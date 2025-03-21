@@ -1,0 +1,53 @@
+<!-- navigation -->
+
+<mat-toolbar class="toolbar">
+  <mat-toolbar-row class="toolbar-row">
+
+    <img class="nav-logo" src="LOGO.png" height="50px" routerLink="/" />
+    <span class="logo">&nbsp;Проект "Внуки по переписке: Поздравить открыткой"</span>
+
+    <span class="spacer"></span>
+    <button mat-button class="navbar-link">
+      Мои заявки
+    </button>
+
+    <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu">
+      <mat-icon>flutter_dash</mat-icon>
+    </button>
+
+    <mat-menu #profileMenu>
+      <p style="padding: 8px" class="drop-menu-item">Вы вошли как {{ name }}</p>
+      <mat-divider></mat-divider>
+      @for (item of menuItems; track $index) {
+      <button mat-menu-item class="drop-menu-item" [routerLink]="item.link">
+        <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
+        <span>{{item.text}}</span>
+      </button>
+      }
+      <mat-divider></mat-divider>
+      <button mat-menu-item class="drop-menu-item" (click)="signOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Выйти</span>
+      </button>
+    </mat-menu>
+
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<!-- main content -->
+
+<main class="main-content">
+  <div id="content-wrap">
+    <router-outlet></router-outlet>
+  </div>
+</main>
+
+<!-- footer -->
+
+<mat-toolbar class="footer">
+  <p>
+    &copy; {{ year | date: "yyyy" }} - OksanaKustova -
+    <a href="https://starikam.org/" class="main-link" target="_blank">БФ помощи пожилым людям и инвалидам "Старость
+      в радость"</a>
+  </p>
+</mat-toolbar>

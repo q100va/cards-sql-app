@@ -1,12 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SignInService } from './services/sign-in.service';
 
 @Component({
   selector: 'app-root',
+  template: `<router-outlet></router-outlet>`,
   imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styles: [``],
 })
-export class AppComponent {
-  title = 'cards-sql-app';
+export class AppComponent implements OnInit {
+  private signInService = inject(SignInService);
+  //constructor(private signInService: SignInService) {}
+
+  ngOnInit() {
+    this.signInService.autoAuthUser();
+  }
 }

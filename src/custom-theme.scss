@@ -1,4 +1,3 @@
-
 // Custom Theming for Angular Material
 // For more information: https://material.angular.io/guide/theming
 @use '@angular/material' as mat;
@@ -7,10 +6,64 @@ html {
   @include mat.theme((
     color: (
       theme-type: light,
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
+      primary: mat.$spring-green-palette,
+      tertiary: mat.$yellow-palette,
     ),
     typography: Roboto,
     density: 0,
+  ));
+}
+
+:root {
+  @include mat.card-overrides((
+    outlined-container-color: #ffffff,
+  ));
+}
+
+:root {
+  @include mat.toolbar-overrides((
+    container-background-color:  #66BB6A,
+   /*  container-text-color: red, */
+  ));
+}
+
+:root {
+  @include mat.menu-overrides((
+    container-color: #ffffff,
+    item-label-text-color: #000000DE,
+  ));
+}
+
+.drop-menu-icon {
+  @include mat.menu-overrides((
+    item-icon-color: #66bb6a
+  ));
+}
+
+:root {
+  @include mat.table-overrides((
+/*     header-headline-color: #66bb6a,
+    header-headline-weight: bold, */
+  ));
+}
+
+:root {
+  @include mat.tabs-overrides((
+    active-ripple-color: #66bb6a,
+  ));
+}
+
+.with-info-badge {
+  @include mat.badge-overrides((
+    background-color: #0ea5e9,
+  ));
+}
+
+.dialog-cancel-button {
+  @include mat.button-overrides((
+    text-label-text-color: #ffaa00,
+    text-ripple-color: #fbc12da2,
+    text-state-layer-color:  #fbc12d
+
   ));
 }
