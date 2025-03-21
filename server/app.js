@@ -9,6 +9,8 @@ import sequelize from './database.js';
 import { config } from 'dotenv';
 config({ debug: true, override: true }); */
 
+import SessionApi from "./routes/session-api.js";
+
 const app = express();
 app.use(json({ limit: '50mb' }));
 app.use(urlencoded({ limit: '50mb', extended: true }));
@@ -60,6 +62,13 @@ app.use((req, res, next) => {
   next();
 });
 
+//API(s)
+
+app.use("/api/session", SessionApi);
+/* app.use("/api/addresses", AddressesApi);
+app.use("/api/users", UsersApi);
+app.use("/api/roles", RolesApi);
+ */
 //Start server
 app.listen(8080);
 console.log(`Application started and listening on port: 8080`);
