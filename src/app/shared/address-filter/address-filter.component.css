@@ -1,0 +1,20 @@
+.mat-mdc-form-field {
+  margin-left: auto;
+  font-size: 12px;
+  width: 100%;
+}
+
+mat-label {
+  font-size: 12px;
+}
+.mat-grid-list {
+  width: 100%;
+}
+
+/* .mat-grid-tile-content {
+  width: 100%;
+
+}
+.mat-grid-tile {
+  display: block;
+} */

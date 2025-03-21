@@ -6,6 +6,7 @@ import { SignInComponent } from './pages/sign-in/sign-in.component';
 import { BaseLayoutComponent } from './shared/base-layout/base-layout.component';
 import { authGuard } from './shared/guards/auth.guard';
 import { RolesListComponent } from './pages/roles-list/roles-list.component';
+import { ToponymsListComponent } from './shared/toponyms-list/toponyms-list.component';
 
 export const routes: Routes = [
   {
@@ -28,12 +29,12 @@ export const routes: Routes = [
         component: RolesListComponent,
         canActivate: [authGuard],
       },
-  /*      {
+       {
         path: "toponyms",
         component: ToponymsListComponent,
         canActivate: [authGuard],
       },
-     {
+   /*   {
         path: "addresses",
         component: UploadFileComponent,
         canActivate: [authGuard],
