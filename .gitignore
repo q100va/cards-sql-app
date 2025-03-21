@@ -44,3 +44,8 @@ Thumbs.db
 # dotenv environment variables file
 .env
 .env.test
+
+# xlsx file
+/public/archive
+*.xlsx
+
