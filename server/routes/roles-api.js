@@ -5,7 +5,7 @@ import Sequelize from 'sequelize';
 import Role from "../models/role.js";
 import User from "../models/user.js";
 import { operations } from "../shared/operations.js";
-import { objects } from "../shared/operations.js";
+//mport { objects } from "../shared/operations.js";
 import Operation from "../models/operation.js";
 const Op = Sequelize.Op;
 
@@ -43,9 +43,12 @@ router.post("/create-role", async (req, res) => {
         description: req.body.data.description,
       }
     );
+    console.log("role");
+    console.log(role.id);
+    //console.log(role.dataValues.id);
 
     for (let operation of operations) {
-      await Operation.create(
+      let op = await Operation.create(
         {
           name: operation.operation,
           roleId: role.id,
@@ -53,6 +56,8 @@ router.post("/create-role", async (req, res) => {
           disabled: operation.flag == 'FULL',
         }
       );
+      console.log("op");
+      console.log(op);
     }
     res.status(200).send({ msg: "Роль успешно создана.", data: req.body.data.name });
   } catch (e) {

@@ -5,6 +5,8 @@ import { AuthLayoutComponent } from './shared/auth-layout/auth-layout.component'
 import { SignInComponent } from './pages/sign-in/sign-in.component';
 import { BaseLayoutComponent } from './shared/base-layout/base-layout.component';
 import { authGuard } from './shared/guards/auth.guard';
+import { RolesListComponent } from './pages/roles-list/roles-list.component';
+
 export const routes: Routes = [
   {
     path: "",
@@ -20,18 +22,18 @@ export const routes: Routes = [
         path: "users",
         component: UsersListComponent,
         canActivate: [authGuard],
-      },
+      },*/
       {
         path: "roles",
         component: RolesListComponent,
         canActivate: [authGuard],
       },
-      {
+  /*      {
         path: "toponyms",
         component: ToponymsListComponent,
         canActivate: [authGuard],
-      }, */
-/*       {
+      },
+     {
         path: "addresses",
         component: UploadFileComponent,
         canActivate: [authGuard],
