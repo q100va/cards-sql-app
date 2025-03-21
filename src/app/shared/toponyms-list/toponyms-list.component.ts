@@ -60,7 +60,7 @@ import { AddressService } from '../../services/address.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
 import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
 import { FileService } from '../../services/file.service';
-//import { UploadFileComponent } from '../../pages/upload-file/upload-file.component';
+import { UploadFileComponent } from '../upload-file/upload-file.component';
 //import {  Router } from '@angular/router';
 
 @Component({
@@ -86,7 +86,7 @@ import { FileService } from '../../services/file.service';
     MatCheckboxModule,
     MatSelectModule,
     AddressFilterComponent,
-   // UploadFileComponent,
+    UploadFileComponent,
   ],
   providers: [
     MessageService,
