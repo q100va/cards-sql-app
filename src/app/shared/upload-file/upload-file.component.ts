@@ -27,10 +27,12 @@ export class UploadFileComponent {
   file?: File;
   errorMessage?: string;
   typeOfData = input.required<'country' | 'region' | 'district' | 'locality'>();
+  showSpinner = output<boolean>();
  // afterUploadingFile = output<void>();
 
   addFile(event: Event) {
     console.log('START', event);
+    this.showSpinner.emit(true);
     const inputElement = event.target as HTMLInputElement;
     if (inputElement.files) {
       this.file = inputElement.files[0];
@@ -54,10 +56,12 @@ export class UploadFileComponent {
           this.saveData(rows);
         })
         .catch((err) => {
+          this.showSpinner.emit(false);
           this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
          // this.errorMessage = 'Невозможно загрузить выбранный файл: ' + err;
         });
     } else {
+      this.showSpinner.emit(false);
       this.errorHandling({error: 'Невозможно загрузить выбранный файл!'});
     }
   }
@@ -74,10 +78,11 @@ export class UploadFileComponent {
             sticky: false,
           });
           //this.afterUploadingFile.emit();
+          this.showSpinner.emit(false);
           location.reload();
-
         },
         error: (err) => {
+          this.showSpinner.emit(false);
           this.errorHandling(err);
         },
       });

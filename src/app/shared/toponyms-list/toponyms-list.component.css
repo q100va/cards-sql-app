@@ -2,7 +2,7 @@
   margin: auto;
   width: fit-content;
   min-width: 70%;
-  min-height: 80vh;;
+  min-height: 80vh;
   text-align: center;
 }
 
@@ -87,4 +87,11 @@ mat-card-actions {
 
 .icon-cursor {
   cursor: pointer;
+}
+
+p-progress-spinner {
+  --p-progressspinner-color-1 : #fbc02d;
+--p-progressspinner-color-2 : #d6c616;
+--p-progressspinner-color-3 : #45d233;
+--p-progressspinner-color-4 : #66bb6a;
 }

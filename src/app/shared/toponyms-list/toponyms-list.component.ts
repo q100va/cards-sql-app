@@ -32,6 +32,7 @@ import {
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { MatMenuModule } from '@angular/material/menu';
 import {
@@ -87,6 +88,7 @@ import { UploadFileComponent } from '../upload-file/upload-file.component';
     MatSelectModule,
     AddressFilterComponent,
     UploadFileComponent,
+    ProgressSpinner,
   ],
   providers: [
     MessageService,
@@ -117,6 +119,7 @@ export class ToponymsListComponent {
   pageSize = 5;
   pageSizeOptions = [5, 10, 25, 50, 100];
   avoidDoubleRequest = false;
+  showSpinner = signal<boolean>(false);
 
   exactMatch = signal<boolean>(false);
   searchValue = signal<string>('');

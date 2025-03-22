@@ -1,6 +1,14 @@
+
+
 <mat-card class="list-card" appearance="outlined">
+    @if(showSpinner()){
+    <div class="card" style="z-index: 100; position: fixed; width: 70%; height: 80vh; padding-top: 20%; background-color: #dddfd081; border-radius:12px;">
+      <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s" [style]="{ width: '150px', height: '150px' }" />
+  </div>
+  }
   <p-confirmdialog />
   <p-toast position="center" />
+
   <mat-card-header>
     <mat-grid-list cols="24" rowHeight="42px">
       <mat-grid-tile colspan="8" rowspan="1">
@@ -33,7 +41,7 @@
               <mat-icon fontSet="material-icons-outlined">file_upload</mat-icon>
             </button>
            -->
-        <app-upload-file [typeOfData] = "type()"></app-upload-file>
+        <app-upload-file [typeOfData] = "type()" (showSpinner)="showSpinner.set($event);"></app-upload-file>
 
           </div>
         </mat-grid-tile>
