@@ -80,7 +80,12 @@ export const schemas = {
       prop: 'isFederalCity',
       type: Boolean,
       required: true,
-    }
+    },
+    region: {
+      prop: 'region',
+      type: String,
+      required: true,
+    },
 
   },
 

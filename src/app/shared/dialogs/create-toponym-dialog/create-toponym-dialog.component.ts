@@ -58,8 +58,11 @@ export class CreateToponymDialogComponent {
 
   //roleName = '';
   //roleDescription = '';
+  //TODO: different placeholders for different toponyms
   toponymNamePlaceholder = 'Синицыно поселок';
   toponymShortNamePlaceholder = 'п. Синицыно';
+  toponymPostNamePlaceholder = 'Дарницкий район';
+  toponymShortPostNamePlaceholder = 'Дарницкий р-н';
  // type = 'locality';
 
   mainData = new FormGroup<Record<string, AbstractControl>>({
@@ -116,6 +119,8 @@ export class CreateToponymDialogComponent {
     ) {
       this.mainData.controls['toponymName'].enable();
       this.mainData.controls['toponymShortName'].enable();
+      this.mainData.controls['toponymPostName'].enable();
+      this.mainData.controls['toponymShortPostName'].enable();
       this.mainData.controls['federalCity'].enable();
       this.mainData.controls['capitalOfRegion'].enable();
       this.mainData.controls['capitalOfDistrict'].enable();

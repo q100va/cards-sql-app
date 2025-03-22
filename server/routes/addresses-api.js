@@ -756,6 +756,7 @@ router.post("/populate-district", async (req, res) => {
       }
       console.log("districtData");
       console.log(districtData);
+         //TODO: в разных регионах могут быть одинаковые названия округов/районов
       const newDistrict = await District.create({
         name: districtData.name,
         shortName: districtData.shortName,
@@ -786,6 +787,7 @@ router.post("/populate-locality", async (req, res) => {
     const localities = Array.from(new Set(req.body.data));
     /*     console.log("localities");
         console.log(localities); */
+
     for (let locality of localities) {
       let localityData;
       try {
@@ -802,7 +804,19 @@ router.post("/populate-locality", async (req, res) => {
         isCapitalOfRegion: locality.isCapitalOfRegion,
         isFederalCity: locality.isFederalCity,
       });
-      const district = await District.findOne({ where: { name: localityData.districtFullName } });
+      //TODO: в разных регионах могут быть одинаковые названия округов/районов -TEST
+
+      const district = await District.findOne(
+        {
+          where: { name: localityData.districtFullName, isRestricted: false, '$region.name$': locality.region },
+          include: [
+            {
+              model: Region,
+              attributes: [],
+            }
+          ]
+        }
+      );
       if (district === null) {
         throw new CustomError(`"${locality.district}" не найден в базе данных! Ввод прекращен.`, 422);
       } else {

@@ -14,7 +14,7 @@ const District = sequelize.define('district', {
   },
   name: {
     type: DataTypes.STRING,
-    unique: true,
+    unique: false,
     allowNull: false,
     validate: {
       notEmpty: true,
@@ -23,14 +23,14 @@ const District = sequelize.define('district', {
   shortName: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
+    unique: false,
     validate: {
       notEmpty: true,
     }
   },
   postName: {
     type: DataTypes.STRING,
-    unique: true,
+    unique: false,
     allowNull: false,
     validate: {
       notEmpty: true,
@@ -38,7 +38,7 @@ const District = sequelize.define('district', {
   },
   shortPostName: {
     type: DataTypes.STRING,
-    unique: true,
+    unique: false,
     allowNull: false,
     validate: {
       notEmpty: true,

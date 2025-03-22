@@ -58,11 +58,6 @@ const namesOfAddressTypes = {
       re: /деревня/i
     },
     {
-      name: "поселок",
-      shortName: "п.",
-      re: /поселок/i
-    },
-    {
       name: "село",
       shortName: "с.",
       re: /село/i
@@ -86,6 +81,16 @@ const namesOfAddressTypes = {
       name: "поселок станции",
       shortName: "п.ст.",
       re: /поселок станции/i
+    },
+    {
+      name: "курортный поселок",
+      shortName: "кп",
+      re: /курортный поселок/i
+    },
+    {
+      name: "поселок",
+      shortName: "п.",
+      re: /поселок/i
     },
     {
       name: "хутор",
@@ -112,11 +117,7 @@ const namesOfAddressTypes = {
       shortName: "аул",
       re: /аул/i
     },
-    {
-      name: "курортный поселок",
-      shortName: "кп",
-      re: /курортный поселок/i
-    },
+
     {
       name: "станица",
       shortName: "ст-ца",
@@ -131,6 +132,16 @@ const namesOfAddressTypes = {
       name: "поселок ж.д. разъезда",
       shortName: "п. ж/д рзд.",
       re: /поселок ж.д. разъезда/i
+    },
+    {
+      name: "разъезд",
+      shortName: "рзд",
+      re: /разъезд/i
+    },
+    {
+      name: "станция",
+      shortName: "ст.",
+      re: /станция/i
     },
 
 

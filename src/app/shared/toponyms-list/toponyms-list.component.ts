@@ -182,7 +182,7 @@ export class ToponymsListComponent {
   });
 
   type = model<'country' | 'region' | 'district' | 'locality'>('locality');
-
+ // type = model<'country' | 'region' | 'district' | 'locality'>('district');
   localities?: {
     id: number;
     name: string;
