@@ -7,6 +7,7 @@ import { BaseLayoutComponent } from './shared/base-layout/base-layout.component'
 import { authGuard } from './shared/guards/auth.guard';
 import { RolesListComponent } from './pages/roles-list/roles-list.component';
 import { ToponymsListComponent } from './shared/toponyms-list/toponyms-list.component';
+import { UsersListComponent } from './pages/users-list/users-list.component';
 
 export const routes: Routes = [
   {
@@ -14,7 +15,7 @@ export const routes: Routes = [
     component: BaseLayoutComponent,
     canActivate: [authGuard],
     children: [
-/*       {
+      {
         path: "",
         component: UsersListComponent,
         canActivate: [authGuard],
@@ -23,7 +24,7 @@ export const routes: Routes = [
         path: "users",
         component: UsersListComponent,
         canActivate: [authGuard],
-      },*/
+      },
       {
         path: "roles",
         component: RolesListComponent,

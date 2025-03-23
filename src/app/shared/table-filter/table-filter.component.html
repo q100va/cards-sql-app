@@ -1,0 +1,190 @@
+<div class="fieldset-div">
+  <mat-checkbox [(ngModel)]="notActualOption">включать неактуальные данные: прежние адреса, телефоны и
+    т.п.</mat-checkbox>
+
+  <form [formGroup]="form">
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (addressFilter().countries && addressFilter().countries!.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">адрес</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">адрес</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <app-address-filter [params]="{multiple: true, cols: '1', gutterSize: '16px', rowHeight: '57px'}"
+        [defaultAddressParams] = "defaultAddressParams()"
+          (addressFilter)="onAddressFilterChange($event)" (addressString)="onAddressStringChange($event)"
+          (addressFilterBadgeValue)="onAddressFilterBadgeValueChange($event)"></app-address-filter>
+        <!--         <mat-form-field>
+          <mat-label>Страна</mat-label>
+          <mat-select formControlName="countries" multiple (selectionChange)="onCountrySelectionChange()">
+            @for (country of countriesList; track $index ) {
+            <mat-option [value]="country">{{country.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Регион</mat-label>
+          <mat-select formControlName="regions" multiple (selectionChange)="onRegionSelectionChange()">
+            @for (region of regionsList; track $index) {
+            <mat-option [value]="region">{{region.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Район/округ</mat-label>
+          <mat-select formControlName="districts" multiple (selectionChange)="onDistrictSelectionChange()">
+            @for (district of districtsList; track $index) {
+            <mat-option [value]="district">{{district.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Населенный пункт</mat-label>
+          <mat-select formControlName="localities" multiple (selectionChange)="emitSelectedFilters()">
+            @for (locality of localitiesList; track $index) {
+            <mat-option [value]="locality">{{locality.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field> -->
+
+        <mat-checkbox formControlName="strongAddressFilter" (change)="emitSelectedFilters()">все выбранные значения
+          должны одновременно встречаться у одного пользователя</mat-checkbox>
+
+      </p>
+    </p-fieldset>
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls['roles'].value?.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">роль</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">роль</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>Выберите значение(я)</mat-label>
+          <mat-select formControlName="roles" multiple (selectionChange)="emitSelectedFilters()">
+            @for (role of rolesList; track $index) {
+            <mat-option [value]="role.id">{{role.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </p>
+    </p-fieldset>
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls['startBeginningDate'].value || form.controls['endBeginningDate'].value) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">дата присоединения</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">дата присоединения</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>Введите диапазон</mat-label>
+          <mat-date-range-input [rangePicker]="picker1">
+            <input formControlName="startBeginningDate" matStartDate placeholder="дд.мм.гггг"
+              (dateChange)="emitSelectedFilters()">
+            <input formControlName="endBeginningDate" matEndDate placeholder="дд.мм.гггг"
+              (dateChange)="emitSelectedFilters()">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker1></mat-date-range-picker>
+        </mat-form-field>
+      </p>
+    </p-fieldset>
+
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls['startRestrictionDate'].value || form.controls['endRestrictionDate'].value) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">дата блокировки</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">дата блокировки</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>Введите диапазон</mat-label>
+          <mat-date-range-input [rangePicker]="picker2">
+            <input formControlName="startRestrictionDate" matStartDate placeholder="дд.мм.гггг"
+              (dateChange)="emitSelectedFilters()">
+            <input formControlName="endRestrictionDate" matEndDate placeholder="дд.мм.гггг"
+              (dateChange)="emitSelectedFilters()">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker2></mat-date-range-picker>
+        </mat-form-field>
+        <span class="comment">результат поиска будет иметь смысл, если выбраны <br /> "Все пользователи" или "Только
+          заблокированные"</span>
+      </p>
+    </p-fieldset>
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls['contactTypes'].value?.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">тип контакта</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">тип контакта</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>Выберите значение(я)</mat-label>
+          <mat-select formControlName="contactTypes" multiple (selectionChange)="emitSelectedFilters()">
+            @for (contact of contactTypesList; track $index) {
+            <mat-option [value]="contact">{{contact.label}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="strongContactFilter" (change)="emitSelectedFilters()">все выбранные значения
+          должны одновременно встречаться у одного пользователя</mat-checkbox>
+
+      </p>
+
+    </p-fieldset>
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls['comment'].value?.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">комментарий</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">комментарий</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>Выберите значение(я)</mat-label>
+          <mat-select formControlName="comment" multiple (selectionChange)="emitSelectedFilters()">
+            <mat-option [value]="'с комментарием'">с комментарием</mat-option>
+            <mat-option [value]="'без комментария'">без комментария</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </p>
+    </p-fieldset>
+  </form>
+</div>

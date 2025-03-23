@@ -62,7 +62,7 @@ import { AddressFilterComponent } from '../address-filter/address-filter.compone
 import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
 import { FileService } from '../../services/file.service';
 import { UploadFileComponent } from '../upload-file/upload-file.component';
-//import {  Router } from '@angular/router';
+import {  Router } from '@angular/router';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -100,7 +100,7 @@ import { UploadFileComponent } from '../upload-file/upload-file.component';
 })
 export class ToponymsListComponent {
   private confirmationService = inject(ConfirmationService);
-  //private router = inject(Router);
+  private router = inject(Router);
   private messageService = inject(MessageService);
   private addressService = inject(AddressService);
   readonly dialog = inject(MatDialog);
@@ -296,16 +296,22 @@ export class ToponymsListComponent {
     }; */
     //this.router.navigate(['/users'], navigationExtras);
 
-/*     this.router.navigateByUrl('/users', {
+    console.log('toponym');
+    console.log(toponym);
+   // console.log('toponym.district.id');
+    //console.log(toponym.district.id);
+
+
+     this.router.navigate(['/users'], {
       state: {
         params: {
           localityId: toponym.id,
-          districtId: toponym.district.id,
-          regionId: toponym.district.region.id,
-          countryId: toponym.district.region.country.id,
+          districtId: toponym['district.id'],
+          regionId: toponym['district.region.id'],
+          countryId: toponym['district.region.country.id'],
         },
       },
-    }); */
+    });
   }
   onOpenPartnersListClick(rowId: number) {}
   onOpenSeniorsListClick(rowId: number) {}

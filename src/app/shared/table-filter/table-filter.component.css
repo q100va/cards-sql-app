@@ -1,0 +1,30 @@
+.fieldset-div {
+  width: 100%;
+  display: block;
+}
+
+.fieldset {
+  display: block;
+  width: 90%;
+  margin: auto;
+  --p-fieldset-background: #f9faf4;
+  --p-fieldset-legend-background: #f9faf4;
+  margin-bottom: 24px;
+}
+
+.mat-mdc-form-field {
+  min-width: 100%;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+mat-checkbox {
+  --mat-sys-body-medium-size: 12px;
+  margin-bottom: 16px;
+}
+
+.comment {
+  font-size: x-small;
+}

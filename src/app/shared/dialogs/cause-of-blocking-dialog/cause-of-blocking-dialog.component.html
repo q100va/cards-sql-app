@@ -1,0 +1,18 @@
+<h2 mat-dialog-title>Укажите причину блокировки {{data.userName}}</h2>
+
+<mat-dialog-content class="full-width">
+  <form>
+  <mat-form-field class="full-width">
+    <mat-label>Причина блокировки</mat-label>
+    <textarea rows="10" matInput [formControl]="causeOfBlocking"></textarea>
+    @if (causeOfBlocking.hasError('required')) {
+      <mat-error>Поле 'Причина блокировки' не может быть пустым!</mat-error>
+      }
+  </mat-form-field>
+</form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button class="dialog-cancel-button" mat-button (click)="onCancelClick()">Отменить</button>
+  <button class="dialog-submit-button" mat-button [disabled]="causeOfBlocking.hasError('required')" (click)="onBlockUserClick()">Заблокировать</button>
+</mat-dialog-actions>
+

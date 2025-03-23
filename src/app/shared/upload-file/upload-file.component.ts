@@ -79,7 +79,7 @@ export class UploadFileComponent {
           });
           //this.afterUploadingFile.emit();
           this.showSpinner.emit(false);
-          location.reload();
+          location.reload();//TODO: delete?
         },
         error: (err) => {
           this.showSpinner.emit(false);
