@@ -120,10 +120,6 @@ export class TableFilterComponent implements OnInit {
     roles: new FormControl(null),
     comment: new FormControl(null),
     contactTypes: new FormControl(null),
-    /*  countries: new FormControl(null),
-    regions: new FormControl({ value: null, disabled: true }),
-    districts: new FormControl({ value: null, disabled: true }),
-    localities: new FormControl({ value: null, disabled: true }), */
     startBeginningDate: new FormControl(null),
     endBeginningDate: new FormControl(null),
     startRestrictionDate: new FormControl(null),
@@ -132,11 +128,6 @@ export class TableFilterComponent implements OnInit {
     strongContactFilter: new FormControl(false),
   });
 
-  /*   countriesList!: { id: number; name: string }[];
-  regionsList?: { id: number; name: string; countryId: number }[];
-  districtsList?: { id: number; name: string; regionId: number }[];
-  localitiesList?: { id: number; name: string; districtId: number }[];
- */
   contactTypesList = [
     {
       type: 'email',
@@ -181,15 +172,13 @@ export class TableFilterComponent implements OnInit {
   ];
 
   ngOnInit() {
-    /*     this._locale.set('ru');
-    this._adapter.setLocale(this._locale());
-    this._intl.closeCalendarLabel = 'Закрыть календарь.';
-    this._intl.changes.next(); */
+
+    console.log('defaultAddressParams in table-filter', this.defaultAddressParams());
 
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
-        console.log('res');
-        console.log(res);
+       // console.log('res');
+       // console.log(res);
         this.rolesList = res.data.roles;
       },
       error: (err) => {
@@ -204,137 +193,8 @@ export class TableFilterComponent implements OnInit {
         });
       },
     });
-    /*
-     this.addressService.getListOfCountries().subscribe({
-      next: (res) => {
-        this.countriesList = res.data;
-      },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
-    }); */
-  }
-  /*
-  onCountrySelectionChange() {
-    console.log('this.countries.value');
-    console.log(this.form.controls['countries'].value);
-    if (this.form.controls['countries'].value.length > 0) {
-      const countriesIds = this.form.controls['countries'].value.map(
-        (item: any) => item.id
-      );
-      this.addressService.getListOfRegionsOfCountries(countriesIds).subscribe({
-        next: (res) => {
-          this.regionsList = res.data;
-          if (this.regionsList && this.regionsList.length > 0) {
-            this.form.get('regions')?.enable();
-          } else {
-            this.form.get('regions')?.disable();
-          }
-        },
-        error: (err) => {
-          console.log(err);
-          let errorMessage =
-            typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: errorMessage,
-            sticky: true,
-          });
-        },
-      });
-    } else {
-      this.form.get('regions')?.disable();
-    }
-    this.form.get('regions')?.setValue(null);
-    this.form.get('districts')?.disable();
-    this.form.get('districts')?.setValue(null);
-    this.form.get('localities')?.disable();
-    this.form.get('localities')?.setValue(null);
-    this.emitSelectedFilters();
   }
 
-  onRegionSelectionChange() {
-    if (this.form.controls['regions'].value.length > 0) {
-      const regionsIds = this.form.controls['regions'].value.map(
-        (item: any) => item.id
-      );
-      this.addressService.getListOfDistrictsOfRegions(regionsIds).subscribe({
-        next: (res) => {
-          this.districtsList = res.data;
-          if (this.districtsList && this.districtsList.length > 0) {
-            this.form.get('districts')?.enable();
-          } else {
-            this.form.get('districts')?.disable();
-          }
-        },
-        error: (err) => {
-          console.log(err);
-          let errorMessage =
-            typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: errorMessage,
-            sticky: true,
-          });
-        },
-      });
-    } else {
-      this.form.get('districts')?.disable();
-    }
-    this.form.get('districts')?.setValue(null);
-    this.form.get('localities')?.disable();
-    this.form.get('localities')?.setValue(null);
-    this.emitSelectedFilters();
-  }
-
-  onDistrictSelectionChange() {
-    if (this.form.controls['districts'].value.length > 0) {
-      const districtsIds = this.form.controls['districts'].value.map(
-        (item: any) => item.id
-      );
-      this.addressService.getListOfLocalitiesOfDistricts(districtsIds).subscribe({
-        next: (res) => {
-          this.localitiesList = res.data;
-          if (this.localitiesList && this.localitiesList.length > 0) {
-            this.form.get('localities')?.enable();
-          } else {
-            this.form.get('localities')?.disable();
-          }
-        },
-        error: (err) => {
-          console.log(err);
-          let errorMessage =
-            typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: errorMessage,
-            sticky: true,
-          });
-        },
-      });
-    } else {
-      this.form.get('localities')?.disable();
-    }
-    this.form.get('localities')?.setValue(null);
-    this.emitSelectedFilters();
-  } */
   onAddressFilterChange(value: {
     countries: null | number[] | [];
     regions: null | number[] | [];
@@ -396,9 +256,9 @@ export class TableFilterComponent implements OnInit {
       this.form.controls['startBeginningDate'].value &&
       this.form.controls['endBeginningDate'].value
     ) {
-      console.log('dateBeginningRange');
-      console.log(this.form.controls['startBeginningDate'].value);
-      console.log(this.form.controls['endBeginningDate'].value);
+      //console.log('dateBeginningRange');
+      //console.log(this.form.controls['startBeginningDate'].value);
+      //console.log(this.form.controls['endBeginningDate'].value);
       count = count + 1;
       filter['dateBeginningRange'] = [
         this.form.controls['startBeginningDate'].value.toDate(),
@@ -416,9 +276,9 @@ export class TableFilterComponent implements OnInit {
       this.form.controls['startRestrictionDate'].value &&
       this.form.controls['endRestrictionDate'].value
     ) {
-      console.log('dateRestrictionRange');
-      console.log(this.form.controls['startRestrictionDate'].value);
-      console.log(this.form.controls['endRestrictionDate'].value);
+      //console.log('dateRestrictionRange');
+      //console.log(this.form.controls['startRestrictionDate'].value);
+      //console.log(this.form.controls['endRestrictionDate'].value);
       count = count + 1;
       filter['dateRestrictionRange'] = [
         this.form.controls['startRestrictionDate'].value.toDate(),
@@ -447,8 +307,8 @@ export class TableFilterComponent implements OnInit {
       count = count + 1;
     } */
     count = count + this.addressFilterBadgeValue();
-    console.log('filter');
-    console.log(filter);
+    //console.log('filter');
+    //console.log(filter);
     /*     console.log('addressFilter');
     console.log(addressFilter);
  */

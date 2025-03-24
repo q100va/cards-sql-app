@@ -53,9 +53,15 @@ export class AddressService {
     return this.http.get(BACKEND_URL + '/api/addresses/get-countries-list');
   }
 
+  getListOfToponyms(idsOfToponym: number[], typeOfToponym: string): Observable<any> {
+    const BACKEND_URL = environment.apiUrl;
+    return this.http.post(BACKEND_URL + '/api/addresses/get-' + typeOfToponym + '-list', {
+      data: idsOfToponym,
+    });
+  }
+
+/*
   getListOfRegionsOfCountries(idsOfCountries: number[]): Observable<any> {
-    /*  console.log('idsOfCountries');
-    console.log(idsOfCountries); */
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/get-regions-list', {
       data: idsOfCountries,
@@ -74,7 +80,7 @@ export class AddressService {
     return this.http.post(BACKEND_URL + '/api/addresses/get-localities-list', {
       data: idsOfDistricts,
     });
-  }
+  } */
 
   //create toponym
 

@@ -46,7 +46,7 @@
                 <button mat-icon-button title="Настроить фильтр"
                   (click)="sidenav2.toggle()"><!-- (click)="onFilterClick()" -->
                   <mat-icon [matBadge]="filterBadgeValue ? filterBadgeValue : null"
-                    matBadgeOverlap="false">filter_alt</mat-icon>
+                    matBadgeOverlap="false" aria-hidden="true">filter_alt</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
@@ -69,7 +69,7 @@
               <div class="bottom-right with-info-badge">
                 <button mat-icon-button (click)="sidenav1.toggle()" title="Настроить отображение колонок">
                   <mat-icon [matBadge]="settingsBadgeValue ? settingsBadgeValue : null"
-                    matBadgeOverlap="false">settings</mat-icon>
+                    matBadgeOverlap="false" aria-hidden="true">settings</mat-icon>
                 </button>
               </div>
             </mat-grid-tile> </mat-card-actions>

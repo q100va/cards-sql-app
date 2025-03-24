@@ -62,7 +62,7 @@ import { AddressFilterComponent } from '../address-filter/address-filter.compone
 import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
 import { FileService } from '../../services/file.service';
 import { UploadFileComponent } from '../upload-file/upload-file.component';
-import {  Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -185,7 +185,7 @@ export class ToponymsListComponent {
   });
 
   type = model<'country' | 'region' | 'district' | 'locality'>('locality');
- // type = model<'country' | 'region' | 'district' | 'locality'>('district');
+  // type = model<'country' | 'region' | 'district' | 'locality'>('district');
   localities?: {
     id: number;
     name: string;
@@ -284,7 +284,7 @@ export class ToponymsListComponent {
 
   onOpenHomesListClick(rowId: number) {}
   onOpenUsersListClick(toponym: any) {
-/*     const navigationExtras: NavigationExtras = {
+    /*     const navigationExtras: NavigationExtras = {
       state: {
         params: {
           localityId: toponym.id,
@@ -298,18 +298,15 @@ export class ToponymsListComponent {
 
     console.log('toponym');
     console.log(toponym);
-   // console.log('toponym.district.id');
+    // console.log('toponym.district.id');
     //console.log(toponym.district.id);
 
-
-     this.router.navigate(['/users'], {
-      state: {
-        params: {
-          localityId: toponym.id,
-          districtId: toponym['district.id'],
-          regionId: toponym['district.region.id'],
-          countryId: toponym['district.region.country.id'],
-        },
+    this.router.navigate(['/users'], {
+      queryParams: {
+        localityId: toponym.id,
+        districtId: toponym['district.id'],
+        regionId: toponym['district.region.id'],
+        countryId: toponym['district.region.country.id'],
       },
     });
   }

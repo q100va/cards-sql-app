@@ -52,6 +52,7 @@ import { TableSettingsComponent } from '../../shared/table-settings/table-settin
 import { TableFilterComponent } from '../../shared/table-filter/table-filter.component';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-users-list',
@@ -92,6 +93,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private userService = inject(UserService);
   readonly dialog = inject(MatDialog);
   dataSource!: MatTableDataSource<User>;
@@ -360,20 +362,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       }
     }
     filterString = filterString.slice(0, -2);
-    /*     let addressFilterData = this.allFilterParameters().addressFilter;
-    //console.log('addressFilterData');
-    //console.log(addressFilterData);
-    let addressString = '';
-    for (let key of this.objectKeys(addressFilterData)) {
-      if (addressFilterData[key] && addressFilterData[key]!.length > 0) {
-        for (let item of addressFilterData[key]!) {
-          console.log('addressFilterData - item');
-          console.log(item);
-          addressString = addressString + item['name'] + ', ';
-        }
-      }
-    }
-    addressString = addressString.slice(0, -2); */
+
     let result = this.addressStringValue()
       ? filterString + ', ' + this.addressStringValue()
       : filterString;
@@ -402,17 +391,22 @@ export class UsersListComponent implements OnInit, AfterViewInit {
         sanitizer.bypassSecurityTrustHtml(item.svg)
       );
     }
+
+        this.route.queryParams.subscribe((params) => {
+      this.defaultAddressParams.localityId = params['localityId'];
+      this.defaultAddressParams.districtId = params['districtId'];
+      this.defaultAddressParams.regionId = params['regionId'];
+      this.defaultAddressParams.countryId = params['countryId'];
+    });
+    console.log('this.defaultAddressParams in user-list');
+    console.log(this.defaultAddressParams);
   }
 
   ngOnInit() {
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras && navigation.extras.state) {
-      Object.assign(this.defaultAddressParams, [
-        navigation.extras.state['params'],
-      ]);
-    }
-  }
 
+
+    //console.log(navigation);
+  }
   ngAfterViewInit() {}
 
   objectKeys(obj: any): string[] {
@@ -426,7 +420,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       height: '80%',
     });
     dialogRef.afterClosed().subscribe((result) => {
-      console.log('The dialog was closed');
+      //console.log('The dialog was closed');
       if (result.userName) {
         this.getUsers();
         this.messageService.add({
@@ -455,7 +449,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   }
 
   onBlockUserClick(id: number) {
-    console.log(id);
+    //console.log(id);
     const blockingUser = this.users.find((item) => item.id == id)!.userName;
     const dialogRef = this.dialog.open(CauseOfBlockingDialogComponent, {
       data: { userName: blockingUser, userId: id },
@@ -464,7 +458,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log('The dialog was closed');
+      //console.log('The dialog was closed');
       if (result.success) {
         this.getUsers();
         this.messageService.add({
@@ -529,7 +523,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   }
 
   onDeleteUserClick(id: number) {
-    console.log(id);
+    //console.log(id);
     const deletingUser = this.users.find((item) => item.id == id)!.userName;
     this.confirmationService.confirm({
       message: `Вы уверены, что хотите удалить пользователя ${deletingUser}?<br />Данные невозможно будет восстановить!`,
@@ -611,7 +605,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     this.currentPage = pageData.pageIndex + 1;
     this.pageSize = pageData.pageSize;
     if (!this.avoidDoubleRequest) {
-      console.log('pageData');
+      //console.log('pageData');
       this.getUsers();
     } else {
       this.avoidDoubleRequest = false;
@@ -632,8 +626,8 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   }
 
   sortData(sort: Sort) {
-    console.log('sort');
-    console.log(sort);
+   // console.log('sort');
+    //console.log(sort);
     this.sortParameters.set(sort);
     //this.getUsers();
   }
@@ -674,7 +668,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
 
   getUsers() {
     // this.pageSize, this.currentPage
-    console.log('WORK');
+   // console.log('WORK');
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),
@@ -685,8 +679,8 @@ export class UsersListComponent implements OnInit, AfterViewInit {
         next: (res) => {
           this.users = res.data.users;
           this.length.set(res.data.length);
-          console.log('this.users');
-          console.log(this.users);
+          //console.log('this.users');
+          //console.log(this.users);
           for (let user of this.users) {
             let orderedContacts: { [key: string]: string[] } = {};
             if (user.contacts) {
