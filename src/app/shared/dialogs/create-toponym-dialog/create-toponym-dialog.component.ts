@@ -51,19 +51,27 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 })
 export class CreateToponymDialogComponent {
   readonly dialogRef = inject(MatDialogRef<CreateToponymDialogComponent>);
-  readonly data = inject<{type: string}>(MAT_DIALOG_DATA);
+  readonly data = inject<{ type: string }>(MAT_DIALOG_DATA);
   private messageService = inject(MessageService);
   private addressService = inject(AddressService);
   private confirmationService = inject(ConfirmationService);
 
-  //roleName = '';
-  //roleDescription = '';
   //TODO: different placeholders for different toponyms
   toponymNamePlaceholder = 'Синицыно поселок';
   toponymShortNamePlaceholder = 'п. Синицыно';
   toponymPostNamePlaceholder = 'Дарницкий район';
   toponymShortPostNamePlaceholder = 'Дарницкий р-н';
- // type = 'locality';
+
+  params = {
+    multiple: false,
+    cols: '1',
+    gutterSize: '16px',
+    rowHeight: '76px',
+    type: this.data.type,
+    isShowRegion: true,
+    isShowDistrict: true,
+    isShowLocality: false
+  };
 
   mainData = new FormGroup<Record<string, AbstractControl>>({
     toponymName: new FormControl<string>({ value: '', disabled: true }, [
@@ -154,7 +162,10 @@ export class CreateToponymDialogComponent {
             this.messageService.add({
               severity: 'warn',
               summary: 'Ошибка',
-              detail: `Топоним с названием '${this.mainData.controls['toponymName'].value!}' уже существует! Если это не ошибка, обратитесь к администратору.`,
+              detail: `Топоним с названием '${this.mainData.controls[
+                'toponymName'
+              ]
+                .value!}' уже существует! Если это не ошибка, обратитесь к администратору.`,
               sticky: true,
             });
           } else {

@@ -68,6 +68,17 @@ export class TableFilterComponent implements OnInit {
   private injector = inject(Injector);
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
+
+  params = {
+    multiple: true,
+    cols: '1',
+    gutterSize: '16px',
+    rowHeight: '57px',
+    isShowRegion: true,
+    isShowDistrict: true,
+    isShowLocality: true,
+  };
+
   goToFirstPage = output<void>();
   addressString = signal<string>('');
   addressFilter = signal<{
@@ -102,7 +113,6 @@ export class TableFilterComponent implements OnInit {
     regionId: number | null;
     countryId: number | null;
   }>();
-
 
   private strongAddressFilterControl = effect(
     () => {
@@ -172,13 +182,15 @@ export class TableFilterComponent implements OnInit {
   ];
 
   ngOnInit() {
-
-    console.log('defaultAddressParams in table-filter', this.defaultAddressParams());
+    console.log(
+      'defaultAddressParams in table-filter',
+      this.defaultAddressParams()
+    );
 
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
-       // console.log('res');
-       // console.log(res);
+        // console.log('res');
+        // console.log(res);
         this.rolesList = res.data.roles;
       },
       error: (err) => {

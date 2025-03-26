@@ -16,42 +16,9 @@
         </div>
       </ng-template>
       <p class="m-0">
-        <app-address-filter [params]="{multiple: true, cols: '1', gutterSize: '16px', rowHeight: '57px'}"
-        [defaultAddressParams] = "defaultAddressParams()"
+        <app-address-filter [params]="params" [defaultAddressParams]="defaultAddressParams()"
           (addressFilter)="onAddressFilterChange($event)" (addressString)="onAddressStringChange($event)"
           (addressFilterBadgeValue)="onAddressFilterBadgeValueChange($event)"></app-address-filter>
-        <!--         <mat-form-field>
-          <mat-label>Страна</mat-label>
-          <mat-select formControlName="countries" multiple (selectionChange)="onCountrySelectionChange()">
-            @for (country of countriesList; track $index ) {
-            <mat-option [value]="country">{{country.name}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>Регион</mat-label>
-          <mat-select formControlName="regions" multiple (selectionChange)="onRegionSelectionChange()">
-            @for (region of regionsList; track $index) {
-            <mat-option [value]="region">{{region.name}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>Район/округ</mat-label>
-          <mat-select formControlName="districts" multiple (selectionChange)="onDistrictSelectionChange()">
-            @for (district of districtsList; track $index) {
-            <mat-option [value]="district">{{district.name}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>Населенный пункт</mat-label>
-          <mat-select formControlName="localities" multiple (selectionChange)="emitSelectedFilters()">
-            @for (locality of localitiesList; track $index) {
-            <mat-option [value]="locality">{{locality.name}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field> -->
 
         <mat-checkbox formControlName="strongAddressFilter" (change)="emitSelectedFilters()">все выбранные значения
           должны одновременно встречаться у одного пользователя</mat-checkbox>

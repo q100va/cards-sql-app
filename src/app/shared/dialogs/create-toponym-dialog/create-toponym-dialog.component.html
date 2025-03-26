@@ -2,7 +2,7 @@
 <p-confirmdialog />
 <p-toast position="center" />
 <mat-dialog-content class="full-width">
-  <app-address-filter [params]="{multiple: false, cols: '1', gutterSize: '16px', rowHeight: '76px', type: data.type}"
+  <app-address-filter [params]="params"
     [defaultAddressParams]="defaultAddressParams" (addressFilter)="onChangeAddressFilter($event)">
   </app-address-filter>
   <form [formGroup]="mainData">

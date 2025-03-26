@@ -1,11 +1,8 @@
 import {
-  AfterViewInit,
   Component,
-  OnInit,
   ViewChild,
   computed,
   inject,
-  input,
   model,
   signal,
 } from '@angular/core';
@@ -23,26 +20,13 @@ import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatDialog } from '@angular/material/dialog';
-import { DomSanitizer } from '@angular/platform-browser';
-import { MatIconRegistry, MatIconModule } from '@angular/material/icon';
-import {
-  AbstractControl,
-  FormControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-} from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { MatMenuModule } from '@angular/material/menu';
-import {
-  MatCheckboxChange,
-  MatCheckboxModule,
-} from '@angular/material/checkbox';
-import {
-  MatButtonToggle,
-  MatButtonToggleModule,
-} from '@angular/material/button-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -50,18 +34,15 @@ import { Toast } from 'primeng/toast';
 import { saveAs } from 'file-saver';
 import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
 
-//import { User } from '../../interfaces/user';
-
-import { DatePipe } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
 import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
+
 import { FileService } from '../../services/file.service';
 import { UploadFileComponent } from '../upload-file/upload-file.component';
 import { Router } from '@angular/router';
-
-
+import { ToponymDetailsDialogComponent } from '../dialogs/toponym-details-dialog/toponym-details-dialog.component';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -88,13 +69,9 @@ import { Router } from '@angular/router';
     AddressFilterComponent,
     UploadFileComponent,
     ProgressSpinner,
-    BlurOnClickDirective
+    BlurOnClickDirective,
   ],
-  providers: [
-    MessageService,
-    ConfirmationService,
-  //  { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
-  ],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './toponyms-list.component.html',
   styleUrl: './toponyms-list.component.css',
 })
@@ -120,6 +97,16 @@ export class ToponymsListComponent {
   pageSizeOptions = [5, 10, 25, 50, 100];
   avoidDoubleRequest = false;
   showSpinner = signal<boolean>(false);
+
+  params = {
+    multiple: false,
+    cols: '4',
+    gutterSize: '16px',
+    rowHeight: '76px',
+    isShowRegion: true,
+    isShowDistrict: true,
+    isShowLocality: true,
+  };
 
   exactMatch = signal<boolean>(false);
   searchValue = signal<string>('');
@@ -224,13 +211,22 @@ export class ToponymsListComponent {
     this.sortParameters.set(sort);
   }
   onAddToponymClick() {
-    const dialogRefCreate = this.dialog.open(CreateToponymDialogComponent, {
-      data: { type: this.type() },
+    const dialogRefCreate = this.dialog.open(ToponymDetailsDialogComponent, {
+      data: {
+        type: this.type(),
+        operation: 'create',
+        defaultAddressParams: {
+          localityId: null,
+          districtId: null,
+          regionId: null,
+          countryId: null,
+        },
+      },
       disableClose: true,
-      minWidth: '400px',
+      minWidth: '500px',
       height: 'fit-content',
       autoFocus: 'dialog',
-      restoreFocus: true
+      restoreFocus: true,
       //height: '80%',
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
@@ -303,7 +299,37 @@ export class ToponymsListComponent {
   onOpenDistrictsListClick(rowId: number) {}
   onOpenRegionsListClick(rowId: number) {}
 
-  onOpenUserCardClick(row: any){}
+  onOpenToponymCardClick(toponym: any) {
+    const dialogRefCreate = this.dialog.open(ToponymDetailsDialogComponent, {
+      data: {
+        type: this.type(),
+        operation: 'create',
+        defaultAddressParams: {
+          localityId: toponym.id,
+          districtId: toponym['district.id'],
+          regionId: toponym['district.region.id'],
+          countryId: toponym['district.region.country.id'],
+        },
+      },
+      disableClose: true,
+      minWidth: '500px',
+      height: 'fit-content',
+      autoFocus: 'dialog',
+      restoreFocus: true,
+      //height: '80%',
+    });
+    dialogRefCreate.afterClosed().subscribe((result) => {
+      console.log('The dialog was closed');
+      if (result.toponymName) {
+        this.getToponyms();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Подтверждение',
+          detail: `Топоним '${result.toponymName}' успешно создан!`,
+        });
+      }
+    });
+  }
 
   onDeleteToponymClick(rowId: number, rowShortName: string, destroy: boolean) {
     this.confirmationService.confirm({

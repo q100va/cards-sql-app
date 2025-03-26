@@ -129,6 +129,8 @@
         </mat-select>
       </mat-form-field>
     </mat-grid-tile>
+
+    @if (params().isShowRegion) {
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Регион</mat-label>
@@ -141,6 +143,9 @@
         </mat-select>
       </mat-form-field>
     </mat-grid-tile>
+    }
+
+    @if (params().isShowDistrict) {
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Район/округ</mat-label>
@@ -153,6 +158,9 @@
         </mat-select>
       </mat-form-field>
     </mat-grid-tile>
+    }
+
+    @if (params().isShowLocality) {
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Населенный пункт</mat-label>
@@ -165,6 +173,7 @@
         </mat-select>
       </mat-form-field>
     </mat-grid-tile>
+    }
   </form>
 </mat-grid-list>
 <!-- } -->

@@ -71,68 +71,11 @@
 
           <mat-grid-tile colspan="6" rowspan="2">
               <app-address-filter
-                [params]="{multiple: false,  cols: '2', gutterSize: '16px', rowHeight: '76px'}"
+                [params]="params"
                 [defaultAddressParams] = "defaultAddressParams"
                 (addressFilter)="addressFilter.set($event)"></app-address-filter>
           </mat-grid-tile>
 
-
-          <!--     <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Страна</mat-label>
-              <mat-select formControlName="country" (selectionChange)="onCountrySelectionChange()">
-                <mat-option></mat-option>
-                @for (country of countries; track $index) {
-                <mat-option [value]="country">
-                  {{ country.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Регион</mat-label>
-              <mat-select formControlName="region" (selectionChange)="onRegionSelectionChange()">
-                <mat-option></mat-option>
-                @for (region of regions; track $index) {
-                <mat-option [value]="region">
-                  {{ region.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Округ/район</mat-label>
-              <mat-select formControlName="district" (selectionChange)="onDistrictSelectionChange()">
-                <mat-option></mat-option>
-                @for (district of districts; track $index) {
-                <mat-option [value]="district">
-                  {{ district.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Населенный пункт</mat-label>
-              <mat-select formControlName="locality">
-                <mat-option></mat-option>
-                @for (locality of localities; track $index) {
-                <mat-option [value]="locality">
-                  {{ locality.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
- -->
           <mat-grid-tile colspan="6" rowspan="1">
             <mat-form-field>
               <input type="text" matInput formControlName="comment" placeholder="Комментарий" />

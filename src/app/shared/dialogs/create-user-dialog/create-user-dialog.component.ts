@@ -63,9 +63,9 @@ import { AddressFilterComponent } from '../../address-filter/address-filter.comp
     ReactiveFormsModule,
     ConfirmDialogModule,
     Toast,
-    AddressFilterComponent
+    AddressFilterComponent,
   ],
-  providers: [ConfirmationService, MessageService,],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './create-user-dialog.component.html',
   styleUrl: './create-user-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,6 +77,16 @@ export class CreateUserDialogComponent implements OnInit {
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private router = inject(Router);
+
+  params = {
+    multiple: false,
+    cols: '2',
+    gutterSize: '16px',
+    rowHeight: '76px',
+    isShowRegion: true,
+    isShowDistrict: true,
+    isShowLocality: true,
+  };
 
   addressFilter = signal<{
     countries: null | number[] | [];
@@ -102,8 +112,8 @@ export class CreateUserDialogComponent implements OnInit {
     countryId: null,
   };
 
-  roles!: { id: number; name: string;}[];
-/*   countries!: { id: number; name: string }[];
+  roles!: { id: number; name: string }[];
+  /*   countries!: { id: number; name: string }[];
   regions?: { id: number; name: string; countryId: number }[];
   districts?: { id: number; name: string; regionId: number }[];
   localities?: { id: number; name: string; districtId: number }[]; */
@@ -229,7 +239,7 @@ export class CreateUserDialogComponent implements OnInit {
         Validators.compose([Validators.required])
       ),
 
-/*       country: new FormControl(null),
+      /*       country: new FormControl(null),
       region: new FormControl({ value: null, disabled: true }),
       district: new FormControl({ value: null, disabled: true }),
       locality: new FormControl({ value: null, disabled: true }),
@@ -315,7 +325,7 @@ export class CreateUserDialogComponent implements OnInit {
         });
       },
     });
-/*     this.addressService.getListOfCountries().subscribe({
+    /*     this.addressService.getListOfCountries().subscribe({
       next: (res) => {
         this.countries = res.data;
       },
@@ -335,7 +345,7 @@ export class CreateUserDialogComponent implements OnInit {
 
   //
 
-/*   onCountrySelectionChange() {
+  /*   onCountrySelectionChange() {
     if (this.form.controls['country'].value) {
       this.addressService
         .getListOfRegionsOfCountries([this.form.controls['country'].value.id])
@@ -492,12 +502,27 @@ export class CreateUserDialogComponent implements OnInit {
     newUser.roleId = this.form.controls['role'].value;
     newUser.addresses = [
       {
-        country: (this.addressFilter().countries && this.addressFilter().countries?.length) ? this.addressFilter().countries![0] : null,
-        region: (this.addressFilter().regions && this.addressFilter().regions?.length) ? this.addressFilter().regions![0] : null,
-        district: (this.addressFilter().districts && this.addressFilter().districts?.length) ? this.addressFilter().districts![0] : null,
-        locality: (this.addressFilter().localities && this.addressFilter().localities?.length) ? this.addressFilter().localities![0] : null,
-      }
-/*       {
+        country:
+          this.addressFilter().countries &&
+          this.addressFilter().countries?.length
+            ? this.addressFilter().countries![0]
+            : null,
+        region:
+          this.addressFilter().regions && this.addressFilter().regions?.length
+            ? this.addressFilter().regions![0]
+            : null,
+        district:
+          this.addressFilter().districts &&
+          this.addressFilter().districts?.length
+            ? this.addressFilter().districts![0]
+            : null,
+        locality:
+          this.addressFilter().localities &&
+          this.addressFilter().localities?.length
+            ? this.addressFilter().localities![0]
+            : null,
+      },
+      /*       {
         country: this.form.controls['country'].value,
         region: this.form.controls['region'].value,
         district: this.form.controls['district'].value,
@@ -758,7 +783,7 @@ export class CreateUserDialogComponent implements OnInit {
   createUser(newUser: User) {
     this.userService.createUser(newUser).subscribe({
       next: (res) => {
-        this.dialogRef.close({userName: res.userName });
+        this.dialogRef.close({ userName: res.userName });
       },
       error: (err) => {
         console.log(err);
