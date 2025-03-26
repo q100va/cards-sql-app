@@ -9,10 +9,16 @@ import {
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
 import { MessageService } from 'primeng/api';
-import { EMPTY, Observable, catchError, concatMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  concatMap,
+  tap,
+} from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
@@ -80,85 +86,6 @@ export class AddressFilterComponent {
 
   constructor() {}
 
-  /*   ngOnInit() {
-
-
-    console.log(
-      'defaultAddressParams in address-filter',
-      this.defaultAddressParams()
-    );
-
-    this.addressService.getListOfCountries().subscribe({
-      next: (res) => {
-        this.toponyms.countriesList = res.data; */
-  //console.log('this.toponyms.countriesList');
-  //console.log(this.toponyms.countriesList);
-  /*
-        this.onCountrySelectionChange()
-          .pipe(
-            concatMap(() =>
-              this.defaultAddressParams()?.regionId
-                ?  this.onRegionSelectionChange()
-                : EMPTY
-            ),
-            concatMap(() =>
-              this.defaultAddressParams()?.districtId
-                ? this.onDistrictSelectionChange()
-                : EMPTY
-            ),
-            concatMap(() =>
-              this.defaultAddressParams()?.localityId
-                ? this.onLocalitySelectionChange()
-                : EMPTY
-            )
-          )
-          .subscribe({
-            next: () => console.log('All operations completed successfully'),
-            error: (err) => this.errorHandling(err),
-          }); */
-
-  /*          if (this.defaultAddressParams().countryId) {
-          this.setDefaultFormValue('country');
-          this.onCountrySelectionChange().subscribe({
-            next: () => {
-              console.log('after this.onCountrySelectionChange();');
-              if (this.defaultAddressParams().regionId) {
-                this.setDefaultFormValue('region');
-                this.onRegionSelectionChange().subscribe({
-                  next: () => {
-                    if (this.defaultAddressParams().districtId) {
-                      this.setDefaultFormValue('district');
-                      this.onDistrictSelectionChange().subscribe({
-                        next: () => {
-                          if (this.defaultAddressParams().localityId) {
-                            this.setDefaultFormValue('locality');
-                            this.onLocalitySelectionChange();
-                          }
-                        },
-                        error: (err) => {
-                          this.errorHandling(err);
-                        },
-                      });
-                    }
-                  },
-                  error: (err) => {
-                    this.errorHandling(err);
-                  },
-                });
-              }
-            },
-            error: (err) => {
-              this.errorHandling(err);
-            },
-          });
-        }
-      },
-      error: (err) => {
-        this.errorHandling(err);
-      },
-    });
-  } */
-
   //TODO: added cond first page
 
   ngOnInit() {
@@ -207,34 +134,49 @@ export class AddressFilterComponent {
     });
   }
 
-  /*   onCountrySelectionChange0(): Observable<any> {
-    return this.addressService.getListOfToponyms([143], 'regions').pipe(
-      tap((res) => {
-        this.toponyms.regionsList = res.data;
-        console.log("this.toponyms.regionsList INSIDE CC", this.toponyms.regionsList);
-        if (this.toponyms.regionsList?.length > 0) {
-          this.form.get('region')?.enable();
-        } else {
-          this.form.get('region')?.disable();
-        }
-      }),
-      catchError((err) => {
+  private selectionChangeMethods: {
+    onCountrySelectionChange: () => Observable<any>;
+    onRegionSelectionChange: () => Observable<any>;
+    onDistrictSelectionChange: () => Observable<any>;
+    onLocalitySelectionChange: () => Observable<any>;
+  } = {
+    onCountrySelectionChange: this.onCountrySelectionChange.bind(this),
+    onRegionSelectionChange: this.onRegionSelectionChange.bind(this),
+    onDistrictSelectionChange: this.onDistrictSelectionChange.bind(this),
+    onLocalitySelectionChange: this.onLocalitySelectionChange.bind(this),
+  };
+
+  handleToponymSelectionChange(
+    methodName: keyof AddressFilterComponent['selectionChangeMethods'],
+    levelName: 'Country' | 'Region' | 'District' | 'Locality'
+  ): void {
+    console.log(`Before calling ${methodName}`);
+
+    this.selectionChangeMethods[methodName]().subscribe({
+      next: () => {
+        console.log(`${levelName} selection change completed`);
+      },
+      error: (err) => {
+        console.error(
+          `Error during ${levelName.toLowerCase()} selection change:`,
+          err
+        );
         this.errorHandling(err);
-        return EMPTY;
-      })
-    );
-  } */
+      },
+    });
+  }
 
   onCountrySelectionChange(): Observable<any> {
     console.log('onCountrySelectionChange');
-
     return this.onToponymSelectionChange('country', 'region', 'regions').pipe(
       tap(() => {
         this.form.get('region')?.setValue(null);
         this.form.get('district')?.disable();
         this.form.get('district')?.setValue(null);
+        this.toponyms.districtsList = [];
         this.form.get('locality')?.disable();
         this.form.get('locality')?.setValue(null);
+        this.toponyms.localitiesList = [];
         this.emitAddressData();
       }),
       catchError((err) => {
@@ -254,6 +196,7 @@ export class AddressFilterComponent {
         this.form.get('district')?.setValue(null);
         this.form.get('locality')?.disable();
         this.form.get('locality')?.setValue(null);
+        this.toponyms.localitiesList = [];
         this.emitAddressData();
       }),
       catchError((err) => {
@@ -308,13 +251,7 @@ export class AddressFilterComponent {
           console.log('source', source);
           console.log(
             'this.toponyms',
-            this.toponyms /* [
-              source as
-                | 'countriesList'
-                | 'regionsList'
-                | 'districtsList'
-                | 'localitiesList'
-            ] */
+            this.toponyms
           );
 
           const name = this.toponyms[
@@ -324,16 +261,10 @@ export class AddressFilterComponent {
               | 'districtsList'
               | 'localitiesList'
           ].find((item) => item.id == id)!.name;
-
           addressString = addressString + name + ', ';
-
-          //console.log('addressString', addressString);
         }
       }
     }
-
-    // console.log('addressString');
-    // console.log(addressString);
 
     console.log('createAddressString finish');
     return addressString.slice(0, -2);
@@ -438,69 +369,33 @@ export class AddressFilterComponent {
     nextKey: 'region' | 'district' | 'locality',
     typeOfList: 'regions' | 'districts' | 'localities'
   ): Observable<any> {
-    if (
-      (!this.params().multiple && this.form.controls[key].value) ||
-      (this.params().multiple &&
-        this.form.controls[key].value &&
-        this.form.controls[key].value.length > 0)
-    ) {
-      const idValues = !this.params().multiple
-        ? [this.form.controls[key].value]
-        : this.form.controls[key].value;
-      console.log('idValues');
-      console.log(idValues);
+    console.log('this.form.controls[key].value');
+    console.log(this.form.controls[key].value);
+    const idValues = !this.params().multiple
+      ? [this.form.controls[key].value]
+      : this.form.controls[key].value;
+    console.log('idValues');
+    console.log(idValues);
 
-      return this.addressService.getListOfToponyms(idValues, typeOfList).pipe(
-        tap((res) => {
-          this.toponyms[`${typeOfList}List` as keyof typeof this.toponyms] =
-            res.data;
-          console.log('this.toponymsList INSIDE CC', res.data);
-          if (res.data && res.data.length > 0) {
-            this.form.get(nextKey)?.enable();
-          } else {
-            this.form.get(nextKey)?.disable();
-          }
-        }),
-        catchError((err) => {
-          this.errorHandling(err);
-          return EMPTY;
-        })
-      );
-
-      /*       this.addressService.getListOfToponyms(idValues, typeOfList).subscribe({
-        next: (res) => {
-          this.toponyms[`${key}List` as keyof typeof this.toponyms] = res.data;
-
-          console.log(
-            'this.toponymsList INSIDE CC',
-            res.data
-          );
-          if (
-            res.data &&
-            res.data.length > 0
-          ) {
-            this.form.get(nextKey)?.enable();
-          } else {
-            this.form.get(nextKey)?.disable();
-          }
-        },
-        error: (err) => {
-          this.errorHandling(err);
-        },
-      }); */
-    } else {
-      this.form.get(nextKey)?.disable();
-      return EMPTY;
-    }
+    return this.addressService.getListOfToponyms(idValues, typeOfList).pipe(
+      tap((res) => {
+        this.toponyms[`${typeOfList}List` as keyof typeof this.toponyms] =
+          res.data;
+        console.log(
+          'this.toponymsList INSIDE onToponymSelectionChange',
+          res.data
+        );
+        if (res.data && res.data.length > 0) {
+          this.form.get(nextKey)?.enable();
+        } else {
+          this.form.get(nextKey)?.disable();
+        }
+      }),
+      catchError((err) => {
+        this.errorHandling(err);
+        return EMPTY;
+      })
+    );
   }
 
-  /*   private updateFormControl(key: string, data: any[], enableOnData: boolean) {
-    this.form.controls[key]?.setValue(null);
-    this.form.controls[key]?.disable();
-
-    if (enableOnData && data.length > 0) {
-      this.toponyms[`${key}List` as keyof typeof this.toponyms] = data;
-      this.form.controls[key]?.enable();
-    }
-  } */
 }

@@ -438,95 +438,150 @@ router.post("/get-users", async (req, res) => {
      */
 
 
+/*         if (addresses.countries && addresses.countries.length > 0) {
+          let countriesAmount, regionsAmount, districtsAmount, localitiesAmount = 0;
+          addressRequiredParam = true;
+          countriesAmount = addresses.countries.length;
+
+          //localities
+          let listOfLocalitiesIds = ``;
+          if (addresses.localities && addresses.localities.length > 0) {
+            localitiesAmount = addresses.localities.length;
+            listOfLocalitiesIds = `(`;
+            for (let id of addresses.localities) {
+
+              const locality = await Locality.findOne({
+                where: { id: id },
+                attributes: ['districtId'],
+              });
+              addresses.districts = addresses.districts.filter(id => id != locality.districtId);
+
+              const district = await District.findOne({
+                where: { id: locality.districtId },
+                attributes: ['regionId'],
+              });
+              addresses.regions = addresses.regions.filter(id => id != district.regionId);
+
+              const region = await Region.findOne({
+                where: { id: district.regionId },
+                attributes: ['countryId'],
+              });
+              addresses.countries = addresses.countries.filter(id => id != region.countryId);
+
+              listOfLocalitiesIds = listOfLocalitiesIds + `'` + id + `', `;
+            }
+            listOfLocalitiesIds = listOfLocalitiesIds.slice(0, -2) + `)`;
+          }
+
+          //districts
+          let listOfDistrictsIds = ``;
+          if (addresses.districts && addresses.districts.length > 0) {
+            districtsAmount = addresses.districts.length;
+            listOfDistrictsIds = `(`;
+
+            for (let id of addresses.districts) {
+              const district = await District.findOne({
+                where: { id: id },
+                attributes: ['regionId'],
+              });
+              addresses.regions = addresses.regions.filter(id => id != district.regionId);
+
+              const region = await Region.findOne({
+                where: { id: district.regionId },
+                attributes: ['countryId'],
+              });
+              addresses.countries = addresses.countries.filter(id => id != region.countryId);
+
+              listOfDistrictsIds = listOfDistrictsIds + `'` + id + `', `;
+            }
+            listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
+          }
+
+          //regions
+          let listOfRegionsIds = ``;
+          if (addresses.regions && addresses.regions.length > 0) {
+            regionsAmount = addresses.regions.length;
+            listOfRegionsIds = `(`;
+            for (let id of addresses.regions) {
+              const region = await Region.findOne({
+                where: { id: id },
+                attributes: ['countryId'],
+              })
+              addresses.countries = addresses.countries.filter(id => id != region.countryId);
+
+              listOfRegionsIds = listOfRegionsIds + `'` + id + `', `;
+            }
+            listOfRegionsIds = listOfRegionsIds.slice(0, -2) + `)`;
+          }
+
+          //countries
+          let listOfCountriesIds = ``;
+          if (addresses.countries && addresses.countries.length > 0) {
+            listOfCountriesIds = `(`;
+            for (let id of addresses.countries) {
+              listOfCountriesIds = listOfCountriesIds + `'` + id + `', `;
+            }
+            listOfCountriesIds = listOfCountriesIds.slice(0, -2) + `)`;
+          } */
+
     if (addresses.countries && addresses.countries.length > 0) {
-      let countriesAmount, regionsAmount, districtsAmount, localitiesAmount = 0;
       addressRequiredParam = true;
-      countriesAmount = addresses.countries.length;
 
-      //localities
-      let listOfLocalitiesIds = ``;
-      if (addresses.localities && addresses.localities.length > 0) {
-        localitiesAmount = addresses.localities.length;
-        listOfLocalitiesIds = `(`;
-        for (let id of addresses.localities) {
+      const findParent = async (id, Toponym, parentIdName, parentType) => {
+        const toponym = await Toponym.findOne({
+          where: { id: id },
+          attributes: [parentIdName],
+        });
+        console.log('toponym');
+        console.log(toponym);
 
-          const locality = await Locality.findOne({
-            where: { id: id },
-            attributes: ['districtId'],
-          });
-          addresses.districts = addresses.districts.filter(id => id != locality.districtId);
+        console.log('addresses', parentType);
+        console.log(addresses[parentType]);
+        addresses[parentType] = addresses[parentType].filter(
+          (i) => i !== toponym[parentIdName]
+        );
+        console.log('addresses', parentType);
+        console.log(addresses[parentType]);
 
-          const district = await District.findOne({
-            where: { id: locality.districtId },
-            attributes: ['regionId'],
-          });
-          addresses.regions = addresses.regions.filter(id => id != district.regionId);
 
-          const region = await Region.findOne({
-            where: { id: district.regionId },
-            attributes: ['countryId'],
-          });
-          addresses.countries = addresses.countries.filter(id => id != region.countryId);
-
-          listOfLocalitiesIds = listOfLocalitiesIds + `'` + id + `', `;
-        }
-        listOfLocalitiesIds = listOfLocalitiesIds.slice(0, -2) + `)`;
+        return toponym[parentIdName];
       }
 
-      //districts
-      let listOfDistrictsIds = ``;
-      if (addresses.districts && addresses.districts.length > 0) {
-        districtsAmount = addresses.districts.length;
+      const buildIdsList = async (type, Toponym, parentIdName, parentType) => {
+        console.log('type', type);
+        let listOfDistrictsIds = ``;
         listOfDistrictsIds = `(`;
-
-        for (let id of addresses.districts) {
-          const district = await District.findOne({
-            where: { id: id },
-            attributes: ['regionId'],
-          });
-          addresses.regions = addresses.regions.filter(id => id != district.regionId);
-
-          const region = await Region.findOne({
-            where: { id: district.regionId },
-            attributes: ['countryId'],
-          });
-          addresses.countries = addresses.countries.filter(id => id != region.countryId);
-
+        let parentId;
+        for (let id of addresses[type]) {
+          parentId = await findParent(id, Toponym, parentIdName, parentType);
+          console.log('parentId', parentId);
+          if (type == 'localities') parentId = await findParent(parentId, District, 'regionId', 'regions');
+          console.log('parentId', parentId);
+          if (type == 'localities' || type == 'districts') parentId = await findParent(parentId, Region, 'countryId', 'countries');
+          console.log('parentId', parentId);
           listOfDistrictsIds = listOfDistrictsIds + `'` + id + `', `;
         }
         listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
-      }
+        console.log('listOfDistrictsIds', listOfDistrictsIds);
+        console.log(`(${addresses[type].map((id) => `'${id}'`).join(', ')})`);
 
-      //regions
-      let listOfRegionsIds = ``;
-      if (addresses.regions && addresses.regions.length > 0) {
-        regionsAmount = addresses.regions.length;
-        listOfRegionsIds = `(`;
-        for (let id of addresses.regions) {
-          const region = await Region.findOne({
-            where: { id: id },
-            attributes: ['countryId'],
-          })
-          addresses.countries = addresses.countries.filter(id => id != region.countryId);
+        return `(${addresses[type].map((id) => `'${id}'`).join(', ')})`
+      };
 
-          listOfRegionsIds = listOfRegionsIds + `'` + id + `', `;
-        }
-        listOfRegionsIds = listOfRegionsIds.slice(0, -2) + `)`;
-        console.log('listOfRegionsIds');
-        console.log(listOfRegionsIds);
-        console.log('addresses.countries');
-        console.log(addresses.countries);
-      }
+      const localitiesAmount = addresses.localities?.length || 0;
+      const listOfLocalitiesIds = localitiesAmount > 0 ? await buildIdsList('localities', Locality, 'districtId', 'districts') : '';
 
-      //countries
-      let listOfCountriesIds = ``;
-      if (addresses.countries && addresses.countries.length > 0) {
-        listOfCountriesIds = `(`;
-        for (let id of addresses.countries) {
-          listOfCountriesIds = listOfCountriesIds + `'` + id + `', `;
-        }
-        listOfCountriesIds = listOfCountriesIds.slice(0, -2) + `)`;
-      }
+      const districtsAmount = addresses.districts?.length || 0;
+      const listOfDistrictsIds = districtsAmount > 0 ? await buildIdsList('districts', District, 'regionId', 'regions') : '';
+
+      const regionsAmount = addresses.regions?.length || 0;
+      const listOfRegionsIds = regionsAmount > 0 ? await buildIdsList('regions', Region, 'countryId', 'countries') : '';
+
+      const countriesAmount = addresses.countries.length;
+      const listOfCountriesIds = countriesAmount > 0
+        ? `(${addresses.countries.map((id) => `'${id}'`).join(', ')})`
+        : '';
+
 
       if (addressRequiredParam) {
         let whereString = `

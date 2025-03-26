@@ -15,7 +15,6 @@ import {
   MatDialogActions,
   //MatDialogClose,
   MatDialogRef,
-  MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -66,7 +65,7 @@ import { AddressFilterComponent } from '../../address-filter/address-filter.comp
     Toast,
     AddressFilterComponent
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService, MessageService,],
   templateUrl: './create-user-dialog.component.html',
   styleUrl: './create-user-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

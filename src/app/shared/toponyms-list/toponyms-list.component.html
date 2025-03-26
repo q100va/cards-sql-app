@@ -22,7 +22,7 @@
         </mat-grid-tile>
         <mat-grid-tile colspan="1" rowspan="1">
           <div class="bottom-right">
-            <button mat-icon-button title="Добавить населенный пункт" (click)="onAddToponymClick()">
+            <button mat-icon-button title="Добавить населенный пункт" (click)="onAddToponymClick()" appBlurOnClick>
               <mat-icon fontSet="material-icons-outlined">add_location_alt</mat-icon>
             </button>
           </div>
@@ -59,7 +59,7 @@
             [params]="{multiple: false, cols: '4', gutterSize: '16px', rowHeight: '76px'}"
             [defaultAddressParams] = "defaultAddressParams"
             (addressFilter)="addressFilter.set($event)" (addressString)="addressString.set($event)"
-            (goToFirstPage)="goToFirstPage('emitAddressData')">
+            (goToFirstPage)="goToFirstPage()">
           </app-address-filter>
         </div>
       </mat-grid-tile>
@@ -144,6 +144,10 @@
                 </mat-icon>
               </button>
               <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="onOpenUserCardClick(row)">
+                  <mat-icon>open_in_new</mat-icon>
+                  <span>открыть карточку</span>
+                </button>
                 <button mat-menu-item (click)="onOpenUsersListClick(row)">
                   <mat-icon fontSet="material-icons-outlined">badge</mat-icon>
                   <span>открыть список пользователей</span>

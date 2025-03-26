@@ -44,14 +44,11 @@ import {
   MatButtonToggleModule,
 } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
-import {
-  ConfigurableFocusTrapFactory,
-  FocusTrapFactory,
-} from '@angular/cdk/a11y';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
 import { saveAs } from 'file-saver';
+import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
 
 //import { User } from '../../interfaces/user';
 
@@ -63,6 +60,8 @@ import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/c
 import { FileService } from '../../services/file.service';
 import { UploadFileComponent } from '../upload-file/upload-file.component';
 import { Router } from '@angular/router';
+
+
 
 @Component({
   selector: 'app-toponyms-list',
@@ -89,11 +88,12 @@ import { Router } from '@angular/router';
     AddressFilterComponent,
     UploadFileComponent,
     ProgressSpinner,
+    BlurOnClickDirective
   ],
   providers: [
     MessageService,
     ConfirmationService,
-    { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
+  //  { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
   ],
   templateUrl: './toponyms-list.component.html',
   styleUrl: './toponyms-list.component.css',
@@ -213,7 +213,7 @@ export class ToponymsListComponent {
     localityId: null,
     districtId: null,
     regionId: null,
-    countryId: null,
+    countryId: 143,
   };
 
   ngOnInit() {}
@@ -229,6 +229,8 @@ export class ToponymsListComponent {
       disableClose: true,
       minWidth: '400px',
       height: 'fit-content',
+      autoFocus: 'dialog',
+      restoreFocus: true
       //height: '80%',
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
@@ -247,7 +249,7 @@ export class ToponymsListComponent {
   searchToponym(event: Event) {
     let searchString = (event.target as HTMLInputElement).value;
     searchString = searchString.trim().toLowerCase().replaceAll('ё', 'е');
-    this.goToFirstPage('searchToponym');
+    this.goToFirstPage();
     /*     this.avoidDoubleRequest = true;
     this.paginator.firstPage(); */
     this.searchValue.set(searchString);
@@ -256,7 +258,7 @@ export class ToponymsListComponent {
   onClearSearchClick() {
     /*     this.avoidDoubleRequest = true;
     this.paginator.firstPage(); */
-    this.goToFirstPage('onClearSearchClick');
+    this.goToFirstPage();
     this.searchValue.set('');
     console.log('onClearSearchClick');
   }
@@ -284,23 +286,8 @@ export class ToponymsListComponent {
 
   onOpenHomesListClick(rowId: number) {}
   onOpenUsersListClick(toponym: any) {
-    /*     const navigationExtras: NavigationExtras = {
-      state: {
-        params: {
-          localityId: toponym.id,
-          districtId: toponym.district.id,
-          regionId: toponym.district.region.id,
-          countryId: toponym.district.region.country.id,
-        },
-      },
-    }; */
-    //this.router.navigate(['/users'], navigationExtras);
-
     console.log('toponym');
     console.log(toponym);
-    // console.log('toponym.district.id');
-    //console.log(toponym.district.id);
-
     this.router.navigate(['/users'], {
       queryParams: {
         localityId: toponym.id,
@@ -315,6 +302,8 @@ export class ToponymsListComponent {
   onOpenLocalitiesListClick(rowId: number) {}
   onOpenDistrictsListClick(rowId: number) {}
   onOpenRegionsListClick(rowId: number) {}
+
+  onOpenUserCardClick(row: any){}
 
   onDeleteToponymClick(rowId: number, rowShortName: string, destroy: boolean) {
     this.confirmationService.confirm({
@@ -404,8 +393,7 @@ export class ToponymsListComponent {
     }
   }
 
-  goToFirstPage(source: string) {
-    console.log('goToFirstPage ' + source);
+  goToFirstPage() {
     if (this.currentPage != 1) this.avoidDoubleRequest = true;
     this.paginator.firstPage();
   }

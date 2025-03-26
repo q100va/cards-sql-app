@@ -1,6 +1,6 @@
-@if (!params().multiple) {
+<!-- @if (!params().multiple) { -->
 <!-- toponyms-list -- create-user-dialog -->
-<mat-grid-list [cols]="params().cols" [gutterSize]="params().gutterSize" [rowHeight]="params().rowHeight">
+<!-- <mat-grid-list [cols]="params().cols" [gutterSize]="params().gutterSize" [rowHeight]="params().rowHeight">
   <form [formGroup]="form">
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
@@ -51,7 +51,7 @@
   </form>
 </mat-grid-list>
 }
-
+ -->
 
 
 <!-- create-user-dialog -->
@@ -113,14 +113,16 @@
 </mat-grid-tile>
 </form> -->
 
-@if (params().multiple) {
+<!-- @if (params().multiple) { -->
 <!-- table-filter -->
 <mat-grid-list [cols]="params().cols" [gutterSize]="params().gutterSize" [rowHeight]="params().rowHeight">
   <form [formGroup]="form">
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Страна</mat-label>
-        <mat-select formControlName="country" multiple (selectionChange)="onCountrySelectionChange()">
+        <mat-select formControlName="country" [multiple]="params().multiple"
+          (selectionChange)="handleToponymSelectionChange('onCountrySelectionChange', 'Country')">
+          @if (!params().multiple) {<mat-option></mat-option>}
           @for (country of toponyms.countriesList; track $index ) {
           <mat-option [value]="country.id">{{country.name}}</mat-option>
           }
@@ -130,7 +132,9 @@
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Регион</mat-label>
-        <mat-select formControlName="region" multiple (selectionChange)="onRegionSelectionChange()">
+        <mat-select formControlName="region" [multiple]="params().multiple"
+          (selectionChange)="handleToponymSelectionChange('onRegionSelectionChange', 'Region')">
+          @if (!params().multiple) {<mat-option></mat-option>}
           @for (region of toponyms.regionsList; track $index) {
           <mat-option [value]="region.id">{{region.name}}</mat-option>
           }
@@ -140,7 +144,9 @@
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Район/округ</mat-label>
-        <mat-select formControlName="district" multiple (selectionChange)="onDistrictSelectionChange()">
+        <mat-select formControlName="district" [multiple]="params().multiple"
+          (selectionChange)="handleToponymSelectionChange('onDistrictSelectionChange', 'District')">
+          @if (!params().multiple) {<mat-option></mat-option>}
           @for (district of toponyms.districtsList; track $index) {
           <mat-option [value]="district.id">{{district.name}}</mat-option>
           }
@@ -150,7 +156,9 @@
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
         <mat-label>Населенный пункт</mat-label>
-        <mat-select formControlName="locality" multiple (selectionChange)="onLocalitySelectionChange()">
+        <mat-select formControlName="locality" [multiple]="params().multiple"
+          (selectionChange)="handleToponymSelectionChange('onLocalitySelectionChange', 'Locality')">
+          @if (!params().multiple) {<mat-option></mat-option>}
           @for (locality of toponyms.localitiesList; track $index) {
           <mat-option [value]="locality.id">{{locality.name}}</mat-option>
           }
@@ -159,4 +167,4 @@
     </mat-grid-tile>
   </form>
 </mat-grid-list>
-}
+<!-- } -->

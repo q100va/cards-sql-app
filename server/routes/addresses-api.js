@@ -159,7 +159,7 @@ router.post("/create-toponym", async (req, res) => {
 
 
 
-// API get address elements
+// API get address elements for address filter
 
 router.get("/get-countries-list", async (req, res) => {
   try {
@@ -183,18 +183,19 @@ router.post("/get-regions-list", async (req, res) => {
     console.log("req.body.data");
     console.log(req.body.data);
     const countriesIds = req.body.data;//.map(item => item.id);
-    const regions = await Region.findAll({
-      where: {
-        isRestricted: false,
-        countryId: { [Op.in]: countriesIds }
-      },
-      attributes: ['id', 'name', 'countryId'],
-      order: [['name', 'ASC']],
-      raw: true
-    });
-    let result = regions;
-    // console.log('regions');
-    //console.log(result);
+    let result = [];
+    if (countriesIds.length > 0 && countriesIds[0]) {
+      const regions = await Region.findAll({
+        where: {
+          isRestricted: false,
+          countryId: { [Op.in]: countriesIds }
+        },
+        attributes: ['id', 'name', 'countryId'],
+        order: [['name', 'ASC']],
+        raw: true
+      });
+      result = regions;
+    }
     res.status(200).send({ msg: "Данные получены.", data: result });
   } catch (e) {
     const err = errorHandling(e);
@@ -204,42 +205,22 @@ router.post("/get-regions-list", async (req, res) => {
 
 router.post("/get-districts-list", async (req, res) => {
   try {
-    //const regions = await Region.findAll({ where: { name: { [Op.in]: req.body.data } } });
+    console.log("req.body.data");
+    console.log(req.body.data);
     const regionsIds = req.body.data;//.map(item => item.id);
-    const districts = await District.findAll({
-      where: {
-        isRestricted: false,
-        regionId: { [Op.in]: regionsIds }
-      },
-      attributes: ['id', 'name', 'regionId'],
-      order: [['name', 'ASC']],
-      raw: true,
-      /*       include: [
-              {
-                model: Region,
-                where: { id: { [Op.in]: req.body.data } },
-                attributes: [],
-                required: true,
-              },
-            ], */
-    });
-
-    /*     let districts = [];
-        for (let region of regions) {
-          const partOfDistricts = await region.getDistricts({
-            where: { isRestricted: false, },
-            attributes: ['name'],
-            order: [['name', 'ASC']],
-            raw: true
-          });
-          console.log('partOfDistricts');
-          console.log(partOfDistricts);
-          districts = [...districts, ...partOfDistricts];
-          console.log('districts');
-          console.log(districts);
-        }*/
-    let result = districts;//.map(item => item.name);
-    //result.sort((a, b) => (b - a));
+    let result = [];
+    if (regionsIds.length > 0 && regionsIds[0]) {
+      const districts = await District.findAll({
+        where: {
+          isRestricted: false,
+          regionId: { [Op.in]: regionsIds }
+        },
+        attributes: ['id', 'name', 'regionId'],
+        order: [['name', 'ASC']],
+        raw: true,
+      });
+      result = districts;
+    }
     res.status(200).send({ msg: "Данные получены.", data: result });
   } catch (e) {
     const err = errorHandling(e);
@@ -249,41 +230,22 @@ router.post("/get-districts-list", async (req, res) => {
 
 router.post("/get-localities-list", async (req, res) => {
   try {
+    console.log("req.body.data");
+    console.log(req.body.data);
     const districtsIds = req.body.data;//.map(item => item.id);
-    const localities = await Locality.findAll({
-      where: {
-        isRestricted: false,
-        districtId: { [Op.in]: districtsIds }
-      },
-      attributes: ['id', 'name', 'districtId'],
-      order: [['name', 'ASC']],
-      raw: true,
-      /*       include: [
-              {
-                model: District,
-                where: { name: { [Op.in]: req.body.data } },
-                attributes: [],
-                required: true,
-              },
-            ], */
-    });
-
-
-    /*     console.log("req.body.data ");
-        console.log(req.body.data );
-        const districts = await District.findAll({ where: { name: { [Op.in]: req.body.data } } });
-        let localities = [];
-        for (let district of districts) {
-          const partOfLocalities = await district.getLocalities({
-            where: { isRestricted: false, },
-            attributes: ['name'],
-            order: [['name', 'ASC']],
-            raw: true
-          });
-          localities = [...localities, ...partOfLocalities];
-        } */
-    let result = localities;//.map(item => item.name);
-    // result.sort((a, b) => (b - a));
+    let result = [];
+    if (districtsIds.length > 0 && districtsIds[0]) {
+      const localities = await Locality.findAll({
+        where: {
+          isRestricted: false,
+          districtId: { [Op.in]: districtsIds }
+        },
+        attributes: ['id', 'name', 'districtId'],
+        order: [['name', 'ASC']],
+        raw: true,
+      });
+      result = localities;
+    }
     res.status(200).send({ msg: "Данные получены.", data: result });
   } catch (e) {
     const err = errorHandling(e);
@@ -291,7 +253,7 @@ router.post("/get-localities-list", async (req, res) => {
   }
 });
 
-// APT get toponyms
+// APT get toponyms for lists of toponyms
 
 router.post("/get-countries", async (req, res) => {
 
@@ -332,13 +294,13 @@ router.post("/get-regions", async (req, res) => {
       raw: true
     });
     // let result = regions.map(item => item.name);
-    let result = regions;
+    // let result = regions;
     /*result.sort((a, b) => (b === "Москва город") - (a === "Москва город"));
 
        console.log("countries");
            console.log(JSON.stringify(countries)); */
 
-    res.status(200).send({ msg: "Данные получены.", data: { toponyms: countries, length: length } });
+    res.status(200).send({ msg: "Данные получены.", data: { toponyms: regions, length: length } });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -381,9 +343,9 @@ router.post("/get-districts", async (req, res) => {
           console.log('districts');
           console.log(districts);
         }*/
-    let result = districts;//.map(item => item.name);
+    //let result = districts;//.map(item => item.name);
     //result.sort((a, b) => (b - a));
-    res.status(200).send({ msg: "Данные получены.", data: { toponyms: countries, length: length } });
+    res.status(200).send({ msg: "Данные получены.", data: { toponyms: districts, length: length } });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -756,7 +718,7 @@ router.post("/populate-district", async (req, res) => {
       }
       console.log("districtData");
       console.log(districtData);
-         //TODO: в разных регионах могут быть одинаковые названия округов/районов
+      //TODO: в разных регионах могут быть одинаковые названия округов/районов
       const newDistrict = await District.create({
         name: districtData.name,
         shortName: districtData.shortName,

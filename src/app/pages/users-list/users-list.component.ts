@@ -36,10 +36,6 @@ import {
   MatButtonToggleModule,
 } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
-import {
-  ConfigurableFocusTrapFactory,
-  FocusTrapFactory,
-} from '@angular/cdk/a11y';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
@@ -53,6 +49,7 @@ import { TableFilterComponent } from '../../shared/table-filter/table-filter.com
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
+import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
 
 @Component({
   selector: 'app-users-list',
@@ -78,12 +75,13 @@ import { ActivatedRoute } from '@angular/router';
     TableFilterComponent,
     ConfirmDialogModule,
     MatCheckboxModule,
+    BlurOnClickDirective
   ],
   providers: [
     MessageService,
     ConfirmationService,
     MessageService,
-    { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
+   // { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
   ],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
@@ -108,7 +106,6 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   currentPage = 1;
   pageSize = 5;
   pageSizeOptions = [5, 10, 25, 50, 100];
-
   contactTypes = [
     {
       type: 'email',
@@ -392,7 +389,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       );
     }
 
-        this.route.queryParams.subscribe((params) => {
+      this.route.queryParams.subscribe((params) => {
       this.defaultAddressParams.localityId = params['localityId'];
       this.defaultAddressParams.districtId = params['districtId'];
       this.defaultAddressParams.regionId = params['regionId'];
@@ -418,7 +415,10 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       disableClose: true,
       minWidth: '800px',
       height: '80%',
+      autoFocus: 'dialog',
+      restoreFocus: true
     });
+
     dialogRef.afterClosed().subscribe((result) => {
       //console.log('The dialog was closed');
       if (result.userName) {
@@ -662,7 +662,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   }
 
   goToFirstPage() {
-    this.avoidDoubleRequest = true;
+    if (this.currentPage != 1) this.avoidDoubleRequest = true;
     this.paginator.firstPage();
   }
 
