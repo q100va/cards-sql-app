@@ -30,6 +30,7 @@ router.post("/check-toponym-name", async (req, res) => {
 
     const type = req.body.data.type;
     const name = req.body.data.name;
+    const id = req.body.data.id;
     const addressFilter = req.body.data.addressFilter;
     let duplicate;
     if (type == 'country') {
@@ -81,13 +82,19 @@ router.post("/check-toponym-name", async (req, res) => {
         });
     }
     if (type == 'locality') {
+      const whereParams = id ? {
+        name: name,
+        id: { [Op.ne]: id },
+        '$district.id$': addressFilter.districts[0],
+        isRestricted: false,
+      } : {
+        name: name,
+        '$district.id$': addressFilter.districts[0],
+        isRestricted: false,
+      };
       duplicate = await Locality.findOne(
         {
-          where: {
-            name: name,
-            '$district.id$': addressFilter.districts[0],
-            isRestricted: false,
-          },
+          where: whereParams,
           attributes: ['id'],
           raw: true,
           include: [
@@ -151,6 +158,80 @@ router.post("/create-toponym", async (req, res) => {
         });
     }
     res.status(200).send({ msg: "Топоним успешно добавлен.", data: name });
+  } catch (e) {
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
+  }
+});
+
+router.post("/update-toponym", async (req, res) => {
+  try {
+    console.log("req.body.data");
+    console.log(req.body.data);
+
+    const type = req.body.data.type;
+    const name = req.body.data.name;
+    const shortName = req.body.data.shortName;
+    const addressFilter = req.body.data.addressFilter;
+    const id = req.body.data.id;
+
+    let updatedToponym;
+    if (type == 'country') {
+      updatedToponym = await Country.update(
+        {
+          name: name,
+        }
+      ),
+      {
+        where: {
+          id:id
+        }
+      };
+    }
+    if (type == 'region') {
+      updatedToponym = await Region.update(
+        {
+          name: name,
+          shortName: shortName,
+          countryId: addressFilter.countries[0],
+        },
+        {
+          where: {
+            id:id
+          }
+        });
+    }
+    if (type == 'district') {
+      updatedToponym = await District.update(
+        {
+          name: name,
+          shortName: shortName,
+          regionId: addressFilter.regions[0],
+        },
+        {
+          where: {
+            id:id
+          }
+        });
+    }
+    if (type == 'locality') {
+      updatedToponym = await Locality.update(
+        {
+          name: name,
+          shortName: shortName,
+          districtId: addressFilter.districts[0],
+          isFederalCity: req.body.data.isFederalCity,
+          isCapitalOfRegion: req.body.data.isCapitalOfRegion,
+          isCapitalOfDistrict: req.body.data.isCapitalOfDistrict,
+        },
+        {
+          where: {
+            id:id
+          }
+        }
+        );
+    }
+    res.status(200).send({ msg: "Топоним успешно обновлен.", data: name });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -557,7 +638,7 @@ router.post("/get-localities", async (req, res) => {
       offset: pageSize * (currentPage - 1),
       limit: pageSize,
 
-      attributes: ['id', 'name', 'shortName'],
+      attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
       order: [orderParams],
       raw: true,
       where: whereParams,

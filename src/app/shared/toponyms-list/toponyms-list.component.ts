@@ -37,7 +37,7 @@ import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.dire
 import { MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
-import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
+//import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
 
 import { FileService } from '../../services/file.service';
 import { UploadFileComponent } from '../upload-file/upload-file.component';
@@ -98,7 +98,20 @@ export class ToponymsListComponent {
   avoidDoubleRequest = false;
   showSpinner = signal<boolean>(false);
 
-  params = {
+  params: {
+    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
+    multiple: boolean;
+    cols: string;
+    gutterSize: string;
+    rowHeight: string;
+    type?: string | undefined;
+    isShowRegion: boolean;
+    isShowDistrict: boolean;
+    isShowLocality: boolean;
+    readonly?: boolean | undefined;
+    class: string;
+  } = {
+    source: 'toponymList',
     multiple: false,
     cols: '4',
     gutterSize: '16px',
@@ -106,6 +119,7 @@ export class ToponymsListComponent {
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
+    class: 'none',
   };
 
   exactMatch = signal<boolean>(false);
@@ -281,6 +295,7 @@ export class ToponymsListComponent {
   }
 
   onOpenHomesListClick(rowId: number) {}
+
   onOpenUsersListClick(toponym: any) {
     console.log('toponym');
     console.log(toponym);
@@ -303,13 +318,14 @@ export class ToponymsListComponent {
     const dialogRefCreate = this.dialog.open(ToponymDetailsDialogComponent, {
       data: {
         type: this.type(),
-        operation: 'create',
+        operation: 'view-edit',
         defaultAddressParams: {
           localityId: toponym.id,
           districtId: toponym['district.id'],
           regionId: toponym['district.region.id'],
           countryId: toponym['district.region.country.id'],
         },
+        toponym: toponym,
       },
       disableClose: true,
       minWidth: '500px',
@@ -320,12 +336,12 @@ export class ToponymsListComponent {
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
       console.log('The dialog was closed');
+      this.getToponyms();
       if (result.toponymName) {
-        this.getToponyms();
         this.messageService.add({
           severity: 'success',
           summary: 'Подтверждение',
-          detail: `Топоним '${result.toponymName}' успешно создан!`,
+          detail: `Топоним '${result.toponymName}' успешно обновлен!`,
         });
       }
     });

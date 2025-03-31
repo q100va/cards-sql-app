@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+/* import { Component, inject, signal } from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
@@ -70,7 +70,8 @@ export class CreateToponymDialogComponent {
     type: this.data.type,
     isShowRegion: true,
     isShowDistrict: true,
-    isShowLocality: false
+    isShowLocality: false,
+    class: "none",
   };
 
   mainData = new FormGroup<Record<string, AbstractControl>>({
@@ -241,3 +242,4 @@ export class CreateToponymDialogComponent {
     });
   }
 }
+ */

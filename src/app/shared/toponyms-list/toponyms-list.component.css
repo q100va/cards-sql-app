@@ -81,7 +81,7 @@ mat-card-actions {
   text-align: left;
 }
 
- mat-card-header {
+mat-card-header {
   margin: 40px 0 40px 0;
 }
 
@@ -90,8 +90,8 @@ mat-card-actions {
 }
 
 p-progress-spinner {
-  --p-progressspinner-color-1 : #fbc02d;
---p-progressspinner-color-2 : #d6c616;
---p-progressspinner-color-3 : #45d233;
---p-progressspinner-color-4 : #66bb6a;
+  --p-progressspinner-color-1: #fbc02d;
+  --p-progressspinner-color-2: #d6c616;
+  --p-progressspinner-color-3: #45d233;
+  --p-progressspinner-color-4: #66bb6a;
 }

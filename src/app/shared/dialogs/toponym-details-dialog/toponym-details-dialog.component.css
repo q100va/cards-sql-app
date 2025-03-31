@@ -1,4 +1,30 @@
 .full-width {
   width: 100%;
+}
 
+.view-mode
+  ::ng-deep.mdc-text-field--filled.mdc-text-field--disabled
+  .mdc-text-field__input {
+  color: #191c19;
+}
+
+.view-mode
+  ::ng-deep
+  .mdc-text-field--filled.mdc-text-field--disabled
+  .mdc-floating-label {
+  color: #191c19 !important;
+}
+
+.view-mode
+  ::ng-deep
+.mat-mdc-checkbox.mat-mdc-checkbox-disabled label {
+  color: #191c19 !important;
+}
+
+.view-mode ::ng-deep .mat-mdc-select-arrow svg {
+  fill: #ffffff;
+}
+
+.view-mode ::ng-deep .mdc-text-field--filled.mdc-text-field--disabled {
+  background-color: #ffffff !important;
 }

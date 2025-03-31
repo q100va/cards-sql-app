@@ -1,32 +1,36 @@
-<mat-grid-list cols="9" gutterSize="16px" rowHeight="76px">
-  <mat-grid-tile colspan="7" rowspan="1">
-    <h2 mat-dialog-title>{{title}}</h2>
+<mat-grid-list cols="18" gutterSize="16px" rowHeight="76px">
+  <mat-grid-tile colspan="11" rowspan="1">
+    <h3 mat-dialog-title>{{title}}</h3>
   </mat-grid-tile>
   <mat-dialog-actions>
     <mat-grid-tile colspan="2" rowspan="1">
-      <div class="bottom-right">
-        @if (data.operation == 'view-edit' && !isEditMode) {
-        <button mat-icon-button title="Изменить" (click)="onEditClick()">
-          <mat-icon fontSet="material-icons-outlined">edit_square</mat-icon>
-        </button>
-        }
-        @if (data.operation == 'view-edit' && isEditMode) {
-        <button mat-icon-button title="К просмотру" (click)="onViewClick()">
-          <mat-icon fontSet="material-icons-outlined">pageview</mat-icon>
-        </button>
-        }
-        @if (data.operation == 'create' || isEditMode) {
-        <button mat-icon-button title="Сохранить"
-          [disabled]="mainData.controls['toponymName'].hasError('required') || mainData.controls['toponymShortName'].hasError('required') || invalidAddressFilter"
-          (click)="onSaveToponymClick()">
-          <mat-icon fontSet="material-icons-outlined">save</mat-icon>
-        </button>
-        }
-        <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
-          <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
-        </button>
-      </div>
+
+      @if (data.operation == 'view-edit' && isEditMode) {
+      <button mat-icon-button title="Сохранить"
+        [disabled]="mainForm.controls['toponymName'].hasError('required') || mainForm.controls['toponymShortName'].hasError('required') || invalidAddressFilter || !changes"
+        (click)="onSaveToponymClick('justSave')">
+        <mat-icon fontSet="material-icons-outlined">save</mat-icon>
+      </button>
+      }
     </mat-grid-tile>
+    <mat-grid-tile colspan="2" rowspan="1">
+      @if (data.operation == 'view-edit' && !isEditMode) {
+      <button mat-icon-button title="Изменить" (click)="onEditClick()">
+        <mat-icon fontSet="material-icons-outlined">edit_square</mat-icon>
+      </button>
+      }
+      @if (data.operation == 'view-edit' && isEditMode) {
+      <button mat-icon-button title="К просмотру" (click)="onViewClick()">
+        <mat-icon fontSet="material-icons-outlined">find_in_page</mat-icon>
+      </button>
+      }
+    </mat-grid-tile>
+    <mat-grid-tile colspan="2" rowspan="1">
+      <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
+        <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
+      </button>
+    </mat-grid-tile>
+    <mat-grid-tile colspan="1" rowspan="1"> </mat-grid-tile>
   </mat-dialog-actions>
 </mat-grid-list>
 
@@ -36,13 +40,14 @@
   <app-address-filter [params]="params" [defaultAddressParams]="data.defaultAddressParams"
     (addressFilter)="onChangeAddressFilter($event)">
   </app-address-filter>
-  <form [formGroup]="mainData"  style="margin-top: 16px;">
+  <form [formGroup]="mainForm" style="margin-top: 16px;"
+    [class]="data.operation == 'view-edit' && !isEditMode ? 'view-mode' : 'none'" (change)="onChangeValidation()">
     <mat-grid-list cols="1" gutterSize="16px" rowHeight="76px">
       <mat-grid-tile colspan="1" rowspan="1">
         <mat-form-field class="full-width">
           <mat-label>Название</mat-label>
           <input class="full-width" matInput formControlName="toponymName" [placeholder]="toponymNamePlaceholder">
-          @if (mainData.controls['toponymName'].hasError('required')) {
+          @if (mainForm.controls['toponymName'].hasError('required')) {
           <mat-error>Поле не может быть пустым!</mat-error>
           }
         </mat-form-field>
@@ -52,7 +57,7 @@
           <mat-label>Краткое название</mat-label>
           <input class="full-width" matInput formControlName="toponymShortName"
             [placeholder]="toponymShortNamePlaceholder">
-          @if (mainData.controls['toponymShortName'].hasError('required')) {
+          @if (mainForm.controls['toponymShortName'].hasError('required')) {
           <mat-error>Поле не может быть пустым!</mat-error>
           }
         </mat-form-field>
@@ -63,7 +68,7 @@
         <mat-form-field class="full-width">
           <mat-label>Почтовое название</mat-label>
           <input class="full-width" matInput formControlName="toponymName" [placeholder]="toponymPostNamePlaceholder">
-          @if (mainData.controls['toponymPostName'].hasError('required')) {
+          @if (mainForm.controls['toponymPostName'].hasError('required')) {
           <mat-error>Поле не может быть пустым!</mat-error>
           }
         </mat-form-field>
@@ -73,7 +78,7 @@
           <mat-label>Краткое почтовое название</mat-label>
           <input class="full-width" matInput formControlName="toponymShortName"
             [placeholder]="toponymShortPostNamePlaceholder">
-          @if (mainData.controls['toponymShortPostName'].hasError('required')) {
+          @if (mainForm.controls['toponymShortPostName'].hasError('required')) {
           <mat-error>Поле не может быть пустым!</mat-error>
           }
         </mat-form-field>
@@ -82,32 +87,44 @@
 
     </mat-grid-list>
 
-    <mat-grid-list cols="1" gutterSize="16px" rowHeight="36px">
-      <mat-grid-tile colspan="1" rowspan="1">
+    <mat-grid-list cols="9" gutterSize="16px" rowHeight="36px">
+      <mat-grid-tile colspan="6" rowspan="1">
         <p class="full-width">
-          <mat-checkbox formControlName="federalCity">город федерального значения</mat-checkbox>
+          <mat-checkbox formControlName="federalCity" (change)="onChangeValidation()">город федерального
+            значения</mat-checkbox>
         </p>
       </mat-grid-tile>
-      <mat-grid-tile colspan="1" rowspan="1">
+      <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+      <mat-grid-tile colspan="6" rowspan="1">
         <p class="full-width">
-          <mat-checkbox formControlName="capitalOfRegion">столица региона</mat-checkbox>
+          <mat-checkbox formControlName="capitalOfRegion" (change)="onChangeValidation()">столица региона</mat-checkbox>
         </p>
       </mat-grid-tile>
-      <mat-grid-tile colspan="1" rowspan="1">
+      <mat-grid-tile colspan="3" rowspan="1">
+        <!--         <mat-dialog-actions>
+        @if (data.operation == 'create' || isEditMode){
+        <button class="dialog-submit-button" mat-button
+          [disabled]="mainForm.controls['toponymName'].hasError('required') || mainForm.controls['toponymShortName'].hasError('required') || invalidAddressFilter"
+          (click)="onSaveToponymClick()">Сохранить</button>}
+        </mat-dialog-actions> -->
+      </mat-grid-tile>
+      <mat-grid-tile colspan="6" rowspan="1">
         <p class="full-width">
-          <mat-checkbox formControlName="capitalOfDistrict">административный центр</mat-checkbox>
+          <mat-checkbox formControlName="capitalOfDistrict" (change)="onChangeValidation()">административный
+            центр</mat-checkbox>
         </p>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="3" rowspan="1">
+        <mat-dialog-actions>
+          <!--   <button class="dialog-cancel-button" mat-button (click)="onCancelClick($event)">Отменить</button> -->
 
+          @if (data.operation == 'create' || isEditMode){
+          <button class="dialog-submit-button" mat-button
+            [disabled]="mainForm.controls['toponymName'].hasError('required') || mainForm.controls['toponymShortName'].hasError('required') || invalidAddressFilter || (!changes && data.operation == 'view-edit')"
+            (click)="onSaveToponymClick('saveAndExit')">Сохранить и выйти</button>}
+        </mat-dialog-actions>
       </mat-grid-tile>
     </mat-grid-list>
   </form>
-   <br />
+  <br />
 </mat-dialog-content>
-<!--
-<mat-dialog-actions>
-  <button class="dialog-cancel-button" mat-button (click)="onCancelClick($event)">Отменить</button>
-  <button class="dialog-submit-button" mat-button
-    [disabled]="mainData.controls['toponymName'].hasError('required') || mainData.controls['toponymShortName'].hasError('required') || invalidAddressFilter"
-    (click)="onCreateToponymClick()">Сохранить</button>
-</mat-dialog-actions>
- -->

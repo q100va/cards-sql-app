@@ -12,7 +12,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
 import { MessageService } from 'primeng/api';
-import { EMPTY, Observable, catchError, concatMap, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, of, tap } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
@@ -35,6 +35,7 @@ export class AddressFilterComponent {
   private addressService = inject(AddressService);
 
   params = input.required<{
+    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
     multiple: boolean;
     // defaultValue: boolean;
     cols: string;
@@ -45,6 +46,7 @@ export class AddressFilterComponent {
     isShowDistrict: boolean;
     isShowLocality: boolean;
     readonly?: boolean;
+    class: string;
   }>();
   defaultAddressParams = input.required<{
     localityId: number | null;
@@ -83,13 +85,12 @@ export class AddressFilterComponent {
   });
 
   constructor() {}
-
+  //TODO: spinner?
   ngOnInit() {
     console.log(
       'defaultAddressParams in address-filter',
       this.defaultAddressParams()
     );
-
     this.addressService.getListOfCountries().subscribe({
       next: (res) => {
         this.toponyms.countriesList = res.data;
@@ -100,6 +101,7 @@ export class AddressFilterComponent {
             .pipe(
               concatMap(() => {
                 if (this.defaultAddressParams().regionId) {
+                  console.log('in process');
                   this.setDefaultFormValue('region');
                   return this.onRegionSelectionChange();
                 }
@@ -121,19 +123,60 @@ export class AddressFilterComponent {
               })
             )
             .subscribe({
-              next: () => console.log('All operations completed successfully'),
+              next: () => {
+                console.log('All operations completed successfully');
+              },
               error: (err) => this.errorHandling(err),
             });
         }
       },
       error: (err) => this.errorHandling(err),
     });
-    if (this.params().readonly) {
-      this.form.get('country')?.disable();
-      this.form.get('region')?.disable();
-      this.form.get('district')?.disable();
-      this.form.get('locality')?.disable();
-    }
+
+    /*       this.addressService.getListOfCountries().subscribe({
+        next: (res) => {
+          this.toponyms.countriesList = res.data;
+          if (this.defaultAddressParams().countryId) {
+            this.setDefaultFormValue('country');
+            this.onCountrySelectionChange().subscribe({
+              next: () => {
+                console.log('after this.onCountrySelectionChange();');
+                if (this.defaultAddressParams().regionId) {
+                  this.setDefaultFormValue('region');
+                  this.onRegionSelectionChange().subscribe({
+                    next: () => {
+                      if (this.defaultAddressParams().districtId) {
+                        this.setDefaultFormValue('district');
+                        this.onDistrictSelectionChange().subscribe({
+                          next: () => {
+                            if (this.defaultAddressParams().localityId) {
+                              this.setDefaultFormValue('locality');
+                              this.onLocalitySelectionChange();
+                            }
+                          },
+                          error: (err) => {
+                            this.errorHandling(err);
+                          },
+                        });
+                      }
+                    },
+                    error: (err) => {
+                      this.errorHandling(err);
+                    },
+                  });
+                }
+                console.log('All operations completed successfully');
+              },
+              error: (err) => {
+                this.errorHandling(err);
+              },
+            });
+          }
+        },
+        error: (err) => {
+          this.errorHandling(err);
+        },
+      }); */
   }
 
   private selectionChangeMethods: {
@@ -172,6 +215,8 @@ export class AddressFilterComponent {
         this.form.get('locality')?.disable();
         this.form.get('locality')?.setValue(null);
         this.toponyms.localitiesList = [];
+        if (this.params().readonly) this.form.get('country')?.disable();
+
         this.emitAddressData();
       }),
       catchError((err) => {
@@ -191,6 +236,7 @@ export class AddressFilterComponent {
         this.form.get('locality')?.disable();
         this.form.get('locality')?.setValue(null);
         this.toponyms.localitiesList = [];
+        if (this.params().readonly) this.form.get('region')?.disable();
         this.emitAddressData();
       }),
       catchError((err) => {
@@ -207,6 +253,7 @@ export class AddressFilterComponent {
     ).pipe(
       tap(() => {
         this.form.get('locality')?.setValue(null);
+        if (this.params().readonly) this.form.get('district')?.disable();
         this.emitAddressData();
       }),
       catchError((err) => {
@@ -216,6 +263,7 @@ export class AddressFilterComponent {
     );
   }
   onLocalitySelectionChange(): Observable<any> {
+    if (this.params().readonly) this.form.get('locality')?.disable();
     this.emitAddressData();
     return EMPTY;
   }
@@ -285,10 +333,90 @@ export class AddressFilterComponent {
     ) {
       count = count + 1;
     }
+    console.log('this.emitAddressData', addressData);
     this.addressFilter.emit(addressData);
-    this.addressFilterBadgeValue.emit(count);
-    this.addressString.emit(this.createAddressString(addressData));
-    this.goToFirstPage.emit();
+    if (this.params().source != 'toponymCard') {
+      this.addressFilterBadgeValue.emit(count);
+      this.addressString.emit(this.createAddressString(addressData));
+      this.goToFirstPage.emit();
+    }
+  }
+
+  onChangeMode(
+    mode: string,
+    data: {
+      localityId: number | null;
+      districtId: number | null;
+      regionId: number | null;
+      countryId: number | null;
+    } | null
+  ) {
+    if (mode == 'edit') {
+      this.form.get('country')?.enable();
+      this.form.get('region')?.enable();
+      this.form.get('district')?.enable();
+      this.form.get('locality')?.enable();
+      this.params().class = 'none';
+      this.params().readonly = false;
+      this.emitAddressData();
+    }
+    if (mode == 'view') {
+      console.log('onChangeMode');
+      this.params().class = 'view-mode';
+      this.params().readonly = true;
+      if (data) {
+        // Sequentially execute the steps using concatMap
+        this.selectionChangeMethods['onCountrySelectionChange']()
+          .pipe(
+            tap(() => {
+              this.form.controls['country'].setValue(data?.countryId);
+              console.log('Country ID:', data?.countryId);
+            }),
+            concatMap(() => {
+              this.form.controls['region'].setValue(data?.regionId);
+              console.log('Region ID:', data?.regionId);
+              return this.selectionChangeMethods['onRegionSelectionChange']();
+            }),
+            concatMap(() => {
+              this.form.controls['district'].setValue(data?.districtId);
+              console.log('District ID:', data?.districtId);
+              return this.selectionChangeMethods['onDistrictSelectionChange']();
+            }),
+            concatMap(() => {
+              this.form.controls['locality'].setValue(data?.localityId);
+              console.log('Locality ID:', data?.localityId);
+              return this.selectionChangeMethods['onLocalitySelectionChange']();
+            })
+          )
+          .subscribe({
+            next: () => console.log('All selection changes completed'),
+            error: (err) => this.errorHandling(err),
+          });
+      } else {
+        this.form.get('country')?.disable();
+        this.form.get('region')?.disable();
+        this.form.get('district')?.disable();
+        this.form.get('locality')?.disable();
+      }
+    }
+
+    /*       this.form.controls['country'].setValue(data?.countryId);
+      console.log(data?.countryId);
+      this.handleToponymSelectionChange('onCountrySelectionChange', 'Country');
+      this.form.controls['region'].setValue(data?.regionId);
+      console.log(data?.regionId);
+      this.handleToponymSelectionChange('onRegionSelectionChange', 'Region');
+      this.form.controls['district'].setValue(data?.districtId);
+      console.log(data?.districtId);
+      this.handleToponymSelectionChange('onDistrictSelectionChange', 'District');
+      this.form.controls['locality'].setValue(data?.localityId);
+      console.log(data?.localityId);
+      this.handleToponymSelectionChange('onLocalitySelectionChange', 'Locality'); */
+    /*       this.form.get('country')?.disable();
+      this.form.get('region')?.disable();
+      this.form.get('district')?.disable();
+      this.form.get('locality')?.disable();
+      this.emitAddressData(); */
   }
 
   clearForm() {

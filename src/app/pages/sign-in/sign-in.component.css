@@ -34,3 +34,7 @@
 mat-label {
   color: #1a1a1a;
 }
+
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: #f9faf4 !important;
+}

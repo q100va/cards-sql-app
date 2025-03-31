@@ -69,7 +69,20 @@ export class TableFilterComponent implements OnInit {
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
 
-  params = {
+  params: {
+    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
+    multiple: boolean;
+    cols: string;
+    gutterSize: string;
+    rowHeight: string;
+    type?: string | undefined;
+    isShowRegion: boolean;
+    isShowDistrict: boolean;
+    isShowLocality: boolean;
+    readonly?: boolean | undefined;
+    class: string;
+  } = {
+    source: 'userList',
     multiple: true,
     cols: '1',
     gutterSize: '16px',
@@ -77,6 +90,7 @@ export class TableFilterComponent implements OnInit {
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
+    class: "none",
   };
 
   goToFirstPage = output<void>();

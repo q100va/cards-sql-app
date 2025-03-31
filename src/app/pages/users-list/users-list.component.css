@@ -64,7 +64,7 @@ mat-card-actions {
   background: #dddfd0;
 }
 
-::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+ ::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
   background-color: #f9faf4 !important;
 }
 

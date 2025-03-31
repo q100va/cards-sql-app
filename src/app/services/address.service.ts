@@ -87,32 +87,40 @@ export class AddressService {
   checkToponymName(
     type: string,
     name: string,
-    addressFilter: { [key: string]: null | number[] | [] }
+    id: number | null,
+    addressFilter: { [key: string]: null | number[] | [] },
+    operation: string,
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/check-toponym-name', {
       data: {
         type: type,
         name: name,
+        id: id,
         addressFilter: addressFilter,
+        operation: operation,
       },
     });
   }
 
-  createToponym(
+  saveToponym(
     type: string,
     name: string,
+    id: number | null,
     shortName: string,
     isFederalCity: boolean,
     isCapitalOfRegion: boolean,
     isCapitalOfDistrict: boolean,
-    addressFilter: { [key: string]: null | number[] | [] }
+    addressFilter: { [key: string]: null | number[] | [] },
+    operation: string,
   ): Observable<any> {
+    const addressPoint = operation == 'create' ? 'create-toponym' : 'update-toponym'
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/create-toponym', {
+    return this.http.post(BACKEND_URL + '/api/addresses/' + addressPoint, {
       data: {
         type: type,
         name: name,
+        id: id,
         shortName: shortName,
         addressFilter: addressFilter,
         isFederalCity: isFederalCity,

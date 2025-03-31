@@ -78,7 +78,20 @@ export class CreateUserDialogComponent implements OnInit {
   private messageService = inject(MessageService);
   private router = inject(Router);
 
-  params = {
+  params: {
+    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
+    multiple: boolean;
+    cols: string;
+    gutterSize: string;
+    rowHeight: string;
+    type?: string | undefined;
+    isShowRegion: boolean;
+    isShowDistrict: boolean;
+    isShowLocality: boolean;
+    readonly?: boolean | undefined;
+    class: string;
+  } = {
+    source: 'userCard',
     multiple: false,
     cols: '2',
     gutterSize: '16px',
@@ -86,6 +99,7 @@ export class CreateUserDialogComponent implements OnInit {
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
+    class: "none",
   };
 
   addressFilter = signal<{
