@@ -26,6 +26,9 @@ import { AddressFilterComponent } from '../../address-filter/address-filter.comp
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
+import { AddressFilterParams } from '../../../interfaces/address-filter-params';
+import { GeographyLevels } from '../../../interfaces/types';
+import { DefaultAddressParams } from '../../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-toponym-details-dialog',
@@ -52,17 +55,23 @@ import { MatIconModule } from '@angular/material/icon';
 export class ToponymDetailsDialogComponent {
   readonly dialogRef = inject(MatDialogRef<ToponymDetailsDialogComponent>);
   readonly data = inject<{
-    type: string;
+    type: GeographyLevels;
     operation: 'create' | 'view-edit';
-    defaultAddressParams: {
-      localityId: number | null;
-      districtId: number | null;
-      regionId: number | null;
-      countryId: number | null;
-    };
+    defaultAddressParams: DefaultAddressParams;
     toponym?: {
       [key: string]: string | number | boolean;
     };
+    isShowCountry: boolean;
+    isShowRegion: boolean;
+    isShowDistrict: boolean;
+    isShowLocality: boolean;
+    specialField: string;
+    creationTitle: string;
+    viewTitle: string;
+    namePlaceHolder: string;
+    shortNamePlaceHolder: string;
+    postNamePlaceHolder: string;
+    shortPostNamePlaceHolder: string;
   }>(MAT_DIALOG_DATA);
   private messageService = inject(MessageService);
   private addressService = inject(AddressService);
@@ -71,40 +80,35 @@ export class ToponymDetailsDialogComponent {
   addressFilterComponent!: AddressFilterComponent;
 
   title =
-    this.data.operation == 'create' ? 'Новый насел. пункт' : 'Населенный пункт';
-
-  //TODO: different placeholders for different toponyms
-  toponymNamePlaceholder = 'Синицыно поселок';
-  toponymShortNamePlaceholder = 'п. Синицыно';
-  toponymPostNamePlaceholder = 'Дарницкий район';
-  toponymShortPostNamePlaceholder = 'Дарницкий р-н';
+    this.data.operation == 'create'
+      ? this.data.creationTitle
+      : this.data.viewTitle;
 
   isEditMode = false;
   onChangeMode = output<string>();
   changes = false;
 
-  params: {
-    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
-    multiple: boolean;
-    cols: string;
-    gutterSize: string;
-    rowHeight: string;
-    type?: string | undefined;
-    isShowRegion: boolean;
-    isShowDistrict: boolean;
-    isShowLocality: boolean;
-    readonly?: boolean | undefined;
-    class: string;
-  } = {
+  params: AddressFilterParams= {
     source: 'toponymCard',
     multiple: false,
     cols: '1',
     gutterSize: '16px',
     rowHeight: '76px',
     type: this.data.type,
-    isShowRegion: true,
-    isShowDistrict: true,
-    isShowLocality: false,
+    isShowCountry:
+      this.data.specialField != 'isShowCountry'
+        ? this.data.isShowCountry
+        : false,
+    isShowRegion:
+      this.data.specialField != 'isShowRegion' ? this.data.isShowRegion : false,
+    isShowDistrict:
+      this.data.specialField != 'isShowDistrict'
+        ? this.data.isShowDistrict
+        : false,
+    isShowLocality:
+      this.data.specialField != 'isShowLocality'
+        ? this.data.isShowLocality
+        : false,
     readonly: this.data.operation == 'create' ? false : true,
     class: this.data.operation == 'create' ? 'none' : 'view-mode',
   };
@@ -116,6 +120,13 @@ export class ToponymDetailsDialogComponent {
     toponymShortName: new FormControl<string>({ value: '', disabled: true }, [
       Validators.required,
     ]),
+    toponymPostName: new FormControl<string>({ value: '', disabled: true }, [
+      Validators.required,
+    ]),
+    toponymShortPostName: new FormControl<string>(
+      { value: '', disabled: true },
+      [Validators.required]
+    ),
     federalCity: new FormControl<boolean>({ value: false, disabled: true }),
     capitalOfRegion: new FormControl<boolean>({ value: false, disabled: true }),
     capitalOfDistrict: new FormControl<boolean>({
@@ -137,24 +148,19 @@ export class ToponymDetailsDialogComponent {
   });
   invalidAddressFilter = true;
 
-  /*   defaultAddressParams: {
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  } = {
-    localityId: null,
-    districtId: null,
-    regionId: null,
-    countryId: null,
-  }; */
-
   ngOnInit() {
     if (this.data.toponym) {
       this.mainForm.controls['toponymName'].setValue(this.data.toponym['name']);
       this.mainForm.controls['toponymShortName'].setValue(
         this.data.toponym['shortName']
       );
+      this.mainForm.controls['toponymPostName'].setValue(
+        this.data.toponym['postName']
+      );
+      this.mainForm.controls['toponymShortPostName'].setValue(
+        this.data.toponym['shortPostName']
+      );
+
       this.mainForm.controls['federalCity'].setValue(
         this.data.toponym['isFederalCity']
       );
@@ -164,6 +170,9 @@ export class ToponymDetailsDialogComponent {
       this.mainForm.controls['capitalOfDistrict'].setValue(
         this.data.toponym['isCapitalOfDistrict']
       );
+    } else if (this.data.type == 'country') {
+      this.mainForm.controls['toponymName'].enable();
+      this.mainForm.controls['toponymShortName'].enable();
     }
   }
 
@@ -182,8 +191,6 @@ export class ToponymDetailsDialogComponent {
       ) {
         this.mainForm.controls['toponymName'].enable();
         this.mainForm.controls['toponymShortName'].enable();
-        //this.mainForm.controls['toponymPostName'].enable();
-        //this.mainForm.controls['toponymShortPostName'].enable();
         this.mainForm.controls['federalCity'].enable();
         this.mainForm.controls['capitalOfRegion'].enable();
         this.mainForm.controls['capitalOfDistrict'].enable();
@@ -202,6 +209,55 @@ export class ToponymDetailsDialogComponent {
         this.mainForm.controls['capitalOfDistrict'].disable();
         this.invalidAddressFilter = true;
       }
+
+      if (
+        this.data.type == 'district' &&
+        this.addressFilter().regions &&
+        this.addressFilter().regions!.length > 0
+      ) {
+        this.mainForm.controls['toponymName'].enable();
+        this.mainForm.controls['toponymShortName'].enable();
+        this.mainForm.controls['toponymPostName'].enable();
+        this.mainForm.controls['toponymShortPostName'].enable();
+
+        this.invalidAddressFilter = false;
+      }
+      if (
+        this.data.type == 'district' &&
+        (!this.addressFilter().regions ||
+          (this.addressFilter().regions &&
+            this.addressFilter().regions!.length == 0))
+      ) {
+        this.mainForm.controls['toponymName'].disable();
+        this.mainForm.controls['toponymShortName'].disable();
+        this.mainForm.controls['toponymPostName'].disable();
+        this.mainForm.controls['toponymShortPostName'].disable();
+
+        this.invalidAddressFilter = true;
+      }
+
+      if (
+        this.data.type == 'region' &&
+        this.addressFilter().countries &&
+        this.addressFilter().countries!.length > 0
+      ) {
+        this.mainForm.controls['toponymName'].enable();
+        this.mainForm.controls['toponymShortName'].enable();
+
+        this.invalidAddressFilter = false;
+      }
+      if (
+        this.data.type == 'region' &&
+        (!this.addressFilter().countries ||
+          (this.addressFilter().countries &&
+            this.addressFilter().countries!.length == 0))
+      ) {
+        this.mainForm.controls['toponymName'].disable();
+        this.mainForm.controls['toponymShortName'].disable();
+
+        this.invalidAddressFilter = true;
+      }
+
       this.onChangeValidation();
     }
   }
@@ -254,6 +310,8 @@ export class ToponymDetailsDialogComponent {
         this.mainForm.controls['toponymName'].value!,
         this.data.toponym ? (this.data.toponym['id'] as number) : null,
         this.mainForm.controls['toponymShortName'].value!,
+        this.mainForm.controls['toponymPostName'].value!,
+        this.mainForm.controls['toponymShortPostName'].value!,
         this.mainForm.controls['federalCity'].value!,
         this.mainForm.controls['capitalOfRegion'].value!,
         this.mainForm.controls['capitalOfDistrict'].value!,
@@ -294,8 +352,8 @@ export class ToponymDetailsDialogComponent {
     this.changes = false;
     this.mainForm.controls['toponymName'].enable();
     this.mainForm.controls['toponymShortName'].enable();
-    //this.mainForm.controls['toponymPostName'].enable();
-    //this.mainForm.controls['toponymShortPostName'].enable();
+    this.mainForm.controls['toponymPostName'].enable();
+    this.mainForm.controls['toponymShortPostName'].enable();
     this.mainForm.controls['federalCity'].enable();
     this.mainForm.controls['capitalOfRegion'].enable();
     this.mainForm.controls['capitalOfDistrict'].enable();
@@ -327,8 +385,12 @@ export class ToponymDetailsDialogComponent {
           this.mainForm.controls['toponymShortName'].setValue(
             this.data.toponym!['shortName']
           );
-          //this.mainForm.controls['toponymPostName'].setValue(this.data.toponym!['postName']);
-          //this.mainForm.controls['toponymShortPostName'].setValue(this.data.toponym!['postShortName']);
+          this.mainForm.controls['toponymPostName'].setValue(
+            this.data.toponym!['postName']
+          );
+          this.mainForm.controls['toponymShortPostName'].setValue(
+            this.data.toponym!['shortPostName']
+          );
           this.mainForm.controls['federalCity'].setValue(
             this.data.toponym!['isFederalCity']
           );
@@ -349,34 +411,105 @@ export class ToponymDetailsDialogComponent {
 
   onChangeValidation() {
     if (this.data.operation == 'view-edit') {
+      this.changes = false;
+      console.log(
+        "this.mainForm.controls['toponymName'].value !=this.data.toponym!['name']"
+      );
+      console.log(
+        this.mainForm.controls['toponymName'].value,
+        this.data.toponym!['name']
+      );
+      console.log(
+        "mainForm.controls['toponymName'].hasError('required') || (mainForm.controls['toponymShortName'].hasError('required') && data.type != 'country') || (invalidAddressFilter && data.type != 'country') || (!changes && data.operation == 'view-edit')"
+      );
+      console.log(
+        this.mainForm.controls['toponymName'].hasError('required'),
+        this.mainForm.controls['toponymShortName'].hasError('required'),
+        this.data.type,
+        this.invalidAddressFilter,
+        this.data.type,
+        this.changes,
+        this.data.operation
+      );
+      console.log(
+        this.mainForm.controls['toponymName'].hasError('required') ||
+          (this.mainForm.controls['toponymShortName'].hasError('required') &&
+            this.data.type != 'country') ||
+          (this.invalidAddressFilter && this.data.type != 'country') ||
+          (!this.changes && this.data.operation == 'view-edit')
+      );
+      console.log(
+        this.mainForm.controls['toponymName'].hasError('required'),
+        this.mainForm.controls['toponymShortName'].hasError('required') &&
+          this.data.type != 'country',
+        this.invalidAddressFilter && this.data.type != 'country',
+        !this.changes && this.data.operation == 'view-edit'
+      );
+
       if (
-        //this.invalidAddressFilter ||
-        //!this.mainForm.controls['toponymName'].value ||
-        //!this.mainForm.controls['toponymShortName'].value ||
-        //!this.mainForm.controls['toponymPostName'].value ||
-        //!this.mainForm.controls['toponymShortPostName'].value ||
-        this.addressFilter().countries![0] !=
-          this.data.toponym!['district.region.country.id'] ||
-        this.addressFilter().regions![0] !=
-          this.data.toponym!['district.region.id'] ||
-        this.addressFilter().districts![0] !=
-          this.data.toponym!['district.id'] ||
+        this.data.type == 'country' &&
         this.mainForm.controls['toponymName'].value !=
-          this.data.toponym!['name'] ||
-        this.mainForm.controls['toponymShortName'].value !=
-          this.data.toponym!['shortName'] ||
-        //this.mainForm.controls['toponymPostName'].value != this.data.toponym!['postName'] ||
-        //this.mainForm.controls['toponymShortPostName'].value != this.data.toponym!['postShortName'] ||
-        this.mainForm.controls['federalCity'].value !=
-          this.data.toponym!['isFederalCity'] ||
-        this.mainForm.controls['capitalOfRegion'].value !=
-          this.data.toponym!['isCapitalOfRegion'] ||
-        this.mainForm.controls['capitalOfDistrict'].value !=
-          this.data.toponym!['isCapitalOfDistrict']
+          this.data.toponym!['name']
       ) {
         this.changes = true;
-      } else {
-        this.changes = false;
+        console.log(
+          this.mainForm.controls['toponymName'].hasError('required'),
+          this.mainForm.controls['toponymShortName'].hasError('required') &&
+            this.data.type != 'country',
+          this.invalidAddressFilter && this.data.type != 'country',
+          !this.changes && this.data.operation == 'view-edit'
+        );
+      }
+
+      if (
+        this.data.type == 'region' &&
+        (this.addressFilter().countries![0] !=
+          this.data.toponym!['country.id'] ||
+          this.mainForm.controls['toponymName'].value !=
+            this.data.toponym!['name'] ||
+          this.mainForm.controls['toponymShortName'].value !=
+            this.data.toponym!['shortName'])
+      ) {
+        this.changes = true;
+      }
+
+      if (
+        this.data.type == 'district' &&
+        (this.addressFilter().countries![0] !=
+          this.data.toponym!['region.country.id'] ||
+          this.addressFilter().regions![0] != this.data.toponym!['region.id'] ||
+          this.mainForm.controls['toponymName'].value !=
+            this.data.toponym!['name'] ||
+          this.mainForm.controls['toponymShortName'].value !=
+            this.data.toponym!['shortName'] ||
+          this.mainForm.controls['toponymPostName'].value !=
+            this.data.toponym!['postName'] ||
+          this.mainForm.controls['toponymShortPostName'].value !=
+            this.data.toponym!['shortPostName'])
+      ) {
+        this.changes = true;
+      }
+
+      if (
+        this.data.type == 'locality' &&
+        (this.addressFilter().countries![0] !=
+          this.data.toponym!['district.region.country.id'] ||
+          this.addressFilter().regions![0] !=
+            this.data.toponym!['district.region.id'] ||
+          this.addressFilter().districts![0] !=
+            this.data.toponym!['district.id'] ||
+          this.mainForm.controls['toponymName'].value !=
+            this.data.toponym!['name'] ||
+          this.mainForm.controls['toponymShortName'].value !=
+            this.data.toponym!['shortName'] ||
+          this.mainForm.controls['federalCity'].value !=
+            this.data.toponym!['isFederalCity'] ||
+          this.mainForm.controls['capitalOfRegion'].value !=
+            this.data.toponym!['isCapitalOfRegion'] ||
+          this.mainForm.controls['capitalOfDistrict'].value !=
+            this.data.toponym!['isCapitalOfDistrict'])
+      ) {
+        this.changes = true;
       }
     }
   }
@@ -385,8 +518,8 @@ export class ToponymDetailsDialogComponent {
     this.isEditMode = false;
     this.mainForm.controls['toponymName'].disable();
     this.mainForm.controls['toponymShortName'].disable();
-    //this.mainForm.controls['toponymPostName'].disable();
-    //this.mainForm.controls['toponymShortPostName'].disable();
+    this.mainForm.controls['toponymPostName'].disable();
+    this.mainForm.controls['toponymShortPostName'].disable();
     this.mainForm.controls['federalCity'].disable();
     this.mainForm.controls['capitalOfRegion'].disable();
     this.mainForm.controls['capitalOfDistrict'].disable();

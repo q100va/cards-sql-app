@@ -50,6 +50,7 @@ import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-users-list',
@@ -75,13 +76,13 @@ import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.dire
     TableFilterComponent,
     ConfirmDialogModule,
     MatCheckboxModule,
-    BlurOnClickDirective
+    BlurOnClickDirective,
   ],
   providers: [
     MessageService,
     ConfirmationService,
     MessageService,
-   // { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
+    // { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
   ],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
@@ -367,12 +368,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     return result;
   });
 
-  defaultAddressParams: {
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  } = {
+  defaultAddressParams: DefaultAddressParams = {
     localityId: null,
     districtId: null,
     regionId: null,
@@ -389,7 +385,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       );
     }
 
-      this.route.queryParams.subscribe((params) => {
+    this.route.queryParams.subscribe((params) => {
       this.defaultAddressParams.localityId = params['localityId'];
       this.defaultAddressParams.districtId = params['districtId'];
       this.defaultAddressParams.regionId = params['regionId'];
@@ -400,8 +396,6 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-
-
     //console.log(navigation);
   }
   ngAfterViewInit() {}
@@ -416,7 +410,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       minWidth: '800px',
       height: '80%',
       autoFocus: 'dialog',
-      restoreFocus: true
+      restoreFocus: true,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -626,7 +620,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   }
 
   sortData(sort: Sort) {
-   // console.log('sort');
+    // console.log('sort');
     //console.log(sort);
     this.sortParameters.set(sort);
     //this.getUsers();
@@ -668,7 +662,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
 
   getUsers() {
     // this.pageSize, this.currentPage
-   // console.log('WORK');
+    // console.log('WORK');
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),

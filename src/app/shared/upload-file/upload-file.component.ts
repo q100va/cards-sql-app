@@ -8,6 +8,7 @@ import { FileService } from '../../services/file.service';
 import { MatIconModule } from '@angular/material/icon';
 
 import { MessageService } from 'primeng/api';
+import { GeographyLevels } from '../../interfaces/types';
 
 @Component({
   selector: 'app-upload-file',
@@ -26,9 +27,8 @@ export class UploadFileComponent {
   private messageService = inject(MessageService);
   file?: File;
   errorMessage?: string;
-  typeOfData = input.required<'country' | 'region' | 'district' | 'locality'>();
+  typeOfData = input.required<GeographyLevels>();
   showSpinner = output<boolean>();
- // afterUploadingFile = output<void>();
 
   addFile(event: Event) {
     console.log('START', event);
@@ -58,7 +58,6 @@ export class UploadFileComponent {
         .catch((err) => {
           this.showSpinner.emit(false);
           this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
-         // this.errorMessage = 'Невозможно загрузить выбранный файл: ' + err;
         });
     } else {
       this.showSpinner.emit(false);
@@ -77,7 +76,6 @@ export class UploadFileComponent {
             detail: res.msg,
             sticky: false,
           });
-          //this.afterUploadingFile.emit();
           this.showSpinner.emit(false);
           location.reload();//TODO: delete?
         },

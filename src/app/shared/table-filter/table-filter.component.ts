@@ -42,6 +42,8 @@ import {
 } from '@angular/material/checkbox';
 import { RoleService } from '../../services/role.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
+import { AddressFilterParams } from '../../interfaces/address-filter-params';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-table-filter',
@@ -69,24 +71,13 @@ export class TableFilterComponent implements OnInit {
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
 
-  params: {
-    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
-    multiple: boolean;
-    cols: string;
-    gutterSize: string;
-    rowHeight: string;
-    type?: string | undefined;
-    isShowRegion: boolean;
-    isShowDistrict: boolean;
-    isShowLocality: boolean;
-    readonly?: boolean | undefined;
-    class: string;
-  } = {
+  params: AddressFilterParams = {
     source: 'userList',
     multiple: true,
     cols: '1',
     gutterSize: '16px',
     rowHeight: '57px',
+    isShowCountry: true,
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
@@ -121,12 +112,7 @@ export class TableFilterComponent implements OnInit {
   strongContactFilter = output<boolean>();
   rolesList!: { id: number; name: string }[];
 
-  defaultAddressParams = input.required<{
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  }>();
+  defaultAddressParams = input.required<DefaultAddressParams>();
 
   private strongAddressFilterControl = effect(
     () => {

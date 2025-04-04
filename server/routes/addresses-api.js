@@ -34,25 +34,36 @@ router.post("/check-toponym-name", async (req, res) => {
     const addressFilter = req.body.data.addressFilter;
     let duplicate;
     if (type == 'country') {
+      const whereParams = id ? {
+        name: name,
+        id: { [Op.ne]: id },
+        isRestricted: false,
+      } : {
+        name: name,
+        isRestricted: false,
+      };
       duplicate = await Country.findOne(
         {
-          where: {
-            name: name,
-            isRestricted: false,
-          },
+          where: whereParams,
           attributes: ['id'],
           raw: true
         }
       );
     }
     if (type == 'region') {
+      const whereParams = id ? {
+        name: name,
+        id: { [Op.ne]: id },
+        '$country.id$': addressFilter.countries[0],
+        isRestricted: false,
+      } : {
+        name: name,
+        '$country.id$': addressFilter.countries[0],
+        isRestricted: false,
+      };
       duplicate = await Region.findOne(
         {
-          where: {
-            name: name,
-            '$country.id$': addressFilter.countries[0],
-            isRestricted: false,
-          },
+          where: whereParams,
           attributes: ['id'],
           raw: true,
           include: [
@@ -64,13 +75,19 @@ router.post("/check-toponym-name", async (req, res) => {
         });
     }
     if (type == 'district') {
+      const whereParams = id ? {
+        name: name,
+        id: { [Op.ne]: id },
+        '$region.id$': addressFilter.regions[0],
+        isRestricted: false,
+      } : {
+        name: name,
+        '$region.id$': addressFilter.regions[0],
+        isRestricted: false,
+      };
       duplicate = await District.findOne(
         {
-          where: {
-            name: name,
-            '$region.id$': addressFilter.regions[0],
-            isRestricted: false,
-          },
+          where: whereParams,
           attributes: ['id'],
           raw: true,
           include: [
@@ -121,6 +138,8 @@ router.post("/create-toponym", async (req, res) => {
     const type = req.body.data.type;
     const name = req.body.data.name;
     const shortName = req.body.data.shortName;
+    const postName = req.body.data.postName;
+    const shortPostName = req.body.data.shortPostName;
     const addressFilter = req.body.data.addressFilter;
     let createdToponym;
     if (type == 'country') {
@@ -143,6 +162,8 @@ router.post("/create-toponym", async (req, res) => {
         {
           name: name,
           shortName: shortName,
+          postName: postName,
+          shortPostName: shortPostName,
           regionId: addressFilter.regions[0],
         });
     }
@@ -172,21 +193,23 @@ router.post("/update-toponym", async (req, res) => {
     const type = req.body.data.type;
     const name = req.body.data.name;
     const shortName = req.body.data.shortName;
+    const postName = req.body.data.postName;
+    const shortPostName = req.body.data.shortPostName;
     const addressFilter = req.body.data.addressFilter;
     const id = req.body.data.id;
+
 
     let updatedToponym;
     if (type == 'country') {
       updatedToponym = await Country.update(
         {
           name: name,
-        }
-      ),
-      {
-        where: {
-          id:id
-        }
-      };
+        },
+        {
+          where: {
+            id: id
+          }
+        });
     }
     if (type == 'region') {
       updatedToponym = await Region.update(
@@ -197,7 +220,7 @@ router.post("/update-toponym", async (req, res) => {
         },
         {
           where: {
-            id:id
+            id: id
           }
         });
     }
@@ -206,11 +229,13 @@ router.post("/update-toponym", async (req, res) => {
         {
           name: name,
           shortName: shortName,
+          postName: postName,
+          shortPostName: shortPostName,
           regionId: addressFilter.regions[0],
         },
         {
           where: {
-            id:id
+            id: id
           }
         });
     }
@@ -226,10 +251,10 @@ router.post("/update-toponym", async (req, res) => {
         },
         {
           where: {
-            id:id
+            id: id
           }
         }
-        );
+      );
     }
     res.status(200).send({ msg: "Топоним успешно обновлен.", data: name });
   } catch (e) {
@@ -336,22 +361,136 @@ router.post("/get-localities-list", async (req, res) => {
 
 // APT get toponyms for lists of toponyms
 
-router.post("/get-countries", async (req, res) => {
 
+router.post("/get-countries", async (req, res) => {
+  console.log("countries");
+  const searchValue = req.body.data.filter.searchValue.trim();
+  const exactMatch = req.body.data.filter.exactMatch;
+  const sortParameters = req.body.data.filter.sortParameters;
+  const addressFilter = req.body.data.filter.addressFilter;
+  const pageSize = req.body.data.pageSize;
+  const currentPage = req.body.data.currentPage;
   try {
+
+    //sorting
+    //form order: {active: [name, shortName, district, region, country], direction: [desc, asc]}
+    let orderParams = [];
+    let orderByName;
+    let orderDirection;
+
+    if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
+      orderByName = 'name';
+      orderDirection = 'ASC';
+    } else {
+      orderDirection = sortParameters.direction.toUpperCase();
+      orderByName = sortParameters.active;
+    }
+    orderParams.push(orderByName);
+    orderParams.push(orderDirection);
+
+    console.log("orderParams");
+    console.log(orderParams);
+
+    //search
+
+    let whereParams = {};
+    //let searchWhereParams = {};
+    let searchParams = [];
+    whereParams.isRestricted = false;
+    if (searchValue) {
+      const searchColumnNames = ['name'];
+      let arrayOfSearchValues = searchValue.split(" ");
+      console.log('arrayOfSearchValues');
+      console.log(arrayOfSearchValues);
+      if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
+        let opLikeValues = [];
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          opLikeValues.push({ [Op.iLike]: '%' + arrayOfSearchValues[i] + '%' });
+        }
+        for (let columnName of searchColumnNames) {
+          searchParams.push({
+            [columnName]: {
+              [Op.or]: opLikeValues
+            }
+          });
+          console.log("opLikeValues");
+          console.log(opLikeValues);
+        }
+        whereParams = { ...whereParams, [Op.or]: searchParams };
+        console.log("whereParams");
+        console.log(whereParams);
+      } else {
+        //all search words in one column
+        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
+
+                for (let columnName of searchColumnNames) {
+                  searchParams.push({
+                    [columnName]: opLikeValues
+                  });
+                  console.log("opLikeValues");
+                  console.log(opLikeValues);
+                }
+
+                whereParams = { ...whereParams, [Op.or]: searchParams }; */
+
+        //search words in different columns
+        const searchColumnRowNames = [
+          '"country"."name"'
+        ];
+        let innerQuery = '';
+
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          innerQuery = innerQuery + '(SELECT DISTINCT "country"."id" WHERE "country"."isRestricted" = false AND (';
+          const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
+          console.log("searchWord");
+          console.log(searchWord);
+          for (let columnName of searchColumnRowNames) {
+            innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
+          }
+          innerQuery = innerQuery.slice(0, -4) + `)`;
+          console.log("innerQuery");
+          console.log(innerQuery);
+          if (i != arrayOfSearchValues.length - 1) {
+            innerQuery = innerQuery + 'AND  "country"."id" IN ';
+          }
+        }
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          innerQuery = innerQuery + ')';
+        }
+
+        console.log("innerQueryFinal");
+        console.log(innerQuery);
+
+        searchParams.push({
+          id: {
+            [Op.in]: Sequelize.literal(innerQuery),
+          }
+        });
+        whereParams = { ...whereParams, [Op.or]: searchParams };
+      }
+
+    }
+
+    //filter
+    if (addressFilter.countries && addressFilter.countries.length > 0) {
+      whereParams.id = addressFilter.countries[0];
+    }
     const length = await Country.count({
-      where: { isRestricted: false },
+      where: whereParams,
     });
 
     let countries = await Country.findAll({
       offset: pageSize * (currentPage - 1),
       limit: pageSize,
-      where: { isRestricted: false },
+
       attributes: ['id', 'name'],
-      order: [['name', 'ASC']],
-      raw: true
+      order: [orderParams],
+      raw: true,
+      where: whereParams,
     });
-    countries.sort((a, b) => (b.name === "Россия") - (a.name === "Россия"));
+    //console.log("localities");
+    //console.log(localities);
+
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: countries, length: length } });
   } catch (e) {
     const err = errorHandling(e);
@@ -359,27 +498,166 @@ router.post("/get-countries", async (req, res) => {
   }
 });
 
+
 router.post("/get-regions", async (req, res) => {
+  console.log("regions");
+  const searchValue = req.body.data.filter.searchValue.trim();
+  const exactMatch = req.body.data.filter.exactMatch;
+  const sortParameters = req.body.data.filter.sortParameters;
+  const addressFilter = req.body.data.filter.addressFilter;
+  const pageSize = req.body.data.pageSize;
+  const currentPage = req.body.data.currentPage;
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
-    const regionsIds = req.body.data.map(item => item.id);
 
-    const regions = await Region.findAll({
-      where: {
-        isRestricted: false,
-        countryId: { [Op.in]: regionsIds }
-      },
-      attributes: ['id', 'name', 'countryId'],
-      order: [['name', 'ASC']],
-      raw: true
+    //sorting
+    //form order: {active: [name, shortName, district, region, country], direction: [desc, asc]}
+    let orderParams = [];
+    let orderByName;
+    let orderDirection;
+    let orderModel1;
+
+    if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
+      orderByName = 'name';
+      orderDirection = 'ASC';
+    } else {
+      orderDirection = sortParameters.direction.toUpperCase();
+
+      if (sortParameters.active == 'name' || sortParameters.active == 'shortName') {
+        orderByName = sortParameters.active;
+      } else {
+        orderByName = 'name';
+
+        if (sortParameters.active == 'country') {
+          orderModel1 = { model: Country, as: 'country' };
+        }
+      }
+    }
+
+    if (orderModel1) orderParams.push(orderModel1);
+    orderParams.push(orderByName);
+    orderParams.push(orderDirection);
+
+    console.log("orderParams");
+    console.log(orderParams);
+
+    //search
+
+    let whereParams = {};
+    //let searchWhereParams = {};
+    let searchParams = [];
+    whereParams.isRestricted = false;
+    if (searchValue) {
+      const searchColumnNames = ['$country.name$', 'name', 'shortName'];
+      let arrayOfSearchValues = searchValue.split(" ");
+      console.log('arrayOfSearchValues');
+      console.log(arrayOfSearchValues);
+      if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
+        let opLikeValues = [];
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          opLikeValues.push({ [Op.iLike]: '%' + arrayOfSearchValues[i] + '%' });
+        }
+        for (let columnName of searchColumnNames) {
+          searchParams.push({
+            [columnName]: {
+              [Op.or]: opLikeValues
+            }
+          });
+          console.log("opLikeValues");
+          console.log(opLikeValues);
+        }
+        whereParams = { ...whereParams, [Op.or]: searchParams };
+        console.log("whereParams");
+        console.log(whereParams);
+      } else {
+        //all search words in one column
+        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
+
+                for (let columnName of searchColumnNames) {
+                  searchParams.push({
+                    [columnName]: opLikeValues
+                  });
+                  console.log("opLikeValues");
+                  console.log(opLikeValues);
+                }
+
+                whereParams = { ...whereParams, [Op.or]: searchParams }; */
+
+        //search words in different columns
+        const searchColumnRowNames = [
+          '"country"."name"',
+          '"region"."name"', '"region"."shortName"'
+        ];
+        let innerQuery = '';
+
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          innerQuery = innerQuery + '(SELECT DISTINCT "region"."id" WHERE "region"."isRestricted" = false AND (';
+          const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
+          console.log("searchWord");
+          console.log(searchWord);
+          for (let columnName of searchColumnRowNames) {
+            innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
+          }
+          innerQuery = innerQuery.slice(0, -4) + `)`;
+          console.log("innerQuery");
+          console.log(innerQuery);
+          if (i != arrayOfSearchValues.length - 1) {
+            innerQuery = innerQuery + 'AND  "region"."id" IN ';
+          }
+        }
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          innerQuery = innerQuery + ')';
+        }
+
+        console.log("innerQueryFinal");
+        console.log(innerQuery);
+
+
+        searchParams.push({
+          id: {
+            [Op.in]: Sequelize.literal(innerQuery),
+          }
+        });
+        whereParams = { ...whereParams, [Op.or]: searchParams };
+      }
+
+    }
+
+    //filter
+
+    if (addressFilter.regions && addressFilter.regions.length > 0) {
+      whereParams.id = addressFilter.regions[0];
+    } else
+      if (addressFilter.countries && addressFilter.countries.length > 0) {
+        whereParams['$country.id$'] = addressFilter.countries[0];
+      }
+
+    const length = await Region.count({
+      where: whereParams,
+      include: [
+        {
+          model: Country,
+          attributes: [],
+        },
+      ],
+
     });
-    // let result = regions.map(item => item.name);
-    // let result = regions;
-    /*result.sort((a, b) => (b === "Москва город") - (a === "Москва город"));
 
-       console.log("countries");
-           console.log(JSON.stringify(countries)); */
+    let regions = await Region.findAll({
+      offset: pageSize * (currentPage - 1),
+      limit: pageSize,
+      attributes: ['id', 'name', 'shortName',],
+      order: [orderParams],
+      raw: true,
+      where: whereParams,
+      include: [
+        {
+          model: Country,
+          attributes: ['id', 'name'],
+        },
+      ],
+    });
+    console.log("regions");
+    console.log(regions);
 
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: regions, length: length } });
   } catch (e) {
@@ -389,49 +667,200 @@ router.post("/get-regions", async (req, res) => {
 });
 
 router.post("/get-districts", async (req, res) => {
+  console.log("districts");
+  const searchValue = req.body.data.filter.searchValue.trim();
+  const exactMatch = req.body.data.filter.exactMatch;
+  const sortParameters = req.body.data.filter.sortParameters;
+  const addressFilter = req.body.data.filter.addressFilter;
+  const pageSize = req.body.data.pageSize;
+  const currentPage = req.body.data.currentPage;
   try {
-    //const regions = await Region.findAll({ where: { name: { [Op.in]: req.body.data } } });
-    const districtsIds = req.body.data.map(item => item.id);
-    const districts = await District.findAll({
-      where: {
-        isRestricted: false,
-        regionId: { [Op.in]: districtsIds }
-      },
-      attributes: ['id', 'name', 'regionId'],
-      order: [['name', 'ASC']],
-      raw: true,
-      /*       include: [
-              {
-                model: Region,
-                where: { id: { [Op.in]: req.body.data } },
-                attributes: [],
-                required: true,
-              },
-            ], */
+
+    //sorting
+    //form order: {active: [name, shortName, district, region, country], direction: [desc, asc]}
+    let orderParams = [];
+    let orderByName;
+    let orderDirection;
+    let orderModel1;
+    let orderModel2;
+
+    if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
+      orderByName = 'name';
+      orderDirection = 'ASC';
+    } else {
+      orderDirection = sortParameters.direction.toUpperCase();
+
+      if (sortParameters.active == 'name' || sortParameters.active == 'shortName') {
+        orderByName = sortParameters.active;
+      } else {
+        orderByName = 'name';
+        if (sortParameters.active == 'region') {
+          orderModel1 = { model: Region, as: 'region' };
+        }
+        if (sortParameters.active == 'country') {
+          orderModel1 = { model: Region, as: 'region' };
+          orderModel2 = { model: Country, as: 'country' };
+        }
+      }
+    }
+
+    if (orderModel1) orderParams.push(orderModel1);
+    if (orderModel2) orderParams.push(orderModel2);
+    orderParams.push(orderByName);
+    orderParams.push(orderDirection);
+
+    console.log("orderParams");
+    console.log(orderParams);
+
+    //search
+
+    let whereParams = {};
+    //let searchWhereParams = {};
+    let searchParams = [];
+    whereParams.isRestricted = false;
+    if (searchValue) {
+      const searchColumnNames = ['$region.country.name$', '$region.name$', '$region.shortName$', 'name', 'shortName'];
+      let arrayOfSearchValues = searchValue.split(" ");
+      console.log('arrayOfSearchValues');
+      console.log(arrayOfSearchValues);
+      if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
+        let opLikeValues = [];
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          opLikeValues.push({ [Op.iLike]: '%' + arrayOfSearchValues[i] + '%' });
+        }
+        for (let columnName of searchColumnNames) {
+          searchParams.push({
+            [columnName]: {
+              [Op.or]: opLikeValues
+            }
+          });
+          console.log("opLikeValues");
+          console.log(opLikeValues);
+        }
+        whereParams = { ...whereParams, [Op.or]: searchParams };
+        console.log("whereParams");
+        console.log(whereParams);
+      } else {
+        //all search words in one column
+        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
+
+                for (let columnName of searchColumnNames) {
+                  searchParams.push({
+                    [columnName]: opLikeValues
+                  });
+                  console.log("opLikeValues");
+                  console.log(opLikeValues);
+                }
+
+                whereParams = { ...whereParams, [Op.or]: searchParams }; */
+
+        //search words in different columns
+        const searchColumnRowNames = [
+          '"region->country"."name"',
+          '"region"."name"', '"region"."shortName"',
+          '"district"."name"', '"district"."shortName"'
+        ];
+        let innerQuery = '';
+
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          innerQuery = innerQuery + '(SELECT DISTINCT "district"."id" WHERE "district"."isRestricted" = false AND (';
+          const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
+          console.log("searchWord");
+          console.log(searchWord);
+          for (let columnName of searchColumnRowNames) {
+            innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
+          }
+          innerQuery = innerQuery.slice(0, -4) + `)`;
+          console.log("innerQuery");
+          console.log(innerQuery);
+          if (i != arrayOfSearchValues.length - 1) {
+            innerQuery = innerQuery + 'AND  "district"."id" IN ';
+          }
+        }
+        for (let i = 0; i < arrayOfSearchValues.length; i++) {
+          innerQuery = innerQuery + ')';
+        }
+
+        console.log("innerQueryFinal");
+        console.log(innerQuery);
+
+
+
+        searchParams.push({
+          id: {
+            [Op.in]: Sequelize.literal(innerQuery),
+          }
+        });
+        whereParams = { ...whereParams, [Op.or]: searchParams };
+      }
+
+    }
+
+    //filter
+    if (addressFilter.districts && addressFilter.districts.length > 0) {
+      whereParams.id = addressFilter.districts[0];
+    } else
+      if (addressFilter.regions && addressFilter.regions.length > 0) {
+        whereParams['$region.id$'] = addressFilter.regions[0];
+      } else
+        if (addressFilter.countries && addressFilter.countries.length > 0) {
+          whereParams['$region.country.id$'] = addressFilter.countries[0];
+        }
+
+
+
+    const length = await District.count({
+      where: whereParams,
+
+      include: [
+        {
+          model: Region,
+          attributes: [],
+          include: [
+            {
+              model: Country,
+              attributes: [],
+            },
+          ],
+        },
+      ],
     });
 
-    /*     let districts = [];
-        for (let region of regions) {
-          const partOfDistricts = await region.getDistricts({
-            where: { isRestricted: false, },
-            attributes: ['name'],
-            order: [['name', 'ASC']],
-            raw: true
-          });
-          console.log('partOfDistricts');
-          console.log(partOfDistricts);
-          districts = [...districts, ...partOfDistricts];
-          console.log('districts');
-          console.log(districts);
-        }*/
-    //let result = districts;//.map(item => item.name);
-    //result.sort((a, b) => (b - a));
+    let districts = await District.findAll({
+      offset: pageSize * (currentPage - 1),
+      limit: pageSize,
+
+      attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
+      order: [orderParams],
+      raw: true,
+      where: whereParams,
+
+      include: [
+        {
+          model: Region,
+          attributes: ['id', 'name'],
+          include: [
+            {
+              model: Country,
+              attributes: ['id', 'name'],
+            },
+          ],
+        },
+      ],
+
+    });
+    //console.log("districts");
+    //console.log(districts);
+
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: districts, length: length } });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
   }
 });
+
+
+
 
 router.post("/get-localities", async (req, res) => {
   console.log("localities");
@@ -762,7 +1191,6 @@ router.post("/populate-region", async (req, res) => {
     const regions = req.body.data;
     for (let region of regions) {
       const newRegion = await Region.create({
-        code: region.code,
         name: region.name,
         shortName: region.shortName,
       });
@@ -880,7 +1308,7 @@ router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
 
-    const foundToponymId = await Address.findOne({
+    let foundToponymId = await Address.findOne({
       where: {
         isRestricted: false,
         [toponymType + 'Id']: toponymId,
@@ -891,9 +1319,44 @@ router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
     console.log("foundToponymId");
     console.log(foundToponymId);
 
+    if (!foundToponymId) {
+      if (toponymType == 'country') {
+        foundToponymId = await Region.findOne({
+          where: {
+            isRestricted: false,
+            [toponymType + 'Id']: toponymId,
+          },
+          attributes: ['id'],
+        }
+        );
+      }
+
+      if (toponymType == 'region') {
+        foundToponymId = await District.findOne({
+          where: {
+            isRestricted: false,
+            [toponymType + 'Id']: toponymId,
+          },
+          attributes: ['id'],
+        }
+        );
+      }
+
+      if (toponymType == 'district') {
+        foundToponymId = await Locality.findOne({
+          where: {
+            isRestricted: false,
+            [toponymType + 'Id']: toponymId,
+          },
+          attributes: ['id'],
+        }
+        );
+      }
+    }
+
     //TODO: find does this toponym has houses(?)
 
-    res.status(200).send({ msg: "Топоним может быть удален.", data: !foundToponymId });
+    res.status(200).send({ msg: "Проверена возможность блокировки топонима.", data: !foundToponymId });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -915,9 +1378,44 @@ router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
     console.log("foundToponymId");
     console.log(foundToponymId);
 
+    if (!foundToponymId) {
+      if (toponymType == 'country') {
+        foundToponymId = await Region.findOne({
+          where: {
+            isRestricted: false,
+            [toponymType + 'Id']: toponymId,
+          },
+          attributes: ['id'],
+        }
+        );
+      }
+
+      if (toponymType == 'region') {
+        foundToponymId = await District.findOne({
+          where: {
+            isRestricted: false,
+            [toponymType + 'Id']: toponymId,
+          },
+          attributes: ['id'],
+        }
+        );
+      }
+
+      if (toponymType == 'district') {
+        foundToponymId = await Locality.findOne({
+          where: {
+            isRestricted: false,
+            [toponymType + 'Id']: toponymId,
+          },
+          attributes: ['id'],
+        }
+        );
+      }
+    }
+
     //TODO: find does this toponym has houses(?)
 
-    res.status(200).send({ msg: "Топоним может быть удален.", data: !foundToponymId });
+    res.status(200).send({ msg: "Проверена возможность удаления топонима.", data: !foundToponymId });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);

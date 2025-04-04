@@ -12,14 +12,6 @@ const Region = sequelize.define('region', {
     allowNull: false,
     primaryKey: true
   },
-  code: {
-    type: DataTypes.STRING(4),
-    unique: true,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-    }
-  },
   name: {
     type: DataTypes.STRING,
     unique: true,

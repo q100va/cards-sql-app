@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AbstractControl, FormGroup } from '@angular/forms';
 import { MessageService } from 'primeng/api';
+import { GeographyLevels } from '../interfaces/types';
 
 @Injectable({
   providedIn: 'root',
@@ -38,6 +39,30 @@ export class AddressService {
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/get-localities', {
+      data: {
+        filter: filter,
+        pageSize: pageSize,
+        currentPage: currentPage,
+      },
+    });
+  }
+
+  getToponyms(
+    type: GeographyLevels,
+    filter: any,
+    pageSize: number,
+    currentPage: number
+  ): Observable<any> {
+    const toponymsTypes = {
+      locality: 'localities',
+      district: 'districts',
+      region: 'regions',
+      country: 'countries'
+    }
+    const BACKEND_URL = environment.apiUrl;
+    console.log(BACKEND_URL + '/api/addresses/get-' + toponymsTypes[type])
+
+    return this.http.post(BACKEND_URL + '/api/addresses/get-' + toponymsTypes[type], {
       data: {
         filter: filter,
         pageSize: pageSize,
@@ -108,6 +133,8 @@ export class AddressService {
     name: string,
     id: number | null,
     shortName: string,
+    postName: string,
+    shortPostName: string,
     isFederalCity: boolean,
     isCapitalOfRegion: boolean,
     isCapitalOfDistrict: boolean,
@@ -122,6 +149,8 @@ export class AddressService {
         name: name,
         id: id,
         shortName: shortName,
+        postName: postName,
+        shortPostName: shortPostName,
         addressFilter: addressFilter,
         isFederalCity: isFederalCity,
         isCapitalOfRegion: isCapitalOfRegion,

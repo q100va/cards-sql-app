@@ -14,6 +14,9 @@ import { AddressService } from '../../services/address.service';
 import { MessageService } from 'primeng/api';
 import { EMPTY, Observable, catchError, concatMap, of, tap } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
+import { AddressFilterParams } from '../../interfaces/address-filter-params';
+import { GeographyLevels } from '../../interfaces/types';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-address-filter',
@@ -34,26 +37,8 @@ export class AddressFilterComponent {
   private cdr = inject(ChangeDetectorRef);
   private addressService = inject(AddressService);
 
-  params = input.required<{
-    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
-    multiple: boolean;
-    // defaultValue: boolean;
-    cols: string;
-    gutterSize: string;
-    rowHeight: string;
-    type?: string;
-    isShowRegion: boolean;
-    isShowDistrict: boolean;
-    isShowLocality: boolean;
-    readonly?: boolean;
-    class: string;
-  }>();
-  defaultAddressParams = input.required<{
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  }>();
+  params = input.required<AddressFilterParams>();
+  defaultAddressParams = input.required<DefaultAddressParams>();
 
   toponyms: {
     countriesList: { id: number; name: string }[] | [];
@@ -87,6 +72,12 @@ export class AddressFilterComponent {
   constructor() {}
   //TODO: spinner?
   ngOnInit() {
+    console.log(
+      'params in address-filter',
+      this.params()
+    );
+
+
     console.log(
       'defaultAddressParams in address-filter',
       this.defaultAddressParams()
@@ -344,12 +335,7 @@ export class AddressFilterComponent {
 
   onChangeMode(
     mode: string,
-    data: {
-      localityId: number | null;
-      districtId: number | null;
-      regionId: number | null;
-      countryId: number | null;
-    } | null
+    data: DefaultAddressParams | null
   ) {
     if (mode == 'edit') {
       this.form.get('country')?.enable();
@@ -445,7 +431,7 @@ export class AddressFilterComponent {
   }
 
   private setDefaultFormValue(
-    key: 'country' | 'region' | 'district' | 'locality'
+    key: GeographyLevels
   ) {
     const toponymType:
       | 'countryId'

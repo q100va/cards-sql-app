@@ -42,6 +42,8 @@ import { UserService } from '../../../services/user.service';
 import { Router } from '@angular/router';
 import { RoleService } from '../../../services/role.service';
 import { AddressFilterComponent } from '../../address-filter/address-filter.component';
+import { AddressFilterParams } from '../../../interfaces/address-filter-params';
+import { DefaultAddressParams } from '../../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-create-user-dialog',
@@ -78,24 +80,13 @@ export class CreateUserDialogComponent implements OnInit {
   private messageService = inject(MessageService);
   private router = inject(Router);
 
-  params: {
-    source: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
-    multiple: boolean;
-    cols: string;
-    gutterSize: string;
-    rowHeight: string;
-    type?: string | undefined;
-    isShowRegion: boolean;
-    isShowDistrict: boolean;
-    isShowLocality: boolean;
-    readonly?: boolean | undefined;
-    class: string;
-  } = {
+  params: AddressFilterParams = {
     source: 'userCard',
     multiple: false,
     cols: '2',
     gutterSize: '16px',
     rowHeight: '76px',
+    isShowCountry: true,
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
@@ -114,12 +105,7 @@ export class CreateUserDialogComponent implements OnInit {
     localities: null,
   });
 
-  defaultAddressParams: {
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  } = {
+  defaultAddressParams: DefaultAddressParams = {
     localityId: null,
     districtId: null,
     regionId: null,
