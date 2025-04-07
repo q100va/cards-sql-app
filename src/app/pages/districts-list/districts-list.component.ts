@@ -3,6 +3,7 @@ import { ToponymsListComponent } from '../../shared/toponyms-list/toponyms-list.
 import { ToponymProps } from '../../interfaces/toponym-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../interfaces/types';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-districts-list',
@@ -33,6 +34,7 @@ export class DistrictsListComponent {
     defaultRegionId: null,
     defaultDistrictId: null,
     defaultLocalityId: null,
+    queryParams: null,
     creationTitle: 'Новый р-н/округ',
     viewTitle: 'Район/округ',
     searchPlaceHolder: 'Белогорский',
@@ -44,15 +46,7 @@ export class DistrictsListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.defaultCountryId = params['countryId']
-        ? params['countryId']
-        : this.props.defaultCountryId;
-      this.props.defaultRegionId = params['regionId']
-        ? params['regionId']
-        : this.props.defaultRegionId;
-      this.props.defaultDistrictId = params['districtId']
-        ? params['districtId']
-        : this.props.defaultDistrictId;
+      this.props.queryParams = params as DefaultAddressParams | null;
     });
   }
 }

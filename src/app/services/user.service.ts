@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { User } from '../interfaces/user';
 import { environment } from '../../environments/environment';
+import { AddressFilter } from '../interfaces/address-filter';
 
 @Injectable({
   providedIn: 'root',
@@ -43,9 +44,7 @@ export class UserService {
       filter: {
         [key: string]: string[] | Date[] | null | { [key: string]: string }[];
       };
-      addressFilter: {
-        [key: string]: number[] | null | [];
-      };
+      addressFilter: AddressFilter;
       strongAddressFilter: boolean;
       strongContactFilter: boolean;
     },

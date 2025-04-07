@@ -29,6 +29,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { AddressFilterParams } from '../../../interfaces/address-filter-params';
 import { GeographyLevels } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
+import { AddressFilter } from '../../../interfaces/address-filter';
 
 @Component({
   selector: 'app-toponym-details-dialog',
@@ -135,12 +136,7 @@ export class ToponymDetailsDialogComponent {
     }),
   });
 
-  addressFilter = signal<{
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }>({
+  addressFilter = signal<AddressFilter>({
     countries: null,
     regions: null,
     districts: null,
@@ -176,12 +172,7 @@ export class ToponymDetailsDialogComponent {
     }
   }
 
-  onChangeAddressFilter(event: {
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }) {
+  onChangeAddressFilter(event: AddressFilter) {
     if (this.data.operation == 'create' || this.isEditMode) {
       this.addressFilter.set(event);
       if (

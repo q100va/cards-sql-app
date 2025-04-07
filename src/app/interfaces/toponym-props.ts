@@ -1,3 +1,5 @@
+import { DefaultAddressParams } from "./default-address-params";
+
 export interface ToponymProps {
   title: string;
   displayedColumns: (
@@ -19,6 +21,7 @@ export interface ToponymProps {
   defaultRegionId: number | null;
   defaultDistrictId: number | null;
   defaultLocalityId: number | null;
+  queryParams: DefaultAddressParams | null;
   creationTitle: string;
   viewTitle: string;
   searchPlaceHolder: string;

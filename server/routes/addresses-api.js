@@ -122,7 +122,7 @@ router.post("/check-toponym-name", async (req, res) => {
           ],
         });
     }
-    res.status(200).send({ msg: "Данные получены.", data: duplicate });
+    res.status(200).send({ msg: "Данные проверены.", data: duplicate });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -394,7 +394,6 @@ router.post("/get-countries", async (req, res) => {
     //search
 
     let whereParams = {};
-    //let searchWhereParams = {};
     let searchParams = [];
     whereParams.isRestricted = false;
     if (searchValue) {
@@ -420,20 +419,6 @@ router.post("/get-countries", async (req, res) => {
         console.log("whereParams");
         console.log(whereParams);
       } else {
-        //all search words in one column
-        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
-
-                for (let columnName of searchColumnNames) {
-                  searchParams.push({
-                    [columnName]: opLikeValues
-                  });
-                  console.log("opLikeValues");
-                  console.log(opLikeValues);
-                }
-
-                whereParams = { ...whereParams, [Op.or]: searchParams }; */
-
-        //search words in different columns
         const searchColumnRowNames = [
           '"country"."name"'
         ];
@@ -607,11 +592,8 @@ router.post("/get-regions", async (req, res) => {
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
           innerQuery = innerQuery + ')';
         }
-
         console.log("innerQueryFinal");
         console.log(innerQuery);
-
-
         searchParams.push({
           id: {
             [Op.in]: Sequelize.literal(innerQuery),
@@ -619,7 +601,6 @@ router.post("/get-regions", async (req, res) => {
         });
         whereParams = { ...whereParams, [Op.or]: searchParams };
       }
-
     }
 
     //filter
@@ -639,7 +620,6 @@ router.post("/get-regions", async (req, res) => {
           attributes: [],
         },
       ],
-
     });
 
     let regions = await Region.findAll({
@@ -784,8 +764,6 @@ router.post("/get-districts", async (req, res) => {
         console.log("innerQueryFinal");
         console.log(innerQuery);
 
-
-
         searchParams.push({
           id: {
             [Op.in]: Sequelize.literal(innerQuery),
@@ -793,7 +771,6 @@ router.post("/get-districts", async (req, res) => {
         });
         whereParams = { ...whereParams, [Op.or]: searchParams };
       }
-
     }
 
     //filter
@@ -806,8 +783,6 @@ router.post("/get-districts", async (req, res) => {
         if (addressFilter.countries && addressFilter.countries.length > 0) {
           whereParams['$region.country.id$'] = addressFilter.countries[0];
         }
-
-
 
     const length = await District.count({
       where: whereParams,
@@ -858,8 +833,6 @@ router.post("/get-districts", async (req, res) => {
     res.status(err.statusCode).send(err.message);
   }
 });
-
-
 
 
 router.post("/get-localities", async (req, res) => {
@@ -1190,19 +1163,16 @@ router.post("/populate-region", async (req, res) => {
   try {
     const regions = req.body.data;
     for (let region of regions) {
-      const newRegion = await Region.create({
-        name: region.name,
-        shortName: region.shortName,
-      });
+
       const country = await Country.findOne({ where: { name: region.country } });
       if (country === null) {
-        await Region.destroy({
-          where: {
-            id: newRegion.id,
-          },
-        });
-        throw new CustomError(`Страна "${region.country}" не найдена в базе данных! Ввод прекращен.`, 422);
+
+        throw new CustomError(`Страна "${region.country}" не найдена в базе данных! Ввод прекращен.`, 507);
       } else {
+        const newRegion = await Region.create({
+          name: region.name,
+          shortName: region.shortName,
+        });
         await newRegion.setCountry(country);
       }
     }
@@ -1219,31 +1189,48 @@ router.post("/populate-district", async (req, res) => {
     /*     console.log("districts");
         console.log(districts); */
     for (let district of districts) {
+      //TODO: ПРОТЕСТИРОВАТЬ в разных регионах могут быть одинаковые названия округов/районов, проверять имя в пределах одного региона
+
       let districtData;
       try {
         districtData = correctDistrictName(district.name, district.postName, district.postNameType);
       } catch (e) {
-        throw new CustomError(e.message, 422);
+        throw new CustomError(e.message, 507);
       }
       console.log("districtData");
       console.log(districtData);
-      //TODO: в разных регионах могут быть одинаковые названия округов/районов
-      const newDistrict = await District.create({
-        name: districtData.name,
-        shortName: districtData.shortName,
-        postName: districtData.postName,
-        shortPostName: districtData.shortPostName,
-      });
+
       const region = await Region.findOne({ where: { name: district.region } });
       if (region === null) {
-        await District.destroy({
-          where: {
-            id: newDistrict.id,
-          },
-        });
-        throw new CustomError(`Регион "${district.region}" не найден в базе данных! Ввод прекращен.`, 422);
+        throw new CustomError(`Регион "${district.region}" не найден в базе данных! Ввод прекращен.`, 507);
       } else {
-        await newDistrict.setRegion(region);
+        const duplicate = await District.findOne(
+          {
+            where: {
+              name: districtData.name,
+              '$region.id$': region.id,
+              isRestricted: false,
+            },
+            attributes: ['id'],
+            raw: true,
+            include: [
+              {
+                model: Region,
+                attributes: [],
+              },
+            ],
+          });
+        if (duplicate) {
+          throw new CustomError(`Топоним с названием '${districtData.name}' уже существует в регионе '${region.name}'! Если это не ошибка, обратитесь к администратору.`, 507);
+        } else {
+          const newDistrict = await District.create({
+            name: districtData.name,
+            shortName: districtData.shortName,
+            postName: districtData.postName,
+            shortPostName: districtData.shortPostName,
+          });
+          await newDistrict.setRegion(region);
+        }
       }
     }
     res.status(200).send({ msg: "Таблица успешно пополнена." });
@@ -1264,19 +1251,10 @@ router.post("/populate-locality", async (req, res) => {
       try {
         localityData = correctLocalityName(locality.name, locality.type, locality.district);
       } catch (e) {
-        throw new CustomError(e.message, 422);
+        throw new CustomError(e.message, 507);
       }
       console.log("localityData");
       console.log(localityData);
-      const newLocality = await Locality.create({
-        name: localityData.name,
-        shortName: localityData.shortName,
-        isCapitalOfDistrict: locality.isCapitalOfDistrict,
-        isCapitalOfRegion: locality.isCapitalOfRegion,
-        isFederalCity: locality.isFederalCity,
-      });
-      //TODO: в разных регионах могут быть одинаковые названия округов/районов -TEST
-
       const district = await District.findOne(
         {
           where: { name: localityData.districtFullName, isRestricted: false, '$region.name$': locality.region },
@@ -1289,9 +1267,38 @@ router.post("/populate-locality", async (req, res) => {
         }
       );
       if (district === null) {
-        throw new CustomError(`"${locality.district}" не найден в базе данных! Ввод прекращен.`, 422);
+        throw new CustomError(`"${locality.district}" не найден в базе данных! Ввод прекращен.`, 507);
       } else {
-        await newLocality.setDistrict(district);
+      //TODO: ПРОТЕСТИРОВАТЬ проверять имя населенного пункта в пределах одного округа/района
+        const duplicate = await Locality.findOne(
+          {
+            where: {
+              name: localityData.name,
+              '$district.id$': district.id,
+              isRestricted: false,
+            },
+            attributes: ['id'],
+            raw: true,
+            include: [
+              {
+                model: District,
+                attributes: [],
+              },
+            ],
+          });
+        if (duplicate) {
+          throw new CustomError(`Топоним с названием '${localityData.name}' уже существует в кластере '${district.name}'! Если это не ошибка, обратитесь к администратору.`, 507);
+        } else {
+
+          const newLocality = await Locality.create({
+            name: localityData.name,
+            shortName: localityData.shortName,
+            isCapitalOfDistrict: locality.isCapitalOfDistrict,
+            isCapitalOfRegion: locality.isCapitalOfRegion,
+            isFederalCity: locality.isFederalCity,
+          });
+          await newLocality.setDistrict(district);
+        }
       }
     }
     res.status(200).send({ msg: "Таблица успешно пополнена." });
@@ -1489,11 +1496,5 @@ function setToponym(toponym) {
   }
   return Toponym;
 }
-
-
-
-
-
-
 
 export default router;

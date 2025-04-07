@@ -44,6 +44,7 @@ import { RoleService } from '../../../services/role.service';
 import { AddressFilterComponent } from '../../address-filter/address-filter.component';
 import { AddressFilterParams } from '../../../interfaces/address-filter-params';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
+import { AddressFilter } from '../../../interfaces/address-filter';
 
 @Component({
   selector: 'app-create-user-dialog',
@@ -93,12 +94,7 @@ export class CreateUserDialogComponent implements OnInit {
     class: "none",
   };
 
-  addressFilter = signal<{
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }>({
+  addressFilter = signal<AddressFilter>({
     countries: null,
     regions: null,
     districts: null,

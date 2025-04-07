@@ -22,6 +22,7 @@ export class CountriesListComponent {
     defaultRegionId: null,
     defaultDistrictId: null,
     defaultLocalityId: null,
+    queryParams: null,
     filename: 'шаблон-страны.xlsx',
     creationTitle: 'Новая страна',
     viewTitle: 'Страна',
@@ -30,6 +31,7 @@ export class CountriesListComponent {
     shortNamePlaceHolder: '',
     postNamePlaceHolder: '',
     shortPostNamePlaceHolder: '',
+
   };
 
 

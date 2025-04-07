@@ -3,6 +3,7 @@ import { ToponymsListComponent } from '../../shared/toponyms-list/toponyms-list.
 import { ToponymProps } from '../../interfaces/toponym-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../interfaces/types';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-regions-list',
@@ -24,6 +25,7 @@ export class RegionsListComponent {
     defaultRegionId: null,
     defaultDistrictId: null,
     defaultLocalityId: null,
+    queryParams: null,
     filename: 'шаблон-регионы.xlsx',
     creationTitle: 'Новый регион',
     viewTitle: 'Регион',
@@ -36,12 +38,7 @@ export class RegionsListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.defaultCountryId = params['countryId']
-        ? params['countryId']
-        : this.props.defaultCountryId;
-      this.props.defaultRegionId = params['regionId']
-        ? params['regionId']
-        : this.props.defaultRegionId;
+      this.props.queryParams = params as DefaultAddressParams | null;
     });
   }
 }

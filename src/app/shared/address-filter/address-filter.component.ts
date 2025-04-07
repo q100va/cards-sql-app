@@ -17,6 +17,7 @@ import { ChangeDetectorRef } from '@angular/core';
 import { AddressFilterParams } from '../../interfaces/address-filter-params';
 import { GeographyLevels } from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { AddressFilter } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-address-filter',
@@ -52,12 +53,7 @@ export class AddressFilterComponent {
     localitiesList: [],
   };
 
-  addressFilter = output<{
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }>();
+  addressFilter = output<AddressFilter>();
   addressFilterBadgeValue = output<number>();
   addressString = output<string>();
   goToFirstPage = output<void>();
@@ -258,12 +254,7 @@ export class AddressFilterComponent {
     this.emitAddressData();
     return EMPTY;
   }
-  createAddressString(addressData: {
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }) {
+  createAddressString(addressData: AddressFilter) {
     let addressString = '';
     for (let key of this.objectKeys(addressData)) {
       if (

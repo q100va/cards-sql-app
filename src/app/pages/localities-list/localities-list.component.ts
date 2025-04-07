@@ -3,6 +3,7 @@ import { ToponymsListComponent } from '../../shared/toponyms-list/toponyms-list.
 import { ToponymProps } from '../../interfaces/toponym-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../interfaces/types';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-localities-list',
@@ -31,6 +32,7 @@ export class LocalitiesListComponent {
     defaultRegionId: null,
     defaultDistrictId: null,
     defaultLocalityId: null,
+    queryParams: null,
     filename: 'шаблон-населенные-пункты.xlsx',
     creationTitle: 'Новый насел. пункт',
     viewTitle: 'Населенный пункт',
@@ -43,18 +45,7 @@ export class LocalitiesListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.defaultCountryId = params['countryId']
-        ? params['countryId']
-        : this.props.defaultCountryId;
-      this.props.defaultRegionId = params['regionId']
-        ? params['regionId']
-        : this.props.defaultRegionId;
-      this.props.defaultDistrictId = params['districtId']
-        ? params['districtId']
-        : this.props.defaultDistrictId;
-              this.props.defaultLocalityId = params['localityId']
-        ? params['localityId']
-        : this.props.defaultLocalityId;
+      this.props.queryParams = params as DefaultAddressParams | null;
     });
   }
 }

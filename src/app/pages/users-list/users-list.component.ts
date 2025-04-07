@@ -50,7 +50,9 @@ import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
+import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { AddressFilter } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-users-list',
@@ -77,6 +79,7 @@ import { DefaultAddressParams } from '../../interfaces/default-address-params';
     ConfirmDialogModule,
     MatCheckboxModule,
     BlurOnClickDirective,
+    UserColumnsComponent
   ],
   providers: [
     MessageService,
@@ -257,6 +260,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
   notOnlyActual = signal<boolean>(false);
   exactMatch = signal<boolean>(false);
   searchValue = signal<string>('');
+  inputValue = '';
   sortParameters = signal<{
     active: string;
     direction: 'asc' | 'desc' | '';
@@ -274,9 +278,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     dateRestrictionRange: null,
   });
 
-  addressFilterValue = signal<{
-    [key: string]: number[] | null | [];
-  }>({
+  addressFilterValue = signal<AddressFilter>({
     countries: null,
     regions: null,
     districts: null,
@@ -640,6 +642,7 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     this.avoidDoubleRequest = true;
     this.paginator.firstPage();
     this.searchValue.set('');
+    this.inputValue = '';
     //this.avoidDoubleRequest = false;
     //this.getUsers();
   }
