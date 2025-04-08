@@ -1,15 +1,12 @@
 import {
-  AfterViewInit,
   Component,
-  OnInit,
   ViewChild,
   computed,
+  effect,
   inject,
-  model,
+  input,
   signal,
 } from '@angular/core';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import {
   MatPaginator,
   MatPaginatorModule,
@@ -17,94 +14,44 @@ import {
 } from '@angular/material/paginator';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatGridListModule } from '@angular/material/grid-list';
-import { MatDialog } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { User } from '../../interfaces/user';
+import { UserService } from '../../services/user.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry, MatIconModule } from '@angular/material/icon';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatDrawerMode, MatSidenavModule } from '@angular/material/sidenav';
-import { MatMenuModule } from '@angular/material/menu';
-import {
-  MatCheckboxChange,
-  MatCheckboxModule,
-} from '@angular/material/checkbox';
-import {
-  MatButtonToggle,
-  MatButtonToggleModule,
-} from '@angular/material/button-toggle';
-import { MatBadgeModule } from '@angular/material/badge';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { Toast } from 'primeng/toast';
-
-import { CreateUserDialogComponent } from '../../shared/dialogs/create-user-dialog/create-user-dialog.component';
-import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/cause-of-blocking-dialog/cause-of-blocking-dialog.component';
-import { UserService } from '../../services/user.service';
-import { User } from '../../interfaces/user';
-import { TableSettingsComponent } from '../../shared/table-settings/table-settings.component';
-import { TableFilterComponent } from '../../shared/table-filter/table-filter.component';
 import { DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
-import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
-import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
-import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { MatMenuModule } from '@angular/material/menu';
+import { ListBaseComponent } from '../../shared/list-base/list-base.component';
+import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 import { AddressFilter } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-users-list',
   imports: [
-    MatCardModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatListModule,
     MatTableModule,
     MatSortModule,
-    MatGridListModule,
     MatPaginatorModule,
     MatIconModule,
-    Toast,
-    MatSidenavModule,
-    FormsModule,
-    MatBadgeModule,
-    MatButtonToggleModule,
-    ReactiveFormsModule,
     MatMenuModule,
-    TableSettingsComponent,
-    TableFilterComponent,
-    ConfirmDialogModule,
-    MatCheckboxModule,
-    BlurOnClickDirective,
-    UserColumnsComponent
+    ListBaseComponent,
+    MatButtonModule
   ],
-  providers: [
-    MessageService,
-    ConfirmationService,
-    MessageService,
-    // { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
-  ],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
 })
-export class UsersListComponent implements OnInit, AfterViewInit {
-  //  private datePipe = inject(DatePipe);
-  private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private userService = inject(UserService);
-  readonly dialog = inject(MatDialog);
+export class UsersListComponent {
   dataSource!: MatTableDataSource<User>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(TableFilterComponent) tableFilterComponent!: TableFilterComponent;
 
-  settingsBadgeValue: number = 0;
-  filterBadgeValue: number = 0;
+  private userService = inject(UserService);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
+  readonly dialog = inject(MatDialog);
+
   users!: User[];
   length = signal<number>(0);
   currentPage = 1;
@@ -214,53 +161,50 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       columnFullName: 'Действия',
       isUnchangeable: false,
     },
-    /*     {
-      id: 9,
-      columnName: 'view',
-      columnFullName: 'Открыть',
-      isUnchangeable: false,
-    },
-    {
-      id: 10,
-      columnName: 'restrict',
-      columnFullName: 'Заблокировать/разблокировать',
-      isUnchangeable: false,
-    },
-    {
-      id: 11,
-      columnName: 'delete',
-      columnFullName: 'Удалить',
-      isUnchangeable: false,
-    }, */
   ];
   displayedColumns = this.implicitlyDisplayedColumns.map(
     (item) => item.columnName
   );
-  viewOptions = [
-    {
-      id: 'all',
-      name: 'Все пользователи',
-      initiallySelected: false,
-    },
-    {
-      id: 'only-active',
-      name: 'Только активные',
-      initiallySelected: true,
-    },
-    {
-      id: 'only-blocked',
-      name: 'Только заблокированные',
-      initiallySelected: false,
-    },
-  ];
-
   avoidDoubleRequest = false;
-
-  selectedViewOptionId = signal<string>('only-active');
-  notOnlyActual = signal<boolean>(false);
-  exactMatch = signal<boolean>(false);
-  searchValue = signal<string>('');
-  inputValue = '';
+  filterParameters = signal<{
+    viewOption: string;
+    searchValue: string;
+    notOnlyActual: boolean;
+    exactMatch: boolean;
+    filter: {
+      [key: string]:
+        | string[]
+        | Date[]
+        | {
+            [key: string]: string;
+          }[]
+        | null;
+    };
+    addressFilter: AddressFilter;
+    strongAddressFilter: boolean;
+    strongContactFilter: boolean;
+  }>(
+    {
+      viewOption: 'only-active',
+      searchValue: '',
+      notOnlyActual: false,
+      exactMatch: false,
+      filter: {roles: null,
+        comment: null,
+        contactTypes: null,
+        dateBeginningRange: null,
+        dateRestrictionRange: null,
+      },
+      addressFilter: {
+        countries: null,
+        regions: null,
+        districts: null,
+        localities: null,
+      },
+      strongAddressFilter: false,
+      strongContactFilter: false,
+    }
+  );
   sortParameters = signal<{
     active: string;
     direction: 'asc' | 'desc' | '';
@@ -268,116 +212,21 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     active: '',
     direction: '',
   });
-  filterValue = signal<{
-    [key: string]: string[] | Date[] | null | { [key: string]: string }[];
-  }>({
-    roles: null,
-    comment: null,
-    contactTypes: null,
-    dateBeginningRange: null,
-    dateRestrictionRange: null,
-  });
-
-  addressFilterValue = signal<AddressFilter>({
-    countries: null,
-    regions: null,
-    districts: null,
-    localities: null,
-  });
-
-  addressStringValue = signal<string>('');
-
-  strongAddressFilter = signal<boolean>(false);
-  strongContactFilter = signal<boolean>(false);
-
-  // const doubleCount: Signal<number> = computed(() => count() * 2);
 
   allFilterParameters = computed(() => {
-    //console.log('this.strongContactFilter()');
-    //console.log(this.strongContactFilter());
-    console.log('this.addressFilterValue()');
-    console.log(this.addressFilterValue());
-    return {
-      viewOption: this.selectedViewOptionId(),
-      searchValue: this.searchValue(),
-      notOnlyActual: this.notOnlyActual(),
-      exactMatch: this.exactMatch(),
-      filter: this.filterValue(),
-      addressFilter: this.addressFilterValue(),
-      sortParameters: this.sortParameters(),
-      strongAddressFilter: this.strongAddressFilter(),
-      strongContactFilter: this.strongContactFilter(),
-    };
-  });
-  /*     result = computed(() => {
-      console.log('result computed');
-    this.getUsers();
-    return this.allFilterParameters();
-  }); */
-
-  filterString = computed(() => {
-    // console.log('filterString computed');
-    let filterString = '';
-    let viewOption = this.viewOptions.find(
-      // (item) => item.id == this.selectedViewOptionId()
-      (item) => item.id == this.allFilterParameters().viewOption
-    )?.name;
-    filterString = filterString + viewOption + ', ';
-    filterString =
-      filterString +
-      (this.allFilterParameters().searchValue
-        ? this.allFilterParameters().searchValue + ', '
-        : '');
-    let filterData = this.allFilterParameters().filter;
-    for (let key of this.objectKeys(filterData)) {
-      if (filterData[key] && filterData[key]!.length > 0) {
-        if (key == 'dateBeginningRange') {
-          filterString =
-            filterString +
-            'нач.: ' +
-            this.transformDate(filterData[key]![0] as Date) +
-            '-' +
-            this.transformDate(filterData[key]![1] as Date) +
-            ', ';
-        } else if (key == 'dateRestrictionRange') {
-          filterString =
-            filterString +
-            'блок.: ' +
-            this.transformDate(filterData[key]![0] as Date) +
-            '-' +
-            this.transformDate(filterData[key]![1] as Date) +
-            ', ';
-        } else {
-          for (let item of filterData[key]!) {
-            if (key == 'contactTypes') {
-              console.log('item');
-              console.log(item);
-              let contactType = item as {
-                [key: string]: string;
-              };
-              filterString = filterString + contactType['label'] + ', ';
-            } else filterString = filterString + item + ', ';
-          }
-        }
-      }
+    const sortParameters = {
+      sortParameters: this.sortParameters()
     }
-    filterString = filterString.slice(0, -2);
-
-    let result = this.addressStringValue()
-      ? filterString + ', ' + this.addressStringValue()
-      : filterString;
-    this.getUsers();
-    return result;
+    return Object.assign(this.filterParameters(), sortParameters);
   });
-
-  defaultAddressParams: DefaultAddressParams = {
-    localityId: null,
-    districtId: null,
-    regionId: null,
-    countryId: null,
-  };
 
   constructor() {
+
+    effect(() => {
+      console.log('allFilterParameters changed:', this.allFilterParameters());
+      this.getUsers(); // Automatically invoked whenever allFilterParameters changes
+    });
+
     const iconRegistry = inject(MatIconRegistry);
     const sanitizer = inject(DomSanitizer);
     for (let item of this.contactTypes) {
@@ -387,57 +236,36 @@ export class UsersListComponent implements OnInit, AfterViewInit {
       );
     }
 
-    this.route.queryParams.subscribe((params) => {
-      this.defaultAddressParams.localityId = params['localityId'];
-      this.defaultAddressParams.districtId = params['districtId'];
-      this.defaultAddressParams.regionId = params['regionId'];
-      this.defaultAddressParams.countryId = params['countryId'];
-    });
-    console.log('this.defaultAddressParams in user-list');
-    console.log(this.defaultAddressParams);
   }
 
-  ngOnInit() {
-    //console.log(navigation);
-  }
-  ngAfterViewInit() {}
-
-  objectKeys(obj: any): string[] {
-    return Object.keys(obj);
+  sortData(sort: Sort) {
+    // console.log('sort');
+    //console.log(sort);
+    this.sortParameters.set(sort);
+    //this.getUsers();
   }
 
-  onAddUserClick() {
-    const dialogRef = this.dialog.open(CreateUserDialogComponent, {
-      disableClose: true,
-      minWidth: '800px',
-      height: '80%',
-      autoFocus: 'dialog',
-      restoreFocus: true,
-    });
+  onChangedPage(pageData: PageEvent) {
+    /*  console.log('pageData');
+  console.log(pageData); */
+    this.currentPage = pageData.pageIndex + 1;
+    this.pageSize = pageData.pageSize;
+    if (!this.avoidDoubleRequest) {
+      //console.log('pageData');
+      this.getUsers();
+    } else {
+      this.avoidDoubleRequest = false;
+    }
+  }
 
-    dialogRef.afterClosed().subscribe((result) => {
-      //console.log('The dialog was closed');
-      if (result.userName) {
-        this.getUsers();
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Аккаунт пользователя ${result.userName} успешно создан!`,
-        });
-      }
-    });
+  goToFirstPage() {
+    if (this.currentPage != 1) this.avoidDoubleRequest = true;
+    this.paginator.firstPage();
   }
 
   changeColumnsView(selectedColumns: string[]) {
     this.displayedColumns = [...selectedColumns];
     //console.log(this.displayedColumns);
-  }
-  changeSettingsBadge(settingsBadgeValue: number) {
-    this.settingsBadgeValue = settingsBadgeValue;
-  }
-  changeFilterBadge(filterBadgeValue: number) {
-    this.filterBadgeValue = filterBadgeValue;
-    // console.log(this.filterBadgeValue);
   }
 
   onOpenUserCardClick(id: number) {
@@ -595,77 +423,9 @@ export class UsersListComponent implements OnInit, AfterViewInit {
     });
   }
 
-  onChangedPage(pageData: PageEvent) {
-    /*  console.log('pageData');
-    console.log(pageData); */
-    this.currentPage = pageData.pageIndex + 1;
-    this.pageSize = pageData.pageSize;
-    if (!this.avoidDoubleRequest) {
-      //console.log('pageData');
-      this.getUsers();
-    } else {
-      this.avoidDoubleRequest = false;
-    }
-
-    //this.postsService.getPosts(this.postsPerPage, this.currentPage);
-    // this.isShowAll = !this.isShowAll;
-  }
-
-  onChangeViewSelection(option: string) {
-    /*     chip.select();
-    console.log(chip.value); */
-    this.avoidDoubleRequest = true;
-    this.paginator.firstPage();
-    this.selectedViewOptionId.set(option);
-    // this.avoidDoubleRequest = false;
-    // this.getUsers();
-  }
-
-  sortData(sort: Sort) {
-    // console.log('sort');
-    //console.log(sort);
-    this.sortParameters.set(sort);
-    //this.getUsers();
-  }
-
-  searchUser(event: Event) {
-    let searchString = (event.target as HTMLInputElement).value;
-    searchString = searchString.trim().toLowerCase().replaceAll('ё', 'е');
-    this.avoidDoubleRequest = true;
-    this.paginator.firstPage();
-    this.searchValue.set(searchString);
-    // this.avoidDoubleRequest = false;
-    //this.getUsers();
-  }
-
-  onClearSearchClick() {
-    this.avoidDoubleRequest = true;
-    this.paginator.firstPage();
-    this.searchValue.set('');
-    this.inputValue = '';
-    //this.avoidDoubleRequest = false;
-    //this.getUsers();
-  }
-
-  onClearFilterClick() {
-    /*     console.log('pageData');
-          console.log(pageData);
- */
-    this.avoidDoubleRequest = true;
-    this.paginator.firstPage();
-    this.tableFilterComponent.clearForm();
-    // this.avoidDoubleRequest = false;
-    //this.getUsers();
-  }
-
-  goToFirstPage() {
-    if (this.currentPage != 1) this.avoidDoubleRequest = true;
-    this.paginator.firstPage();
-  }
-
   getUsers() {
-    // this.pageSize, this.currentPage
-    // console.log('WORK');
+    console.log('this.allFilterParameters()');
+    console.log(this.allFilterParameters());
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),
@@ -705,11 +465,11 @@ export class UsersListComponent implements OnInit, AfterViewInit {
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
           /*            console.log('this.paginator');
-        console.log(this.paginator);
-        console.log('this.sort');
-        console.log(this.sort);
-        console.log('this.length');
-        console.log(this.length()); */
+      console.log(this.paginator);
+      console.log('this.sort');
+      console.log(this.sort);
+      console.log('this.length');
+      console.log(this.length()); */
           //this.dataSource.paginator = this.paginator;
           this.dataSource.sort = this.sort;
         },
@@ -728,15 +488,6 @@ export class UsersListComponent implements OnInit, AfterViewInit {
         },
       });
   }
-  /*
-  changeDateFormat(date: string) {
-    //let newDate = new Date(date);
-    //let localDate = newDate.toLocaleDateString();
-    let localDate = this.transformDate(new Date(date));
-    console.log("localDate");
-    console.log(localDate);
-    return localDate;
-  } */
 
   transformDate(date: Date | string): string | null {
     return new DatePipe('ru').transform(date, 'dd.MM.yyyy');
