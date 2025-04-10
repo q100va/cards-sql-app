@@ -40,36 +40,42 @@ export class DistrictsListComponent {
     dialogProps: {
       creationTitle: 'Новый р-н/округ',
       viewTitle: 'Район/округ',
-      placeHolders: {
-        namePlaceHolder: 'Диксонский район',
-        shortNamePlaceHolder: 'Диксонский р-н',
-        postNamePlaceHolder: 'Диксонский район',
-        shortPostNamePlaceHolder: 'Диксонский р-н',
-      },
       controls: [
         {
           controlName: 'name',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Название',
+          placeHolder: 'Диксонский район',
         },
         {
           controlName: 'shortName',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Краткое название',
+          placeHolder: 'Диксонский р-н',
         },
         {
           controlName: 'postName',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Почтовое название',
+          placeHolder: 'Диксонский район',
         },
         {
           controlName: 'shortPostName',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Краткое почтовое название',
+          placeHolder: 'Диксонский р-н',
         },
       ],
       checkingName: 'name',
@@ -83,6 +89,13 @@ export class DistrictsListComponent {
           toponymProp: 'region.id',
         },
       ],
+      addressFilterParams: {
+        type: this.type,
+        isShowCountry: true,
+        isShowRegion: true,
+        isShowDistrict: false,
+        isShowLocality: false,
+      },
     },
   };
 

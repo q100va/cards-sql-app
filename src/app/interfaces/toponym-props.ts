@@ -1,5 +1,6 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { DefaultAddressParams } from './default-address-params';
+import { AddressFilterParams } from './address-filter-params';
 
 export interface Control {
   controlName: string;
@@ -8,20 +9,34 @@ export interface Control {
   validators?: ((
     control: AbstractControl<any, any>
   ) => ValidationErrors | null)[];
+  type: string;
+  label: string;
+  placeHolder?: string;
 }
 
 export interface DialogProps {
   creationTitle: string;
   viewTitle: string;
-  placeHolders: {
-    [key: string]: string;
-  };
   controls: Control[];
   checkingName: string;
   addressFilterControls?: {
     addressFilterProp: string;
     toponymProp: string;
   }[];
+  addressFilterParams: {
+    source?: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
+    multiple?: boolean;
+    cols?: string;
+    gutterSize?: string;
+    rowHeight?: string;
+    type: string;
+    isShowCountry: boolean;
+    isShowRegion: boolean;
+    isShowDistrict: boolean;
+    isShowLocality: boolean;
+    readonly?: boolean;
+    class?: 'none' | 'view-mode';
+  };
 }
 
 export interface ToponymProps {

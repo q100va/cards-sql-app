@@ -29,18 +29,25 @@ export class CountriesListComponent {
     dialogProps: {
       creationTitle: 'Новая страна',
       viewTitle: 'Страна',
-      placeHolders: {
-        namePlaceHolder: 'Лапландия',
-      },
       controls: [
         {
           controlName: 'name',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Название',
+          placeHolder: 'Лапландия',
         },
       ],
       checkingName: 'name',
+      addressFilterParams: {
+        type: this.type,
+        isShowCountry: false,
+        isShowRegion: false,
+        isShowDistrict: false,
+        isShowLocality: false,
+      },
     },
   };
 }

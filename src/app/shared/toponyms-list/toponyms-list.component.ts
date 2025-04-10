@@ -50,6 +50,7 @@ import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { Toponym } from '../../interfaces/toponym';
 import { DetailsDialogComponent } from '../dialogs/details-dialog/details-dialog.component';
+import { DialogData } from '../../interfaces/dialog-data';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -168,28 +169,21 @@ export class ToponymsListComponent {
   };
 
   dialogData = computed(() => {
+    this.toponymProps().dialogProps.addressFilterParams = {
+      ...this.toponymProps().dialogProps.addressFilterParams,
+      source: 'toponymCard',
+      multiple: false,
+      cols: '1',
+      gutterSize: '16px',
+      rowHeight: '76px',
+    }
     return {
+      ...this.toponymProps().dialogProps,
       type: this.type(),
-      isShowCountry: this.toponymProps().isShowCountry,
-      isShowRegion: this.toponymProps().isShowRegion,
-      isShowDistrict: this.toponymProps().isShowDistrict,
-      isShowLocality: this.toponymProps().isShowLocality,
-      specialField:
-        'isShow' + this.type()[0].toUpperCase() + this.type().substring(1),
-      creationTitle: this.toponymProps().dialogProps.creationTitle,
-      viewTitle: this.toponymProps().dialogProps.viewTitle,
-      placeHolders: this.toponymProps().dialogProps.placeHolders,
-/*       namePlaceHolder: this.toponymProps().dialogProps.placeHolders['namePlaceHolder'],
-      shortNamePlaceHolder: this.toponymProps().dialogProps.placeHolders['shortNamePlaceHolder'],
-      postNamePlaceHolder: this.toponymProps().dialogProps.placeHolders['postNamePlaceHolder'],
-      shortPostNamePlaceHolder: this.toponymProps().dialogProps.placeHolders['shortPostNamePlaceHolder'], */
-      controls: this.toponymProps().dialogProps.controls,
-      checkingName: this.toponymProps().dialogProps.checkingName,
-      addressFilterControls: this.toponymProps().dialogProps.addressFilterControls,
     };
   });
 
-   nameWays: Ways = {
+  nameWays: Ways = {
     locality: {
       district: 'district.name',
       region: 'district.region.name',
@@ -235,18 +229,25 @@ export class ToponymsListComponent {
       regionId: this.toponymProps().defaultRegionId,
       countryId: this.toponymProps().defaultCountryId,
     };
-    if(this.toponymProps().queryParams){
-
-      this.defaultAddressParams.countryId = this.toponymProps().queryParams!['countryId']
+    if (this.toponymProps().queryParams) {
+      this.defaultAddressParams.countryId = this.toponymProps().queryParams![
+        'countryId'
+      ]
         ? this.toponymProps().queryParams!['countryId']
         : this.defaultAddressParams.countryId;
-      this.defaultAddressParams.regionId = this.toponymProps().queryParams!['regionId']
+      this.defaultAddressParams.regionId = this.toponymProps().queryParams![
+        'regionId'
+      ]
         ? this.toponymProps().queryParams!['regionId']
         : this.defaultAddressParams.regionId;
-      this.defaultAddressParams.districtId = this.toponymProps().queryParams!['districtId']
+      this.defaultAddressParams.districtId = this.toponymProps().queryParams![
+        'districtId'
+      ]
         ? this.toponymProps().queryParams!['districtId']
         : this.defaultAddressParams.districtId;
-      this.defaultAddressParams.localityId = this.toponymProps().queryParams!['localityId']
+      this.defaultAddressParams.localityId = this.toponymProps().queryParams![
+        'localityId'
+      ]
         ? this.toponymProps().queryParams!['localityId']
         : this.defaultAddressParams.localityId;
     }
@@ -257,6 +258,8 @@ export class ToponymsListComponent {
   }
 
   onAddToponymClick() {
+    this.dialogData().addressFilterParams.readonly = false;
+    this.dialogData().addressFilterParams.class = 'none';
     const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
       data: {
@@ -268,7 +271,6 @@ export class ToponymsListComponent {
           regionId: null,
           countryId: null,
         },
-
       },
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
@@ -283,7 +285,7 @@ export class ToponymsListComponent {
     });
   }
 
-  formDefaultAddressParams(toponym: Toponym){
+  formDefaultAddressParams(toponym: Toponym) {
     const idWays: Ways = {
       locality: {
         locality: 'id',
@@ -315,24 +317,33 @@ export class ToponymsListComponent {
       regionId: number | null;
       districtId: number | null;
       localityId: number | null;
-    } = {countryId: null, regionId: null, districtId: null, localityId: null
-    };
-    result.countryId = toponym[idWays[this.type()].country as keyof Toponym] as number | null;
-    result.regionId = toponym[idWays[this.type()].region as keyof Toponym] as number | null;
-    result.districtId = toponym[idWays[this.type()].district as keyof Toponym] as number | null;
-    result.localityId = toponym[idWays[this.type()].locality as keyof Toponym] as number | null;
+    } = { countryId: null, regionId: null, districtId: null, localityId: null };
+    result.countryId = toponym[idWays[this.type()].country as keyof Toponym] as
+      | number
+      | null;
+    result.regionId = toponym[idWays[this.type()].region as keyof Toponym] as
+      | number
+      | null;
+    result.districtId = toponym[
+      idWays[this.type()].district as keyof Toponym
+    ] as number | null;
+    result.localityId = toponym[
+      idWays[this.type()].locality as keyof Toponym
+    ] as number | null;
     return result;
   }
 
   onOpenToponymCardClick(toponym: Toponym) {
+    this.dialogData().addressFilterParams.readonly = true;
+    this.dialogData().addressFilterParams.class = 'view-mode';
     const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
       data: {
         ...this.dialogData(),
         operation: 'view-edit',
         defaultAddressParams: this.formDefaultAddressParams(toponym),
-        toponym: toponym,
-      }
+        toponym: toponym
+      },
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
       this.getToponyms();
@@ -357,7 +368,7 @@ export class ToponymsListComponent {
     console.log('onClearSearchClick');
     this.goToFirstPage();
     this.searchValue.set('');
-    this.inputValue='';
+    this.inputValue = '';
   }
 
   onFileDownloadClick() {
@@ -381,7 +392,7 @@ export class ToponymsListComponent {
     });
   }
 
-  onOpenListClick(toponym: Toponym, way: string){
+  onOpenListClick(toponym: Toponym, way: string) {
     this.router.navigate([way], {
       queryParams: this.formDefaultAddressParams(toponym),
     });

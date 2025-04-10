@@ -32,22 +32,24 @@ export class RegionsListComponent {
     dialogProps: {
       creationTitle: 'Новый регион',
       viewTitle: 'Регион',
-      placeHolders: {
-        namePlaceHolder: 'Читинская область',
-        shortNamePlaceHolder: 'Читинская обл.',
-      },
       controls: [
         {
           controlName: 'name',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Название',
+          placeHolder: 'Читинская область',
         },
         {
           controlName: 'shortName',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Краткое название',
+          placeHolder: 'Читинская обл.',
         },
       ],
       checkingName: 'name',
@@ -57,6 +59,13 @@ export class RegionsListComponent {
           toponymProp: 'country.id',
         },
       ],
+      addressFilterParams: {
+        type: this.type,
+        isShowCountry: true,
+        isShowRegion: false,
+        isShowDistrict: false,
+        isShowLocality: false,
+      },
     },
   };
 

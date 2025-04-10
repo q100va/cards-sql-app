@@ -95,7 +95,7 @@ export class ToponymDetailsDialogComponent {
     cols: '1',
     gutterSize: '16px',
     rowHeight: '76px',
-    type: this.data.type,
+    //type: this.data.type,
     isShowCountry:
       this.data.specialField != 'isShowCountry'
         ? this.data.isShowCountry

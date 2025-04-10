@@ -4,11 +4,10 @@ export interface AddressFilterParams {
   cols: string;
   gutterSize: string;
   rowHeight: string;
-  type?: string | undefined;
   isShowCountry: boolean;
   isShowRegion: boolean;
   isShowDistrict: boolean;
   isShowLocality: boolean;
   readonly?: boolean | undefined;
-  class: string;
+  class?: 'none' | 'view-mode';
 }

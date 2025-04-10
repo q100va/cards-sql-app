@@ -39,37 +39,45 @@ export class LocalitiesListComponent {
     dialogProps: {
       creationTitle: 'Новый насел. пункт',
       viewTitle: 'Населенный пункт',
-      placeHolders: {
-        namePlaceHolder: 'Синицыно поселок',
-        shortNamePlaceHolder: 'п. Синицыно',
-      },
       controls: [
         {
           controlName: 'name',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Название',
+          placeHolder: 'Синицыно поселок',
         },
         {
           controlName: 'shortName',
           value: '',
           disabled: true,
           validators: [Validators.required],
+          type: 'input',
+          label: 'Краткое название',
+          placeHolder: 'п. Синицыно',
         },
         {
           controlName: 'isFederalCity',
           value: false,
           disabled: true,
+          type: 'checkbox',
+          label: 'Федеральный город',
         },
         {
           controlName: 'isCapitalOfRegion',
           value: false,
           disabled: true,
+          type: 'checkbox',
+          label: 'Столица региона',
         },
         {
           controlName: 'isCapitalOfDistrict',
           value: false,
           disabled: true,
+          type: 'checkbox',
+          label: 'Столица округа',
         },
       ],
       checkingName: 'name',
@@ -87,6 +95,13 @@ export class LocalitiesListComponent {
           toponymProp: 'district.id',
         },
       ],
+      addressFilterParams: {
+        type: this.type,
+        isShowCountry: true,
+        isShowRegion: true,
+        isShowDistrict: true,
+        isShowLocality: false,
+      },
     },
   };
 

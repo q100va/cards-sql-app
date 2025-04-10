@@ -76,33 +76,7 @@ export class ToponymDetailsComponent {
   mainForm: FormGroup<Record<string, AbstractControl>> = new FormGroup({});
 
   ngOnInit() {
-    this.params = {
-      source: 'toponymCard',
-      multiple: false,
-      cols: '1',
-      gutterSize: '16px',
-      rowHeight: '76px',
-      type: this.data().type,
-      isShowCountry:
-        this.data().specialField != 'isShowCountry'
-          ? this.data().isShowCountry
-          : false,
-      isShowRegion:
-        this.data().specialField != 'isShowRegion'
-          ? this.data().isShowRegion
-          : false,
-      isShowDistrict:
-        this.data().specialField != 'isShowDistrict'
-          ? this.data().isShowDistrict
-          : false,
-      isShowLocality:
-        this.data().specialField != 'isShowLocality'
-          ? this.data().isShowLocality
-          : false,
-      readonly: this.data().operation == 'create' ? false : true,
-      class: this.data().operation == 'create' ? 'none' : 'view-mode',
-    };
-
+    this.params = this.data().addressFilterParams;
     this.createFormGroup(this.data().controls);
     this.controlsNames = this.data().controls.map(
       (control) => control.controlName
@@ -117,18 +91,9 @@ export class ToponymDetailsComponent {
   }
 
   checkIsSaveDisabled() {
-    console.log(
-      "!this.mainForm.valid ||      this.invalidAddressFilter ||      (!this.changes && this.data().operation == 'view-edit')"
-    );
-    console.log(
-      !this.mainForm.valid,
-      this.invalidAddressFilter,
-      !this.changes,
-      this.data().operation == 'view-edit'
-    );
     if (
       !this.mainForm.valid ||
-      this.invalidAddressFilter || // && this.data().type != 'country'
+      this.invalidAddressFilter ||
       (!this.changes && this.data().operation == 'view-edit')
     ) {
       this.emittedIsSaveDisabled.emit(true);
