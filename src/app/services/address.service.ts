@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { GeographyLevels } from '../interfaces/types';
 import { AddressFilter } from '../interfaces/address-filter';
+import { ToponymFormControlsNames } from '../interfaces/toponymFormControlsNames';
 
 @Injectable({
   providedIn: 'root',
@@ -81,14 +82,14 @@ export class AddressService {
 
   saveToponym(
     type: string,
-    name: string,
     id: number | null,
-    shortName: string,
+    mainValues: ToponymFormControlsNames,
+    /*       name: string,  shortName: string,
     postName: string,
     shortPostName: string,
     isFederalCity: boolean,
     isCapitalOfRegion: boolean,
-    isCapitalOfDistrict: boolean,
+    isCapitalOfDistrict: boolean, */
     addressFilter: AddressFilter,
     operation: string,
   ): Observable<any> {
@@ -97,15 +98,16 @@ export class AddressService {
     return this.http.post(BACKEND_URL + '/api/addresses/' + addressPoint, {
       data: {
         type: type,
-        name: name,
+        mainValues: mainValues,
         id: id,
+        addressFilter: addressFilter,
+/*         name: name,
         shortName: shortName,
         postName: postName,
         shortPostName: shortPostName,
-        addressFilter: addressFilter,
         isFederalCity: isFederalCity,
         isCapitalOfRegion: isCapitalOfRegion,
-        isCapitalOfDistrict: isCapitalOfDistrict,
+        isCapitalOfDistrict: isCapitalOfDistrict, */
       },
     });
   }

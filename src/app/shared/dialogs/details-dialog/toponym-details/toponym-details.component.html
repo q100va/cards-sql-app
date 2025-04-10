@@ -1,0 +1,85 @@
+<app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams"
+    (addressFilter)="onChangeAddressFilter($event)">
+  </app-address-filter>
+  <p-confirmdialog />
+  <p-toast position="center" />
+  <form [formGroup]="mainForm" style="margin-top: 16px;"
+    [class]="data().operation == 'view-edit' && !isEditMode ? 'view-mode' : 'none'" (change)="onChangeValidation()">
+    <mat-grid-list cols="1" gutterSize="16px" rowHeight="76px">
+      <mat-grid-tile colspan="1" rowspan="1">
+        <mat-form-field class="full-width">
+          <mat-label>Название</mat-label>
+          <input class="full-width" matInput formControlName="name" [placeholder]="data().placeHolders['namePlaceHolder']">
+          @if (mainForm.controls['name'].hasError('required')) {
+          <mat-error>Поле не может быть пустым!</mat-error>
+          }
+        </mat-form-field>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="1" rowspan="1">
+        @if (data().type != 'country') {
+        <mat-form-field class="full-width">
+          <mat-label>Краткое название</mat-label>
+          <input class="full-width" matInput formControlName="shortName"
+            [placeholder]="data().placeHolders['shortNamePlaceHolder']">
+          @if (mainForm.controls['shortName'].hasError('required')) {
+          <mat-error>Поле не может быть пустым!</mat-error>
+          }
+        </mat-form-field>
+        }
+
+      </mat-grid-tile>
+
+      @if (data().type == 'district') {
+      <mat-grid-tile colspan="1" rowspan="1">
+        <mat-form-field class="full-width">
+          <mat-label>Почтовое название</mat-label>
+          <input class="full-width" matInput formControlName="postName" [placeholder]="data().placeHolders['postNamePlaceHolder']">
+          @if (mainForm.controls['postName'].hasError('required')) {
+          <mat-error>Поле не может быть пустым!</mat-error>
+          }
+        </mat-form-field>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="1" rowspan="1">
+        <mat-form-field class="full-width">
+          <mat-label>Краткое почтовое название</mat-label>
+          <input class="full-width" matInput formControlName="shortPostName"
+            [placeholder]="data().placeHolders['shortNamePlaceHolder']">
+          @if (mainForm.controls['shortPostName'].hasError('required')) {
+          <mat-error>Поле не может быть пустым!</mat-error>
+          }
+        </mat-form-field>
+      </mat-grid-tile>
+      }
+
+    </mat-grid-list>
+    <mat-grid-list cols="9" gutterSize="16px" rowHeight="36px">
+      @if (data().type == 'locality')
+      {
+      <mat-grid-tile colspan="6" rowspan="1">
+        <p class="full-width">
+          <mat-checkbox formControlName="isFederalCity" (change)="onChangeValidation()">город федерального
+            значения</mat-checkbox>
+        </p>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+      <mat-grid-tile colspan="6" rowspan="1">
+        <p class="full-width">
+          <mat-checkbox formControlName="isCapitalOfRegion" (change)="onChangeValidation()">столица региона</mat-checkbox>
+        </p>
+      </mat-grid-tile>
+
+      <mat-grid-tile colspan="3" rowspan="1">
+      </mat-grid-tile>
+      <mat-grid-tile colspan="6" rowspan="1">
+        <p class="full-width">
+          <mat-checkbox formControlName="isCapitalOfDistrict" (change)="onChangeValidation()">административный
+            центр</mat-checkbox>
+        </p>
+      </mat-grid-tile>}
+      @else {
+      <mat-grid-tile colspan="6" rowspan="1"></mat-grid-tile>
+      <mat-grid-tile colspan="3" rowspan="1">
+      </mat-grid-tile>
+      }
+    </mat-grid-list>
+  </form>

@@ -4,6 +4,7 @@ import { ToponymProps } from '../../interfaces/toponym-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-regions-list',
@@ -27,13 +28,36 @@ export class RegionsListComponent {
     defaultLocalityId: null,
     queryParams: null,
     filename: 'шаблон-регионы.xlsx',
-    creationTitle: 'Новый регион',
-    viewTitle: 'Регион',
     searchPlaceHolder: 'Тульская',
-    namePlaceHolder: 'Читинская область',
-    shortNamePlaceHolder: 'Читинская обл.',
-    postNamePlaceHolder: '',
-    shortPostNamePlaceHolder: '',
+    dialogProps: {
+      creationTitle: 'Новый регион',
+      viewTitle: 'Регион',
+      placeHolders: {
+        namePlaceHolder: 'Читинская область',
+        shortNamePlaceHolder: 'Читинская обл.',
+      },
+      controls: [
+        {
+          controlName: 'name',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+        {
+          controlName: 'shortName',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+      ],
+      checkingName: 'name',
+      addressFilterControls: [
+        {
+          addressFilterProp: 'countries',
+          toponymProp: 'country.id',
+        },
+      ],
+    },
   };
 
   constructor() {

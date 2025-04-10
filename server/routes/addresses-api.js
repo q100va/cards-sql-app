@@ -136,10 +136,7 @@ router.post("/create-toponym", async (req, res) => {
     console.log(req.body.data);
 
     const type = req.body.data.type;
-    const name = req.body.data.name;
-    const shortName = req.body.data.shortName;
-    const postName = req.body.data.postName;
-    const shortPostName = req.body.data.shortPostName;
+    const name = req.body.data.mainValues.name;
     const addressFilter = req.body.data.addressFilter;
     let createdToponym;
     if (type == 'country') {
@@ -153,7 +150,7 @@ router.post("/create-toponym", async (req, res) => {
       createdToponym = await Region.create(
         {
           name: name,
-          shortName: shortName,
+          shortName: req.body.data.mainValues.shortName,
           countryId: addressFilter.countries[0],
         });
     }
@@ -161,9 +158,9 @@ router.post("/create-toponym", async (req, res) => {
       createdToponym = await District.create(
         {
           name: name,
-          shortName: shortName,
-          postName: postName,
-          shortPostName: shortPostName,
+          shortName: req.body.data.mainValues.shortName,
+          postName: req.body.data.mainValues.postName,
+          shortPostName: req.body.data.mainValues.shortPostName,
           regionId: addressFilter.regions[0],
         });
     }
@@ -171,14 +168,14 @@ router.post("/create-toponym", async (req, res) => {
       createdToponym = await Locality.create(
         {
           name: name,
-          shortName: shortName,
+          shortName: req.body.data.mainValues.shortName,
           districtId: addressFilter.districts[0],
-          isFederalCity: req.body.data.isFederalCity,
-          isCapitalOfRegion: req.body.data.isCapitalOfRegion,
-          isCapitalOfDistrict: req.body.data.isCapitalOfDistrict,
+          isFederalCity: req.body.data.mainValues.isFederalCity,
+          isCapitalOfRegion: req.body.data.mainValues.isCapitalOfRegion,
+          isCapitalOfDistrict: req.body.data.mainValues.isCapitalOfDistrict,
         });
     }
-    res.status(200).send({ msg: "Топоним успешно добавлен.", data: name });
+    res.status(200).send({ msg: "Топоним успешно добавлен.", data: createdToponym });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -191,17 +188,14 @@ router.post("/update-toponym", async (req, res) => {
     console.log(req.body.data);
 
     const type = req.body.data.type;
-    const name = req.body.data.name;
-    const shortName = req.body.data.shortName;
-    const postName = req.body.data.postName;
-    const shortPostName = req.body.data.shortPostName;
+    const name = req.body.data.mainValues.name;
     const addressFilter = req.body.data.addressFilter;
     const id = req.body.data.id;
 
 
     let updatedToponym;
     if (type == 'country') {
-      updatedToponym = await Country.update(
+      await Country.update(
         {
           name: name,
         },
@@ -210,12 +204,19 @@ router.post("/update-toponym", async (req, res) => {
             id: id
           }
         });
+        updatedToponym = await Country.findOne({
+          attributes: ['id', 'name'],
+          raw: true,
+          where: {
+            id: id
+          }
+        });
     }
     if (type == 'region') {
-      updatedToponym = await Region.update(
+      await Region.update(
         {
           name: name,
-          shortName: shortName,
+          shortName: req.body.data.mainValues.shortName,
           countryId: addressFilter.countries[0],
         },
         {
@@ -223,14 +224,27 @@ router.post("/update-toponym", async (req, res) => {
             id: id
           }
         });
+        updatedToponym = await Region.findOne({
+          attributes: ['id', 'name', 'shortName',],
+          raw: true,
+          where: {
+            id: id
+          },
+          include: [
+            {
+              model: Country,
+              attributes: ['id', 'name'],
+            },
+          ],
+        });
     }
     if (type == 'district') {
-      updatedToponym = await District.update(
+      await District.update(
         {
           name: name,
-          shortName: shortName,
-          postName: postName,
-          shortPostName: shortPostName,
+          shortName: req.body.data.mainValues.shortName,
+          postName: req.body.data.mainValues.postName,
+          shortPostName: req.body.data.mainValues.shortPostName,
           regionId: addressFilter.regions[0],
         },
         {
@@ -238,12 +252,31 @@ router.post("/update-toponym", async (req, res) => {
             id: id
           }
         });
+        updatedToponym = await District.findOne({
+          attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
+          raw: true,
+          where: {
+            id: id
+          },
+          include: [
+            {
+              model: Region,
+              attributes: ['id', 'name'],
+              include: [
+                {
+                  model: Country,
+                  attributes: ['id', 'name'],
+                },
+              ],
+            },
+          ],
+        });
     }
     if (type == 'locality') {
-      updatedToponym = await Locality.update(
+      await Locality.update(
         {
           name: name,
-          shortName: shortName,
+          shortName: req.body.data.mainValues.shortName,
           districtId: addressFilter.districts[0],
           isFederalCity: req.body.data.isFederalCity,
           isCapitalOfRegion: req.body.data.isCapitalOfRegion,
@@ -255,8 +288,34 @@ router.post("/update-toponym", async (req, res) => {
           }
         }
       );
+      updatedToponym = await Locality.findOne({
+        attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
+        raw: true,
+        where: {
+          id: id
+        },
+        include: [
+          {
+            model: District,
+            attributes: ['id', 'name'],
+            include: [
+              {
+                model: Region,
+                attributes: ['id', 'name'],
+                include: [
+                  {
+                    model: Country,
+                    attributes: ['id', 'name'],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
     }
-    res.status(200).send({ msg: "Топоним успешно обновлен.", data: name });
+    res.status(200).send({ msg: "Топоним успешно обновлен.", data: updatedToponym });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -554,20 +613,6 @@ router.post("/get-regions", async (req, res) => {
         console.log("whereParams");
         console.log(whereParams);
       } else {
-        //all search words in one column
-        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
-
-                for (let columnName of searchColumnNames) {
-                  searchParams.push({
-                    [columnName]: opLikeValues
-                  });
-                  console.log("opLikeValues");
-                  console.log(opLikeValues);
-                }
-
-                whereParams = { ...whereParams, [Op.or]: searchParams }; */
-
-        //search words in different columns
         const searchColumnRowNames = [
           '"country"."name"',
           '"region"."name"', '"region"."shortName"'
@@ -721,20 +766,6 @@ router.post("/get-districts", async (req, res) => {
         console.log("whereParams");
         console.log(whereParams);
       } else {
-        //all search words in one column
-        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
-
-                for (let columnName of searchColumnNames) {
-                  searchParams.push({
-                    [columnName]: opLikeValues
-                  });
-                  console.log("opLikeValues");
-                  console.log(opLikeValues);
-                }
-
-                whereParams = { ...whereParams, [Op.or]: searchParams }; */
-
-        //search words in different columns
         const searchColumnRowNames = [
           '"region->country"."name"',
           '"region"."name"', '"region"."shortName"',
@@ -917,20 +948,6 @@ router.post("/get-localities", async (req, res) => {
         console.log("whereParams");
         console.log(whereParams);
       } else {
-        //all search words in one column
-        /*         const opLikeValues = { [Op.iLike]: '%' + searchValue + '%' };
-
-                for (let columnName of searchColumnNames) {
-                  searchParams.push({
-                    [columnName]: opLikeValues
-                  });
-                  console.log("opLikeValues");
-                  console.log(opLikeValues);
-                }
-
-                whereParams = { ...whereParams, [Op.or]: searchParams }; */
-
-        //search words in different columns
         const searchColumnRowNames = [
           '"district->region->country"."name"',
           '"district->region"."name"', '"district->region"."shortName"',
@@ -1375,7 +1392,7 @@ router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
 
-    const foundToponymId = await Address.findOne({
+    let foundToponymId = await Address.findOne({
       where: {
         [toponymType + 'Id']: toponymId,
       },

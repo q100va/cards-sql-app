@@ -7,4 +7,7 @@ export interface Toponym {
   districtId?: number;
   regionId?: number;
   countryId?: number;
+  isFederalCity?: boolean;
+  isCapitalOfRegion?: boolean;
+  isCapitalOfDistrict?: boolean;
 }

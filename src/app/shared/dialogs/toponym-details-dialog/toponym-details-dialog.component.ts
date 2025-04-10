@@ -295,7 +295,7 @@ export class ToponymDetailsDialogComponent {
   }
 
   saveToponym(action: 'justSave' | 'saveAndExit') {
-    this.addressService
+/*     this.addressService
       .saveToponym(
         this.data.type,
         this.mainForm.controls['toponymName'].value!,
@@ -335,7 +335,7 @@ export class ToponymDetailsDialogComponent {
             sticky: true,
           });
         },
-      });
+      }); */
   }
 
   onEditClick() {

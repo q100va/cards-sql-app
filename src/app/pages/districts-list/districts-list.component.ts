@@ -4,6 +4,7 @@ import { ToponymProps } from '../../interfaces/toponym-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-districts-list',
@@ -35,13 +36,54 @@ export class DistrictsListComponent {
     defaultDistrictId: null,
     defaultLocalityId: null,
     queryParams: null,
-    creationTitle: 'Новый р-н/округ',
-    viewTitle: 'Район/округ',
     searchPlaceHolder: 'Белогорский',
-    namePlaceHolder: 'Диксонский район',
-    shortNamePlaceHolder: 'Диксонский р-н',
-    postNamePlaceHolder: 'Диксонский район',
-    shortPostNamePlaceHolder: 'Диксонский р-н',
+    dialogProps: {
+      creationTitle: 'Новый р-н/округ',
+      viewTitle: 'Район/округ',
+      placeHolders: {
+        namePlaceHolder: 'Диксонский район',
+        shortNamePlaceHolder: 'Диксонский р-н',
+        postNamePlaceHolder: 'Диксонский район',
+        shortPostNamePlaceHolder: 'Диксонский р-н',
+      },
+      controls: [
+        {
+          controlName: 'name',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+        {
+          controlName: 'shortName',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+        {
+          controlName: 'postName',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+        {
+          controlName: 'shortPostName',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+      ],
+      checkingName: 'name',
+      addressFilterControls: [
+        {
+          addressFilterProp: 'countries',
+          toponymProp: 'region.country.id',
+        },
+        {
+          addressFilterProp: 'regions',
+          toponymProp: 'region.id',
+        },
+      ],
+    },
   };
 
   constructor() {

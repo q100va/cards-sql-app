@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  ViewChild,
   inject,
   model,
+  output,
   signal,
 } from '@angular/core';
 import { AbstractControl, FormArray, FormsModule } from '@angular/forms';
@@ -15,6 +17,7 @@ import {
   MatDialogActions,
   //MatDialogClose,
   MatDialogRef,
+  MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -74,12 +77,34 @@ import { AddressFilter } from '../../../interfaces/address-filter';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateUserDialogComponent implements OnInit {
+  readonly dialogRef = inject(MatDialogRef<CreateUserDialogComponent>);
+  readonly data = inject<{
+    type: 'user' | 'partner' | 'client';
+    operation: 'create' | 'view-edit';
+    defaultAddressParams: DefaultAddressParams;
+    user?: User;
+    creationTitle: string;
+    viewTitle: string;
+  }>(MAT_DIALOG_DATA);
+
   private addressService = inject(AddressService);
   private userService = inject(UserService);
   private roleService = inject(RoleService);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private router = inject(Router);
+
+  @ViewChild(AddressFilterComponent)
+  addressFilterComponent!: AddressFilterComponent;
+
+  title =
+    this.data.operation == 'create'
+      ? this.data.creationTitle
+      : this.data.viewTitle;
+
+  isEditMode = false;
+  onChangeMode = output<string>();
+  changes = false;
 
   params: AddressFilterParams = {
     source: 'userCard',
@@ -101,6 +126,9 @@ export class CreateUserDialogComponent implements OnInit {
     localities: null,
   });
 
+  invalidAddressFilter = true;
+
+
   defaultAddressParams: DefaultAddressParams = {
     localityId: null,
     districtId: null,
@@ -109,10 +137,6 @@ export class CreateUserDialogComponent implements OnInit {
   };
 
   roles!: { id: number; name: string }[];
-  /*   countries!: { id: number; name: string }[];
-  regions?: { id: number; name: string; countryId: number }[];
-  districts?: { id: number; name: string; regionId: number }[];
-  localities?: { id: number; name: string; districtId: number }[]; */
 
   contactTypes = [
     {
@@ -206,11 +230,7 @@ export class CreateUserDialogComponent implements OnInit {
   ];
   availableContactTypes: any;
 
-  readonly dialogRef = inject(MatDialogRef<CreateUserDialogComponent>);
-  //form!: FormGroup;
-  //readonly data = inject<DialogData>(MAT_DIALOG_DATA);
-  //readonly animal = model(this.data.animal);
-  form = new FormGroup<Record<string, AbstractControl | FormGroup>>(
+  mainForm = new FormGroup<Record<string, AbstractControl | FormGroup>>(
     {
       userName: new FormControl(
         null,
@@ -235,11 +255,6 @@ export class CreateUserDialogComponent implements OnInit {
         Validators.compose([Validators.required])
       ),
 
-      /*       country: new FormControl(null),
-      region: new FormControl({ value: null, disabled: true }),
-      district: new FormControl({ value: null, disabled: true }),
-      locality: new FormControl({ value: null, disabled: true }),
- */
       comment: new FormControl(null),
       isRestricted: new FormControl(false),
 
@@ -298,7 +313,7 @@ export class CreateUserDialogComponent implements OnInit {
   );
 
   get extraContacts() {
-    return this.form.get('extraContacts') as FormArray;
+    return this.mainForm.get('extraContacts') as FormArray;
   }
 
   constructor() {}
@@ -321,145 +336,22 @@ export class CreateUserDialogComponent implements OnInit {
         });
       },
     });
-    /*     this.addressService.getListOfCountries().subscribe({
-      next: (res) => {
-        this.countries = res.data;
-      },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
-    }); */
   }
-
-  //
-
-  /*   onCountrySelectionChange() {
-    if (this.form.controls['country'].value) {
-      this.addressService
-        .getListOfRegionsOfCountries([this.form.controls['country'].value.id])
-        .subscribe({
-          next: (res) => {
-            this.regions = res.data;
-            if (this.regions && this.regions.length > 0) {
-              this.form.get('region')?.enable();
-            } else {
-              this.form.get('region')?.disable();
-            }
-          },
-          error: (err) => {
-            console.log(err);
-            let errorMessage =
-              typeof err.error === 'string'
-                ? err.error
-                : 'Ошибка: ' + err.message;
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Ошибка',
-              detail: errorMessage,
-              sticky: true,
-            });
-          },
-        });
-      } else {
-        this.form.get('region')?.disable();
-      }
-      this.form.get('region')?.setValue(null);
-      this.form.get('district')?.disable();
-      this.form.get('district')?.setValue(null);
-      this.form.get('locality')?.disable();
-      this.form.get('locality')?.setValue(null);
-  }
-
-  onRegionSelectionChange() {
-    if (this.form.controls['region'].value) {
-      this.addressService
-        .getListOfDistrictsOfRegions([this.form.controls['region'].value.id])
-        .subscribe({
-          next: (res) => {
-            this.districts = res.data;
-            if (this.districts && this.districts.length > 0) {
-              this.form.get('district')?.enable();
-            } else {
-              this.form.get('district')?.disable();
-            }
-          },
-          error: (err) => {
-            console.log(err);
-            let errorMessage =
-              typeof err.error === 'string'
-                ? err.error
-                : 'Ошибка: ' + err.message;
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Ошибка',
-              detail: errorMessage,
-              sticky: true,
-            });
-          },
-        });
-      } else {
-        this.form.get('district')?.disable();
-      }
-      this.form.get('district')?.setValue(null);
-      this.form.get('locality')?.disable();
-      this.form.get('locality')?.setValue(null);
-  }
-
-  onDistrictSelectionChange() {
-    if (this.form.controls['district'].value) {
-      this.addressService
-        .getListOfLocalitiesOfDistricts([this.form.controls['district'].value.id])
-        .subscribe({
-          next: (res) => {
-            this.localities = res.data;
-            if (this.localities && this.localities.length > 0) {
-              this.form.get('locality')?.enable();
-            } else {
-              this.form.get('locality')?.disable();
-            }
-          },
-          error: (err) => {
-            console.log(err);
-            let errorMessage =
-              typeof err.error === 'string'
-                ? err.error
-                : 'Ошибка: ' + err.message;
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Ошибка',
-              detail: errorMessage,
-              sticky: true,
-            });
-          },
-        });
-      } else {
-        this.form.get('locality')?.disable();
-      }
-      this.form.get('locality')?.setValue(null);
-  } */
 
   addIfRestricted() {
-    if (this.form.controls['isRestricted'].value) {
-      this.form.addControl(
+    if (this.mainForm.controls['isRestricted'].value) {
+      this.mainForm.addControl(
         'causeOfRestriction',
         new FormControl(null, Validators.required)
       );
     } else {
-      this.form.removeControl('causeOfRestriction');
+      this.mainForm.removeControl('causeOfRestriction');
     }
   }
 
   modifyContactTypesList() {
     for (let contact of this.contactTypes) {
-      if (this.form.controls[contact.type].value) {
+      if (this.mainForm.controls[contact.type].value) {
         contact.available = true;
       }
     }
@@ -487,15 +379,15 @@ export class CreateUserDialogComponent implements OnInit {
     this.extraContacts.removeAt(index);
   }
 
-  onSaveClick() {
+  onSaveClick(action: 'justSave' | 'saveAndExit') {
     console.log('SAVE');
     const newUser = {} as User;
-    newUser.userName = this.form.controls['userName'].value?.trim();
-    newUser.password = this.form.controls['password'].value;
-    newUser.firstName = this.form.controls['firstName'].value?.trim();
-    newUser.patronymic = this.form.controls['patronymic'].value?.trim();
-    newUser.lastName = this.form.controls['lastName'].value?.trim();
-    newUser.roleId = this.form.controls['role'].value;
+    newUser.userName = this.mainForm.controls['userName'].value?.trim();
+    newUser.password = this.mainForm.controls['password'].value;
+    newUser.firstName = this.mainForm.controls['firstName'].value?.trim();
+    newUser.patronymic = this.mainForm.controls['patronymic'].value?.trim();
+    newUser.lastName = this.mainForm.controls['lastName'].value?.trim();
+    newUser.roleId = this.mainForm.controls['role'].value;
     newUser.addresses = [
       {
         country:
@@ -518,74 +410,69 @@ export class CreateUserDialogComponent implements OnInit {
             ? this.addressFilter().localities![0]
             : null,
       },
-      /*       {
-        country: this.form.controls['country'].value,
-        region: this.form.controls['region'].value,
-        district: this.form.controls['district'].value,
-        locality: this.form.controls['locality'].value,
-      }, */
+
     ];
-    newUser.comment = this.form.controls['comment'].value;
-    newUser.isRestricted = this.form.controls['isRestricted'].value;
-    newUser.causeOfRestriction = this.form.controls['isRestricted'].value
-      ? this.form.controls['causeOfRestriction'].value
+    newUser.comment = this.mainForm.controls['comment'].value;
+    newUser.isRestricted = this.mainForm.controls['isRestricted'].value;
+    newUser.causeOfRestriction = this.mainForm.controls['isRestricted'].value
+      ? this.mainForm.controls['causeOfRestriction'].value
       : null;
-    newUser.dateOfRestriction = this.form.controls['isRestricted'].value
+    newUser.dateOfRestriction = this.mainForm.controls['isRestricted'].value
       ? new Date()
       : null;
     newUser.orderedContacts = {
-      email: [this.form.controls['email'].value],
+      email: [this.mainForm.controls['email'].value],
       phoneNumber: [
         this.completeContact(
-          this.form.controls['phoneNumber'].value,
+          this.mainForm.controls['phoneNumber'].value,
           'phoneNumber'
         ),
       ],
-      telegramId: [this.form.controls['telegramId'].value],
+      telegramId: [this.mainForm.controls['telegramId'].value],
       telegramPhoneNumber: [
         this.completeContact(
-          this.form.controls['telegramPhoneNumber'].value,
+          this.mainForm.controls['telegramPhoneNumber'].value,
           'telegramPhoneNumber'
         ),
       ],
       telegramNickname: [
-        this.form.controls['telegramNickname'].value
-          ? this.form.controls['telegramNickname'].value.trim()
-          : this.form.controls['telegramNickname'].value,
+        this.mainForm.controls['telegramNickname'].value
+          ? this.mainForm.controls['telegramNickname'].value.trim()
+          : this.mainForm.controls['telegramNickname'].value,
       ],
       whatsApp: [
-        this.form.controls['whatsApp'].value
+        this.mainForm.controls['whatsApp'].value
           ? this.completeContact(
-              this.form.controls['whatsApp'].value,
+              this.mainForm.controls['whatsApp'].value,
               'whatsApp'
             )
-          : this.form.controls['whatsApp'].value,
+          : this.mainForm.controls['whatsApp'].value,
       ],
       vKontakte: [
-        this.form.controls['vKontakte'].value
+        this.mainForm.controls['vKontakte'].value
           ? this.completeContact(
-              this.form.controls['vKontakte'].value,
+              this.mainForm.controls['vKontakte'].value,
               'vKontakte'
             )
-          : this.form.controls['vKontakte'].value,
+          : this.mainForm.controls['vKontakte'].value,
       ],
       instagram: [
-        this.form.controls['instagram'].value
+        this.mainForm.controls['instagram'].value
           ? this.completeContact(
-              this.form.controls['instagram'].value,
+              this.mainForm.controls['instagram'].value,
               'instagram'
             )
-          : this.form.controls['instagram'].value,
+          : this.mainForm.controls['instagram'].value,
       ],
       facebook: [
-        this.form.controls['facebook'].value
+        this.mainForm.controls['facebook'].value
           ? this.completeContact(
-              this.form.controls['facebook'].value,
+              this.mainForm.controls['facebook'].value,
               'facebook'
             )
-          : this.form.controls['facebook'].value,
+          : this.mainForm.controls['facebook'].value,
       ],
-      otherContact: [this.form.controls['otherContact'].value],
+      otherContact: [this.mainForm.controls['otherContact'].value],
     };
 
     let extraContacts: [{ type: string; contact: string }];
@@ -817,19 +704,81 @@ export class CreateUserDialogComponent implements OnInit {
       reject: () => {},
     });
   }
+
+  onEditClick() {
+    this.isEditMode = true;
+    this.changes = false;
+    this.mainForm.controls['toponymName'].enable();
+    this.mainForm.controls['toponymShortName'].enable();
+    this.mainForm.controls['toponymPostName'].enable();
+    this.mainForm.controls['toponymShortPostName'].enable();
+    this.mainForm.controls['federalCity'].enable();
+    this.mainForm.controls['capitalOfRegion'].enable();
+    this.mainForm.controls['capitalOfDistrict'].enable();
+    this.invalidAddressFilter = false;
+    this.addressFilterComponent.onChangeMode('edit', null);
+  }
+
+  onViewClick() {
+    console.log('this.addressFilter()', this.addressFilter());
+    if (this.changes) {
+      this.confirmationService.confirm({
+        message: 'Вы уверены, что хотите выйти без сохранения?',
+        header: 'Предупреждение',
+        closable: true,
+        closeOnEscape: true,
+        icon: 'pi pi-exclamation-triangle',
+        rejectButtonProps: {
+          label: 'Нет',
+        },
+        acceptButtonProps: {
+          label: 'Да',
+          severity: 'secondary',
+          outlined: true,
+        },
+        accept: () => {
+/*           this.mainForm.controls['toponymName'].setValue(
+            this.data.toponym!['name']
+          );
+          this.mainForm.controls['toponymShortName'].setValue(
+            this.data.toponym!['shortName']
+          );
+          this.mainForm.controls['toponymPostName'].setValue(
+            this.data.toponym!['postName']
+          );
+          this.mainForm.controls['toponymShortPostName'].setValue(
+            this.data.toponym!['shortPostName']
+          );
+          this.mainForm.controls['federalCity'].setValue(
+            this.data.toponym!['isFederalCity']
+          );
+          this.mainForm.controls['capitalOfRegion'].setValue(
+            this.data.toponym!['isCapitalOfRegion']
+          );
+          this.mainForm.controls['capitalOfDistrict'].setValue(
+            this.data.toponym!['isCapitalOfDistrict']
+          ); */
+          this.changeToViewMode(this.data.defaultAddressParams);
+        },
+        reject: () => {},
+      });
+    } else {
+      this.changeToViewMode(null);
+    }
+  }
+
+  changeToViewMode(addressParams: any) {
+    this.isEditMode = false;
+/*     this.mainForm.controls['toponymName'].disable();
+    this.mainForm.controls['toponymShortName'].disable();
+    this.mainForm.controls['toponymPostName'].disable();
+    this.mainForm.controls['toponymShortPostName'].disable();
+    this.mainForm.controls['federalCity'].disable();
+    this.mainForm.controls['capitalOfRegion'].disable();
+    this.mainForm.controls['capitalOfDistrict'].disable(); */
+    this.invalidAddressFilter = false;
+    this.addressFilterComponent.onChangeMode('view', addressParams);
+  }
+
+
 }
-
-/* It looks like you're using the disabled attribute with a reactive form directive. If you set disabled to true
-when you set up this control in your component class, the disabled attribute will actually be set in the DOM for
-you. We recommend using this approach to avoid 'changed after checked' errors.
-
-Example:
-// Specify the `disabled` property at control creation time:
-form = new FormGroup({
-  first: new FormControl({value: 'Nancy', disabled: true}, Validators.required),
-  last: new FormControl('Drew', Validators.required)
-});
-
-// Controls can also be enabled/disabled after creation:
-form.get('first')?.enable();
-form.get('last')?.disable(); */

@@ -49,6 +49,7 @@ import { GeographyLevels, Ways } from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { Toponym } from '../../interfaces/toponym';
+import { DetailsDialogComponent } from '../dialogs/details-dialog/details-dialog.component';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -175,8 +176,16 @@ export class ToponymsListComponent {
       isShowLocality: this.toponymProps().isShowLocality,
       specialField:
         'isShow' + this.type()[0].toUpperCase() + this.type().substring(1),
-      creationTitle: this.toponymProps().creationTitle,
-      viewTitle: this.toponymProps().viewTitle,
+      creationTitle: this.toponymProps().dialogProps.creationTitle,
+      viewTitle: this.toponymProps().dialogProps.viewTitle,
+      placeHolders: this.toponymProps().dialogProps.placeHolders,
+/*       namePlaceHolder: this.toponymProps().dialogProps.placeHolders['namePlaceHolder'],
+      shortNamePlaceHolder: this.toponymProps().dialogProps.placeHolders['shortNamePlaceHolder'],
+      postNamePlaceHolder: this.toponymProps().dialogProps.placeHolders['postNamePlaceHolder'],
+      shortPostNamePlaceHolder: this.toponymProps().dialogProps.placeHolders['shortPostNamePlaceHolder'], */
+      controls: this.toponymProps().dialogProps.controls,
+      checkingName: this.toponymProps().dialogProps.checkingName,
+      addressFilterControls: this.toponymProps().dialogProps.addressFilterControls,
     };
   });
 
@@ -248,7 +257,7 @@ export class ToponymsListComponent {
   }
 
   onAddToponymClick() {
-    const dialogRefCreate = this.dialog.open(ToponymDetailsDialogComponent, {
+    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
       data: {
         ...this.dialogData(),
@@ -259,19 +268,16 @@ export class ToponymsListComponent {
           regionId: null,
           countryId: null,
         },
-        namePlaceHolder: this.toponymProps().namePlaceHolder,
-        shortNamePlaceHolder: this.toponymProps().shortNamePlaceHolder,
-        postNamePlaceHolder: this.toponymProps().postNamePlaceHolder,
-        shortPostNamePlaceHolder: this.toponymProps().shortPostNamePlaceHolder,
+
       },
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
-      if (result.toponymName) {
+      if (result.name) {
         this.getToponyms();
         this.messageService.add({
           severity: 'success',
           summary: 'Подтверждение',
-          detail: `Топоним '${result.toponymName}' успешно создан!`,
+          detail: `Топоним '${result.name}' успешно создан!`,
         });
       }
     });
@@ -319,7 +325,7 @@ export class ToponymsListComponent {
   }
 
   onOpenToponymCardClick(toponym: Toponym) {
-    const dialogRefCreate = this.dialog.open(ToponymDetailsDialogComponent, {
+    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
       data: {
         ...this.dialogData(),
@@ -330,11 +336,11 @@ export class ToponymsListComponent {
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
       this.getToponyms();
-      if (result.toponymName) {
+      if (result.name) {
         this.messageService.add({
           severity: 'success',
           summary: 'Подтверждение',
-          detail: `Топоним '${result.toponymName}' успешно обновлен!`,
+          detail: `Топоним '${result.name}' успешно обновлен!`,
         });
       }
     });
@@ -476,6 +482,8 @@ export class ToponymsListComponent {
       )
       .subscribe({
         next: (res) => {
+          console.log('res.data.toponyms');
+          console.log(res.data.toponyms);
           this.toponyms = res.data.toponyms;
           this.length.set(res.data.length);
           this.dataSource = new MatTableDataSource(this.toponyms);

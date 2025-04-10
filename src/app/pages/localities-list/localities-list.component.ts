@@ -4,6 +4,7 @@ import { ToponymProps } from '../../interfaces/toponym-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-localities-list',
@@ -33,14 +34,60 @@ export class LocalitiesListComponent {
     defaultDistrictId: null,
     defaultLocalityId: null,
     queryParams: null,
-    filename: 'шаблон-населенные-пункты.xlsx',
-    creationTitle: 'Новый насел. пункт',
-    viewTitle: 'Населенный пункт',
     searchPlaceHolder: 'Лихоборы или Малаховка Московская',
-    namePlaceHolder: 'Синицыно поселок',
-    shortNamePlaceHolder: 'п. Синицыно',
-    postNamePlaceHolder: '',
-    shortPostNamePlaceHolder: '',
+    filename: 'шаблон-населенные-пункты.xlsx',
+    dialogProps: {
+      creationTitle: 'Новый насел. пункт',
+      viewTitle: 'Населенный пункт',
+      placeHolders: {
+        namePlaceHolder: 'Синицыно поселок',
+        shortNamePlaceHolder: 'п. Синицыно',
+      },
+      controls: [
+        {
+          controlName: 'name',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+        {
+          controlName: 'shortName',
+          value: '',
+          disabled: true,
+          validators: [Validators.required],
+        },
+        {
+          controlName: 'isFederalCity',
+          value: false,
+          disabled: true,
+        },
+        {
+          controlName: 'isCapitalOfRegion',
+          value: false,
+          disabled: true,
+        },
+        {
+          controlName: 'isCapitalOfDistrict',
+          value: false,
+          disabled: true,
+        },
+      ],
+      checkingName: 'name',
+      addressFilterControls: [
+        {
+          addressFilterProp: 'countries',
+          toponymProp: 'district.region.country.id',
+        },
+        {
+          addressFilterProp: 'regions',
+          toponymProp: 'district.region.id',
+        },
+        {
+          addressFilterProp: 'districts',
+          toponymProp: 'district.id',
+        },
+      ],
+    },
   };
 
   constructor() {

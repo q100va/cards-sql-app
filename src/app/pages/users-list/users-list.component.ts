@@ -36,7 +36,7 @@ import { AddressFilter } from '../../interfaces/address-filter';
     MatIconModule,
     MatMenuModule,
     ListBaseComponent,
-    MatButtonModule
+    MatButtonModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.component.html',
@@ -183,28 +183,27 @@ export class UsersListComponent {
     addressFilter: AddressFilter;
     strongAddressFilter: boolean;
     strongContactFilter: boolean;
-  }>(
-    {
-      viewOption: 'only-active',
-      searchValue: '',
-      notOnlyActual: false,
-      exactMatch: false,
-      filter: {roles: null,
-        comment: null,
-        contactTypes: null,
-        dateBeginningRange: null,
-        dateRestrictionRange: null,
-      },
-      addressFilter: {
-        countries: null,
-        regions: null,
-        districts: null,
-        localities: null,
-      },
-      strongAddressFilter: false,
-      strongContactFilter: false,
-    }
-  );
+  }>({
+    viewOption: 'only-active',
+    searchValue: '',
+    notOnlyActual: false,
+    exactMatch: false,
+    filter: {
+      roles: null,
+      comment: null,
+      contactTypes: null,
+      dateBeginningRange: null,
+      dateRestrictionRange: null,
+    },
+    addressFilter: {
+      countries: null,
+      regions: null,
+      districts: null,
+      localities: null,
+    },
+    strongAddressFilter: false,
+    strongContactFilter: false,
+  });
   sortParameters = signal<{
     active: string;
     direction: 'asc' | 'desc' | '';
@@ -214,14 +213,12 @@ export class UsersListComponent {
   });
 
   allFilterParameters = computed(() => {
-    const sortParameters = {
-      sortParameters: this.sortParameters()
-    }
-    return Object.assign(this.filterParameters(), sortParameters);
+    return Object.assign(this.filterParameters(), {
+      sortParameters: this.sortParameters(),
+    });
   });
 
   constructor() {
-
     effect(() => {
       console.log('allFilterParameters changed:', this.allFilterParameters());
       this.getUsers(); // Automatically invoked whenever allFilterParameters changes
@@ -235,7 +232,6 @@ export class UsersListComponent {
         sanitizer.bypassSecurityTrustHtml(item.svg)
       );
     }
-
   }
 
   sortData(sort: Sort) {
