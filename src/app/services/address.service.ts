@@ -66,7 +66,7 @@ export class AddressService {
     name: string,
     id: number | null,
     addressFilter: AddressFilter,
-    operation: string,
+    //operation: string,
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/check-toponym-name', {
@@ -75,7 +75,7 @@ export class AddressService {
         name: name,
         id: id,
         addressFilter: addressFilter,
-        operation: operation,
+        //operation: operation,
       },
     });
   }
@@ -93,7 +93,7 @@ export class AddressService {
     addressFilter: AddressFilter,
     operation: string,
   ): Observable<any> {
-    const addressPoint = operation == 'create' ? 'create-toponym' : 'update-toponym'
+    const addressPoint = operation == 'create' ? 'create-toponym' : 'update-toponym';
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/' + addressPoint, {
       data: {

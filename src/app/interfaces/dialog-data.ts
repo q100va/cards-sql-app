@@ -7,11 +7,12 @@ export interface DialogData {
   type: GeographyLevels;
   operation: 'create' | 'view-edit';
   defaultAddressParams: DefaultAddressParams;
-  toponym?: {
+  object?: {
     [key: string]: string | number | boolean;
   };
   creationTitle: string;
   viewTitle: string;
+  controlsDisable: boolean;
   controls: Control[];
   checkingName: string;
   addressFilterControls?: {
@@ -19,5 +20,6 @@ export interface DialogData {
     toponymProp: string;
   }[];
   addressFilterParams: AddressFilterParams;
+  componentType: 'toponym' | 'user';
 
 }

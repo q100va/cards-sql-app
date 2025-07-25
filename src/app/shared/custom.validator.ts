@@ -1,5 +1,6 @@
 import {
   AbstractControl,
+  FormArray,
   FormGroup,
   ValidationErrors,
   ValidatorFn,
@@ -11,7 +12,7 @@ export function emailFormatValidator(): ValidatorFn {
     const allowed = emailRe.test(control.value);
     return allowed || control.value == null || control.value == ''
       ? null
-      : { emailFormat: true };
+      : { pattern: true };
   };
 }
 
@@ -35,7 +36,7 @@ export function phoneNumberFormatValidator(): ValidatorFn {
 
     return allowed || control.value == null || control.value == ''
       ? null
-      : { phoneNumberFormat: true };
+      : { pattern: true };
   };
 }
 
@@ -46,7 +47,7 @@ export function telegramNicknameFormatValidator(): ValidatorFn {
     const allowed_nickname = nicknameRe.test(control.value);
     return allowed_empty || allowed_nickname
       ? null
-      : { telegramNicknameFormat: { value: control.value } };
+      : { pattern: { value: control.value } };
   };
 }
 
@@ -63,7 +64,7 @@ export function telegramIdFormatValidator(): ValidatorFn {
 
     return allowed_empty || allowed
       ? null
-      : { telegramIdFormat: { value: control.value } };
+      : { pattern: { value: control.value } };
   };
 }
 
@@ -75,7 +76,7 @@ export function vKontakteFormatValidator(): ValidatorFn {
     const allowed = vkRe.test(control.value);
     return allowed || control.value == null || control.value == ''
       ? null
-      : { vKontakteFormat: { value: control.value } };
+      : { pattern: { value: control.value } };
   };
 }
 
@@ -87,7 +88,7 @@ export function instagramFormatValidator(): ValidatorFn {
     const allowed = instaRe.test(control.value);
     return allowed || control.value == null || control.value == ''
       ? null
-      : { instagramFormat: { value: control.value } };
+      : { pattern: { value: control.value } };
   };
 }
 
@@ -98,25 +99,38 @@ export function facebookFormatValidator(): ValidatorFn {
     const allowed = fbRe.test(control.value);
     return allowed || control.value == null || control.value == ''
       ? null
-      : { facebookFormat: { value: control.value } };
+      : { pattern: { value: control.value } };
   };
 }
 
 export const mainContactsValidator: ValidatorFn = (
   control: AbstractControl
 ): ValidationErrors | null => {
-  const emailError =
+  const formArrayEmail = control.get('email') as FormArray;
+  const formArrayPhoneNumber = control.get('phoneNumber') as FormArray;
+  const formArrayTelegramId = control.get('telegramId') as FormArray;
+  const formArrayTelegramPhoneNumber = control.get('telegramPhoneNumber') as FormArray;
+
+  //console.log('mainContactsValidator', formArray.get('email'));
+/*   const emailError =
     control.get('email')?.hasError('required') ||
-    control.get('email')?.hasError('email');
+    control.get('email')?.hasError('pattern');
   const phoneNumberError =
     control.get('phoneNumber')?.hasError('required') ||
-    control.get('phoneNumber')?.hasError('phoneNumberFormat');
+    control.get('phoneNumber')?.hasError('pattern');
   const telegramIdError =
     control.get('telegramId')?.hasError('required') ||
-    control.get('telegramId')?.hasError('telegramIdFormat');
+    control.get('telegramId')?.hasError('pattern');
   const telegramPhoneNumberError =
     control.get('telegramPhoneNumber')?.hasError('required') ||
-    control.get('telegramPhoneNumber')?.hasError('phoneNumberFormat');
+    control.get('telegramPhoneNumber')?.hasError('pattern'); */
+
+
+    const emailError = formArrayEmail.controls.some((control) => control.errors !== null);
+    const phoneNumberError = formArrayPhoneNumber.controls.some((control) => control.errors !== null);
+    const telegramIdError = formArrayTelegramId.controls.some((control) => control.errors !== null);
+    const telegramPhoneNumberError = formArrayTelegramPhoneNumber.controls.some((control) => control.errors !== null);
+
   return emailError ||
     phoneNumberError ||
     telegramIdError ||

@@ -23,52 +23,70 @@ const saltRounds = 10;
 
 router.post("/check-username", async (req, res) => {
   try {
-    let userName = req.body.data.toLowerCase();
+    const userName = req.body.data.userName.toLowerCase();
+    const id = req.body.data.id;
+
+    const whereParams = id ? {
+      userName: { [Op.iLike]: userName },
+      id: { [Op.ne]: id },
+    } : {
+      userName: { [Op.iLike]: userName },
+    };
+
     const duplicate = await User.findOne({
-      where: { userName: { [Op.iLike]: userName } },
+      where: whereParams,
       attributes: ['userName'],
       raw: true
     });
     res.status(200).send({ msg: "Проверка завершена.", data: duplicate });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
 router.post("/check-user-data", async (req, res) => {
   try {
-    let newUser = req.body.data;
+    let user = req.body.data;
+    const whereParams = user.id ?
+      {
+        firstName: { [Op.iLike]: user.firstName.toLowerCase() },
+        lastName: { [Op.iLike]: user.lastName.toLowerCase() },
+        id: { [Op.ne]: user.id },
+      } : {
+        firstName: { [Op.iLike]: user.firstName.toLowerCase() },
+        lastName: { [Op.iLike]: user.lastName.toLowerCase() }
+      }
+
     let duplicatesName = await User.findAll({
-      where: {
-        firstName: { [Op.iLike]: newUser.firstName.toLowerCase() },
-        lastName: { [Op.iLike]: newUser.lastName.toLowerCase() }
-      },
+      where: whereParams,
       attributes: ['userName'],
       raw: true
     });
     duplicatesName = duplicatesName.map(item => item.userName);
     let duplicatesContact = [];
-    for (let key in newUser.contacts) {
-      for (let contact of newUser.contacts[key]) {
+
+
+    for (let key in user.contacts) {
+      for (let contact of user.contacts[key]) {
         if (contact) {
-          let existedContacts = await User.findAll({
+          let params = {
             attributes: ['userName'],
             include: {
               model: Contact,
               where: {
-                type: key, content: contact, isRestricted: false
+                type: key, content: contact
               },
               attributes: [],
             },
             raw: true
-          });
+          };
+          if (user.id) {
+            params.where = {
+              id: { [Op.ne]: user.id },
+            };
+          }
+          let existedContacts = await User.findAll(params);
           if (existedContacts.length > 0) {
             existedContacts = existedContacts.map(item => item.userName);
             duplicatesContact.push(
@@ -87,18 +105,10 @@ router.post("/check-user-data", async (req, res) => {
 
     res.status(200).send({ msg: "Проверка завершена.", data: { duplicatesName: duplicatesName, duplicatesContact: duplicatesContact } });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
-
-
 
 
 router.post("/create-user", async (req, res) => {
@@ -131,8 +141,6 @@ router.post("/create-user", async (req, res) => {
         id: creatingUser.roleId,
       }
     });
-
-
 
     let searchString =
       creatingUser.userName +
@@ -216,7 +224,7 @@ router.post("/create-user", async (req, res) => {
           districtName = await District.findOne({ where: { id: address.district }, attributes: ['name'] });
           districtName = districtName.name + ' ';
         }
-        if (address.country) {
+        if (address.locality) {
           localityName = await Locality.findOne({ where: { id: address.locality }, attributes: ['name'] });
           localityName = localityName.name + ' ';
         }
@@ -231,9 +239,6 @@ router.post("/create-user", async (req, res) => {
     // await createdUser.setRole(role);
     res.status(200).send({ msg: "Аккаунт успешно создан.", data: creatingUser.userName });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    console.log(e.statusCode);
     if (createdUser) {
       /*       await Address.destroy({
               where: {
@@ -251,12 +256,8 @@ router.post("/create-user", async (req, res) => {
         },
       });
     }
-    let message = `Произошла ошибка (пользователь не сохранен):  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
@@ -438,91 +439,91 @@ router.post("/get-users", async (req, res) => {
      */
 
 
-/*         if (addresses.countries && addresses.countries.length > 0) {
-          let countriesAmount, regionsAmount, districtsAmount, localitiesAmount = 0;
-          addressRequiredParam = true;
-          countriesAmount = addresses.countries.length;
+    /*         if (addresses.countries && addresses.countries.length > 0) {
+              let countriesAmount, regionsAmount, districtsAmount, localitiesAmount = 0;
+              addressRequiredParam = true;
+              countriesAmount = addresses.countries.length;
 
-          //localities
-          let listOfLocalitiesIds = ``;
-          if (addresses.localities && addresses.localities.length > 0) {
-            localitiesAmount = addresses.localities.length;
-            listOfLocalitiesIds = `(`;
-            for (let id of addresses.localities) {
+              //localities
+              let listOfLocalitiesIds = ``;
+              if (addresses.localities && addresses.localities.length > 0) {
+                localitiesAmount = addresses.localities.length;
+                listOfLocalitiesIds = `(`;
+                for (let id of addresses.localities) {
 
-              const locality = await Locality.findOne({
-                where: { id: id },
-                attributes: ['districtId'],
-              });
-              addresses.districts = addresses.districts.filter(id => id != locality.districtId);
+                  const locality = await Locality.findOne({
+                    where: { id: id },
+                    attributes: ['districtId'],
+                  });
+                  addresses.districts = addresses.districts.filter(id => id != locality.districtId);
 
-              const district = await District.findOne({
-                where: { id: locality.districtId },
-                attributes: ['regionId'],
-              });
-              addresses.regions = addresses.regions.filter(id => id != district.regionId);
+                  const district = await District.findOne({
+                    where: { id: locality.districtId },
+                    attributes: ['regionId'],
+                  });
+                  addresses.regions = addresses.regions.filter(id => id != district.regionId);
 
-              const region = await Region.findOne({
-                where: { id: district.regionId },
-                attributes: ['countryId'],
-              });
-              addresses.countries = addresses.countries.filter(id => id != region.countryId);
+                  const region = await Region.findOne({
+                    where: { id: district.regionId },
+                    attributes: ['countryId'],
+                  });
+                  addresses.countries = addresses.countries.filter(id => id != region.countryId);
 
-              listOfLocalitiesIds = listOfLocalitiesIds + `'` + id + `', `;
-            }
-            listOfLocalitiesIds = listOfLocalitiesIds.slice(0, -2) + `)`;
-          }
+                  listOfLocalitiesIds = listOfLocalitiesIds + `'` + id + `', `;
+                }
+                listOfLocalitiesIds = listOfLocalitiesIds.slice(0, -2) + `)`;
+              }
 
-          //districts
-          let listOfDistrictsIds = ``;
-          if (addresses.districts && addresses.districts.length > 0) {
-            districtsAmount = addresses.districts.length;
-            listOfDistrictsIds = `(`;
+              //districts
+              let listOfDistrictsIds = ``;
+              if (addresses.districts && addresses.districts.length > 0) {
+                districtsAmount = addresses.districts.length;
+                listOfDistrictsIds = `(`;
 
-            for (let id of addresses.districts) {
-              const district = await District.findOne({
-                where: { id: id },
-                attributes: ['regionId'],
-              });
-              addresses.regions = addresses.regions.filter(id => id != district.regionId);
+                for (let id of addresses.districts) {
+                  const district = await District.findOne({
+                    where: { id: id },
+                    attributes: ['regionId'],
+                  });
+                  addresses.regions = addresses.regions.filter(id => id != district.regionId);
 
-              const region = await Region.findOne({
-                where: { id: district.regionId },
-                attributes: ['countryId'],
-              });
-              addresses.countries = addresses.countries.filter(id => id != region.countryId);
+                  const region = await Region.findOne({
+                    where: { id: district.regionId },
+                    attributes: ['countryId'],
+                  });
+                  addresses.countries = addresses.countries.filter(id => id != region.countryId);
 
-              listOfDistrictsIds = listOfDistrictsIds + `'` + id + `', `;
-            }
-            listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
-          }
+                  listOfDistrictsIds = listOfDistrictsIds + `'` + id + `', `;
+                }
+                listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
+              }
 
-          //regions
-          let listOfRegionsIds = ``;
-          if (addresses.regions && addresses.regions.length > 0) {
-            regionsAmount = addresses.regions.length;
-            listOfRegionsIds = `(`;
-            for (let id of addresses.regions) {
-              const region = await Region.findOne({
-                where: { id: id },
-                attributes: ['countryId'],
-              })
-              addresses.countries = addresses.countries.filter(id => id != region.countryId);
+              //regions
+              let listOfRegionsIds = ``;
+              if (addresses.regions && addresses.regions.length > 0) {
+                regionsAmount = addresses.regions.length;
+                listOfRegionsIds = `(`;
+                for (let id of addresses.regions) {
+                  const region = await Region.findOne({
+                    where: { id: id },
+                    attributes: ['countryId'],
+                  })
+                  addresses.countries = addresses.countries.filter(id => id != region.countryId);
 
-              listOfRegionsIds = listOfRegionsIds + `'` + id + `', `;
-            }
-            listOfRegionsIds = listOfRegionsIds.slice(0, -2) + `)`;
-          }
+                  listOfRegionsIds = listOfRegionsIds + `'` + id + `', `;
+                }
+                listOfRegionsIds = listOfRegionsIds.slice(0, -2) + `)`;
+              }
 
-          //countries
-          let listOfCountriesIds = ``;
-          if (addresses.countries && addresses.countries.length > 0) {
-            listOfCountriesIds = `(`;
-            for (let id of addresses.countries) {
-              listOfCountriesIds = listOfCountriesIds + `'` + id + `', `;
-            }
-            listOfCountriesIds = listOfCountriesIds.slice(0, -2) + `)`;
-          } */
+              //countries
+              let listOfCountriesIds = ``;
+              if (addresses.countries && addresses.countries.length > 0) {
+                listOfCountriesIds = `(`;
+                for (let id of addresses.countries) {
+                  listOfCountriesIds = listOfCountriesIds + `'` + id + `', `;
+                }
+                listOfCountriesIds = listOfCountriesIds.slice(0, -2) + `)`;
+              } */
 
     if (addresses.countries && addresses.countries.length > 0) {
       addressRequiredParam = true;
@@ -637,19 +638,19 @@ router.post("/get-users", async (req, res) => {
         include: [
           {
             model: Country,
-            attributes: ['name'],
+            attributes: ['id', 'name'],
           },
           {
             model: Region,
-            attributes: ['shortName'],
+            attributes: ['id', 'shortName'],
           },
           {
             model: District,
-            attributes: ['shortName'],
+            attributes: ['id', 'shortName'],
           },
           {
             model: Locality,
-            attributes: ['shortName'],
+            attributes: ['id', 'shortName'],
           },
         ]
       },
@@ -698,14 +699,12 @@ router.post("/get-users", async (req, res) => {
       where: whereParams,
       include: parameters
     });
+    console.log("users");
+    console.log(users[0].dataValues.contacts);
     res.status(200).send({ msg: "Данные получены.", data: { users: users, length: length } });
   } catch (e) {
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
@@ -716,14 +715,8 @@ router.get("/check-user-before-delete/:id", async (req, res) => {
 
     res.status(200).send({ msg: "Пользователь может быть удален.", data: true });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
@@ -735,14 +728,8 @@ router.delete("/delete-user/:id", async (req, res) => {
     });
     res.status(200).send({ msg: "Пользователь удален.", data: true });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
@@ -761,14 +748,8 @@ router.patch("/block-user/:id", async (req, res) => {
     );
     res.status(200).send({ msg: "Пользователь заблокирован.", data: true });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
@@ -787,14 +768,8 @@ router.patch("/unblock-user", async (req, res) => {
     );
     res.status(200).send({ msg: "Пользователь разблокирован.", data: true });
   } catch (e) {
-    console.log("error");
-    console.log(e);
-    let message = `Произошла ошибка:  ${e.message}`;
-    if (e.parent?.detail) {
-      message = message + ': ' + e.parent.detail;
-    }
-    const statusCode = e.statusCode ? e.statusCode : 500;
-    res.status(statusCode).send(message);
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
   }
 });
 
@@ -806,6 +781,17 @@ function cloneDate(date) {
     String(date.getMonth() + 1).padStart(2, '0') +
     '.' +
     date.getFullYear();
+}
+
+function errorHandling(e) {
+  console.log("error");
+  console.log(e);
+  let message = `Произошла ошибка:  ${e.message}`;
+  if (e.parent?.detail) {
+    message = message + ': ' + e.parent.detail;
+  }
+  const statusCode = e.statusCode ? e.statusCode : 500;
+  return { statusCode: statusCode, message: message };
 }
 
 

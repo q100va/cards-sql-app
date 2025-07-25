@@ -4,14 +4,20 @@ import { AddressFilterParams } from './address-filter-params';
 
 export interface Control {
   controlName: string;
-  value: string | boolean;
-  disabled: boolean;
+  value: string | boolean | Date | [] | string[];
+  disabled?: boolean;
   validators?: ((
     control: AbstractControl<any, any>
   ) => ValidationErrors | null)[];
-  type: string;
+  type: 'inputText' | 'inputPassword' | 'select' | 'checkbox' | 'radio' | 'toggle';
   label: string;
-  placeHolder?: string;
+  postfix?: string;
+  placeholder?: string;
+  errorName?: string;
+  category?: string;
+  formType: string;
+  colspan?: number;
+  rowspan?: number;
 }
 
 export interface DialogProps {
@@ -24,20 +30,41 @@ export interface DialogProps {
     toponymProp: string;
   }[];
   addressFilterParams: {
-    source?: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
-    multiple?: boolean;
-    cols?: string;
-    gutterSize?: string;
-    rowHeight?: string;
-    type: string;
     isShowCountry: boolean;
     isShowRegion: boolean;
     isShowDistrict: boolean;
     isShowLocality: boolean;
-    readonly?: boolean;
-    class?: 'none' | 'view-mode';
+
+    source?: 'toponymCard' | 'toponymList' | 'userCard' | 'userList';
+  multiple?: boolean;
+  cols?: string;
+  gutterSize?: string;
+  rowHeight?: string;
+  readonly?: boolean | undefined;
+  class?: 'none' | 'view-mode';
   };
 }
+
+/* export interface DialogData {
+  type: GeographyLevels;
+  operation: 'create' | 'view-edit';
+  defaultAddressParams: DefaultAddressParams;
+  object?: {
+    [key: string]: string | number | boolean;
+  };
+  creationTitle: string;
+  viewTitle: string;
+  controlsDisable: boolean;
+  controls: Control[];
+  checkingName: string;
+  addressFilterControls?: {
+    addressFilterProp: string;
+    toponymProp: string;
+  }[];
+  addressFilterParams: AddressFilterParams;
+  componentType: 'toponym' | 'user';
+
+} */
 
 export interface ToponymProps {
   title: string;

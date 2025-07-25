@@ -68,11 +68,9 @@ export class AddressFilterComponent {
   constructor() {}
   //TODO: spinner?
   ngOnInit() {
-    console.log(
-      'params in address-filter',
-      this.params()
-    );
+    console.log('params in address-filter', this.params());
 
+    if (this.params().readonly) this.form.get('country')?.disable();
 
     console.log(
       'defaultAddressParams in address-filter',
@@ -316,6 +314,7 @@ export class AddressFilterComponent {
       count = count + 1;
     }
     console.log('this.emitAddressData', addressData);
+    console.log('this.addressFilter', this.addressFilter);
     this.addressFilter.emit(addressData);
     if (this.params().source != 'toponymCard') {
       this.addressFilterBadgeValue.emit(count);
@@ -324,15 +323,22 @@ export class AddressFilterComponent {
     }
   }
 
-  onChangeMode(
-    mode: string,
-    data: DefaultAddressParams | null
-  ) {
+  onChangeMode(mode: string, data: DefaultAddressParams | null) {
     if (mode == 'edit') {
-      this.form.get('country')?.enable();
-      this.form.get('region')?.enable();
-      this.form.get('district')?.enable();
-      this.form.get('locality')?.enable();
+      if (this.params().source != 'userCard') {
+        this.form.get('country')?.enable();
+        this.form.get('region')?.enable();
+        this.form.get('district')?.enable();
+        this.form.get('locality')?.enable();
+      } else {
+        this.form.get('country')?.enable();
+        if (this.form.controls['country'].value)
+          this.form.get('region')?.enable();
+        if (this.form.controls['region'].value)
+          this.form.get('district')?.enable();
+        if (this.form.controls['district'].value)
+          this.form.get('locality')?.enable();
+      }
       this.params().class = 'none';
       this.params().readonly = false;
       this.emitAddressData();
@@ -421,9 +427,7 @@ export class AddressFilterComponent {
     });
   }
 
-  private setDefaultFormValue(
-    key: GeographyLevels
-  ) {
+  private setDefaultFormValue(key: GeographyLevels) {
     const toponymType:
       | 'countryId'
       | 'regionId'

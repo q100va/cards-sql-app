@@ -23,9 +23,17 @@ import { DatePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { MatMenuModule } from '@angular/material/menu';
-import { ListBaseComponent } from '../../shared/list-base/list-base.component';
+import { BaseListComponent } from '../../shared/base-list/base-list.component';
 import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 import { AddressFilter } from '../../interfaces/address-filter';
+import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
+import { Validators } from '@angular/forms';
+import { DialogData } from '../../interfaces/dialog-data';
+import { DialogProps } from '../../interfaces/toponym-props';
+import * as Validator from '../../shared/custom.validator';
+import { UserDetailsComponent } from '../../shared/dialogs/details-dialogs/user-details/user-details.component';
+import { Toast } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
   selector: 'app-users-list',
@@ -35,8 +43,10 @@ import { AddressFilter } from '../../interfaces/address-filter';
     MatPaginatorModule,
     MatIconModule,
     MatMenuModule,
-    ListBaseComponent,
+    BaseListComponent,
     MatButtonModule,
+    Toast,
+    ConfirmDialogModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './users-list.component.html',
@@ -218,6 +228,311 @@ export class UsersListComponent {
     });
   });
 
+  dialogConfig = {
+    disableClose: true,
+    minWidth: '800px',
+    height: '80%',
+    autoFocus: 'dialog',
+    restoreFocus: true,
+  };
+
+  dialogProps: DialogProps = {
+    creationTitle: 'Новый пользователь',
+    viewTitle: 'Пользователь',
+    controls: [
+      {
+        controlName: 'userName',
+        value: '',
+
+        validators: [Validators.required],
+        type: 'inputText',
+        label: 'Имя пользователя',
+        postfix: '*',
+        placeholder: 'a.petrova',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'roleId',
+        value: '',
+
+        validators: [Validators.required],
+        type: 'select',
+        label: 'Роль',
+        postfix: '*',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'password',
+        value: '',
+
+        validators: [
+          Validators.required,
+          Validators.pattern('^(?=.*\\d)(?=.*[A-Za-z]).{8,}$'),
+        ],
+        type: 'inputPassword',
+        label: 'Пароль',
+        postfix: '*',
+       // placeholder: '********',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+
+      {
+        controlName: 'firstName',
+        value: '',
+
+        validators: [Validators.required],
+        type: 'inputText',
+        label: 'Имя',
+        postfix: '*',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'patronymic',
+        value: '',
+
+        validators: [],
+        type: 'inputText',
+        label: 'Отчество',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'lastName',
+        value: '',
+
+        validators: [Validators.required],
+        type: 'inputText',
+        label: 'Фамилия',
+        postfix: '*',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'comment',
+        value: '',
+
+        validators: [],
+        type: 'inputText',
+        label: 'Комментарий',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 6,
+        rowspan: 1,
+      },
+      {
+        controlName: 'isRestricted',
+        value: false,
+
+        validators: [],
+        type: 'toggle',
+        label: 'Заблокирован',
+        category: 'extraData',
+        formType: 'formControl',
+        colspan: 6,
+        rowspan: 1,
+      },
+      {
+        controlName: 'email',
+        value: '',
+
+        type: 'inputText',
+        label: 'Email',
+        postfix: '*',
+        placeholder: 'agatha85@yandex.ru',
+        validators: [Validators.required, Validator.emailFormatValidator()],
+        errorName: 'emailFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'phoneNumber',
+        value: '',
+
+        type: 'inputText',
+        label: 'Номер телефона',
+        postfix: '*',
+        placeholder: 'начните с "+", далее в любом формате',
+        validators: [
+          Validators.required,
+          Validator.phoneNumberFormatValidator(),
+        ],
+        errorName: 'phoneNumberFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'telegramId',
+        value: '',
+
+        type: 'inputText',
+        label: 'Телеграм ID',
+        postfix: '*',
+        placeholder: '#1234567890',
+        validators: [
+          Validators.required,
+          Validator.telegramIdFormatValidator(),
+        ],
+        errorName: 'telegramIdFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'telegramPhoneNumber',
+        value: '',
+
+        type: 'inputText',
+        label: 'Телеграм номер телефона',
+        postfix: '*',
+        placeholder: 'начните с "+", далее в любом формате',
+        validators: [
+          Validators.required,
+          Validator.phoneNumberFormatValidator(),
+        ],
+        errorName: 'phoneNumberFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'telegramNickname',
+        value: '',
+
+        type: 'inputText',
+        label: 'Телеграм nickname',
+        placeholder: '@daisy',
+        validators: [Validator.telegramNicknameFormatValidator()],
+        errorName: 'telegramNicknameFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'whatsApp',
+        value: '',
+
+        type: 'inputText',
+        label: 'WhatsApp',
+        placeholder: 'начните с "+", далее в любом формате',
+        validators: [Validator.phoneNumberFormatValidator()],
+        errorName: 'phoneNumberFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'vKontakte',
+        value: '',
+
+        type: 'inputText',
+        label: 'Вконтакте',
+        placeholder: 'id719993384 или daisy',
+        validators: [Validator.vKontakteFormatValidator()],
+        errorName: 'vKontakteFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'instagram',
+        value: '',
+
+        type: 'inputText',
+        label: 'Instagram',
+        placeholder: 'daisy',
+        validators: [Validator.instagramFormatValidator()],
+        errorName: 'instaFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'facebook',
+        value: '',
+
+        type: 'inputText',
+        label: 'Facebook',
+        placeholder: 'daisy',
+        validators: [Validator.facebookFormatValidator()],
+        errorName: 'facebookFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'otherContact',
+        value: '',
+
+        type: 'inputText',
+        label: 'Другой контакт',
+        placeholder: 'все, что не подошло выше',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+    ],
+    checkingName: 'userName',
+    addressFilterControls: [
+      {
+        addressFilterProp: 'countries',
+        toponymProp: 'district.region.country.id',
+      },
+      {
+        addressFilterProp: 'regions',
+        toponymProp: 'district.region.id',
+      },
+      {
+        addressFilterProp: 'districts',
+        toponymProp: 'district.id',
+      },
+      {
+        addressFilterProp: 'localities',
+        toponymProp: 'locality.id',
+      },
+    ],
+
+    addressFilterParams: {
+      source: 'userCard',
+      multiple: false,
+      cols: '2',
+      gutterSize: '16px',
+      rowHeight: '76px',
+      isShowCountry: true,
+      isShowRegion: true,
+      isShowDistrict: true,
+      isShowLocality: true,
+      class: 'none',
+    },
+  };
+
   constructor() {
     effect(() => {
       console.log('allFilterParameters changed:', this.allFilterParameters());
@@ -264,8 +579,90 @@ export class UsersListComponent {
     //console.log(this.displayedColumns);
   }
 
-  onOpenUserCardClick(id: number) {
-    console.log(id);
+  onAddUserClick() {
+    this.dialogProps.addressFilterParams.readonly = false;
+    this.dialogProps.addressFilterParams.class = 'none';
+    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
+      ...this.dialogConfig,
+      data: {
+        ...this.dialogProps,
+        operation: 'create',
+        controlsDisable: false,
+        defaultAddressParams: {
+          localityId: null,
+          districtId: null,
+          regionId: null,
+          countryId: null,
+        },
+        componentType: 'user',
+      },
+    });
+
+    dialogRefCreate.afterClosed().subscribe((result) => {
+      console.log('The dialog was closed', result);
+
+      if (result.name) {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Подтверждение',
+          detail: `Аккаунт пользователя ${result.name} успешно создан!`,
+        });
+      }
+      this.getUsers();
+    });
+  }
+
+  onOpenUserCardClick(user: any) {
+    console.log('user', user);
+    this.dialogProps.addressFilterParams.readonly = true;
+    this.dialogProps.addressFilterParams.class = 'view-mode';
+    if (user.isRestricted) {
+      this.dialogProps.controls.push({
+        controlName: 'causeOfRestriction',
+        value: '',
+        validators: [Validators.required],
+        type: 'inputText',
+        label: 'Причина',
+        category: 'extraData',
+        formType: 'formControl',
+      });
+    }
+    console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
+
+    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
+      ...this.dialogConfig,
+      data: {
+        ...this.dialogProps,
+        operation: 'view-edit',
+        controlsDisable: true,
+        defaultAddressParams: {
+          localityId: user.addresses[0]?.locality
+            ? user.addresses[0]?.locality.id
+            : null,
+          districtId: user.addresses[0]?.district
+            ? user.addresses[0]?.district.id
+            : null,
+          regionId: user.addresses[0]?.region
+            ? user.addresses[0]?.region.id
+            : null,
+          countryId: user.addresses[0]?.country
+            ? user.addresses[0]?.country.id
+            : null,
+        },
+        object: user,
+        componentType: 'user',
+      },
+    });
+    dialogRefCreate.afterClosed().subscribe((result) => {
+      this.getUsers();
+      if (result.name) {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Подтверждение',
+          detail: `Аккаунт пользователя '${result.name}' успешно обновлен!`,
+        });
+      }
+    });
   }
 
   onBlockUserClick(id: number) {
@@ -328,17 +725,7 @@ export class UsersListComponent {
         });
         this.getUsers();
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorHandling(err),
     });
   }
 
@@ -380,17 +767,7 @@ export class UsersListComponent {
           });
         }
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorHandling(err),
     });
   }
 
@@ -405,17 +782,7 @@ export class UsersListComponent {
         });
         this.getUsers();
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorHandling(err),
     });
   }
 
@@ -430,62 +797,92 @@ export class UsersListComponent {
       )
       .subscribe({
         next: (res) => {
+          /* console.log('res.data.users');
+          console.log(res.data.users); */
           this.users = res.data.users;
           this.length.set(res.data.length);
-          //console.log('this.users');
-          //console.log(this.users);
+          /*  console.log('this.users0');
+          console.log(this.users); */
           for (let user of this.users) {
+         //   user.role = typeof user.role === 'object' && 'name' in user.role ? user.role.name : user.role;
             let orderedContacts: { [key: string]: string[] } = {};
+            console.log('user.contacts');
+            /*     console.log(user.contacts); */
             if (user.contacts) {
               for (let contact of user.contacts) {
+                console.log('contact');
+                console.log(contact);
                 if (
                   contact.type == 'telegramNickname' ||
                   contact.type == 'telegramPhoneNumber' ||
                   contact.type == 'telegramId'
                 ) {
-                  contact.type = 'telegram';
+                  if (!orderedContacts['telegram']) {
+                    orderedContacts['telegram'] = [];
+                  }
+                  orderedContacts['telegram'].push(contact.content);
                 }
                 if (!orderedContacts[contact.type]) {
                   orderedContacts[contact.type] = [];
-                  orderedContacts[contact.type].push(contact.content);
-                } else {
-                  orderedContacts[contact.type].push(contact.content);
                 }
+                orderedContacts[contact.type].push(contact.content);
               }
             }
             user.orderedContacts =
               orderedContacts as typeof user.orderedContacts;
           }
-          // console.log('this.users');
-          // console.log(this.users);
+          console.log('this.users');
+          console.log(this.users);
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
-          /*            console.log('this.paginator');
-      console.log(this.paginator);
-      console.log('this.sort');
-      console.log(this.sort);
-      console.log('this.length');
-      console.log(this.length()); */
-          //this.dataSource.paginator = this.paginator;
           this.dataSource.sort = this.sort;
         },
-        error: (err) => {
-          console.log(err);
-          let errorMessage =
-            typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: errorMessage,
-            sticky: true,
-          });
-        },
+        error: (err) => this.errorHandling(err),
       });
   }
 
   transformDate(date: Date | string): string | null {
     return new DatePipe('ru').transform(date, 'dd.MM.yyyy');
+  }
+
+  editContact(value: string, type: string) {
+    let result = '';
+    //TODO: move this logic to a service СТРАННО: когда открыта карточка пользователя, то эта функция вызывается при любом действии
+    switch (type) {
+      case 'vKontakte':
+        result = 'https://vk.com/' + value;
+        break;
+      case 'instagram':
+        result = 'https://www.instagram.com/' + value;
+        break;
+      case 'facebook':
+        result = 'https://www.facebook.com/' + value;
+        break;
+      /*       case 'phoneNumber':
+        result = value.trim().replace(/[^0-9+]/g, '');
+        break;
+      case 'telegramPhoneNumber':
+        result = value.trim().replace(/[^0-9+]/g, '');
+        break;
+      case 'whatsApp':
+        result = value.trim().replace(/[^0-9+]/g, '');
+        break; */
+      default:
+        result = value;
+    }
+   // console.log('editContact', type, value, result);
+    return result;
+  }
+
+  errorHandling(err: any) {
+    console.log(err);
+    let errorMessage =
+      typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Ошибка',
+      detail: errorMessage,
+      sticky: true,
+    });
   }
 }

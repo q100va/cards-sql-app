@@ -13,22 +13,23 @@ export class UserService {
 
   constructor() {}
 
-  checkUserName(userName: string): Observable<any> {
+  checkUserName(userName: string, id: number | null): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/users/check-username/', {
-      data: userName,
+      data: {userName: userName, id: id}
     });
   }
-  checkUserData(newUser: User): Observable<any> {
+  checkUserData(user: User): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/users/check-user-data/', {
-      data: newUser,
+      data: user,
     });
   }
-  createUser(newUser: User): Observable<any> {
+  saveUser(user: User, operation: string,): Observable<any> {
+    const addressPoint = operation == 'create' ? 'create-user' : 'update-user';
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/users/create-user/', {
-      data: newUser,
+    return this.http.post(BACKEND_URL + '/api/users/' + addressPoint, {
+      data: user,
     });
   }
   getListOfUsers(
@@ -52,12 +53,15 @@ export class UserService {
     currentPage: number
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/users/get-users/', {
+    const result = this.http.post(BACKEND_URL + '/api/users/get-users/', {
       allFilterParameters: allFilterParameters,
       pageSize: pageSize,
       currentPage: currentPage,
     });
+    console.log('getListOfUsers service result', result);
+    return result;
   }
+
   checkPossibilityToDeleteUser(id: number): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.get(
