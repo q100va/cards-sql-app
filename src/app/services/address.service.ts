@@ -2,42 +2,41 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AbstractControl, FormGroup } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { GeographyLevels } from '../interfaces/types';
+import { AddressFilter } from '../interfaces/address-filter';
+import { ToponymFormControlsNames } from '../interfaces/toponymFormControlsNames';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AddressService {
   private http = inject(HttpClient);
-  //private messageService = inject(MessageService);
 
   constructor() {}
 
-  getCountries(): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
-    return this.http.get(BACKEND_URL + '/api/addresses/get-countries');
-  }
-
-  getRegions(): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
-    return this.http.get(BACKEND_URL + '/api/addresses/get-regions');
-  }
-
-  getDistricts(): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
-    return this.http.get(BACKEND_URL + '/api/addresses/get-districts');
-  }
-
-  getLocalities(
-    filter: any /* {
-      [key: string]: number[] | null | boolean | string | {[key: string]: number[] | null | string};
-    } */,
+  getToponyms(
+    type: GeographyLevels,
+    filter: {
+      searchValue: string;
+      exactMatch: boolean;
+      addressString: string;
+      addressFilter: AddressFilter;
+      sortParameters: {
+          active: string;
+          direction: "" | "asc" | "desc";
+      };
+  },
     pageSize: number,
     currentPage: number
   ): Observable<any> {
+    const toponymsTypes = {
+      locality: 'localities',
+      district: 'districts',
+      region: 'regions',
+      country: 'countries'
+    }
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/get-localities', {
+    return this.http.post(BACKEND_URL + '/api/addresses/get-' + toponymsTypes[type], {
       data: {
         filter: filter,
         pageSize: pageSize,
@@ -60,64 +59,55 @@ export class AddressService {
     });
   }
 
-/*
-  getListOfRegionsOfCountries(idsOfCountries: number[]): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/get-regions-list', {
-      data: idsOfCountries,
-    });
-  }
-
-  getListOfDistrictsOfRegions(idsOfRegions: number[]): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/get-districts-list', {
-      data: idsOfRegions,
-    });
-  }
-
-  getListOfLocalitiesOfDistricts(idsOfDistricts: number[]): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/get-localities-list', {
-      data: idsOfDistricts,
-    });
-  } */
-
   //create toponym
 
   checkToponymName(
     type: string,
     name: string,
-    addressFilter: { [key: string]: null | number[] | [] }
+    id: number | null,
+    addressFilter: AddressFilter,
+    operation: string,
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/check-toponym-name', {
       data: {
         type: type,
         name: name,
+        id: id,
         addressFilter: addressFilter,
+        operation: operation,
       },
     });
   }
 
-  createToponym(
+  saveToponym(
     type: string,
-    name: string,
-    shortName: string,
+    id: number | null,
+    mainValues: ToponymFormControlsNames,
+    /*       name: string,  shortName: string,
+    postName: string,
+    shortPostName: string,
     isFederalCity: boolean,
     isCapitalOfRegion: boolean,
-    isCapitalOfDistrict: boolean,
-    addressFilter: { [key: string]: null | number[] | [] }
+    isCapitalOfDistrict: boolean, */
+    addressFilter: AddressFilter,
+    operation: string,
   ): Observable<any> {
+    const addressPoint = operation == 'create' ? 'create-toponym' : 'update-toponym'
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/create-toponym', {
+    return this.http.post(BACKEND_URL + '/api/addresses/' + addressPoint, {
       data: {
         type: type,
-        name: name,
-        shortName: shortName,
+        mainValues: mainValues,
+        id: id,
         addressFilter: addressFilter,
+/*         name: name,
+        shortName: shortName,
+        postName: postName,
+        shortPostName: shortPostName,
         isFederalCity: isFederalCity,
         isCapitalOfRegion: isCapitalOfRegion,
-        isCapitalOfDistrict: isCapitalOfDistrict,
+        isCapitalOfDistrict: isCapitalOfDistrict, */
       },
     });
   }
@@ -131,7 +121,6 @@ export class AddressService {
     const path = destroy
       ? 'check-toponym-before-delete/'
       : 'check-toponym-before-block/';
-
     return this.http.get(
       BACKEND_URL + '/api/addresses/' + path + type + '/' + id
     );
@@ -143,6 +132,7 @@ export class AddressService {
       BACKEND_URL + '/api/addresses/delete-toponym/' + type + '/' + id
     );
   }
+
   blockToponym(type: string, id: number): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.patch(

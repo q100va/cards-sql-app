@@ -1,7 +1,44 @@
-<h2 mat-dialog-title>Новый пользователь</h2>
+
+
+<mat-grid-list cols="18" gutterSize="16px" rowHeight="76px">
+  <mat-grid-tile colspan="11" rowspan="1">
+    <h3 mat-dialog-title>{{title}}</h3>
+  </mat-grid-tile>
+  <mat-dialog-actions>
+    <mat-grid-tile colspan="2" rowspan="1">
+
+      @if (data.operation == 'view-edit' && isEditMode) {
+      <button mat-icon-button title="Сохранить"
+        [disabled]="!mainForm.valid"
+        (click)="onSaveClick('justSave')">
+        <mat-icon fontSet="material-icons-outlined">save</mat-icon>
+      </button>
+      }
+    </mat-grid-tile>
+    <mat-grid-tile colspan="2" rowspan="1">
+      @if (data.operation == 'view-edit' && !isEditMode) {
+      <button mat-icon-button title="Изменить" (click)="onEditClick()">
+        <mat-icon fontSet="material-icons-outlined">edit_square</mat-icon>
+      </button>
+      }
+      @if (data.operation == 'view-edit' && isEditMode) {
+      <button mat-icon-button title="К просмотру" (click)="onViewClick()">
+        <mat-icon fontSet="material-icons-outlined">find_in_page</mat-icon>
+      </button>
+      }
+    </mat-grid-tile>
+    <mat-grid-tile colspan="2" rowspan="1">
+      <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
+        <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
+      </button>
+    </mat-grid-tile>
+    <mat-grid-tile colspan="1" rowspan="1"> </mat-grid-tile>
+  </mat-dialog-actions>
+</mat-grid-list>
+
 <p-confirmdialog />
 <p-toast position="center" />
-<form [formGroup]="form">
+<form [formGroup]="mainForm">
   <mat-dialog-content>
     <mat-tab-group animationDuration="0ms">
       <mat-tab label="Основные сведения">
@@ -10,7 +47,7 @@
             <mat-form-field>
               <mat-label>Имя пользователя*</mat-label>
               <input type="text" matInput formControlName="userName" placeholder="a.petrova" />
-              @if (form.controls['userName'].hasError('required')) {
+              @if (mainForm.controls['userName'].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
             </mat-form-field>
@@ -19,10 +56,10 @@
             <mat-form-field>
               <mat-label>Пароль*</mat-label>
               <input type="password" matInput formControlName="password" />
-              @if (form.controls['password'].hasError('required')) {
+              @if (mainForm.controls['password'].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
-              @if (form.controls['password'].hasError('pattern')) {
+              @if (mainForm.controls['password'].hasError('pattern')) {
               <mat-error class="error">Пароль должен содержать минимум 8 символов, включая латинские буквы и
                 цифры!</mat-error>
               }
@@ -36,7 +73,7 @@
                 @for (role of roles; track $index) {
                 <mat-option [value]="role.id">{{ role.name }}</mat-option>}
               </mat-select>
-              @if (form.controls['role'].hasError('required')) {
+              @if (mainForm.controls['role'].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
             </mat-form-field>
@@ -46,7 +83,7 @@
             <mat-form-field>
               <mat-label>Имя*</mat-label>
               <input type="text" matInput formControlName="firstName" />
-              @if (form.controls['firstName'].hasError('required')) {
+              @if (mainForm.controls['firstName'].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
             </mat-form-field>
@@ -63,7 +100,7 @@
             <mat-form-field>
               <mat-label>Фамилия*</mat-label>
               <input type="text" matInput formControlName="lastName" />
-              @if (form.controls['lastName'].hasError('required')) {
+              @if (mainForm.controls['lastName'].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
             </mat-form-field>
@@ -71,68 +108,11 @@
 
           <mat-grid-tile colspan="6" rowspan="2">
               <app-address-filter
-                [params]="{multiple: false,  cols: '2', gutterSize: '16px', rowHeight: '76px'}"
+                [params]="params"
                 [defaultAddressParams] = "defaultAddressParams"
                 (addressFilter)="addressFilter.set($event)"></app-address-filter>
           </mat-grid-tile>
 
-
-          <!--     <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Страна</mat-label>
-              <mat-select formControlName="country" (selectionChange)="onCountrySelectionChange()">
-                <mat-option></mat-option>
-                @for (country of countries; track $index) {
-                <mat-option [value]="country">
-                  {{ country.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Регион</mat-label>
-              <mat-select formControlName="region" (selectionChange)="onRegionSelectionChange()">
-                <mat-option></mat-option>
-                @for (region of regions; track $index) {
-                <mat-option [value]="region">
-                  {{ region.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Округ/район</mat-label>
-              <mat-select formControlName="district" (selectionChange)="onDistrictSelectionChange()">
-                <mat-option></mat-option>
-                @for (district of districts; track $index) {
-                <mat-option [value]="district">
-                  {{ district.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Населенный пункт</mat-label>
-              <mat-select formControlName="locality">
-                <mat-option></mat-option>
-                @for (locality of localities; track $index) {
-                <mat-option [value]="locality">
-                  {{ locality.name }}
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </mat-grid-tile>
- -->
           <mat-grid-tile colspan="6" rowspan="1">
             <mat-form-field>
               <input type="text" matInput formControlName="comment" placeholder="Комментарий" />
@@ -142,11 +122,11 @@
             <mat-slide-toggle formControlName="isRestricted"
               (change)="  addIfRestricted()">Заблокирован</mat-slide-toggle>
           </mat-grid-tile>
-          @if (form.controls['isRestricted'].value) {
+          @if (mainForm.controls['isRestricted'].value) {
           <mat-grid-tile colspan="6" rowspan="1">
             <mat-form-field>
               <input type="text" matInput formControlName="causeOfRestriction" placeholder="Причина*" />
-              @if (form.controls['causeOfRestriction'].hasError('required')) {
+              @if (mainForm.controls['causeOfRestriction'].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
             </mat-form-field>
@@ -165,10 +145,10 @@
                 'Телеграм ID' || item.label == 'Телеграм номер телефона') ? item.label + '*' : item.label}}</mat-label>
               <!-- <span matTextPrefix>{{item.prefix}}</span> -->
               <input type="text" matInput [formControlName]="item.type" [placeholder]="item.placeholder" />
-              @if (form.controls[item.type].hasError('required')) {
+              @if (mainForm.controls[item.type].hasError('required')) {
               <mat-error class="error">Поле не может быть пустым</mat-error>
               }
-              @if (item.errorName && form.controls[item.type].hasError(item.errorName)) {
+              @if (item.errorName && mainForm.controls[item.type].hasError(item.errorName)) {
               <mat-error class="error">Неверный формат</mat-error>
               }
             </mat-form-field>
@@ -199,7 +179,7 @@
           </ng-container>
 
           <mat-grid-tile colspan="3" rowspan="1">
-            <button mat-button [matMenuTriggerFor]="menu" [disabled]="form.hasError('mainContacts')"
+            <button mat-button [matMenuTriggerFor]="menu" [disabled]="mainForm.hasError('mainContacts')"
               (click)="modifyContactTypesList()">Дополнительный
               контакт</button>
             <mat-menu #menu="matMenu">
@@ -218,118 +198,9 @@
   <br />
   <mat-dialog-actions align="end">
     <button class="dialog-cancel-button" mat-button (click)="onCancelClick($event)">Отменить</button>
-    <button mat-button [disabled]="!form.valid" (click)="onSaveClick()">Сохранить</button>
+    <button mat-button [disabled]="!mainForm.valid" (click)="onSaveClick('saveAndExit')">Сохранить</button>
     <!-- [mat-dialog-close]="true" -->
   </mat-dialog-actions>
 
 </form>
 
-
-<!--  <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Email*</mat-label>
-              <input type="text" matInput formControlName="email" placeholder="agatha85@yandex.ru" />
-              @if (form.controls['email'].hasError('required')) {
-              <mat-error class="error">Поле не может быть пустым</mat-error>
-              }
-              @if (form.controls['email'].hasError('emailFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Номер телефона*</mat-label>
-              <input type="text" matInput formControlName="phoneNumber" placeholder="+79031234567" />
-              @if (form.controls['phoneNumber'].hasError('required')) {
-              <mat-error class="error">Поле не может быть пустым</mat-error>
-              }
-              @if (form.controls['phoneNumber'].hasError('phoneNumberFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Телеграм ID*</mat-label>
-              <input type="text" matInput formControlName="telegramId" placeholder="#1234567890" />
-              @if (form.controls['telegramId'].hasError('required')) {
-              <mat-error class="error">Поле не может быть пустым</mat-error>
-              }
-              @if (form.controls['telegramId'].hasError('telegramIdFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Телеграм номер телефона*</mat-label>
-              <input type="text" matInput formControlName="telegramPhoneNumber" placeholder="+79031234567" />
-              @if (form.controls['telegramPhoneNumber'].hasError('required')) {
-              <mat-error class="error">Поле не может быть пустым</mat-error>
-              }
-              @if (form.controls['telegramPhoneNumber'].hasError('phoneNumberFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Телеграм nickname</mat-label>
-              <input type="text" matInput formControlName="telegramNickname" placeholder="@daisy" />
-              @if (form.controls['telegramNickname'].hasError('telegramNicknameFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>WhatsApp</mat-label>
-              <input type="text" matInput formControlName="whatsApp" placeholder="+79031234567" />
-              @if (form.controls['whatsApp'].hasError('phoneNumberFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Вконтакте</mat-label>
-              <input type="text" matInput formControlName="vKontakte" placeholder="https://vk.com/id1234567" />
-              @if (form.controls['vKontakte'].hasError('vKontakteFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Instagram</mat-label>
-              <input type="text" matInput formControlName="instagram" placeholder="https://www.instagram.com/daisy" />
-              @if (form.controls['instagram'].hasError('instagramFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Facebook</mat-label>
-              <input type="text" matInput formControlName="facebook" placeholder="https://www.facebook.com/daisy" />
-              @if (form.controls['facebook'].hasError('facebookFormat')) {
-              <mat-error class="error">Неверный формат</mat-error>
-              }
-            </mat-form-field>
-          </mat-grid-tile>
-
-          <mat-grid-tile colspan="3" rowspan="1">
-            <mat-form-field>
-              <mat-label>Другой контакт</mat-label>
-              <input type="text" matInput formControlName="otherContact" placeholder="все, что не подошло выше" />
-            </mat-form-field>
-          </mat-grid-tile> -->

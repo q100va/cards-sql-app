@@ -1,0 +1,57 @@
+<mat-grid-list cols="18" gutterSize="16px" rowHeight="76px">
+  <div mat-dialog-title>
+    <mat-grid-tile colspan="11" rowspan="1">
+      <h3 mat-dialog-title>{{title}}</h3>
+    </mat-grid-tile>
+
+    <mat-grid-tile colspan="2" rowspan="1">
+
+      @if (data.operation == 'view-edit' && isEditMode()) {
+      <button mat-icon-button title="Сохранить" [disabled]="isSaveDisabled()" (click)="onSaveClick('justSave')">
+        <mat-icon fontSet="material-icons-outlined">save</mat-icon>
+      </button>
+      }
+    </mat-grid-tile>
+    <mat-grid-tile colspan="2" rowspan="1">
+      @if (data.operation == 'view-edit' && !isEditMode()) {
+      <button mat-icon-button title="Изменить" (click)="onEditClick()">
+        <mat-icon fontSet="material-icons-outlined">edit_square</mat-icon>
+      </button>
+      }
+      @if (data.operation == 'view-edit' && isEditMode()) {
+      <button mat-icon-button title="К просмотру" (click)="onViewClick()">
+        <mat-icon fontSet="material-icons-outlined">find_in_page</mat-icon>
+      </button>
+      }
+    </mat-grid-tile>
+    <mat-grid-tile colspan="2" rowspan="1">
+      <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
+        <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
+      </button>
+    </mat-grid-tile>
+    <mat-grid-tile colspan="1" rowspan="1"> </mat-grid-tile>
+  </div>
+</mat-grid-list>
+
+<p-confirmdialog />
+<p-toast position="center" />
+<mat-dialog-content class="full-width">
+
+  <app-toponym-details [data]="data" (emittedIsEditMode)="isEditMode.set($event)" (emittedChanges)="changes.set($event)"
+    (emittedIsSaveDisabled)="isSaveDisabled.set($event)" (closeDialog)="closeDialog($event)"></app-toponym-details>
+
+</mat-dialog-content>
+
+<mat-grid-list cols="9" gutterSize="16px" rowHeight="36px">
+  <mat-grid-tile colspan="6" rowspan="1"></mat-grid-tile>
+  <mat-grid-tile colspan="3" rowspan="1">
+    <mat-dialog-actions>
+      @if (data.operation == 'create' || isEditMode()){
+      <button class="dialog-submit-button" mat-button [disabled]="isSaveDisabled()"
+        (click)="onSaveClick('saveAndExit')">Сохранить и
+        выйти</button>}
+    </mat-dialog-actions>
+  </mat-grid-tile>
+</mat-grid-list>
+
+<br />

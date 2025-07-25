@@ -1,3 +1,4 @@
+//schemas to upload lists of toponyms
 export const schemas = {
   country: {
     name: {
@@ -7,11 +8,6 @@ export const schemas = {
     },
   },
   region: {
-    code: {
-      prop: 'code',
-      type: String,
-      required: true,
-    },
     name: {
       prop: 'name',
       type: String,

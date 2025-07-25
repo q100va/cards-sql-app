@@ -21,7 +21,7 @@ import { SignInService } from '../../services/sign-in.service';
     MatMenuModule,
     MatDividerModule,
     RouterOutlet,
-    RouterModule
+    RouterModule,
   ],
   templateUrl: './base-layout.component.html',
   styleUrl: './base-layout.component.css',
@@ -36,8 +36,7 @@ export class BaseLayoutComponent {
   userName: string = this.cookieService.get('session_user');
   menuItems: MenuItem[] = [];
 
-  constructor() {
-  }
+  constructor() {}
 
   ngOnInit(): void {
     this.populateMenuItems();
@@ -60,18 +59,22 @@ export class BaseLayoutComponent {
     this.menuItems.push(
       new MenuItem('settings', 'Профайл', '/users/user/profile')
     );
+    this.menuItems.push(new MenuItem('verified_user', 'Роли', '/roles'));
+    this.menuItems.push(new MenuItem('badge', 'Пользователи', '/users'));
     this.menuItems.push(
-      new MenuItem('verified_user', 'Роли', '/roles')
+      new MenuItem('map', 'Топонимы', '/toponyms', [
+        new MenuItem('place', 'Страны', '/countries'),
+        new MenuItem('corporate_fare', 'Регионы', '/regions'),
+        new MenuItem('home_work', 'Р-ны/округа', '/districts'),
+        new MenuItem('holiday_village', 'Насел. пункты', '/localities'),
+      ])
     );
-    this.menuItems.push(
-      new MenuItem('badge', 'Пользователи', '/users')
-    );
-    this.menuItems.push(
-      new MenuItem('map', 'Топонимы', '/toponyms')
-    );
-    this.menuItems.push(
-      new MenuItem('address', 'Адреса', '/addresses')
-    );
+/*     this.menuItems.push(
+      new MenuItem('map', 'Люди', '/toponyms', [
+        new MenuItem('place', 'Сеньоры', '/countries'),
+        new MenuItem('location_city', 'Координаторы', '/localities'),
+      ])
+    ); */
 
   }
 }

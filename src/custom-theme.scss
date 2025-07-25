@@ -67,3 +67,12 @@ html {
 
   ));
 }
+
+:root {
+  @include mat.dialog-overrides((
+    container-color: #ffffff,
+  ));
+}
+
+
+

@@ -42,6 +42,9 @@ import {
 } from '@angular/material/checkbox';
 import { RoleService } from '../../services/role.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
+import { AddressFilterParams } from '../../interfaces/address-filter-params';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { AddressFilter } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-table-filter',
@@ -68,14 +71,23 @@ export class TableFilterComponent implements OnInit {
   private injector = inject(Injector);
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
+
+  params: AddressFilterParams = {
+    source: 'userList',
+    multiple: true,
+    cols: '1',
+    gutterSize: '16px',
+    rowHeight: '57px',
+    isShowCountry: true,
+    isShowRegion: true,
+    isShowDistrict: true,
+    isShowLocality: true,
+    class: "none",
+  };
+
   goToFirstPage = output<void>();
   addressString = signal<string>('');
-  addressFilter = signal<{
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }>({
+  addressFilter = signal<AddressFilter>({
     countries: null,
     regions: null,
     districts: null,
@@ -88,21 +100,13 @@ export class TableFilterComponent implements OnInit {
     [key: string]: string[] | Date[] | null | { [key: string]: string }[];
   }>();
   addressStringValue = output<string>();
-  addressFilterValue = output<{
-    [key: string]: number[] | null | [];
-  }>();
+  addressFilterValue = output<AddressFilter>();
   notActualOption = model.required<boolean>();
   strongAddressFilter = output<boolean>();
   strongContactFilter = output<boolean>();
   rolesList!: { id: number; name: string }[];
 
-  defaultAddressParams = input.required<{
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  }>();
-
+  defaultAddressParams = input.required<DefaultAddressParams>();
 
   private strongAddressFilterControl = effect(
     () => {
@@ -172,13 +176,15 @@ export class TableFilterComponent implements OnInit {
   ];
 
   ngOnInit() {
-
-    console.log('defaultAddressParams in table-filter', this.defaultAddressParams());
+    console.log(
+      'defaultAddressParams in table-filter',
+      this.defaultAddressParams()
+    );
 
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
-       // console.log('res');
-       // console.log(res);
+        // console.log('res');
+        // console.log(res);
         this.rolesList = res.data.roles;
       },
       error: (err) => {
@@ -195,12 +201,7 @@ export class TableFilterComponent implements OnInit {
     });
   }
 
-  onAddressFilterChange(value: {
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }) {
+  onAddressFilterChange(value: AddressFilter) {
     this.addressFilter.set(value);
     this.emitSelectedFilters();
   }
@@ -329,9 +330,12 @@ export class TableFilterComponent implements OnInit {
     let filter: {
       [key: string]: string[] | Date[] | null | { [key: string]: string }[];
     } = {};
-    let addressFilter: {
-      [key: string]: number[] | null | [];
-    } = {};
+    let addressFilter: AddressFilter = {
+      countries: null,
+      regions: null,
+      districts: null,
+      localities: null,
+    };
     this.form.reset();
 
     for (let filterItem of ['roles', 'comment', 'contactTypes', 'dateRange']) {
@@ -339,9 +343,9 @@ export class TableFilterComponent implements OnInit {
     }
     this.addressFilterComponent.clearForm();
 
-    for (let filterItem of ['country', 'region', 'district', 'locality']) {
+  /*   for (let filterItem of ['country', 'region', 'district', 'locality']) {
       addressFilter[filterItem] = null;
-    }
+    } */
 
     this.filterBadgeValue.emit(0);
     this.filterValue.emit(filter);

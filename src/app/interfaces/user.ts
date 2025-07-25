@@ -6,12 +6,6 @@ export interface User {
   patronymic: string | null;
   lastName: string;
   roleId: number;
-  /*   address?: {
-    country: string;
-    region: string;
-    district: string;
-    locality: string;
-  }; */
   addresses: [
     {
       country: number | null;

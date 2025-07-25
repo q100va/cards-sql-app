@@ -15,15 +15,54 @@
       <mat-icon>flutter_dash</mat-icon>
     </button>
 
-    <mat-menu #profileMenu>
+    <mat-menu #profileMenu="matMenu">
       <p style="padding: 8px" class="drop-menu-item">Вы вошли как {{ name }}</p>
       <mat-divider></mat-divider>
       @for (item of menuItems; track $index) {
+        <ng-container>
+      @if(!item.subMenuItems){
       <button mat-menu-item class="drop-menu-item" [routerLink]="item.link">
         <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
         <span>{{item.text}}</span>
       </button>
+      } @else {
+     <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu">
+        <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
+        <span>{{item.text}}</span>
+      </button>
+      <mat-menu  #submenu="matMenu" xPosition="before">
+        @for(subItem of item.subMenuItems; track $index){
+        <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link">
+          <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
+          <span>{{subItem.text}}</span>
+        </button>
+        }
+      </mat-menu>
       }
+</ng-container>
+
+
+      }
+
+      <!--       <mat-menu #mainMenu="matMenu">
+        <ng-container *ngFor="let item of menuItems">
+          <button mat-menu-item
+                  *ngIf="!item.subMenuItems; else nestedMenu"
+                  [routerLink]="item.link">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            {{ item.label }}
+          </button>
+
+          <ng-template #nestedMenu>
+
+
+              <ng-container *ngFor="let subItem of item.subMenuItems">
+
+              </ng-container>
+
+          </ng-template>
+        </ng-container>
+      </mat-menu> -->
       <mat-divider></mat-divider>
       <button mat-menu-item class="drop-menu-item" (click)="signOut()">
         <mat-icon>logout</mat-icon>

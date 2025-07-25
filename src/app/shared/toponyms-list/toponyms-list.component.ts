@@ -1,7 +1,5 @@
 import {
-  AfterViewInit,
   Component,
-  OnInit,
   ViewChild,
   computed,
   inject,
@@ -9,6 +7,8 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -23,45 +23,34 @@ import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatDialog } from '@angular/material/dialog';
-import { DomSanitizer } from '@angular/platform-browser';
-import { MatIconRegistry, MatIconModule } from '@angular/material/icon';
-import {
-  AbstractControl,
-  FormControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-} from '@angular/forms';
-import { ProgressSpinner } from 'primeng/progressspinner';
-
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
-import {
-  MatCheckboxChange,
-  MatCheckboxModule,
-} from '@angular/material/checkbox';
-import {
-  MatButtonToggle,
-  MatButtonToggleModule,
-} from '@angular/material/button-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ProgressSpinner } from 'primeng/progressspinner';
 import { Toast } from 'primeng/toast';
 import { saveAs } from 'file-saver';
+
 import { BlurOnClickDirective } from '../../shared/directives/blur-on-click.directive';
-
-//import { User } from '../../interfaces/user';
-
-import { DatePipe } from '@angular/common';
-import { MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
-import { AddressFilterComponent } from '../address-filter/address-filter.component';
-import { CreateToponymDialogComponent } from '../dialogs/create-toponym-dialog/create-toponym-dialog.component';
 import { FileService } from '../../services/file.service';
+import { AddressFilterComponent } from '../address-filter/address-filter.component';
 import { UploadFileComponent } from '../upload-file/upload-file.component';
-import { Router } from '@angular/router';
-
-
+import { ToponymDetailsDialogComponent } from '../dialogs/toponym-details-dialog/toponym-details-dialog.component';
+import { ToponymProps } from '../../interfaces/toponym-props';
+import { AddressFilterParams } from '../../interfaces/address-filter-params';
+import { GeographyLevels, Ways } from '../../interfaces/types';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { AddressFilter } from '../../interfaces/address-filter';
+import { Toponym } from '../../interfaces/toponym';
+import { DetailsDialogComponent } from '../dialogs/details-dialog/details-dialog.component';
+import { DialogData } from '../../interfaces/dialog-data';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -76,25 +65,21 @@ import { Router } from '@angular/router';
     MatGridListModule,
     MatPaginatorModule,
     MatIconModule,
-    Toast,
-    FormsModule,
     MatBadgeModule,
     MatButtonToggleModule,
+    MatCheckboxModule,
+    MatSelectModule,
+    FormsModule,
     ReactiveFormsModule,
     MatMenuModule,
     ConfirmDialogModule,
-    MatCheckboxModule,
-    MatSelectModule,
+    ProgressSpinner,
+    Toast,
     AddressFilterComponent,
     UploadFileComponent,
-    ProgressSpinner,
-    BlurOnClickDirective
+    BlurOnClickDirective,
   ],
-  providers: [
-    MessageService,
-    ConfirmationService,
-  //  { provide: FocusTrapFactory, useClass: ConfigurableFocusTrapFactory },
-  ],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './toponyms-list.component.html',
   styleUrl: './toponyms-list.component.css',
 })
@@ -103,26 +88,34 @@ export class ToponymsListComponent {
   private router = inject(Router);
   private messageService = inject(MessageService);
   private addressService = inject(AddressService);
-  readonly dialog = inject(MatDialog);
   private fileService = inject(FileService);
+  readonly dialog = inject(MatDialog);
   dataSource!: MatTableDataSource<{
     id: number;
     name: string;
-    shortName: string;
-    districtId: number;
+    shortName?: string;
+    postName?: string;
+    shortPostName?: string;
+    districtId?: number;
+    regionId?: number;
+    countryId?: number;
   }>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-
   length = signal<number>(0);
   currentPage = 1;
   pageSize = 5;
   pageSizeOptions = [5, 10, 25, 50, 100];
   avoidDoubleRequest = false;
-  showSpinner = signal<boolean>(false);
 
+  toponyms?: Toponym[];
+  toponymProps = input.required<ToponymProps>();
+  type = model.required<GeographyLevels>();
+  params!: AddressFilterParams;
+  defaultAddressParams!: DefaultAddressParams;
   exactMatch = signal<boolean>(false);
   searchValue = signal<string>('');
+  inputValue = '';
   sortParameters = signal<{
     active: string;
     direction: 'asc' | 'desc' | '';
@@ -130,22 +123,14 @@ export class ToponymsListComponent {
     active: '',
     direction: '',
   });
-
   addressString = signal<string>('');
-  addressFilter = signal<{
-    countries: null | number[] | [];
-    regions: null | number[] | [];
-    districts: null | number[] | [];
-    localities: null | number[] | [];
-  }>({
+  addressFilter = signal<AddressFilter>({
     countries: null,
     regions: null,
     districts: null,
     localities: null,
   });
-
   filterValue = computed(() => {
-    //console.log('filterValue computed');
     return {
       searchValue: this.searchValue(),
       exactMatch: this.exactMatch(),
@@ -154,24 +139,15 @@ export class ToponymsListComponent {
       sortParameters: this.sortParameters(),
     };
   });
-
   filterString = computed(() => {
-    //console.log('filterString computed');
     let filterString = '';
     filterString =
       filterString +
       (this.filterValue().searchValue
         ? this.filterValue().searchValue + ', '
         : '');
-    //console.log('filterString');
-    //console.log(filterString);
-
     filterString = filterString.slice(0, -2);
-
     let addressString = this.addressString();
-    //console.log('addressString main');
-    //console.log(addressString);
-
     let result = '';
     if (addressString) {
       result = filterString
@@ -184,63 +160,198 @@ export class ToponymsListComponent {
     return result;
   });
 
-  type = model<'country' | 'region' | 'district' | 'locality'>('locality');
-  // type = model<'country' | 'region' | 'district' | 'locality'>('district');
-  localities?: {
-    id: number;
-    name: string;
-    shortName: string;
-    districtId: number;
-  }[];
-
-  displayedColumns = [
-    'name',
-    'shortName',
-    'district',
-    'region',
-    'country',
-    'actions',
-  ];
-
-  filename = 'шаблон-населенные-пункты.xlsx';
-
-  defaultAddressParams: {
-    localityId: number | null;
-    districtId: number | null;
-    regionId: number | null;
-    countryId: number | null;
-  } = {
-    localityId: null,
-    districtId: null,
-    regionId: null,
-    countryId: 143,
+  dialogConfig = {
+    disableClose: true,
+    minWidth: '500px',
+    height: 'fit-content',
+    autoFocus: 'dialog',
+    restoreFocus: true,
   };
 
-  ngOnInit() {}
-  objectKeys(obj: any): string[] {
-    return Object.keys(obj);
+  dialogData = computed(() => {
+    this.toponymProps().dialogProps.addressFilterParams = {
+      ...this.toponymProps().dialogProps.addressFilterParams,
+      source: 'toponymCard',
+      multiple: false,
+      cols: '1',
+      gutterSize: '16px',
+      rowHeight: '76px',
+    }
+    return {
+      ...this.toponymProps().dialogProps,
+      type: this.type(),
+    };
+  });
+
+  nameWays: Ways = {
+    locality: {
+      district: 'district.name',
+      region: 'district.region.name',
+      country: 'district.region.country.name',
+    },
+    district: {
+      district: null,
+      region: 'region.name',
+      country: 'region.country.name',
+    },
+    region: {
+      district: null,
+      region: null,
+      country: 'country.name',
+    },
+    country: {
+      district: null,
+      region: null,
+      country: null,
+    },
+  };
+
+  showSpinner = signal<boolean>(false);
+
+  constructor() {}
+
+  ngOnInit() {
+    this.params = {
+      source: 'toponymList',
+      multiple: false,
+      cols: '4',
+      gutterSize: '16px',
+      rowHeight: '76px',
+      isShowCountry: this.toponymProps().isShowCountry,
+      isShowRegion: this.toponymProps().isShowRegion,
+      isShowDistrict: this.toponymProps().isShowDistrict,
+      isShowLocality: this.toponymProps().isShowLocality,
+      class: 'none',
+    };
+    this.defaultAddressParams = {
+      localityId: this.toponymProps().defaultLocalityId,
+      districtId: this.toponymProps().defaultDistrictId,
+      regionId: this.toponymProps().defaultRegionId,
+      countryId: this.toponymProps().defaultCountryId,
+    };
+    if (this.toponymProps().queryParams) {
+      this.defaultAddressParams.countryId = this.toponymProps().queryParams![
+        'countryId'
+      ]
+        ? this.toponymProps().queryParams!['countryId']
+        : this.defaultAddressParams.countryId;
+      this.defaultAddressParams.regionId = this.toponymProps().queryParams![
+        'regionId'
+      ]
+        ? this.toponymProps().queryParams!['regionId']
+        : this.defaultAddressParams.regionId;
+      this.defaultAddressParams.districtId = this.toponymProps().queryParams![
+        'districtId'
+      ]
+        ? this.toponymProps().queryParams!['districtId']
+        : this.defaultAddressParams.districtId;
+      this.defaultAddressParams.localityId = this.toponymProps().queryParams![
+        'localityId'
+      ]
+        ? this.toponymProps().queryParams!['localityId']
+        : this.defaultAddressParams.localityId;
+    }
   }
+
   sortData(sort: Sort) {
     this.sortParameters.set(sort);
   }
+
   onAddToponymClick() {
-    const dialogRefCreate = this.dialog.open(CreateToponymDialogComponent, {
-      data: { type: this.type() },
-      disableClose: true,
-      minWidth: '400px',
-      height: 'fit-content',
-      autoFocus: 'dialog',
-      restoreFocus: true
-      //height: '80%',
+    this.dialogData().addressFilterParams.readonly = false;
+    this.dialogData().addressFilterParams.class = 'none';
+    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
+      ...this.dialogConfig,
+      data: {
+        ...this.dialogData(),
+        operation: 'create',
+        defaultAddressParams: {
+          localityId: null,
+          districtId: null,
+          regionId: null,
+          countryId: null,
+        },
+      },
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
-      console.log('The dialog was closed');
-      if (result.toponymName) {
+      if (result.name) {
         this.getToponyms();
         this.messageService.add({
           severity: 'success',
           summary: 'Подтверждение',
-          detail: `Топоним '${result.toponymName}' успешно создан!`,
+          detail: `Топоним '${result.name}' успешно создан!`,
+        });
+      }
+    });
+  }
+
+  formDefaultAddressParams(toponym: Toponym) {
+    const idWays: Ways = {
+      locality: {
+        locality: 'id',
+        district: 'district.id',
+        region: 'district.region.id',
+        country: 'district.region.country.id',
+      },
+      district: {
+        locality: null,
+        district: 'id',
+        region: 'region.id',
+        country: 'region.country.id',
+      },
+      region: {
+        locality: null,
+        district: null,
+        region: 'id',
+        country: 'country.id',
+      },
+      country: {
+        locality: null,
+        district: null,
+        region: null,
+        country: 'id',
+      },
+    };
+    let result: {
+      countryId: number | null;
+      regionId: number | null;
+      districtId: number | null;
+      localityId: number | null;
+    } = { countryId: null, regionId: null, districtId: null, localityId: null };
+    result.countryId = toponym[idWays[this.type()].country as keyof Toponym] as
+      | number
+      | null;
+    result.regionId = toponym[idWays[this.type()].region as keyof Toponym] as
+      | number
+      | null;
+    result.districtId = toponym[
+      idWays[this.type()].district as keyof Toponym
+    ] as number | null;
+    result.localityId = toponym[
+      idWays[this.type()].locality as keyof Toponym
+    ] as number | null;
+    return result;
+  }
+
+  onOpenToponymCardClick(toponym: Toponym) {
+    this.dialogData().addressFilterParams.readonly = true;
+    this.dialogData().addressFilterParams.class = 'view-mode';
+    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
+      ...this.dialogConfig,
+      data: {
+        ...this.dialogData(),
+        operation: 'view-edit',
+        defaultAddressParams: this.formDefaultAddressParams(toponym),
+        toponym: toponym
+      },
+    });
+    dialogRefCreate.afterClosed().subscribe((result) => {
+      this.getToponyms();
+      if (result.name) {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Подтверждение',
+          detail: `Топоним '${result.name}' успешно обновлен!`,
         });
       }
     });
@@ -250,23 +361,20 @@ export class ToponymsListComponent {
     let searchString = (event.target as HTMLInputElement).value;
     searchString = searchString.trim().toLowerCase().replaceAll('ё', 'е');
     this.goToFirstPage();
-    /*     this.avoidDoubleRequest = true;
-    this.paginator.firstPage(); */
     this.searchValue.set(searchString);
-    console.log('searchToponym');
   }
+
   onClearSearchClick() {
-    /*     this.avoidDoubleRequest = true;
-    this.paginator.firstPage(); */
+    console.log('onClearSearchClick');
     this.goToFirstPage();
     this.searchValue.set('');
-    console.log('onClearSearchClick');
+    this.inputValue = '';
   }
 
   onFileDownloadClick() {
-    this.fileService.downloadFile(this.filename).subscribe({
+    this.fileService.downloadFile(this.toponymProps().filename!).subscribe({
       next: (blob) => {
-        saveAs(blob, this.filename);
+        saveAs(blob, this.toponymProps().filename);
       },
       error: (err) => {
         console.log(err);
@@ -284,26 +392,11 @@ export class ToponymsListComponent {
     });
   }
 
-  onOpenHomesListClick(rowId: number) {}
-  onOpenUsersListClick(toponym: any) {
-    console.log('toponym');
-    console.log(toponym);
-    this.router.navigate(['/users'], {
-      queryParams: {
-        localityId: toponym.id,
-        districtId: toponym['district.id'],
-        regionId: toponym['district.region.id'],
-        countryId: toponym['district.region.country.id'],
-      },
+  onOpenListClick(toponym: Toponym, way: string) {
+    this.router.navigate([way], {
+      queryParams: this.formDefaultAddressParams(toponym),
     });
   }
-  onOpenPartnersListClick(rowId: number) {}
-  onOpenSeniorsListClick(rowId: number) {}
-  onOpenLocalitiesListClick(rowId: number) {}
-  onOpenDistrictsListClick(rowId: number) {}
-  onOpenRegionsListClick(rowId: number) {}
-
-  onOpenUserCardClick(row: any){}
 
   onDeleteToponymClick(rowId: number, rowShortName: string, destroy: boolean) {
     this.confirmationService.confirm({
@@ -337,12 +430,12 @@ export class ToponymsListComponent {
       .subscribe({
         next: (res) => {
           if (res.data) {
-            this.deleteToponym(this.type(), id, destroy, deletingToponym);
+            this.deleteToponym(id, destroy, deletingToponym);
           } else {
             //TODO: проверить на неактуальных адресах
             const detail = destroy
-              ? `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей адресов.\nПроверьте список связанных с ним интернатов, поздравляющих и пользователей.\nЭти адреса, в т.ч. неактуальные, должны быть изменены или удалены.`
-              : `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей актуальных адресов.\nПроверьте список связанных с ним интернатов, поздравляющих и пользователей.\nЭти адреса должны быть изменены, удалены или помечены как неактуальные.`;
+              ? `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей адресов или имеет подчиненные топонимы.\nПроверьте список связанных с ним топонимов, интернатов, поздравляющих и пользователей.\nЭти адреса, в т.ч. неактуальные, и топонимы должны быть изменены или удалены.`
+              : `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей актуальных адресов или имеет подчиненные топонимы.\nПроверьте список связанных с ним топонимов, интернатов, поздравляющих и пользователей.\nЭти адреса и топонимы должны быть изменены, удалены или помечены как неактуальные.`;
             this.messageService.add({
               severity: 'warn',
               summary: 'Ошибка',
@@ -357,19 +450,14 @@ export class ToponymsListComponent {
       });
   }
 
-  deleteToponym(
-    type: string,
-    id: number,
-    destroy: boolean,
-    deletingUser: string
-  ) {
+  deleteToponym(id: number, destroy: boolean, deletingToponym: string) {
     const serviceFuncName = destroy ? 'deleteToponym' : 'blockToponym';
-    this.addressService[serviceFuncName](type, id).subscribe({
+    this.addressService[serviceFuncName](this.type(), id).subscribe({
       next: (res) => {
         this.messageService.add({
           severity: 'success',
           summary: 'Подтверждение',
-          detail: `Аккаунт пользователя ${deletingUser} был удален.`,
+          detail: `Топоним ${deletingToponym} был удален.`,
           sticky: false,
         });
         this.getToponyms();
@@ -383,10 +471,7 @@ export class ToponymsListComponent {
   onChangedPage(pageData: PageEvent) {
     this.currentPage = pageData.pageIndex + 1;
     this.pageSize = pageData.pageSize;
-    console.log('this.avoidDoubleRequest');
-    console.log(this.avoidDoubleRequest);
     if (!this.avoidDoubleRequest) {
-      console.log('pageData');
       this.getToponyms();
     } else {
       this.avoidDoubleRequest = false;
@@ -399,16 +484,20 @@ export class ToponymsListComponent {
   }
 
   getToponyms() {
-    console.log('getToponyms');
     this.addressService
-      .getLocalities(this.filterValue(), this.pageSize, this.currentPage)
+      .getToponyms(
+        this.type(),
+        this.filterValue(),
+        this.pageSize,
+        this.currentPage
+      )
       .subscribe({
         next: (res) => {
-          this.localities = res.data.toponyms;
+          console.log('res.data.toponyms');
+          console.log(res.data.toponyms);
+          this.toponyms = res.data.toponyms;
           this.length.set(res.data.length);
-          console.log('localities');
-          console.log(this.localities);
-          this.dataSource = new MatTableDataSource(this.localities);
+          this.dataSource = new MatTableDataSource(this.toponyms);
           this.dataSource.sort = this.sort;
         },
         error: (err) => {

@@ -7,7 +7,7 @@
 mat-label {
   font-size: 12px;
 }
-.mat-grid-list {
+mat-grid-list {
   width: 100%;
 }
 
@@ -18,3 +18,25 @@ mat-label {
 .mat-grid-tile {
   display: block;
 } */
+
+.view-mode
+::ng-deep.mat-mdc-select-disabled {
+  color: #191c19;
+}
+.view-mode
+  ::ng-deep
+    .mdc-text-field--filled.mdc-text-field--disabled
+    .mdc-floating-label {
+    color: #191c19 !important;
+  }
+
+.view-mode
+  ::ng-deep .mat-mdc-select-arrow svg {
+    fill: #ffffff;
+  }
+
+.view-mode
+  ::ng-deep .mdc-text-field--filled.mdc-text-field--disabled {
+    background-color: #ffffff !important;
+  }
+
