@@ -69,10 +69,10 @@
         </mat-grid-tile>
 
         <mat-grid-tile colspan="6" rowspan="1">
-          <mat-slide-toggle formControlName="isRestricted" (change)="addIfRestricted()">Заблокирован</mat-slide-toggle>
+          <mat-slide-toggle formControlName="isRestricted" (change)="onRestrictedToggleClick()">Заблокирован</mat-slide-toggle>
         </mat-grid-tile>
 
-        @if (mainForm.controls['isRestricted'].value) {
+     @if (mainForm.controls['isRestricted'].value) {
         <mat-grid-tile colspan="6" rowspan="1">
           <mat-form-field>
             <mat-label>Причина</mat-label>
@@ -81,7 +81,7 @@
             <mat-error class="error">Поле не может быть пустым</mat-error>
             }
           </mat-form-field>
-        </mat-grid-tile>}
+        </mat-grid-tile> }
       </mat-grid-list>
     </mat-tab>
 

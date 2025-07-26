@@ -101,7 +101,7 @@ export class BaseDetailsComponent {
 
       console.log(
         'checkIsSaveDisabled',
-        condition,
+        condition, '---',
         !this.mainForm.valid,
         !this.changes,
         this.data().operation == 'view-edit'
@@ -379,11 +379,11 @@ export class BaseDetailsComponent {
   updateControlsValidity(controlsToUpdate: string[], conditions: boolean) {
     // console.log('controlsToUpdate', controlsToUpdate, conditions);
     controlsToUpdate.forEach((control) => {
-      if (control != 'userName') {
+/*       if (control != 'userName') { */
         conditions
           ? this.mainForm.controls[control].enable()
           : this.mainForm.controls[control].disable();
-      }
+   /*    } */
     });
     this.invalidAddressFilter = !conditions;
     //console.log('invalidAddressFilter', this.invalidAddressFilter);

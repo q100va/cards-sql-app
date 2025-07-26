@@ -345,6 +345,18 @@ export class UsersListComponent {
         colspan: 6,
         rowspan: 1,
       },
+      /*       {
+        controlName: 'causeOfRestriction',
+        value: '',
+
+        validators: [Validators.required],
+        type: 'inputText',
+        label: 'Причина блокировки',
+        category: 'extraData',
+        formType: 'formControl',
+        colspan: 6,
+        rowspan: 1,
+      }, */
       {
         controlName: 'email',
         value: '',
@@ -610,65 +622,67 @@ export class UsersListComponent {
     });
   }
 
-  onOpenUserCardClick(user: any) {
-    //console.log('user', user);
-    this.dialogProps.addressFilterParams.readonly = true;
-    this.dialogProps.addressFilterParams.class = 'view-mode';
-    if (user.isRestricted) {
-      this.dialogProps.controls.push({
-        controlName: 'causeOfRestriction',
-        value: '',
-        validators: [Validators.required],
-        type: 'inputText',
-        label: 'Причина',
-        category: 'extraData',
-        formType: 'formControl',
-      });
-    }
-    //console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
-    if (user.addresses.length == 0) {
-      user.addresses.push({
-        country: null,
-        region: null,
-        district: null,
-        locality: null,
-      });
-    }
+  onOpenUserCardClick(id: number) {
+    let user;
 
-    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
-      ...this.dialogConfig,
-      data: {
-        ...this.dialogProps,
-        operation: 'view-edit',
-        controlsDisable: true,
-        defaultAddressParams: {
-          localityId: user.addresses[0]?.locality
-            ? user.addresses[0]?.locality.id
-            : null,
-          districtId: user.addresses[0]?.district
-            ? user.addresses[0]?.district.id
-            : null,
-          regionId: user.addresses[0]?.region
-            ? user.addresses[0]?.region.id
-            : null,
-          countryId: user.addresses[0]?.country
-            ? user.addresses[0]?.country.id
-            : null,
-        },
-        object: user,
-        componentType: 'user',
-      },
-    });
-    dialogRefCreate.afterClosed().subscribe((result) => {
-      this.getUsers();
-      if (result.name) {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Аккаунт пользователя '${result.name}' успешно обновлен!`,
+    this.userService.getUser(id).subscribe({
+      next: (res) => {
+        user = res.data;
+        this.dialogProps.addressFilterParams.readonly = true;
+        this.dialogProps.addressFilterParams.class = 'view-mode';
+        if (user.isRestricted) {
+          this.dialogProps.controls.push({
+            controlName: 'causeOfRestriction',
+            value: '',
+            validators: [Validators.required],
+            type: 'inputText',
+            label: 'Причина',
+            category: 'extraData',
+            formType: 'formControl',
+          });
+        }
+        //console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
+
+        const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
+          ...this.dialogConfig,
+          data: {
+            ...this.dialogProps,
+            operation: 'view-edit',
+            controlsDisable: true,
+            defaultAddressParams: {
+              localityId: user.addresses[0]?.locality
+                ? user.addresses[0]?.locality.id
+                : null,
+              districtId: user.addresses[0]?.district
+                ? user.addresses[0]?.district.id
+                : null,
+              regionId: user.addresses[0]?.region
+                ? user.addresses[0]?.region.id
+                : null,
+              countryId: user.addresses[0]?.country
+                ? user.addresses[0]?.country.id
+                : null,
+            },
+            object: user,
+            componentType: 'user',
+          },
         });
-      }
+        dialogRefCreate.afterClosed().subscribe((result) => {
+          this.getUsers();
+          if (result.name) {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Подтверждение',
+              detail: `Аккаунт пользователя '${result.name}' успешно обновлен!`,
+            });
+          }
+        });
+
+      },
+      error: (err) => this.errorHandling(err),
     });
+
+
   }
 
   onBlockUserClick(id: number) {
@@ -803,42 +817,8 @@ export class UsersListComponent {
       )
       .subscribe({
         next: (res) => {
-          /* //console.log('res.data.users');
-          //console.log(res.data.users); */
           this.users = res.data.users;
           this.length.set(res.data.length);
-          /*  //console.log('this.users0');
-          //console.log(this.users); */
-          for (let user of this.users) {
-            //   user.role = typeof user.role === 'object' && 'name' in user.role ? user.role.name : user.role;
-            let orderedContacts: { [key: string]: string[] } = {};
-            //console.log('user.contacts');
-            /*     //console.log(user.contacts); */
-            if (user.contacts) {
-              for (let contact of user.contacts) {
-                //console.log('contact');
-                //console.log(contact);
-                if (
-                  contact.type == 'telegramNickname' ||
-                  contact.type == 'telegramPhoneNumber' ||
-                  contact.type == 'telegramId'
-                ) {
-                  if (!orderedContacts['telegram']) {
-                    orderedContacts['telegram'] = [];
-                  }
-                  orderedContacts['telegram'].push(contact.content);
-                }
-                if (!orderedContacts[contact.type]) {
-                  orderedContacts[contact.type] = [];
-                }
-                orderedContacts[contact.type].push(contact.content);
-              }
-            }
-            user.orderedContacts =
-              orderedContacts as typeof user.orderedContacts;
-          }
-          //console.log('this.users');
-          //console.log(this.users);
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;

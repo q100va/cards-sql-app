@@ -79,21 +79,27 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     });
   }
 
-  addIfRestricted() {
+  onRestrictedToggleClick() {
     //TODO: change controls???
+
     if (this.mainForm.controls['isRestricted'].value) {
       this.mainForm.addControl(
         'causeOfRestriction',
         new FormControl('', Validators.required)
       );
       this.controlsNames.push('causeOfRestriction');
-    } else {
+    } else if (
+      (this.isEditMode && !this.data().object!['isRestricted']) ||
+      this.data().operation == 'create'
+    ) {
+      //TODO: remove control after save
       this.mainForm.removeControl('causeOfRestriction');
       const index = this.controlsNames.findIndex(
         (item) => item == 'causeOfRestriction'
       );
       this.controlsNames.splice(index);
     }
+    this.onChangeValidation();
   }
 
   modifyContactTypesList() {
@@ -306,22 +312,33 @@ export class UserDetailsComponent extends BaseDetailsComponent {
               outlined: true,
             },
             accept: () => {
-              this.saveUser(action, user);
+              this.checkNotActualData(action, user);
             },
             reject: () => {},
           });
         } else {
-          this.saveUser(action, user);
+          this.checkNotActualData(action, user);
         }
       },
       error: (err) => this.errorHandling(err),
     });
   }
 
+  //TODO: check if there are duplicates of not actual data
+  checkNotActualData(action: 'justSave' | 'saveAndExit', user: User) {
+    this.checkAllChanges(action, user);
+    this.checkAllChanges(action, user);
+  }
+
+  checkAllChanges(action: 'justSave' | 'saveAndExit', user: User) {
+    this.saveUser(action, user);
+    this.saveUser(action, user);
+  }
+
   saveUser(action: 'justSave' | 'saveAndExit', user: User) {
     user.password = this.mainForm.controls['password'].value;
     user.roleId = this.mainForm.controls['roleId'].value;
-    user.addresses = [
+    user.draftAddresses = [
       {
         country:
           this.addressFilter().countries &&
@@ -362,6 +379,18 @@ export class UserDetailsComponent extends BaseDetailsComponent {
           //console.log('this.data().object', this.data().object);
           this.data().object = res.data;
           //console.log('this.data().object', this.data().object);
+          //TODO: test it
+          if (
+            !this.mainForm.controls['isRestricted'].value &&
+            this.mainForm.get('causeOfRestriction')
+          ) {
+            this.mainForm.removeControl('causeOfRestriction');
+            const index = this.controlsNames.findIndex(
+              (item) => item == 'causeOfRestriction'
+            );
+            this.controlsNames.splice(index);
+          }
+
           this.changeToViewMode(null);
           this.messageService.add({
             severity: 'success',

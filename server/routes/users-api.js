@@ -12,6 +12,7 @@ import UserAddress from "../models/user-address.js";
 import Sequelize from 'sequelize';
 import Role from "../models/role.js";
 import SearchUser from "../models/search-user.js";
+import CustomError from "../shared/customError.js";
 const Op = Sequelize.Op;
 
 const router = Router();
@@ -525,14 +526,14 @@ router.post("/get-users", async (req, res) => {
         as: 'contacts',
         where: contactWhereParams,
         required: contactRequiredParam,
-        attributes: ['type', 'content'],
+        attributes: ['type', 'content', 'isRestricted'],
       },
       {
         model: UserAddress,
         as: 'addresses',
         where: addressWhereParams,
         required: addressRequiredParam,
-        attributes: ['id'],
+        attributes: ['isRestricted'],
 
         include: [
           {
@@ -601,6 +602,57 @@ router.post("/get-users", async (req, res) => {
     console.log("users");
     console.log(users);
     res.status(200).send({ msg: "Данные получены.", data: { users: users, length: length } });
+  } catch (e) {
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
+  }
+});
+
+router.get("/get-user-by-id/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [
+        {
+          model: UserContact,
+          as: 'contacts',
+          attributes: ['type', 'content', 'isRestricted'],
+        },
+        {
+          model: UserAddress,
+          as: 'addresses',
+          attributes: ['isRestricted'],
+          include: [
+            {
+              model: Country,
+              attributes: ['id', 'name'],
+            },
+            {
+              model: Region,
+              attributes: ['id', 'shortName'],
+            },
+            {
+              model: District,
+              attributes: ['id', 'shortName'],
+            },
+            {
+              model: Locality,
+              attributes: ['id', 'shortName'],
+            },
+          ]
+        },
+        {
+          model: Role,
+          attributes: ['id', 'name'],
+        },
+        // { model: OutdatedName },
+      ],
+    });
+    if (!user) {
+      throw new CustomError(`Пользователь с id ${userId}! не найден!`, 404);
+    }
+    res.status(200).send({ msg: "Пользователь найден.", data: user });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
