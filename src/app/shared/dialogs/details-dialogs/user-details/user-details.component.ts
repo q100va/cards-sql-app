@@ -135,6 +135,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     if (formArray.length > 1) {
       formArray.removeAt(index);
     }
+    this.onChangeValidation();
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
@@ -162,7 +163,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
   completeContact(value: string, type: string) {
     let result = '';
     switch (type) {
-/*       case 'vKontakte':
+      /*       case 'vKontakte':
         result = 'https://vk.com/' + value.trim();
         break;
       case 'instagram':
