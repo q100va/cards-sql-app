@@ -8,44 +8,23 @@ import {
 } from '@angular/core';
 import {
   FormControl,
-  FormsModule,
-  ReactiveFormsModule,
   FormGroup,
   AbstractControl,
-  Validators,
   FormArray,
 } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatGridListModule } from '@angular/material/grid-list';
-import { MatInputModule } from '@angular/material/input';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Toast } from 'primeng/toast';
 
 import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
 import { AddressFilterParams } from '../../../../interfaces/address-filter-params';
 import { AddressFilter } from '../../../../interfaces/address-filter';
-import { ToponymFormControlsNames } from '../../../../interfaces/toponymFormControlsNames';
-import { Control } from '../../../../interfaces/toponym-props';
+import { Control } from '../../../../interfaces/dialog-props';
 import { AddressService } from '../../../../services/address.service';
-import { DialogData } from '../../../../interfaces/dialog-data';
+import { DialogData } from '../../../../interfaces/dialog-props';
 
 @Component({
   selector: 'app-base-details',
-  imports: [
-    //FormsModule,
-    //ReactiveFormsModule,
-    // ConfirmDialogModule,
-    // Toast,
-    // AddressFilterComponent,
-  ],
+  imports: [],
   providers: [ConfirmationService, MessageService],
   templateUrl: './base-details.component.html',
   styleUrl: './base-details.component.css',
@@ -92,14 +71,14 @@ export class BaseDetailsComponent {
   ];
 
   ngOnInit() {
-    console.log('ngOnInit', this.data());
+    //console.log('ngOnInit', this.data());
     this.params = this.data().addressFilterParams;
     this.createFormGroup(this.data().controls, this.data().controlsDisable!);
-    //console.log('this.mainForm', this.mainForm);
+    ////console.log('this.mainForm', this.mainForm);
     this.controlsNames = this.data().controls.map(
       (control) => control.controlName
     );
-    //console.log('this.controlsNames', this.controlsNames);
+    ////console.log('this.controlsNames', this.controlsNames);
     if (this.data().object) {
       this.setInitialValues(
         this.controlsNames,
@@ -107,7 +86,7 @@ export class BaseDetailsComponent {
         true
       );
     } else {
-      if (this.data().type == 'country') {
+      if (this.data().toponymType == 'country') {
         this.updateControlsValidity(this.controlsNames, true);
       }
     }
@@ -119,6 +98,14 @@ export class BaseDetailsComponent {
       condition =
         !this.mainForm.valid ||
         (!this.changes && this.data().operation == 'view-edit');
+
+      console.log(
+        'checkIsSaveDisabled',
+        condition,
+        !this.mainForm.valid,
+        !this.changes,
+        this.data().operation == 'view-edit'
+      );
     }
     if (this.data().componentType == 'toponym') {
       condition =
@@ -126,11 +113,12 @@ export class BaseDetailsComponent {
         this.invalidAddressFilter ||
         (!this.changes && this.data().operation == 'view-edit');
     }
-    if (condition) {
+    /*     if (condition) {
       this.emittedIsSaveDisabled.emit(true);
     } else {
       this.emittedIsSaveDisabled.emit(false);
-    }
+    } */
+    this.emittedIsSaveDisabled.emit(condition);
   }
 
   createFormGroup(controls: Control[], controlsDisable: boolean) {
@@ -164,7 +152,7 @@ export class BaseDetailsComponent {
           );
         }
       }
-/*       console.log(
+      /*       //console.log(
         'this.mainForm.controls[control.controlName]',
         control.controlName,
         this.mainForm.controls[control.controlName]
@@ -176,17 +164,22 @@ export class BaseDetailsComponent {
     return this.mainForm.get(name) as FormArray;
   }
 
-  onChangeAddressFilter(event: AddressFilter) {
-    console.log('onChangeAddressFilter', event);
-    console.log('this.data()', this.data());
+  //only for toponyms???
+
+  onChangeAddress(event: AddressFilter) {
+    //console.log('onChangeAddress', event);
+    //console.log('this.data()', this.data());
     if (this.data().operation == 'create' || this.isEditMode) {
       this.addressFilter.set(event);
+      // console.log('onChangeAddress', event);
+      //console.log('this.data().toponymType', this.data().toponymType);
+
       let condition = true;
-      if (this.data().type == 'locality')
+      if (this.data().toponymType == 'locality')
         condition = this.addressFilter().districts?.length! > 0;
-      if (this.data().type == 'district')
+      if (this.data().toponymType == 'district')
         condition = this.addressFilter().regions?.length! > 0;
-      if (this.data().type == 'region')
+      if (this.data().toponymType == 'region')
         condition = this.addressFilter().countries?.length! > 0;
 
       this.updateControlsValidity(this.controlsNames, condition);
@@ -236,6 +229,108 @@ export class BaseDetailsComponent {
     }
   }
 
+  contactsChangeValidation() {
+    const orderedContacts = this.data().object!['orderedContacts'];
+    for (let contact of this.contactTypes) {
+      const values = orderedContacts[
+        contact as keyof typeof orderedContacts
+      ] as unknown as string[];
+      if (!values) {
+        if (
+          this.mainForm.get(contact)?.value.length > 0 &&
+          this.mainForm.get(contact)?.value[0] != ''
+        ) {
+          this.changes = true;
+        }
+      } else if (values.length != this.mainForm.get(contact)?.value.length) {
+        this.changes = true;
+        break;
+      } else {
+        for (let i = 0; i < values.length; i++) {
+          /*               //console.log(
+            'onChangeValidation',
+            this.mainForm.get(contact)?.value[i],
+            values[i]
+          ); */
+          if (
+            this.mainForm.get(contact)?.value[i] != values[i] /* &&
+            !(
+              this.mainForm.get(contact)?.value[i] === '\u00A0' &&
+              values[i] === ''
+            ) */
+          ) {
+            this.changes = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  addressChangeValidation() {
+    /*     console.log(
+      'this.data().addressFilterControls',
+      this.data().addressFilterControls
+    ); */
+    //console.log('this.addressFilter()', this.addressFilter());
+
+    console.log('this.data().object', this.data().object);
+    const address = this.data().object!['addresses'] as {
+      [key: string]: { id: number; name: string } | null;
+    }[];
+
+    if (this.addressFilter().countries == null) {
+      console.log('address', address);
+      if (address[0]['country'] != null) {
+        this.changes = true;
+      } else {
+        //no changes
+      }
+    } else if (address[0]['country'] == null) {
+      this.changes = true;
+    } else if (
+      this.addressFilter().countries![0] != address[0]['country']!['id']
+    ) {
+      this.changes = true;
+    } else if (this.addressFilter().regions == null) {
+      if (address[0]['region'] != null) {
+        this.changes = true;
+      } else {
+        //no changes
+      }
+    } else if (address[0]['region'] == null) {
+      this.changes = true;
+    } else if (
+      this.addressFilter().regions![0] != address[0]['region']!['id']
+    ) {
+      this.changes = true;
+    } else if (this.addressFilter().districts == null) {
+      if (address[0]['district'] != null) {
+        this.changes = true;
+      } else {
+        //no changes
+      }
+    } else if (address[0]['district'] == null) {
+      this.changes = true;
+    } else if (
+      this.addressFilter().districts![0] != address[0]['district']!['id']
+    ) {
+      this.changes = true;
+    } else if (this.addressFilter().localities == null) {
+      if (address[0]['locality'] != null) {
+        this.changes = true;
+      } else {
+        //no changes
+      }
+    } else if (address[0]['locality'] == null) {
+      this.changes = true;
+    } else if (
+      this.addressFilter().localities![0] != address[0]['locality']!['id']
+    ) {
+      this.changes = true;
+    }
+  }
+
   onChangeValidation() {
     if (this.data().operation == 'view-edit') {
       this.changes = false;
@@ -251,7 +346,7 @@ export class BaseDetailsComponent {
               )
             ) {
               this.changes = true;
-/*               console.log(
+              /*           console.log(
                 'this.mainForm.controls[controlName].value',
                 this.mainForm.controls[controlName].value,
                 this.data().object![controlName],
@@ -262,53 +357,27 @@ export class BaseDetailsComponent {
         }
       }
 
-      if (!this.changes && this.data().object!['orderedContacts']) {
-        const orderedContacts = this.data().object!['orderedContacts'];
-        for (let contact of this.contactTypes) {
-          const values = orderedContacts[
-            contact as keyof typeof orderedContacts
-          ] as unknown as string[];
-          if (!values) {
-            if (
-              this.mainForm.get(contact)?.value.length > 0 &&
-              this.mainForm.get(contact)?.value[0] != ''
-            ) {
-              this.changes = true;
-            }
-          } else if (
-            values.length != this.mainForm.get(contact)?.value.length
+      if (!this.changes && this.data().componentType == 'toponym') {
+        for (let item of this.data().addressFilterControls!) {
+          /*
+          console.log('item', item);
+
+          console.log(
+            'this.addressFilter()[item.addressFilterProp as keyof AddressFilter]',
+            this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
+          );
+
+          console.log(
+            'this.data().object![item.toponymProp]',
+            this.data().object![item.toponymProp]
+          ); */
+
+          if (
+            !this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
           ) {
             this.changes = true;
             break;
-          } else {
-            for (let i = 0; i < values.length; i++) {
-/*               console.log(
-                'onChangeValidation',
-                this.mainForm.get(contact)?.value[i],
-                values[i]
-              ); */
-              if (
-                this.mainForm.get(contact)?.value[i] != values[i] /* &&
-                !(
-                  this.mainForm.get(contact)?.value[i] === '\u00A0' &&
-                  values[i] === ''
-                ) */
-              ) {
-                this.changes = true;
-                break;
-              }
-            }
-          }
-
-
-        }
-      }
-//TODO: check if address were changed - ПОКА  РАБОТАЕТ с ошибками
-
-      if (!this.changes && this.data().addressFilterControls) {
-        console.log('this.data().addressFilterControls', this.data().addressFilterControls);
-        for (let item of this.data().addressFilterControls!) {
-          if (
+          } else if (
             this.addressFilter()[
               item.addressFilterProp as keyof AddressFilter
             ]![0] != this.data().object![item.toponymProp]
@@ -318,8 +387,18 @@ export class BaseDetailsComponent {
           }
         }
       }
+
+      if (!this.changes && this.data().componentType == 'user') {
+        this.contactsChangeValidation();
+      }
+
+      if (!this.changes && this.data().componentType == 'user') {
+        this.addressChangeValidation();
+      }
+
       this.emittedChanges.emit(this.changes);
     }
+
     this.checkIsSaveDisabled();
   }
 
@@ -332,7 +411,7 @@ export class BaseDetailsComponent {
   }
 
   updateControlsValidity(controlsToUpdate: string[], conditions: boolean) {
- //   console.log('controlsToUpdate', controlsToUpdate, conditions);
+    // console.log('controlsToUpdate', controlsToUpdate, conditions);
     controlsToUpdate.forEach((control) => {
       if (control != 'userName') {
         conditions
@@ -341,6 +420,7 @@ export class BaseDetailsComponent {
       }
     });
     this.invalidAddressFilter = !conditions;
+    //console.log('invalidAddressFilter', this.invalidAddressFilter);
     this.checkIsSaveDisabled();
   }
 
@@ -369,7 +449,7 @@ export class BaseDetailsComponent {
       default:
         result = value;
     }
-  //  console.log('editContact', type, value, result);
+    //  //console.log('editContact', type, value, result);
     return result;
   }
 
@@ -379,14 +459,16 @@ export class BaseDetailsComponent {
     firstInitialization = false
   ) {
     controlsToSetValues.forEach((controlName) => {
-    //  console.log('control', controlName);
+      //  //console.log('control', controlName);
       if (!this.contactTypes.includes(controlName)) {
         if (mode == 'view' && this.data().object![controlName] === '') {
           this.mainForm.controls[controlName].setValue('\u00A0'); // Non-breaking space for empty values in view mode
-         /*  console.log(
+          /*  //console.log(
             'this.mainForm.controls[controlName].value',
             this.mainForm.controls[controlName].value
           ); */
+        } else if (controlName == 'password') {
+          this.mainForm.controls[controlName].setValue('password123'); // Placeholder for password field to prevent error in edit mode.
         } else {
           this.mainForm.controls[controlName].setValue(
             this.data().object![controlName]
@@ -399,14 +481,14 @@ export class BaseDetailsComponent {
       const orderedContacts = this.data().object!['orderedContacts'];
       for (let contact of this.contactTypes) {
         const formArray = this.mainForm.get(contact) as FormArray;
-        //console.log('formArray', formArray);
-        //console.log('this.data().object![contact]', this.data().object);
+        ////console.log('formArray', formArray);
+        ////console.log('this.data().object![contact]', this.data().object);
 
         const values = orderedContacts[
           contact as keyof typeof orderedContacts
         ] as unknown as string[];
-       // console.log('contact', contact, values);
-       // console.log('formArray', formArray.at(0), values);
+        // //console.log('contact', contact, values);
+        // //console.log('formArray', formArray.at(0), values);
 
         if (values) {
           if (firstInitialization) {
@@ -445,7 +527,7 @@ export class BaseDetailsComponent {
             }
           }
         } else if (mode == 'view') {
-         // console.log('Non-breaking space for empty values');
+          // //console.log('Non-breaking space for empty values');
           formArray.at(0)?.setValue('\u00A0'); // Non-breaking space for empty values
         } else {
           formArray.at(0)?.setValue('');

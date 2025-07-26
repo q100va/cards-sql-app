@@ -30,9 +30,9 @@ export function phoneNumberFormatValidator(): ValidatorFn {
       phoneRe = /^\+[1-9]{1}[0-9]{0,2}[2-9]{1}[0-9]{1,2}[0-9]{3}[0-9]{4}$/;
     }
     const allowed = phoneRe.test(cleanValue);
-    /*       console.log('control.value');
-      console.log(control.value);
-      console.log(control.value == null || control.value == ''); */
+    /*       //console.log('control.value');
+      //console.log(control.value);
+      //console.log(control.value == null || control.value == ''); */
 
     return allowed || control.value == null || control.value == ''
       ? null
@@ -56,11 +56,11 @@ export function telegramIdFormatValidator(): ValidatorFn {
     const allowed_empty = control.value == null || control.value == '';
     const idRe = /^(\#+([0-9]){9,10})$/;
     const allowed = idRe.test(control.value);
-    //console.log("control.value");
-    //console.log(allowed_phone);
-    // console.log(allowed_empty);
-    // console.log(allowed_nickname);
-    // console.log(allowed_id);
+    ////console.log("control.value");
+    ////console.log(allowed_phone);
+    // //console.log(allowed_empty);
+    // //console.log(allowed_nickname);
+    // //console.log(allowed_id);
 
     return allowed_empty || allowed
       ? null
@@ -111,7 +111,7 @@ export const mainContactsValidator: ValidatorFn = (
   const formArrayTelegramId = control.get('telegramId') as FormArray;
   const formArrayTelegramPhoneNumber = control.get('telegramPhoneNumber') as FormArray;
 
-  //console.log('mainContactsValidator', formArray.get('email'));
+  ////console.log('mainContactsValidator', formArray.get('email'));
 /*   const emailError =
     control.get('email')?.hasError('required') ||
     control.get('email')?.hasError('pattern');
@@ -143,8 +143,8 @@ export const mainContactsValidator: ValidatorFn = (
  export function minValidator(): ValidatorFn {
     return (group: FormGroup): ValidationErrors | null => {
       //const fg = ctrl as FormGroup;
-      console.log("group.controls");
-      console.log(group.controls);
+      //console.log("group.controls");
+      //console.log(group.controls);
       const controls = Object.values(group.controls);
       let result;
       if (controls.every((fc) => !fc.value)) {
@@ -154,8 +154,8 @@ export const mainContactsValidator: ValidatorFn = (
         //group.setErrors(null);
         result = null;
       }
-      console.log("group.errors");
-      console.log(group.errors);
+      //console.log("group.errors");
+      //console.log(group.errors);
       return result;
     };
   } */

@@ -1,8 +1,8 @@
 <p-confirmdialog />
 <p-toast position="center" />
 
-<app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams"
-  (addressFilter)="onChangeAddressFilter($event)">
+<app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
+  (addressFilter)="onChangeAddress($event)">
 </app-address-filter>
 <form [formGroup]="mainForm" style="margin-top: 16px;"
   [class]="data().operation == 'view-edit' && !isEditMode ? 'view-mode' : 'none'" (change)="onChangeValidation()">

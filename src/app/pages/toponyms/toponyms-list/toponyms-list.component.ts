@@ -43,7 +43,7 @@ import { FileService } from '../../../services/file.service';
 import { AddressFilterComponent } from '../../../shared/address-filter/address-filter.component';
 import { UploadFileComponent } from '../../../shared/upload-file/upload-file.component';
 //import { ToponymDetailsDialogComponent } from '../dialogs/toponym-details-dialog/toponym-details-dialog.component';
-import { ToponymProps } from '../../../interfaces/toponym-props';
+import { DialogData, ToponymProps } from '../../../interfaces/dialog-props';
 import { AddressFilterParams } from '../../../interfaces/address-filter-params';
 import { GeographyLevels, Ways } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
@@ -170,7 +170,7 @@ export class ToponymsListComponent {
     restoreFocus: true,
   };
 
-  dialogData = computed(() => {
+  dialogData = computed<DialogData>(() => {
     this.toponymProps().dialogProps.addressFilterParams = {
       ...this.toponymProps().dialogProps.addressFilterParams,
       source: 'toponymCard',
@@ -181,7 +181,7 @@ export class ToponymsListComponent {
     };
     return {
       ...this.toponymProps().dialogProps,
-      type: this.type(),
+      toponymType: this.type(),
     };
   });
 
@@ -371,7 +371,7 @@ export class ToponymsListComponent {
   }
 
   onClearSearchClick() {
-    console.log('onClearSearchClick');
+    //console.log('onClearSearchClick');
     this.goToFirstPage();
     this.searchValue.set('');
     this.inputValue = '';
@@ -499,8 +499,8 @@ export class ToponymsListComponent {
       )
       .subscribe({
         next: (res) => {
-          console.log('res.data.toponyms');
-          console.log(res.data.toponyms);
+          //console.log('res.data.toponyms');
+          //console.log(res.data.toponyms);
           this.toponyms = res.data.toponyms;
           this.length.set(res.data.length);
           this.dataSource = new MatTableDataSource(this.toponyms);

@@ -31,13 +31,13 @@ export class UploadFileComponent {
   showSpinner = output<boolean>();
 
   addFile(event: Event) {
-    console.log('START', event);
+    //console.log('START', event);
     this.showSpinner.emit(true);
     const inputElement = event.target as HTMLInputElement;
     if (inputElement.files) {
       this.file = inputElement.files[0];
-      console.log('this.file');
-      console.log(this.file);
+      //console.log('this.file');
+      //console.log(this.file);
       let schema = schemas[this.typeOfData() as keyof typeof schemas];
       readXlsxFile(this.file, { schema })
         .then(({ rows, errors }) => {
@@ -49,10 +49,10 @@ export class UploadFileComponent {
           if (rows.length < Object.keys(schema).length) {
             throw new Error('В файле отсутствуют обязательные колонки!');
           }
-          console.log('rows');
-          console.log(rows);
-          console.log('errors');
-          console.log(errors);
+          //console.log('rows');
+          //console.log(rows);
+          //console.log('errors');
+          //console.log(errors);
           this.saveData(rows);
         })
         .catch((err) => {

@@ -43,7 +43,7 @@ export class BaseLayoutComponent {
 
     /*     this.roleService.findUserRole(this.cookieService.get("session_user")).subscribe((res) => {
       this.userRole = res["data"];
-      console.log(this.userRole);
+      //console.log(this.userRole);
       this.isAdmin = this.userRole === "admin" ;
       this.isManager = this.userRole === "manager";
       this.isDobroru = this.userRole === "dobroru";

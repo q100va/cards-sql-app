@@ -1,6 +1,6 @@
-import { AddressFilterParams } from './address-filter-params';
+/* import { AddressFilterParams } from './address-filter-params';
 import { DefaultAddressParams } from './default-address-params';
-import { Control } from './toponym-props';
+import { Control } from './dialog-props';
 import { GeographyLevels } from './types';
 
 export interface DialogData {
@@ -22,4 +22,4 @@ export interface DialogData {
   addressFilterParams: AddressFilterParams;
   componentType: 'toponym' | 'user';
 
-}
+} */

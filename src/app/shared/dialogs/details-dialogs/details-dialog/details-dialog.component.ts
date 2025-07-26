@@ -14,7 +14,7 @@ import { Toast } from 'primeng/toast';
 
 import { ToponymDetailsComponent } from '../toponym-details/toponym-details.component';
 
-import { DialogData } from '../../../../interfaces/dialog-data';
+import { DialogData } from '../../../../interfaces/dialog-props';
 import { UserDetailsComponent } from '../user-details/user-details.component';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 //import { UserDetailsComponent } from './user-details/user-details.component';
@@ -65,7 +65,7 @@ export class DetailsDialogComponent {
   }
 
   ngOnInit() {
-    console.log('Dialog data:', this.data);
+    //console.log('Dialog data:', this.data);
   }
 
   onSaveClick(action: 'justSave' | 'saveAndExit') {

@@ -58,7 +58,7 @@ export class UserService {
       pageSize: pageSize,
       currentPage: currentPage,
     });
-    console.log('getListOfUsers service result', result);
+    //console.log('getListOfUsers service result', result);
     return result;
   }
 

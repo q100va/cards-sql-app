@@ -379,7 +379,7 @@ export class CreateUserDialogComponent implements OnInit {
   }
 
   onSaveClick(action: 'justSave' | 'saveAndExit') {
-    console.log('SAVE');
+    //console.log('SAVE');
     const newUser = {} as User;
     newUser.userName = this.mainForm.controls['userName'].value?.trim();
     newUser.password = this.mainForm.controls['password'].value;
@@ -481,8 +481,8 @@ export class CreateUserDialogComponent implements OnInit {
         extraContact.type as keyof typeof newUser.orderedContacts
       ].push(this.completeContact(extraContact.contact, extraContact.type));
     }
-    console.log('newUser');
-    console.log(newUser);
+    //console.log('newUser');
+    //console.log(newUser);
     this.checkDuplicates(newUser);
   }
 
@@ -532,7 +532,7 @@ export class CreateUserDialogComponent implements OnInit {
       if (duplicates.size > 0) {
         contactDuplicates[key] = Array.from(duplicates) as string[];
       } else {
-        console.log('There are not duplicates!');
+        //console.log('There are not duplicates!');
       }
     }
 
@@ -719,7 +719,7 @@ export class CreateUserDialogComponent implements OnInit {
   }
 
   onViewClick() {
-    console.log('this.addressFilter()', this.addressFilter());
+    //console.log('this.addressFilter()', this.addressFilter());
     if (this.changes) {
       this.confirmationService.confirm({
         message: 'Вы уверены, что хотите выйти без сохранения?',

@@ -28,10 +28,8 @@ import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/cause-of-bl
 import { AddressFilter } from '../../interfaces/address-filter';
 import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { Validators } from '@angular/forms';
-import { DialogData } from '../../interfaces/dialog-data';
-import { DialogProps } from '../../interfaces/toponym-props';
+import { DialogData } from '../../interfaces/dialog-props';
 import * as Validator from '../../shared/custom.validator';
-import { UserDetailsComponent } from '../../shared/dialogs/details-dialogs/user-details/user-details.component';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
@@ -236,7 +234,7 @@ export class UsersListComponent {
     restoreFocus: true,
   };
 
-  dialogProps: DialogProps = {
+  dialogProps: DialogData = {
     creationTitle: 'Новый пользователь',
     viewTitle: 'Пользователь',
     controls: [
@@ -278,7 +276,7 @@ export class UsersListComponent {
         type: 'inputPassword',
         label: 'Пароль',
         postfix: '*',
-       // placeholder: '********',
+        // placeholder: '********',
         category: 'mainData',
         formType: 'formControl',
         colspan: 2,
@@ -535,7 +533,7 @@ export class UsersListComponent {
 
   constructor() {
     effect(() => {
-      console.log('allFilterParameters changed:', this.allFilterParameters());
+      //console.log('allFilterParameters changed:', this.allFilterParameters());
       this.getUsers(); // Automatically invoked whenever allFilterParameters changes
     });
 
@@ -550,19 +548,19 @@ export class UsersListComponent {
   }
 
   sortData(sort: Sort) {
-    // console.log('sort');
-    //console.log(sort);
+    // //console.log('sort');
+    ////console.log(sort);
     this.sortParameters.set(sort);
     //this.getUsers();
   }
 
   onChangedPage(pageData: PageEvent) {
-    /*  console.log('pageData');
-  console.log(pageData); */
+    /*  //console.log('pageData');
+  //console.log(pageData); */
     this.currentPage = pageData.pageIndex + 1;
     this.pageSize = pageData.pageSize;
     if (!this.avoidDoubleRequest) {
-      //console.log('pageData');
+      ////console.log('pageData');
       this.getUsers();
     } else {
       this.avoidDoubleRequest = false;
@@ -576,7 +574,7 @@ export class UsersListComponent {
 
   changeColumnsView(selectedColumns: string[]) {
     this.displayedColumns = [...selectedColumns];
-    //console.log(this.displayedColumns);
+    ////console.log(this.displayedColumns);
   }
 
   onAddUserClick() {
@@ -599,7 +597,7 @@ export class UsersListComponent {
     });
 
     dialogRefCreate.afterClosed().subscribe((result) => {
-      console.log('The dialog was closed', result);
+      //console.log('The dialog was closed', result);
 
       if (result.name) {
         this.messageService.add({
@@ -613,7 +611,7 @@ export class UsersListComponent {
   }
 
   onOpenUserCardClick(user: any) {
-    console.log('user', user);
+    //console.log('user', user);
     this.dialogProps.addressFilterParams.readonly = true;
     this.dialogProps.addressFilterParams.class = 'view-mode';
     if (user.isRestricted) {
@@ -627,7 +625,15 @@ export class UsersListComponent {
         formType: 'formControl',
       });
     }
-    console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
+    //console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
+    if (user.addresses.length == 0) {
+      user.addresses.push({
+        country: null,
+        region: null,
+        district: null,
+        locality: null,
+      });
+    }
 
     const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
@@ -666,7 +672,7 @@ export class UsersListComponent {
   }
 
   onBlockUserClick(id: number) {
-    //console.log(id);
+    ////console.log(id);
     const blockingUser = this.users.find((item) => item.id == id)!.userName;
     const dialogRef = this.dialog.open(CauseOfBlockingDialogComponent, {
       data: { userName: blockingUser, userId: id },
@@ -675,7 +681,7 @@ export class UsersListComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      //console.log('The dialog was closed');
+      ////console.log('The dialog was closed');
       if (result.success) {
         this.getUsers();
         this.messageService.add({
@@ -730,7 +736,7 @@ export class UsersListComponent {
   }
 
   onDeleteUserClick(id: number) {
-    //console.log(id);
+    ////console.log(id);
     const deletingUser = this.users.find((item) => item.id == id)!.userName;
     this.confirmationService.confirm({
       message: `Вы уверены, что хотите удалить пользователя ${deletingUser}?<br />Данные невозможно будет восстановить!`,
@@ -787,8 +793,8 @@ export class UsersListComponent {
   }
 
   getUsers() {
-    console.log('this.allFilterParameters()');
-    console.log(this.allFilterParameters());
+    //console.log('this.allFilterParameters()');
+    //console.log(this.allFilterParameters());
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),
@@ -797,21 +803,21 @@ export class UsersListComponent {
       )
       .subscribe({
         next: (res) => {
-          /* console.log('res.data.users');
-          console.log(res.data.users); */
+          /* //console.log('res.data.users');
+          //console.log(res.data.users); */
           this.users = res.data.users;
           this.length.set(res.data.length);
-          /*  console.log('this.users0');
-          console.log(this.users); */
+          /*  //console.log('this.users0');
+          //console.log(this.users); */
           for (let user of this.users) {
-         //   user.role = typeof user.role === 'object' && 'name' in user.role ? user.role.name : user.role;
+            //   user.role = typeof user.role === 'object' && 'name' in user.role ? user.role.name : user.role;
             let orderedContacts: { [key: string]: string[] } = {};
-            console.log('user.contacts');
-            /*     console.log(user.contacts); */
+            //console.log('user.contacts');
+            /*     //console.log(user.contacts); */
             if (user.contacts) {
               for (let contact of user.contacts) {
-                console.log('contact');
-                console.log(contact);
+                //console.log('contact');
+                //console.log(contact);
                 if (
                   contact.type == 'telegramNickname' ||
                   contact.type == 'telegramPhoneNumber' ||
@@ -831,8 +837,8 @@ export class UsersListComponent {
             user.orderedContacts =
               orderedContacts as typeof user.orderedContacts;
           }
-          console.log('this.users');
-          console.log(this.users);
+          //console.log('this.users');
+          //console.log(this.users);
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;
@@ -870,7 +876,7 @@ export class UsersListComponent {
       default:
         result = value;
     }
-   // console.log('editContact', type, value, result);
+    // //console.log('editContact', type, value, result);
     return result;
   }
 

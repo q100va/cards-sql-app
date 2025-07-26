@@ -68,12 +68,12 @@ export class UserDetailsComponent extends BaseDetailsComponent {
 
   override ngOnInit(): void {
     super.ngOnInit();
-    //console.log('ngOnInit', this.data().operation);
+    ////console.log('ngOnInit', this.data().operation);
     this.mainForm.setValidators([Validator.mainContactsValidator]);
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
         this.roles = res.data.roles;
-        console.log('this.roles', this.roles);
+        //console.log('this.roles', this.roles);
       },
       error: (err) => this.errorHandling(err),
     });
@@ -98,7 +98,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
 
   modifyContactTypesList() {
     for (let contact of this.possibleContactTypes) {
-      console.log(this.mainForm.controls[contact.name].value);
+      //console.log(this.mainForm.controls[contact.name].value);
       if (
         this.mainForm.controls[contact.name].value.findIndex(
           (item: string) => item == ''
@@ -138,7 +138,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
-    console.log('onSaveClick', action);
+    //console.log('onSaveClick', action);
     const user = {} as User;
     user.userName = this.mainForm.controls['userName'].value!.trim();
     user.id = this.data().object ? (this.data().object!['id'] as number) : null;
@@ -224,7 +224,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
       if (duplicates.size > 0) {
         contactDuplicates[key] = Array.from(duplicates) as string[];
       } else {
-        console.log('There are not duplicates!');
+        //console.log('There are not duplicates!');
       }
     }
 
@@ -351,16 +351,16 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     user.dateOfRestriction = this.mainForm.controls['isRestricted'].value
       ? new Date()
       : null;
-    this.userService.saveUser(user, this.data().operation).subscribe({
+    this.userService.saveUser(user, this.data().operation!).subscribe({
       next: (res) => {
         //this.dialogRefCreate.close({ userName: res.userName });
         if (action == 'saveAndExit') {
           //this.dialogRef.close({ name: res.data });
           this.closeDialog.emit(res.data);
         } else {
-          console.log('this.data().object', this.data().object);
+          //console.log('this.data().object', this.data().object);
           this.data().object = res.data;
-          console.log('this.data().object', this.data().object);
+          //console.log('this.data().object', this.data().object);
           this.changeToViewMode(null);
           this.messageService.add({
             severity: 'success',

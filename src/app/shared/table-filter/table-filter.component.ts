@@ -176,15 +176,15 @@ export class TableFilterComponent implements OnInit {
   ];
 
   ngOnInit() {
-    console.log(
+/*     console.log(
       'defaultAddressParams in table-filter',
       this.defaultAddressParams()
-    );
+    ); */
 
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
-        // console.log('res');
-        // console.log(res);
+        // //console.log('res');
+        // //console.log(res);
         this.rolesList = res.data.roles;
       },
       error: (err) => {
@@ -257,9 +257,9 @@ export class TableFilterComponent implements OnInit {
       this.form.controls['startBeginningDate'].value &&
       this.form.controls['endBeginningDate'].value
     ) {
-      //console.log('dateBeginningRange');
-      //console.log(this.form.controls['startBeginningDate'].value);
-      //console.log(this.form.controls['endBeginningDate'].value);
+      ////console.log('dateBeginningRange');
+      ////console.log(this.form.controls['startBeginningDate'].value);
+      ////console.log(this.form.controls['endBeginningDate'].value);
       count = count + 1;
       filter['dateBeginningRange'] = [
         this.form.controls['startBeginningDate'].value.toDate(),
@@ -277,9 +277,9 @@ export class TableFilterComponent implements OnInit {
       this.form.controls['startRestrictionDate'].value &&
       this.form.controls['endRestrictionDate'].value
     ) {
-      //console.log('dateRestrictionRange');
-      //console.log(this.form.controls['startRestrictionDate'].value);
-      //console.log(this.form.controls['endRestrictionDate'].value);
+      ////console.log('dateRestrictionRange');
+      ////console.log(this.form.controls['startRestrictionDate'].value);
+      ////console.log(this.form.controls['endRestrictionDate'].value);
       count = count + 1;
       filter['dateRestrictionRange'] = [
         this.form.controls['startRestrictionDate'].value.toDate(),
@@ -308,10 +308,10 @@ export class TableFilterComponent implements OnInit {
       count = count + 1;
     } */
     count = count + this.addressFilterBadgeValue();
-    //console.log('filter');
-    //console.log(filter);
-    /*     console.log('addressFilter');
-    console.log(addressFilter);
+    ////console.log('filter');
+    ////console.log(filter);
+    /*     //console.log('addressFilter');
+    //console.log(addressFilter);
  */
     this.goToFirstPage.emit();
     this.filterBadgeValue.emit(count);

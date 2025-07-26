@@ -68,14 +68,14 @@ export class AddressFilterComponent {
   constructor() {}
   //TODO: spinner?
   ngOnInit() {
-    console.log('params in address-filter', this.params());
+    //console.log('params in address-filter', this.params());
 
     if (this.params().readonly) this.form.get('country')?.disable();
 
-    console.log(
+  /*   console.log(
       'defaultAddressParams in address-filter',
       this.defaultAddressParams()
-    );
+    ); */
     this.addressService.getListOfCountries().subscribe({
       next: (res) => {
         this.toponyms.countriesList = res.data;
@@ -86,7 +86,7 @@ export class AddressFilterComponent {
             .pipe(
               concatMap(() => {
                 if (this.defaultAddressParams().regionId) {
-                  console.log('in process');
+                  //console.log('in process');
                   this.setDefaultFormValue('region');
                   return this.onRegionSelectionChange();
                 }
@@ -109,7 +109,7 @@ export class AddressFilterComponent {
             )
             .subscribe({
               next: () => {
-                console.log('All operations completed successfully');
+                //console.log('All operations completed successfully');
               },
               error: (err) => this.errorHandling(err),
             });
@@ -125,7 +125,7 @@ export class AddressFilterComponent {
             this.setDefaultFormValue('country');
             this.onCountrySelectionChange().subscribe({
               next: () => {
-                console.log('after this.onCountrySelectionChange();');
+                //console.log('after this.onCountrySelectionChange();');
                 if (this.defaultAddressParams().regionId) {
                   this.setDefaultFormValue('region');
                   this.onRegionSelectionChange().subscribe({
@@ -150,7 +150,7 @@ export class AddressFilterComponent {
                     },
                   });
                 }
-                console.log('All operations completed successfully');
+                //console.log('All operations completed successfully');
               },
               error: (err) => {
                 this.errorHandling(err);
@@ -182,7 +182,7 @@ export class AddressFilterComponent {
   ): void {
     this.selectionChangeMethods[methodName]().subscribe({
       next: () => {
-        console.log(`${levelName} selection change completed`);
+        //console.log(`${levelName} selection change completed`);
       },
       error: (err) => {
         this.errorHandling(err);
@@ -191,8 +191,10 @@ export class AddressFilterComponent {
   }
 
   onCountrySelectionChange(): Observable<any> {
+    //console.log('Country selection changed' + this.form.get('country')?.value);
     return this.onToponymSelectionChange('country', 'region', 'regions').pipe(
       tap(() => {
+        //console.log('Country selection changed' + this.form.get('country')?.value);
         this.form.get('region')?.setValue(null);
         this.form.get('district')?.disable();
         this.form.get('district')?.setValue(null);
@@ -313,10 +315,10 @@ export class AddressFilterComponent {
     ) {
       count = count + 1;
     }
-    console.log('this.emitAddressData', addressData);
-    console.log('this.addressFilter', this.addressFilter);
+    //console.log('this.emitAddressData', addressData);
+    //console.log('this.addressFilter', this.addressFilter);
     this.addressFilter.emit(addressData);
-    if (this.params().source != 'toponymCard') {
+    if (this.params().source != 'toponymCard' && this.params().source != 'userCard') {
       this.addressFilterBadgeValue.emit(count);
       this.addressString.emit(this.createAddressString(addressData));
       this.goToFirstPage.emit();
@@ -332,11 +334,11 @@ export class AddressFilterComponent {
         this.form.get('locality')?.enable();
       } else {
         this.form.get('country')?.enable();
-        if (this.form.controls['country'].value)
+        if (this.form.controls['country'].value && this.toponyms['regionsList'].length > 0)
           this.form.get('region')?.enable();
-        if (this.form.controls['region'].value)
+        if (this.form.controls['region'].value && this.toponyms['districtsList'].length > 0)
           this.form.get('district')?.enable();
-        if (this.form.controls['district'].value)
+        if (this.form.controls['district'].value && this.toponyms['localitiesList'].length > 0)
           this.form.get('locality')?.enable();
       }
       this.params().class = 'none';
@@ -344,30 +346,33 @@ export class AddressFilterComponent {
       this.emitAddressData();
     }
     if (mode == 'view') {
-      console.log('onChangeMode');
+      //console.log('onChangeMode');
       this.params().class = 'view-mode';
       this.params().readonly = true;
       if (data) {
+        //console.log('data in onChangeMode', data);
         // Sequentially execute the steps using concatMap
+        this.form.controls['country'].setValue(data?.countryId);
+        //console.log('Country ID:', data?.countryId);
         this.selectionChangeMethods['onCountrySelectionChange']()
           .pipe(
             tap(() => {
-              this.form.controls['country'].setValue(data?.countryId);
-              console.log('Country ID:', data?.countryId);
+  /*             this.form.controls['country'].setValue(data?.countryId);
+              //console.log('Country ID:', data?.countryId); */
             }),
             concatMap(() => {
               this.form.controls['region'].setValue(data?.regionId);
-              console.log('Region ID:', data?.regionId);
+              //console.log('Region ID:', data?.regionId);
               return this.selectionChangeMethods['onRegionSelectionChange']();
             }),
             concatMap(() => {
               this.form.controls['district'].setValue(data?.districtId);
-              console.log('District ID:', data?.districtId);
+              //console.log('District ID:', data?.districtId);
               return this.selectionChangeMethods['onDistrictSelectionChange']();
             }),
             concatMap(() => {
               this.form.controls['locality'].setValue(data?.localityId);
-              console.log('Locality ID:', data?.localityId);
+              //console.log('Locality ID:', data?.localityId);
               return this.selectionChangeMethods['onLocalitySelectionChange']();
             })
           )
@@ -384,16 +389,16 @@ export class AddressFilterComponent {
     }
 
     /*       this.form.controls['country'].setValue(data?.countryId);
-      console.log(data?.countryId);
+      //console.log(data?.countryId);
       this.handleToponymSelectionChange('onCountrySelectionChange', 'Country');
       this.form.controls['region'].setValue(data?.regionId);
-      console.log(data?.regionId);
+      //console.log(data?.regionId);
       this.handleToponymSelectionChange('onRegionSelectionChange', 'Region');
       this.form.controls['district'].setValue(data?.districtId);
-      console.log(data?.districtId);
+      //console.log(data?.districtId);
       this.handleToponymSelectionChange('onDistrictSelectionChange', 'District');
       this.form.controls['locality'].setValue(data?.localityId);
-      console.log(data?.localityId);
+      //console.log(data?.localityId);
       this.handleToponymSelectionChange('onLocalitySelectionChange', 'Locality'); */
     /*       this.form.get('country')?.disable();
       this.form.get('region')?.disable();
@@ -457,6 +462,7 @@ export class AddressFilterComponent {
       tap((res) => {
         this.toponyms[`${typeOfList}List` as keyof typeof this.toponyms] =
           res.data;
+          //console.log(`Toponyms for ${typeOfList}:`, this.toponyms.regionsList);
         if (res.data && res.data.length > 0) {
           this.form.get(nextKey)?.enable();
         } else {

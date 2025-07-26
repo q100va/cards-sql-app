@@ -46,13 +46,13 @@ export class ToponymDetailsComponent extends BaseDetailsComponent{
 
   override ngOnInit(): void {
     super.ngOnInit();
-    console.log('this.data().controls', this.data().controls);
+    //console.log('this.data().controls', this.data().controls);
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
     this.addressService
       .checkToponymName(
-        this.data().type,
+        this.data().toponymType!,
         this.mainForm.controls[this.data().checkingName].value!,
         this.data().object ? (this.data().object!['id'] as number) : null,
         this.addressFilter(),
@@ -81,11 +81,11 @@ export class ToponymDetailsComponent extends BaseDetailsComponent{
   saveToponym(action: 'justSave' | 'saveAndExit') {
     this.addressService
       .saveToponym(
-        this.data().type,
+        this.data().toponymType!,
         this.data().object ? (this.data().object!['id'] as number) : null,
         this.mainForm.value as ToponymFormControlsNames,
         this.addressFilter(),
-        this.data().operation
+        this.data().operation!
       )
       .subscribe({
         next: (res) => {
@@ -94,9 +94,9 @@ export class ToponymDetailsComponent extends BaseDetailsComponent{
             this.closeDialog.emit(res.data.name);
           } else {
 
-            console.log('this.data().object', this.data().object);
+            //console.log('this.data().object', this.data().object);
             this.data().object = res.data;
-            console.log('this.data().object', this.data().object);
+            //console.log('this.data().object', this.data().object);
             this.changeToViewMode(null);
             this.messageService.add({
               severity: 'success',

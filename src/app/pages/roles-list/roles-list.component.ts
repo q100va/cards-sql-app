@@ -61,7 +61,7 @@ export class RolesListComponent {
       height: '40%',
     });
     dialogRef.afterClosed().subscribe((result) => {
-      console.log('The dialog was closed');
+      //console.log('The dialog was closed');
       if (result.roleName) {
         this.getRoles();
         this.messageService.add({
@@ -101,7 +101,7 @@ export class RolesListComponent {
       [key: string]: string | boolean | [] | { [key: string]: boolean }[];
     }
   ) {
-    console.log(value, roleId, operation);
+    //console.log(value, roleId, operation);
     this.roleService.updateRoleAccess(value, roleId, operation).subscribe({
       next: (res) => {
         if (res) {
@@ -205,10 +205,10 @@ export class RolesListComponent {
       next: (res) => {
         this.roles = res.data.roles;
         this.operations = res.data.operations;
-        /*         console.log("this.roles");
-        console.log(this.roles);
-        console.log("this.operations");
-        console.log(this.operations); */
+        /*         //console.log("this.roles");
+        //console.log(this.roles);
+        //console.log("this.operations");
+        //console.log(this.operations); */
       },
       error: (err) => {
         console.log(err);

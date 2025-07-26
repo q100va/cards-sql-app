@@ -64,8 +64,8 @@
         }
 
         <mat-grid-tile colspan="6" rowspan="2">
-          <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams"
-            (addressFilter)="onChangeAddressFilter($event)"></app-address-filter>
+          <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
+            (addressFilter)="onChangeAddress($event)"></app-address-filter>
         </mat-grid-tile>
 
         <mat-grid-tile colspan="6" rowspan="1">

@@ -39,10 +39,10 @@ export class FileService {
     }
     catch (error: any) {
 
-      console.log(error);
+      //console.log(error);
       let errorResponse = error.response.data.text();
       const errorObj = JSON.parse(errorResponse);
-       console.log(errorObj) // log error to console
+       //console.log(errorObj) // log error to console
       return errorObj;
 
   }
@@ -69,7 +69,7 @@ export class FileService {
       let errorResponse = await error.response.data.text();
       const errorObj = JSON.parse(response);
       return errorObj
-      console.log(errorObj) // log error to console
+      //console.log(errorObj) // log error to console
   }
 } */
 }

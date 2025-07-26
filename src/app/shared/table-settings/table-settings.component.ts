@@ -54,14 +54,14 @@ export class TableSettingsComponent {
   isAllSelected() {
     const numSelected = this.selection.selected.length;
     const numRows = this.dataSource.data.length;
-    //  console.log(this.selection.selected);
+    //  //console.log(this.selection.selected);
     return numSelected === numRows;
   }
 
   /** Selects all rows if they are not all selected; otherwise clear selection. */
   toggleAllRows(...rest: any[]) {
     if(rest.length > 0) {
-      console.log(rest[0]);
+      //console.log(rest[0]);
     }
 
     if (this.isAllSelected()) {
@@ -77,7 +77,7 @@ export class TableSettingsComponent {
       return;
     }
     this.selection.select(...this.dataSource.data);
-    // console.log(this.selection);
+    // //console.log(this.selection);
     this.emitSelectedColumns();
     // this.selectedColumns.emit(this.selection.selected);
   }
@@ -100,7 +100,7 @@ export class TableSettingsComponent {
     let listOfSelectedColumns = this.selection.selected
       .sort((prev, next) => prev.id - next.id)
       .map((item) => item.columnName);
-   // console.log(listOfSelectedColumns);
+   // //console.log(listOfSelectedColumns);
     this.selectedColumns.emit(listOfSelectedColumns);
     this.settingsBadgeValue.emit(listOfSelectedColumns.length - this.columnsList().length);
   }

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
-import { ToponymProps } from '../../../interfaces/toponym-props';
+import { ToponymProps } from '../../../interfaces/dialog-props';
 import { ActivatedRoute } from '@angular/router';
 import { GeographyLevels } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';

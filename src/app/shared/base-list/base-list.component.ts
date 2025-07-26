@@ -140,10 +140,10 @@ export class BaseListComponent {
   strongContactFilter = signal<boolean>(false);
 
   allFilterParameters = computed(() => {
-    console.log('allFilterParameters');
-    // console.log(this.strongContactFilter());
-    console.log('this.addressFilterValue()');
-    console.log(this.addressFilterValue());
+    //console.log('allFilterParameters');
+    // //console.log(this.strongContactFilter());
+    //console.log('this.addressFilterValue()');
+    //console.log(this.addressFilterValue());
     return {
       viewOption: this.selectedViewOptionId(),
       searchValue: this.searchValue(),
@@ -176,7 +176,7 @@ export class BaseListComponent {
   }>();
 
   filterString = computed(() => {
-    // console.log('filterString computed');
+    // //console.log('filterString computed');
     let filterString = '';
     let viewOption = this.viewOptions.find(
       // (item) => item.id == this.selectedViewOptionId()
@@ -210,8 +210,8 @@ export class BaseListComponent {
         } else {
           for (let item of filterData[key]!) {
             if (key == 'contactTypes') {
-              console.log('item');
-              console.log(item);
+              //console.log('item');
+              //console.log(item);
               let contactType = item as {
                 [key: string]: string;
               };
@@ -245,8 +245,8 @@ export class BaseListComponent {
       this.defaultAddressParams.regionId = params['regionId'];
       this.defaultAddressParams.countryId = params['countryId'];
     });
-    console.log('this.defaultAddressParams in user-list');
-    console.log(this.defaultAddressParams);
+    //console.log('this.defaultAddressParams in user-list');
+    //console.log(this.defaultAddressParams);
 
     /*     effect(() => {
       this.allFilterParametersChange.emit(this.allFilterParameters());
@@ -254,7 +254,7 @@ export class BaseListComponent {
   }
 
   ngOnInit() {
-    //console.log(navigation);
+    ////console.log(navigation);
   }
   objectKeys(obj: any): string[] {
     return Object.keys(obj);
@@ -276,7 +276,7 @@ export class BaseListComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      //console.log('The dialog was closed');
+      ////console.log('The dialog was closed');
       if (result.userName) {
         this.getUsers();
         this.messageService.add({
@@ -293,12 +293,12 @@ export class BaseListComponent {
   }
   changeFilterBadge(filterBadgeValue: number) {
     this.filterBadgeValue = filterBadgeValue;
-    // console.log(this.filterBadgeValue);
+    // //console.log(this.filterBadgeValue);
   }
 
   onChangeViewSelection(option: string) {
     /*     chip.select();
-    console.log(chip.value); */
+    //console.log(chip.value); */
     this.avoidDoubleRequest = true;
     this.goToFirstPage();
     this.selectedViewOptionId.set(option);
@@ -326,8 +326,8 @@ export class BaseListComponent {
   }
 
   onClearFilterClick() {
-    /*     console.log('pageData');
-          console.log(pageData);
+    /*     //console.log('pageData');
+          //console.log(pageData);
  */
     this.avoidDoubleRequest = true;
     this.goToFirstPage();

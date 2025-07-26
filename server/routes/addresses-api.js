@@ -345,8 +345,6 @@ router.get("/get-countries-list", async (req, res) => {
 
 router.post("/get-regions-list", async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
     const countriesIds = req.body.data;//.map(item => item.id);
     let result = [];
     if (countriesIds.length > 0 && countriesIds[0]) {
@@ -361,6 +359,7 @@ router.post("/get-regions-list", async (req, res) => {
       });
       result = regions;
     }
+    console.log("result", countriesIds ,result);
     res.status(200).send({ msg: "Данные получены.", data: result });
   } catch (e) {
     const err = errorHandling(e);
@@ -370,8 +369,6 @@ router.post("/get-regions-list", async (req, res) => {
 
 router.post("/get-districts-list", async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
     const regionsIds = req.body.data;//.map(item => item.id);
     let result = [];
     if (regionsIds.length > 0 && regionsIds[0]) {
@@ -395,8 +392,6 @@ router.post("/get-districts-list", async (req, res) => {
 
 router.post("/get-localities-list", async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
     const districtsIds = req.body.data;//.map(item => item.id);
     let result = [];
     if (districtsIds.length > 0 && districtsIds[0]) {
