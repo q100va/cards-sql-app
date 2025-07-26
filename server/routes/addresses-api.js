@@ -1,12 +1,5 @@
 import { Router } from "express";
-//import fs from "fs";
 import path from "path";
-//import { join } from "path";
-//import { fileURLToPath } from 'url';
-
-
-
-import checkAuth from "../middleware/check-auth.js";
 import Country from "../models/country.js";
 import Region from "../models/region.js";
 import District from "../models/district.js";
@@ -17,7 +10,7 @@ import { correctDistrictName } from '../controllers/addresses.js'
 import CustomError from "../shared/customError.js";
 
 import Sequelize from 'sequelize';
-import Address from "../models/address.js";
+import UserAddress from "../models/user-address.js";
 const Op = Sequelize.Op;
 const router = Router();
 
@@ -973,33 +966,6 @@ router.post("/get-localities", async (req, res) => {
         console.log("innerQueryFinal");
         console.log(innerQuery);
 
-
-        /*         addressWhereParams.userId = {
-                  [Op.in]: Sequelize.literal(
-                    `(SELECT DISTINCT "userId" FROM addresses WHERE ${innerRestriction} "countryId" IN ${listOfCountriesIds})`
-                  )
-         */
-
-        /* SELECT "locality"."id", "locality"."name", "locality"."shortName", "district"."id" AS "district.id", "district"."name" AS "district.name", "district->region"."id" AS "district.region.id", "district->region"."name" AS "district.region.name", "district->region->country"."id" AS "district.region.country.id", "district->region->country"."name" AS "district.region.country.name"
-        FROM "localities" AS "locality"
-        LEFT OUTER JOIN "districts" AS "district" ON "locality"."districtId" = "district"."id"
-        LEFT OUTER JOIN "regions" AS "district->region" ON "district"."regionId" = "district->region"."id"
-        LEFT OUTER JOIN "countries" AS "district->region->country" ON "district->region"."countryId" = "district->region->country"."id"
-        WHERE "locality"."id" IN
-        (SELECT "locality"."id"
-        WHERE "locality"."isRestricted" = false AND
-        ("district->region->country"."name" ILIKE '%аверино%'
-        OR "district->region"."name" ILIKE '%аверино%' OR "district->region"."shortName" ILIKE '%аверино%'
-        OR "district"."name" ILIKE '%аверино%' OR "district"."shortName" ILIKE '%аверино%'
-        OR "locality"."name" ILIKE '%аверино%' OR "locality"."shortName" ILIKE '%аверино%')
-        AND  "locality"."id" IN
-        (SELECT "locality"."id"
-        WHERE (("district->region->country"."name" LIKE '%сысертский%')
-        OR ("district->region"."name" ILIKE '%сысертский%') OR ("district->region"."shortName" ILIKE '%сысертский%')
-        OR ("district"."name" ILIKE '%сысертский%') OR ("district"."shortName" ILIKE '%сысертский%')
-        OR ("locality"."name" ILIKE '%сысертский%') OR ("locality"."shortName" ILIKE '%сысертский%'))
-        AND "locality"."isRestricted" = false)); */
-
         searchParams.push({
           id: {
             [Op.in]: Sequelize.literal(innerQuery),
@@ -1327,7 +1293,7 @@ router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
 
-    let foundToponymId = await Address.findOne({
+    let foundToponymId = await UserAddress.findOne({
       where: {
         isRestricted: false,
         [toponymType + 'Id']: toponymId,
@@ -1387,7 +1353,7 @@ router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
 
-    let foundToponymId = await Address.findOne({
+    let foundToponymId = await UserAddress.findOne({
       where: {
         [toponymType + 'Id']: toponymId,
       },

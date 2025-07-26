@@ -1,16 +1,14 @@
 import { Router } from "express";
 import pkg from 'bcryptjs';
 const { hashSync } = pkg;
-import checkAuth from "../middleware/check-auth.js";
 import Country from "../models/country.js";
 import Region from "../models/region.js";
 import District from "../models/district.js";
 import Locality from "../models/locality.js";
 
-import CustomError from "../shared/customError.js";
 import User from "../models/user.js";
-import Contact from "../models/contact.js";
-import Address from "../models/address.js";
+import UserContact from "../models/user-contact.js";
+import UserAddress from "../models/user-address.js";
 import Sequelize from 'sequelize';
 import Role from "../models/role.js";
 import SearchUser from "../models/search-user.js";
@@ -73,7 +71,7 @@ router.post("/check-user-data", async (req, res) => {
           let params = {
             attributes: ['userName'],
             include: {
-              model: Contact,
+              model: UserContact,
               where: {
                 type: key, content: contact
               },
@@ -157,7 +155,7 @@ router.post("/create-user", async (req, res) => {
     for (let key in creatingUser.orderedContacts) {
       for (let contact of creatingUser.orderedContacts[key]) {
         if (contact) {
-          newContact = await Contact.create({ type: key, content: contact });
+          newContact = await UserContact.create({ type: key, content: contact });
           await newContact.setUser(createdUser);
           searchString = searchString + ' ' + contact;
         }
@@ -204,7 +202,7 @@ router.post("/create-user", async (req, res) => {
             } */
       if (address.country || address.region || address.district || address.locality) {
         newAddress
-          = await Address.create({
+          = await UserAddress.create({
             countryId: address.country,
             regionId: address.region,
             districtId: address.district,
@@ -214,19 +212,19 @@ router.post("/create-user", async (req, res) => {
         let countryName, regionName, districtName, localityName = '';
         if (address.country) {
           countryName = await Country.findOne({ where: { id: address.country }, attributes: ['name'] });
-          countryName = countryName.name + ' ';
+          countryName = countryName.name ? countryName.name + ' ' : '';
         }
         if (address.region) {
           regionName = await Region.findOne({ where: { id: address.region }, attributes: ['name'] });
-          regionName = regionName.name + ' ';
+          regionName = regionName.name ? regionName.name + ' ' : '';
         }
         if (address.district) {
           districtName = await District.findOne({ where: { id: address.district }, attributes: ['name'] });
-          districtName = districtName.name + ' ';
+          districtName = districtName.name ? districtName.name + ' ' : '';
         }
         if (address.locality) {
           localityName = await Locality.findOne({ where: { id: address.locality }, attributes: ['name'] });
-          localityName = localityName.name + ' ';
+          localityName = localityName.name ? localityName.name + ' ' : '';
         }
         searchString =
           searchString + countryName + regionName + districtName + localityName;
@@ -240,12 +238,12 @@ router.post("/create-user", async (req, res) => {
     res.status(200).send({ msg: "Аккаунт успешно создан.", data: creatingUser.userName });
   } catch (e) {
     if (createdUser) {
-      /*       await Address.destroy({
+      /*       await UserAddress.destroy({
               where: {
                 userId: createdUser.id,
               },
             });
-            await Contact.destroy({
+            await UserContact.destroy({
               where: {
                 userId: createdUser.id,
               },
@@ -408,13 +406,13 @@ router.post("/get-users", async (req, res) => {
       if (!strongContactFilter) {
         contactWhereParams.userId = {
           [Op.in]: Sequelize.literal(
-            `(SELECT DISTINCT "userId" FROM contacts
+            `(SELECT DISTINCT "userId" FROM "user-contacts"
             WHERE ${innerRestriction} type IN ${listOfTypes})`)
         }
       } else {
         contactWhereParams.userId = {
           [Op.in]: Sequelize.literal(
-            `(SELECT DISTINCT "userId" FROM contacts
+            `(SELECT DISTINCT "userId" FROM "user-contacts"
           WHERE ${innerRestriction} type IN ${listOfTypes}
           GROUP BY "userId"
           HAVING COUNT(DISTINCT type)=${contactTypes.length})`
@@ -423,107 +421,6 @@ router.post("/get-users", async (req, res) => {
       }
       contactRequiredParam = true;
     }
-
-
-    /*     SELECT "userId"
-    FROM contacts
-    WHERE type IN('vKontakte','instagram' )
-    group by "userId"
-    having count(distinct type)=2 */
-
-    /* addresses:
-    {countries : [143],
-    regions : [66],
-    districts : [37, name: 'Лесной городской округ город', regionId: 66}],
-    localities : [{id: 105, name: 'Лесной город', districtId: 37}]}
-     */
-
-
-    /*         if (addresses.countries && addresses.countries.length > 0) {
-              let countriesAmount, regionsAmount, districtsAmount, localitiesAmount = 0;
-              addressRequiredParam = true;
-              countriesAmount = addresses.countries.length;
-
-              //localities
-              let listOfLocalitiesIds = ``;
-              if (addresses.localities && addresses.localities.length > 0) {
-                localitiesAmount = addresses.localities.length;
-                listOfLocalitiesIds = `(`;
-                for (let id of addresses.localities) {
-
-                  const locality = await Locality.findOne({
-                    where: { id: id },
-                    attributes: ['districtId'],
-                  });
-                  addresses.districts = addresses.districts.filter(id => id != locality.districtId);
-
-                  const district = await District.findOne({
-                    where: { id: locality.districtId },
-                    attributes: ['regionId'],
-                  });
-                  addresses.regions = addresses.regions.filter(id => id != district.regionId);
-
-                  const region = await Region.findOne({
-                    where: { id: district.regionId },
-                    attributes: ['countryId'],
-                  });
-                  addresses.countries = addresses.countries.filter(id => id != region.countryId);
-
-                  listOfLocalitiesIds = listOfLocalitiesIds + `'` + id + `', `;
-                }
-                listOfLocalitiesIds = listOfLocalitiesIds.slice(0, -2) + `)`;
-              }
-
-              //districts
-              let listOfDistrictsIds = ``;
-              if (addresses.districts && addresses.districts.length > 0) {
-                districtsAmount = addresses.districts.length;
-                listOfDistrictsIds = `(`;
-
-                for (let id of addresses.districts) {
-                  const district = await District.findOne({
-                    where: { id: id },
-                    attributes: ['regionId'],
-                  });
-                  addresses.regions = addresses.regions.filter(id => id != district.regionId);
-
-                  const region = await Region.findOne({
-                    where: { id: district.regionId },
-                    attributes: ['countryId'],
-                  });
-                  addresses.countries = addresses.countries.filter(id => id != region.countryId);
-
-                  listOfDistrictsIds = listOfDistrictsIds + `'` + id + `', `;
-                }
-                listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
-              }
-
-              //regions
-              let listOfRegionsIds = ``;
-              if (addresses.regions && addresses.regions.length > 0) {
-                regionsAmount = addresses.regions.length;
-                listOfRegionsIds = `(`;
-                for (let id of addresses.regions) {
-                  const region = await Region.findOne({
-                    where: { id: id },
-                    attributes: ['countryId'],
-                  })
-                  addresses.countries = addresses.countries.filter(id => id != region.countryId);
-
-                  listOfRegionsIds = listOfRegionsIds + `'` + id + `', `;
-                }
-                listOfRegionsIds = listOfRegionsIds.slice(0, -2) + `)`;
-              }
-
-              //countries
-              let listOfCountriesIds = ``;
-              if (addresses.countries && addresses.countries.length > 0) {
-                listOfCountriesIds = `(`;
-                for (let id of addresses.countries) {
-                  listOfCountriesIds = listOfCountriesIds + `'` + id + `', `;
-                }
-                listOfCountriesIds = listOfCountriesIds.slice(0, -2) + `)`;
-              } */
 
     if (addresses.countries && addresses.countries.length > 0) {
       addressRequiredParam = true;
@@ -597,14 +494,14 @@ router.post("/get-users", async (req, res) => {
         if (!strongAddressFilter) {
           addressWhereParams.userId = {
             [Op.in]: Sequelize.literal(
-              `(SELECT DISTINCT "userId" FROM addresses
+              `(SELECT DISTINCT "userId" FROM "user-addresses"
               WHERE ${innerRestriction} (${whereString}))`
             )
           }
         } else { //TODO: is not tested!!!
           addressWhereParams.userId = {
             [Op.in]: Sequelize.literal(
-              `(SELECT DISTINCT "userId" FROM addresses
+              `(SELECT DISTINCT "userId" FROM "user-addresses"
               WHERE ${innerRestriction} (${whereString})
               GROUP BY "userId"
               HAVING COUNT(DISTINCT "countryId")=${countriesAmount}
@@ -624,13 +521,15 @@ router.post("/get-users", async (req, res) => {
         attributes: ['name'],
       },
       {
-        model: Contact,
+        model: UserContact,
+        as: 'contacts',
         where: contactWhereParams,
         required: contactRequiredParam,
         attributes: ['type', 'content'],
       },
       {
-        model: Address,
+        model: UserAddress,
+        as: 'addresses',
         where: addressWhereParams,
         required: addressRequiredParam,
         attributes: ['id'],
@@ -700,7 +599,7 @@ router.post("/get-users", async (req, res) => {
       include: parameters
     });
     console.log("users");
-    console.log(users[0].dataValues.contacts);
+    console.log(users);
     res.status(200).send({ msg: "Данные получены.", data: { users: users, length: length } });
   } catch (e) {
     const err = errorHandling(e);
@@ -801,65 +700,3 @@ export default router;
 
 
 
-/*//regions
-
-if (addresses.regions && addresses.regions.length > 0) {
- listOfCountriesIds = listOfCountriesIds.replaceAll(`, '143'`, ``);
- listOfCountriesIds = listOfCountriesIds.replaceAll(`'143', `, ``);
- listOfCountriesIds = listOfCountriesIds.replaceAll(`'143'`, ``);
- listOfCountriesIds = listOfCountriesIds + ` OR`;
-
- console.log('listOfCountriesIds');
- console.log(listOfCountriesIds);
-
- let listOfRegionsIds = `(`;
- for (let item of addresses.regions) {
-   listOfRegionsIds = listOfRegionsIds + `'` + item.id + `', `;
- }
- listOfRegionsIds = listOfRegionsIds.slice(0, -2) + `)`;
- console.log('listOfRegionsIds');
- console.log(listOfRegionsIds);
-
- addressWhereParams.userId = {
-   [Op.in]: Sequelize.literal(
-     `(SELECT DISTINCT "userId" FROM addresses WHERE ${innerRestriction} "countryId" IN ${listOfCountriesIds} "regionId" IN ${listOfRegionsIds})`
-   )
- }
-}
-
-   //districts
-
- if (addresses.districts && addresses.districts.length > 0) {
-   let listOfDistrictsIds = `(`;
-   for (let item of addresses.districts) {
-     listOfDistrictsIds = listOfDistrictsIds + `'` + item.id + `', `;
-   }
-   listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
-   console.log('listOfDistrictsIds');
-   console.log(listOfDistrictsIds);
-
-   addressWhereParams.userId = {
-     [Op.in]: Sequelize.literal(
-       `(SELECT DISTINCT "userId" FROM addresses WHERE ${innerRestriction} "countryId" IN ${listOfCountriesIds} "districtId" IN ${listOfDistrictsIds})`
-     )
-   }
- }
-
- //localities
-
-   if (addresses.localities && addresses.localities.length > 0) {
-       let listOfLocalitiesIds = `(`;
-       for (let item of addresses.localities) {
-         listOfLocalitiesIds = listOfLocalitiesIds + `'` + item.id + `', `;
-       }
-       listOfLocalitiesIds = listOfLocalitiesIds.slice(0, -2) + `)`;
-       console.log('listOfLocalitiesIds');
-       console.log(listOfLocalitiesIds);
-
-       addressWhereParams.userId = {
-         [Op.in]: Sequelize.literal(
-           `(SELECT DISTINCT "userId" FROM addresses WHERE ${innerRestriction} "countryId" IN ${listOfCountriesIds} "localityId" IN ${listOfLocalitiesIds})`
-         )
-       }
-     }
-  */

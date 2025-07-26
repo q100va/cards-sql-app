@@ -1,10 +1,9 @@
 import { DataTypes } from 'sequelize';
 
 import sequelize from '../database.js';
-import User from './user.js';
 import CustomError from "../shared/customError.js";
 
-const Contact = sequelize.define('contact', {
+const UserContact = sequelize.define('user-contact', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -87,4 +86,4 @@ const Contact = sequelize.define('contact', {
 //Associations
 
 
-export default Contact;
+export default UserContact;

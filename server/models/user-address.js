@@ -1,13 +1,8 @@
 import { DataTypes } from 'sequelize';
 
 import sequelize from '../database.js';
-import User from './user.js';
-import Country from './country.js';
-import Region from './region.js';
-import District from './district.js';
-import Locality from './locality.js';
 
-const Address = sequelize.define('address', {
+const UserAddress = sequelize.define('user-address', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -23,4 +18,4 @@ const Address = sequelize.define('address', {
 
 //Associations
 
-export default Address;
+export default UserAddress;
