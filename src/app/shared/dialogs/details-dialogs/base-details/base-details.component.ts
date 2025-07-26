@@ -268,66 +268,32 @@ export class BaseDetailsComponent {
   }
 
   addressChangeValidation() {
-    /*     console.log(
-      'this.data().addressFilterControls',
-      this.data().addressFilterControls
-    ); */
-    //console.log('this.addressFilter()', this.addressFilter());
 
-    console.log('this.data().object', this.data().object);
-    const address = this.data().object!['addresses'] as {
+    const addresses = this.data().object!['addresses'] as {
       [key: string]: { id: number; name: string } | null;
     }[];
 
-    if (this.addressFilter().countries == null) {
-      console.log('address', address);
-      if (address[0]['country'] != null) {
+    const address = addresses[0];
+    const filter = this.addressFilter();/*
+    console.log('this.addressFilter()', filter);
+    console.log('address', address); */
+
+    const keyMap: { [key: string]: string } = {
+      country: 'countries',
+      region: 'regions',
+      district: 'districts',
+      locality: 'localities',
+    };
+
+    for (const key in keyMap) {
+      const original = address[key];
+      const filtered = filter[keyMap[key] as keyof AddressFilter];
+      const originalId = original?.id ?? null;
+      const filteredId = Array.isArray(filtered) ? filtered[0] ?? null : null;
+      if (originalId !== filteredId) {
         this.changes = true;
-      } else {
-        //no changes
+        return;
       }
-    } else if (address[0]['country'] == null) {
-      this.changes = true;
-    } else if (
-      this.addressFilter().countries![0] != address[0]['country']!['id']
-    ) {
-      this.changes = true;
-    } else if (this.addressFilter().regions == null) {
-      if (address[0]['region'] != null) {
-        this.changes = true;
-      } else {
-        //no changes
-      }
-    } else if (address[0]['region'] == null) {
-      this.changes = true;
-    } else if (
-      this.addressFilter().regions![0] != address[0]['region']!['id']
-    ) {
-      this.changes = true;
-    } else if (this.addressFilter().districts == null) {
-      if (address[0]['district'] != null) {
-        this.changes = true;
-      } else {
-        //no changes
-      }
-    } else if (address[0]['district'] == null) {
-      this.changes = true;
-    } else if (
-      this.addressFilter().districts![0] != address[0]['district']!['id']
-    ) {
-      this.changes = true;
-    } else if (this.addressFilter().localities == null) {
-      if (address[0]['locality'] != null) {
-        this.changes = true;
-      } else {
-        //no changes
-      }
-    } else if (address[0]['locality'] == null) {
-      this.changes = true;
-    } else if (
-      this.addressFilter().localities![0] != address[0]['locality']!['id']
-    ) {
-      this.changes = true;
     }
   }
 
