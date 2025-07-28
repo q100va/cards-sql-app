@@ -63,4 +63,9 @@ mat-form-field {
 }
  */
 
+ ::ng-deep .custom-confirm-dialog {
+  width: 500px !important;
+  max-width: 90vw;
+}
+
 

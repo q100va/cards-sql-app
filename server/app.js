@@ -11,7 +11,7 @@ import AddressesApi from "./routes/addresses-api.js";
 import UsersApi from "./routes/users-api.js";
 import RolesApi from "./routes/roles-api.js";
 
-import { Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, Operation } from './models/index.js';
+import { Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, Operation, OutdatedName } from './models/index.js';
 
 const app = express();
 app.use(json({ limit: '50mb' }));
@@ -41,6 +41,7 @@ sequelize
   .then(Role.sync())
   .then(Operation.sync())
   .then(User.sync())
+  .then(OutdatedName.sync())
   .then(() => {
     console.log('Connection has been established successfully.');
   })

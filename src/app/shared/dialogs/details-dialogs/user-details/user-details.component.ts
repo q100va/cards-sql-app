@@ -198,6 +198,30 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     user.patronymic = this.mainForm.controls['patronymic'].value?.trim();
     user.lastName = this.mainForm.controls['lastName'].value!.trim();
 
+    user.draftAddresses = [
+      {
+        country:
+          this.addressFilter().countries &&
+          this.addressFilter().countries?.length
+            ? this.addressFilter().countries![0]
+            : null,
+        region:
+          this.addressFilter().regions && this.addressFilter().regions?.length
+            ? this.addressFilter().regions![0]
+            : null,
+        district:
+          this.addressFilter().districts &&
+          this.addressFilter().districts?.length
+            ? this.addressFilter().districts![0]
+            : null,
+        locality:
+          this.addressFilter().localities &&
+          this.addressFilter().localities?.length
+            ? this.addressFilter().localities![0]
+            : null,
+      },
+    ];
+
     user.orderedContacts = {} as User['orderedContacts'];
 
     for (let contact of this.possibleContactTypes) {
@@ -312,22 +336,223 @@ export class UserDetailsComponent extends BaseDetailsComponent {
               outlined: true,
             },
             accept: () => {
-              this.checkNotActualData(action, user);
+              this.checkNotActualDataDuplicates(action, user);
             },
             reject: () => {},
           });
         } else {
-          this.checkNotActualData(action, user);
+          this.checkNotActualDataDuplicates(action, user);
         }
       },
       error: (err) => this.errorHandling(err),
     });
   }
 
-  //TODO: check if there are duplicates of not actual data
-  checkNotActualData(action: 'justSave' | 'saveAndExit', user: User) {
-    this.checkAllChanges(action, user);
-    this.checkAllChanges(action, user);
+  //TODO: check if there are duplicates of not actual data MAYBE move this logic to base-details.component.ts
+
+  async checkNotActualDataDuplicates(
+    action: 'justSave' | 'saveAndExit',
+    user: User
+  ) {
+    const outdatedAddresses = (
+      this.data().object!['outdatedData'] as unknown as { addresses: any[] }
+    ).addresses;
+
+    if (outdatedAddresses.length > 0 && user.draftAddresses?.[0]?.country) {
+      console.log(outdatedAddresses.length, user.draftAddresses?.[0]?.country);
+      for (const address of outdatedAddresses) {
+        const isMatch =
+          address.country?.id == user.draftAddresses[0].country &&
+          address.region?.id == user.draftAddresses[0].region &&
+          address.district?.id == user.draftAddresses[0].district &&
+          address.locality?.id == user.draftAddresses[0].locality;
+
+        if (isMatch) {
+          console.log('address', address);
+          const fullAddress = `${address.country?.name + ' ' || ''}
+          ${address.region?.shortName || ''}
+          ${address.district?.name || ''}
+          ${address.locality?.name || ''}`.trim();
+          const confirmed = await this.confirmDataCorrectness(
+            'address',
+            fullAddress
+          );
+          if (confirmed) {
+            console.log('this.deleteFromOutdatedData("address", address.id)');
+            // TODO: this.deleteFromOutdatedData('address', address.id);
+          } else {
+            // Прервать всё, если пользователь сказал "Нет"
+            return;
+          }
+        }
+      }
+    }
+
+    const outdatedAllNames = (
+      this.data().object!['outdatedData'] as unknown as { names: any[] }
+    ).names;
+    // console.log('outdatedAllNames', outdatedAllNames);
+    // console.log('user', user);
+    const outdatedNames = outdatedAllNames.filter((item) => {
+      return (
+        this.normalize(item.firstName) === this.normalize(user.firstName) &&
+        this.normalize(item.patronymic) === this.normalize(user.patronymic) &&
+        this.normalize(item.lastName) === this.normalize(user.lastName)
+      );
+    });
+    //  console.log('outdatedNames', outdatedNames);
+    if (outdatedNames.length > 0) {
+      const fullName = `${user.firstName} ${user.patronymic || ''} ${
+        user.lastName
+      }`.trim();
+      const confirmed = await this.confirmDataCorrectness('names', fullName);
+      if (confirmed) {
+        console.log(
+          'this.deleteFromOutdatedData("names", outdatedNames[0].id,)'
+        );
+      } else {
+        // Прервать всё, если пользователь сказал "Нет"
+        return;
+      }
+    }
+
+    const outdatedUserNames = outdatedAllNames.filter((item) => {
+      return item.userName === user.userName;
+    });
+    console.log('outdatedNames', outdatedNames);
+
+    console.log('user', user);
+    if (outdatedUserNames.length > 0) {
+      const userName = user.userName;
+      const confirmed = await this.confirmDataCorrectness('userName', userName);
+      if (confirmed) {
+        console.log(
+          'this.deleteFromOutdatedData("userName", outdatedUserNames[0].id,)'
+        );
+      } else {
+        // Прервать всё, если пользователь сказал "Нет"
+        return;
+      }
+    }
+
+    const outdatedContacts = (
+      this.data().object!['outdatedData'] as unknown as {
+        contacts: {
+          [key: string]: { id: number; type: string; content: string }[];
+        };
+      }
+    ).contacts;
+
+    console.log('outdatedContacts', outdatedContacts);
+    console.log('user.orderedContacts', user.orderedContacts);
+
+    if (outdatedContacts) {
+      const currentContacts = user.orderedContacts;
+      const duplicates: { id: number; content: string }[] = [];
+
+      for (const type of this.contactTypes) {
+     /*    const currentValues =
+          currentContacts[type as keyof typeof currentContacts] || [];
+ */
+        for (const value of currentContacts[type as keyof typeof currentContacts]) {
+          if (!value) continue;
+
+          for (const outdated of outdatedContacts[type]) {
+            if (outdated.content === value) {
+              duplicates.push({ id: outdated.id, content: value });
+            }
+          }
+        }
+        if (duplicates.length > 0) {
+          console.log('duplicates', duplicates);
+          const contentString = type + ' ' + duplicates.map(c => c.content).join(', ');
+          const confirmed = await this.confirmDataCorrectness(
+            'contacts',
+            contentString
+          );
+          if (confirmed) {
+            console.log('this.deleteFromOutdatedData("contacts", contacts.id)');
+            // TODO: this.deleteFromOutdatedData(type, duplicates.map(c => c.id));
+          } else {
+            // Прервать всё, если пользователь сказал "Нет"
+            return;
+          }
+        }
+      }
+    }
+    // this.checkAllChanges(action, user);
+    console.log('this.checkAllChanges(action, user)');
+  }
+
+
+  // TODO: 🔄 Актуализация данных
+
+// 🟡 1. Сверка изменений
+//  - Сравнение новых значений с текущими
+//  - Диалог: «Сохранить старое как неактуальное?»
+//  - Отправка в outdatedData или замена без сохранения + API
+
+// 🟡 2. Унификация значений null / ''
+//  - Привести отсутствующие значения к одному виду
+
+// 🟢 3. Вынести общие функции
+//  - Проверка дубликатов
+//  - Отображение диалогов
+//  - Работа с outdatedData (добавление, удаление)
+
+// 👁 Отображение неактуальных данных
+
+// 🔵 4. В таблице (по запросу)
+//  - Кнопка или фильтр: «Показать неактуальные» - это уже есть
+//  - Выделение неактуальных данных (цвет/иконка)
+
+// 🟣 5. В карточке (всегда)
+//  - Показывать список неактуальных значений
+
+// 🔐 Изменение пароля
+
+// 🔴 6. Реализация
+//  - UI: модалка или секция
+//  - Поля: текущий пароль, новый, повтор
+//  - Валидация
+//  - Запрос к API и сообщение об успехе/ошибке
+
+  //checkOutdatedContactsDuplicates(user: User): { id: number, type: string, value: string }[] {}
+
+  normalize = (value: string | null | undefined) => (value ?? '').trim();
+
+  confirmDataCorrectness(
+    type: string,
+    value: string | string[]
+  ): Promise<boolean> {
+    const types = {
+      address: 'адрес',
+      names: 'ФИО',
+      userName: 'имя пользователя',
+      contacts: 'контакт(ы)',
+    };
+
+    return new Promise((resolve) => {
+      this.confirmationService.confirm({
+        message: `В введенных вами данных:<br><b> ${
+          types[type as keyof typeof types]
+        } '${value}'</b><br>есть совпадения с неактуальными.<br><br>Вы уверены, что указали актуальную информацию?`,
+        header: 'Обнаружены дубли',
+        closable: true,
+        closeOnEscape: true,
+        icon: 'pi pi-exclamation-triangle',
+        rejectButtonProps: {
+          label: 'Нет',
+        },
+        acceptButtonProps: {
+          label: 'Да',
+          severity: 'secondary',
+          outlined: true,
+        },
+        accept: () => resolve(true),
+        reject: () => resolve(false),
+      });
+    });
   }
 
   checkAllChanges(action: 'justSave' | 'saveAndExit', user: User) {
@@ -338,29 +563,6 @@ export class UserDetailsComponent extends BaseDetailsComponent {
   saveUser(action: 'justSave' | 'saveAndExit', user: User) {
     user.password = this.mainForm.controls['password'].value;
     user.roleId = this.mainForm.controls['roleId'].value;
-    user.draftAddresses = [
-      {
-        country:
-          this.addressFilter().countries &&
-          this.addressFilter().countries?.length
-            ? this.addressFilter().countries![0]
-            : null,
-        region:
-          this.addressFilter().regions && this.addressFilter().regions?.length
-            ? this.addressFilter().regions![0]
-            : null,
-        district:
-          this.addressFilter().districts &&
-          this.addressFilter().districts?.length
-            ? this.addressFilter().districts![0]
-            : null,
-        locality:
-          this.addressFilter().localities &&
-          this.addressFilter().localities?.length
-            ? this.addressFilter().localities![0]
-            : null,
-      },
-    ];
     user.comment = this.mainForm.controls['comment'].value;
     user.isRestricted = this.mainForm.controls['isRestricted'].value;
     user.causeOfRestriction = this.mainForm.controls['isRestricted'].value

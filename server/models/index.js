@@ -9,6 +9,7 @@ import UserContact from './user-contact.js';
 import User from './user.js';
 import Operation from './operation.js';
 import SearchUser from './search-user.js';
+import OutdatedName from './outdated-name.js';
 
 /* User.belongsTo(Role);
 Role.hasMany(User);
@@ -71,6 +72,13 @@ User.hasMany(SearchUser, {
 });
 SearchUser.belongsTo(User);
 
+User.hasMany(OutdatedName, { as: 'outdatedNames' }, {
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+OutdatedName.belongsTo(User);
+
 User.belongsTo(Role);
 Role.hasMany(User, {
   onDelete: 'RESTRICT',
@@ -83,5 +91,5 @@ Role.hasMany(Operation, {
 });
 Operation.belongsTo(Role);
 
-export { Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation };
+export { Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName};
 

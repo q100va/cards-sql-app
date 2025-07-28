@@ -13,6 +13,7 @@ import Sequelize from 'sequelize';
 import Role from "../models/role.js";
 import SearchUser from "../models/search-user.js";
 import CustomError from "../shared/customError.js";
+import OutdatedName from "../models/outdated-name.js";
 const Op = Sequelize.Op;
 
 const router = Router();
@@ -167,7 +168,7 @@ router.post("/create-user", async (req, res) => {
         let region = creatingUser.addresses.region;
         let district = creatingUser.addresses.district;
         let locality = creatingUser.addresses.locality; */
-    for (let address of creatingUser.addresses) {
+    for (let address of creatingUser.draftAddresses) {
       /*       if (address.country) {
               console.log("address.country");
               console.log(address.country);
@@ -617,12 +618,12 @@ router.get("/get-user-by-id/:id", async (req, res) => {
         {
           model: UserContact,
           as: 'contacts',
-          attributes: ['type', 'content', 'isRestricted'],
+          attributes: ['id', 'type', 'content', 'isRestricted'],
         },
         {
           model: UserAddress,
           as: 'addresses',
-          attributes: ['isRestricted'],
+          attributes: ['id', 'isRestricted'],
           include: [
             {
               model: Country,
@@ -646,7 +647,7 @@ router.get("/get-user-by-id/:id", async (req, res) => {
           model: Role,
           attributes: ['id', 'name'],
         },
-        // { model: OutdatedName },
+     { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
       ],
     });
     if (!user) {

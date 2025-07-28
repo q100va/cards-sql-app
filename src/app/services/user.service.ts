@@ -108,22 +108,24 @@ export class UserService {
   transformUserData(user: User): User {
     let orderedContacts: { [key: string]: string[] } = {};
     let outdatedData: {
-      contacts?: { [key: string]: string[] };
+      contacts?: { [key: string]: {id: number, content: string}[] };
       addresses?: {
         country: number | null;
         region: number | null;
         district: number | null;
         locality: number | null;
         isRestricted?: boolean;
+        id: number;
       }[];
       names?: {
         firstName: string | null;
         patronymic: string | null;
         lastName: string | null;
         userName: string | null;
+        id: number;
       }[];
     } = { contacts: {}, addresses: [], names: [] };
-    let outdatedDataContacts: { [key: string]: string[] } = {};
+    let outdatedDataContacts: { [key: string]: {id: number, content: string}[] } = {};
 
     if (user.contacts) {
       for (let contact of user.contacts) {
@@ -132,16 +134,20 @@ export class UserService {
           contact.type === 'telegramPhoneNumber' ||
           contact.type === 'telegramId';
 
-        const target = contact.isRestricted ? outdatedDataContacts : orderedContacts;
+        if(!contact.isRestricted) {
 
         if (isTelegram) {
-          target['telegram'] = target['telegram'] || [];
-          target['telegram'].push(contact.content);
+          orderedContacts['telegram'] = orderedContacts['telegram'] || [];
+          orderedContacts['telegram'].push(contact.content);
         }
 
-        target[contact.type] = target[contact.type] || [];
-        target[contact.type].push(contact.content);
+        orderedContacts[contact.type] = orderedContacts[contact.type] || [];
+        orderedContacts[contact.type].push( contact.content);
+      } else {
+        outdatedDataContacts[contact.type] = outdatedDataContacts[contact.type] || [];
+        outdatedDataContacts[contact.type].push( { id: contact.id, content: contact.content } );
       }
+    }
     }
     outdatedData.contacts =
       outdatedDataContacts as (typeof outdatedData)['contacts'];
@@ -154,6 +160,7 @@ export class UserService {
         district: { id: number; name: string } | null;
         locality: { id: number; name: string } | null;
         isRestricted?: boolean;
+        id: number;
       }[] = [];
       for (let address of user.addresses) {
         if (address.isRestricted) {
@@ -163,6 +170,7 @@ export class UserService {
             district: address.district,
             locality: address.locality,
             isRestricted: address.isRestricted,
+            id: address.id!,
           });
         }
         const filteredAddresses = user.addresses.filter(
@@ -201,11 +209,12 @@ export class UserService {
         patronymic: name.patronymic,
         lastName: name.lastName,
         userName: name.userName,
+        id: name.id!,
       }));
     }
     user.outdatedData = outdatedData as typeof user.outdatedData;
 
-   // console.log('transformed user data:', user);
+    console.log('transformed user data:', user);
 
     return user;
   }

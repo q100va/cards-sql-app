@@ -831,6 +831,10 @@ export class UsersListComponent {
     return new DatePipe('ru').transform(date, 'dd.MM.yyyy');
   }
 
+  hasOutdatedUserNames(row: any): boolean {
+    return row.outdatedData.names.some((item: any) => item.userName != null);
+  }
+
   editContact(value: string, type: string) {
     let result = '';
     //TODO: move this logic to a service СТРАННО: когда открыта карточка пользователя, то эта функция вызывается при любом действии
