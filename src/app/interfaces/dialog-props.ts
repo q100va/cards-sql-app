@@ -57,7 +57,7 @@ export interface DialogData {
    componentType?: 'toponym' | 'user';
   defaultAddressParams?: DefaultAddressParams;
   object?: {
-    [key: string]: string | number | boolean | any[] ;
+    [key: string]: string | number | boolean | any[] | {[key: string]: string | number | boolean | any} | Date;
   };
 
   toponymType?: GeographyLevels;

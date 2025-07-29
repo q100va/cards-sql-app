@@ -149,6 +149,66 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     const user = {} as User;
     user.userName = this.mainForm.controls['userName'].value!.trim();
     user.id = this.data().object ? (this.data().object!['id'] as number) : null;
+
+    user.firstName = this.mainForm.controls['firstName'].value!.trim();
+    user.patronymic = this.mainForm.controls['patronymic'].value?.trim();
+    user.lastName = this.mainForm.controls['lastName'].value!.trim();
+
+    user.draftAddresses = [
+      {
+        country:
+          this.addressFilter().countries &&
+          this.addressFilter().countries?.length
+            ? this.addressFilter().countries![0]
+            : null,
+        region:
+          this.addressFilter().regions && this.addressFilter().regions?.length
+            ? this.addressFilter().regions![0]
+            : null,
+        district:
+          this.addressFilter().districts &&
+          this.addressFilter().districts?.length
+            ? this.addressFilter().districts![0]
+            : null,
+        locality:
+          this.addressFilter().localities &&
+          this.addressFilter().localities?.length
+            ? this.addressFilter().localities![0]
+            : null,
+      },
+    ];
+
+    user.orderedContacts = {} as User['orderedContacts'];
+
+    for (let contact of this.contactTypes) {
+      user.orderedContacts[contact as keyof typeof user.orderedContacts] =
+        this.getFormArray(contact).getRawValue() as string[];
+
+      user.orderedContacts[contact as keyof typeof user.orderedContacts] =
+        user.orderedContacts[contact as keyof typeof user.orderedContacts].map(
+          (item) => {
+            if (item != '') {
+              return this.completeContact(item, contact) as string;
+            } else {
+              return item;
+            }
+          }
+        );
+    }
+
+    user.password = this.mainForm.controls['password'].value;
+    user.roleId = this.mainForm.controls['roleId'].value;
+    user.comment = this.mainForm.controls['comment'].value;
+    user.isRestricted = this.mainForm.controls['isRestricted'].value;
+    user.causeOfRestriction = this.mainForm.controls['isRestricted'].value
+      ? this.mainForm.controls['causeOfRestriction'].value
+      : null;
+    user.dateOfRestriction = this.mainForm.controls['isRestricted'].value
+      ? this.data().object!['isRestricted']
+        ? (this.data().object!['dateOfRestriction'] as Date)
+        : new Date()
+      : null;
+
     this.userService.checkUserName(user.userName, user.id).subscribe({
       next: (res) => {
         if (res.data) {
@@ -194,52 +254,6 @@ export class UserDetailsComponent extends BaseDetailsComponent {
   }
 
   checkDuplicates(action: 'justSave' | 'saveAndExit', user: User) {
-    user.firstName = this.mainForm.controls['firstName'].value!.trim();
-    user.patronymic = this.mainForm.controls['patronymic'].value?.trim();
-    user.lastName = this.mainForm.controls['lastName'].value!.trim();
-
-    user.draftAddresses = [
-      {
-        country:
-          this.addressFilter().countries &&
-          this.addressFilter().countries?.length
-            ? this.addressFilter().countries![0]
-            : null,
-        region:
-          this.addressFilter().regions && this.addressFilter().regions?.length
-            ? this.addressFilter().regions![0]
-            : null,
-        district:
-          this.addressFilter().districts &&
-          this.addressFilter().districts?.length
-            ? this.addressFilter().districts![0]
-            : null,
-        locality:
-          this.addressFilter().localities &&
-          this.addressFilter().localities?.length
-            ? this.addressFilter().localities![0]
-            : null,
-      },
-    ];
-
-    user.orderedContacts = {} as User['orderedContacts'];
-
-    for (let contact of this.possibleContactTypes) {
-      user.orderedContacts[contact.name as keyof typeof user.orderedContacts] =
-        this.getFormArray(contact.name).getRawValue() as string[];
-
-      user.orderedContacts[contact.name as keyof typeof user.orderedContacts] =
-        user.orderedContacts[
-          contact.name as keyof typeof user.orderedContacts
-        ].map((item) => {
-          if (item != '') {
-            return this.completeContact(item, contact.name) as string;
-          } else {
-            return item;
-          }
-        });
-    }
-
     let contactDuplicates: { [key: string]: string[] } = {};
 
     for (let key in user.orderedContacts) {
@@ -336,12 +350,20 @@ export class UserDetailsComponent extends BaseDetailsComponent {
               outlined: true,
             },
             accept: () => {
-              this.checkNotActualDataDuplicates(action, user);
+              if (this.data().operation == 'view-edit') {
+                this.checkNotActualDataDuplicates(action, user);
+              } else {
+                this.saveUser(action, user);
+              }
             },
             reject: () => {},
           });
         } else {
-          this.checkNotActualDataDuplicates(action, user);
+          if (this.data().operation == 'view-edit') {
+            this.checkNotActualDataDuplicates(action, user);
+          } else {
+            this.saveUser(action, user);
+          }
         }
       },
       error: (err) => this.errorHandling(err),
@@ -354,6 +376,30 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     action: 'justSave' | 'saveAndExit',
     user: User
   ) {
+    let restoringData: {
+      address: number | null;
+      names: number | null;
+      userName: number | null;
+      contacts: {
+        [key: string]: { id: number; content: string }[];
+      };
+    } = {
+      address: null,
+      names: null,
+      userName: null,
+      contacts: {
+        email: [],
+        phoneNumber: [],
+        whatsApp: [],
+        telegramNickname: [],
+        telegramId: [],
+        telegramPhoneNumber: [],
+        vKontakte: [],
+        instagram: [],
+        facebook: [],
+        otherContact: [],
+      },
+    };
     const outdatedAddresses = (
       this.data().object!['outdatedData'] as unknown as { addresses: any[] }
     ).addresses;
@@ -379,7 +425,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
           );
           if (confirmed) {
             console.log('this.deleteFromOutdatedData("address", address.id)');
-            // TODO: this.deleteFromOutdatedData('address', address.id);
+            restoringData.address = address.id;
           } else {
             // Прервать всё, если пользователь сказал "Нет"
             return;
@@ -410,6 +456,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         console.log(
           'this.deleteFromOutdatedData("names", outdatedNames[0].id,)'
         );
+        restoringData.names = outdatedNames[0].id;
       } else {
         // Прервать всё, если пользователь сказал "Нет"
         return;
@@ -429,6 +476,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         console.log(
           'this.deleteFromOutdatedData("userName", outdatedUserNames[0].id,)'
         );
+        restoringData.userName = outdatedUserNames[0].id;
       } else {
         // Прервать всё, если пользователь сказал "Нет"
         return;
@@ -446,33 +494,44 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     console.log('outdatedContacts', outdatedContacts);
     console.log('user.orderedContacts', user.orderedContacts);
 
-    if (outdatedContacts) {
+    if (outdatedContacts && Object.keys(outdatedContacts).length != 0) {
       const currentContacts = user.orderedContacts;
       const duplicates: { id: number; content: string }[] = [];
 
       for (const type of this.contactTypes) {
-     /*    const currentValues =
+        /*    const currentValues =
           currentContacts[type as keyof typeof currentContacts] || [];
  */
-        for (const value of currentContacts[type as keyof typeof currentContacts]) {
+        for (const value of currentContacts[
+          type as keyof typeof currentContacts
+        ]) {
           if (!value) continue;
-
-          for (const outdated of outdatedContacts[type]) {
-            if (outdated.content === value) {
-              duplicates.push({ id: outdated.id, content: value });
+          if (Array.isArray(outdatedContacts[type])) {
+            for (const outdated of outdatedContacts[type]) {
+              if (outdated.content === value) {
+                duplicates.push({ id: outdated.id, content: value });
+              }
             }
           }
         }
         if (duplicates.length > 0) {
           console.log('duplicates', duplicates);
-          const contentString = type + ' ' + duplicates.map(c => c.content).join(', ');
+          const contentString =
+            type + ' ' + duplicates.map((c) => c.content).join(', ');
           const confirmed = await this.confirmDataCorrectness(
             'contacts',
             contentString
           );
           if (confirmed) {
             console.log('this.deleteFromOutdatedData("contacts", contacts.id)');
-            // TODO: this.deleteFromOutdatedData(type, duplicates.map(c => c.id));
+            restoringData.contacts[
+              type as keyof typeof restoringData.contacts
+            ] = [
+              ...restoringData.contacts[
+                type as keyof typeof restoringData.contacts
+              ],
+              ...duplicates,
+            ];
           } else {
             // Прервать всё, если пользователь сказал "Нет"
             return;
@@ -480,42 +539,42 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         }
       }
     }
-    // this.checkAllChanges(action, user);
-    console.log('this.checkAllChanges(action, user)');
+    console.log('restoringData', restoringData);
+    this.checkAllChanges(action, user, restoringData);
   }
-
 
   // TODO: 🔄 Актуализация данных
 
-// 🟡 1. Сверка изменений
-//  - Сравнение новых значений с текущими
-//  - Диалог: «Сохранить старое как неактуальное?»
-//  - Отправка в outdatedData или замена без сохранения + API
+  // 🟡 1. Сверка изменений
+  //  - Сравнение новых значений с текущими - доделать контакты
+  // - API
 
-// 🟡 2. Унификация значений null / ''
-//  - Привести отсутствующие значения к одному виду
+  // 🟡 2. Унификация значений null / '', форматов
+  //  - Привести отсутствующие значения к одному виду
+  // - привести адреса (и не только) к одному формату
+  // - save this.data().object! as existedUser
 
-// 🟢 3. Вынести общие функции
-//  - Проверка дубликатов
-//  - Отображение диалогов
-//  - Работа с outdatedData (добавление, удаление)
+  // 🟢 3. Вынести общие функции в базовый компонент
+  //  - Проверка дубликатов
+  //  - Отображение диалогов
+  //  - Работа с outdatedData (добавление, удаление)
 
-// 👁 Отображение неактуальных данных
+  // 👁 Отображение неактуальных данных +API
 
-// 🔵 4. В таблице (по запросу)
-//  - Кнопка или фильтр: «Показать неактуальные» - это уже есть
-//  - Выделение неактуальных данных (цвет/иконка)
+  // 🔵 4. В таблице (по запросу)
+  //  - Кнопка или фильтр: «Показать неактуальные» - это уже есть
+  //  - Выделение неактуальных данных (цвет/иконка)
 
-// 🟣 5. В карточке (всегда)
-//  - Показывать список неактуальных значений
+  // 🟣 5. В карточке (всегда)
+  //  - Показывать список неактуальных значений
 
-// 🔐 Изменение пароля
+  // 🔐 Изменение пароля
 
-// 🔴 6. Реализация
-//  - UI: модалка или секция
-//  - Поля: текущий пароль, новый, повтор
-//  - Валидация
-//  - Запрос к API и сообщение об успехе/ошибке
+  // 🔴 6. Реализация
+  //  - UI: модалка или секция
+  //  - Поля: текущий пароль, новый, повтор
+  //  - Валидация
+  //  - Запрос к API и сообщение об успехе/ошибке
 
   //checkOutdatedContactsDuplicates(user: User): { id: number, type: string, value: string }[] {}
 
@@ -537,7 +596,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         message: `В введенных вами данных:<br><b> ${
           types[type as keyof typeof types]
         } '${value}'</b><br>есть совпадения с неактуальными.<br><br>Вы уверены, что указали актуальную информацию?`,
-        header: 'Обнаружены дубли',
+        header: 'Совпадения с неактуальными данными',
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
@@ -554,23 +613,254 @@ export class UserDetailsComponent extends BaseDetailsComponent {
       });
     });
   }
+  // TODO: save this.data().object! as existedUser
+  async checkAllChanges(
+    action: 'justSave' | 'saveAndExit',
+    user: User,
+    restoringData: {
+      address: number | null;
+      names: number | null;
+      userName: number | null;
+      contacts: {
+        [key: string]: { id: number; content: string }[];
+      };
+    }
+  ) {
+    let changes: { [key: string]: any } = {};
+    let outdatingData: { [key: string]: any } = {};
+    let deletingData: { [key: string]: any } = {};
 
-  checkAllChanges(action: 'justSave' | 'saveAndExit', user: User) {
+    const isNamesChanged =
+      this.normalize(this.data().object!['firstName'] as string) !=
+        this.normalize(user.firstName) ||
+      this.normalize(this.data().object!['patronymic'] as string) !=
+        this.normalize(user.patronymic) ||
+      this.normalize(this.data().object!['lastName'] as string) !=
+        this.normalize(user.lastName);
+
+    if (!restoringData.names && isNamesChanged) {
+      changes = {
+        firstName: user.firstName,
+        patronymic: user.patronymic,
+        lastName: user.lastName,
+      };
+      const oldValue = `${this.data().object!['firstName']} ${
+        this.data().object!['patronymic'] || ''
+      } ${this.data().object!['lastName']}`.trim();
+      /*       const newValue = `${user.firstName} ${user.patronymic || ''} ${
+        user.lastName
+      }`.trim(); */
+      const confirmed = await this.confirmDataSaving(
+        'names',
+        oldValue
+        //newValue
+      );
+      if (confirmed) {
+        outdatingData['names'] = {
+          firstName: this.data().object!['firstName'],
+          patronymic: this.data().object!['patronymic'] || null,
+          lastName: this.data().object!['lastName'],
+        };
+      } else {
+      }
+    }
+    const oldValue = this.data().object!['userName'] as string;
+    if (!restoringData.userName && user.userName != oldValue) {
+      changes['userName'] = user.userName;
+      //const newValue = user.userName;
+      const confirmed = await this.confirmDataSaving(
+        'userName',
+        oldValue
+        //newValue
+      );
+      if (confirmed) {
+        outdatingData['userName'] = this.data().object!['userName'];
+      } else {
+      }
+    }
+
+    //TODO: привести к единообразию форматы адресов
+    const oldAddress = (this.data().object!['addresses'] as any[])[0] as {
+      country: { id: number; name: string } | null;
+      region: { id: number; shortName: string } | null;
+      district: { id: number; name: string } | null;
+      locality: { id: number; name: string } | null;
+      id: number;
+    };
+
+    const newAddress = user.draftAddresses![0];
+
+    console.log('oldAddress', 'newAddress', oldAddress, newAddress);
+
+    const isAddressChanged =
+      !isFieldEqual(
+        newAddress.country,
+        oldAddress.country ? oldAddress.country.id : oldAddress.country
+      ) ||
+      !isFieldEqual(
+        newAddress.region,
+        oldAddress.region ? oldAddress.region.id : oldAddress.region
+      ) ||
+      !isFieldEqual(
+        newAddress.district,
+        oldAddress.district ? oldAddress.district.id : oldAddress.district
+      ) ||
+      !isFieldEqual(
+        newAddress.locality,
+        oldAddress.locality ? oldAddress.locality.id : oldAddress.locality
+      );
+
+    if (!restoringData.address && isAddressChanged) {
+      changes['addresses'] = user.draftAddresses;
+      // console.log('changes', changes);
+      //console.log('oldAddress.country', oldAddress.country);
+      if (oldAddress.country) {
+        // console.log('oldAddress.country', oldAddress.country);
+        const oldValue = `${oldAddress.country?.name + ' ' || ''}
+        ${oldAddress.region?.shortName || ''}
+        ${oldAddress.district?.name || ''}
+        ${oldAddress.locality?.name || ''}`.trim();
+        const confirmed = await this.confirmDataSaving(
+          'address',
+          oldValue
+          //newValue
+        );
+        if (confirmed) {
+          outdatingData['address'] = oldAddress.id;
+        } else {
+          deletingData['address'] = oldAddress.id;
+        }
+      }
+    }
+
+    //TODO: contacts Add id to orderedContacts
+
+    const oldContacts = this.data().object!['orderedContacts'] as {
+      [key: string]: string[];
+    };
+    changes['contacts'] = {};
+    const newContacts = user.orderedContacts;
+
+    console.log('oldContacts', 'newContacts', oldContacts, newContacts);
+
+    for (const type of this.contactTypes) {
+      changes['contacts'][type] = [];
+      for (const contact of newContacts[type as keyof typeof newContacts]) {
+        console.log('contact', contact);
+        const indexInOldContactsArray = oldContacts[type]?.findIndex(
+          (item) => item === contact
+        );
+        console.log('indexInOldContactsArray', indexInOldContactsArray);
+        if (indexInOldContactsArray == -1) {
+          if (restoringData.contacts && restoringData.contacts[type]) {
+            const indexInRestoringContactsArray = (
+              restoringData.contacts[type] as { id: number; content: string }[]
+            ).findIndex((item) => item.content === contact);
+            console.log(
+              'indexInRestoringContactsArray',
+              indexInRestoringContactsArray
+            );
+            if (indexInRestoringContactsArray == -1) {
+              changes['contacts'][type].push(contact);
+            }
+          } else {
+            changes['contacts'][type].push(contact);
+          }
+        }
+      }
+
+      if (Array.isArray(oldContacts[type as keyof typeof oldContacts])) {
+        for (const contact of oldContacts[type as keyof typeof oldContacts]) {
+          const indexInNewContactsArray = (
+            newContacts[type as keyof typeof newContacts]! as string[]
+          ).findIndex((item) => item === contact);
+          if (indexInNewContactsArray == -1) {
+            const oldValue = type + ' ' + contact;
+
+            const confirmed = await this.confirmDataSaving(
+              'contacts',
+              oldValue
+              //newValue
+            );
+            if (confirmed) {
+              outdatingData['contacts'] ??= [];
+              outdatingData['contacts'].push(contact);
+            } else {
+              deletingData['contacts'] ??= [];
+              deletingData['contacts'].push(contact);
+            }
+          }
+        }
+      }
+    }
+
+    if (this.data().object!['roleId'] != user.roleId) {
+      changes['roleId'] = user.roleId;
+    }
+    if (this.data().object!['comment'] != user.comment) {
+      changes['comment'] = user.comment;
+    }
+    if (this.data().object!['isRestricted'] != user.isRestricted) {
+      changes['isRestricted'] = user.isRestricted;
+    }
+    if (this.data().object!['causeOfRestriction'] != user.causeOfRestriction) {
+      changes['causeOfRestriction'] = user.causeOfRestriction;
+    }
+    if (this.data().object!['dateOfRestriction'] != user.dateOfRestriction) {
+      changes['dateOfRestriction'] = user.dateOfRestriction;
+    }
+
+    console.log('outdatingData', outdatingData);
+    console.log('deletingData', deletingData);
+    console.log('restoringData', restoringData);
+    console.log('changes', changes);
+
     this.saveUser(action, user);
-    this.saveUser(action, user);
+    function isFieldEqual(
+      newFieldId: number | null,
+      oldFieldId: number | null
+    ): boolean {
+      if (!newFieldId && !oldFieldId) return true;
+      if (newFieldId && oldFieldId) return newFieldId === oldFieldId;
+      return false;
+    }
   }
 
+  confirmDataSaving(
+    type: string,
+    oldValue: string
+    //newValue: string
+  ): Promise<boolean> {
+    const types = {
+      address: 'адрес',
+      names: 'ФИО',
+      userName: 'имя пользователя',
+      contacts: 'контакт(ы)',
+    };
+
+    return new Promise((resolve) => {
+      this.confirmationService.confirm({
+        message: `Вы изменили ${
+          types[type as keyof typeof types]
+        }.<br>Сохранить прежнее значение <b>"${oldValue}"</b> как неактуальное?<br>В противном случае оно будет удалено как ошибочное без возможности восстановления.`,
+        header: 'Сохранить в неактуальные?',
+        closable: true,
+        closeOnEscape: true,
+        icon: 'pi pi-exclamation-triangle',
+        rejectButtonProps: {
+          label: 'Нет',
+        },
+        acceptButtonProps: {
+          label: 'Да',
+          severity: 'secondary',
+          outlined: true,
+        },
+        accept: () => resolve(true),
+        reject: () => resolve(false),
+      });
+    });
+  }
   saveUser(action: 'justSave' | 'saveAndExit', user: User) {
-    user.password = this.mainForm.controls['password'].value;
-    user.roleId = this.mainForm.controls['roleId'].value;
-    user.comment = this.mainForm.controls['comment'].value;
-    user.isRestricted = this.mainForm.controls['isRestricted'].value;
-    user.causeOfRestriction = this.mainForm.controls['isRestricted'].value
-      ? this.mainForm.controls['causeOfRestriction'].value
-      : null;
-    user.dateOfRestriction = this.mainForm.controls['isRestricted'].value
-      ? new Date()
-      : null;
     this.userService.saveUser(user, this.data().operation!).subscribe({
       next: (res) => {
         //this.dialogRefCreate.close({ userName: res.userName });
