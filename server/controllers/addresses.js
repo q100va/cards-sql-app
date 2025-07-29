@@ -180,9 +180,10 @@ const namesOfAddressTypes = {
 клх — колхоз (коллективное хозяйство);
 свх — совхоз (советское хозяйство);*/
 
-export function correctDistrictName(rowName, rowPostName, rowPostNameType) {
-  rowPostName = rowPostName || null;
-  rowPostNameType = rowPostNameType || null;
+export function correctDistrictName(rowName, rowPostName = null, rowPostNameType = null) {
+  rowPostName = rowPostName?.replace('ё', 'е').trim();
+  rowPostNameType = rowPostNameType?.replace('ё', 'е').trim().toLowerCase();
+  rowName = rowName.replace('ё', 'е').trim();
   const addressTypes = namesOfAddressTypes.districts;
   let name, shortName, postName, shortPostName;
   for (let type of addressTypes) {
@@ -222,11 +223,19 @@ export function correctDistrictName(rowName, rowPostName, rowPostNameType) {
   }
 }
 
-export function correctLocalityName(rowName, type, district) {
-  district = district || null;
+export function correctLocalityName(rowName, type, district = null) {
+  //district = district;
   console.log("rowName, type, district");
   console.log(rowName, type, district);
-  const addressType = namesOfAddressTypes.localities.find(item => item.name == type.toLowerCase());
+  type = type.replace('ё', 'е').trim().toLowerCase();
+  if(type == 'поселок городского типа') {
+    type = 'пгт';
+  }
+  if(type == 'пгт (рабочий поселок)') {
+    type = 'пгт';
+  }
+  rowName = rowName.replace('ё', 'е').trim();
+  const addressType = namesOfAddressTypes.localities.find(item => item.name == type);
   if (!addressType) throw new Error(`Отсутствующий или неверный тип населенного пункта в названии "${rowName} ${type}"! Ввод прекращен.`);
   let districtData;
   if (district) {
@@ -237,8 +246,8 @@ export function correctLocalityName(rowName, type, district) {
     }
   }
 
-  let name = rowName.trim() + " " + addressType.name;
-  let shortName = addressType.shortName + " " + rowName.trim();
+  let name = rowName + " " + addressType.name;
+  let shortName = addressType.shortName + " " + rowName;
 
   console.log("name");
   console.log(name);
