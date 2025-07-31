@@ -1,4 +1,6 @@
-export interface Toponym {
+import { BaseModel } from "./base-model";
+
+export interface Toponym extends BaseModel {
   id: number;
   name: string;
   shortName?: string;

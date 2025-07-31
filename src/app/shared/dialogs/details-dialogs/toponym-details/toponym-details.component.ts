@@ -1,10 +1,5 @@
-import {
-  Component,
-} from '@angular/core';
-import {
-  FormsModule,
-  ReactiveFormsModule,
-} from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatInputModule } from '@angular/material/input';
@@ -20,6 +15,8 @@ import { Toast } from 'primeng/toast';
 import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
 import { ToponymFormControlsNames } from '../../../../interfaces/toponymFormControlsNames';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
+import { Toponym } from '../../../../interfaces/toponym';
+import { AddressFilter } from '../../../../interfaces/address-filter';
 
 @Component({
   selector: 'app-toponym-details',
@@ -37,16 +34,57 @@ import { BaseDetailsComponent } from '../base-details/base-details.component';
     Toast,
     AddressFilterComponent,
     //DetailsDialogComponent
-],
+  ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './toponym-details.component.html',
   styleUrl: './toponym-details.component.css',
 })
-export class ToponymDetailsComponent extends BaseDetailsComponent{
-
+export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
   override ngOnInit(): void {
     super.ngOnInit();
     //console.log('this.data().controls', this.data().controls);
+  }
+
+
+  override checkIsSaveDisabled() {
+    let condition: boolean = false;
+    if (this.data().componentType == 'toponym') {
+      condition =
+        !this.mainForm.valid ||
+        this.invalidAddressFilter ||
+        (!this.changesSignal() && this.data().operation == 'view-edit');
+    }
+    this.IsSaveDisabledSignal.set(condition);
+    this.emittedIsSaveDisabled.emit(condition);
+  }
+
+  protected  override additionalValidationHooks() {
+    //checking if selectable part of address was changed
+    for (let item of this.data().addressFilterControls!) {
+      /*
+      console.log('item', item);
+      console.log(
+        'this.addressFilter()[item.addressFilterProp as keyof AddressFilter]',
+        this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
+      );
+      console.log(
+        'this.data().object![item.toponymProp]',
+        this.data().object![item.toponymProp]
+      ); */
+
+      if (
+        !this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
+      ) {
+        return true;
+      } else if (
+        this.addressFilter()[
+          item.addressFilterProp as keyof AddressFilter
+        ]![0] != this.object![item.toponymProp as keyof typeof this.object]
+      ) {
+        return true;
+      }
+    }
+     return false;
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
@@ -55,7 +93,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent{
         this.data().toponymType!,
         this.mainForm.controls[this.data().checkingName].value!,
         this.data().object ? (this.data().object!['id'] as number) : null,
-        this.addressFilter(),
+        this.addressFilter()
         //this.data().operation
       )
       .subscribe({
@@ -91,9 +129,9 @@ export class ToponymDetailsComponent extends BaseDetailsComponent{
         next: (res) => {
           if (action == 'saveAndExit') {
             //this.dialogRef.close({ name: res.data });
-            this.closeDialog.emit(res.data.name);
+            this.closeDialogDataSignal.set(res.data.name);
+            this.emittedCloseDialogData.emit(res.data.name);
           } else {
-
             //console.log('this.data().object', this.data().object);
             this.data().object = res.data;
             //console.log('this.data().object', this.data().object);
@@ -108,7 +146,4 @@ export class ToponymDetailsComponent extends BaseDetailsComponent{
         error: (err) => this.errorHandling(err),
       });
   }
-
-
-
 }

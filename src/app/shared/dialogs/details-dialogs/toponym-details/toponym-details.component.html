@@ -5,7 +5,7 @@
   (addressFilter)="onChangeAddress($event)">
 </app-address-filter>
 <form [formGroup]="mainForm" style="margin-top: 16px;"
-  [class]="data().operation == 'view-edit' && !isEditMode ? 'view-mode' : 'none'" (change)="onChangeValidation()">
+  [class]="data().operation == 'view-edit' && !isEditModeSignal() ? 'view-mode' : 'none'" (change)="onChangeValidation()">
   <mat-grid-list cols="1" gutterSize="16px" rowHeight="76px">
     @for (control of data().controls; track $index) {
     @if (control.type=="inputText") {

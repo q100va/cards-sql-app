@@ -48,6 +48,8 @@ export class CountriesListComponent {
         isShowDistrict: false,
         isShowLocality: false,
       },
+      object: null,
+      componentType: 'toponym',
     },
   };
 }

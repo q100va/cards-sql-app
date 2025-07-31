@@ -141,7 +141,7 @@ export class UsersListComponent {
     },
     {
       id: 5,
-      columnName: 'addresses',
+      columnName: 'address',
       columnFullName: 'Адрес',
       isUnchangeable: false,
     },
@@ -234,7 +234,7 @@ export class UsersListComponent {
     restoreFocus: true,
   };
 
-  dialogProps: DialogData = {
+  dialogProps: DialogData<User> = {
     creationTitle: 'Новый пользователь',
     viewTitle: 'Пользователь',
     controls: [
@@ -541,6 +541,8 @@ export class UsersListComponent {
       isShowLocality: true,
       class: 'none',
     },
+    object: null,
+    componentType: 'user',
   };
 
   constructor() {
@@ -592,20 +594,21 @@ export class UsersListComponent {
   onAddUserClick() {
     this.dialogProps.addressFilterParams.readonly = false;
     this.dialogProps.addressFilterParams.class = 'none';
+    const dialogData: DialogData<User> = {
+      ...this.dialogProps as DialogData<User>,
+      operation: 'create',
+      controlsDisable: false,
+      defaultAddressParams: {
+        localityId: null,
+        districtId: null,
+        regionId: null,
+        countryId: null,
+      },
+    };
+
     const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
-      data: {
-        ...this.dialogProps,
-        operation: 'create',
-        controlsDisable: false,
-        defaultAddressParams: {
-          localityId: null,
-          districtId: null,
-          regionId: null,
-          countryId: null,
-        },
-        componentType: 'user',
-      },
+      data: dialogData,
     });
 
     dialogRefCreate.afterClosed().subscribe((result) => {
@@ -630,6 +633,7 @@ export class UsersListComponent {
         user = res.data;
         this.dialogProps.addressFilterParams.readonly = true;
         this.dialogProps.addressFilterParams.class = 'view-mode';
+        this.dialogProps.object = user;
         if (user.isRestricted) {
           this.dialogProps.controls.push({
             controlName: 'causeOfRestriction',
@@ -643,29 +647,21 @@ export class UsersListComponent {
         }
         //console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
 
+        const dialogData: DialogData<User> = {
+          ...this.dialogProps as DialogData<User>,
+          operation: 'view-edit',
+          controlsDisable: true,
+          defaultAddressParams: {
+            localityId: user.address.locality ? user.address.locality.id : null,
+            districtId: user.address.district ? user.address.district.id : null,
+            regionId: user.address.region ? user.address.region.id : null,
+            countryId: user.address.country ? user.address.country.id : null,
+          },
+        };
+
         const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
           ...this.dialogConfig,
-          data: {
-            ...this.dialogProps,
-            operation: 'view-edit',
-            controlsDisable: true,
-            defaultAddressParams: {
-              localityId: user.addresses[0]?.locality
-                ? user.addresses[0]?.locality.id
-                : null,
-              districtId: user.addresses[0]?.district
-                ? user.addresses[0]?.district.id
-                : null,
-              regionId: user.addresses[0]?.region
-                ? user.addresses[0]?.region.id
-                : null,
-              countryId: user.addresses[0]?.country
-                ? user.addresses[0]?.country.id
-                : null,
-            },
-            object: user,
-            componentType: 'user',
-          },
+          data: dialogData,
         });
         dialogRefCreate.afterClosed().subscribe((result) => {
           this.getUsers();
@@ -677,12 +673,9 @@ export class UsersListComponent {
             });
           }
         });
-
       },
       error: (err) => this.errorHandling(err),
     });
-
-
   }
 
   onBlockUserClick(id: number) {

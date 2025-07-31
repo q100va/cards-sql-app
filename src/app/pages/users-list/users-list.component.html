@@ -51,8 +51,8 @@
               <!--       <mat-icon>{{item.icon}}</mat-icon> -->
             </div>
             <div class="inner-right">
-              @for (content of row.orderedContacts[item.type]; track $index) {
-              {{editContact(content, item.type)}}<br />
+              @for (contact of row.orderedContacts[item.type]; track $index) {
+              {{editContact(contact.content, item.type)}}<br />
               }
             </div>
           </div>
@@ -61,20 +61,20 @@
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="addresses">
+      <ng-container matColumnDef="address">
         <th mat-header-cell *matHeaderCellDef> Адрес </th>
         <td mat-cell *matCellDef="let row">
-          @if (row.addresses[0]?.country) {
-          {{row.addresses[0].country.name}}<br />
+          @if (row.address.country) {
+          {{row.address.country.name}}<br />
           }
-          @if (row.addresses[0]?.region) {
-          {{row.addresses[0].region.shortName}}<br />
+          @if (row.address.region) {
+          {{row.address.region.shortName}}<br />
           }
-          @if (row.addresses[0]?.district) {
-          {{row.addresses[0].district.shortName}}<br />
+          @if (row.address.district) {
+          {{row.address.district.shortName}}<br />
           }
-          @if (row.addresses[0]?.locality) {
-          {{row.addresses[0].locality.shortName}}<br />
+          @if (row.address.locality) {
+          {{row.address.locality.shortName}}<br />
           }
         </td>
       </ng-container>

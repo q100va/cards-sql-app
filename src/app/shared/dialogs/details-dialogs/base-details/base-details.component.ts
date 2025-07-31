@@ -21,6 +21,14 @@ import { AddressFilter } from '../../../../interfaces/address-filter';
 import { Control } from '../../../../interfaces/dialog-props';
 import { AddressService } from '../../../../services/address.service';
 import { DialogData } from '../../../../interfaces/dialog-props';
+import {
+  Contacts,
+  ContactType,
+  isContactType,
+  User,
+} from '../../../../interfaces/user';
+import { Toponym } from '../../../../interfaces/toponym';
+import { BaseModel } from '../../../../interfaces/base-model';
 
 @Component({
   selector: 'app-base-details',
@@ -29,7 +37,8 @@ import { DialogData } from '../../../../interfaces/dialog-props';
   templateUrl: './base-details.component.html',
   styleUrl: './base-details.component.css',
 })
-export class BaseDetailsComponent {
+export class BaseDetailsComponent<T extends BaseModel> {
+  object: T | null = null;
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
 
@@ -37,8 +46,7 @@ export class BaseDetailsComponent {
   messageService = inject(MessageService);
   addressService = inject(AddressService);
 
-  data = input.required<DialogData>();
-  //data = signal<DialogData>({});
+  data = input.required<DialogData<T>>();
   controlsNames!: string[];
   params!: AddressFilterParams;
   addressFilter = signal<AddressFilter>({
@@ -48,16 +56,28 @@ export class BaseDetailsComponent {
     localities: null,
   });
   invalidAddressFilter = true;
-  isEditMode = false;
-  emittedIsEditMode = output<boolean>();
-  onChangeMode = output<string>();
-  changes = false;
+
+  readonly emittedIsEditMode = output<boolean>();
+  readonly emittedChanges = output<boolean>();
+  readonly emittedIsSaveDisabled = output<boolean>();
+  readonly emittedCloseDialogData = output<string>();
+  /*   emittedIsEditMode = output<boolean>();
   emittedChanges = output<boolean>();
   closeDialog = output<string>();
-  emittedIsSaveDisabled = output<boolean>();
+  emittedIsSaveDisabled = output<boolean>(); */
+  //isEditMode = false;
+  //changes = false;
+
+  isEditModeSignal = signal(false);
+  changesSignal = signal(false);
+  IsSaveDisabledSignal = signal(true);
+  closeDialogDataSignal = signal<string | null>(null);
+
+  onChangeMode = output<string>();
+
   mainForm: FormGroup<Record<string, AbstractControl>> = new FormGroup({});
 
-  contactTypes = [
+  contactTypes: Exclude<ContactType, 'telegram'>[] = [
     'email',
     'phoneNumber',
     'telegramId',
@@ -69,6 +89,7 @@ export class BaseDetailsComponent {
     'facebook',
     'otherContact',
   ];
+  // object: User | Toponym | null = null;
 
   ngOnInit() {
     //console.log('ngOnInit', this.data());
@@ -79,7 +100,9 @@ export class BaseDetailsComponent {
       (control) => control.controlName
     );
     ////console.log('this.controlsNames', this.controlsNames);
-    if (this.data().object) {
+
+    this.object = this.data().object;
+    if (this.object) {
       this.setInitialValues(
         this.controlsNames,
         this.data().operation == 'view-edit' ? 'view' : 'create',
@@ -92,34 +115,7 @@ export class BaseDetailsComponent {
     }
   }
 
-  checkIsSaveDisabled() {
-    let condition: boolean = false;
-    if (this.data().componentType == 'user') {
-      condition =
-        !this.mainForm.valid ||
-        (!this.changes && this.data().operation == 'view-edit');
-
-      console.log(
-        'checkIsSaveDisabled',
-        condition, '---',
-        !this.mainForm.valid,
-        !this.changes,
-        this.data().operation == 'view-edit'
-      );
-    }
-    if (this.data().componentType == 'toponym') {
-      condition =
-        !this.mainForm.valid ||
-        this.invalidAddressFilter ||
-        (!this.changes && this.data().operation == 'view-edit');
-    }
-    /*     if (condition) {
-      this.emittedIsSaveDisabled.emit(true);
-    } else {
-      this.emittedIsSaveDisabled.emit(false);
-    } */
-    this.emittedIsSaveDisabled.emit(condition);
-  }
+  checkIsSaveDisabled() {}
 
   createFormGroup(controls: Control[], controlsDisable: boolean) {
     for (let control of controls) {
@@ -134,7 +130,7 @@ export class BaseDetailsComponent {
       }
       if (control.formType == 'formArray') {
         this.mainForm.addControl(control.controlName, new FormArray([]));
-        if ((control.value as [] | string[]).length > 0) {
+        /*         if ((control.value as [] | string[]).length > 0) {
           for (let value of control.value as string[]) {
             (this.mainForm.controls[control.controlName] as FormArray).push(
               new FormControl(
@@ -143,20 +139,15 @@ export class BaseDetailsComponent {
               )
             );
           }
-        } else {
-          (this.mainForm.controls[control.controlName] as FormArray).push(
-            new FormControl(
-              { value: '', disabled: controlsDisable },
-              control.validators || []
-            )
-          );
-        }
+        } else { */
+        (this.mainForm.controls[control.controlName] as FormArray).push(
+          new FormControl(
+            { value: control.value, disabled: controlsDisable },
+            control.validators || []
+          )
+        );
+        //}
       }
-      /*       //console.log(
-        'this.mainForm.controls[control.controlName]',
-        control.controlName,
-        this.mainForm.controls[control.controlName]
-      ); */
     }
   }
 
@@ -164,12 +155,12 @@ export class BaseDetailsComponent {
     return this.mainForm.get(name) as FormArray;
   }
 
-  //only for toponyms???
+  onSaveClick(action: 'justSave' | 'saveAndExit') {}
 
   onChangeAddress(event: AddressFilter) {
     //console.log('onChangeAddress', event);
     //console.log('this.data()', this.data());
-    if (this.data().operation == 'create' || this.isEditMode) {
+    if (this.data().operation == 'create' || this.isEditModeSignal()) {
       this.addressFilter.set(event);
       // console.log('onChangeAddress', event);
       //console.log('this.data().toponymType', this.data().toponymType);
@@ -188,13 +179,13 @@ export class BaseDetailsComponent {
     }
   }
 
-  onSaveClick(action: 'justSave' | 'saveAndExit') {}
-
   onEditClick() {
-    this.isEditMode = true;
-    this.emittedIsEditMode.emit(this.isEditMode);
-    this.changes = false;
-    this.emittedChanges.emit(this.changes);
+    this.isEditModeSignal.set(true);
+    //this.isEditMode = true;
+    this.emittedIsEditMode.emit(true);
+    this.changesSignal.set(false);
+    //this.changes = false;
+    this.emittedChanges.emit(false);
     //this.checkIsSaveDisabled();
     this.setInitialValues(this.controlsNames, 'edit');
     this.updateControlsValidity(this.controlsNames, true);
@@ -202,7 +193,7 @@ export class BaseDetailsComponent {
   }
 
   onViewClick() {
-    if (this.changes) {
+    if (this.changesSignal()) {
       this.confirmationService.confirm({
         message: 'Вы уверены, что хотите выйти без сохранения?',
         header: 'Предупреждение',
@@ -229,93 +220,28 @@ export class BaseDetailsComponent {
     }
   }
 
-  contactsChangeValidation() {
-    const orderedContacts = this.data().object!['orderedContacts'];
-    for (let contact of this.contactTypes) {
-      const values = orderedContacts[
-        contact as keyof typeof orderedContacts
-      ] as unknown as string[];
-      if (!values) {
-        if (
-          this.mainForm.get(contact)?.value.length > 0 &&
-          this.mainForm.get(contact)?.value[0] != ''
-        ) {
-          this.changes = true;
-        }
-      } else if (values.length != this.mainForm.get(contact)?.value.length) {
-        this.changes = true;
-        break;
-      } else {
-        for (let i = 0; i < values.length; i++) {
-          /*               //console.log(
-            'onChangeValidation',
-            this.mainForm.get(contact)?.value[i],
-            values[i]
-          ); */
-          if (
-            this.mainForm.get(contact)?.value[i] != values[i] /* &&
-            !(
-              this.mainForm.get(contact)?.value[i] === '\u00A0' &&
-              values[i] === ''
-            ) */
-          ) {
-            this.changes = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  addressChangeValidation() {
-
-    const addresses = this.data().object!['addresses'] as {
-      [key: string]: { id: number; name: string } | null;
-    }[];
-
-    const address = addresses[0];
-    const filter = this.addressFilter();/*
-    console.log('this.addressFilter()', filter);
-    console.log('address', address); */
-
-    const keyMap: { [key: string]: string } = {
-      country: 'countries',
-      region: 'regions',
-      district: 'districts',
-      locality: 'localities',
-    };
-
-    for (const key in keyMap) {
-      const original = address[key];
-      const filtered = filter[keyMap[key] as keyof AddressFilter];
-      const originalId = original?.id ?? null;
-      const filteredId = Array.isArray(filtered) ? filtered[0] ?? null : null;
-      if (originalId !== filteredId) {
-        this.changes = true;
-        return;
-      }
-    }
-  }
-
   onChangeValidation() {
+    //Общая часть
     if (this.data().operation == 'view-edit') {
-      this.changes = false;
+      this.changesSignal.set(false);
       for (let controlName of this.controlsNames) {
         if (controlName != 'password') {
-          if (!this.contactTypes.includes(controlName)) {
+          // if (!this.contactTypes.includes(controlName)) {
+          if (!isContactType(controlName)) {
             if (
               this.mainForm.controls[controlName].value !=
-                this.data().object![controlName] &&
+                this.object![controlName as keyof typeof this.object] &&
               !(
                 this.mainForm.controls[controlName].value === '\u00A0' &&
-                this.data().object![controlName] === ''
+                this.object![controlName as keyof typeof this.object] === ''
               )
             ) {
-              this.changes = true;
+              this.changesSignal.set(true);
+             // this.changes = true;
               /*           console.log(
                 'this.mainForm.controls[controlName].value',
                 this.mainForm.controls[controlName].value,
-                this.data().object![controlName],
+                this.object![controlName],
                 controlName
               ); */
             }
@@ -323,54 +249,25 @@ export class BaseDetailsComponent {
         }
       }
 
-      if (!this.changes && this.data().componentType == 'toponym') {
-        for (let item of this.data().addressFilterControls!) {
-          /*
-          console.log('item', item);
-
-          console.log(
-            'this.addressFilter()[item.addressFilterProp as keyof AddressFilter]',
-            this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
-          );
-
-          console.log(
-            'this.data().object![item.toponymProp]',
-            this.data().object![item.toponymProp]
-          ); */
-
-          if (
-            !this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
-          ) {
-            this.changes = true;
-            break;
-          } else if (
-            this.addressFilter()[
-              item.addressFilterProp as keyof AddressFilter
-            ]![0] != this.data().object![item.toponymProp]
-          ) {
-            this.changes = true;
-            break;
-          }
-        }
+      if (!this.changesSignal()) {
+        this.changesSignal.set(this.additionalValidationHooks());
       }
 
-      if (!this.changes && this.data().componentType == 'user') {
-        this.contactsChangeValidation();
-      }
+      //Общая часть
 
-      if (!this.changes && this.data().componentType == 'user') {
-        this.addressChangeValidation();
-      }
-
-      this.emittedChanges.emit(this.changes);
+      this.emittedChanges.emit(this.changesSignal());
     }
 
     this.checkIsSaveDisabled();
   }
 
+  protected additionalValidationHooks(): boolean {
+    return false; // по умолчанию — ничего не добавляет
+  }
+
   changeToViewMode(addressParams: any) {
-    this.isEditMode = false;
-    this.emittedIsEditMode.emit(this.isEditMode);
+    this.isEditModeSignal.set(false);
+    this.emittedIsEditMode.emit(false);
     this.updateControlsValidity(this.controlsNames, false);
     //this.invalidAddressFilter = false; ???
     this.addressFilterComponent.onChangeMode('view', addressParams);
@@ -379,44 +276,15 @@ export class BaseDetailsComponent {
   updateControlsValidity(controlsToUpdate: string[], conditions: boolean) {
     // console.log('controlsToUpdate', controlsToUpdate, conditions);
     controlsToUpdate.forEach((control) => {
-/*       if (control != 'userName') { */
-        conditions
-          ? this.mainForm.controls[control].enable()
-          : this.mainForm.controls[control].disable();
-   /*    } */
+      /*       if (control != 'userName') { */
+      conditions
+        ? this.mainForm.controls[control].enable()
+        : this.mainForm.controls[control].disable();
+      /*    } */
     });
     this.invalidAddressFilter = !conditions;
     //console.log('invalidAddressFilter', this.invalidAddressFilter);
     this.checkIsSaveDisabled();
-  }
-
-  editContact(value: string, type: string) {
-    let result = '';
-    //TODO: move this logic to a service
-    switch (type) {
-      case 'vKontakte':
-        result = 'https://vk.com/' + value;
-        break;
-      case 'instagram':
-        result = 'https://www.instagram.com/' + value;
-        break;
-      case 'facebook':
-        result = 'https://www.facebook.com/' + value;
-        break;
-      /*       case 'phoneNumber':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      case 'telegramPhoneNumber':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      case 'whatsApp':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break; */
-      default:
-        result = value;
-    }
-    //  //console.log('editContact', type, value, result);
-    return result;
   }
 
   setInitialValues(
@@ -426,8 +294,13 @@ export class BaseDetailsComponent {
   ) {
     controlsToSetValues.forEach((controlName) => {
       //  //console.log('control', controlName);
-      if (!this.contactTypes.includes(controlName)) {
-        if (mode == 'view' && this.data().object![controlName] === '') {
+      if (
+        !this.contactTypes.includes(controlName as keyof typeof this.object)
+      ) {
+        if (
+          mode == 'view' &&
+          this.object![controlName as keyof typeof this.object] === ''
+        ) {
           this.mainForm.controls[controlName].setValue('\u00A0'); // Non-breaking space for empty values in view mode
           /*  //console.log(
             'this.mainForm.controls[controlName].value',
@@ -437,69 +310,11 @@ export class BaseDetailsComponent {
           this.mainForm.controls[controlName].setValue('password123'); // Placeholder for password field to prevent error in edit mode.
         } else {
           this.mainForm.controls[controlName].setValue(
-            this.data().object![controlName]
+            this.object![controlName as keyof typeof this.object]
           );
         }
       }
     });
-
-    if (this.data().object!['orderedContacts']) {
-      const orderedContacts = this.data().object!['orderedContacts'];
-      for (let contact of this.contactTypes) {
-        const formArray = this.mainForm.get(contact) as FormArray;
-        ////console.log('formArray', formArray);
-        ////console.log('this.data().object![contact]', this.data().object);
-
-        const values = orderedContacts[
-          contact as keyof typeof orderedContacts
-        ] as unknown as string[];
-        // //console.log('contact', contact, values);
-        // //console.log('formArray', formArray.at(0), values);
-
-        if (values) {
-          if (firstInitialization) {
-            formArray
-              .at(0)
-              ?.setValue(
-                mode == 'view'
-                  ? this.editContact(values[0], contact)
-                  : values[0]
-              );
-            for (let i = 1; i < values.length; i++) {
-              formArray.push(
-                new FormControl(
-                  {
-                    value:
-                      mode == 'view'
-                        ? this.editContact(values[i], contact)
-                        : values[i],
-                    disabled: true,
-                  },
-                  this.data().controls.find(
-                    (control) => control.controlName == contact
-                  )?.validators || []
-                )
-              );
-            }
-          } else {
-            for (let i = 0; i < values.length; i++) {
-              formArray
-                .at(i)
-                ?.setValue(
-                  mode == 'view'
-                    ? this.editContact(values[i], contact)
-                    : values[i]
-                );
-            }
-          }
-        } else if (mode == 'view') {
-          // //console.log('Non-breaking space for empty values');
-          formArray.at(0)?.setValue('\u00A0'); // Non-breaking space for empty values
-        } else {
-          formArray.at(0)?.setValue('');
-        }
-      }
-    }
   }
 
   errorHandling(err: any) {

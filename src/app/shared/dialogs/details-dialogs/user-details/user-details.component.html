@@ -1,7 +1,7 @@
 <p-confirmdialog  [style]="{width: '500px'}"/>
 <p-toast position="center" />
 
-<form [formGroup]="mainForm" [class]="data().operation == 'view-edit' && !isEditMode ? 'view-mode' : 'none'"
+<form [formGroup]="mainForm" [class]="data().operation == 'view-edit' && !isEditModeSignal() ? 'view-mode' : 'none'"
   (change)="onChangeValidation()">
   <mat-tab-group animationDuration="0ms">
     <mat-tab label="Основные сведения">
@@ -36,7 +36,7 @@
           </mat-form-field>
           }
           @else {
-          <button class = 'password' mat-button [disabled]="data().operation == 'view-edit' && !isEditMode">
+          <button class = 'password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()">
             <mat-icon>edit</mat-icon>
             Изменить пароль</button>
           }
@@ -95,7 +95,7 @@
             <mat-form-field>
               <mat-label>{{control.label}}</mat-label>
               <input type="text" matInput [formControlName]="j" [placeholder]="control.placeholder!" />
-              @if (j>0 && (data().operation == 'view-edit' && isEditMode || data().operation == 'create')) {
+              @if (j>0 && (data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create')) {
               <button matSuffix mat-icon-button title="Удалить поле"
                 (click)="deleteContactControl(j, control.controlName) ">
                 <mat-icon>delete_outlined</mat-icon>

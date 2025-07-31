@@ -527,7 +527,7 @@ router.post("/get-users", async (req, res) => {
         as: 'contacts',
         where: contactWhereParams,
         required: contactRequiredParam,
-        attributes: ['type', 'content', 'isRestricted'],
+        attributes: ['id', 'type', 'content', 'isRestricted'],
       },
       {
         model: UserAddress,
@@ -647,7 +647,10 @@ router.get("/get-user-by-id/:id", async (req, res) => {
           model: Role,
           attributes: ['id', 'name'],
         },
-     { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
+        {
+          model: OutdatedName, as: 'outdatedNames',
+          attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName']
+        },
       ],
     });
     if (!user) {

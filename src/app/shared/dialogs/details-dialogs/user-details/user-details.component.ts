@@ -25,6 +25,8 @@ import { RoleService } from '../../../../services/role.service';
 import { User } from '../../../../interfaces/user';
 import { UserService } from '../../../../services/user.service';
 import * as Validator from '../../../custom.validator';
+import { UserDraft } from '../../../../interfaces/userDraft';
+import { AdvancedDetailsComponent } from '../advances-details/advanced-details.component';
 
 @Component({
   selector: 'app-user-details',
@@ -48,7 +50,9 @@ import * as Validator from '../../../custom.validator';
   templateUrl: './user-details.component.html',
   styleUrl: './user-details.component.css',
 })
-export class UserDetailsComponent extends BaseDetailsComponent {
+export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
+  existedUser: User | null = null;
+
   private roleService = inject(RoleService);
   private userService = inject(UserService);
 
@@ -68,6 +72,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
 
   override ngOnInit(): void {
     super.ngOnInit();
+    this.existedUser = this.object;
     ////console.log('ngOnInit', this.data().operation);
     this.mainForm.setValidators([Validator.mainContactsValidator]);
     this.roleService.getRolesNamesList().subscribe({
@@ -89,7 +94,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
       );
       this.controlsNames.push('causeOfRestriction');
     } else if (
-      (this.isEditMode && !this.data().object!['isRestricted']) ||
+      (this.isEditModeSignal() && !this.existedUser!['isRestricted']) ||
       this.data().operation == 'create'
     ) {
       //TODO: remove control after save
@@ -146,46 +151,45 @@ export class UserDetailsComponent extends BaseDetailsComponent {
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
     //console.log('onSaveClick', action);
-    const user = {} as User;
-    user.userName = this.mainForm.controls['userName'].value!.trim();
-    user.id = this.data().object ? (this.data().object!['id'] as number) : null;
+    const userDraft = {} as UserDraft;
+    userDraft.userName = this.mainForm.controls['userName'].value!.trim();
+    userDraft.id = this.object ? (this.object!['id'] as number) : null;
 
-    user.firstName = this.mainForm.controls['firstName'].value!.trim();
-    user.patronymic = this.mainForm.controls['patronymic'].value?.trim();
-    user.lastName = this.mainForm.controls['lastName'].value!.trim();
+    userDraft.firstName = this.mainForm.controls['firstName'].value!.trim();
+    userDraft.patronymic = this.mainForm.controls['patronymic'].value?.trim();
+    userDraft.lastName = this.mainForm.controls['lastName'].value!.trim();
 
-    user.draftAddresses = [
+    userDraft.draftAddress =
       {
-        country:
+        countryId:
           this.addressFilter().countries &&
           this.addressFilter().countries?.length
             ? this.addressFilter().countries![0]
             : null,
-        region:
+        regionId:
           this.addressFilter().regions && this.addressFilter().regions?.length
             ? this.addressFilter().regions![0]
             : null,
-        district:
+        districtId:
           this.addressFilter().districts &&
           this.addressFilter().districts?.length
             ? this.addressFilter().districts![0]
             : null,
-        locality:
+        localityId:
           this.addressFilter().localities &&
           this.addressFilter().localities?.length
             ? this.addressFilter().localities![0]
             : null,
-      },
-    ];
+      };
 
-    user.orderedContacts = {} as User['orderedContacts'];
+    userDraft.draftContacts = {} as UserDraft['draftContacts'];
 
     for (let contact of this.contactTypes) {
-      user.orderedContacts[contact as keyof typeof user.orderedContacts] =
+      userDraft.draftContacts[contact as keyof typeof userDraft.draftContacts] =
         this.getFormArray(contact).getRawValue() as string[];
 
-      user.orderedContacts[contact as keyof typeof user.orderedContacts] =
-        user.orderedContacts[contact as keyof typeof user.orderedContacts].map(
+        userDraft.draftContacts[contact as keyof typeof userDraft.draftContacts] =
+        userDraft.draftContacts[contact as keyof typeof userDraft.draftContacts].map(
           (item) => {
             if (item != '') {
               return this.completeContact(item, contact) as string;
@@ -196,18 +200,20 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         );
     }
 
-    user.password = this.mainForm.controls['password'].value;
-    user.roleId = this.mainForm.controls['roleId'].value;
-    user.comment = this.mainForm.controls['comment'].value;
-    user.isRestricted = this.mainForm.controls['isRestricted'].value;
-    user.causeOfRestriction = this.mainForm.controls['isRestricted'].value
+    userDraft.password = this.mainForm.controls['password'].value;
+    userDraft.roleId = this.mainForm.controls['roleId'].value;
+    userDraft.comment = this.mainForm.controls['comment'].value;
+    userDraft.isRestricted = this.mainForm.controls['isRestricted'].value;
+    userDraft.causeOfRestriction = this.mainForm.controls['isRestricted'].value
       ? this.mainForm.controls['causeOfRestriction'].value
       : null;
-    user.dateOfRestriction = this.mainForm.controls['isRestricted'].value
-      ? this.data().object!['isRestricted']
-        ? (this.data().object!['dateOfRestriction'] as Date)
+      userDraft.dateOfRestriction = this.mainForm.controls['isRestricted'].value
+      ? this.existedUser!['isRestricted']
+        ? (this.existedUser!['dateOfRestriction'] as Date)
         : new Date()
       : null;
+
+      const user: UserDraft = userDraft;
 
     this.userService.checkUserName(user.userName, user.id).subscribe({
       next: (res) => {
@@ -253,12 +259,12 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     return result;
   }
 
-  checkDuplicates(action: 'justSave' | 'saveAndExit', user: User) {
+  checkDuplicates(action: 'justSave' | 'saveAndExit', user: UserDraft) {
     let contactDuplicates: { [key: string]: string[] } = {};
 
-    for (let key in user.orderedContacts) {
+    for (let key in user.draftContacts) {
       let tempArray =
-        user.orderedContacts[key as keyof typeof user.orderedContacts].sort();
+      user.draftContacts[key as keyof typeof user.draftContacts].sort();
       let duplicates = new Set();
       for (let i = 0; i < tempArray.length - 1; i++) {
         if (tempArray[i + 1] == tempArray[i]) {
@@ -294,7 +300,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     }
   }
 
-  checkUserData(action: 'justSave' | 'saveAndExit', user: User) {
+  checkUserData(action: 'justSave' | 'saveAndExit', user: UserDraft) {
     this.userService.checkUserData(user).subscribe({
       next: (res) => {
         if (
@@ -374,7 +380,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
 
   async checkNotActualDataDuplicates(
     action: 'justSave' | 'saveAndExit',
-    user: User
+    user: UserDraft
   ) {
     let restoringData: {
       address: number | null;
@@ -400,18 +406,16 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         otherContact: [],
       },
     };
-    const outdatedAddresses = (
-      this.data().object!['outdatedData'] as unknown as { addresses: any[] }
-    ).addresses;
+    const outdatedAddresses = this.existedUser!['outdatedData'].addresses;
 
-    if (outdatedAddresses.length > 0 && user.draftAddresses?.[0]?.country) {
-      console.log(outdatedAddresses.length, user.draftAddresses?.[0]?.country);
+    if (outdatedAddresses.length > 0 && user.draftAddress?.countryId) {
+      console.log(outdatedAddresses.length, user.draftAddress?.countryId);
       for (const address of outdatedAddresses) {
         const isMatch =
-          address.country?.id == user.draftAddresses[0].country &&
-          address.region?.id == user.draftAddresses[0].region &&
-          address.district?.id == user.draftAddresses[0].district &&
-          address.locality?.id == user.draftAddresses[0].locality;
+          address.country?.id == user.draftAddress.countryId &&
+          address.region?.id == user.draftAddress.regionId &&
+          address.district?.id == user.draftAddress.districtId &&
+          address.locality?.id == user.draftAddress.localityId;
 
         if (isMatch) {
           console.log('address', address);
@@ -435,7 +439,7 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     }
 
     const outdatedAllNames = (
-      this.data().object!['outdatedData'] as unknown as { names: any[] }
+      this.existedUser!['outdatedData']
     ).names;
     // console.log('outdatedAllNames', outdatedAllNames);
     // console.log('user', user);
@@ -484,18 +488,14 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     }
 
     const outdatedContacts = (
-      this.data().object!['outdatedData'] as unknown as {
-        contacts: {
-          [key: string]: { id: number; type: string; content: string }[];
-        };
-      }
+      this.existedUser!['outdatedData']
     ).contacts;
 
     console.log('outdatedContacts', outdatedContacts);
-    console.log('user.orderedContacts', user.orderedContacts);
+    console.log('user.orderedContacts', user.draftContacts);
 
     if (outdatedContacts && Object.keys(outdatedContacts).length != 0) {
-      const currentContacts = user.orderedContacts;
+      const currentContacts = user.draftContacts;
       const duplicates: { id: number; content: string }[] = [];
 
       for (const type of this.contactTypes) {
@@ -546,20 +546,19 @@ export class UserDetailsComponent extends BaseDetailsComponent {
   // TODO: 🔄 Актуализация данных
 
   // 🟡 1. Сверка изменений
-  //  - Сравнение новых значений с текущими - доделать контакты
-  // - API
+
+  // - API - сохранить изменения
 
   // 🟡 2. Унификация значений null / '', форматов
   //  - Привести отсутствующие значения к одному виду
   // - привести адреса (и не только) к одному формату
-  // - save this.data().object! as existedUser
 
-  // 🟢 3. Вынести общие функции в базовый компонент
+  // 🟢 3. Вынести общие функции в адванс компонент
   //  - Проверка дубликатов
   //  - Отображение диалогов
   //  - Работа с outdatedData (добавление, удаление)
 
-  // 👁 Отображение неактуальных данных +API
+  // 👁 Отображение неактуальных данных +API - запрос этих данных в лист
 
   // 🔵 4. В таблице (по запросу)
   //  - Кнопка или фильтр: «Показать неактуальные» - это уже есть
@@ -613,10 +612,10 @@ export class UserDetailsComponent extends BaseDetailsComponent {
       });
     });
   }
-  // TODO: save this.data().object! as existedUser
+
   async checkAllChanges(
     action: 'justSave' | 'saveAndExit',
-    user: User,
+    user: UserDraft,
     restoringData: {
       address: number | null;
       names: number | null;
@@ -631,11 +630,11 @@ export class UserDetailsComponent extends BaseDetailsComponent {
     let deletingData: { [key: string]: any } = {};
 
     const isNamesChanged =
-      this.normalize(this.data().object!['firstName'] as string) !=
+      this.normalize(this.existedUser!['firstName'] as string) !=
         this.normalize(user.firstName) ||
-      this.normalize(this.data().object!['patronymic'] as string) !=
+      this.normalize(this.existedUser!['patronymic'] as string) !=
         this.normalize(user.patronymic) ||
-      this.normalize(this.data().object!['lastName'] as string) !=
+      this.normalize(this.existedUser!['lastName'] as string) !=
         this.normalize(user.lastName);
 
     if (!restoringData.names && isNamesChanged) {
@@ -644,9 +643,9 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         patronymic: user.patronymic,
         lastName: user.lastName,
       };
-      const oldValue = `${this.data().object!['firstName']} ${
-        this.data().object!['patronymic'] || ''
-      } ${this.data().object!['lastName']}`.trim();
+      const oldValue = `${this.existedUser!['firstName']} ${
+        this.existedUser!['patronymic'] || ''
+      } ${this.existedUser!['lastName']}`.trim();
       /*       const newValue = `${user.firstName} ${user.patronymic || ''} ${
         user.lastName
       }`.trim(); */
@@ -657,14 +656,14 @@ export class UserDetailsComponent extends BaseDetailsComponent {
       );
       if (confirmed) {
         outdatingData['names'] = {
-          firstName: this.data().object!['firstName'],
-          patronymic: this.data().object!['patronymic'] || null,
-          lastName: this.data().object!['lastName'],
+          firstName: this.existedUser!['firstName'],
+          patronymic: this.existedUser!['patronymic'] || null,
+          lastName: this.existedUser!['lastName'],
         };
       } else {
       }
     }
-    const oldValue = this.data().object!['userName'] as string;
+    const oldValue = this.existedUser!['userName'] as string;
     if (!restoringData.userName && user.userName != oldValue) {
       changes['userName'] = user.userName;
       //const newValue = user.userName;
@@ -674,44 +673,38 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         //newValue
       );
       if (confirmed) {
-        outdatingData['userName'] = this.data().object!['userName'];
+        outdatingData['userName'] = this.existedUser!['userName'];
       } else {
       }
     }
 
     //TODO: привести к единообразию форматы адресов
-    const oldAddress = (this.data().object!['addresses'] as any[])[0] as {
-      country: { id: number; name: string } | null;
-      region: { id: number; shortName: string } | null;
-      district: { id: number; name: string } | null;
-      locality: { id: number; name: string } | null;
-      id: number;
-    };
+    const oldAddress = this.existedUser!['address'];
 
-    const newAddress = user.draftAddresses![0];
+    const newAddress = user.draftAddress!;
 
     console.log('oldAddress', 'newAddress', oldAddress, newAddress);
 
     const isAddressChanged =
       !isFieldEqual(
-        newAddress.country,
+        newAddress.countryId,
         oldAddress.country ? oldAddress.country.id : oldAddress.country
       ) ||
       !isFieldEqual(
-        newAddress.region,
+        newAddress.regionId,
         oldAddress.region ? oldAddress.region.id : oldAddress.region
       ) ||
       !isFieldEqual(
-        newAddress.district,
+        newAddress.districtId,
         oldAddress.district ? oldAddress.district.id : oldAddress.district
       ) ||
       !isFieldEqual(
-        newAddress.locality,
+        newAddress.localityId,
         oldAddress.locality ? oldAddress.locality.id : oldAddress.locality
       );
 
     if (!restoringData.address && isAddressChanged) {
-      changes['addresses'] = user.draftAddresses;
+      changes['addresses'] = user.draftAddress;
       // console.log('changes', changes);
       //console.log('oldAddress.country', oldAddress.country);
       if (oldAddress.country) {
@@ -735,20 +728,19 @@ export class UserDetailsComponent extends BaseDetailsComponent {
 
     //TODO: contacts Add id to orderedContacts
 
-    const oldContacts = this.data().object!['orderedContacts'] as {
-      [key: string]: string[];
-    };
+    const oldContacts = this.object!['orderedContacts'];
     changes['contacts'] = {};
-    const newContacts = user.orderedContacts;
+    const newContacts = user.draftContacts;
 
     console.log('oldContacts', 'newContacts', oldContacts, newContacts);
 
     for (const type of this.contactTypes) {
+
       changes['contacts'][type] = [];
-      for (const contact of newContacts[type as keyof typeof newContacts]) {
+      for (const contact of newContacts[type]) {
         console.log('contact', contact);
         const indexInOldContactsArray = oldContacts[type]?.findIndex(
-          (item) => item === contact
+          (item) => item.content == contact
         );
         console.log('indexInOldContactsArray', indexInOldContactsArray);
         if (indexInOldContactsArray == -1) {
@@ -773,9 +765,9 @@ export class UserDetailsComponent extends BaseDetailsComponent {
         for (const contact of oldContacts[type as keyof typeof oldContacts]) {
           const indexInNewContactsArray = (
             newContacts[type as keyof typeof newContacts]! as string[]
-          ).findIndex((item) => item === contact);
+          ).findIndex((item) => item === contact.content);
           if (indexInNewContactsArray == -1) {
-            const oldValue = type + ' ' + contact;
+            const oldValue = type + ' ' + contact.content;
 
             const confirmed = await this.confirmDataSaving(
               'contacts',
@@ -784,29 +776,29 @@ export class UserDetailsComponent extends BaseDetailsComponent {
             );
             if (confirmed) {
               outdatingData['contacts'] ??= [];
-              outdatingData['contacts'].push(contact);
+              outdatingData['contacts'].push(contact.id);
             } else {
               deletingData['contacts'] ??= [];
-              deletingData['contacts'].push(contact);
+              deletingData['contacts'].push(contact.id);
             }
           }
         }
       }
     }
 
-    if (this.data().object!['roleId'] != user.roleId) {
+    if (this.existedUser!['roleId'] != user.roleId) {
       changes['roleId'] = user.roleId;
     }
-    if (this.data().object!['comment'] != user.comment) {
+    if (this.existedUser!['comment'] != user.comment) {
       changes['comment'] = user.comment;
     }
-    if (this.data().object!['isRestricted'] != user.isRestricted) {
+    if (this.existedUser!['isRestricted'] != user.isRestricted) {
       changes['isRestricted'] = user.isRestricted;
     }
-    if (this.data().object!['causeOfRestriction'] != user.causeOfRestriction) {
+    if (this.existedUser!['causeOfRestriction'] != user.causeOfRestriction) {
       changes['causeOfRestriction'] = user.causeOfRestriction;
     }
-    if (this.data().object!['dateOfRestriction'] != user.dateOfRestriction) {
+    if (this.existedUser!['dateOfRestriction'] != user.dateOfRestriction) {
       changes['dateOfRestriction'] = user.dateOfRestriction;
     }
 
@@ -860,17 +852,20 @@ export class UserDetailsComponent extends BaseDetailsComponent {
       });
     });
   }
-  saveUser(action: 'justSave' | 'saveAndExit', user: User) {
+  saveUser(action: 'justSave' | 'saveAndExit', user: UserDraft) {
     this.userService.saveUser(user, this.data().operation!).subscribe({
       next: (res) => {
         //this.dialogRefCreate.close({ userName: res.userName });
         if (action == 'saveAndExit') {
           //this.dialogRef.close({ name: res.data });
-          this.closeDialog.emit(res.data);
+          this.closeDialogDataSignal.set(res.data);
+          this.emittedCloseDialogData.emit(res.data);
         } else {
-          //console.log('this.data().object', this.data().object);
+          //console.log('this.existedUser', this.existedUser);
+          //TODO: check if existedUser changed
           this.data().object = res.data;
-          //console.log('this.data().object', this.data().object);
+          //this.existedUser= this.data().object;
+          console.log('this.existedUser', this.existedUser);
           //TODO: test it
           if (
             !this.mainForm.controls['isRestricted'].value &&

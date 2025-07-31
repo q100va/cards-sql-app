@@ -170,7 +170,7 @@ export class ToponymsListComponent {
     restoreFocus: true,
   };
 
-  dialogData = computed<DialogData>(() => {
+  dialogData = computed<DialogData<Toponym>>(() => {
     this.toponymProps().dialogProps.addressFilterParams = {
       ...this.toponymProps().dialogProps.addressFilterParams,
       source: 'toponymCard',
@@ -262,20 +262,21 @@ export class ToponymsListComponent {
   onAddToponymClick() {
     this.dialogData().addressFilterParams.readonly = false;
     this.dialogData().addressFilterParams.class = 'none';
+    const dialogData: DialogData<Toponym> = {
+      ...this.dialogData() as DialogData<Toponym>,
+      operation: 'create',
+      controlsDisable: true,
+      defaultAddressParams: {
+        localityId: null,
+        districtId: null,
+        regionId: null,
+        countryId: null,
+      },
+      componentType: 'toponym',
+    };
     const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
-      data: {
-        ...this.dialogData(),
-        operation: 'create',
-        controlsDisable: true,
-        defaultAddressParams: {
-          localityId: null,
-          districtId: null,
-          regionId: null,
-          countryId: null,
-        },
-        componentType: 'toponym',
-      },
+      data: dialogData,
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
       if (result.name) {
@@ -340,16 +341,18 @@ export class ToponymsListComponent {
   onOpenToponymCardClick(toponym: Toponym) {
     this.dialogData().addressFilterParams.readonly = true;
     this.dialogData().addressFilterParams.class = 'view-mode';
+    this.dialogData().object = toponym;
+    const dialogData: DialogData<Toponym> = {
+      ...this.dialogData() as DialogData<Toponym>,
+      operation: 'view-edit',
+      controlsDisable: true,
+      defaultAddressParams: this.formDefaultAddressParams(toponym),
+      componentType: 'toponym',
+    };
+
     const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
       ...this.dialogConfig,
-      data: {
-        ...this.dialogData(),
-        operation: 'view-edit',
-        controlsDisable: true,
-        defaultAddressParams: this.formDefaultAddressParams(toponym),
-        object: toponym,
-        componentType: 'toponym',
-      },
+      data: dialogData,
     });
     dialogRefCreate.afterClosed().subscribe((result) => {
       this.getToponyms();

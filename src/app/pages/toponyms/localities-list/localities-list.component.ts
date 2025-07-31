@@ -107,12 +107,14 @@ export class LocalitiesListComponent {
         isShowDistrict: true,
         isShowLocality: false,
       },
+      object: null,
+      componentType: 'toponym',
     },
   };
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.queryParams = params as DefaultAddressParams | null;
+      this.props.queryParams = params as DefaultAddressParams;
     });
   }
 }

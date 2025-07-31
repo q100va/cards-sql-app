@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { OutdatedData, User } from '../interfaces/user';
 import { environment } from '../../environments/environment';
 import { AddressFilter } from '../interfaces/address-filter';
+import { UserDraft } from '../interfaces/userDraft';
 
 @Injectable({
   providedIn: 'root',
@@ -19,13 +20,13 @@ export class UserService {
       data: { userName: userName, id: id },
     });
   }
-  checkUserData(user: User): Observable<any> {
+  checkUserData(user: UserDraft): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/users/check-user-data/', {
       data: user,
     });
   }
-  saveUser(user: User, operation: string): Observable<any> {
+  saveUser(user: UserDraft, operation: string): Observable<any> {
     const addressPoint = operation == 'create' ? 'create-user' : 'update-user';
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/users/' + addressPoint, {
@@ -106,7 +107,7 @@ export class UserService {
   }
 
   transformUserData(user: User): User {
-    let orderedContacts: { [key: string]: string[] } = {};
+    let orderedContacts: { [key: string]: {id: number, content: string}[] } = {};
     let outdatedData: {
       contacts?: { [key: string]: {id: number, content: string}[] };
       addresses?: {
@@ -138,11 +139,11 @@ export class UserService {
 
         if (isTelegram) {
           orderedContacts['telegram'] = orderedContacts['telegram'] || [];
-          orderedContacts['telegram'].push(contact.content);
+          orderedContacts['telegram'].push(contact);
         }
 
         orderedContacts[contact.type] = orderedContacts[contact.type] || [];
-        orderedContacts[contact.type].push( contact.content);
+        orderedContacts[contact.type].push( contact);
       } else {
         outdatedDataContacts[contact.type] = outdatedDataContacts[contact.type] || [];
         outdatedDataContacts[contact.type].push( { id: contact.id, content: contact.content } );
@@ -151,12 +152,13 @@ export class UserService {
     }
     outdatedData.contacts =
       outdatedDataContacts as (typeof outdatedData)['contacts'];
-    user.orderedContacts = orderedContacts as typeof user.orderedContacts;
+    user.orderedContacts = orderedContacts as unknown as typeof user.orderedContacts;
+    delete user.contacts;
 
-    if (user.addresses?.length > 0) {
+    if (user.addresses && user.addresses?.length > 0) {
       let outdatedDataAddresses: {
         country: { id: number; name: string } | null;
-        region: { id: number; name: string } | null;
+        region: { id: number; shortName: string } | null;
         district: { id: number; name: string } | null;
         locality: { id: number; name: string } | null;
         isRestricted?: boolean;
@@ -176,34 +178,34 @@ export class UserService {
         const filteredAddresses = user.addresses.filter(
           (address) => !address.isRestricted
         );
-        user.addresses =
+        user.address =
           filteredAddresses.length > 0
-            ? filteredAddresses
-            : [
+            ? filteredAddresses[0]
+            :
                 {
                   country: null,
                   region: null,
                   district: null,
                   locality: null,
-                  isRestricted: false,
-                },
-              ];
+                  id: null
+                };
 
         outdatedData.addresses =
           outdatedDataAddresses as (typeof outdatedData)['addresses'];
       }
+
+      delete user.addresses;
     } else {
-      user.addresses = [
+      user.address =
         {
           country: null,
           region: null,
           district: null,
           locality: null,
-          isRestricted: false,
-        },
-      ];
+          id: null
+        };
     }
-    if (user.outdatedNames?.length > 0) {
+    if (user.outdatedNames && user.outdatedNames?.length > 0) {
       outdatedData.names = user.outdatedNames.map((name) => ({
         firstName: name.firstName,
         patronymic: name.patronymic,
@@ -211,8 +213,10 @@ export class UserService {
         userName: name.userName,
         id: name.id!,
       }));
+      delete user.outdatedNames;
     }
-    user.outdatedData = outdatedData as typeof user.outdatedData;
+    user.outdatedData = outdatedData as unknown as typeof user.outdatedData;
+
 
     console.log('transformed user data:', user);
 

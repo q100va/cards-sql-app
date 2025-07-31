@@ -2,6 +2,10 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { DefaultAddressParams } from './default-address-params';
 import { AddressFilterParams } from './address-filter-params';
 import { GeographyLevels } from './types';
+import { User } from './user';
+import { Toponym } from './toponym';
+import { BaseModel } from './base-model';
+import { DetailsComponentType } from '../shared/dialogs/details-dialogs/details-dialog/details-component-registry';
 
 export interface ToponymProps {
   title: string;
@@ -26,7 +30,7 @@ export interface ToponymProps {
   isShowDistrict: boolean;
   isShowLocality: boolean;
   searchPlaceHolder: string;
-  dialogProps: DialogData;
+  dialogProps: DialogData<Toponym>;
 }
 
 /* export interface DialogProps {
@@ -41,7 +45,7 @@ export interface ToponymProps {
   addressFilterParams: AddressFilterParams;
 } */
 
-export interface DialogData {
+export interface DialogData<T extends BaseModel> {
   creationTitle: string;
   viewTitle: string;
   controls: Control[];
@@ -54,18 +58,19 @@ export interface DialogData {
 
   operation?: 'create' | 'view-edit';
    controlsDisable?: boolean;
-   componentType?: 'toponym' | 'user';
+   componentType: DetailsComponentType;
   defaultAddressParams?: DefaultAddressParams;
-  object?: {
+/*   object?: {
     [key: string]: string | number | boolean | any[] | {[key: string]: string | number | boolean | any} | Date;
-  };
+  }; */
+  object: T | null;
 
   toponymType?: GeographyLevels;
 }
 
 export interface Control {
   controlName: string;
-  value: string | boolean | Date | [] | string[];
+  value: string | boolean;// | Date | [] | string[];
   disabled?: boolean;
   validators?: ((
     control: AbstractControl<any, any>
