@@ -1,18 +1,16 @@
-import {
-  Component,
-} from '@angular/core';
-import {
-  FormControl,
-  FormArray,
-} from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormControl, FormArray } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AddressFilter } from '../../../../interfaces/address-filter';
-import {
-  Contacts,
-} from '../../../../interfaces/user';
+import { Contacts } from '../../../../interfaces/user';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 import { AdvancedModel } from '../../../../interfaces/advanced-model';
+import {
+  AddressKey,
+  ToponymType,
+  typedKeys,
+} from '../../../../interfaces/types';
 
 @Component({
   selector: 'app-advanced-details',
@@ -24,7 +22,6 @@ import { AdvancedModel } from '../../../../interfaces/advanced-model';
 export class AdvancedDetailsComponent<
   T extends AdvancedModel
 > extends BaseDetailsComponent<T> {
-
   override checkIsSaveDisabled() {
     let condition: boolean = false;
     if (this.data().componentType == 'user') {
@@ -72,21 +69,20 @@ export class AdvancedDetailsComponent<
   addressChangeValidation() {
     const address = this.object!['address'];
     const filter = this.addressFilter();
-    const keyMap = {
+    const keyMap: {
+      country: AddressKey;
+      region: AddressKey;
+      district: AddressKey;
+      locality: AddressKey;
+    } = {
       country: 'countries',
       region: 'regions',
       district: 'districts',
       locality: 'localities',
     };
-    const keys: (keyof typeof keyMap)[] = [
-      'country',
-      'region',
-      'district',
-      'locality',
-    ];
-    for (const key of keys) {
+    for (const key of typedKeys(keyMap)) {
       const original = address[key];
-      const filtered = filter[keyMap[key] as keyof AddressFilter];
+      const filtered = filter[keyMap[key]];
       const originalId = original?.id ?? null;
       const filteredId = Array.isArray(filtered) ? filtered[0] ?? null : null;
       if (originalId !== filteredId) {
@@ -125,67 +121,48 @@ export class AdvancedDetailsComponent<
     return result;
   }
 
- override setInitialValues(
-  controlsToSetValues: string[],
-  mode: 'view' | 'edit' | 'create',
-  firstInitialization = false){
-    super.setInitialValues(controlsToSetValues, mode, firstInitialization);
+  override setInitialValues(
+    //   controlsToSetValues: string[],
+    mode: 'view' | 'edit' | 'create',
+    firstInitialization = false
+  ) {
+    super.setInitialValues(mode, firstInitialization);
 
-      const orderedContacts = this.object!['orderedContacts'];
-      for (let contact of this.contactTypes) {
-        const formArray = this.mainForm.get(contact) as FormArray;
-        ////console.log('formArray', formArray);
-        ////console.log('this.object![contact]', this.object);
+    const orderedContacts = this.object!['orderedContacts'];
 
-        const values = orderedContacts[
-          contact as keyof typeof orderedContacts
-        ] as unknown as { id: number; content: string }[];
-        // //console.log('contact', contact, values);
-        // //console.log('formArray', formArray.at(0), values);
+    for (let contact of this.contactTypes) {
+      const formArray = this.mainForm.get(contact) as FormArray;
+      const values = orderedContacts[contact];
 
-        if (values) {
-          if (firstInitialization) {
-            formArray
-              .at(0)
-              ?.setValue(
-                mode == 'view'
-                  ? this.editContact(values[0].content, contact)
-                  : values[0].content
-              );
-            for (let i = 1; i < values.length; i++) {
+      const transform = (val: string) =>
+        mode === 'view' ? this.editContact(val, contact) : val;
+
+      if (values?.length) {
+        if (firstInitialization) {
+          values.forEach((v, i) => {
+            const value = transform(v.content);
+
+            if (i === 0) {
+              formArray.at(0)?.setValue(value);
+            } else {
+              const validators =
+                this.data().controls.find((c) => c.controlName === contact)
+                  ?.validators || [];
+
               formArray.push(
-                new FormControl(
-                  {
-                    value:
-                      mode == 'view'
-                        ? this.editContact(values[i].content, contact)
-                        : values[i].content,
-                    disabled: true,
-                  },
-                  this.data().controls.find(
-                    (control) => control.controlName == contact
-                  )?.validators || []
-                )
+                new FormControl({ value, disabled: true }, validators)
               );
             }
-          } else {
-            for (let i = 0; i < values.length; i++) {
-              formArray
-                .at(i)
-                ?.setValue(
-                  mode == 'view'
-                    ? this.editContact(values[i].content, contact)
-                    : values[i].content
-                );
-            }
-          }
-        } else if (mode == 'view') {
-          // //console.log('Non-breaking space for empty values');
-          formArray.at(0)?.setValue('\u00A0'); // Non-breaking space for empty values
+          });
         } else {
-          formArray.at(0)?.setValue('');
+          values.forEach((v, i) => {
+            formArray.at(i)?.setValue(transform(v.content));
+          });
         }
+      } else {
+        const emptyValue = mode === 'view' ? '\u00A0' : '';
+        formArray.at(0)?.setValue(emptyValue);
       }
-
+    }
   }
 }

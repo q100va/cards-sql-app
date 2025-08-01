@@ -42,9 +42,8 @@ import { AddressFilter } from '../../../../interfaces/address-filter';
 export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
   override ngOnInit(): void {
     super.ngOnInit();
-    //console.log('this.data().controls', this.data().controls);
+    console.log('this.data()', this.data());
   }
-
 
   override checkIsSaveDisabled() {
     let condition: boolean = false;
@@ -58,33 +57,41 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
     this.emittedIsSaveDisabled.emit(condition);
   }
 
-  protected  override additionalValidationHooks() {
+  protected override additionalValidationHooks() {
+    const getByPath = function (
+      obj: Record<string, any>,
+      key: string
+    ): number {
+      return obj[key];
+    };
+    /* function <T extends object>(
+      obj: T,
+      path: string
+    ): number {
+      return path.split('.').reduce((acc: any, key) => acc?.[key], obj);
+    }; */
     //checking if selectable part of address was changed
-    for (let item of this.data().addressFilterControls!) {
-      /*
-      console.log('item', item);
-      console.log(
-        'this.addressFilter()[item.addressFilterProp as keyof AddressFilter]',
-        this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
-      );
-      console.log(
-        'this.data().object![item.toponymProp]',
-        this.data().object![item.toponymProp]
-      ); */
+    if (this.data().addressFilterControls && this.data().addressFilterControls!.length > 0)
+      for (let item of this.data().addressFilterControls!) {
+        const filterValues = this.addressFilter()[item.addressFilterProp];
+        //  const objectValue = this.object![item.toponymProp];
+        const objectValue = getByPath(
+          this.data().defaultAddressParams!,
+          item.toponymProp
+        );
 
-      if (
-        !this.addressFilter()[item.addressFilterProp as keyof AddressFilter]
-      ) {
-        return true;
-      } else if (
-        this.addressFilter()[
-          item.addressFilterProp as keyof AddressFilter
-        ]![0] != this.object![item.toponymProp as keyof typeof this.object]
-      ) {
-        return true;
+        // this.data().defaultAddressParams![item.toponymProp];
+
+        //const objectValue = getByPath(this.object!, item.toponymProp);
+
+        console.log('filterValues, objectValue', filterValues, objectValue);
+        if (!filterValues.length) {
+          return true;
+        } else if (filterValues[0] !== objectValue) {
+          return true;
+        }
       }
-    }
-     return false;
+    return false;
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
@@ -92,7 +99,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
       .checkToponymName(
         this.data().toponymType!,
         this.mainForm.controls[this.data().checkingName].value!,
-        this.data().object ? (this.data().object!['id'] as number) : null,
+        this.data().object ? this.data().object!['id'] : null,
         this.addressFilter()
         //this.data().operation
       )
@@ -112,7 +119,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
             this.saveToponym(action);
           }
         },
-        error: (err) => this.errorHandling(err),
+       error: (err) => this.errorService.handle(err)
       });
   }
 
@@ -120,7 +127,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
     this.addressService
       .saveToponym(
         this.data().toponymType!,
-        this.data().object ? (this.data().object!['id'] as number) : null,
+        this.data().object ? this.data().object!['id'] : null,
         this.mainForm.value as ToponymFormControlsNames,
         this.addressFilter(),
         this.data().operation!
@@ -129,21 +136,23 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
         next: (res) => {
           if (action == 'saveAndExit') {
             //this.dialogRef.close({ name: res.data });
-            this.closeDialogDataSignal.set(res.data.name);
-            this.emittedCloseDialogData.emit(res.data.name);
+            this.closeDialogDataSignal.set(res.data.toponym.name);
+            this.emittedCloseDialogData.emit(res.data.toponym.name);
           } else {
             //console.log('this.data().object', this.data().object);
-            this.data().object = res.data;
-            //console.log('this.data().object', this.data().object);
-            this.changeToViewMode(null);
+            this.data().object = res.data.toponym;
+            this.data().defaultAddressParams = res.data.defaultAddressParams
+            console.log('this.data().object', this.data().object);
+            this.changeToViewMode(this.data().defaultAddressParams!);
+            this.setInitialValues('view');
             this.messageService.add({
               severity: 'success',
               summary: 'Подтверждение',
-              detail: `Топоним '${res.data.name}' успешно обновлен!`,
+              detail: `Топоним '${res.data.toponym.name}' успешно обновлен!`,
             });
           }
         },
-        error: (err) => this.errorHandling(err),
+       error: (err) => this.errorService.handle(err)
       });
   }
 }

@@ -153,9 +153,9 @@ router.post("/create-user", async (req, res) => {
       (creatingUser.dateOfRestriction ? (' ' + cloneDate(creatingUser.dateOfRestriction)) : '') +
       (creatingUser.causeOfRestriction ? (' ' + creatingUser.causeOfRestriction) : '') +
       ' ' + cloneDate(createdUser.dataValues.dateOfStart);
-
-    for (let key in creatingUser.orderedContacts) {
-      for (let contact of creatingUser.orderedContacts[key]) {
+//TODO: error if contacts empty
+    for (let key in creatingUser.draftContacts) {
+      for (let contact of creatingUser.draftContacts[key]) {
         if (contact) {
           newContact = await UserContact.create({ type: key, content: contact });
           await newContact.setUser(createdUser);
@@ -168,8 +168,8 @@ router.post("/create-user", async (req, res) => {
         let region = creatingUser.addresses.region;
         let district = creatingUser.addresses.district;
         let locality = creatingUser.addresses.locality; */
-    for (let address of creatingUser.draftAddresses) {
-      /*       if (address.country) {
+     /*  for (let address of creatingUser.draftAddress) {
+          if (address.country) {
               console.log("address.country");
               console.log(address.country);
 
@@ -202,13 +202,14 @@ router.post("/create-user", async (req, res) => {
                 raw: true
               });
             } */
-      if (address.country || address.region || address.district || address.locality) {
+      const address = creatingUser.draftAddress;
+      if (address.countryId || address.regionId || address.districtId || address.localityId) {
         newAddress
           = await UserAddress.create({
-            countryId: address.country,
-            regionId: address.region,
-            districtId: address.district,
-            localityId: address.locality
+            countryId: address.countryId,
+            regionId: address.regionId,
+            districtId: address.districtId,
+            localityId: address.localityId
           });
         await newAddress.setUser(createdUser);
         let countryName, regionName, districtName, localityName = '';
@@ -231,7 +232,7 @@ router.post("/create-user", async (req, res) => {
         searchString =
           searchString + countryName + regionName + districtName + localityName;
       }
-    }
+ //   }
     newSearchString = await SearchUser.create({ content: searchString.trim() });
     console.log("newSearchString");
     console.log(newSearchString);
@@ -376,7 +377,7 @@ router.post("/get-users", async (req, res) => {
     }
 
     //roles
-    if (roles && roles.length > 0) {
+    if (roles.length > 0) {
       whereParams.roleId = { [Op.in]: roles };
     }
 
@@ -396,7 +397,7 @@ router.post("/get-users", async (req, res) => {
     }
 
     //contactTypes: contactTypes:(10) ['email', 'phoneNumber', 'telegramId', 'telegramPhoneNumber', 'telegramNickname', 'whatsApp', 'vKontakte', 'instagram', 'facebook', 'otherContact']
-    if (contactTypes && contactTypes.length > 0) {
+    if (contactTypes.length > 0) {
       let listOfTypes = `(`;
       for (let item of contactTypes) {
         listOfTypes = listOfTypes + `'` + item.type + `', `;
@@ -424,7 +425,7 @@ router.post("/get-users", async (req, res) => {
       contactRequiredParam = true;
     }
 
-    if (addresses.countries && addresses.countries.length > 0) {
+    if (addresses.countries.length > 0) {
       addressRequiredParam = true;
 
       const findParent = async (id, Toponym, parentIdName, parentType) => {

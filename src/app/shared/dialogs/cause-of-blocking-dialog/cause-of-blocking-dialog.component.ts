@@ -8,12 +8,18 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { FormControl, FormsModule, Validators, ReactiveFormsModule} from '@angular/forms';
+import {
+  FormControl,
+  FormsModule,
+  Validators,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { UserService } from '../../../services/user.service';
 import { MessageService } from 'primeng/api';
+import { ErrorService } from '../../../services/error.service';
 
 @Component({
   selector: 'app-cause-of-blocking-dialog',
@@ -25,7 +31,7 @@ import { MessageService } from 'primeng/api';
     MatInputModule,
     MatButtonModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
   ],
   providers: [MessageService],
   templateUrl: './cause-of-blocking-dialog.component.html',
@@ -36,6 +42,7 @@ export class CauseOfBlockingDialogComponent {
   readonly data = inject<{ userId: number; userName: string }>(MAT_DIALOG_DATA);
   private messageService = inject(MessageService);
   private userService = inject(UserService);
+  errorService = inject(ErrorService);
 
   //causeOfBlocking = '';
   causeOfBlocking = new FormControl<string>('', [Validators.required]);
@@ -45,25 +52,13 @@ export class CauseOfBlockingDialogComponent {
       .blockUser(this.data.userId, this.causeOfBlocking.value!)
       .subscribe({
         next: (res) => {
-          this.dialogRef.close({success: res.data});
+          this.dialogRef.close({ success: res.data });
         },
-        error: (err) => {
-          console.log(err);
-          let errorMessage =
-            typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: errorMessage,
-            sticky: true,
-          });
-        },
+        error: (err) => this.errorService.handle(err),
       });
   }
 
   onCancelClick(): void {
-    this.dialogRef.close({success: false});
+    this.dialogRef.close({ success: false });
   }
 }

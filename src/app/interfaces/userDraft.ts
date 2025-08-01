@@ -6,7 +6,7 @@ export interface UserDraft {
   patronymic: string | null;
   lastName: string;
   roleId: number;
-  role: { name: string };
+  //role: { name: string };
 
   draftAddress: {
     countryId: number | null;

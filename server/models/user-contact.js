@@ -43,7 +43,7 @@ const UserContact = sequelize.define('user-contact', {
             }
             break;
           case "telegramId":
-            RegularExpression = /^(\#+([0-9]){9,10})$/;
+            RegularExpression = /^(\#+([0-9]){8,10})$/;
             break;
           case "telegramNickname":
             RegularExpression = /^@[A-Za-z0-9_]{5,32}$/;
@@ -56,13 +56,13 @@ const UserContact = sequelize.define('user-contact', {
             }
             break;
           case "vKontakte":
-            RegularExpression = /^https:\/\/vk.com\/([A-Za-z0-9](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}(?:[A-Za-z0-9]))?)$/;
+            RegularExpression = /^([A-Za-z0-9](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}(?:[A-Za-z0-9]))?)$/;
             break;
           case "instagram":
-            RegularExpression = /^https:\/\/www.instagram.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)$/;
+            RegularExpression = /^([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)$/;
             break;
           case "facebook":
-            RegularExpression = /^https:\/\/www.facebook.com\/[A-Za-z0-9_\.]{5,}$/;
+            RegularExpression = /^[A-Za-z0-9_\.]{5,}$/;
             break;
           default:
             if (this.type != "otherContact") {

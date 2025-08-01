@@ -37,6 +37,8 @@ import { BlurOnClickDirective } from '../directives/blur-on-click.directive';
 //import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
+import { GeneralFilter } from '../../interfaces/filter';
+import { typedKeys } from '../../interfaces/types';
 
 @Component({
   selector: 'app-base-list',
@@ -83,11 +85,10 @@ export class BaseListComponent {
     }[]
   >();
 
-  componentType='user';
+  componentType = 'user';
 
   selectedColumns = output<string[]>();
   onAddUserWasClicked = output<void>();
-
 
   settingsBadgeValue: number = 0;
   filterBadgeValue: number = 0;
@@ -118,21 +119,19 @@ export class BaseListComponent {
   searchValue = signal<string>('');
   inputValue = '';
 
-  filterValue = signal<{
-    [key: string]: string[] | Date[] | null | { [key: string]: string }[];
-  }>({
-    roles: null,
-    comment: null,
-    contactTypes: null,
-    dateBeginningRange: null,
-    dateRestrictionRange: null,
+  filterValue = signal<GeneralFilter>({
+    roles: [],
+    comment: [],
+    contactTypes: [],
+    dateBeginningRange: [],
+    dateRestrictionRange: [],
   });
 
   addressFilterValue = signal<AddressFilter>({
-    countries: null,
-    regions: null,
-    districts: null,
-    localities: null,
+    countries: [],
+    regions: [],
+    districts: [],
+    localities: [],
   });
 
   addressStringValue = signal<string>('');
@@ -161,15 +160,7 @@ export class BaseListComponent {
     searchValue: string;
     notOnlyActual: boolean;
     exactMatch: boolean;
-    filter: {
-      [key: string]:
-        | string[]
-        | Date[]
-        | {
-            [key: string]: string;
-          }[]
-        | null;
-    };
+    filter: GeneralFilter;
     addressFilter: AddressFilter;
     strongAddressFilter: boolean;
     strongContactFilter: boolean;
@@ -188,39 +179,32 @@ export class BaseListComponent {
       (this.allFilterParameters().searchValue
         ? this.allFilterParameters().searchValue + ', '
         : '');
-    let filterData = this.allFilterParameters().filter;
-    for (let key of this.objectKeys(filterData)) {
-      if (filterData[key] && filterData[key]!.length > 0) {
-        if (key == 'dateBeginningRange') {
-          filterString =
-            filterString +
-            'нач.: ' +
-            this.transformDate(filterData[key]![0] as Date) +
+    let filterData: GeneralFilter = this.allFilterParameters().filter;
+
+    for (let key of typedKeys(filterData)) {
+      const value = filterData[key];
+      if (value.length > 0) {
+        if (key === 'dateBeginningRange' || key === 'dateRestrictionRange') {
+          const label = key === 'dateBeginningRange' ? 'нач.' : 'блок.';
+          filterString +=
+            label +
+            ': ' +
+            this.transformDate((value as Date[])[0]) +
             '-' +
-            this.transformDate(filterData[key]![1] as Date) +
-            ', ';
-        } else if (key == 'dateRestrictionRange') {
-          filterString =
-            filterString +
-            'блок.: ' +
-            this.transformDate(filterData[key]![0] as Date) +
-            '-' +
-            this.transformDate(filterData[key]![1] as Date) +
+            this.transformDate((value as Date[])[1]) +
             ', ';
         } else {
-          for (let item of filterData[key]!) {
-            if (key == 'contactTypes') {
-              //console.log('item');
-              //console.log(item);
-              let contactType = item as {
-                [key: string]: string;
-              };
-              filterString = filterString + contactType['label'] + ', ';
-            } else filterString = filterString + item + ', ';
+          for (let item of value) {
+            if (key === 'contactTypes') {
+              filterString += (item as { label: string }).label + ', ';
+            } else {
+              filterString += item + ', ';
+            }
           }
         }
       }
     }
+
     filterString = filterString.slice(0, -2);
 
     let result = this.addressStringValue()
@@ -256,36 +240,13 @@ export class BaseListComponent {
   ngOnInit() {
     ////console.log(navigation);
   }
-  objectKeys(obj: any): string[] {
-    return Object.keys(obj);
-  }
 
   changeColumnsView(selectedColumns: string[]) {
     this.selectedColumns.emit([...selectedColumns]);
   }
 
   onAddUserClick() {
-
     this.onAddUserWasClicked.emit();
-/*     const dialogRef = this.dialog.open(CreateUserDialogComponent, {
-      disableClose: true,
-      minWidth: '800px',
-      height: '80%',
-      autoFocus: 'dialog',
-      restoreFocus: true,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      ////console.log('The dialog was closed');
-      if (result.userName) {
-        this.getUsers();
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Аккаунт пользователя ${result.userName} успешно создан!`,
-        });
-      }
-    }); */
   }
 
   changeSettingsBadge(settingsBadgeValue: number) {
@@ -342,7 +303,7 @@ export class BaseListComponent {
     //this.usersListComponent.getUsers(this.allFilterParameters());
   }
 
-  transformDate(date: Date | string): string | null {
+  transformDate(date: Date): string | null {
     return new DatePipe('ru').transform(date, 'dd.MM.yyyy');
   }
 }

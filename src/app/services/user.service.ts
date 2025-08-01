@@ -5,6 +5,7 @@ import { OutdatedData, User } from '../interfaces/user';
 import { environment } from '../../environments/environment';
 import { AddressFilter } from '../interfaces/address-filter';
 import { UserDraft } from '../interfaces/userDraft';
+import { GeneralFilter } from '../interfaces/filter';
 
 @Injectable({
   providedIn: 'root',
@@ -43,9 +44,7 @@ export class UserService {
         active: string;
         direction: 'asc' | 'desc' | '';
       };
-      filter: {
-        [key: string]: string[] | Date[] | null | { [key: string]: string }[];
-      };
+      filter: GeneralFilter;
       addressFilter: AddressFilter;
       strongAddressFilter: boolean;
       strongContactFilter: boolean;
@@ -195,6 +194,7 @@ export class UserService {
       }
 
       delete user.addresses;
+
     } else {
       user.address =
         {
@@ -205,6 +205,7 @@ export class UserService {
           id: null
         };
     }
+
     if (user.outdatedNames && user.outdatedNames?.length > 0) {
       outdatedData.names = user.outdatedNames.map((name) => ({
         firstName: name.firstName,

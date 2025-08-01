@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps } from '../../../interfaces/dialog-props';
-import { GeographyLevels } from '../../../interfaces/types';
+import { ToponymType } from '../../../interfaces/types';
 import { Validators } from '@angular/forms';
 
 @Component({
@@ -11,7 +11,7 @@ import { Validators } from '@angular/forms';
   styleUrl: './countries-list.component.css',
 })
 export class CountriesListComponent {
-  type: GeographyLevels = 'country';
+  type: ToponymType = 'country';
   props: ToponymProps = {
     title: 'Страны',
     displayedColumns: ['name', 'actions'],

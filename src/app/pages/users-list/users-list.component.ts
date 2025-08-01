@@ -1,11 +1,14 @@
 import {
   Component,
+  Inject,
+  Injector,
   ViewChild,
   computed,
   effect,
   inject,
   input,
   signal,
+  runInInjectionContext
 } from '@angular/core';
 import {
   MatPaginator,
@@ -32,6 +35,8 @@ import { DialogData } from '../../interfaces/dialog-props';
 import * as Validator from '../../shared/custom.validator';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { GeneralFilter } from '../../interfaces/filter';
+import { ErrorService } from '../../services/error.service';
 
 @Component({
   selector: 'app-users-list',
@@ -58,6 +63,7 @@ export class UsersListComponent {
   private userService = inject(UserService);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
+  errorService = inject(ErrorService);
   readonly dialog = inject(MatDialog);
 
   users!: User[];
@@ -179,15 +185,7 @@ export class UsersListComponent {
     searchValue: string;
     notOnlyActual: boolean;
     exactMatch: boolean;
-    filter: {
-      [key: string]:
-        | string[]
-        | Date[]
-        | {
-            [key: string]: string;
-          }[]
-        | null;
-    };
+    filter: GeneralFilter;
     addressFilter: AddressFilter;
     strongAddressFilter: boolean;
     strongContactFilter: boolean;
@@ -197,17 +195,17 @@ export class UsersListComponent {
     notOnlyActual: false,
     exactMatch: false,
     filter: {
-      roles: null,
-      comment: null,
-      contactTypes: null,
-      dateBeginningRange: null,
-      dateRestrictionRange: null,
+      roles: [],
+      comment: [],
+      contactTypes: [],
+      dateBeginningRange: [],
+      dateRestrictionRange: [],
     },
     addressFilter: {
-      countries: null,
-      regions: null,
-      districts: null,
-      localities: null,
+      countries: [],
+      regions: [],
+      districts: [],
+      localities: [],
     },
     strongAddressFilter: false,
     strongContactFilter: false,
@@ -221,9 +219,11 @@ export class UsersListComponent {
   });
 
   allFilterParameters = computed(() => {
-    return Object.assign(this.filterParameters(), {
-      sortParameters: this.sortParameters(),
-    });
+    console.log('this.allFilterParameters() recomputed');
+    return {
+      ...this.filterParameters(),
+      sortParameters: { ...this.sortParameters() }, // важно делать копию
+    };
   });
 
   dialogConfig = {
@@ -510,24 +510,6 @@ export class UsersListComponent {
       },
     ],
     checkingName: 'userName',
-    addressFilterControls: [
-      {
-        addressFilterProp: 'countries',
-        toponymProp: 'district.region.country.id',
-      },
-      {
-        addressFilterProp: 'regions',
-        toponymProp: 'district.region.id',
-      },
-      {
-        addressFilterProp: 'districts',
-        toponymProp: 'district.id',
-      },
-      {
-        addressFilterProp: 'localities',
-        toponymProp: 'locality.id',
-      },
-    ],
 
     addressFilterParams: {
       source: 'userCard',
@@ -545,12 +527,8 @@ export class UsersListComponent {
     componentType: 'user',
   };
 
-  constructor() {
-    effect(() => {
-      //console.log('allFilterParameters changed:', this.allFilterParameters());
-      this.getUsers(); // Automatically invoked whenever allFilterParameters changes
-    });
 
+  constructor(@Inject(Injector) private injector: Injector) {
     const iconRegistry = inject(MatIconRegistry);
     const sanitizer = inject(DomSanitizer);
     for (let item of this.contactTypes) {
@@ -561,10 +539,24 @@ export class UsersListComponent {
     }
   }
 
+  ngOnInit(): void {
+    runInInjectionContext(this.injector, () => {
+      effect(() => {
+     //   console.log('allFilterParameters changed:', this.allFilterParameters());
+        // Прочитав signal, мы на него подписываемся
+        this.allFilterParameters();
+        this.getUsers();
+      });
+    });
+  }
+
+
   sortData(sort: Sort) {
-    // //console.log('sort');
-    ////console.log(sort);
+    console.log('sort');
+    console.log(sort);
     this.sortParameters.set(sort);
+    console.log(' this.sortParameters');
+    console.log( this.sortParameters());
     //this.getUsers();
   }
 
@@ -592,10 +584,11 @@ export class UsersListComponent {
   }
 
   onAddUserClick() {
+    this.dialogProps.object = null;
     this.dialogProps.addressFilterParams.readonly = false;
     this.dialogProps.addressFilterParams.class = 'none';
     const dialogData: DialogData<User> = {
-      ...this.dialogProps as DialogData<User>,
+      ...this.dialogProps,
       operation: 'create',
       controlsDisable: false,
       defaultAddressParams: {
@@ -648,7 +641,7 @@ export class UsersListComponent {
         //console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
 
         const dialogData: DialogData<User> = {
-          ...this.dialogProps as DialogData<User>,
+          ...this.dialogProps,
           operation: 'view-edit',
           controlsDisable: true,
           defaultAddressParams: {
@@ -674,7 +667,7 @@ export class UsersListComponent {
           }
         });
       },
-      error: (err) => this.errorHandling(err),
+     error: (err) => this.errorService.handle(err)
     });
   }
 
@@ -738,7 +731,7 @@ export class UsersListComponent {
         });
         this.getUsers();
       },
-      error: (err) => this.errorHandling(err),
+     error: (err) => this.errorService.handle(err)
     });
   }
 
@@ -780,7 +773,7 @@ export class UsersListComponent {
           });
         }
       },
-      error: (err) => this.errorHandling(err),
+     error: (err) => this.errorService.handle(err)
     });
   }
 
@@ -795,13 +788,13 @@ export class UsersListComponent {
         });
         this.getUsers();
       },
-      error: (err) => this.errorHandling(err),
+     error: (err) => this.errorService.handle(err)
     });
   }
 
   getUsers() {
-    //console.log('this.allFilterParameters()');
-    //console.log(this.allFilterParameters());
+  /*   console.log('this.allFilterParameters()');
+    console.log(this.allFilterParameters()); */
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),
@@ -816,7 +809,7 @@ export class UsersListComponent {
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;
         },
-        error: (err) => this.errorHandling(err),
+       error: (err) => this.errorService.handle(err)
       });
   }
 
@@ -857,15 +850,5 @@ export class UsersListComponent {
     return result;
   }
 
-  errorHandling(err: any) {
-    console.log(err);
-    let errorMessage =
-      typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Ошибка',
-      detail: errorMessage,
-      sticky: true,
-    });
-  }
+
 }

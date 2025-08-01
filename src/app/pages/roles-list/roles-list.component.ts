@@ -17,6 +17,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RoleService } from '../../services/role.service';
+import { ErrorService } from '../../services/error.service';
 
 @Component({
   selector: 'app-roles-list',
@@ -49,6 +50,7 @@ export class RolesListComponent {
   private messageService = inject(MessageService);
   private roleService = inject(RoleService);
   private confirmationService = inject(ConfirmationService);
+  errorService = inject(ErrorService);
 
   ngOnInit() {
     this.getRoles();
@@ -77,19 +79,7 @@ export class RolesListComponent {
     if (this.roles[index]['name'] && this.roles[index]['description']) {
       this.roleService.updateRole(this.roles[index]).subscribe({
         next: (res) => {},
-        error: (err) => {
-          console.log(err);
-          let errorMessage =
-            typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: errorMessage,
-            sticky: true,
-          });
-        },
+        error: (err) => this.errorService.handle(err),
       });
     }
   }
@@ -108,17 +98,7 @@ export class RolesListComponent {
           this.getRoles();
         }
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -138,7 +118,10 @@ export class RolesListComponent {
         outlined: true,
       },
       accept: () => {
-        this.checkPossibilityToDeleteRole(this.roles[index].id, this.roles[index].name);
+        this.checkPossibilityToDeleteRole(
+          this.roles[index].id,
+          this.roles[index].name
+        );
       },
       reject: () => {},
     });
@@ -158,17 +141,9 @@ export class RolesListComponent {
           });
         }
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+
+      //TODO: error hand
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -183,22 +158,9 @@ export class RolesListComponent {
         });
         this.getRoles();
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorService.handle(err),
     });
-
-
   }
-
 
   getRoles() {
     this.roleService.getRoles().subscribe({
@@ -210,17 +172,7 @@ export class RolesListComponent {
         //console.log("this.operations");
         //console.log(this.operations); */
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorService.handle(err),
     });
   }
 }

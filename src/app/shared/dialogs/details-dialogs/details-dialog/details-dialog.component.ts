@@ -124,7 +124,7 @@ export class DetailsDialogComponent<T extends BaseModel>
   onViewClick() {
     this.getChildInstance()?.onViewClick();
   }
-
+//TODO: не успевает проверять, если изменить поле и нажать кросс надо проверять дерти
   onCancelClick(event: Event) {
     if (
       (this.data.operation === 'view-edit' && !this.isEditMode()) ||

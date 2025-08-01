@@ -10,7 +10,7 @@
         <mat-select  formControlName="country" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onCountrySelectionChange', 'Country')">
           @if (!params().multiple) {<mat-option></mat-option>}
-          @for (country of toponyms.countriesList; track $index ) {
+          @for (country of toponymsList.countriesList; track $index ) {
           <mat-option [value]="country.id">{{country.name}}</mat-option>
           }
         </mat-select>
@@ -25,7 +25,7 @@
         <mat-select  formControlName="region" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onRegionSelectionChange', 'Region')">
           @if (!params().multiple) {<mat-option></mat-option>}
-          @for (region of toponyms.regionsList; track $index) {
+          @for (region of toponymsList.regionsList; track $index) {
           <mat-option [value]="region.id">{{region.name}}</mat-option>
           }
         </mat-select>
@@ -40,7 +40,7 @@
         <mat-select  formControlName="district" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onDistrictSelectionChange', 'District')">
           @if (!params().multiple) {<mat-option></mat-option>}
-          @for (district of toponyms.districtsList; track $index) {
+          @for (district of toponymsList.districtsList; track $index) {
           <mat-option [value]="district.id">{{district.name}}</mat-option>
           }
         </mat-select>
@@ -55,7 +55,7 @@
         <mat-select  formControlName="locality" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onLocalitySelectionChange', 'Locality')">
           @if (!params().multiple) {<mat-option></mat-option>}
-          @for (locality of toponyms.localitiesList; track $index) {
+          @for (locality of toponymsList.localitiesList; track $index) {
           <mat-option [value]="locality.id">{{locality.name}}</mat-option>
           }
         </mat-select>

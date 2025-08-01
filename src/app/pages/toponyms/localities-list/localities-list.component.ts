@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps } from '../../../interfaces/dialog-props';
 import { ActivatedRoute } from '@angular/router';
-import { GeographyLevels } from '../../../interfaces/types';
+import { ToponymType } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
 import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 
@@ -14,7 +14,7 @@ import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 })
 export class LocalitiesListComponent {
   private route = inject(ActivatedRoute);
-  type: GeographyLevels = 'locality';
+  type: ToponymType = 'locality';
   props: ToponymProps = {
     title: 'Населенные пункты',
     displayedColumns: [
@@ -89,15 +89,15 @@ export class LocalitiesListComponent {
       addressFilterControls: [
         {
           addressFilterProp: 'countries',
-          toponymProp: 'district.region.country.id',
+          toponymProp: 'countryId',
         },
         {
           addressFilterProp: 'regions',
-          toponymProp: 'district.region.id',
+          toponymProp: 'regionId',
         },
         {
           addressFilterProp: 'districts',
-          toponymProp: 'district.id',
+          toponymProp: 'districtId',
         },
       ],
       addressFilterParams: {

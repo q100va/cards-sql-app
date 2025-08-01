@@ -1,11 +1,12 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { DefaultAddressParams } from './default-address-params';
 import { AddressFilterParams } from './address-filter-params';
-import { GeographyLevels } from './types';
+import { AddressKey, ToponymType } from './types';
 import { User } from './user';
 import { Toponym } from './toponym';
 import { BaseModel } from './base-model';
 import { DetailsComponentType } from '../shared/dialogs/details-dialogs/details-dialog/details-component-registry';
+import { AddressFilter } from './address-filter';
 
 export interface ToponymProps {
   title: string;
@@ -50,10 +51,7 @@ export interface DialogData<T extends BaseModel> {
   viewTitle: string;
   controls: Control[];
   checkingName: string;
-  addressFilterControls?: {
-    addressFilterProp: string;
-    toponymProp: string;
-  }[];
+  addressFilterControls?: AddressFilterControl<AddressKey>[];
   addressFilterParams: AddressFilterParams;
 
   operation?: 'create' | 'view-edit';
@@ -65,7 +63,7 @@ export interface DialogData<T extends BaseModel> {
   }; */
   object: T | null;
 
-  toponymType?: GeographyLevels;
+  toponymType?: ToponymType;
 }
 
 export interface Control {
@@ -90,6 +88,14 @@ export interface Control {
   formType: string;
   colspan?: number;
   rowspan?: number;
+}
+
+
+interface AddressFilterControl<
+  AFKey extends AddressKey
+> {
+  addressFilterProp: AFKey;
+  toponymProp: string;
 }
 
 

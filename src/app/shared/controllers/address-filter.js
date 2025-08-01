@@ -12,18 +12,7 @@ export class getListOfRegions {
               this.form.get('region')?.disable();
             }
           },
-          error: (err) => {
-            console.log(err);
-            let errorMessage = typeof err.error === 'string'
-              ? err.error
-              : 'Ошибка: ' + err.message;
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Ошибка',
-              detail: errorMessage,
-              sticky: true,
-            });
-          },
+          error: (err) => this.errorService.handle(err)
         });
     } else {
       this.form.get('region')?.disable();

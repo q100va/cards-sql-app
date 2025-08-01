@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps } from '../../../interfaces/dialog-props';
 import { ActivatedRoute } from '@angular/router';
-import { GeographyLevels } from '../../../interfaces/types';
+import { ToponymType } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
 import { Validators } from '@angular/forms';
 
@@ -14,7 +14,7 @@ import { Validators } from '@angular/forms';
 })
 export class RegionsListComponent {
   private route = inject(ActivatedRoute);
-  type: GeographyLevels = 'region';
+  type: ToponymType = 'region';
   props: ToponymProps = {
     title: 'Регионы',
     displayedColumns: ['name', 'shortName', 'country', 'actions'],

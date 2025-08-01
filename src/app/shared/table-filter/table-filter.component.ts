@@ -24,27 +24,18 @@ import { AddressService } from '../../services/address.service';
 import { MessageService } from 'primeng/api';
 
 import { OnInit, computed, signal } from '@angular/core';
-import {
-  DateAdapter,
-  MAT_DATE_LOCALE,
-  MatOptionSelectionChange,
-} from '@angular/material/core';
-import {
-  MatDatepickerIntl,
-  MatDatepickerModule,
-} from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import 'moment/locale/ru';
-import { Event } from '@angular/router';
-import {
-  MatCheckboxChange,
-  MatCheckboxModule,
-} from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { RoleService } from '../../services/role.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
 import { AddressFilterParams } from '../../interfaces/address-filter-params';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
+import { GeneralFilter } from '../../interfaces/filter';
+import { typedKeys } from '../../interfaces/types';
+import { ErrorService } from '../../services/error.service';
 
 @Component({
   selector: 'app-table-filter',
@@ -65,10 +56,11 @@ import { AddressFilter } from '../../interfaces/address-filter';
   styleUrl: './table-filter.component.css',
 })
 export class TableFilterComponent implements OnInit {
-  private addressService = inject(AddressService);
   private roleService = inject(RoleService);
   private messageService = inject(MessageService);
   private injector = inject(Injector);
+  errorService = inject(ErrorService);
+
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
 
@@ -82,23 +74,21 @@ export class TableFilterComponent implements OnInit {
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
-    class: "none",
+    class: 'none',
   };
 
   goToFirstPage = output<void>();
   addressString = signal<string>('');
   addressFilter = signal<AddressFilter>({
-    countries: null,
-    regions: null,
-    districts: null,
-    localities: null,
+    countries: [],
+    regions: [],
+    districts: [],
+    localities: [],
   });
   addressFilterBadgeValue = signal<number>(0);
 
   filterBadgeValue = output<number>();
-  filterValue = output<{
-    [key: string]: string[] | Date[] | null | { [key: string]: string }[];
-  }>();
+  filterValue = output<GeneralFilter>();
   addressStringValue = output<string>();
   addressFilterValue = output<AddressFilter>();
   notActualOption = model.required<boolean>();
@@ -107,6 +97,10 @@ export class TableFilterComponent implements OnInit {
   rolesList!: { id: number; name: string }[];
 
   defaultAddressParams = input.required<DefaultAddressParams>();
+
+  //TODO: make strongAddressFilter and strongContactFilter disable if nothing selected (?? or selected only one)
+
+  //TODO: check clear filter because address region still enabled and bageCount wrong because of address
 
   private strongAddressFilterControl = effect(
     () => {
@@ -121,9 +115,9 @@ export class TableFilterComponent implements OnInit {
   );
 
   form = new FormGroup<Record<string, AbstractControl | FormGroup>>({
-    roles: new FormControl(null),
-    comment: new FormControl(null),
-    contactTypes: new FormControl(null),
+    roles: new FormControl([]),
+    comment: new FormControl([]),
+    contactTypes: new FormControl([]),
     startBeginningDate: new FormControl(null),
     endBeginningDate: new FormControl(null),
     startRestrictionDate: new FormControl(null),
@@ -176,7 +170,7 @@ export class TableFilterComponent implements OnInit {
   ];
 
   ngOnInit() {
-/*     console.log(
+    /*     console.log(
       'defaultAddressParams in table-filter',
       this.defaultAddressParams()
     ); */
@@ -187,17 +181,7 @@ export class TableFilterComponent implements OnInit {
         // //console.log(res);
         this.rolesList = res.data.roles;
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+error: (err) => this.errorService.handle(err)
     });
   }
 
@@ -215,104 +199,53 @@ export class TableFilterComponent implements OnInit {
   }
   emitSelectedFilters() {
     let count = 0;
-    let filter: { [key: string]: string[] | Date[] | null } = {};
-    /*     let addressFilter: {
-      [key: string]: { [key: string]: string | number }[] | null | [];
-    } = {};
- */
-    for (let filterItem of ['roles', 'comment', 'contactTypes']) {
-      filter[filterItem] = this.form.controls[filterItem].value;
-      if (
-        this.form.controls[filterItem].value !== null &&
-        this.form.controls[filterItem].value.length > 0
-      ) {
-        count = count + 1;
-      }
-    }
 
-    //if only start or end
-    if (
-      this.form.controls['startBeginningDate'].value &&
-      !this.form.controls['endBeginningDate'].value
-    ) {
-      filter['dateBeginningRange'] = [
-        this.form.controls['startBeginningDate'].value.toDate(),
-        new Date(),
-      ];
-      count = count + 1;
-    }
+    const getRange = (
+      startKey: string,
+      endKey: string,
+      fallbackStart?: Date,
+      fallbackEnd?: Date
+    ): Date[] => {
+      const start = this.form.controls[startKey].value;
+      const end = this.form.controls[endKey].value;
 
-    if (
-      !this.form.controls['startBeginningDate'].value &&
-      this.form.controls['endBeginningDate'].value
-    ) {
-      filter['dateBeginningRange'] = [
+      if (start && end) return [start.toDate(), end.toDate()];
+      if (start && !end) return [start.toDate(), fallbackEnd ?? new Date()];
+      if (!start && end)
+        return [fallbackStart ?? new Date('2014-10-01'), end.toDate()];
+      return [];
+    };
+
+    let filter: GeneralFilter = {
+      roles: [],
+      comment: [],
+      contactTypes: [],
+      dateBeginningRange: getRange(
+        'startBeginningDate',
+        'endBeginningDate',
         new Date('2014-10-01'),
-        this.form.controls['endBeginningDate'].value.toDate(),
-      ];
-      count = count + 1;
+        new Date()
+      ),
+      dateRestrictionRange: getRange(
+        'startRestrictionDate',
+        'endRestrictionDate'
+      ),
+    };
+
+    for (const key of typedKeys(filter)) {
+      if (key === 'dateBeginningRange' || key === 'dateRestrictionRange') {
+        if (filter[key]) count++;
+        continue;
+      }
+
+      const value = this.form.controls[key].value;
+      filter[key] = value;
+      if (value.length > 0) count++;
     }
 
-    if (
-      this.form.controls['startBeginningDate'].value &&
-      this.form.controls['endBeginningDate'].value
-    ) {
-      ////console.log('dateBeginningRange');
-      ////console.log(this.form.controls['startBeginningDate'].value);
-      ////console.log(this.form.controls['endBeginningDate'].value);
-      count = count + 1;
-      filter['dateBeginningRange'] = [
-        this.form.controls['startBeginningDate'].value.toDate(),
-        this.form.controls['endBeginningDate'].value.toDate(),
-      ];
-    }
-    if (
-      !this.form.controls['startBeginningDate'].value &&
-      !this.form.controls['endBeginningDate'].value
-    ) {
-      filter['dateBeginningRange'] = null;
-    }
+    count += this.addressFilterBadgeValue();
 
-    if (
-      this.form.controls['startRestrictionDate'].value &&
-      this.form.controls['endRestrictionDate'].value
-    ) {
-      ////console.log('dateRestrictionRange');
-      ////console.log(this.form.controls['startRestrictionDate'].value);
-      ////console.log(this.form.controls['endRestrictionDate'].value);
-      count = count + 1;
-      filter['dateRestrictionRange'] = [
-        this.form.controls['startRestrictionDate'].value.toDate(),
-        this.form.controls['endRestrictionDate'].value.toDate(),
-      ];
-    }
-    if (
-      !this.form.controls['startRestrictionDate'].value &&
-      !this.form.controls['endRestrictionDate'].value
-    ) {
-      filter['dateRestrictionRange'] = null;
-    }
-
-    /*     for (let filterItem of [
-      'countries',
-      'regions',
-      'districts',
-      'localities',
-    ]) {
-      addressFilter[filterItem] = this.form.controls[filterItem].value;
-    }
-    if (
-      this.form.controls['countries'].value !== null &&
-      this.form.controls['countries'].value.length > 0
-    ) {
-      count = count + 1;
-    } */
-    count = count + this.addressFilterBadgeValue();
-    ////console.log('filter');
-    ////console.log(filter);
-    /*     //console.log('addressFilter');
-    //console.log(addressFilter);
- */
+    // Emit all results
     this.goToFirstPage.emit();
     this.filterBadgeValue.emit(count);
     this.filterValue.emit(filter);
@@ -327,23 +260,35 @@ export class TableFilterComponent implements OnInit {
   }
 
   clearForm() {
-    let filter: {
-      [key: string]: string[] | Date[] | null | { [key: string]: string }[];
-    } = {};
-    let addressFilter: AddressFilter = {
-      countries: null,
-      regions: null,
-      districts: null,
-      localities: null,
+    let filter: GeneralFilter = {
+      roles: [],
+      comment: [],
+      contactTypes: [],
+      dateBeginningRange: [],
+      dateRestrictionRange: [],
     };
-    this.form.reset();
+    let addressFilter: AddressFilter = {
+      countries: [],
+      regions: [],
+      districts: [],
+      localities: [],
+    };
+    this.form.reset({
+      roles: [],
+      comment: [],
+      contactTypes: [],
+      startBeginningDate: null,
+      endBeginningDate: null,
+      startRestrictionDate: null,
+      endRestrictionDate: null,
+      strongAddressFilter: false, //disabled: true }),
+      strongContactFilter: false,
+    });
+    this.form.get('strongAddressFilter')?.disable();
 
-    for (let filterItem of ['roles', 'comment', 'contactTypes', 'dateRange']) {
-      filter[filterItem] = null;
-    }
     this.addressFilterComponent.clearForm();
 
-  /*   for (let filterItem of ['country', 'region', 'district', 'locality']) {
+    /*   for (let filterItem of ['country', 'region', 'district', 'locality']) {
       addressFilter[filterItem] = null;
     } */
 

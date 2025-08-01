@@ -45,7 +45,7 @@ import { UploadFileComponent } from '../../../shared/upload-file/upload-file.com
 //import { ToponymDetailsDialogComponent } from '../dialogs/toponym-details-dialog/toponym-details-dialog.component';
 import { DialogData, ToponymProps } from '../../../interfaces/dialog-props';
 import { AddressFilterParams } from '../../../interfaces/address-filter-params';
-import { GeographyLevels, Ways } from '../../../interfaces/types';
+import { ToponymType, ToponymField, Ways } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
 import { AddressFilter } from '../../../interfaces/address-filter';
 import { Toponym } from '../../../interfaces/toponym';
@@ -53,6 +53,7 @@ import { Toponym } from '../../../interfaces/toponym';
 //import { DialogData } from '../../interfaces/dialog-data';
 import { ToponymDetailsComponent } from '../../../shared/dialogs/details-dialogs/toponym-details/toponym-details.component';
 import { DetailsDialogComponent } from '../../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
+import { ErrorService } from '../../../services/error.service';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -92,16 +93,8 @@ export class ToponymsListComponent {
   private addressService = inject(AddressService);
   private fileService = inject(FileService);
   readonly dialog = inject(MatDialog);
-  dataSource!: MatTableDataSource<{
-    id: number;
-    name: string;
-    shortName?: string;
-    postName?: string;
-    shortPostName?: string;
-    districtId?: number;
-    regionId?: number;
-    countryId?: number;
-  }>;
+  errorService = inject(ErrorService);
+  dataSource!: MatTableDataSource<Toponym>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   length = signal<number>(0);
@@ -110,9 +103,9 @@ export class ToponymsListComponent {
   pageSizeOptions = [5, 10, 25, 50, 100];
   avoidDoubleRequest = false;
 
-  toponyms?: Toponym[];
+  toponyms!: Toponym[];
   toponymProps = input.required<ToponymProps>();
-  type = model.required<GeographyLevels>();
+  type = model.required<ToponymType>();
   params!: AddressFilterParams;
   defaultAddressParams!: DefaultAddressParams;
   exactMatch = signal<boolean>(false);
@@ -127,10 +120,10 @@ export class ToponymsListComponent {
   });
   addressString = signal<string>('');
   addressFilter = signal<AddressFilter>({
-    countries: null,
-    regions: null,
-    districts: null,
-    localities: null,
+    countries: [],
+    regions: [],
+    districts: [],
+    localities: [],
   });
   filterValue = computed(() => {
     return {
@@ -184,29 +177,6 @@ export class ToponymsListComponent {
       toponymType: this.type(),
     };
   });
-
-  nameWays: Ways = {
-    locality: {
-      district: 'district.name',
-      region: 'district.region.name',
-      country: 'district.region.country.name',
-    },
-    district: {
-      district: null,
-      region: 'region.name',
-      country: 'region.country.name',
-    },
-    region: {
-      district: null,
-      region: null,
-      country: 'country.name',
-    },
-    country: {
-      district: null,
-      region: null,
-      country: null,
-    },
-  };
 
   showSpinner = signal<boolean>(false);
 
@@ -263,7 +233,7 @@ export class ToponymsListComponent {
     this.dialogData().addressFilterParams.readonly = false;
     this.dialogData().addressFilterParams.class = 'none';
     const dialogData: DialogData<Toponym> = {
-      ...this.dialogData() as DialogData<Toponym>,
+      ...this.dialogData(),
       operation: 'create',
       controlsDisable: true,
       defaultAddressParams: {
@@ -290,79 +260,36 @@ export class ToponymsListComponent {
     });
   }
 
-  formDefaultAddressParams(toponym: Toponym) {
-    const idWays: Ways = {
-      locality: {
-        locality: 'id',
-        district: 'district.id',
-        region: 'district.region.id',
-        country: 'district.region.country.id',
-      },
-      district: {
-        locality: null,
-        district: 'id',
-        region: 'region.id',
-        country: 'region.country.id',
-      },
-      region: {
-        locality: null,
-        district: null,
-        region: 'id',
-        country: 'country.id',
-      },
-      country: {
-        locality: null,
-        district: null,
-        region: null,
-        country: 'id',
-      },
-    };
-    let result: {
-      countryId: number | null;
-      regionId: number | null;
-      districtId: number | null;
-      localityId: number | null;
-    } = { countryId: null, regionId: null, districtId: null, localityId: null };
-    result.countryId = toponym[idWays[this.type()].country as keyof Toponym] as
-      | number
-      | null;
-    result.regionId = toponym[idWays[this.type()].region as keyof Toponym] as
-      | number
-      | null;
-    result.districtId = toponym[
-      idWays[this.type()].district as keyof Toponym
-    ] as number | null;
-    result.localityId = toponym[
-      idWays[this.type()].locality as keyof Toponym
-    ] as number | null;
-    return result;
-  }
+  onOpenToponymCardClick(id: number) {
+    this.addressService.getToponym(id, this.type()).subscribe({
+      next: (res) => {
+        this.dialogData().addressFilterParams.readonly = true;
+        this.dialogData().addressFilterParams.class = 'view-mode';
+        this.dialogData().object = res.data.toponym;
+        const dialogData: DialogData<Toponym> = {
+          ...this.dialogData(),
+          operation: 'view-edit',
+          controlsDisable: true,
+          defaultAddressParams: res.data.defaultAddressParams,
+          componentType: 'toponym',
+        };
 
-  onOpenToponymCardClick(toponym: Toponym) {
-    this.dialogData().addressFilterParams.readonly = true;
-    this.dialogData().addressFilterParams.class = 'view-mode';
-    this.dialogData().object = toponym;
-    const dialogData: DialogData<Toponym> = {
-      ...this.dialogData() as DialogData<Toponym>,
-      operation: 'view-edit',
-      controlsDisable: true,
-      defaultAddressParams: this.formDefaultAddressParams(toponym),
-      componentType: 'toponym',
-    };
-
-    const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
-      ...this.dialogConfig,
-      data: dialogData,
-    });
-    dialogRefCreate.afterClosed().subscribe((result) => {
-      this.getToponyms();
-      if (result.name) {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Топоним '${result.name}' успешно обновлен!`,
+        const dialogRefCreate = this.dialog.open(DetailsDialogComponent, {
+          ...this.dialogConfig,
+          data: dialogData,
         });
-      }
+        dialogRefCreate.afterClosed().subscribe((result) => {
+          this.getToponyms();
+          if (result.name) {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Подтверждение',
+              detail: `Топоним '${result.name}' успешно обновлен!`,
+            });
+          }
+        });
+      },
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -386,16 +313,8 @@ export class ToponymsListComponent {
         saveAs(blob, this.toponymProps().filename);
       },
       error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string'
-            ? err.error
-            : 'Невозможно скачать файл: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
+        this.errorService.handle({
+          error: 'Невозможно загрузить выбранный файл: ' + err,
         });
       },
     });
@@ -403,7 +322,7 @@ export class ToponymsListComponent {
 
   onOpenListClick(toponym: Toponym, way: string) {
     this.router.navigate([way], {
-      queryParams: this.formDefaultAddressParams(toponym),
+      queryParams: toponym.defaultAddressParams, //this.addDefaultAddressParams(toponym),
     });
   }
 
@@ -453,9 +372,7 @@ export class ToponymsListComponent {
             });
           }
         },
-        error: (err) => {
-          this.errorHandling(err);
-        },
+        error: (err) => this.errorService.handle(err),
       });
   }
 
@@ -471,9 +388,7 @@ export class ToponymsListComponent {
         });
         this.getToponyms();
       },
-      error: (err) => {
-        this.errorHandling(err);
-      },
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -493,6 +408,7 @@ export class ToponymsListComponent {
   }
 
   getToponyms() {
+    console.log('getToponyms')
     this.addressService
       .getToponyms(
         this.type(),
@@ -502,28 +418,14 @@ export class ToponymsListComponent {
       )
       .subscribe({
         next: (res) => {
-          //console.log('res.data.toponyms');
-          //console.log(res.data.toponyms);
+          console.log('res.data.toponyms');
+          console.log(res.data.toponyms);
           this.toponyms = res.data.toponyms;
           this.length.set(res.data.length);
           this.dataSource = new MatTableDataSource(this.toponyms);
           this.dataSource.sort = this.sort;
         },
-        error: (err) => {
-          this.errorHandling(err);
-        },
+        error: (err) => this.errorService.handle(err),
       });
-  }
-
-  errorHandling(err: any) {
-    console.log(err);
-    let errorMessage =
-      typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Ошибка',
-      detail: errorMessage,
-      sticky: true,
-    });
   }
 }

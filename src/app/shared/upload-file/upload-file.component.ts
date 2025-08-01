@@ -8,7 +8,8 @@ import { FileService } from '../../services/file.service';
 import { MatIconModule } from '@angular/material/icon';
 
 import { MessageService } from 'primeng/api';
-import { GeographyLevels } from '../../interfaces/types';
+import { ToponymType } from '../../interfaces/types';
+import { ErrorService } from '../../services/error.service';
 
 @Component({
   selector: 'app-upload-file',
@@ -25,9 +26,10 @@ import { GeographyLevels } from '../../interfaces/types';
 export class UploadFileComponent {
   private fileService = inject(FileService);
   private messageService = inject(MessageService);
+  errorService = inject(ErrorService);
   file?: File;
   errorMessage?: string;
-  typeOfData = input.required<GeographyLevels>();
+  typeOfData = input.required<ToponymType>();
   showSpinner = output<boolean>();
 
   addFile(event: Event) {
@@ -38,7 +40,7 @@ export class UploadFileComponent {
       this.file = inputElement.files[0];
       //console.log('this.file');
       //console.log(this.file);
-      let schema = schemas[this.typeOfData() as keyof typeof schemas];
+      let schema = schemas[this.typeOfData()];
       readXlsxFile(this.file, { schema })
         .then(({ rows, errors }) => {
           if (rows.length == 0) {
@@ -57,11 +59,13 @@ export class UploadFileComponent {
         })
         .catch((err) => {
           this.showSpinner.emit(false);
-          this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
+          this.errorService.handle({error: 'Невозможно загрузить выбранный файл: ' + err});
+          //this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
         });
     } else {
       this.showSpinner.emit(false);
-      this.errorHandling({error: 'Невозможно загрузить выбранный файл!'});
+      this.errorService.handle({error: 'Невозможно загрузить выбранный файл!'});
+      //this.errorHandling({error: 'Невозможно загрузить выбранный файл!'});
     }
   }
 
@@ -81,20 +85,10 @@ export class UploadFileComponent {
         },
         error: (err) => {
           this.showSpinner.emit(false);
-          this.errorHandling(err);
+          this.errorService.handle(err)
         },
       });
   }
 
-  errorHandling(err: any) {
-    console.log(err);
-    let errorMessage =
-      typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Ошибка',
-      detail: errorMessage,
-      sticky: true,
-    });
-  }
+
 }

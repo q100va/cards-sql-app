@@ -8,7 +8,12 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { FormControl, FormsModule, Validators, ReactiveFormsModule} from '@angular/forms';
+import {
+  FormControl,
+  FormsModule,
+  Validators,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -17,6 +22,7 @@ import { MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
+import { ErrorService } from '../../../services/error.service';
 
 @Component({
   selector: 'app-create-role-dialog',
@@ -30,7 +36,7 @@ import { Toast } from 'primeng/toast';
     FormsModule,
     ConfirmDialogModule,
     Toast,
-    ReactiveFormsModule
+    ReactiveFormsModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './create-role-dialog.component.html',
@@ -42,6 +48,7 @@ export class CreateRoleDialogComponent {
   private messageService = inject(MessageService);
   private roleService = inject(RoleService);
   private confirmationService = inject(ConfirmationService);
+  errorService = inject(ErrorService);
 
   //roleName = '';
   //roleDescription = '';
@@ -63,37 +70,19 @@ export class CreateRoleDialogComponent {
           this.createRole();
         }
       },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
+      error: (err) => this.errorService.handle(err),
     });
   }
 
   createRole() {
-    this.roleService.createRole(this.roleName.value!, this.roleDescription.value!).subscribe({
-      next: (res) => {
-        this.dialogRef.close({ roleName: res.data });
-      },
-      error: (err) => {
-        console.log(err);
-        let errorMessage =
-          typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: errorMessage,
-          sticky: true,
-        });
-      },
-    });
+    this.roleService
+      .createRole(this.roleName.value!, this.roleDescription.value!)
+      .subscribe({
+        next: (res) => {
+          this.dialogRef.close({ roleName: res.data });
+        },
+        error: (err) => this.errorService.handle(err),
+      });
   }
   onCancelClick(event: Event) {
     this.confirmationService.confirm({

@@ -54,7 +54,7 @@ export function telegramNicknameFormatValidator(): ValidatorFn {
 export function telegramIdFormatValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const allowed_empty = control.value == null || control.value == '';
-    const idRe = /^(\#+([0-9]){9,10})$/;
+    const idRe = /^(\#+([0-9]){8,10})$/;
     const allowed = idRe.test(control.value);
     ////console.log("control.value");
     ////console.log(allowed_phone);
