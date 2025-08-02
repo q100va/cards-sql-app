@@ -42,7 +42,7 @@ export class LocalitiesListComponent {
       controls: [
         {
           controlName: 'name',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',
@@ -52,7 +52,7 @@ export class LocalitiesListComponent {
         },
         {
           controlName: 'shortName',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',

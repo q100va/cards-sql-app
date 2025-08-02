@@ -43,7 +43,7 @@ export class DistrictsListComponent {
       controls: [
         {
           controlName: 'name',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',
@@ -53,7 +53,7 @@ export class DistrictsListComponent {
         },
         {
           controlName: 'shortName',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',
@@ -63,7 +63,7 @@ export class DistrictsListComponent {
         },
         {
           controlName: 'postName',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',
@@ -73,7 +73,7 @@ export class DistrictsListComponent {
         },
         {
           controlName: 'shortPostName',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',

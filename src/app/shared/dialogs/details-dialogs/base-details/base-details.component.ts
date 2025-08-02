@@ -231,7 +231,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
                 this.object![controlName] &&
               !(
                 this.mainForm.controls[controlName].value === '\u00A0' &&
-                this.object![controlName] === ''
+               this.object![controlName] === null
               )
             ) {
               this.changesSignal.set(true);
@@ -294,7 +294,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
         const controlValue = this.object![controlName];
 
         this.mainForm.controls[controlName].setValue(
-          mode === 'view' && controlValue === ''
+          mode === 'view' && controlValue === null
             ? '\u00A0'
             : controlName === 'password'
             ? 'password123'

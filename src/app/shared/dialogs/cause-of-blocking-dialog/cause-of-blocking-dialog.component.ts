@@ -45,7 +45,7 @@ export class CauseOfBlockingDialogComponent {
   errorService = inject(ErrorService);
 
   //causeOfBlocking = '';
-  causeOfBlocking = new FormControl<string>('', [Validators.required]);
+  causeOfBlocking = new FormControl<string | null>(null, [Validators.required]);
 
   onBlockUserClick() {
     this.userService

@@ -18,6 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RoleService } from '../../services/role.service';
 import { ErrorService } from '../../services/error.service';
+import { Operation, Role } from '../../interfaces/role';
 
 @Component({
   selector: 'app-roles-list',
@@ -38,14 +39,8 @@ import { ErrorService } from '../../services/error.service';
   styleUrl: './roles-list.component.css',
 })
 export class RolesListComponent {
-  operations!: {
-    [key: string]:
-      | string
-      | boolean
-      | []
-      | { id: number; access: boolean; disabled: boolean }[];
-  }[];
-  roles!: { id: number; name: string; description: string }[];
+  operations!: Operation[];
+  roles!: Role[];
   readonly dialog = inject(MatDialog);
   private messageService = inject(MessageService);
   private roleService = inject(RoleService);
@@ -87,9 +82,7 @@ export class RolesListComponent {
   onAccessChangeCheck(
     value: boolean,
     roleId: number,
-    operation: {
-      [key: string]: string | boolean | [] | { [key: string]: boolean }[];
-    }
+    operation: Operation
   ) {
     //console.log(value, roleId, operation);
     this.roleService.updateRoleAccess(value, roleId, operation).subscribe({
@@ -167,10 +160,10 @@ export class RolesListComponent {
       next: (res) => {
         this.roles = res.data.roles;
         this.operations = res.data.operations;
-        /*         //console.log("this.roles");
-        //console.log(this.roles);
-        //console.log("this.operations");
-        //console.log(this.operations); */
+             console.log("this.roles");
+        console.log(this.roles);
+        console.log("this.operations");
+        console.log(this.operations);
       },
       error: (err) => this.errorService.handle(err),
     });

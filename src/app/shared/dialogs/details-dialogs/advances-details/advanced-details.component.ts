@@ -47,8 +47,7 @@ export class AdvancedDetailsComponent<
       const values = orderedContacts[contact];
       if (!values) {
         if (
-          this.mainForm.get(contact)?.value.length > 0 &&
-          this.mainForm.get(contact)?.value[0] != ''
+          this.mainForm.get(contact)?.value.length > 0
         ) {
           return true;
         }

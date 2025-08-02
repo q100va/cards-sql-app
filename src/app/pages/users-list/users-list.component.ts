@@ -240,7 +240,7 @@ export class UsersListComponent {
     controls: [
       {
         controlName: 'userName',
-        value: '',
+        value: null,
 
         validators: [Validators.required],
         type: 'inputText',
@@ -254,7 +254,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'roleId',
-        value: '',
+        value: null,
 
         validators: [Validators.required],
         type: 'select',
@@ -267,7 +267,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'password',
-        value: '',
+        value: null,
 
         validators: [
           Validators.required,
@@ -285,7 +285,7 @@ export class UsersListComponent {
 
       {
         controlName: 'firstName',
-        value: '',
+        value: null,
 
         validators: [Validators.required],
         type: 'inputText',
@@ -298,7 +298,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'patronymic',
-        value: '',
+        value: null,
 
         validators: [],
         type: 'inputText',
@@ -310,7 +310,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'lastName',
-        value: '',
+        value: null,
 
         validators: [Validators.required],
         type: 'inputText',
@@ -323,7 +323,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'comment',
-        value: '',
+        value: null,
 
         validators: [],
         type: 'inputText',
@@ -359,7 +359,7 @@ export class UsersListComponent {
       }, */
       {
         controlName: 'email',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Email',
@@ -374,7 +374,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'phoneNumber',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Номер телефона',
@@ -392,7 +392,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'telegramId',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Телеграм ID',
@@ -410,7 +410,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'telegramPhoneNumber',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Телеграм номер телефона',
@@ -428,7 +428,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'telegramNickname',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Телеграм nickname',
@@ -442,7 +442,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'whatsApp',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'WhatsApp',
@@ -456,7 +456,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'vKontakte',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Вконтакте',
@@ -470,7 +470,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'instagram',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Instagram',
@@ -484,7 +484,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'facebook',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Facebook',
@@ -498,7 +498,7 @@ export class UsersListComponent {
       },
       {
         controlName: 'otherContact',
-        value: '',
+        value: null,
 
         type: 'inputText',
         label: 'Другой контакт',
@@ -550,6 +550,7 @@ export class UsersListComponent {
     });
   }
 
+  //TODO: запросы отправляются по два раза
 
   sortData(sort: Sort) {
     console.log('sort');
@@ -630,7 +631,7 @@ export class UsersListComponent {
         if (user.isRestricted) {
           this.dialogProps.controls.push({
             controlName: 'causeOfRestriction',
-            value: '',
+            value: null,
             validators: [Validators.required],
             type: 'inputText',
             label: 'Причина',
@@ -808,6 +809,8 @@ export class UsersListComponent {
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;
+          console.log('this.users');
+    console.log(this.users);
         },
        error: (err) => this.errorService.handle(err)
       });

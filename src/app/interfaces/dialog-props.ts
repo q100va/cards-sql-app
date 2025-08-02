@@ -58,9 +58,6 @@ export interface DialogData<T extends BaseModel> {
    controlsDisable?: boolean;
    componentType: DetailsComponentType;
   defaultAddressParams?: DefaultAddressParams;
-/*   object?: {
-    [key: string]: string | number | boolean | any[] | {[key: string]: string | number | boolean | any} | Date;
-  }; */
   object: T | null;
 
   toponymType?: ToponymType;
@@ -68,7 +65,7 @@ export interface DialogData<T extends BaseModel> {
 
 export interface Control {
   controlName: string;
-  value: string | boolean;// | Date | [] | string[];
+  value: string | boolean | null;// | Date | string[];
   disabled?: boolean;
   validators?: ((
     control: AbstractControl<any, any>

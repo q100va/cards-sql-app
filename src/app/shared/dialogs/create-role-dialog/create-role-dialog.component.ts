@@ -53,8 +53,8 @@ export class CreateRoleDialogComponent {
   //roleName = '';
   //roleDescription = '';
 
-  roleName = new FormControl<string>('', [Validators.required]);
-  roleDescription = new FormControl<string>('');
+  roleName = new FormControl<string | null>(null, [Validators.required]);
+  roleDescription = new FormControl<string | null>(null);
 
   onCreateRoleClick() {
     this.roleService.checkRoleName(this.roleName.value!).subscribe({

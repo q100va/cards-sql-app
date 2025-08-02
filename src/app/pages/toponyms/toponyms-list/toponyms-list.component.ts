@@ -232,6 +232,7 @@ export class ToponymsListComponent {
   onAddToponymClick() {
     this.dialogData().addressFilterParams.readonly = false;
     this.dialogData().addressFilterParams.class = 'none';
+    this.dialogData().object = null;
     const dialogData: DialogData<Toponym> = {
       ...this.dialogData(),
       operation: 'create',

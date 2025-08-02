@@ -2,49 +2,27 @@ import { BaseModel } from "./base-model";
 import { AdvancedModel } from "./advanced-model";
 
 export interface User extends AdvancedModel{
-  id: number | null;
+  id: number;
   userName: string;
   password: string;
   firstName: string;
   patronymic: string | null;
   lastName: string;
   roleId: number;
-  role: { name: string };
+  roleName: string;
   address: {
     country: { id: number; name: string } | null;
     region: { id: number; shortName: string } | null;
     district: { id: number; name: string } | null;
     locality: { id: number; name: string } | null;
     // isRestricted: boolean;
-    id: number | null;
+    id?: number;
   };
-
-  addresses?: {
-    country: { id: number; name: string } | null;
-    region: { id: number; shortName: string } | null;
-    district: { id: number; name: string } | null;
-    locality: { id: number; name: string } | null;
-    isRestricted: boolean;
-    id: number;
-  }[];
   comment: string | null;
   isRestricted: boolean;
   causeOfRestriction: string | null;
   dateOfRestriction: Date | null;
-  contacts?: {
-    id: number;
-    type: string;
-    content: string;
-    isRestricted: boolean;
-  }[];
   orderedContacts: Contacts;
-  outdatedNames?: {
-    firstName: string | null;
-    patronymic: string | null;
-    lastName: string | null;
-    userName: string | null;
-    id: number;
-  }[];
   outdatedData: OutdatedData;
 }
 
@@ -65,18 +43,6 @@ export interface Contacts {
   facebook: Contact[];
   otherContact: Contact[];
 }
-/*
-export type ContactType =
-  | 'email'
-  | 'phoneNumber'
-  | 'whatsApp'
-  | 'telegramNickname'
-  | 'telegramId'
-  | 'telegramPhoneNumber'
-  | 'vKontakte'
-  | 'instagram'
-  | 'facebook'
-  | 'otherContact'; */
 
   const contactTypeMap = {
     email: true,
@@ -106,7 +72,6 @@ export interface OutdatedData {
     region: { id: number; shortName: string } | null;
     district: { id: number; name: string } | null;
     locality: { id: number; name: string } | null;
-    isRestricted: boolean;
     id: number;
   }[];
   names: {
@@ -117,3 +82,40 @@ export interface OutdatedData {
     id: number;
   }[];
 }
+
+export interface OutdatingData {
+  address?: number;
+  names?: {
+    firstName: string;
+    patronymic: string | null;
+    lastName: string;
+  };
+  userName?: string;
+  contacts?: number[];
+}
+
+export interface DeletingData {
+  address?: number;
+  contacts?: number[];
+}
+
+export interface ChangedData {
+  firstName?: string;
+  patronymic?: string | null;
+  lastName?: string;
+  userName?: string;
+  addresses?: {
+    countryId: number | null;
+    regionId: number | null;
+    districtId: number | null;
+    localityId: number | null;
+  };
+  contacts?: Record<Exclude<ContactType, 'telegram'>, string[]>;
+  roleId?: number;
+  comment?: string | null;
+  isRestricted?: boolean;
+  causeOfRestriction?: string | null;
+  dateOfRestriction?: Date | null;
+}
+
+

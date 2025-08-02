@@ -153,7 +153,7 @@ router.post("/create-user", async (req, res) => {
       (creatingUser.dateOfRestriction ? (' ' + cloneDate(creatingUser.dateOfRestriction)) : '') +
       (creatingUser.causeOfRestriction ? (' ' + creatingUser.causeOfRestriction) : '') +
       ' ' + cloneDate(createdUser.dataValues.dateOfStart);
-//TODO: error if contacts empty
+    //TODO: error if contacts empty
     for (let key in creatingUser.draftContacts) {
       for (let contact of creatingUser.draftContacts[key]) {
         if (contact) {
@@ -168,71 +168,71 @@ router.post("/create-user", async (req, res) => {
         let region = creatingUser.addresses.region;
         let district = creatingUser.addresses.district;
         let locality = creatingUser.addresses.locality; */
-     /*  for (let address of creatingUser.draftAddress) {
-          if (address.country) {
-              console.log("address.country");
-              console.log(address.country);
+    /*  for (let address of creatingUser.draftAddress) {
+         if (address.country) {
+             console.log("address.country");
+             console.log(address.country);
 
-              country = await Country.findOne({
-                where: { id: address.country },
-                attributes: ['id'],
-                raw: true
-              });
-              console.log("countryId");
-              console.log(country.id);
-            }
-            if (address.region) {
-              region = await Region.findOne({
-                where: { id: address.region },
-                attributes: ['id'],
-                raw: true
-              });
-            }
-            if (address.district) {
-              district = await District.findOne({
-                where: { id: address.district },
-                attributes: ['id'],
-                raw: true
-              });
-            }
-            if (address.locality) {
-              locality = await Locality.findOne({
-                where: { id: address.locality },
-                attributes: ['id'],
-                raw: true
-              });
-            } */
-      const address = creatingUser.draftAddress;
-      if (address.countryId || address.regionId || address.districtId || address.localityId) {
-        newAddress
-          = await UserAddress.create({
-            countryId: address.countryId,
-            regionId: address.regionId,
-            districtId: address.districtId,
-            localityId: address.localityId
-          });
-        await newAddress.setUser(createdUser);
-        let countryName, regionName, districtName, localityName = '';
-        if (address.country) {
-          countryName = await Country.findOne({ where: { id: address.country }, attributes: ['name'] });
-          countryName = countryName.name ? countryName.name + ' ' : '';
-        }
-        if (address.region) {
-          regionName = await Region.findOne({ where: { id: address.region }, attributes: ['name'] });
-          regionName = regionName.name ? regionName.name + ' ' : '';
-        }
-        if (address.district) {
-          districtName = await District.findOne({ where: { id: address.district }, attributes: ['name'] });
-          districtName = districtName.name ? districtName.name + ' ' : '';
-        }
-        if (address.locality) {
-          localityName = await Locality.findOne({ where: { id: address.locality }, attributes: ['name'] });
-          localityName = localityName.name ? localityName.name + ' ' : '';
-        }
-        searchString =
-          searchString + countryName + regionName + districtName + localityName;
+             country = await Country.findOne({
+               where: { id: address.country },
+               attributes: ['id'],
+               raw: true
+             });
+             console.log("countryId");
+             console.log(country.id);
+           }
+           if (address.region) {
+             region = await Region.findOne({
+               where: { id: address.region },
+               attributes: ['id'],
+               raw: true
+             });
+           }
+           if (address.district) {
+             district = await District.findOne({
+               where: { id: address.district },
+               attributes: ['id'],
+               raw: true
+             });
+           }
+           if (address.locality) {
+             locality = await Locality.findOne({
+               where: { id: address.locality },
+               attributes: ['id'],
+               raw: true
+             });
+           } */
+    const address = creatingUser.draftAddress;
+    if (address.countryId || address.regionId || address.districtId || address.localityId) {
+      newAddress
+        = await UserAddress.create({
+          countryId: address.countryId,
+          regionId: address.regionId,
+          districtId: address.districtId,
+          localityId: address.localityId
+        });
+      await newAddress.setUser(createdUser);
+      let countryName, regionName, districtName, localityName = '';
+      if (address.country) {
+        countryName = await Country.findOne({ where: { id: address.country }, attributes: ['name'] });
+        countryName = countryName.name ? countryName.name + ' ' : '';
       }
- //   }
+      if (address.region) {
+        regionName = await Region.findOne({ where: { id: address.region }, attributes: ['name'] });
+        regionName = regionName.name ? regionName.name + ' ' : '';
+      }
+      if (address.district) {
+        districtName = await District.findOne({ where: { id: address.district }, attributes: ['name'] });
+        districtName = districtName.name ? districtName.name + ' ' : '';
+      }
+      if (address.locality) {
+        localityName = await Locality.findOne({ where: { id: address.locality }, attributes: ['name'] });
+        localityName = localityName.name ? localityName.name + ' ' : '';
+      }
+      searchString =
+        searchString + countryName + regionName + districtName + localityName;
+    }
+    //   }
     newSearchString = await SearchUser.create({ content: searchString.trim() });
     console.log("newSearchString");
     console.log(newSearchString);
@@ -279,8 +279,8 @@ currentPage: number */
 
 router.post("/get-users", async (req, res) => {
 
-  console.log('req.body');
-  console.log(req.body);
+  //console.log('req.body');
+  //console.log(req.body);
   const viewOption = req.body.allFilterParameters.viewOption;
   const notOnlyActual = req.body.allFilterParameters.notOnlyActual;
   const searchValue = req.body.allFilterParameters.searchValue.trim();
@@ -314,20 +314,28 @@ router.post("/get-users", async (req, res) => {
 
 
   try {
-    //form order: {active: [userName, isRestricted, dateOsStart, comment, roles], direction: [desc, asc]}
+    //form order: {active: [userName, isRestricted, dateOsStart, comment, role], direction: [desc, asc]}
     let orderParams = [];
     let orderByName;
     let orderDirection;
     let orderModel;
 
-    if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
+    if (sortParameters.direction == '') {
+      orderParams = ['userName', 'ASC'];
+    } else if (sortParameters.active === 'role') {
+      orderParams = [{ model: Role }, 'name', sortParameters.direction.toUpperCase()];
+    } else {
+      orderParams = [sortParameters.active, sortParameters.direction.toUpperCase()];
+    }
+
+/*     if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
       orderByName = 'userName';
       orderDirection = 'ASC';
     } else {
       orderDirection = sortParameters.direction.toUpperCase();
       if (sortParameters.active == 'role') {
         orderByName = 'name';
-        orderModel = { model: Role, as: 'role' };
+        orderModel = { model: Role };
       } else {
         orderByName = sortParameters.active;
       }
@@ -336,7 +344,7 @@ router.post("/get-users", async (req, res) => {
     if (orderModel) orderParams.push(orderModel);
     orderParams.push(orderByName);
     orderParams.push(orderDirection);
-
+ */
     console.log("orderParams");
     console.log(orderParams);
 
@@ -403,8 +411,8 @@ router.post("/get-users", async (req, res) => {
         listOfTypes = listOfTypes + `'` + item.type + `', `;
       }
       listOfTypes = listOfTypes.slice(0, -2) + `)`;
-      console.log('strongContactFilter');
-      console.log(strongContactFilter);
+      //console.log('strongContactFilter');
+      // console.log(strongContactFilter);
 
       if (!strongContactFilter) {
         contactWhereParams.userId = {
@@ -433,38 +441,38 @@ router.post("/get-users", async (req, res) => {
           where: { id: id },
           attributes: [parentIdName],
         });
-        console.log('toponym');
-        console.log(toponym);
+        //console.log('toponym');
+        //console.log(toponym);
 
-        console.log('addresses', parentType);
-        console.log(addresses[parentType]);
+        //console.log('addresses', parentType);
+        //console.log(addresses[parentType]);
         addresses[parentType] = addresses[parentType].filter(
           (i) => i !== toponym[parentIdName]
         );
-        console.log('addresses', parentType);
-        console.log(addresses[parentType]);
+        //console.log('addresses', parentType);
+        //console.log(addresses[parentType]);
 
 
         return toponym[parentIdName];
       }
 
       const buildIdsList = async (type, Toponym, parentIdName, parentType) => {
-        console.log('type', type);
+        //console.log('type', type);
         let listOfDistrictsIds = ``;
         listOfDistrictsIds = `(`;
         let parentId;
         for (let id of addresses[type]) {
           parentId = await findParent(id, Toponym, parentIdName, parentType);
-          console.log('parentId', parentId);
+          //console.log('parentId', parentId);
           if (type == 'localities') parentId = await findParent(parentId, District, 'regionId', 'regions');
-          console.log('parentId', parentId);
+          //console.log('parentId', parentId);
           if (type == 'localities' || type == 'districts') parentId = await findParent(parentId, Region, 'countryId', 'countries');
-          console.log('parentId', parentId);
+          //console.log('parentId', parentId);
           listOfDistrictsIds = listOfDistrictsIds + `'` + id + `', `;
         }
         listOfDistrictsIds = listOfDistrictsIds.slice(0, -2) + `)`;
-        console.log('listOfDistrictsIds', listOfDistrictsIds);
-        console.log(`(${addresses[type].map((id) => `'${id}'`).join(', ')})`);
+        //console.log('listOfDistrictsIds', listOfDistrictsIds);
+        //console.log(`(${addresses[type].map((id) => `'${id}'`).join(', ')})`);
 
         return `(${addresses[type].map((id) => `'${id}'`).join(', ')})`
       };
@@ -517,6 +525,7 @@ router.post("/get-users", async (req, res) => {
         }
       }
     }
+    { model: Role }
 
     let parameters =
       [{
@@ -529,13 +538,15 @@ router.post("/get-users", async (req, res) => {
         where: contactWhereParams,
         required: contactRequiredParam,
         attributes: ['id', 'type', 'content', 'isRestricted'],
+        separate: true,
       },
       {
         model: UserAddress,
         as: 'addresses',
         where: addressWhereParams,
         required: addressRequiredParam,
-        attributes: ['isRestricted'],
+        attributes: ['id', 'isRestricted'],
+        separate: true,
 
         include: [
           {
@@ -556,6 +567,12 @@ router.post("/get-users", async (req, res) => {
           },
         ]
       },
+      {
+        model: OutdatedName, as: 'outdatedNames',
+        attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'],
+        separate: true
+      },
+
       ];
 
     //searchValue
@@ -590,8 +607,8 @@ router.post("/get-users", async (req, res) => {
       distinct: true
     });
 
-    console.log("length");
-    console.log(length);
+    // console.log("length");
+    // console.log(length);
 
     const users = await User.findAll({
       offset: pageSize * (currentPage - 1),
@@ -599,11 +616,21 @@ router.post("/get-users", async (req, res) => {
       order: [orderParams],
       attributes: { exclude: ['password'] },
       where: whereParams,
-      include: parameters
+      include: parameters,
+  /*     subQuery: false,
+      distinct: true, */
     });
-    console.log("users");
-    console.log(users);
-    res.status(200).send({ msg: "Данные получены.", data: { users: users, length: length } });
+    /*    console.log("users");
+        console.log(users[0]); */
+    let transformedUsers = [];
+
+    for (let user of users) {
+
+      transformedUsers.push(transformUserData(user.toJSON()));
+    }
+    //console.log('transformed user data:', transformedUsers);
+
+    res.status(200).send({ msg: "Данные получены.", data: { users: transformedUsers, length: length } });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -646,7 +673,7 @@ router.get("/get-user-by-id/:id", async (req, res) => {
         },
         {
           model: Role,
-          attributes: ['id', 'name'],
+          attributes: ['name'],
         },
         {
           model: OutdatedName, as: 'outdatedNames',
@@ -657,7 +684,7 @@ router.get("/get-user-by-id/:id", async (req, res) => {
     if (!user) {
       throw new CustomError(`Пользователь с id ${userId}! не найден!`, 404);
     }
-    res.status(200).send({ msg: "Пользователь найден.", data: user });
+    res.status(200).send({ msg: "Пользователь найден.", data: transformUserData(user.toJSON()) });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -748,6 +775,104 @@ function errorHandling(e) {
   }
   const statusCode = e.statusCode ? e.statusCode : 500;
   return { statusCode: statusCode, message: message };
+}
+
+//TODO: transform user and users!!!
+function transformUserData(rawUserData) {
+  const user = { ...rawUserData };
+  let orderedContacts = {};
+  let outdatedData = { contacts: {}, addresses: [], names: [] };
+  let outdatedDataContacts = {};
+
+  // console.log(user.role.id, 'user.role.id');
+  user.roleName = user.role.name;
+  delete user.role;
+
+  if (user.contacts) {
+    for (let contact of user.contacts) {
+      const isTelegram =
+        contact.type === 'telegramNickname' ||
+        contact.type === 'telegramPhoneNumber' ||
+        contact.type === 'telegramId';
+
+      if (!contact.isRestricted) {
+
+        if (isTelegram) {
+          orderedContacts['telegram'] = orderedContacts['telegram'] || [];
+          orderedContacts['telegram'].push({ id: contact.id, content: contact.content });
+        }
+
+        orderedContacts[contact.type] = orderedContacts[contact.type] || [];
+        orderedContacts[contact.type].push({ id: contact.id, content: contact.content });
+      } else {
+        outdatedDataContacts[contact.type] = outdatedDataContacts[contact.type] || [];
+        outdatedDataContacts[contact.type].push({ id: contact.id, content: contact.content });
+      }
+    }
+  }
+  outdatedData.contacts =
+    outdatedDataContacts;
+  user.orderedContacts = orderedContacts;
+  delete user.contacts;
+
+  if (user.addresses?.length > 0) {
+    let outdatedDataAddresses = [];
+    for (let address of user.addresses) {
+      if (address.isRestricted) {
+        outdatedDataAddresses.push({
+          country: address.country,
+          region: address.region,
+          district: address.district,
+          locality: address.locality,
+          id: address.id,
+        });
+      }
+      const filteredAddresses = user.addresses.filter(
+        (address) => !address.isRestricted
+      );
+
+      user.address =
+        filteredAddresses.length > 0
+          ? filteredAddresses[0]
+          :
+          {
+            country: null,
+            region: null,
+            district: null,
+            locality: null,
+          };
+
+      outdatedData.addresses =
+        outdatedDataAddresses;
+    }
+
+  } else {
+    user.address =
+    {
+      country: null,
+      region: null,
+      district: null,
+      locality: null
+    };
+  }
+
+  delete user.addresses;
+
+  if (user.outdatedNames?.length > 0) {
+    outdatedData.names = user.outdatedNames.map((name) => ({
+      firstName: name.firstName,
+      patronymic: name.patronymic,
+      lastName: name.lastName,
+      userName: name.userName,
+      id: name.id,
+    }));
+    delete user.outdatedNames;
+  }
+  user.outdatedData = outdatedData;
+
+  // console.log('transformed user data:', user.orderedContacts.email);
+
+  return user;
 }
 
 

@@ -8,7 +8,7 @@ export interface AdvancedModel extends BaseModel {
     district: { id: number; name: string } | null;
     locality: { id: number; name: string } | null;
     // isRestricted: boolean;
-    id: number | null;
+    id?: number;
   };
   comment: string | null;
   orderedContacts: Contacts;

@@ -35,7 +35,7 @@ export class RegionsListComponent {
       controls: [
         {
           controlName: 'name',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',
@@ -45,7 +45,7 @@ export class RegionsListComponent {
         },
         {
           controlName: 'shortName',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',

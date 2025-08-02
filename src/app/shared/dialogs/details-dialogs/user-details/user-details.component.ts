@@ -23,9 +23,12 @@ import { AddressFilterComponent } from '../../../address-filter/address-filter.c
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 import { RoleService } from '../../../../services/role.service';
 import {
+  ChangedData,
   Contact,
   Contacts,
   ContactType,
+  DeletingData,
+  OutdatingData,
   User,
 } from '../../../../interfaces/user';
 import { UserService } from '../../../../services/user.service';
@@ -93,7 +96,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         this.roles = res.data.roles;
         //console.log('this.roles', this.roles);
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -103,7 +106,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     if (this.mainForm.controls['isRestricted'].value) {
       this.mainForm.addControl(
         'causeOfRestriction',
-        new FormControl('', Validators.required)
+        new FormControl(null, Validators.required)
       );
       this.controlsNames.push('causeOfRestriction');
     } else if (
@@ -125,7 +128,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       //console.log(this.mainForm.controls[contact.name].value);
       if (
         this.mainForm.controls[contact.name].value.findIndex(
-          (item: string) => item == ''
+          (item: string | null) => item == null
         ) == -1
       ) {
         contact.availableForExtra = true;
@@ -150,7 +153,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       instagram: [Validator.instagramFormatValidator()],
       facebook: [Validator.facebookFormatValidator()],
     };
-    this.getFormArray(type).push(new FormControl('', validators[type] || []));
+    this.getFormArray(type).push(new FormControl(null, validators[type] || []));
   }
 
   deleteContactControl(index: number, controlName: string) {
@@ -212,7 +215,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           this.checkDuplicates(action, userDraft);
         }
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -247,7 +250,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     let contactDuplicates = {} as Record<
       Exclude<ContactType, 'telegram'>,
       string[]
-    >; /*, { [key: string]: string[] } = {} */
+    >;
 
     for (let key of typedKeys(user.draftContacts)) {
       let tempArray = user.draftContacts[key].sort();
@@ -361,7 +364,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           }
         }
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -520,6 +523,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
 
   // TODO: 🔄 Актуализация данных
 
+
   // 🟡 1. Сверка изменений
 
   // - API - сохранить изменения
@@ -549,8 +553,6 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   //  - Поля: текущий пароль, новый, повтор
   //  - Валидация
   //  - Запрос к API и сообщение об успехе/ошибке
-
-  //checkOutdatedContactsDuplicates(user: User): { id: number, type: string, value: string }[] {}
 
   normalize = (value: string | null | undefined) => (value ?? '').trim();
 
@@ -596,9 +598,9 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       contacts: Exclude<Contacts, 'telegram'>;
     }
   ) {
-    let changes: { [key: string]: any } = {};
-    let outdatingData: { [key: string]: any } = {};
-    let deletingData: { [key: string]: any } = {};
+    let changes: ChangedData = {};
+    let outdatingData:  OutdatingData = {};
+    let deletingData: DeletingData = {};
 
     const isNamesChanged =
       this.normalize(this.existedUser!['firstName']) !=
@@ -617,9 +619,6 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       const oldValue = `${this.existedUser!['firstName']} ${
         this.existedUser!['patronymic'] || ''
       } ${this.existedUser!['lastName']}`.trim();
-      /*       const newValue = `${user.firstName} ${user.patronymic || ''} ${
-        user.lastName
-      }`.trim(); */
       const confirmed = await this.confirmDataSaving(
         'names',
         oldValue
@@ -637,7 +636,6 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     const oldValue = this.existedUser!['userName'];
     if (!restoringData.userName && user.userName != oldValue) {
       changes['userName'] = user.userName;
-      //const newValue = user.userName;
       const confirmed = await this.confirmDataSaving(
         'userName',
         oldValue
@@ -700,7 +698,10 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     //TODO: contacts Add id to orderedContacts
 
     const oldContacts = this.object!['orderedContacts'];
-    changes['contacts'] = {};
+    changes['contacts'] = {} as Record<
+      Exclude<ContactType, 'telegram'>,
+      string[]
+    >;
     const newContacts = user.draftContacts;
 
     console.log('oldContacts', 'newContacts', oldContacts, newContacts);
@@ -802,9 +803,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
 
     return new Promise((resolve) => {
       this.confirmationService.confirm({
-        message: `Вы изменили ${
-          types[type]
-        }.<br>Сохранить прежнее значение <b>"${oldValue}"</b> как неактуальное?<br>В противном случае оно будет удалено как ошибочное без возможности восстановления.`,
+        message: `Вы изменили ${types[type]}.<br>Сохранить прежнее значение <b>"${oldValue}"</b> как неактуальное?<br>В противном случае оно будет удалено как ошибочное без возможности восстановления.`,
         header: 'Сохранить в неактуальные?',
         closable: true,
         closeOnEscape: true,
@@ -857,7 +856,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           });
         }
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 }

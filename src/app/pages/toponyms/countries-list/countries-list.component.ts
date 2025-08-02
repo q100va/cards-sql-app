@@ -32,7 +32,7 @@ export class CountriesListComponent {
       controls: [
         {
           controlName: 'name',
-          value: '',
+          value: null,
           disabled: true,
           validators: [Validators.required],
           type: 'inputText',

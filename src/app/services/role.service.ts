@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { Operation, Role } from '../interfaces/role';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +24,7 @@ export class RoleService {
       data: { name: name, description: description },
     });
   }
-  updateRole(role: { [key: string]: string | number}): Observable<any> {
+  updateRole(role: Role): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.patch(BACKEND_URL + '/api/roles/update-role/', {
       data: { role: role},
@@ -32,9 +33,7 @@ export class RoleService {
   updateRoleAccess(
     value: boolean,
     roleId: number,
-    operation: {
-      [key: string]: string | boolean | [] | { [key: string]: boolean }[];
-    }
+    operation: Operation
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.patch(BACKEND_URL + '/api/roles/update-role-access/', {
