@@ -100,8 +100,6 @@ export class TableFilterComponent implements OnInit {
 
   //TODO: make strongAddressFilter and strongContactFilter disable if nothing selected (?? or selected only one)
 
-  //TODO: check clear filter because address region still enabled and bageCount wrong because of address
-
   private strongAddressFilterControl = effect(
     () => {
       if (this.notActualOption()) {
@@ -181,7 +179,7 @@ export class TableFilterComponent implements OnInit {
         // //console.log(res);
         this.rolesList = res.data.roles;
       },
-error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -194,6 +192,7 @@ error: (err) => this.errorService.handle(err)
     this.emitSelectedFilters();
   }
   onAddressFilterBadgeValueChange(value: number) {
+    //console.log('onAddressFilterBadgeValueChange', value);
     this.addressFilterBadgeValue.set(value);
     this.emitSelectedFilters();
   }
@@ -234,13 +233,16 @@ error: (err) => this.errorService.handle(err)
 
     for (const key of typedKeys(filter)) {
       if (key === 'dateBeginningRange' || key === 'dateRestrictionRange') {
-        if (filter[key]) count++;
+        //console.log('dateRange', filter[key]);
+        if (filter[key].length > 0) count++;
+        //console.log('dateRangeCount', count);
         continue;
       }
 
       const value = this.form.controls[key].value;
       filter[key] = value;
       if (value.length > 0) count++;
+      //console.log('filterCount', count);
     }
 
     count += this.addressFilterBadgeValue();

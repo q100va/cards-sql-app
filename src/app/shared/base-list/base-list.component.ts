@@ -224,10 +224,12 @@ export class BaseListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.defaultAddressParams.localityId = params['localityId'];
-      this.defaultAddressParams.districtId = params['districtId'];
-      this.defaultAddressParams.regionId = params['regionId'];
-      this.defaultAddressParams.countryId = params['countryId'];
+      console.log('this.route.queryParams.subscribe((params)', params)
+        this.defaultAddressParams.localityId = params['localityId'] ? +params['localityId'] : this.defaultAddressParams.localityId;
+        this.defaultAddressParams.districtId = params['districtId'] ? +params['districtId'] : this.defaultAddressParams.districtId;
+        this.defaultAddressParams.regionId = params['regionId'] ? +params['regionId'] : this.defaultAddressParams.regionId;
+        this.defaultAddressParams.countryId = params['countryId'] ? +params['countryId'] : this.defaultAddressParams.countryId;
+
     });
     //console.log('this.defaultAddressParams in user-list');
     //console.log(this.defaultAddressParams);

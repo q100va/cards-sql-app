@@ -8,7 +8,7 @@ import {
   inject,
   input,
   signal,
-  runInInjectionContext
+  runInInjectionContext,
 } from '@angular/core';
 import {
   MatPaginator,
@@ -59,7 +59,6 @@ export class UsersListComponent {
   dataSource!: MatTableDataSource<User>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-
   private userService = inject(UserService);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
@@ -527,6 +526,7 @@ export class UsersListComponent {
     componentType: 'user',
   };
 
+  //waitForAddressFilter = true;
 
   constructor(@Inject(Injector) private injector: Injector) {
     const iconRegistry = inject(MatIconRegistry);
@@ -542,10 +542,14 @@ export class UsersListComponent {
   ngOnInit(): void {
     runInInjectionContext(this.injector, () => {
       effect(() => {
-     //   console.log('allFilterParameters changed:', this.allFilterParameters());
+        //   console.log('allFilterParameters changed:', this.allFilterParameters());
         // Прочитав signal, мы на него подписываемся
         this.allFilterParameters();
+        /*         if (this.waitForAddressFilter) {
+          this.waitForAddressFilter = false;
+        } else { */
         this.getUsers();
+        /*      } */
       });
     });
   }
@@ -557,7 +561,7 @@ export class UsersListComponent {
     console.log(sort);
     this.sortParameters.set(sort);
     console.log(' this.sortParameters');
-    console.log( this.sortParameters());
+    console.log(this.sortParameters());
     //this.getUsers();
   }
 
@@ -668,7 +672,7 @@ export class UsersListComponent {
           }
         });
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -732,7 +736,7 @@ export class UsersListComponent {
         });
         this.getUsers();
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -774,7 +778,7 @@ export class UsersListComponent {
           });
         }
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
@@ -789,13 +793,13 @@ export class UsersListComponent {
         });
         this.getUsers();
       },
-     error: (err) => this.errorService.handle(err)
+      error: (err) => this.errorService.handle(err),
     });
   }
 
   getUsers() {
-  /*   console.log('this.allFilterParameters()');
-    console.log(this.allFilterParameters()); */
+     console.log('this.allFilterParameters()');
+    console.log(this.allFilterParameters());
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),
@@ -810,9 +814,9 @@ export class UsersListComponent {
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;
           console.log('this.users');
-    console.log(this.users);
+          console.log(this.users);
         },
-       error: (err) => this.errorService.handle(err)
+        error: (err) => this.errorService.handle(err),
       });
   }
 
@@ -852,6 +856,4 @@ export class UsersListComponent {
     // //console.log('editContact', type, value, result);
     return result;
   }
-
-
 }

@@ -125,6 +125,9 @@ export class ToponymsListComponent {
     districts: [],
     localities: [],
   });
+  //addressStringValue: string = '';
+  //waitForAddressFilter = true;
+
   filterValue = computed(() => {
     return {
       searchValue: this.searchValue(),
@@ -142,16 +145,21 @@ export class ToponymsListComponent {
         ? this.filterValue().searchValue + ', '
         : '');
     filterString = filterString.slice(0, -2);
-    let addressString = this.addressString();
+   // let addressString = this.addressString();
     let result = '';
-    if (addressString) {
+    if (this.filterValue().addressString) {
       result = filterString
-        ? filterString + ', ' + addressString
-        : addressString;
+        ? filterString + ', ' + this.filterValue().addressString
+        : this.filterValue().addressString;
     } else {
       result = filterString ? filterString : '';
     }
-    this.getToponyms();
+    console.log('filterValue', this.filterValue());
+/*     if (this.waitForAddressFilter) {
+      this.waitForAddressFilter = false;
+    } else { */
+      this.getToponyms();
+   /*  } */
     return result;
   });
 
@@ -205,22 +213,22 @@ export class ToponymsListComponent {
       this.defaultAddressParams.countryId = this.toponymProps().queryParams![
         'countryId'
       ]
-        ? this.toponymProps().queryParams!['countryId']
+        ? +this.toponymProps().queryParams!['countryId']!
         : this.defaultAddressParams.countryId;
       this.defaultAddressParams.regionId = this.toponymProps().queryParams![
         'regionId'
       ]
-        ? this.toponymProps().queryParams!['regionId']
+        ? +this.toponymProps().queryParams!['regionId']!
         : this.defaultAddressParams.regionId;
       this.defaultAddressParams.districtId = this.toponymProps().queryParams![
         'districtId'
       ]
-        ? this.toponymProps().queryParams!['districtId']
+        ? +this.toponymProps().queryParams!['districtId']!
         : this.defaultAddressParams.districtId;
       this.defaultAddressParams.localityId = this.toponymProps().queryParams![
         'localityId'
       ]
-        ? this.toponymProps().queryParams!['localityId']
+        ? +this.toponymProps().queryParams!['localityId']!
         : this.defaultAddressParams.localityId;
     }
   }

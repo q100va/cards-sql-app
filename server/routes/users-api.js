@@ -316,7 +316,25 @@ router.post("/get-users", async (req, res) => {
   try {
     //form order: {active: [userName, isRestricted, dateOsStart, comment, role], direction: [desc, asc]}
     let orderParams = [];
-    let orderByName;
+
+    if (sortParameters.direction === '') {
+      orderParams = [['userName', 'ASC']];
+    } else {
+      const direction = sortParameters.direction.toUpperCase();
+      if (sortParameters.active === 'role') {
+        orderParams = [
+          [
+            Sequelize.literal(`(SELECT "name" FROM "roles" WHERE "roles"."id" = "user"."roleId")`),
+            direction
+          ]
+        ];
+      } else {
+        orderParams = [[sortParameters.active, direction]];
+      }
+    }
+
+
+/*     let orderByName;
     let orderDirection;
     let orderModel;
 
@@ -326,7 +344,7 @@ router.post("/get-users", async (req, res) => {
       orderParams = [{ model: Role }, 'name', sortParameters.direction.toUpperCase()];
     } else {
       orderParams = [sortParameters.active, sortParameters.direction.toUpperCase()];
-    }
+    } */
 
 /*     if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
       orderByName = 'userName';
@@ -538,7 +556,7 @@ router.post("/get-users", async (req, res) => {
         where: contactWhereParams,
         required: contactRequiredParam,
         attributes: ['id', 'type', 'content', 'isRestricted'],
-        separate: true,
+       // separate: true,
       },
       {
         model: UserAddress,
@@ -546,7 +564,7 @@ router.post("/get-users", async (req, res) => {
         where: addressWhereParams,
         required: addressRequiredParam,
         attributes: ['id', 'isRestricted'],
-        separate: true,
+       // separate: true,
 
         include: [
           {
