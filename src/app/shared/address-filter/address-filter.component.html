@@ -9,7 +9,7 @@
         <mat-label>Страна</mat-label>
         <mat-select  formControlName="country" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onCountrySelectionChange', 'Country')">
-          @if (!params().multiple) {<mat-option></mat-option>}
+          @if (!params().multiple) {<mat-option [value]=null> </mat-option>}
           @for (country of toponymsList.countriesList; track $index ) {
           <mat-option [value]="country.id">{{country.name}}</mat-option>
           }
@@ -24,7 +24,7 @@
         <mat-label>Регион</mat-label>
         <mat-select  formControlName="region" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onRegionSelectionChange', 'Region')">
-          @if (!params().multiple) {<mat-option></mat-option>}
+          @if (!params().multiple) {<mat-option [value]=null></mat-option>}
           @for (region of toponymsList.regionsList; track $index) {
           <mat-option [value]="region.id">{{region.name}}</mat-option>
           }
@@ -39,7 +39,7 @@
         <mat-label>Район/округ</mat-label>
         <mat-select  formControlName="district" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onDistrictSelectionChange', 'District')">
-          @if (!params().multiple) {<mat-option></mat-option>}
+          @if (!params().multiple) {<mat-option [value]=null></mat-option>}
           @for (district of toponymsList.districtsList; track $index) {
           <mat-option [value]="district.id">{{district.name}}</mat-option>
           }
@@ -54,7 +54,7 @@
         <mat-label>Населенный пункт</mat-label>
         <mat-select  formControlName="locality" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onLocalitySelectionChange', 'Locality')">
-          @if (!params().multiple) {<mat-option></mat-option>}
+          @if (!params().multiple) {<mat-option [value]=null></mat-option>}
           @for (locality of toponymsList.localitiesList; track $index) {
           <mat-option [value]="locality.id">{{locality.name}}</mat-option>
           }

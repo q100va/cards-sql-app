@@ -99,6 +99,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
   // object: User | Toponym | null = null;
 
   ngOnInit() {
+    console.log('changesSignal', this.changesSignal());
     //console.log('ngOnInit', this.data());
     this.params = this.data().addressFilterParams;
     this.createFormGroup(this.data().controls, this.data().controlsDisable!);
@@ -122,6 +123,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
         this.updateControlsValidity(this.controlsNames, true);
       }
     }
+    console.log('changesSignal', this.changesSignal());
   }
 
   checkIsSaveDisabled() {}
@@ -179,6 +181,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
   }
 
   onEditClick() {
+    console.log('changesSignal', this.changesSignal());
     this.isEditModeSignal.set(true);
     //this.isEditMode = true;
     this.emittedIsEditMode.emit(true);
@@ -188,7 +191,9 @@ export class BaseDetailsComponent<T extends BaseModel> {
     //this.checkIsSaveDisabled();
     this.setInitialValues('edit');
     this.updateControlsValidity(this.controlsNames, true);
+    console.log('changesSignal1', this.changesSignal());
     this.addressFilterComponent.onChangeMode('edit', null);
+    console.log('changesSignal2', this.changesSignal());
   }
 
   onViewClick() {
@@ -231,9 +236,14 @@ export class BaseDetailsComponent<T extends BaseModel> {
                 this.object![controlName] &&
               !(
                 this.mainForm.controls[controlName].value === '\u00A0' &&
-               this.object![controlName] === null
+                this.object![controlName] === null
               )
             ) {
+              console.log(
+                'this.mainForm.controls[controlName].value, this.object![controlName]',
+                this.mainForm.controls[controlName].value,
+                this.object![controlName]
+              );
               this.changesSignal.set(true);
             }
           }
@@ -241,8 +251,12 @@ export class BaseDetailsComponent<T extends BaseModel> {
       }
 
       if (!this.changesSignal()) {
-        this.changesSignal.set(this.additionalValidationHooks());
+        const newChangesValue = this.additionalValidationHooks();
+        console.log('newChangesValue', newChangesValue);
+
+        this.changesSignal.set(newChangesValue);
       }
+
 
       this.emittedChanges.emit(this.changesSignal());
     }
@@ -281,13 +295,13 @@ export class BaseDetailsComponent<T extends BaseModel> {
     mode: 'view' | 'edit' | 'create',
     firstInitialization = false
   ) {
-    console.log(
+    /* console.log(
       'this.data().object, this.object,',
       this.data().object,
       this.object
-    );
+    ); */
     for (const controlName of this.controlsNames) {
-      console.log('controlName', controlName);
+      //  console.log('controlName', controlName);
       if (isContactType(controlName)) continue;
 
       if (hasKey(this.object!, controlName)) {

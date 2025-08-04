@@ -24,11 +24,13 @@ import { BaseDetailsComponent } from '../base-details/base-details.component';
 import { RoleService } from '../../../../services/role.service';
 import {
   ChangedData,
+  CommonUserFields,
   Contact,
   Contacts,
   ContactType,
   DeletingData,
   OutdatingData,
+  RestoringData,
   User,
 } from '../../../../interfaces/user';
 import { UserService } from '../../../../services/user.service';
@@ -374,28 +376,11 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     action: 'justSave' | 'saveAndExit',
     user: UserDraft
   ) {
-    let restoringData: {
-      address: number | null;
-      names: number | null;
-      userName: number | null;
-      contacts: Exclude<Contacts, 'telegram'>;
-    } = {
+    let restoringData: RestoringData = {
       address: null,
       names: null,
       userName: null,
-      contacts: {
-        email: [],
-        phoneNumber: [],
-        whatsApp: [],
-        telegramNickname: [],
-        telegramId: [],
-        telegramPhoneNumber: [],
-        vKontakte: [],
-        instagram: [],
-        facebook: [],
-        otherContact: [],
-        telegram: [],
-      },
+      contacts: null,
     };
     const outdatedAddresses = this.existedUser!['outdatedData'].addresses;
 
@@ -506,6 +491,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           );
           if (confirmed) {
             console.log('this.deleteFromOutdatedData("contacts", contacts.id)');
+            restoringData.contacts ??= {};
+            restoringData.contacts[type] ??= [];
             restoringData.contacts[type] = [
               ...restoringData.contacts[type],
               ...duplicates,
@@ -522,7 +509,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   }
 
   // TODO: 🔄 Актуализация данных
-
+  //Лисик, завтра допишем API для обновления юзера, сделаем смену пароля и отображение неактуальных значений.
+  //Если останется время, то пройдемся по TODO
 
   // 🟡 1.
 
@@ -554,6 +542,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   //  - Поля: новый, повтор
   //  - Валидация
   //  - Запрос к API и сообщение об успехе/ошибке
+
+  //7. упростить код, вынести данные в отд. файлы, упорядочить интерфейсы и типы
 
   normalize = (value: string | null | undefined) => (value ?? '').trim();
 
@@ -592,16 +582,18 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   async checkAllChanges(
     action: 'justSave' | 'saveAndExit',
     user: UserDraft,
-    restoringData: {
-      address: number | null;
-      names: number | null;
-      userName: number | null;
-      contacts: Exclude<Contacts, 'telegram'>;
-    }
+    restoringData: RestoringData
   ) {
-    let changes: ChangedData = {};
-    let outdatingData:  OutdatingData = {};
-    let deletingData: DeletingData = {};
+    let changes: ChangedData = { main: null, contacts: null, address: null };
+
+    let outdatingData: OutdatingData = {
+      address: null,
+      names: null,
+      userName: null,
+      contacts: null,
+    };
+
+    let deletingData: DeletingData = { address: null, contacts: null };
 
     const isNamesChanged =
       this.normalize(this.existedUser!['firstName']) !=
@@ -611,8 +603,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       this.normalize(this.existedUser!['lastName']) !=
         this.normalize(user.lastName);
 
-    if (!restoringData.names && isNamesChanged) {
-      changes = {
+    if (/* !restoringData.names && */ isNamesChanged) {
+      changes.main = {
         firstName: user.firstName,
         patronymic: user.patronymic,
         lastName: user.lastName,
@@ -635,8 +627,12 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       }
     }
     const oldValue = this.existedUser!['userName'];
-    if (!restoringData.userName && user.userName != oldValue) {
-      changes['userName'] = user.userName;
+    if (/* !restoringData.userName && */ user.userName != oldValue) {
+      if (changes.main) {
+        changes.main['userName'] = user.userName;
+      } else {
+        changes.main = { userName: user.userName };
+      }
       const confirmed = await this.confirmDataSaving(
         'userName',
         oldValue
@@ -674,7 +670,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       );
 
     if (!restoringData.address && isAddressChanged) {
-      changes['addresses'] = user.draftAddress;
+      changes['address'] = user.draftAddress;
       // console.log('changes', changes);
       //console.log('oldAddress.country', oldAddress.country);
       if (oldAddress.country) {
@@ -689,33 +685,32 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           //newValue
         );
         if (confirmed) {
-          outdatingData['address'] = oldAddress.id;
+          outdatingData.address = oldAddress.id;
         } else {
           deletingData['address'] = oldAddress.id;
         }
       }
     }
 
-    //TODO: contacts Add id to orderedContacts
-
     const oldContacts = this.object!['orderedContacts'];
-    changes['contacts'] = {} as Record<
+    /*     changes['contacts'] = {} as Record<
       Exclude<ContactType, 'telegram'>,
       string[]
-    >;
+    >; */
     const newContacts = user.draftContacts;
 
     console.log('oldContacts', 'newContacts', oldContacts, newContacts);
-
+//TODO: неправильно формируется массив изменений в контактах: проверить определение наличия изменений в контактах телеграм
     for (const type of this.contactTypes) {
-      changes['contacts'][type] = [];
+      //changes['contacts'][type] = [];
       for (const contact of newContacts[type]) {
         console.log('contact', contact);
+        console.log('oldContacts[type]', oldContacts[type]);
         const indexInOldContactsArray = oldContacts[type]?.findIndex(
           (item) => item.content == contact
         );
         console.log('indexInOldContactsArray', indexInOldContactsArray);
-        if (indexInOldContactsArray == -1) {
+        if (!oldContacts[type] || indexInOldContactsArray == -1) {
           if (restoringData.contacts && restoringData.contacts[type]) {
             const indexInRestoringContactsArray = restoringData.contacts[
               type
@@ -725,9 +720,13 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
               indexInRestoringContactsArray
             );
             if (indexInRestoringContactsArray == -1) {
+              changes['contacts'] ??= {};
+              changes['contacts'][type] ??= [];
               changes['contacts'][type].push(contact);
             }
           } else {
+            changes['contacts'] ??= {};
+            changes['contacts'][type] ??= [];
             changes['contacts'][type].push(contact);
           }
         }
@@ -757,21 +756,25 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         }
       }
     }
+    type MainKeys = keyof NonNullable<ChangedData['main']>;
 
-    if (this.existedUser!['roleId'] != user.roleId) {
-      changes['roleId'] = user.roleId;
-    }
-    if (this.existedUser!['comment'] != user.comment) {
-      changes['comment'] = user.comment;
-    }
-    if (this.existedUser!['isRestricted'] != user.isRestricted) {
-      changes['isRestricted'] = user.isRestricted;
-    }
-    if (this.existedUser!['causeOfRestriction'] != user.causeOfRestriction) {
-      changes['causeOfRestriction'] = user.causeOfRestriction;
-    }
-    if (this.existedUser!['dateOfRestriction'] != user.dateOfRestriction) {
-      changes['dateOfRestriction'] = user.dateOfRestriction;
+    const mainProps: MainKeys[] = [
+      'roleId',
+      'comment',
+      'isRestricted',
+      'causeOfRestriction',
+      'dateOfRestriction',
+    ];
+
+    for (const prop of mainProps) {
+      const key = prop as keyof User & keyof UserDraft;
+      if (this.existedUser![key] !== user[key]) {
+        changes.main = changes.main || {};
+        changes.main = {
+          ...changes.main,
+          [key]: user[key],
+        };
+      }
     }
 
     console.log('outdatingData', outdatingData);
@@ -779,7 +782,12 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     console.log('restoringData', restoringData);
     console.log('changes', changes);
 
-    this.saveUser(action, user);
+    this.saveUpdatedUser(action, {
+      changes,
+      restoringData,
+      outdatingData,
+      deletingData,
+    });
     function isFieldEqual(
       newFieldId: number | null,
       oldFieldId: number | null
@@ -822,42 +830,81 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       });
     });
   }
+
   saveUser(action: 'justSave' | 'saveAndExit', user: UserDraft) {
-    this.userService.saveUser(user, this.data().operation!).subscribe({
+    this.userService.saveUser(user).subscribe({
       next: (res) => {
         //this.dialogRefCreate.close({ userName: res.userName });
         if (action == 'saveAndExit') {
           //this.dialogRef.close({ name: res.data });
-          this.closeDialogDataSignal.set(res.data);
-          this.emittedCloseDialogData.emit(res.data);
+          this.closeDialogDataSignal.set(res.data.userName);
+          this.emittedCloseDialogData.emit(res.data.userName);
         } else {
           //console.log('this.existedUser', this.existedUser);
-          //TODO: check if existedUser changed
+
           //TODO: вернуть новые данные юзера и обновить значения полей, исходя из этого
           this.data().object = res.data;
           //this.existedUser= this.data().object;
           console.log('this.existedUser', this.existedUser);
-          //TODO: test it
-          if (
-            !this.mainForm.controls['isRestricted'].value &&
-            this.mainForm.get('causeOfRestriction')
-          ) {
-            this.mainForm.removeControl('causeOfRestriction');
-            const index = this.controlsNames.findIndex(
-              (item) => item == 'causeOfRestriction'
-            );
-            this.controlsNames.splice(index);
-          }
-
           this.changeToViewMode(null);
+          this.setInitialValues('view');
           this.messageService.add({
             severity: 'success',
             summary: 'Подтверждение',
-            detail: `Карточка пользователя '${res.data.userName}' успешно обновлена!`,
+            detail: `Аккаунт пользователя ${res.data.userName} успешно создан!`,
           });
         }
       },
       error: (err) => this.errorService.handle(err),
     });
+  }
+
+  saveUpdatedUser(
+    action: 'justSave' | 'saveAndExit',
+    upgradedUserData: {
+      changes: ChangedData;
+      restoringData: RestoringData;
+      outdatingData: OutdatingData;
+      deletingData: DeletingData;
+    }
+  ) {
+    this.userService
+      .saveUpdatedUser(this.existedUser!.id, upgradedUserData)
+      .subscribe({
+        next: (res) => {
+          //this.dialogRefCreate.close({ userName: res.userName });
+          if (action == 'saveAndExit') {
+            //this.dialogRef.close({ name: res.data });
+            this.closeDialogDataSignal.set(res.data.userName);
+            this.emittedCloseDialogData.emit(res.data.userName);
+          } else {
+            //console.log('this.existedUser', this.existedUser);
+
+            //TODO: вернуть новые данные юзера и обновить значения полей, исходя из этого
+            if (
+              !this.mainForm.controls['isRestricted'].value &&
+              this.mainForm.get('causeOfRestriction')
+            ) {
+              this.mainForm.removeControl('causeOfRestriction');
+              const index = this.controlsNames.findIndex(
+                (item) => item == 'causeOfRestriction'
+              );
+              this.controlsNames.splice(index);
+            }
+            this.data().object = res.data;
+            //this.existedUser= this.data().object;
+            console.log('this.existedUser', this.existedUser);
+            //TODO: test it
+            this.changeToViewMode(null);
+            this.setInitialValues('view');
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Подтверждение',
+              detail: `Аккаунт пользователя ${res.data.userName} успешно обновлен!`,
+            });
+          }
+        },
+        error: (err) => this.errorService.handle(err),
+      });
   }
 }

@@ -297,8 +297,8 @@ export class AddressFilterComponent {
     ) {
       count = count + 1;
     }
-   //console.log('this.emitAddressData', addressData);
-   //console.log('this.addressFilter', this.addressFilter);
+    console.log('this.emitAddressData', addressData);
+    //console.log('this.addressFilter', this.addressFilter);
     this.addressFilter.emit(addressData);
     if (
       this.params().source != 'toponymCard' &&
@@ -426,9 +426,12 @@ export class AddressFilterComponent {
     nextKey: 'region' | 'district' | 'locality',
     typeOfList: 'regions' | 'districts' | 'localities'
   ): Observable<any> {
+
+    console.log(`key`, key);
+    console.log(`this.form.controls[key]`, this.form.controls[key]);
     if (
-      (this.form.controls[key].value && !this.params().multiple) ||
-      (this.form.controls[key].value.length > 0 && this.params().multiple)
+      (!this.params().multiple && this.form.controls[key].value) ||
+      (this.params().multiple && this.form.controls[key].value.length > 0  )
     ) {
       const idValues = !this.params().multiple
         ? [this.form.controls[key].value]

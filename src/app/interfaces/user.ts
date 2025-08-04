@@ -1,7 +1,7 @@
-import { BaseModel } from "./base-model";
-import { AdvancedModel } from "./advanced-model";
+import { BaseModel } from './base-model';
+import { AdvancedModel } from './advanced-model';
 
-export interface User extends AdvancedModel{
+export interface User extends AdvancedModel {
   id: number;
   userName: string;
   password: string;
@@ -16,7 +16,7 @@ export interface User extends AdvancedModel{
     district: { id: number; name: string } | null;
     locality: { id: number; name: string } | null;
     // isRestricted: boolean;
-    id?: number;
+    id: number;
   };
   comment: string | null;
   isRestricted: boolean;
@@ -44,26 +44,25 @@ export interface Contacts {
   otherContact: Contact[];
 }
 
-  const contactTypeMap = {
-    email: true,
-    phoneNumber: true,
-    whatsApp: true,
-    telegram: true,
-    telegramNickname: true,
-    telegramId: true,
-    telegramPhoneNumber: true,
-    vKontakte: true,
-    instagram: true,
-    facebook: true,
-    otherContact: true,
+const contactTypeMap = {
+  email: true,
+  phoneNumber: true,
+  whatsApp: true,
+  telegram: true,
+  telegramNickname: true,
+  telegramId: true,
+  telegramPhoneNumber: true,
+  vKontakte: true,
+  instagram: true,
+  facebook: true,
+  otherContact: true,
+} as const;
 
-  } as const;
+export type ContactType = keyof typeof contactTypeMap;
 
-  export type ContactType = keyof typeof contactTypeMap;
-
-  export function isContactType(value: string): value is ContactType {
-    return value in contactTypeMap;
-  }
+export function isContactType(value: string): value is ContactType {
+  return value in contactTypeMap;
+}
 
 export interface OutdatedData {
   contacts: Contacts;
@@ -84,38 +83,69 @@ export interface OutdatedData {
 }
 
 export interface OutdatingData {
-  address?: number;
-  names?: {
+  address: number | null;
+  names: {
     firstName: string;
     patronymic: string | null;
     lastName: string;
-  };
-  userName?: string;
-  contacts?: number[];
+  } | null;
+  userName: string | null;
+  contacts: number[] | null;
 }
 
 export interface DeletingData {
-  address?: number;
-  contacts?: number[];
+  address: number | null;
+  contacts: number[] | null;
 }
 
 export interface ChangedData {
-  firstName?: string;
-  patronymic?: string | null;
-  lastName?: string;
-  userName?: string;
-  addresses?: {
+  main: {
+    firstName?: string;
+    patronymic?: string | null;
+    lastName?: string;
+    userName?: string;
+    roleId?: number;
+    comment?: string | null;
+    isRestricted?: boolean;
+    causeOfRestriction?: string | null;
+    dateOfRestriction?: Date | null;
+  } | null;
+  address: {
     countryId: number | null;
     regionId: number | null;
     districtId: number | null;
     localityId: number | null;
-  };
-  contacts?: Record<Exclude<ContactType, 'telegram'>, string[]>;
-  roleId?: number;
-  comment?: string | null;
-  isRestricted?: boolean;
-  causeOfRestriction?: string | null;
-  dateOfRestriction?: Date | null;
+  } | null;
+   contacts: {
+    email?: string[];
+    phoneNumber?: string[];
+    whatsApp?: string[];
+    telegramNickname?: string[];
+    telegramId?: string[];
+    telegramPhoneNumber?: string[];
+    vKontakte?: string[];
+    instagram?: string[];
+    facebook?: string[];
+    otherContact?: string[];
+  }  | null;
 }
 
+export type CommonUserFields = keyof NonNullable<ChangedData['main']>;
 
+export interface RestoringData {
+  address: number | null;
+  names: number | null;
+  userName: number | null;
+  contacts: {
+    email?: Contact[];
+    phoneNumber?: Contact[];
+    whatsApp?: Contact[];
+    telegramNickname?: Contact[];
+    telegramId?: Contact[];
+    telegramPhoneNumber?: Contact[];
+    vKontakte?: Contact[];
+    instagram?: Contact[];
+    facebook?: Contact[];
+    otherContact?: Contact[];
+  } | null;
+}

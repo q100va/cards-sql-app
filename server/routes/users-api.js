@@ -136,72 +136,33 @@ router.post("/create-user", async (req, res) => {
     console.log(createdUser);
     console.log(createdUser.dataValues.dateOfStart);
 
-    const role = await Role.findOne({
-      where: {
-        id: creatingUser.roleId,
-      }
-    });
-
-    let searchString =
-      creatingUser.userName +
-      ' ' + role.name +
-      ' ' + creatingUser.firstName +
-      (creatingUser.patronymic ? (' ' + creatingUser.patronymic) : '') +
-      ' ' + creatingUser.lastName +
-      (creatingUser.comment ? (' ' + creatingUser.comment) : '') +
-      (creatingUser.isRestricted ? ' заблокирован с' : ' активен') +
-      (creatingUser.dateOfRestriction ? (' ' + cloneDate(creatingUser.dateOfRestriction)) : '') +
-      (creatingUser.causeOfRestriction ? (' ' + creatingUser.causeOfRestriction) : '') +
-      ' ' + cloneDate(createdUser.dataValues.dateOfStart);
+    /*     const role = await Role.findOne({
+          where: {
+            id: creatingUser.roleId,
+          }
+        });
+     */
+    /*     let searchString =
+          creatingUser.userName +
+          ' ' + role.name +
+          ' ' + creatingUser.firstName +
+          (creatingUser.patronymic ? (' ' + creatingUser.patronymic) : '') +
+          ' ' + creatingUser.lastName +
+          (creatingUser.comment ? (' ' + creatingUser.comment) : '') +
+          (creatingUser.isRestricted ? ' заблокирован с' : ' активен') +
+          (creatingUser.dateOfRestriction ? (' ' + cloneDate(creatingUser.dateOfRestriction)) : '') +
+          (creatingUser.causeOfRestriction ? (' ' + creatingUser.causeOfRestriction) : '') +
+          ' ' + cloneDate(createdUser.dataValues.dateOfStart); */
     //TODO: error if contacts empty
     for (let key in creatingUser.draftContacts) {
       for (let contact of creatingUser.draftContacts[key]) {
         if (contact) {
           newContact = await UserContact.create({ type: key, content: contact });
           await newContact.setUser(createdUser);
-          searchString = searchString + ' ' + contact;
+          // searchString = searchString + ' ' + contact;
         }
       }
     }
-
-    /*     let country = creatingUser.addresses.country;
-        let region = creatingUser.addresses.region;
-        let district = creatingUser.addresses.district;
-        let locality = creatingUser.addresses.locality; */
-    /*  for (let address of creatingUser.draftAddress) {
-         if (address.country) {
-             console.log("address.country");
-             console.log(address.country);
-
-             country = await Country.findOne({
-               where: { id: address.country },
-               attributes: ['id'],
-               raw: true
-             });
-             console.log("countryId");
-             console.log(country.id);
-           }
-           if (address.region) {
-             region = await Region.findOne({
-               where: { id: address.region },
-               attributes: ['id'],
-               raw: true
-             });
-           }
-           if (address.district) {
-             district = await District.findOne({
-               where: { id: address.district },
-               attributes: ['id'],
-               raw: true
-             });
-           }
-           if (address.locality) {
-             locality = await Locality.findOne({
-               where: { id: address.locality },
-               attributes: ['id'],
-               raw: true
-             });
-           } */
     const address = creatingUser.draftAddress;
     if (address.countryId || address.regionId || address.districtId || address.localityId) {
       newAddress
@@ -212,33 +173,65 @@ router.post("/create-user", async (req, res) => {
           localityId: address.localityId
         });
       await newAddress.setUser(createdUser);
-      let countryName, regionName, districtName, localityName = '';
-      if (address.country) {
-        countryName = await Country.findOne({ where: { id: address.country }, attributes: ['name'] });
-        countryName = countryName.name ? countryName.name + ' ' : '';
-      }
-      if (address.region) {
-        regionName = await Region.findOne({ where: { id: address.region }, attributes: ['name'] });
-        regionName = regionName.name ? regionName.name + ' ' : '';
-      }
-      if (address.district) {
-        districtName = await District.findOne({ where: { id: address.district }, attributes: ['name'] });
-        districtName = districtName.name ? districtName.name + ' ' : '';
-      }
-      if (address.locality) {
-        localityName = await Locality.findOne({ where: { id: address.locality }, attributes: ['name'] });
-        localityName = localityName.name ? localityName.name + ' ' : '';
-      }
-      searchString =
-        searchString + countryName + regionName + districtName + localityName;
+      /*       let countryName, regionName, districtName, localityName = '';
+            if (address.country) {
+              countryName = await Country.findOne({ where: { id: address.country }, attributes: ['name'] });
+              countryName = countryName.name ? countryName.name + ' ' : '';
+            }
+            if (address.region) {
+              regionName = await Region.findOne({ where: { id: address.region }, attributes: ['name'] });
+              regionName = regionName.name ? regionName.name + ' ' : '';
+            }
+            if (address.district) {
+              districtName = await District.findOne({ where: { id: address.district }, attributes: ['name'] });
+              districtName = districtName.name ? districtName.name + ' ' : '';
+            }
+            if (address.locality) {
+              localityName = await Locality.findOne({ where: { id: address.locality }, attributes: ['name'] });
+              localityName = localityName.name ? localityName.name + ' ' : '';
+            }
+            searchString =
+              searchString + countryName + regionName + districtName + localityName; */
     }
     //   }
-    newSearchString = await SearchUser.create({ content: searchString.trim() });
+
+    const createdUser = await User.findOne({
+      where: { id },
+      include: [
+        {
+          model: UserContact,
+          as: 'contacts',
+          attributes: ['id', 'type', 'content', 'isRestricted'],
+        },
+        {
+          model: UserAddress,
+          as: 'addresses',
+          attributes: ['id', 'isRestricted'],
+          include: [
+            { model: Country, attributes: ['id', 'name'] },
+            { model: Region, attributes: ['id', 'shortName'] },
+            { model: District, attributes: ['id', 'shortName'] },
+            { model: Locality, attributes: ['id', 'shortName'] },
+          ]
+        },
+        {
+          model: Role,
+          attributes: ['name'],
+        },
+        {
+          model: OutdatedName,
+          as: 'outdatedNames',
+          attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName']
+        },
+      ],
+    });
+    const searchString = await createSearchString(createdUser);
+    newSearchString = await SearchUser.create({ content: searchString });
     console.log("newSearchString");
     console.log(newSearchString);
     await newSearchString.setUser(createdUser);
     // await createdUser.setRole(role);
-    res.status(200).send({ msg: "Аккаунт успешно создан.", data: creatingUser.userName });
+    res.status(200).send({ msg: "Аккаунт успешно создан.", data: transformUserData(createdUser.toJSON()) });
   } catch (e) {
     if (createdUser) {
       /*       await UserAddress.destroy({
@@ -261,6 +254,242 @@ router.post("/create-user", async (req, res) => {
     res.status(err.statusCode).send(err.message);
   }
 });
+
+router.post("/update-user", async (req, res) => {
+
+  try {
+    console.log("req.body.data");
+    console.log(req.body.data);
+    const id = req.body.data.id;
+    const { changes, restoringData, outdatingData, deletingData } = req.body.data.updatedUserData;
+    let newContact, newAddress, newSearchString;
+
+    //changes
+    if (changes.main) {
+      Object.keys(changes.main).forEach(key => changes.main[key] === null && delete changes.main[key]);
+
+      console.log("changes.main");
+      console.log(changes.main);
+      await User.update(
+        changes.main,
+        {
+          where: {
+            id: id
+          }
+        });
+    }
+
+    const updatingUser = await User.findOne({
+      where: id
+    });
+
+    if (changes.address) {
+      if (changes.address.countryId || changes.address.regionId || changes.address.districtId || changes.address.localityId) {
+        newAddress
+          = await UserAddress.create({
+            countryId: changes.address.countryId,
+            regionId: changes.address.regionId,
+            districtId: changes.address.districtId,
+            localityId: changes.address.localityId
+          });
+        await newAddress.setUser(updatingUser);
+      }
+    }
+    if (changes.contacts) {
+      for (let key in changes.contacts) {
+        for (let contact of changes.contacts[key]) {
+          if (contact) {
+            newContact = await UserContact.create({ type: key, content: contact });
+            await newContact.setUser(updatingUser);
+          }
+        }
+      }
+    }
+
+    //restoringData
+
+    if (restoringData.address) {
+      await UserAddress.update({
+        isRestricted: false
+      },
+        { where: { id: restoringData.address } }
+      );
+    }
+
+    if (restoringData.names) {
+      await OutdatedName.destroy({ where: { id: restoringData.names } });
+    }
+
+    if (restoringData.userName) {
+      await OutdatedName.destroy({ where: { id: restoringData.names } });
+    }
+
+    if (restoringData.contacts) {
+      for (let key in restoringData.contacts) {
+        for (let contact of restoringData.contacts[key]) {
+          await UserContact.update({
+            isRestricted: false
+          },
+            { where: { id: contact.id } }
+          );
+        }
+      }
+    }
+
+    // outdatingData
+
+    if (outdatingData.names) {
+    if (outdatingData.names.firstName) {
+      await OutdatedName.create({
+        userId: id,
+        firstName: outdatingData.names.firstName,
+        patronymic: outdatingData.names.patronymic,
+        lastName: outdatingData.names.lastName
+      });
+    }
+
+    if (outdatingData.names.userName) {
+      await OutdatedName.create({
+        userId: id,
+        userName: userName,
+      });
+    }
+  }
+
+    if (outdatingData.address) {
+      await UserAddress.update({
+        isRestricted: true
+      },
+        { where: { id: outdatingData.address } }
+      );
+    }
+
+    if (outdatingData.contacts) {
+      await UserContact.update({
+        isRestricted: true
+      },
+        { where: { id: { [Op.in]: outdatingData.contacts } } }
+      );
+
+    }
+
+    //deletingData
+
+    if (deletingData.address) {
+      await UserAddress.destroy({
+        where: { id: { [Op.in]: deletingData.address } }
+      });
+    }
+
+    if (deletingData.contacts) {
+      await UserContact.destroy({
+        where: { id: { [Op.in]: deletingData.contacts } }
+      });
+    }
+
+    const updatedUser = await User.findOne({
+      where: { id },
+      include: [
+        {
+          model: UserContact,
+          as: 'contacts',
+          attributes: ['id', 'type', 'content', 'isRestricted'],
+        },
+        {
+          model: UserAddress,
+          as: 'addresses',
+          attributes: ['id', 'isRestricted'],
+          include: [
+            { model: Country, attributes: ['id', 'name'] },
+            { model: Region, attributes: ['id', 'shortName'] },
+            { model: District, attributes: ['id', 'shortName'] },
+            { model: Locality, attributes: ['id', 'shortName'] },
+          ]
+        },
+        {
+          model: Role,
+          attributes: ['name'],
+        },
+        {
+          model: OutdatedName,
+          as: 'outdatedNames',
+          attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName']
+        },
+      ],
+    });
+
+    await SearchUser.update({
+      isRestricted: true
+    },
+      { where: { userId: updatedUser.id, isRestricted: false } }
+    );
+
+    const searchString = await createSearchString(updatedUser);
+
+    newSearchString = await SearchUser.create({ content: searchString });
+    console.log("newSearchString");
+    console.log(newSearchString);
+    await newSearchString.setUser(updatedUser);
+    // await createdUser.setRole(role);
+    res.status(200).send({ msg: "Аккаунт успешно обновлен.", data: transformUserData(updatedUser.toJSON()) });
+  } catch (e) {
+    /*  if (updatedUser) {
+           await UserAddress.destroy({
+              where: {
+                userId: createdUser.id,
+              },
+            });
+            await UserContact.destroy({
+              where: {
+                userId: createdUser.id,
+              },
+            });
+      await User.destroy({
+        where: {
+          id: updatedUser.id,
+        },
+      });
+    }*/
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
+  }
+});
+
+
+async function createSearchString(updatedUser) {
+  const role = await Role.findOne({
+    where: {
+      id: updatedUser.roleId,
+    }
+  });
+  let searchString = '';
+
+  // Add main user data
+  searchString = updatedUser.userName +
+    ' ' + role.name +
+    ' ' + updatedUser.firstName +
+    (updatedUser.patronymic ? (' ' + updatedUser.patronymic) : '') +
+    ' ' + updatedUser.lastName +
+    (updatedUser.comment ? (' ' + updatedUser.comment) : '') +
+    (updatedUser.isRestricted ? ' заблокирован с' : ' активен') +
+    (updatedUser.dateOfRestriction ? (' ' + cloneDate(updatedUser.dateOfRestriction)) : '') +
+    (updatedUser.causeOfRestriction ? (' ' + updatedUser.causeOfRestriction) : '') +
+    ' ' + cloneDate(updatedUser.dateOfStart);
+  // Add contacts that are not restricted
+  const contacts = updatedUser.contacts.filter(contact => !contact.isRestricted);
+  for (const contact of contacts) {
+    searchString += ' ' + contact.content;
+  }
+  // Add address if exists and not restricted
+  const address = updatedUser.addresses.find(addr => !addr.isRestricted);
+  if (address) {
+    searchString += (address.country ? ' ' + address.country.name : '') +
+      (address.region ? ' ' + address.region.shortName : '') +
+      (address.district ? ' ' + address.district.shortName : '') +
+      (address.locality ? ' ' + address.locality.shortName : '');
+  }
+  return searchString.trim();
+}
 
 // API get users
 
@@ -334,35 +563,35 @@ router.post("/get-users", async (req, res) => {
     }
 
 
-/*     let orderByName;
-    let orderDirection;
-    let orderModel;
+    /*     let orderByName;
+        let orderDirection;
+        let orderModel;
 
-    if (sortParameters.direction == '') {
-      orderParams = ['userName', 'ASC'];
-    } else if (sortParameters.active === 'role') {
-      orderParams = [{ model: Role }, 'name', sortParameters.direction.toUpperCase()];
-    } else {
-      orderParams = [sortParameters.active, sortParameters.direction.toUpperCase()];
-    } */
+        if (sortParameters.direction == '') {
+          orderParams = ['userName', 'ASC'];
+        } else if (sortParameters.active === 'role') {
+          orderParams = [{ model: Role }, 'name', sortParameters.direction.toUpperCase()];
+        } else {
+          orderParams = [sortParameters.active, sortParameters.direction.toUpperCase()];
+        } */
 
-/*     if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
-      orderByName = 'userName';
-      orderDirection = 'ASC';
-    } else {
-      orderDirection = sortParameters.direction.toUpperCase();
-      if (sortParameters.active == 'role') {
-        orderByName = 'name';
-        orderModel = { model: Role };
-      } else {
-        orderByName = sortParameters.active;
-      }
-    }
+    /*     if (sortParameters.direction == '') {// || (sortParameters.active == '' && sortParameters.direction == '')
+          orderByName = 'userName';
+          orderDirection = 'ASC';
+        } else {
+          orderDirection = sortParameters.direction.toUpperCase();
+          if (sortParameters.active == 'role') {
+            orderByName = 'name';
+            orderModel = { model: Role };
+          } else {
+            orderByName = sortParameters.active;
+          }
+        }
 
-    if (orderModel) orderParams.push(orderModel);
-    orderParams.push(orderByName);
-    orderParams.push(orderDirection);
- */
+        if (orderModel) orderParams.push(orderModel);
+        orderParams.push(orderByName);
+        orderParams.push(orderDirection);
+     */
     console.log("orderParams");
     console.log(orderParams);
 
@@ -556,7 +785,7 @@ router.post("/get-users", async (req, res) => {
         where: contactWhereParams,
         required: contactRequiredParam,
         attributes: ['id', 'type', 'content', 'isRestricted'],
-       // separate: true,
+        // separate: true,
       },
       {
         model: UserAddress,
@@ -564,7 +793,7 @@ router.post("/get-users", async (req, res) => {
         where: addressWhereParams,
         required: addressRequiredParam,
         attributes: ['id', 'isRestricted'],
-       // separate: true,
+        // separate: true,
 
         include: [
           {
@@ -635,8 +864,8 @@ router.post("/get-users", async (req, res) => {
       attributes: { exclude: ['password'] },
       where: whereParams,
       include: parameters,
-  /*     subQuery: false,
-      distinct: true, */
+      /*     subQuery: false,
+          distinct: true, */
     });
     /*    console.log("users");
         console.log(users[0]); */
@@ -870,8 +1099,12 @@ function transformUserData(rawUserData) {
       country: null,
       region: null,
       district: null,
-      locality: null
+      locality: null,
     };
+  }
+
+  if (user.address.country) {
+    delete user.address.isRestricted;
   }
 
   delete user.addresses;

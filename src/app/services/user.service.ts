@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { OutdatedData, User } from '../interfaces/user';
+import { ChangedData, DeletingData, OutdatedData, OutdatingData, RestoringData, User } from '../interfaces/user';
 import { environment } from '../../environments/environment';
 import { AddressFilter } from '../interfaces/address-filter';
 import { UserDraft } from '../interfaces/userDraft';
@@ -27,13 +27,24 @@ export class UserService {
       data: user,
     });
   }
-  saveUser(user: UserDraft, operation: string): Observable<any> {
-    const addressPoint = operation == 'create' ? 'create-user' : 'update-user';
+  saveUser(user: UserDraft): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/users/' + addressPoint, {
+    return this.http.post(BACKEND_URL + '/api/users/create-user', {
       data: user,
     });
   }
+  saveUpdatedUser(id: number, updatedUserData: {
+        changes: ChangedData;
+        restoringData: RestoringData;
+        outdatingData: OutdatingData;
+        deletingData: DeletingData;
+      }): Observable<any> {
+    const BACKEND_URL = environment.apiUrl;
+    return this.http.post(BACKEND_URL + '/api/users/update-user', {
+      data: {id: id, updatedUserData: updatedUserData},
+    });
+  }
+
   getListOfUsers(
     allFilterParameters: {
       viewOption: string;

@@ -43,20 +43,50 @@ export class AdvancedDetailsComponent<
 
   contactsChangeValidation() {
     const orderedContacts: Contacts = this.object!['orderedContacts'];
-    for (let contact of this.contactTypes) {
-      const values = orderedContacts[contact];
+    for (let type of this.contactTypes) {
+      const values = orderedContacts[type];
+      const rawControlValue: string[] = this.getFormArray(type)
+        .getRawValue()
+        .filter(Boolean);
+      console.log('orderedContacts[contact]', values);
+      console.log('rawControlValue', rawControlValue);
       if (!values) {
-        if (
-          this.mainForm.get(contact)?.value.length > 0
-        ) {
+        console.log(
+          'this.mainForm.get(contact)?.value.length',
+          this.mainForm.get(type)?.value.length
+        );
+        console.log(
+          'this.mainForm.get(contact)?.value',
+          this.mainForm.get(type)?.value
+        );
+        if (rawControlValue.length > 0) {
           return true;
         }
-      } else if (values.length != this.mainForm.get(contact)?.value.length) {
+      } else if (values.length != rawControlValue.length) {
+        console.log(
+          'contactsChangeValidation - values.length != this.mainForm.get(contact)?.value.length',
+          values.length != this.mainForm.get(type)?.value.length
+        );
         return true;
       } else {
-        for (let i = 0; i < values.length; i++) {
-          if (this.mainForm.get(contact)?.value[i] != values[i].content) {
+        for (const contact of rawControlValue) {
+          const indexInOldContactsArray = orderedContacts[type]?.findIndex(
+            (item) => item.content == contact
+          );
+          console.log('indexInOldContactsArray', indexInOldContactsArray);
+          if (!orderedContacts[type] || indexInOldContactsArray == -1) {
             return true;
+          }
+        }
+
+        if (Array.isArray(orderedContacts[type])) {
+          for (const contact of orderedContacts[type]) {
+            const indexInNewContactsArray = rawControlValue.findIndex(
+              (item) => item == contact.content
+            );
+            if (indexInNewContactsArray == -1) {
+              return true;
+            }
           }
         }
       }
@@ -85,6 +115,7 @@ export class AdvancedDetailsComponent<
       const originalId = original?.id ?? null;
       const filteredId = Array.isArray(filtered) ? filtered[0] ?? null : null;
       if (originalId !== filteredId) {
+        console.log('originalId !== filteredId', originalId, filteredId);
         return true;
       }
     }
@@ -159,7 +190,7 @@ export class AdvancedDetailsComponent<
           });
         }
       } else {
-        const emptyValue = mode === 'view' ? '\u00A0' : '';
+        const emptyValue = mode === 'view' ? '\u00A0' : null;
         formArray.at(0)?.setValue(emptyValue);
       }
     }
