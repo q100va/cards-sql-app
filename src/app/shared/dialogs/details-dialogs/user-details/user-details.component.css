@@ -67,5 +67,55 @@ mat-form-field {
   width: 500px !important;
   max-width: 90vw;
 }
+/*
+.outdated-data {
+  color: #7d7d7d;
+  font-style: italic;
+  font-size: 0.9em;
+  display: block;
+  margin-left: 10px;
+  text-align: left;
+  width: 100%;
+} */
+
+.title {
+  font-weight: bold;
+  width: 100%;
+  align-self: flex-start;
+}
+.outdated-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.outdated-data {
+  color: #7d7d7d;
+  font-style: italic;
+  font-size: 1.1em;
+/*   text-align: left; */
+  margin-left: 10px;
+  /* flex: 1;    */
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/*.tile-inner {
+  width: 100%;
+  display: block;
+  align-items: flex-start;
+  margin-top: 20px;
+   text-align: left; */ /* важно: текст внутри будет слева */
+
+/* .outdated-data-container {
+  height: auto !important; min-height: 76px;
+} */
 
 
+/* ::ng-deep mat-grid-list .mat-grid-tile { height: auto !important; min-height: 76px; }
+::ng-deep mat-grid-list .mat-grid-tile .mat-grid-tile-content { height: auto !important; display: block !important; }
+
+
+}*/

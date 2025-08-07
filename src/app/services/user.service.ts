@@ -15,6 +15,13 @@ export class UserService {
 
   constructor() {}
 
+changePassword(userId: number, value: string): Observable<any> {
+  const BACKEND_URL = environment.apiUrl;
+  return this.http.post(BACKEND_URL + '/api/users/change-password/', {
+    data: { userId, value },
+  });
+}
+
   checkUserName(userName: string, id: number | null): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/users/check-username/', {

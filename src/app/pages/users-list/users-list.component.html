@@ -12,14 +12,13 @@
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Имя пользователя </th>
         <td mat-cell *matCellDef="let row">
           <div>{{row.userName}}</div>
+          <br>
           @if(allFilterParameters().notOnlyActual && hasOutdatedUserNames(row)) {
-            <div>прежние значения:</div>
-          @for (item of row.outdatedData.names; track item.id) {
-          @if(item.userName) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (item of row.outdatedData.userNames; track item.id) {
           <span class="outdated-data">
             {{item.userName}}
           </span>
-          }
           }
           }
         </td>
@@ -33,9 +32,23 @@
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef> ФИО </th>
         <td mat-cell *matCellDef="let row">
-          <span>{{row.firstName}}</span><br />
-          @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
-          <span>{{row.lastName}}</span><br />
+          <div> <span>{{row.firstName}}</span><br />
+            @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
+            <span>{{row.lastName}}</span>
+          </div>
+          <br>
+          @if(allFilterParameters().notOnlyActual && hasOutdatedNames(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (item of row.outdatedData.names; track item.id) {
+          @if(item.firstName) {
+          <div class="outdated-data">
+            <span>{{item.firstName}}</span><br />
+            @if (item.patronymic) {<span>{{row.patronymic}}</span><br />}
+            <span>{{item.lastName}}</span>
+          </div>
+          }
+          }
+          }
         </td>
       </ng-container>
 
@@ -43,12 +56,10 @@
         <th mat-header-cell *matHeaderCellDef> Контакты </th>
         <td mat-cell *matCellDef="let row">
           @for (item of contactTypes; track $index) {
-
           @if (row.orderedContacts[item.type]) {
           <div class="outer">
             <div class="inner-left" [title]="item.label">
               <mat-icon [svgIcon]="item.type"></mat-icon>
-              <!--       <mat-icon>{{item.icon}}</mat-icon> -->
             </div>
             <div class="inner-right">
               @for (contact of row.orderedContacts[item.type]; track $index) {
@@ -56,6 +67,27 @@
               }
             </div>
           </div>
+          }
+          }
+          @if(allFilterParameters().notOnlyActual && hasOutdatedContacts(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (item of contactTypes; track $index) {
+
+          @if (row.outdatedData.contacts[item.type]) {
+
+          <div class="outdated-data">
+            <div class="outer">
+              <div class="inner-left" [title]="item.label">
+                <mat-icon [svgIcon]="item.type"></mat-icon>
+              </div>
+              <div class="inner-right">
+                @for (contact of row.outdatedData.contacts[item.type]; track $index) {
+                {{editContact(contact.content, item.type)}}<br />
+                }
+              </div>
+            </div>
+          </div>
+          }
           }
           }
         </td>
@@ -75,6 +107,28 @@
           }
           @if (row.address.locality) {
           {{row.address.locality.shortName}}<br />
+          }
+
+          @if(allFilterParameters().notOnlyActual && hasOutdatedAddresses(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (address of row.outdatedData.addresses; track $index) {
+          <div class="outdated-data">
+
+            @if (address.country) {
+            {{address.country.name}}<br />
+            }
+            @if (address.region) {
+            {{address.region.shortName}}<br />
+            }
+            @if (address.district) {
+            {{address.district.shortName}}<br />
+            }
+            @if (address.locality) {
+            {{address.locality.shortName}}<br />
+            }
+
+          </div>
+          }
           }
         </td>
       </ng-container>

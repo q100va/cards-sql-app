@@ -5,8 +5,8 @@ export interface AdvancedModel extends BaseModel {
   address: {
     country: { id: number; name: string } | null;
     region: { id: number; shortName: string } | null;
-    district: { id: number; name: string } | null;
-    locality: { id: number; name: string } | null;
+    district: { id: number; shortName: string } | null;
+    locality: { id: number; shortName: string } | null;
     // isRestricted: boolean;
     id: number;
   };

@@ -308,21 +308,27 @@ router.post("/update-user", async (req, res) => {
 
     //restoringData
 
-    if (restoringData.address) {
-      await UserAddress.update({
-        isRestricted: false
-      },
-        { where: { id: restoringData.address } }
-      );
+    if (restoringData.addresses && restoringData.addresses.length > 0) {
+      for (let addressId of restoringData.addresses) {
+        await UserAddress.update({
+          isRestricted: false
+        },
+          { where: { id: addressId } }
+        );
+      }
     }
 
-    if (restoringData.names) {
-      await OutdatedName.destroy({ where: { id: restoringData.names } });
+    if (restoringData.names && restoringData.names.length > 0) {
+      for (let nameId of restoringData.names) {
+        await OutdatedName.destroy({ where: { id: nameId } });
+      }
     }
 
-    if (restoringData.userName) {
-      await OutdatedName.destroy({ where: { id: restoringData.names } });
+    if (restoringData.userNames && restoringData.userNames.length > 0) {
+      for (let userNameId of restoringData.userNames) {
+      await OutdatedName.destroy({ where: { id: userNameId} });
     }
+  }
 
     if (restoringData.contacts) {
       for (let key in restoringData.contacts) {
@@ -339,22 +345,21 @@ router.post("/update-user", async (req, res) => {
     // outdatingData
 
     if (outdatingData.names) {
-    if (outdatingData.names.firstName) {
-      await OutdatedName.create({
-        userId: id,
-        firstName: outdatingData.names.firstName,
-        patronymic: outdatingData.names.patronymic,
-        lastName: outdatingData.names.lastName
-      });
+        await OutdatedName.create({
+          userId: id,
+          firstName: outdatingData.names.firstName,
+          patronymic: outdatingData.names.patronymic,
+          lastName: outdatingData.names.lastName
+        });
     }
 
-    if (outdatingData.names.userName) {
-      await OutdatedName.create({
-        userId: id,
-        userName: userName,
-      });
-    }
-  }
+      if (outdatingData.userName) {
+        await OutdatedName.create({
+          userId: id,
+          userName: outdatingData.userName,
+        });
+      }
+
 
     if (outdatingData.address) {
       await UserAddress.update({
@@ -490,6 +495,24 @@ async function createSearchString(updatedUser) {
   }
   return searchString.trim();
 }
+//TODO: test
+router.post("/change-password", async (req, res) => {
+  try {
+    const { userId, value } = req.body.data;
+    const hashedPassword = hashSync(value, saltRounds);
+    await User.update(
+      { password: hashedPassword },
+      { where: { id: userId } }
+    );
+    res.status(200).send({
+      msg: "Пароль успешно изменен.",
+      data: true
+    });
+  } catch (e) {
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
+  }
+});
 
 // API get users
 
@@ -694,7 +717,7 @@ router.post("/get-users", async (req, res) => {
         //console.log('addresses', parentType);
         //console.log(addresses[parentType]);
         addresses[parentType] = addresses[parentType].filter(
-          (i) => i !== toponym[parentIdName]
+          (i) => i != toponym[parentIdName]
         );
         //console.log('addresses', parentType);
         //console.log(addresses[parentType]);
@@ -1028,7 +1051,7 @@ function errorHandling(e) {
 function transformUserData(rawUserData) {
   const user = { ...rawUserData };
   let orderedContacts = {};
-  let outdatedData = { contacts: {}, addresses: [], names: [] };
+  let outdatedData = { contacts: {}, addresses: [], names: [], userNames: [] };
   let outdatedDataContacts = {};
 
   // console.log(user.role.id, 'user.role.id');
@@ -1110,15 +1133,24 @@ function transformUserData(rawUserData) {
   delete user.addresses;
 
   if (user.outdatedNames?.length > 0) {
-    outdatedData.names = user.outdatedNames.map((name) => ({
-      firstName: name.firstName,
-      patronymic: name.patronymic,
-      lastName: name.lastName,
-      userName: name.userName,
-      id: name.id,
-    }));
+    outdatedData.names = user.outdatedNames
+      .filter(name => name.firstName !== null)
+      .map(name => ({
+        firstName: name.firstName,
+        patronymic: name.patronymic,
+        lastName: name.lastName,
+        id: name.id,
+      }));
+    outdatedData.userNames = user.outdatedNames
+      .filter(name => name.userName !== null)
+      .map(name => ({
+        userName: name.userName,
+        id: name.id,
+      }));
+
     delete user.outdatedNames;
   }
+
   user.outdatedData = outdatedData;
 
   // console.log('transformed user data:', user.orderedContacts.email);

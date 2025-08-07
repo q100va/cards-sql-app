@@ -22,14 +22,6 @@ const OutdatedName = sequelize.define('outdated-name', {
   lastName: {
     type: DataTypes.STRING,
   },
-/*   dateOfRestriction: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
-    validate: {
-      notEmpty: true,
-    }
-  }, */
 });
 
 export default OutdatedName;

@@ -48,14 +48,14 @@ export class AdvancedDetailsComponent<
       const rawControlValue: string[] = this.getFormArray(type)
         .getRawValue()
         .filter(Boolean);
-      console.log('orderedContacts[contact]', values);
+  console.log('orderedContacts[contact]', values);
       console.log('rawControlValue', rawControlValue);
       if (!values) {
         console.log(
           'this.mainForm.get(contact)?.value.length',
           this.mainForm.get(type)?.value.length
         );
-        console.log(
+       console.log(
           'this.mainForm.get(contact)?.value',
           this.mainForm.get(type)?.value
         );
@@ -63,7 +63,7 @@ export class AdvancedDetailsComponent<
           return true;
         }
       } else if (values.length != rawControlValue.length) {
-        console.log(
+         console.log(
           'contactsChangeValidation - values.length != this.mainForm.get(contact)?.value.length',
           values.length != this.mainForm.get(type)?.value.length
         );
@@ -114,8 +114,8 @@ export class AdvancedDetailsComponent<
       const filtered = filter[keyMap[key]];
       const originalId = original?.id ?? null;
       const filteredId = Array.isArray(filtered) ? filtered[0] ?? null : null;
-      if (originalId !== filteredId) {
-        console.log('originalId !== filteredId', originalId, filteredId);
+      if (originalId != filteredId) {
+       console.log('originalId != filteredId', originalId, filteredId);
         return true;
       }
     }

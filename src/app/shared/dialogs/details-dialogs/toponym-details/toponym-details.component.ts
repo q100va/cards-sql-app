@@ -87,7 +87,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
         console.log('filterValues, objectValue', filterValues, objectValue);
         if (!filterValues.length) {
           return true;
-        } else if (filterValues[0] !== objectValue) {
+        } else if (filterValues[0] != objectValue) {
           return true;
         }
       }

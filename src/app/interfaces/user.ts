@@ -13,8 +13,8 @@ export interface User extends AdvancedModel {
   address: {
     country: { id: number; name: string } | null;
     region: { id: number; shortName: string } | null;
-    district: { id: number; name: string } | null;
-    locality: { id: number; name: string } | null;
+    district: { id: number; shortName: string } | null;
+    locality: { id: number; shortName: string } | null;
     // isRestricted: boolean;
     id: number;
   };
@@ -69,18 +69,22 @@ export interface OutdatedData {
   addresses: {
     country: { id: number; name: string };
     region: { id: number; shortName: string } | null;
-    district: { id: number; name: string } | null;
-    locality: { id: number; name: string } | null;
+    district: { id: number; shortName: string } | null;
+    locality: { id: number; shortName: string } | null;
     id: number;
   }[];
   names: {
     firstName: string | null;
     patronymic: string | null;
     lastName: string | null;
+    id: number;
+  }[];
+  userNames: {
     userName: string | null;
     id: number;
   }[];
 }
+
 
 export interface OutdatingData {
   address: number | null;
@@ -93,10 +97,18 @@ export interface OutdatingData {
   contacts: number[] | null;
 }
 
-export interface DeletingData {
+/* export interface DeletingData {
   address: number | null;
   contacts: number[] | null;
+} */
+
+export interface DeletingData {
+  userNames: number[] | null;
+  names: number[] | null;
+  addresses: number[] | null;
+  contacts: number[] | null;
 }
+
 
 export interface ChangedData {
   main: {
@@ -133,9 +145,9 @@ export interface ChangedData {
 export type CommonUserFields = keyof NonNullable<ChangedData['main']>;
 
 export interface RestoringData {
-  address: number | null;
-  names: number | null;
-  userName: number | null;
+  addresses: number[] | null;
+  names: number[] | null;
+  userNames: number[] | null;
   contacts: {
     email?: Contact[];
     phoneNumber?: Contact[];
@@ -149,3 +161,6 @@ export interface RestoringData {
     otherContact?: Contact[];
   } | null;
 }
+
+export type RestoringDataType = keyof RestoringData;
+export type DeletingOutdatedDataType = keyof DeletingData;

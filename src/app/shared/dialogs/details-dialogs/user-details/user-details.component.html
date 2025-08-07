@@ -1,4 +1,4 @@
-<p-confirmdialog  [style]="{width: '500px'}"/>
+<p-confirmdialog [style]="{width: '500px'}" />
 <p-toast position="center" />
 
 <form [formGroup]="mainForm" [class]="data().operation == 'view-edit' && !isEditModeSignal() ? 'view-mode' : 'none'"
@@ -36,7 +36,7 @@
           </mat-form-field>
           }
           @else {
-          <button class = 'password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()">
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()" (click)="onChangePasswordClick()">
             <mat-icon>edit</mat-icon>
             Изменить пароль</button>
           }
@@ -69,10 +69,11 @@
         </mat-grid-tile>
 
         <mat-grid-tile colspan="6" rowspan="1">
-          <mat-slide-toggle formControlName="isRestricted" (change)="onRestrictedToggleClick()">Заблокирован</mat-slide-toggle>
+          <mat-slide-toggle formControlName="isRestricted"
+            (change)="onRestrictedToggleClick()">Заблокирован</mat-slide-toggle>
         </mat-grid-tile>
 
-     @if (mainForm.controls['isRestricted'].value) {
+        @if (mainForm.controls['isRestricted'].value) {
         <mat-grid-tile colspan="6" rowspan="1">
           <mat-form-field>
             <mat-label>Причина</mat-label>
@@ -121,7 +122,7 @@
             контакт</button>
           <mat-menu #menu="matMenu">
             @for (item of availableContactTypes; track $index) {
-            <button mat-menu-item (click)="onTypeClick($index)">{{item}}</button>
+            <button mat-menu-item (click)="onTypeClick($index, null)">{{item}}</button>
             }
           </mat-menu>
         </mat-grid-tile>
@@ -129,9 +130,122 @@
     </mat-tab>
 
     @if (data().operation == 'view-edit') {
+
     <mat-tab label="Неактуальные данные">
+      <mat-grid-list cols="6" gutterSize="0px" rowHeight="56px">
+
+        <!-- Outdated Names -->
+        @if (hasOutdatedNames()) {
+        <!--   style="background-color: rgb(224, 241, 227);" -->
+        <mat-grid-tile colspan='2' [rowspan]="newOutdatedData.names.length">
+          <div class="outdated-data title">Прежние ФИО:</div>
+        </mat-grid-tile>
+        <!--     <div class="tile-inner"> -->
+        @for (item of newOutdatedData.names; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu (restore)="onRestoreOutdatedData('names', item)"
+              (delete)="onDeleteOutdatedData('names', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">
+              {{ item.firstName }} {{ item.patronymic }} {{ item.lastName }}
+            </div>
+          </div>
+        </mat-grid-tile>
+        }
+        <!--   </div> -->
+        }
+
+        <!-- Outdated UserNames -->
+        @if (hasOutdatedUserNames()) {
+        <mat-grid-tile colspan="2" [rowspan]="newOutdatedData.userNames.length">
+          <div class="outdated-data title">Прежние имена пользователя:</div>
+        </mat-grid-tile>
+
+
+        @for (item of newOutdatedData.userNames; track item.id) {
+
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu (restore)="onRestoreOutdatedData('userNames', item)"
+              (delete)="onDeleteOutdatedData('userNames', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.userName }}</div>
+
+
+          </div>
+        </mat-grid-tile>
+        }
+
+
+        }
+
+        <!-- Outdated Addresses -->
+
+        <!-- -->
+        @if (hasOutdatedAddresses()) {
+        <mat-grid-tile colspan="2" [rowspan]="newOutdatedData.addresses.length">
+          <div class="outdated-data title">Прежние адреса:</div>
+        </mat-grid-tile>
+        @for (address of newOutdatedData.addresses; track address.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu (restore)="onRestoreOutdatedData('addresses', address)"
+              (delete)="onDeleteOutdatedData('addresses', address.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">
+              {{
+              address.country.name
+              + (address.region ? (', ' + address.region!.shortName) : '')
+              + (address.district ? (', ' + address.district!.shortName) : '')
+              + (address.locality ? (', ' + address.locality!.shortName) : '')
+              }}
+            </div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        <!-- Outdated Contacts -->
+        @if (hasOutdatedContacts()) {
+        <mat-grid-tile colspan="2" [rowspan]="countOutdatedContactsAmount(newOutdatedData.contacts)">
+          <div class="outdated-data title">Прежние контакты:</div>
+        </mat-grid-tile>
+        @for (type of contactTypes; track type) {
+        @if (newOutdatedData.contacts[type]) {
+
+
+        @for (contact of newOutdatedData.contacts[type]; track contact.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu (restore)="onRestoreOutdatedData('contacts', contact, type)"
+              (delete)="onDeleteOutdatedData('contacts', contact.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">
+              {{ type + ': ' + editContact(contact.content, type) }}
+            </div>
+          </div>
+
+        </mat-grid-tile>
+        }
+        }
+        }
+        }
+
+      </mat-grid-list>
     </mat-tab>
+
     }
+
 
   </mat-tab-group>
 </form>

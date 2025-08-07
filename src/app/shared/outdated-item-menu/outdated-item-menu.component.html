@@ -1,0 +1,14 @@
+<button mat-icon-button [matMenuTriggerFor]="menu">
+  <mat-icon>more_vert</mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" xPosition="before">
+  <button mat-menu-item (click)="handleRestore()">
+    <mat-icon>restore</mat-icon>
+    <span>восстановить как актуальное</span>
+  </button>
+  <button mat-menu-item (click)="handleDelete()">
+    <mat-icon>delete_outlined</mat-icon>
+    <span>удалить как ошибочное</span>
+  </button>
+</mat-menu>
