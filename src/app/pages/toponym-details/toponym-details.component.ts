@@ -10,13 +10,13 @@ import { MatMenuModule } from '@angular/material/menu';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 
-import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
-import { ToponymFormControlsNames } from '../../../../interfaces/toponymFormControlsNames';
-import { BaseDetailsComponent } from '../base-details/base-details.component';
-import { Toponym } from '../../../../interfaces/toponym';
-import { AddressFilter } from '../../../../interfaces/address-filter';
+import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
+import { ToponymFormControlsNames } from '../../interfaces/toponymFormControlsNames';
+import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
+import { Toponym } from '../../interfaces/toponym';
+import { AddressFilter } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-toponym-details',
@@ -31,11 +31,11 @@ import { AddressFilter } from '../../../../interfaces/address-filter';
     MatIconModule,
     MatMenuModule,
     ConfirmDialogModule,
-    Toast,
+    ToastModule,
     AddressFilterComponent,
     //DetailsDialogComponent
   ],
-  providers: [ConfirmationService, MessageService],
+providers: [],
   templateUrl: './toponym-details.component.html',
   styleUrl: './toponym-details.component.css',
 })

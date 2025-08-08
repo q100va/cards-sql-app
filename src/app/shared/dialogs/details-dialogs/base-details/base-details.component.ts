@@ -36,7 +36,7 @@ import { ErrorService } from '../../../../services/error.service';
 @Component({
   selector: 'app-base-details',
   imports: [],
-  providers: [ConfirmationService, MessageService],
+providers: [],
   templateUrl: './base-details.component.html',
   styleUrl: './base-details.component.css',
 })

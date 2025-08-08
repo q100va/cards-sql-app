@@ -34,10 +34,10 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 import { saveAs } from 'file-saver';
 
-import { BlurOnClickDirective } from '../../../shared/directives/blur-on-click.directive';
+import { BlurOnClickDirective } from '../../../directives/blur-on-click.directive';
 import { AddressService } from '../../../services/address.service';
 import { FileService } from '../../../services/file.service';
 import { AddressFilterComponent } from '../../../shared/address-filter/address-filter.component';
@@ -51,7 +51,7 @@ import { AddressFilter } from '../../../interfaces/address-filter';
 import { Toponym } from '../../../interfaces/toponym';
 //import { DetailsDialogComponent } from '../dialogs/details-dialog/details-dialog.component';
 //import { DialogData } from '../../interfaces/dialog-data';
-import { ToponymDetailsComponent } from '../../../shared/dialogs/details-dialogs/toponym-details/toponym-details.component';
+import { ToponymDetailsComponent } from '../../toponym-details/toponym-details.component';
 import { DetailsDialogComponent } from '../../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { ErrorService } from '../../../services/error.service';
 
@@ -77,12 +77,12 @@ import { ErrorService } from '../../../services/error.service';
     MatMenuModule,
     ConfirmDialogModule,
     ProgressSpinner,
-    Toast,
+    ToastModule,
     AddressFilterComponent,
     UploadFileComponent,
     BlurOnClickDirective,
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [],
   templateUrl: './toponyms-list.component.html',
   styleUrl: './toponyms-list.component.css',
 })

@@ -27,13 +27,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { MatMenuModule } from '@angular/material/menu';
 import { BaseListComponent } from '../../shared/base-list/base-list.component';
-import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/cause-of-blocking-dialog/cause-of-blocking-dialog.component';
+import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/details-dialogs/user-details/cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { Validators } from '@angular/forms';
 import { DialogData } from '../../interfaces/dialog-props';
-import * as Validator from '../../shared/custom.validator';
-import { Toast } from 'primeng/toast';
+import * as Validator from '../../utils/custom.validator';
+import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { GeneralFilter } from '../../interfaces/filter';
 import { ErrorService } from '../../services/error.service';
@@ -55,10 +55,10 @@ import {
     MatMenuModule,
     BaseListComponent,
     MatButtonModule,
-    Toast,
+    ToastModule,
     ConfirmDialogModule,
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
 })

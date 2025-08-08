@@ -1,7 +1,7 @@
 import { Validators } from '@angular/forms';
 import { DialogData } from '../../interfaces/dialog-props';
 import { User } from '../../interfaces/user';
-import * as Validator from '../../shared/custom.validator';
+import * as Validator from '../../utils/custom.validator';
 
 export interface ColumnDefinition {
   id: number;

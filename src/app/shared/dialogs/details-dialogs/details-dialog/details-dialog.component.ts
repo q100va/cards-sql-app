@@ -21,7 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 
 import { DETAILS_COMPONENT_REGISTRY } from './details-component-registry';
 import { DialogData } from '../../../../interfaces/dialog-props';
@@ -37,9 +37,9 @@ import { BaseDetailsComponent } from '../base-details/base-details.component';
     MatDialogModule,
     MatButtonModule,
     ConfirmDialogModule,
-    Toast,
+    ToastModule,
   ],
-  providers: [ConfirmationService, MessageService],
+providers: [],
   templateUrl: './details-dialog.component.html',
   styleUrl: './details-dialog.component.css',
 })

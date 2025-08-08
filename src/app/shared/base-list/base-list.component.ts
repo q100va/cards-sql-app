@@ -26,14 +26,14 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 
 //import { CreateUserDialogComponent } from '../../shared/dialogs/create-user-dialog/create-user-dialog.component';
 import { TableSettingsComponent } from '../table-settings/table-settings.component';
 import { TableFilterComponent } from '../table-filter/table-filter.component';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { BlurOnClickDirective } from '../directives/blur-on-click.directive';
+import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
 //import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
@@ -50,7 +50,7 @@ import { typedKeys } from '../../interfaces/types';
     //MatListModule,
     MatGridListModule,
     MatIconModule,
-    Toast,
+    ToastModule,
     MatSidenavModule,
     FormsModule,
     MatBadgeModule,
@@ -64,7 +64,7 @@ import { typedKeys } from '../../interfaces/types';
     BlurOnClickDirective,
     //  UserColumnsComponent
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [],
   templateUrl: './base-list.component.html',
   styleUrl: './base-list.component.css',
 })

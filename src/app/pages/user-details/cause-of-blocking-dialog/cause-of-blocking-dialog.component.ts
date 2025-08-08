@@ -17,9 +17,9 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { UserService } from '../../../services/user.service';
+import { UserService } from '../../../../../services/user.service';
 import { MessageService } from 'primeng/api';
-import { ErrorService } from '../../../services/error.service';
+import { ErrorService } from '../../../../../services/error.service';
 
 @Component({
   selector: 'app-cause-of-blocking-dialog',
@@ -33,14 +33,14 @@ import { ErrorService } from '../../../services/error.service';
     FormsModule,
     ReactiveFormsModule,
   ],
-  providers: [MessageService],
+  providers: [],
   templateUrl: './cause-of-blocking-dialog.component.html',
   styleUrl: './cause-of-blocking-dialog.component.css',
 })
 export class CauseOfBlockingDialogComponent {
   readonly dialogRef = inject(MatDialogRef<CauseOfBlockingDialogComponent>);
   readonly data = inject<{ userId: number; userName: string }>(MAT_DIALOG_DATA);
-  private messageService = inject(MessageService);
+//  private messageService = inject(MessageService);
   private userService = inject(UserService);
   errorService = inject(ErrorService);
 

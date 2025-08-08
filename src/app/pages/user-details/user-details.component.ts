@@ -24,7 +24,7 @@ import { MatButtonModule } from '@angular/material/button';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 
 import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
@@ -46,7 +46,7 @@ import {
   User,
 } from '../../../../interfaces/user';
 import { UserService } from '../../../../services/user.service';
-import * as Validator from '../../../custom.validator';
+import * as Validator from '../../../../utils/custom.validator';
 import { UserDraft } from '../../../../interfaces/userDraft';
 import { AdvancedDetailsComponent } from '../advances-details/advanced-details.component';
 import { typedKeys } from '../../../../interfaces/types';
@@ -68,11 +68,11 @@ import { MatDialog } from '@angular/material/dialog';
     MatMenuModule,
     MatButtonModule,
     ConfirmDialogModule,
-    Toast,
+    ToastModule,
     AddressFilterComponent,
     OutdatedItemMenuComponent,
   ],
-  providers: [ConfirmationService, MessageService],
+providers: [],
   templateUrl: './user-details.component.html',
   styleUrl: './user-details.component.css',
 })

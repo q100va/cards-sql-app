@@ -15,7 +15,7 @@ import {
 @Component({
   selector: 'app-advanced-details',
   imports: [],
-  providers: [ConfirmationService, MessageService],
+providers: [],
   templateUrl: './advanced-details.component.html',
   styleUrl: './advanced-details.component.css',
 })
