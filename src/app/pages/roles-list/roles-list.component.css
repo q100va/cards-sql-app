@@ -1,28 +1,54 @@
+/* Allow newlines in table cells by preserving line breaks */
 .table-cell-with-newlines {
   white-space: pre-line;
 }
+/* Center the roles list card content and set responsive width */
 .roles-list-card {
   margin: auto;
   width: fit-content;
   min-width: 70%;
   text-align: center;
-/*   justify-content: center; */
 }
-
-:host ::ng-deep .p-cell-editing{
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+/* Adjust padding when the cell is in editing mode using host context styling */
+:host-context(.p-cell-editing) {
+  padding-top: 0;
+  padding-bottom: 0;
 }
-/*
-mat-icon{
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
- */
-
-/* .cell-editor-icon{
-  margin-top: 14px;
- } */
-.delete-button:hover{
+/* Change the delete button color on hover */
+.delete-button:hover {
   --mat-sys-on-surface-variant: rgb(197, 48, 48);
 }
+/* Utility classes for fixed widths */
+.width-5rem {
+  width: 5rem;
+}
+.width-10rem {
+  width: 10rem;
+}
+.width-15rem {
+  width: 15rem;
+}
+.width-20rem {
+  width: 20rem;
+}
+/*
+  Utility class to add a right-side border.
+  The border is a light gray line.
+*/
+.right-bordered {
+  border-right: 1px solid #e2e8f0;
+}
+/*
+  Utility class to add a bottom border.
+  The border is a darker line.
+*/
+.bottom-bordered {
+  border-bottom: 1px solid #575a5d;
+}
+/*
+  Utility class to center align content.
+*/
+.center {
+  text-align: center;
+}
+

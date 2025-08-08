@@ -15,7 +15,8 @@ import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import { MessageService } from 'primeng/api';
+//import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 import {provideMomentDateAdapter} from '@angular/material-moment-adapter';
 import { LOCALE_ID } from '@angular/core';
@@ -37,7 +38,8 @@ export const appConfig: ApplicationConfig = {
   }),
   provideMomentDateAdapter(),
   { provide: LOCALE_ID, useValue: 'ru-Ru'},
-  MessageService
+  MessageService,
+  ConfirmationService
   ],
 };
 
