@@ -1,5 +1,6 @@
 import { ToponymDetailsComponent } from "../../../../pages/toponym-details/toponym-details.component";
-import { UserDetailsComponent } from "../user-details/user-details.component";
+import { UserDetailsComponent } from "../../../../pages/user-details/user-details.component";
+
 // добавляй остальных потомков
 
 

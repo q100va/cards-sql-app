@@ -17,9 +17,9 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { UserService } from '../../../../../services/user.service';
 import { MessageService } from 'primeng/api';
-import { ErrorService } from '../../../../../services/error.service';
+import { UserService } from '../../../services/user.service';
+import { ErrorService } from '../../../services/error.service';
 
 @Component({
   selector: 'app-cause-of-blocking-dialog',

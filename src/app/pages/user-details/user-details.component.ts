@@ -26,10 +26,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
-import { BaseDetailsComponent } from '../base-details/base-details.component';
-import { OutdatedItemMenuComponent } from '../../../outdated-item-menu/outdated-item-menu.component';
-import { RoleService } from '../../../../services/role.service';
+import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
+import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
+import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
+import { RoleService } from '../../services/role.service';
 import {
   ChangedData,
   CommonUserFields,
@@ -44,13 +44,13 @@ import {
   RestoringData,
   RestoringDataType,
   User,
-} from '../../../../interfaces/user';
-import { UserService } from '../../../../services/user.service';
-import * as Validator from '../../../../utils/custom.validator';
-import { UserDraft } from '../../../../interfaces/userDraft';
-import { AdvancedDetailsComponent } from '../advances-details/advanced-details.component';
-import { typedKeys } from '../../../../interfaces/types';
-import { ChangePasswordDialogComponent } from '../../change-password-dialog/change-password-dialog';
+} from '../../interfaces/user';
+import { UserService } from '../../services/user.service';
+import * as Validator from '../../utils/custom.validator';
+import { UserDraft } from '../../interfaces/userDraft';
+import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advances-details/advanced-details.component';
+import { typedKeys } from '../../interfaces/types';
+import { ChangePasswordDialogComponent } from '../../shared/dialogs/change-password-dialog/change-password-dialog';
 import { MatDialog } from '@angular/material/dialog';
 
 @Component({

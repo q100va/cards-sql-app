@@ -27,7 +27,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { MatMenuModule } from '@angular/material/menu';
 import { BaseListComponent } from '../../shared/base-list/base-list.component';
-import { CauseOfBlockingDialogComponent } from '../../shared/dialogs/details-dialogs/user-details/cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { Validators } from '@angular/forms';
@@ -44,6 +43,7 @@ import {
   IMPLICITLY_DISPLAYED_COLUMNS,
   userDialogConfig
 } from './users-list.config';
+import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 
 @Component({
   selector: 'app-users-list',
