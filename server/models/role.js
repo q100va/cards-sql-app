@@ -26,7 +26,7 @@ const Role = sequelize.define("role", {
     allowNull: false,
     validate: {
       notEmpty: true,       // Ensure the description is not an empty string.
-      len: [0, 500]         // Restrict description length to up to 500 characters.
+      len: [1, 500]         // Restrict description length to up to 500 characters.
     }
   }
 });

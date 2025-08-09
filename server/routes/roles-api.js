@@ -4,6 +4,8 @@ import Role from "../models/role.js";
 import User from "../models/user.js";
 import Operation from "../models/operation.js";
 import { OPERATIONS } from "../shared/operations.js";
+import CustomError from "../shared/customError.js";
+import sanitizeBody from "../middlewares/sanitize-body.js";
 // TODO: Middleware for authentication and admin authorization.
 //import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
 const Op = Sequelize.Op;
@@ -18,72 +20,60 @@ const router = Router();
  */
 const handleError = (error, res, genericMessage) => {
   console.error(error); // TODO: Ideally use a logging library in production.
-  res.status(error.statusCode || 500).send(genericMessage);
-};
-/**
- * Middleware to validate that the request body contains a "data" property.
- */
-const validateRoleData = (req, res, next) => {
-  if (!req.body.data) {
-    return res.status(400).send({ msg: "Missing data in request body." });
-  }
-  next();
+  res.status(error.statusCode || 500).send(error.customError ? error.message : genericMessage);
 };
 
 /**
  * POST /check-role-name
  * Checks if a role with the provided name already exists in the database.
  */
-router.post("/check-role-name", validateRoleData, async (req, res) => {
-  try {
-    // Validate that the data provided is a string (role name).
-    if (typeof req.body.data !== "string") {
-      return res.status(400).send({ msg: "Неверное название роли." });
+router.post(
+  "/check-role-name",
+  sanitizeBody({
+    roleName: { type: 'string', maxLength: 100, allowEmpty: false, allowNull: false, required: true },
+  }),
+  //authenticateUser,
+  //authorizeAdmin,
+  async (req, res) => {
+    try {
+      // Convert role name to lower case to ensure case-insensitive matching.
+      const roleName = req.body.roleName.toLowerCase();
+      // Query the database for any existing role with the same name (case-insensitive).
+      const duplicate = await Role.findOne({
+        where: { name: { [Op.iLike]: roleName } },
+        attributes: ["name"],
+        raw: true,
+      });
+      res.status(200).send({ msg: "Проверка завершена.", data: duplicate });
+    } catch (error) {
+      handleError(error, res, "Произошла ошибка при проверке названия роли.");
     }
-    // Sanitize and convert role name to lower case to ensure case-insensitive matching.
-    const roleName = req.body.data.trim().toLowerCase();
-    // Query the database for any existing role with the same name (case-insensitive).
-    const duplicate = await Role.findOne({
-      where: { name: { [Op.iLike]: roleName } },
-      attributes: ["name"],
-      raw: true,
-    });
-    res.status(200).send({ msg: "Проверка завершена.", data: duplicate });
-  } catch (error) {
-    handleError(error, res, "Произошла ошибка при проверке названия роли.");
-  }
-});
+  });
+
 /**
  * POST /create-role
  * Creates a new role and all its associated operations.
  * Access: Admin only.
  */
+
+const newRoleSchema = {
+  name: { type: 'string', maxLength: 100, allowEmpty: false, allowNull: false, required: true },
+  description: { type: 'string', maxLength: 500, allowEmpty: false, allowNull: false, required: true }
+};
+
 router.post(
   "/create-role",
+  sanitizeBody(newRoleSchema),
   //authenticateUser,
   //authorizeAdmin,
-  validateRoleData,
   async (req, res) => {
     try {
       // Expect request data to have "name" and "description" properties.
-      const { name, description } = req.body.data;
-      if (
-        !name ||
-        typeof name !== "string" ||
-        !description ||
-        typeof description !== "string"
-      ) {
-        return res
-          .status(400)
-          .send({ msg: "Отсутствующие или недействительные данные о роли." });
-      }
-      // Trim input to remove unnecessary whitespace.
-      const sanitizedName = name.trim();
-      const sanitizedDescription = description.trim();
+      const { name, description } = req.body;
       // Create the role record.
       const role = await Role.create({
-        name: sanitizedName,
-        description: sanitizedDescription,
+        name,
+        description,
       });
       // Create all associated operation records in parallel.
       const opPromises = OPERATIONS.map((operation) =>
@@ -97,43 +87,38 @@ router.post(
       await Promise.all(opPromises);
       res
         .status(200)
-        .send({ msg: "Роль успешно создана.", data: sanitizedName });
+        .send({ msg: "Роль успешно создана.", data: name });
     } catch (error) {
       handleError(error, res, "Произошла ошибка. Роль не создана.");
     }
   }
 );
+
 /**
  * PATCH /update-role
  * Updates the details (name and description) of an existing role.
  * Access: Admin only.
  */
+
+const updatingRoleSchema = {
+  id: { type: 'number', allowEmpty: false, allowNull: false, required: true },
+  name: { type: 'string', maxLength: 100, allowEmpty: false, allowNull: false, required: true },
+  description: { type: 'string', maxLength: 500, allowEmpty: false, allowNull: false, required: true }
+};
+
 router.patch(
   "/update-role",
+  sanitizeBody(updatingRoleSchema),
   //authenticateUser,
   //authorizeAdmin,
-  validateRoleData,
   async (req, res) => {
     try {
-      const { role } = req.body.data;
-      // Validate that the role object contains an id, name, and description.
-      if (
-        !role ||
-        !role.id ||
-        !role.name ||
-        typeof role.name !== "string" ||
-        !role.description ||
-        typeof role.description !== "string"
-      ) {
-        return res
-          .status(400)
-          .send({ msg: "Отсутствующие или недействительные данные о роли." });
-      }
+      const { role } = req.body.role;
       // Update the role record with trimmed name and description.
       await Role.update(
         {
-          name: role.name.trim(),
-          description: role.description.trim(),
+          name: role.name,
+          description: role.description,
         },
         {
           where: { id: role.id },
@@ -145,29 +130,36 @@ router.patch(
     }
   }
 );
+
 /**
  * PATCH /update-role-access
  * Updates the access property of a role's operation. Also toggles 'full access'
  * or related operations based on the provided flag.
  * Access: Admin only.
  */
+
+const roleAccessSchema = {
+  access: { type: 'boolean', allowEmpty: false, allowNull: false, required: true },
+  roleId: { type: 'number', allowEmpty: false, allowNull: false, required: true },
+  operation: {
+    type: 'object', allowEmpty: false, allowNull: false, required: true,
+    schema: {
+      fullAccess: { type: 'boolean', allowEmpty: false, allowNull: false, required: true },
+      object: { type: 'string', allowEmpty: false, allowNull: false, required: true },
+      operation: { type: 'string', allowEmpty: false, allowNull: false, required: true },
+      flag:  {type: 'string', enumValues: ['LIMITED', 'FULL'], allowEmpty: false, allowNull: true}
+    }
+  }
+};
+
 router.patch(
   "/update-role-access",
+  sanitizeBody(roleAccessSchema),
   //authenticateUser,
   //authorizeAdmin,
-  validateRoleData,
   async (req, res) => {
     try {
-      const { access, roleId, operation } = req.body.data;
-      // Validate input data types and required fields.
-      if (
-        typeof access !== "boolean" ||
-        !roleId ||
-        !operation ||
-        !operation.operation
-      ) {
-        return res.status(400).send({ msg: "Неверные данные запроса." });
-      }
+      const { access, roleId, operation } = req.body;
       // Update the main operation entry.
       await changeRoleOperation(roleId, operation, access);
       // Create a shallow copy of operations and add an empty roles list.
@@ -211,10 +203,11 @@ router.patch(
     }
   }
 );
+
 /**
  * Helper function to update the operation record associated with a role.
  *
- * @param {number|string} roleId - The ID of the role.
+ * @param {number} roleId - The ID of the role.
  * @param {object} operation - The operation details object.
  * @param {boolean} access - Desired access state.
  */
@@ -254,6 +247,7 @@ async function changeRoleOperation(roleId, operation, access) {
   );
 
 }
+
 /**
  * GET /get-roles-names-list
  * Retrieves a list of roles (id and name) sorted by name.
@@ -282,6 +276,7 @@ router.get(
     }
   }
 );
+
 /**
  * GET /get-roles
  * Retrieves detailed information for all roles including their associated operations.
@@ -339,6 +334,7 @@ router.get(
     }
   }
 );
+
 /**
  * GET /check-role-before-delete/:id
  * Checks if a role can be deleted by ensuring no users are associated with it.
@@ -352,7 +348,11 @@ router.get(
     try {
       const roleId = req.params.id;
       if (!roleId) {
-        return res.status(400).send({ msg: "Отсутствует id роли." });
+        throw new CustomError("Отсутствует id роли.", 400);
+      }
+      const idNum = Number(roleId);
+      if (isNaN(idNum) || idNum <= 0) {
+        throw new CustomError("Некорректное значение id.", 400);
       }
       // Find any users currently assigned this role.
       const connectedUsers = await User.findAll({
@@ -369,6 +369,7 @@ router.get(
     }
   }
 );
+
 /**
  * DELETE /delete-role/:id
  * Deletes a role by its id.
@@ -383,7 +384,11 @@ router.delete(
       const roleId = req.params.id;
       //const roleId = null;
       if (!roleId) {
-        return res.status(400).send("Отсутствует id роли.");
+        throw new CustomError("Отсутствует id роли.", 400);
+      }
+      const idNum = Number(roleId);
+      if (isNaN(idNum) || idNum <= 0) {
+        throw new CustomError("Некорректное значение id.", 400);
       }
       await Role.destroy({ where: { id: roleId } });
       res.status(200).send({ msg: "Role deleted.", data: true });
