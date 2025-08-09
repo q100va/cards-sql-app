@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterModule, RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -7,7 +7,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { CommonModule } from '@angular/common';
 import { CookieService } from 'ngx-cookie-service';
-
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
 import { MenuItem } from './menu-item';
 import { SignInService } from '../../services/sign-in.service';
 
@@ -22,6 +23,8 @@ import { SignInService } from '../../services/sign-in.service';
     MatDividerModule,
     RouterOutlet,
     RouterModule,
+    ConfirmDialogModule,
+    ToastModule
   ],
   templateUrl: './base-layout.component.html',
   styleUrl: './base-layout.component.css',
@@ -30,7 +33,6 @@ export class BaseLayoutComponent {
   private signInService = inject(SignInService);
   private cookieService = inject(CookieService);
   // private roleService = inject(RoleService);
-
   year: number = Date.now();
   name: string | null = sessionStorage.getItem('name');
   userName: string = this.cookieService.get('session_user');

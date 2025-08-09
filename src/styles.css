@@ -10,7 +10,3 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: #f2f2f2;
 }
-/* ::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
-  background-color: #f9faf4 !important;
-}
- */
