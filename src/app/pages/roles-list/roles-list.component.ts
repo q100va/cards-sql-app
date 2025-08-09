@@ -1,4 +1,10 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 // Material imports
@@ -12,7 +18,7 @@ import { FormsModule } from '@angular/forms';
 // PrimeNG imports
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
-import { ToastModule } from 'primeng/toast';
+import { Toast, ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 // Application imports
@@ -21,14 +27,8 @@ import { RoleService } from '../../services/role.service';
 import { ErrorService } from '../../services/error.service';
 import { Operation, Role } from '../../interfaces/role';
 import { trackById } from '../../utils/track-by-id.util';
-
-// Interface for configuring user notifications
-interface MessageConfig {
-  severity: string;
-  summary: string;
-  detail: string;
-  sticky?: boolean;
-}
+import { sanitizeText } from '../../utils/sanitize-text';
+import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
   selector: 'app-roles-list',
@@ -48,29 +48,34 @@ interface MessageConfig {
   templateUrl: './roles-list.component.html',
   styleUrls: ['./roles-list.component.css'],
 })
+
 export class RolesListComponent implements OnInit, OnDestroy {
+
   // Public properties
   operations!: Operation[];
   roles!: Role[];
   isLoading = signal<boolean>(false);
   tableStyle = { 'min-width': '75rem' };
   trackById = trackById;
+  sanitizeText = sanitizeText;
   scrollHeight = '800px';
+
   // Private properties
   private readonly subscriptions = new Subscription();
-  private readonly messageService = inject(MessageService);
   private readonly roleService = inject(RoleService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly dialog = inject(MatDialog);
   protected readonly errorService = inject(ErrorService);
+  private readonly msgWrapper = inject(MessageWrapperService);
 
   // Lifecycle hooks
   ngOnInit(): void {
     this.loadRoles();
-    const height = window.innerHeight * 0.8;
+    const height = window.innerHeight * 0.75;
     this.scrollHeight = `${height}px`;
-    console.log(" this.scrollHeight",  this.scrollHeight)
+    console.log(' this.scrollHeight', this.scrollHeight);
   }
+
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
@@ -89,12 +94,7 @@ export class RolesListComponent implements OnInit, OnDestroy {
     const subscription = dialogRef.afterClosed().subscribe((result) => {
       if (result?.roleName) {
         this.loadRoles();
-        const safeRoleName = this.sanitizeText(result.roleName);
-        this.showMessage({
-          severity: 'success',
-          summary: 'Успешно',
-          detail: `Роль '${safeRoleName}' создана`,
-        });
+        this.msgWrapper.success(`Роль '${result.roleName}' создана.`);
       }
     });
     this.subscriptions.add(subscription);
@@ -109,12 +109,8 @@ export class RolesListComponent implements OnInit, OnDestroy {
     if (role.name && role.description) {
       const subscription = this.roleService.updateRole(role).subscribe({
         next: () => {
-          const safeRoleName = this.sanitizeText(role.name);
-          this.showMessage({
-            severity: 'success',
-            summary: 'Успешно',
-            detail: `Роль '${safeRoleName}' обновлена`,
-          });
+          const roleName = role.name;
+          this.msgWrapper.success(`Роль '${roleName}' обновлена.`);
         },
         error: (err) => this.errorService.handle(err),
       });
@@ -166,27 +162,52 @@ export class RolesListComponent implements OnInit, OnDestroy {
         severity: 'secondary',
         outlined: true,
       },
-      accept: () => this.checkPossibilityToDeleteRole(role.id, safeRoleName),
+      accept: () => this.checkPossibilityToDeleteRole(role.id, role.name),
     });
   }
 
   // Private methods
+
+  //TODO: перечислить пользователей!
   /**
-   * Sanitizes input text to prevent Cross-Site Scripting (XSS) attacks.
-   * @param text - The text to sanitize.
-   * @returns The sanitized text.
+   * Checks if a role can be safely deleted.
+   * @param id - The role's identifier.
+   * @param safeRoleName - The sanitized role name.
    */
-  private sanitizeText(text: string): string {
-    if (!text) {
-      return '';
-    }
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+  private checkPossibilityToDeleteRole(id: number, roleName: string): void {
+    const subscription = this.roleService
+      .checkPossibilityToDeleteRole(id)
+      .subscribe({
+        next: (res) => {
+          if (res.data) {
+            this.deleteRole(id, roleName);
+          } else {
+            this.msgWrapper.warn(
+              `Невозможно удалить роль '${roleName}'. Она назначена пользователям.`
+            );
+          }
+        },
+        error: (err) => this.errorService.handle(err),
+      });
+    this.subscriptions.add(subscription);
   }
+
+  /**
+   * Deletes the role via the RoleService.
+   * @param id - The role's identifier.
+   * @param safeRoleName - The sanitized role name.
+   */
+  private deleteRole(id: number, roleName: string): void {
+    const subscription = this.roleService.deleteRole(id).subscribe({
+      next: () => {
+        this.msgWrapper.success(`Роль '${roleName}'удалена.`);
+        this.loadRoles();
+      },
+      error: (err) => this.errorService.handle(err),
+    });
+    this.subscriptions.add(subscription);
+  }
+
   /**
    * Loads roles and operations from the RoleService.
    */
@@ -207,60 +228,5 @@ export class RolesListComponent implements OnInit, OnDestroy {
         error: (err) => this.errorService.handle(err),
       });
     this.subscriptions.add(subscription);
-  }
-
-  //TODO: перечислить пользователей!
-  /**
-   * Checks if a role can be safely deleted.
-   * @param id - The role's identifier.
-   * @param safeRoleName - The sanitized role name.
-   */
-  private checkPossibilityToDeleteRole(id: number, safeRoleName: string): void {
-    const subscription = this.roleService
-      .checkPossibilityToDeleteRole(id)
-      .subscribe({
-        next: (res) => {
-          if (res.data) {
-            this.deleteRole(id, safeRoleName);
-          } else {
-            this.showMessage({
-              severity: 'warn',
-              summary: 'Ошибка',
-              detail: `Невозможно удалить роль '${safeRoleName}'. Она назначена пользователям.`,
-              sticky: true,
-            });
-          }
-        },
-        error: (err) => this.errorService.handle(err),
-      });
-    this.subscriptions.add(subscription);
-  }
-
-  /**
-   * Deletes the role via the RoleService.
-   * @param id - The role's identifier.
-   * @param safeRoleName - The sanitized role name.
-   */
-  private deleteRole(id: number, safeRoleName: string): void {
-    const subscription = this.roleService.deleteRole(id).subscribe({
-      next: () => {
-        this.showMessage({
-          severity: 'success',
-          summary: 'Успешно',
-          detail: `Роль '${safeRoleName}' удалена`,
-        });
-        this.loadRoles();
-      },
-      error: (err) => this.errorService.handle(err),
-    });
-    this.subscriptions.add(subscription);
-  }
-
-  /**
-   * Displays a message using the MessageService.
-   * @param config - The configuration of the message.
-   */
-  private showMessage(config: MessageConfig): void {
-    this.messageService.add(config);
   }
 }

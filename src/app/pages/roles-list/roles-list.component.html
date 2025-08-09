@@ -1,6 +1,17 @@
 <mat-card class="roles-list-card" appearance="outlined">
+
   <!--   ToastModule notifications centered on the page -->
-  <p-toast position="center"></p-toast>
+  <p-toast position="center">
+    <ng-template let-msg pTemplate="message">
+      <div class="p-toast-message-text">
+        <div class="p-toast-summary">{{ msg.summary }}</div>
+        <div [class]="'ui-toast-' + msg.severity">
+          <div [innerHtml]="msg.detail"></div>
+        </div>
+      </div>
+    </ng-template>
+  </p-toast>
+
 
   <!--  Confirmation dialog for user actions -->
   <p-confirmdialog></p-confirmdialog>
@@ -31,19 +42,13 @@
       </mat-card-actions>
     </mat-grid-tile>
   </mat-grid-list>
+
   <!-- Main content area displaying roles and operations -->
   <mat-card-content>
     @if(roles && roles.length > 0){
     <!-- Table for operations with row grouping by objectName -->
-    <p-table
-    [value]="operations"
-    rowGroupMode="rowspan"
-    groupRowsBy="objectName"
-    sortField="objectName"
-    sortMode="single"
-    [tableStyle]="tableStyle"
-    [scrollable]="true"
-    [scrollHeight]="scrollHeight">
+    <p-table [value]="operations" rowGroupMode="rowspan" groupRowsBy="objectName" sortField="objectName"
+      sortMode="single" [tableStyle]="tableStyle" [scrollable]="true" [scrollHeight]="scrollHeight">
       <!-- Header template -->
       <ng-template #header let-editing="editing">
         <tr>

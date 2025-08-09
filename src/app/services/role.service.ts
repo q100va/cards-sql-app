@@ -15,19 +15,20 @@ export class RoleService {
   checkRoleName(roleName: string): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/roles/check-role-name/', {
-      data: roleName,
+      roleName: roleName,
     });
   }
   createRole(name: string, description: string): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/roles/create-role/', {
-      data: { name: name, description: description },
+      name: name,
+      description: description,
     });
   }
   updateRole(role: Role): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.patch(BACKEND_URL + '/api/roles/update-role/', {
-      data: { role: role},
+      role: role,
     });
   }
   updateRoleAccess(
@@ -37,7 +38,9 @@ export class RoleService {
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.patch(BACKEND_URL + '/api/roles/update-role-access/', {
-      data: { access: value, roleId: roleId, operation: operation },
+      access: value,
+      roleId: roleId,
+      operation: operation,
     });
   }
   getRoles(): Observable<any> {
