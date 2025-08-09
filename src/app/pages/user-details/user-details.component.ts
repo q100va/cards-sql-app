@@ -72,7 +72,7 @@ import { MatDialog } from '@angular/material/dialog';
     AddressFilterComponent,
     OutdatedItemMenuComponent,
   ],
-providers: [],
+  providers: [],
   templateUrl: './user-details.component.html',
   styleUrl: './user-details.component.css',
 })
@@ -116,12 +116,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     userNames: null,
     contacts: null,
   };
-
+//TODO: добавить валидацию для имени пользователя. Убрать из компонентов месседжи и конфирмейшн
   override ngOnInit(): void {
     super.ngOnInit();
-    this.newOutdatedData = structuredClone(
-      this.existedUser!.outdatedData
-    ) as OutdatedData;
+    if (this.existedUser) {
+      this.newOutdatedData = structuredClone(
+        this.existedUser.outdatedData
+      ) as OutdatedData;
+    }
     this.mainForm.setValidators([Validator.mainContactsValidator]);
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
@@ -875,7 +877,6 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   //  - Показывать список неактуальных значений - DONE
 
   // 🔴    Изменение пароля администратором - DONE
-
 
   //7. упростить код, вынести данные в отд. файлы, упорядочить интерфейсы и типы
 
