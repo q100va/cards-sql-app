@@ -128,7 +128,7 @@ router.patch(
       if (!updatedRole) {
         throw new CustomError("Обновление невозможно. Роль не найдена.", 404);
       }
-      res.status(200).send({ msg: "Роль успешно обновлена.", data: updatedRole.name });
+      res.status(200).send({ msg: "Роль успешно обновлена.", data: updatedRole });
     } catch (error) {
       handleError(error, res, "Произошла ошибка. Роль не обновлена.");
     }

@@ -41,9 +41,9 @@ export class RoleService {
    * @param description - Description for the new role.
    * @returns Observable containing the response.
    */
-  createRole(name: string, description: string): Observable<ApiResponse<Role>> {
+  createRole(name: string, description: string): Observable<ApiResponse<string>> {
     return this.http
-      .post<ApiResponse<Role>>(`${this.BASE_URL}/create-role`, {
+      .post<ApiResponse<string>>(`${this.BASE_URL}/create-role`, {
         name,
         description,
       })

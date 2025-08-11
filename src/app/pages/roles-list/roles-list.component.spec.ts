@@ -427,51 +427,6 @@ describe('RolesListComponent', () => {
     });
   });
 
-  /*  describe('onAccessChangeCheck', () => {
-    // Sample operation for access update tests.
-    const operation = {
-      id: 101,
-      description: 'creation senior data',
-      fullAccess: false,
-      object: 'senior',
-      objectName: 'senior',
-      operation: 'SENIOR_CREATION',
-      operationName: 'creation',
-      rolesAccesses: [{
-        id: 1,
-        roleId: 1,
-        access: false,
-        disabled: false,
-      }],
-    };
-     it('should call updateRoleAccess and reload roles on success', fakeAsync(() => {
-      // Arrange: simulate successful access update.
-      roleServiceSpy.updateRoleAccess.and.returnValue(
-        of({ msg: 'success', data: true })
-      );
-      // Act: update access.
-      component.onAccessChangeCheck(true, 1, operation);
-      tick();
-      // Assert:
-      expect(roleServiceSpy.updateRoleAccess).toHaveBeenCalledWith(
-        true,
-        1,
-        operation
-      );
-      expect((component as any).loadRoles).toHaveBeenCalled();
-    }));
-    it('should handle error if updateRoleAccess fails', fakeAsync(() => {
-      // Arrange: simulate failure in updateRoleAccess.
-      const error = new Error('Access update failed');
-      roleServiceSpy.updateRoleAccess.and.returnValue(throwError(() => error));
-      // Act:
-      component.onAccessChangeCheck(false, 1, operation);
-      tick();
-      // Assert:
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(error);
-    }));
-  }); */
-
   // Test deletion of a role.
   describe('onDeleteRoleClick', () => {
     beforeEach(() => {

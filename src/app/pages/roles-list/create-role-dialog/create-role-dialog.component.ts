@@ -1,5 +1,5 @@
 // Angular and Angular Material dependencies
-import { Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, DestroyRef, inject, ViewEncapsulation } from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -7,6 +7,7 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 // Angular Forms modules and validators
 import {
   FormControl,
@@ -55,6 +56,7 @@ import { switchMap, finalize } from 'rxjs/operators';
 })
 export class CreateRoleDialogComponent {
   // Injecting services and dialog references using Angular's DI
+   private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<CreateRoleDialogComponent>);
   readonly data = inject<{ userId: number; userName: string }>(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
@@ -109,7 +111,9 @@ export class CreateRoleDialogComponent {
           }
         }),
         // Finalize the process by resetting the loading flag regardless of outcome
-        finalize(() => (this.isLoading = false))
+        finalize(() => (this.isLoading = false)),
+        //Ensure that any subscriptions are automatically cleaned up when the component is destroyed, thereby preventing memory leaks
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (res) => {
