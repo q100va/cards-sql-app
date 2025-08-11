@@ -1,21 +1,5 @@
 <mat-card class="roles-list-card" appearance="outlined">
 
-  <!--   ToastModule notifications centered on the page -->
-  <p-toast position="center">
-    <ng-template let-msg pTemplate="message">
-      <div class="p-toast-message-text">
-        <div class="p-toast-summary">{{ msg.summary }}</div>
-        <div [class]="'ui-toast-' + msg.severity">
-          <div [innerHtml]="msg.detail"></div>
-        </div>
-      </div>
-    </ng-template>
-  </p-toast>
-
-
-  <!--  Confirmation dialog for user actions -->
-  <p-confirmdialog></p-confirmdialog>
-
   <!-- Grid layout for the header section -->
   <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
     <!-- Spacer tile -->

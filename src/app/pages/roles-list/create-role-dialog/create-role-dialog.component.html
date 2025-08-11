@@ -1,24 +1,74 @@
-<h2 mat-dialog-title>Новая роль</h2>
-<p-confirmdialog />
-<p-toast position="center" />
+<mat-grid-list cols="10" gutterSize="16px" rowHeight="76px">
+  <!-- Header Section -->
+  <mat-grid-tile colspan="5" rowspan="1">
+    <h3 mat-dialog-title>Новая роль</h3>
+  </mat-grid-tile>
+
+  <!-- Empty tile used for spacing -->
+  <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+
+  <!-- Close button section -->
+  <mat-grid-tile colspan="2" rowspan="1">
+    <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
+      <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
+    </button>
+  </mat-grid-tile>
+</mat-grid-list>
+
 <mat-dialog-content class="full-width">
   <form>
+    <!-- Role Name Field -->
     <mat-form-field class="full-width">
       <mat-label>Название</mat-label>
-      <input matInput [formControl]="roleName">
+      <input matInput [formControl]="roleName" />
+
+      <!-- Error for required field -->
       @if (roleName.hasError('required')) {
-      <mat-error>Поле 'Название' не может быть пустым!</mat-error>
+      <mat-error>Поле не может быть пустым!</mat-error>
+      }
+
+      <!-- Error for exceeding maximum length when not only spaces -->
+      @if (roleName.hasError('maxlength') && !roleName.hasError('onlySpaces')) {
+      <mat-error>Превышена максимальная длина!</mat-error>
+      }
+
+      <!-- Error for input containing only spaces -->
+      @if (roleName.hasError('onlySpaces')) {
+      <mat-error>Поле не может состоять только из пробелов!</mat-error>
       }
     </mat-form-field>
+
+    <!-- Role Description Field -->
     <mat-form-field class="full-width">
       <mat-label>Описание</mat-label>
       <textarea rows="5" matInput [formControl]="roleDescription"></textarea>
+
+      <!-- Error for required field -->
+      @if (roleDescription.hasError('required')) {
+      <mat-error>Поле не может быть пустым!</mat-error>
+      }
+
+      <!-- Error for exceeding maximum length when not only spaces -->
+      @if (roleDescription.hasError('maxlength') && !roleDescription.hasError('onlySpaces')) {
+      <mat-error>Превышена максимальная длина!</mat-error>
+      }
+
+      <!-- Error for input containing only spaces -->
+      @if (roleDescription.hasError('onlySpaces')) {
+      <mat-error>Поле не может состоять только из пробелов!</mat-error>
+      }
     </mat-form-field>
   </form>
 </mat-dialog-content>
 
+<!-- Dialog Actions Section -->
 <mat-dialog-actions>
-  <button class="dialog-cancel-button" mat-button (click)="onCancelClick($event)">Отменить</button>
-  <button class="dialog-submit-button" mat-button [disabled]="roleName.hasError('required')"
-    (click)="onCreateRoleClick()">Сохранить</button>
+  <button
+    class="dialog-submit-button"
+    mat-button
+    [disabled]="!roleName.valid || !roleDescription.valid || isLoading"
+    (click)="onCreateRoleClick()"
+  >
+    Сохранить и выйти
+  </button>
 </mat-dialog-actions>

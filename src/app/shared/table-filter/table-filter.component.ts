@@ -177,7 +177,8 @@ export class TableFilterComponent implements OnInit {
       next: (res) => {
         // //console.log('res');
         // //console.log(res);
-        this.rolesList = res.data.roles;
+        this.rolesList = res.data;
+        //TODO: вывести предупреждение, если список пуст!
       },
       error: (err) => this.errorService.handle(err),
     });

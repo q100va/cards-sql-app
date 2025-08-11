@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 // Material imports
@@ -18,9 +12,7 @@ import { FormsModule } from '@angular/forms';
 // PrimeNG imports
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
-import { Toast, ToastModule } from 'primeng/toast';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 // Application imports
 import { CreateRoleDialogComponent } from './create-role-dialog/create-role-dialog.component';
 import { RoleService } from '../../services/role.service';
@@ -41,27 +33,24 @@ import { MessageWrapperService } from '../../services/message.service';
     FormsModule,
     TableModule,
     InputTextModule,
-    ConfirmDialogModule,
-    ToastModule,
   ],
   providers: [],
   templateUrl: './roles-list.component.html',
   styleUrls: ['./roles-list.component.css'],
 })
-
 export class RolesListComponent implements OnInit, OnDestroy {
-
   // Public properties
   operations!: Operation[];
   roles!: Role[];
+  originalRoles!: Role[];
   isLoading = signal<boolean>(false);
   tableStyle = { 'min-width': '75rem' };
   trackById = trackById;
   sanitizeText = sanitizeText;
   scrollHeight = '800px';
+  private readonly subscriptions = new Subscription();
 
   // Private properties
-  private readonly subscriptions = new Subscription();
   private readonly roleService = inject(RoleService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly dialog = inject(MatDialog);
@@ -89,12 +78,12 @@ export class RolesListComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
       disableClose: true,
       minWidth: '400px',
-      height: '40%',
+      height: 'auto',
     });
-    const subscription = dialogRef.afterClosed().subscribe((result) => {
-      if (result?.roleName) {
+    const subscription = dialogRef.afterClosed().subscribe((roleName) => {
+      if (roleName) {
         this.loadRoles();
-        this.msgWrapper.success(`Роль '${result.roleName}' создана.`);
+        this.msgWrapper.success(`Роль '${roleName}' создана.`);
       }
     });
     this.subscriptions.add(subscription);
@@ -105,16 +94,28 @@ export class RolesListComponent implements OnInit, OnDestroy {
    * @param index - The index of the role in the roles array.
    */
   onInputChange(index: number): void {
+    this.roles[index].name = this.roles[index].name.trim();
+    this.roles[index].description = this.roles[index].description.trim();
     const role = this.roles[index];
+    // Ensure role name and description are not empty
     if (role.name && role.description) {
-      const subscription = this.roleService.updateRole(role).subscribe({
-        next: () => {
-          const roleName = role.name;
-          this.msgWrapper.success(`Роль '${roleName}' обновлена.`);
-        },
-        error: (err) => this.errorService.handle(err),
-      });
-      this.subscriptions.add(subscription);
+      const originalRole = this.originalRoles[index];
+      // Ensure role was changed
+      if (
+        originalRole.name !== role.name ||
+        originalRole.description !== role.description
+      ) {
+        const subscription = this.roleService.updateRole(role).subscribe({
+          next: (res) => {
+            const updatedRole = res.data;
+            this.msgWrapper.success(`Роль '${updatedRole.name}' обновлена.`);
+            this.roles[index] = { ...updatedRole };
+            this.originalRoles[index] = { ...updatedRole };
+          },
+          error: (err) => this.errorService.handle(err),
+        });
+        this.subscriptions.add(subscription);
+      }
     }
   }
 
@@ -133,9 +134,19 @@ export class RolesListComponent implements OnInit, OnDestroy {
       .updateRoleAccess(value, roleId, operation)
       .subscribe({
         next: (res) => {
-          if (res) {
-            this.loadRoles();
-          }
+          const updatedObject = res.data.object;
+          const newOpsForUpdatedRole = res.data.ops;
+          console.log('newOpsForUpdatedRole', newOpsForUpdatedRole);
+          const opsMap = new Map(newOpsForUpdatedRole.map((op) => [op.id, op]));
+          this.operations
+            .filter((op) => op.object === updatedObject)
+            .forEach((op) => {
+              op.rolesAccesses = op.rolesAccesses.map((roleAccess) =>
+                opsMap.has(roleAccess.id)
+                  ? { ...roleAccess, ...opsMap.get(roleAccess.id) }
+                  : roleAccess
+              );
+            });
         },
         error: (err) => this.errorService.handle(err),
       });
@@ -168,7 +179,6 @@ export class RolesListComponent implements OnInit, OnDestroy {
 
   // Private methods
 
-  //TODO: перечислить пользователей!
   /**
    * Checks if a role can be safely deleted.
    * @param id - The role's identifier.
@@ -179,11 +189,11 @@ export class RolesListComponent implements OnInit, OnDestroy {
       .checkPossibilityToDeleteRole(id)
       .subscribe({
         next: (res) => {
-          if (res.data) {
+          if (!res.data) {
             this.deleteRole(id, roleName);
           } else {
             this.msgWrapper.warn(
-              `Невозможно удалить роль '${roleName}'. Она назначена пользователям.`
+              `Невозможно удалить роль '${roleName}'. Она назначена пользователям: '${res.data}'.`
             );
           }
         },
@@ -222,6 +232,7 @@ export class RolesListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.roles = res.data.roles;
+          this.originalRoles = structuredClone(this.roles);
           this.operations = res.data.operations;
           console.log('this.operations', this.operations);
         },

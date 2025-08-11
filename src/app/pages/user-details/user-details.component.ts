@@ -127,7 +127,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     this.mainForm.setValidators([Validator.mainContactsValidator]);
     this.roleService.getRolesNamesList().subscribe({
       next: (res) => {
-        this.roles = res.data.roles;
+        this.roles = res.data;
       },
       error: (err) => this.errorService.handle(err),
     });

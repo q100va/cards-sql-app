@@ -19,12 +19,13 @@ export interface RoleAccess {
  * Represents an operation including its metadata and role-specific access settings.
  */
 export interface Operation {
+  id: number;                 // Unique identifier for the operation
   description: string;        // Purpose or explanation of the operation
   fullAccess: boolean;        // Indicates whether access for this operation provides full access for all related operations
   object: string;             // Identifier for the related object involved in the operation
   objectName: string;         // Human-readable name of the related object
   operation: string;          // Identifier for the specific operation to be performed
   operationName: string;      // Human-readable name for the operation
-  rolesAccesses: RoleAccess;  // Role-specific access settings for the operation
+  rolesAccesses: RoleAccess[];  // Role-specific access settings for the operation
   flag?: 'LIMITED' | 'FULL';  // Additional flag or indicator for the operation
 }
