@@ -1,6 +1,14 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import {
+  Component,
+  DestroyRef,
+  OnDestroy,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
+import { EMPTY } from 'rxjs';
+import { finalize, switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 // Material imports
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,7 +24,6 @@ import { ConfirmationService } from 'primeng/api';
 // Application imports
 import { CreateRoleDialogComponent } from './create-role-dialog/create-role-dialog.component';
 import { RoleService } from '../../services/role.service';
-import { ErrorService } from '../../services/error.service';
 import { Operation, Role } from '../../interfaces/role';
 import { trackById } from '../../utils/track-by-id.util';
 import { sanitizeText } from '../../utils/sanitize-text';
@@ -38,7 +45,7 @@ import { MessageWrapperService } from '../../services/message.service';
   templateUrl: './roles-list.component.html',
   styleUrls: ['./roles-list.component.css'],
 })
-export class RolesListComponent implements OnInit, OnDestroy {
+export class RolesListComponent implements OnInit {
   // Public properties
   operations!: Operation[];
   roles!: Role[];
@@ -48,13 +55,12 @@ export class RolesListComponent implements OnInit, OnDestroy {
   trackById = trackById;
   sanitizeText = sanitizeText;
   scrollHeight = '800px';
-  private readonly subscriptions = new Subscription();
 
   // Private properties
+  private readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly dialog = inject(MatDialog);
-  protected readonly errorService = inject(ErrorService);
   private readonly msgWrapper = inject(MessageWrapperService);
 
   // Lifecycle hooks
@@ -63,10 +69,6 @@ export class RolesListComponent implements OnInit, OnDestroy {
     const height = window.innerHeight * 0.75;
     this.scrollHeight = `${height}px`;
     console.log(' this.scrollHeight', this.scrollHeight);
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
   }
 
   // Public methods
@@ -80,13 +82,13 @@ export class RolesListComponent implements OnInit, OnDestroy {
       minWidth: '400px',
       height: 'auto',
     });
-    const subscription = dialogRef.afterClosed().subscribe((roleName) => {
+    dialogRef.afterClosed()
+    .pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roleName) => {
       if (roleName) {
         this.loadRoles();
         this.msgWrapper.success(`Роль '${roleName}' создана.`);
       }
     });
-    this.subscriptions.add(subscription);
   }
 
   /**
@@ -94,28 +96,71 @@ export class RolesListComponent implements OnInit, OnDestroy {
    * @param index - The index of the role in the roles array.
    */
   onInputChange(index: number): void {
+    // Remove any extra whitespace from the role's name and description.
     this.roles[index].name = this.roles[index].name.trim();
     this.roles[index].description = this.roles[index].description.trim();
+    // Get the updated role from the roles array.
     const role = this.roles[index];
-    // Ensure role name and description are not empty
-    if (role.name && role.description) {
-      const originalRole = this.originalRoles[index];
-      // Ensure role was changed
-      if (
-        originalRole.name !== role.name ||
-        originalRole.description !== role.description
-      ) {
-        const subscription = this.roleService.updateRole(role).subscribe({
+    // Exit if the role's name or description is empty.
+    if (!role.name || !role.description) {
+      return;
+    }
+    // Retrieve the original copy of the role for change comparison.
+    const originalRole = this.originalRoles[index];
+    // Determine if the name or description has changed.
+    const nameChanged = originalRole.name !== role.name;
+    const descriptionChanged = originalRole.description !== role.description;
+    // If neither the name nor the description changed, no update is needed.
+    if (!nameChanged && !descriptionChanged) {
+      return; // nothing changed
+    }
+    // Helper function that performs the role update.
+    const updateRole = () =>
+      this.roleService.updateRole(role).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      );
+    // If the role's name has been changed, check if the new name is already taken.
+    if (nameChanged) {
+      this.roleService
+        .checkRoleName(role.name)
+        .pipe(
+          switchMap((res) => {
+            if (res.data) {
+              // Warn the user if the new name is already in use.
+              this.msgWrapper.warn(
+                `Название '${role.name}' уже занято! Выберите другое.`
+              );
+              // Rollback changes to the original role.
+              this.roles[index] = { ...originalRole };
+              return EMPTY;
+            } else {
+              // If the name is unique, proceed to update the role.
+              return updateRole();
+            }
+          })
+        )
+        .subscribe({
           next: (res) => {
+            // Once updated, notify the user and refresh both the roles and originalRoles arrays.
             const updatedRole = res.data;
             this.msgWrapper.success(`Роль '${updatedRole.name}' обновлена.`);
             this.roles[index] = { ...updatedRole };
             this.originalRoles[index] = { ...updatedRole };
           },
-          error: (err) => this.errorService.handle(err),
+          error: (err) => this.msgWrapper.handle(err),
         });
-        this.subscriptions.add(subscription);
-      }
+    } else if (descriptionChanged) {
+      // If only the description has changed, update without checking the name.
+      updateRole().subscribe({
+        next: (res) => {
+          // Once updated, notify the user and refresh both the roles and originalRoles arrays.
+          const updatedRole = res.data;
+          this.msgWrapper.success(`Роль '${updatedRole.name}' обновлена.`);
+          this.roles[index] = { ...updatedRole };
+          this.originalRoles[index] = { ...updatedRole };
+        },
+        error: (err) => this.msgWrapper.handle(err),
+      });
     }
   }
 
@@ -130,8 +175,9 @@ export class RolesListComponent implements OnInit, OnDestroy {
     roleId: number,
     operation: Operation
   ): void {
-    const subscription = this.roleService
+    this.roleService
       .updateRoleAccess(value, roleId, operation)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           const updatedObject = res.data.object;
@@ -148,9 +194,8 @@ export class RolesListComponent implements OnInit, OnDestroy {
               );
             });
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
-    this.subscriptions.add(subscription);
   }
 
   /**
@@ -185,8 +230,9 @@ export class RolesListComponent implements OnInit, OnDestroy {
    * @param safeRoleName - The sanitized role name.
    */
   private checkPossibilityToDeleteRole(id: number, roleName: string): void {
-    const subscription = this.roleService
+    this.roleService
       .checkPossibilityToDeleteRole(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           if (!res.data) {
@@ -197,9 +243,8 @@ export class RolesListComponent implements OnInit, OnDestroy {
             );
           }
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
-    this.subscriptions.add(subscription);
   }
 
   /**
@@ -208,14 +253,15 @@ export class RolesListComponent implements OnInit, OnDestroy {
    * @param safeRoleName - The sanitized role name.
    */
   private deleteRole(id: number, roleName: string): void {
-    const subscription = this.roleService.deleteRole(id).subscribe({
+    this.roleService.deleteRole(id)
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe({
       next: () => {
         this.msgWrapper.success(`Роль '${roleName}'удалена.`);
         this.loadRoles();
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
-    this.subscriptions.add(subscription);
   }
 
   /**
@@ -223,10 +269,11 @@ export class RolesListComponent implements OnInit, OnDestroy {
    */
   private loadRoles(): void {
     this.isLoading.set(true);
-    const subscription = this.roleService
+    this.roleService
       .getRoles()
       .pipe(
         // Ensure loading indicator is deactivated after the call completes
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
@@ -236,8 +283,7 @@ export class RolesListComponent implements OnInit, OnDestroy {
           this.operations = res.data.operations;
           console.log('this.operations', this.operations);
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
-    this.subscriptions.add(subscription);
   }
 }

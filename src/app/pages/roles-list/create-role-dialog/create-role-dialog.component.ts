@@ -1,5 +1,10 @@
 // Angular and Angular Material dependencies
-import { Component, DestroyRef, inject, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  ViewEncapsulation,
+} from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -7,7 +12,6 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 // Angular Forms modules and validators
 import {
   FormControl,
@@ -24,12 +28,12 @@ import { MatIconModule } from '@angular/material/icon';
 // Custom services and utilities
 import { RoleService } from '../../../services/role.service';
 import { ConfirmationService } from 'primeng/api';
-import { ErrorService } from '../../../services/error.service';
 import { noOnlySpacesValidator } from '../../../utils/custom.validator';
 import { MessageWrapperService } from '../../../services/message.service';
 // RxJS imports for reactive programming
 import { EMPTY } from 'rxjs';
 import { switchMap, finalize } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-create-role-dialog',
@@ -56,13 +60,12 @@ import { switchMap, finalize } from 'rxjs/operators';
 })
 export class CreateRoleDialogComponent {
   // Injecting services and dialog references using Angular's DI
-   private readonly destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<CreateRoleDialogComponent>);
   readonly data = inject<{ userId: number; userName: string }>(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly roleService = inject(RoleService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly errorService = inject(ErrorService);
 
   // Flag to indicate when an operation is in progress
   isLoading = false;
@@ -96,6 +99,7 @@ export class CreateRoleDialogComponent {
       .pipe(
         // If the role name exists, warn the user; otherwise, create a new role
         switchMap((res) => {
+          console.log(res);
           if (res.data) {
             this.msgWrapper.warn(
               `Название '${trimmedRoleName}' уже занято! Выберите другое.`
@@ -125,7 +129,7 @@ export class CreateRoleDialogComponent {
         },
         error: (err) => {
           // Handle any errors that occur during the operation
-          this.errorService.handle(err);
+          this.msgWrapper.handle(err);
         },
       });
   }
@@ -152,7 +156,7 @@ export class CreateRoleDialogComponent {
       },
       // Callback for when the user confirms exit
       accept: () => {
-        this.dialogRef.close({ success: false });
+        this.dialogRef.close(null);
       },
       // Callback for when the user rejects exit (no action needed)
       reject: () => {},

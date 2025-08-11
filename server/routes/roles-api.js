@@ -44,7 +44,7 @@ router.post(
         attributes: ["name"],
         raw: true,
       });
-      res.status(200).send({ msg: "Проверка завершена.", data: duplicate?.length > 0 });
+      res.status(200).send({ msg: "Проверка завершена.", data: duplicate !== null });
     } catch (error) {
       handleError(error, res, "Произошла ошибка при проверке названия роли.");
     }

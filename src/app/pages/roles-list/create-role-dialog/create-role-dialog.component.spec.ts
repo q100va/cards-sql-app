@@ -9,7 +9,6 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { RoleService } from '../../../services/role.service';
 import { MessageWrapperService } from '../../../services/message.service';
 import { Confirmation, ConfirmationService } from 'primeng/api';
-import { ErrorService } from '../../../services/error.service';
 import { of, throwError } from 'rxjs';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -20,7 +19,6 @@ describe('CreateRoleDialogComponent', () => {
   let roleServiceSpy: jasmine.SpyObj<RoleService>;
   let messageWrapperSpy: jasmine.SpyObj<MessageWrapperService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
-  let errorServiceSpy: jasmine.SpyObj<ErrorService>;
   let dialogRefSpy: jasmine.SpyObj<MatDialogRef<CreateRoleDialogComponent>>;
   beforeEach(async () => {
     // Create spy objects for the injected services
@@ -28,11 +26,10 @@ describe('CreateRoleDialogComponent', () => {
       'checkRoleName',
       'createRole',
     ]);
-    messageWrapperSpy = jasmine.createSpyObj('MessageWrapperService', ['warn']);
+    messageWrapperSpy = jasmine.createSpyObj('MessageWrapperService', ['warn', 'handle']);
     confirmationServiceSpy = jasmine.createSpyObj('ConfirmationService', [
       'confirm',
     ]);
-    errorServiceSpy = jasmine.createSpyObj('ErrorService', ['handle']);
     dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
     // Configure the testing module with required imports, providers and schemas
     await TestBed.configureTestingModule({
@@ -46,7 +43,6 @@ describe('CreateRoleDialogComponent', () => {
         { provide: RoleService, useValue: roleServiceSpy },
         { provide: MessageWrapperService, useValue: messageWrapperSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
-        { provide: ErrorService, useValue: errorServiceSpy },
         { provide: MatDialogRef, useValue: dialogRefSpy },
         {
           provide: MAT_DIALOG_DATA,
@@ -60,6 +56,12 @@ describe('CreateRoleDialogComponent', () => {
     fixture = TestBed.createComponent(CreateRoleDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+    afterEach(() => {
+    // Clean up: destroy component fixture if defined.
+    if (fixture) {
+      fixture.destroy();
+    }
   });
   describe('onCreateRoleClick', () => {
     it('should not proceed if roleName or roleDescription is invalid - empty', () => {
@@ -156,7 +158,7 @@ describe('CreateRoleDialogComponent', () => {
         roleName,
         roleDescription
       );
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(error);
+      expect(messageWrapperSpy.handle).toHaveBeenCalledWith(error);
       expect(dialogRefSpy.close).not.toHaveBeenCalled();
     }));
   });
@@ -172,7 +174,7 @@ describe('CreateRoleDialogComponent', () => {
       component.onCancelClick(fakeEvent as unknown as Event);
       // Verify that confirmation occurred and dialog was closed with cancellation response
       expect(confirmationServiceSpy.confirm).toHaveBeenCalled();
-      expect(dialogRefSpy.close).toHaveBeenCalledWith({ success: false });
+      expect(dialogRefSpy.close).toHaveBeenCalledWith(null);
     });
     it('should not close the dialog if cancellation is rejected', () => {
       const fakeEvent = { target: document.createElement('div') };

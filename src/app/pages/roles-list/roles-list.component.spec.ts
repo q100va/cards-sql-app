@@ -11,7 +11,6 @@ import { of, throwError, Subject } from 'rxjs';
 import { RolesListComponent } from './roles-list.component';
 import { RoleService } from '../../services/role.service';
 import { MessageWrapperService } from '../../services/message.service';
-import { ErrorService } from '../../services/error.service';
 
 describe('RolesListComponent', () => {
   let component: RolesListComponent;
@@ -20,23 +19,23 @@ describe('RolesListComponent', () => {
   let dialogSpy: jasmine.SpyObj<MatDialog>;
   let roleServiceSpy: jasmine.SpyObj<RoleService>;
   let msgWrapperSpy: jasmine.SpyObj<MessageWrapperService>;
-  let errorServiceSpy: jasmine.SpyObj<ErrorService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
 
   beforeEach(async () => {
     // Create spy objects for service dependencies
     const roleSvcMock = jasmine.createSpyObj('RoleService', [
       'getRoles',
+      'checkRoleName',
       'updateRole',
       'updateRoleAccess',
       'deleteRole',
       'checkPossibilityToDeleteRole',
     ]);
     const dialogMock = jasmine.createSpyObj('MatDialog', ['open']);
-    const errorSvcMock = jasmine.createSpyObj('ErrorService', ['handle']);
     const msgWrapperMock = jasmine.createSpyObj('MessageWrapperService', [
       'success',
       'warn',
+      'handle',
     ]);
     const confirmationSvcMock = jasmine.createSpyObj('ConfirmationService', [
       'confirm',
@@ -48,7 +47,6 @@ describe('RolesListComponent', () => {
       providers: [
         { provide: RoleService, useValue: roleSvcMock },
         { provide: MatDialog, useValue: dialogMock },
-        { provide: ErrorService, useValue: errorSvcMock },
         { provide: MessageWrapperService, useValue: msgWrapperMock },
         { provide: ConfirmationService, useValue: confirmationSvcMock },
       ],
@@ -60,9 +58,6 @@ describe('RolesListComponent', () => {
     component = fixture.componentInstance;
     roleServiceSpy = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
     dialogSpy = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
-    errorServiceSpy = TestBed.inject(
-      ErrorService
-    ) as jasmine.SpyObj<ErrorService>;
     msgWrapperSpy = TestBed.inject(
       MessageWrapperService
     ) as jasmine.SpyObj<MessageWrapperService>;
@@ -84,10 +79,7 @@ describe('RolesListComponent', () => {
   });
 
   afterEach(() => {
-    // Clean up: destroy subscriptions and component fixture if defined.
-    if (component) {
-      component.ngOnDestroy();
-    }
+    // Clean up: destroy component fixture if defined.
     if (fixture) {
       fixture.destroy();
     }
@@ -159,7 +151,7 @@ describe('RolesListComponent', () => {
         { id: 1, name: 'Admin', description: 'Administrator' },
       ];
     });
-    it('should trim input and call updateRole when changes exist', fakeAsync(() => {
+    it('should trim input and call updateRole when changes exist only in description', fakeAsync(() => {
       // Arrange: simulate update by adding extra space.
       component.roles[0].name = 'Admin';
       component.roles[0].description = 'Admin Updated ';
@@ -173,15 +165,83 @@ describe('RolesListComponent', () => {
       component.onInputChange(0);
       tick();
       // Assert: updateRole should be called and originalRoles updated.
-      expect(roleServiceSpy.updateRole).toHaveBeenCalledWith(
-        component.roles[0]
-      );
+      expect(roleServiceSpy.checkRoleName).not.toHaveBeenCalled();
+      expect(roleServiceSpy.updateRole).toHaveBeenCalledWith({
+        id: 1,
+        name: 'Admin',
+        description: 'Admin Updated',
+      });
       expect(msgWrapperSpy.success).toHaveBeenCalledWith(
         `Роль 'Admin' обновлена.`
       );
       expect(component.roles[0].description).toBe('Admin Updated');
       expect(component.originalRoles[0].description).toBe('Admin Updated');
     }));
+
+    it('should warn if the role name is already taken', fakeAsync(() => {
+      // Arrange: simulate update by choosing existed name.
+      component.roles[0].name = 'NewAdmin';
+      component.roles[0].description = 'Administrator';
+
+      // Simulate role name check response indicating the role already exists
+      roleServiceSpy.checkRoleName.and.returnValue(
+        of({ msg: 'failed', data: true })
+      );
+      // Trigger the role updating
+      component.onInputChange(0);
+      tick();
+      // Verify proper service calls and display of a warning message
+      expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith('NewAdmin');
+      expect(msgWrapperSpy.warn).toHaveBeenCalledWith(
+        `Название 'NewAdmin' уже занято! Выберите другое.`
+      );
+      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
+      expect(component.roles[0].name).toBe('Admin');
+      expect(component.roles[0].description).toBe('Administrator');
+    }));
+
+    it('should update role when role name is available', fakeAsync(() => {
+      // Simulate extra spaces to test trimming functionality
+       component.roles[0].name = 'NewRoleName ';
+      // Simulate role name check response indicating the role name is available
+      roleServiceSpy.checkRoleName.and.returnValue(
+        of({ msg: 'success', data: false })
+      );
+      // Simulate successful role creation response
+      roleServiceSpy.updateRole.and.returnValue(
+        of({
+          msg: 'success',
+          data: { id: 1, name: 'NewRoleName', description: 'Administrator' },
+        })
+      );
+      // Trigger the role updating
+      component.onInputChange(0);
+      tick();
+      // Verify that the proper service calls were made and dialog closed with the created role name
+      expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith('NewRoleName');
+      expect(roleServiceSpy.updateRole).toHaveBeenCalledWith({
+        id: 1,
+        name: 'NewRoleName',
+        description: 'Administrator',
+      });
+      expect(msgWrapperSpy.success).toHaveBeenCalledWith(
+        `Роль 'NewRoleName' обновлена.`
+      );
+      expect(component.roles[0].name).toBe('NewRoleName');
+      expect(component.originalRoles[0].name).toBe('NewRoleName');
+      expect(component.roles[0].description).toBe('Administrator');
+      expect(component.originalRoles[0].description).toBe('Administrator');
+    }));
+
+    it('should not call updateRole if trimmed name or description is empty', () => {
+      // Arrange: set an empty name after trimming.
+      component.roles[0].name = '   ';
+      component.roles[0].description = 'Some description';
+      // Act:
+      component.onInputChange(0);
+      // Assert:
+      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
+    });
     it('should not call updateRole if trimmed name or description is equal to original', () => {
       // Arrange: simulate no real changes, only extra spaces.
       component.roles[0].name = 'Admin';
@@ -192,15 +252,6 @@ describe('RolesListComponent', () => {
       expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
       expect(component.roles[0].description).toEqual('Administrator');
       expect(component.originalRoles[0].description).toEqual('Administrator');
-    });
-    it('should not call updateRole if trimmed name or description is empty', () => {
-      // Arrange: set an empty name after trimming.
-      component.roles[0].name = '   ';
-      component.roles[0].description = 'Some description';
-      // Act:
-      component.onInputChange(0);
-      // Assert:
-      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
     });
     it('should not call updateRole if no values have changed', () => {
       // Arrange: set values identical to original.
@@ -221,7 +272,7 @@ describe('RolesListComponent', () => {
       tick();
       // Assert:
       expect(roleServiceSpy.updateRole).toHaveBeenCalled();
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(error);
+      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
     }));
   });
 
@@ -376,16 +427,14 @@ describe('RolesListComponent', () => {
         },
       ]);
     });
-    it('should call errorService.handle when the roleService returns an error', () => {
-      const fakeError = new Error('Some error occurred');
+    it('should call msgWrapperSpy.handle when the roleService returns an error', () => {
+      const error = new Error('Some error occurred');
       // Make roleService return an error
-      roleServiceSpy.updateRoleAccess.and.returnValue(
-        throwError(() => fakeError)
-      );
+      roleServiceSpy.updateRoleAccess.and.returnValue(throwError(() => error));
       // Invoke the function under test
       component.onAccessChangeCheck(false, 101, dummy);
-      // Verify that errorService.handle is called with the error
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(fakeError);
+      // Verify that msgWrapperSpy.handle is called with the error
+      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
     });
     it('should not update any operations if the returned updated object does not match any in the component.', () => {
       // Create a fake response with an object that does not match 'OBJ1'
@@ -516,7 +565,7 @@ describe('RolesListComponent', () => {
       (component as any).checkPossibilityToDeleteRole(1, 'RoleX');
       tick();
       // Assert:
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(error);
+      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
     }));
   });
 
@@ -545,7 +594,7 @@ describe('RolesListComponent', () => {
       (component as any).deleteRole(3, 'RoleX');
       tick();
       // Assert:
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(error);
+      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
     }));
   });
 
@@ -618,25 +667,14 @@ describe('RolesListComponent', () => {
       // Arrange: simulate error when fetching roles.
       const error = new Error('Load error');
       roleServiceSpy.getRoles.and.returnValue(throwError(() => error));
+      // Ensure isLoading is false before loadRoles is called.
       component.isLoading.set(false);
       // Act:
       (component as any).loadRoles();
       tick();
       // Assert:
-      expect(errorServiceSpy.handle).toHaveBeenCalledWith(error);
+      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
       expect(component.isLoading()).toBeFalse();
     }));
-  });
-
-  // Test destruction of the component.
-  describe('ngOnDestroy', () => {
-    it('should unsubscribe from all subscriptions', () => {
-      // Arrange: spy on subscriptions.unsubscribe method.
-      spyOn((component as any).subscriptions, 'unsubscribe');
-      // Act:
-      component.ngOnDestroy();
-      // Assert:
-      expect((component as any).subscriptions.unsubscribe).toHaveBeenCalled();
-    });
   });
 });
