@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ViewChild } from '@angular/core';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +8,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { CommonModule } from '@angular/common';
 import { CookieService } from 'ngx-cookie-service';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
+import { Toast, ToastModule } from 'primeng/toast';
 import { MenuItem } from './menu-item';
 import { SignInService } from '../../services/sign-in.service';
 
@@ -30,6 +30,7 @@ import { SignInService } from '../../services/sign-in.service';
   styleUrl: './base-layout.component.css',
 })
 export class BaseLayoutComponent {
+   @ViewChild(Toast) toast!: Toast;
   private signInService = inject(SignInService);
   private cookieService = inject(CookieService);
   // private roleService = inject(RoleService);
@@ -51,6 +52,11 @@ export class BaseLayoutComponent {
       this.isDobroru = this.userRole === "dobroru";
     });*/
   }
+
+
+/*   clear(msg: any) {
+    this.toast.clear(msg);
+  } */
 
   signOut() {
     this.cookieService.deleteAll();

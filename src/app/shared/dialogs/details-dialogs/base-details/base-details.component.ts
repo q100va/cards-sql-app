@@ -13,7 +13,7 @@ import {
   FormArray,
 } from '@angular/forms';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 
 import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
 import { AddressFilterParams } from '../../../../interfaces/address-filter-params';
@@ -21,22 +21,16 @@ import { AddressFilter } from '../../../../interfaces/address-filter';
 import { Control } from '../../../../interfaces/dialog-props';
 import { AddressService } from '../../../../services/address.service';
 import { DialogData } from '../../../../interfaces/dialog-props';
-import {
-  Contacts,
-  ContactType,
-  isContactType,
-  User,
-} from '../../../../interfaces/user';
-import { Toponym } from '../../../../interfaces/toponym';
+import { ContactType, isContactType } from '../../../../interfaces/user';
 import { BaseModel } from '../../../../interfaces/base-model';
 import { DefaultAddressParams } from '../../../../interfaces/default-address-params';
-import { hasKey, typedKeys } from '../../../../interfaces/types';
-import { ErrorService } from '../../../../services/error.service';
+import { hasKey } from '../../../../interfaces/types';
+import { MessageWrapperService } from '../../../../services/message.service';
 
 @Component({
   selector: 'app-base-details',
   imports: [],
-providers: [],
+  providers: [],
   templateUrl: './base-details.component.html',
   styleUrl: './base-details.component.css',
 })
@@ -49,9 +43,8 @@ export class BaseDetailsComponent<T extends BaseModel> {
   addressFilterComponent!: AddressFilterComponent;
 
   confirmationService = inject(ConfirmationService);
-  messageService = inject(MessageService);
   addressService = inject(AddressService);
-  errorService = inject(ErrorService);
+  msgWrapper = inject(MessageWrapperService);
 
   data = input.required<DialogData<T>>();
   controlsNames!: string[];
@@ -256,7 +249,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
         this.changesSignal.set(newChangesValue);
       }
-
 
       this.emittedChanges.emit(this.changesSignal());
     }

@@ -20,10 +20,7 @@ import {
 } from '@angular/forms';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { AddressService } from '../../services/address.service';
-import { MessageService } from 'primeng/api';
-
-import { OnInit, computed, signal } from '@angular/core';
+import { OnInit, signal } from '@angular/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import 'moment/locale/ru';
@@ -35,7 +32,7 @@ import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { GeneralFilter } from '../../interfaces/filter';
 import { typedKeys } from '../../interfaces/types';
-import { ErrorService } from '../../services/error.service';
+import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
   selector: 'app-table-filter',
@@ -57,9 +54,8 @@ import { ErrorService } from '../../services/error.service';
 })
 export class TableFilterComponent implements OnInit {
   private roleService = inject(RoleService);
-  private messageService = inject(MessageService);
   private injector = inject(Injector);
-  errorService = inject(ErrorService);
+  private readonly msgWrapper = inject(MessageWrapperService);
 
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
@@ -180,7 +176,7 @@ export class TableFilterComponent implements OnInit {
         this.rolesList = res.data;
         //TODO: вывести предупреждение, если список пуст!
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 

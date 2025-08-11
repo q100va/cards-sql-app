@@ -21,24 +21,18 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
-
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
-import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { RoleService } from '../../services/role.service';
 import {
   ChangedData,
-  CommonUserFields,
   Contact,
   Contacts,
   ContactType,
   DeletingData,
   DeletingOutdatedDataType,
-  isContactType,
   OutdatedData,
   OutdatingData,
   RestoringData,
@@ -129,7 +123,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       next: (res) => {
         this.roles = res.data;
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -227,11 +221,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     });
     dialogRef.afterClosed().subscribe((result) => {
       if (result?.success) {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: 'Пароль успешно изменен',
-        });
+        this.msgWrapper.success(`Пароль успешно изменен.`);
       }
     });
   }
@@ -410,17 +400,12 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     this.userService.checkUserName(userDraft.userName, userDraft.id).subscribe({
       next: (res) => {
         if (res.data) {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Ошибка',
-            detail: `Username ${userDraft.userName} уже занято! Выберите другое.`,
-            sticky: true,
-          });
+          this.msgWrapper.warn(`Username ${userDraft.userName} уже занято. Выберите другое.`);
         } else {
           this.checkDuplicates(action, userDraft);
         }
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -477,21 +462,16 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     }
 
     if (Object.keys(contactDuplicates).length != 0) {
-      let errorMessage = 'Вы указали одинаковые значения для: \n';
+      let warnMessage = 'Вы указали одинаковые значения для: \n';
       for (let key of typedKeys(contactDuplicates)) {
-        errorMessage = errorMessage + ` ${key} -`;
+        warnMessage = warnMessage + ` ${key} -`;
         for (let value of contactDuplicates[key]) {
-          errorMessage = errorMessage + ` ${value}`;
+          warnMessage = warnMessage + ` ${value}`;
         }
-        errorMessage = errorMessage + '\n';
+        warnMessage = warnMessage + '\n';
       }
-      errorMessage = errorMessage + '\n Удалите, пожалуйста, дубли!';
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Ошибка',
-        detail: errorMessage,
-        sticky: true,
-      });
+      warnMessage = warnMessage + '\n Удалите, пожалуйста, дубли!';
+      this.msgWrapper.warn(warnMessage);
     } else {
       this.checkUserData(action, user);
     }
@@ -569,7 +549,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           }
         }
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -1202,14 +1182,10 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           console.log('this.existedUser', this.existedUser);
           this.changeToViewMode(null);
           this.setInitialValues('view');
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Подтверждение',
-            detail: `Аккаунт пользователя ${res.data.userName} успешно создан!`,
-          });
+          this.msgWrapper.success(`Аккаунт пользователя ${res.data.userName} создан.`);
         }
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -1279,14 +1255,10 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             //TODO: test it
             this.changeToViewMode(null);
             this.setInitialValues('view');
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Подтверждение',
-              detail: `Аккаунт пользователя ${res.data.userName} успешно обновлен!`,
-            });
+            this.msgWrapper.success(`Аккаунт пользователя ${res.data.userName} обновлен.`);
           }
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
   }
 

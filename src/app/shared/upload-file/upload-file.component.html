@@ -1,22 +1,3 @@
-<!-- <mat-card>
-  <mat-card-actions>
-    <mat-label>Загрузить страны</mat-label>
-    <input type="file" (change)="addFile($event)">
-    <br />
-    <mat-label>Загрузить регионы</mat-label>
-    <input type="file" (change)="addFile($event)">
-    <br />
-    <mat-label>Загрузить округа и районы</mat-label>
-    <input type="file" (change)="addFile($event)">
-    <br />
-    <mat-label>Загрузить населенные пункты</mat-label>
-    <input type="file" (change)="addFile($event)">
-  </mat-card-actions>
-  <mat-card-content>{{errorMessage}}</mat-card-content>
-</mat-card> -->
-
-<!-- <p-toast position="center" /> -->
-
 <input style="display: none" type="file" (change)="addFile($event)"  #hiddenfileinput>
 <button mat-icon-button title="Загрузить списком" (click)="hiddenfileinput.click()">
   <mat-icon fontSet="material-icons-outlined">file_upload</mat-icon>

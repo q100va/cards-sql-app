@@ -7,8 +7,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
@@ -16,7 +14,6 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { ToponymFormControlsNames } from '../../interfaces/toponymFormControlsNames';
 import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
 import { Toponym } from '../../interfaces/toponym';
-import { AddressFilter } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-toponym-details',
@@ -35,7 +32,7 @@ import { AddressFilter } from '../../interfaces/address-filter';
     AddressFilterComponent,
     //DetailsDialogComponent
   ],
-providers: [],
+  providers: [],
   templateUrl: './toponym-details.component.html',
   styleUrl: './toponym-details.component.css',
 })
@@ -58,10 +55,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
   }
 
   protected override additionalValidationHooks() {
-    const getByPath = function (
-      obj: Record<string, any>,
-      key: string
-    ): number {
+    const getByPath = function (obj: Record<string, any>, key: string): number {
       return obj[key];
     };
     /* function <T extends object>(
@@ -71,7 +65,10 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
       return path.split('.').reduce((acc: any, key) => acc?.[key], obj);
     }; */
     //checking if selectable part of address was changed
-    if (this.data().addressFilterControls && this.data().addressFilterControls!.length > 0)
+    if (
+      this.data().addressFilterControls &&
+      this.data().addressFilterControls!.length > 0
+    )
       for (let item of this.data().addressFilterControls!) {
         const filterValues = this.addressFilter()[item.addressFilterProp];
         //  const objectValue = this.object![item.toponymProp];
@@ -106,20 +103,17 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
       .subscribe({
         next: (res) => {
           if (res.data) {
-            this.messageService.add({
-              severity: 'warn',
-              summary: 'Ошибка',
-              detail: `Топоним с названием '${this.mainForm.controls[
+            this.msgWrapper.warn(
+              `Топоним с названием '${this.mainForm.controls[
                 this.data().checkingName
               ]
-                .value!}' уже существует в этом кластере! Если это не ошибка, обратитесь к администратору.`,
-              sticky: true,
-            });
+                .value!}' уже существует в этом кластере. Если это не ошибка, обратитесь к администратору.`
+            );
           } else {
             this.saveToponym(action);
           }
         },
-       error: (err) => this.errorService.handle(err)
+        error: (err) => this.msgWrapper.handle(err),
       });
   }
 
@@ -141,18 +135,16 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
           } else {
             //console.log('this.data().object', this.data().object);
             this.data().object = res.data.toponym;
-            this.data().defaultAddressParams = res.data.defaultAddressParams
+            this.data().defaultAddressParams = res.data.defaultAddressParams;
             console.log('this.data().object', this.data().object);
             this.changeToViewMode(this.data().defaultAddressParams!);
             this.setInitialValues('view');
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Подтверждение',
-              detail: `Топоним '${res.data.toponym.name}' успешно обновлен!`,
-            });
+            this.msgWrapper.success(
+              `Топоним '${res.data.toponym.name}' обновлен.`
+            );
           }
         },
-       error: (err) => this.errorService.handle(err)
+        error: (err) => this.msgWrapper.handle(err),
       });
   }
 }

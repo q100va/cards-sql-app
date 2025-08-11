@@ -13,28 +13,39 @@ export class MessageWrapperService {
    * @param detail - The detailed message content that will be sanitized.
    * @param sticky - If true, the message will remain visible until manually dismissed.
    */
-  add(
+
+  private add(
     severity: 'info' | 'warn' | 'error' | 'success',
     summary: string,
     detail: string,
     sticky: boolean = false
   ) {
     const safeDetail = sanitizeText(detail);
-    //const safeDetail = this.sanitizer.sanitize(SecurityContext.HTML, detail) || '';
     this.messageService.add({ severity, summary, detail: safeDetail, sticky });
   }
 
   // Convenience methods for info, warn, error, and success messages.
-  info(detail: string) {
+  public info(detail: string) {
     this.add('info', 'Информация', detail);
   }
-  warn(detail: string) {
+  public warn(detail: string) {
     this.add('warn', 'Предупреждение', detail, true);
   }
-  error(detail: string) {
+  public error(detail: string) {
     this.add('error', 'Ошибка', detail, true);
   }
-  success(detail: string) {
-    this.add('success', 'Успех', detail);
+  public success(detail: string) {
+    this.add('success', 'Выполнено', detail);
+  }
+
+
+// Determines the appropriate error message to display.
+  public handle(err: any): void {
+    console.log(err);
+    const errorMessage =
+      typeof err.error === 'string'
+        ? err.error
+        : 'Произошла ошибка. Обратитесь к администратору.';
+    this.error(errorMessage);
   }
 }

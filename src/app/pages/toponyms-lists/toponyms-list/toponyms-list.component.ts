@@ -32,7 +32,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { saveAs } from 'file-saver';
@@ -42,18 +42,14 @@ import { AddressService } from '../../../services/address.service';
 import { FileService } from '../../../services/file.service';
 import { AddressFilterComponent } from '../../../shared/address-filter/address-filter.component';
 import { UploadFileComponent } from '../../../shared/upload-file/upload-file.component';
-//import { ToponymDetailsDialogComponent } from '../dialogs/toponym-details-dialog/toponym-details-dialog.component';
 import { DialogData, ToponymProps } from '../../../interfaces/dialog-props';
 import { AddressFilterParams } from '../../../interfaces/address-filter-params';
 import { ToponymType, ToponymField, Ways } from '../../../interfaces/types';
 import { DefaultAddressParams } from '../../../interfaces/default-address-params';
 import { AddressFilter } from '../../../interfaces/address-filter';
 import { Toponym } from '../../../interfaces/toponym';
-//import { DetailsDialogComponent } from '../dialogs/details-dialog/details-dialog.component';
-//import { DialogData } from '../../interfaces/dialog-data';
-import { ToponymDetailsComponent } from '../../toponym-details/toponym-details.component';
 import { DetailsDialogComponent } from '../../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
-import { ErrorService } from '../../../services/error.service';
+import { MessageWrapperService } from '../../../services/message.service';
 
 @Component({
   selector: 'app-toponyms-list',
@@ -89,11 +85,10 @@ import { ErrorService } from '../../../services/error.service';
 export class ToponymsListComponent {
   private confirmationService = inject(ConfirmationService);
   private router = inject(Router);
-  private messageService = inject(MessageService);
   private addressService = inject(AddressService);
   private fileService = inject(FileService);
   readonly dialog = inject(MatDialog);
-  errorService = inject(ErrorService);
+  private readonly msgWrapper = inject(MessageWrapperService);
   dataSource!: MatTableDataSource<Toponym>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -145,7 +140,7 @@ export class ToponymsListComponent {
         ? this.filterValue().searchValue + ', '
         : '');
     filterString = filterString.slice(0, -2);
-   // let addressString = this.addressString();
+    // let addressString = this.addressString();
     let result = '';
     if (this.filterValue().addressString) {
       result = filterString
@@ -155,11 +150,11 @@ export class ToponymsListComponent {
       result = filterString ? filterString : '';
     }
     console.log('filterValue', this.filterValue());
-/*     if (this.waitForAddressFilter) {
+    /*     if (this.waitForAddressFilter) {
       this.waitForAddressFilter = false;
     } else { */
-      this.getToponyms();
-   /*  } */
+    this.getToponyms();
+    /*  } */
     return result;
   });
 
@@ -260,11 +255,7 @@ export class ToponymsListComponent {
     dialogRefCreate.afterClosed().subscribe((result) => {
       if (result.name) {
         this.getToponyms();
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Топоним '${result.name}' успешно создан!`,
-        });
+        this.msgWrapper.success(`Топоним '${result.name}' создан.`);
       }
     });
   }
@@ -290,15 +281,11 @@ export class ToponymsListComponent {
         dialogRefCreate.afterClosed().subscribe((result) => {
           this.getToponyms();
           if (result.name) {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Подтверждение',
-              detail: `Топоним '${result.name}' успешно обновлен!`,
-            });
+            this.msgWrapper.success(`Топоним '${result.name}' обновлен.`);
           }
         });
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -322,7 +309,7 @@ export class ToponymsListComponent {
         saveAs(blob, this.toponymProps().filename);
       },
       error: (err) => {
-        this.errorService.handle({
+        this.msgWrapper.handle({
           error: 'Невозможно загрузить выбранный файл: ' + err,
         });
       },
@@ -373,15 +360,10 @@ export class ToponymsListComponent {
             const detail = destroy
               ? `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей адресов или имеет подчиненные топонимы.\nПроверьте список связанных с ним топонимов, интернатов, поздравляющих и пользователей.\nЭти адреса, в т.ч. неактуальные, и топонимы должны быть изменены или удалены.`
               : `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей актуальных адресов или имеет подчиненные топонимы.\nПроверьте список связанных с ним топонимов, интернатов, поздравляющих и пользователей.\nЭти адреса и топонимы должны быть изменены, удалены или помечены как неактуальные.`;
-            this.messageService.add({
-              severity: 'warn',
-              summary: 'Ошибка',
-              detail: detail,
-              sticky: true,
-            });
+            this.msgWrapper.warn(detail);
           }
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
   }
 
@@ -389,15 +371,10 @@ export class ToponymsListComponent {
     const serviceFuncName = destroy ? 'deleteToponym' : 'blockToponym';
     this.addressService[serviceFuncName](this.type(), id).subscribe({
       next: (res) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Топоним ${deletingToponym} был удален.`,
-          sticky: false,
-        });
+        this.msgWrapper.success(`Топоним ${deletingToponym} удален.`);
         this.getToponyms();
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -417,7 +394,7 @@ export class ToponymsListComponent {
   }
 
   getToponyms() {
-    console.log('getToponyms')
+    console.log('getToponyms');
     this.addressService
       .getToponyms(
         this.type(),
@@ -434,7 +411,7 @@ export class ToponymsListComponent {
           this.dataSource = new MatTableDataSource(this.toponyms);
           this.dataSource.sort = this.sort;
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
   }
 }

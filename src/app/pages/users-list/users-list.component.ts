@@ -24,18 +24,17 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry, MatIconModule } from '@angular/material/icon';
 import { DatePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { MatMenuModule } from '@angular/material/menu';
 import { BaseListComponent } from '../../shared/base-list/base-list.component';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { Validators } from '@angular/forms';
 import { DialogData } from '../../interfaces/dialog-props';
-import * as Validator from '../../utils/custom.validator';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { GeneralFilter } from '../../interfaces/filter';
-import { ErrorService } from '../../services/error.service';
+import { MessageWrapperService } from '../../services/message.service';
 import {
   ColumnDefinition,
   CONTACT_TYPES_FOR_LIST,
@@ -68,8 +67,7 @@ export class UsersListComponent {
   @ViewChild(MatSort) sort!: MatSort;
   private userService = inject(UserService);
   private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
-  errorService = inject(ErrorService);
+  private readonly msgWrapper = inject(MessageWrapperService);
   readonly dialog = inject(MatDialog);
 
   implicitlyDisplayedColumns: ColumnDefinition[] = IMPLICITLY_DISPLAYED_COLUMNS;
@@ -227,11 +225,7 @@ export class UsersListComponent {
       //console.log('The dialog was closed', result);
 
       if (result.name) {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Аккаунт пользователя ${result.name} успешно создан!`,
-        });
+        this.msgWrapper.success(`Аккаунт пользователя ${result.name} создан.`);
       }
       this.getUsers();
     });
@@ -280,15 +274,11 @@ export class UsersListComponent {
         dialogRefCreate.afterClosed().subscribe((result) => {
           this.getUsers();
           if (result.name) {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Подтверждение',
-              detail: `Аккаунт пользователя '${result.name}' успешно обновлен!`,
-            });
-          }
+            this.msgWrapper.success(`Аккаунт пользователя '${result.name}' обновлен.`);
+           }
         });
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -305,11 +295,7 @@ export class UsersListComponent {
       ////console.log('The dialog was closed');
       if (result.success) {
         this.getUsers();
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Пользователь ${blockingUser} был заблокирован.`,
-        });
+        this.msgWrapper.success(`Пользователь ${blockingUser} был заблокирова.`);
       }
     });
   }
@@ -344,15 +330,10 @@ export class UsersListComponent {
   unblockUser(id: number, unblockingUser: string) {
     this.userService.unblockUser(id).subscribe({
       next: (res) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Аккаунт пользователя ${unblockingUser} был разбокирован.`,
-          sticky: false,
-        });
+        this.msgWrapper.success(`Аккаунт пользователя ${unblockingUser} был разбокирован.`);
         this.getUsers();
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -386,30 +367,20 @@ export class UsersListComponent {
         if (res.data) {
           this.deleteUser(id, deletingUser);
         } else {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Ошибка',
-            detail: `Пользователя ${deletingUser} невозможно удалить!\nОн является автором данных в приложении.\nРекомендуется применить блокировку вместо удаления.`,
-            sticky: true,
-          });
+          this.msgWrapper.warn(`Пользователя ${deletingUser} невозможно удалить!\nОн является автором данных в приложении.\nРекомендуется применить блокировку вместо удаления.`);
         }
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
   deleteUser(id: number, deletingUser: string) {
     this.userService.deleteUser(id).subscribe({
       next: (res) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Подтверждение',
-          detail: `Аккаунт пользователя ${deletingUser} был удален.`,
-          sticky: false,
-        });
+        this.msgWrapper.success(`Аккаунт пользователя ${deletingUser} был удален.`);
         this.getUsers();
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -432,7 +403,7 @@ export class UsersListComponent {
           console.log('this.users');
           console.log(this.users);
         },
-        error: (err) => this.errorService.handle(err),
+        error: (err) => this.msgWrapper.handle(err),
       });
   }
 

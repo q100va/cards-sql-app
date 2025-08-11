@@ -13,7 +13,7 @@ import {
   MatDialogModule,
 } from '@angular/material/dialog';
 import { UserService } from '../../../services/user.service';
-import { ErrorService } from '../../../services/error.service';
+import { MessageWrapperService } from '../../../services/message.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,7 +35,7 @@ export class ChangePasswordDialogComponent {
   private dialogRef = inject(MatDialogRef<ChangePasswordDialogComponent>);
   private data = inject<{ userId: number }>(MAT_DIALOG_DATA);
   private userService = inject(UserService);
-  private errorService = inject(ErrorService);
+  private readonly msgWrapper = inject(MessageWrapperService);
   //private json = inject(JsonPipe);
   form = new FormGroup(
     {
@@ -77,7 +77,7 @@ export class ChangePasswordDialogComponent {
         .changePassword(this.data.userId, this.form.get('password')!.value!)
         .subscribe({
           next: () => this.dialogRef.close({ success: true }),
-          error: (err) => this.errorService.handle(err),
+          error: (err) => this.msgWrapper.handle(err),
         });
     }
   }

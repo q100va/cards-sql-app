@@ -1,14 +1,10 @@
 import { Component } from '@angular/core';
 import { FormControl, FormArray } from '@angular/forms';
-
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { AddressFilter } from '../../../../interfaces/address-filter';
 import { Contacts } from '../../../../interfaces/user';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 import { AdvancedModel } from '../../../../interfaces/advanced-model';
 import {
   AddressKey,
-  ToponymType,
   typedKeys,
 } from '../../../../interfaces/types';
 

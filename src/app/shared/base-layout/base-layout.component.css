@@ -76,3 +76,9 @@
   text-decoration: underline;
   color: #fbc02d;
 }
+
+.p-toast-summary {
+    font-weight:bold;
+    padding-bottom: 5px;
+
+}

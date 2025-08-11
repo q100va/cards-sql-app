@@ -11,7 +11,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
-import { MessageService } from 'primeng/api';
 import { EMPTY, Observable, catchError, concatMap, of, tap } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 import { AddressFilterParams } from '../../interfaces/address-filter-params';
@@ -23,7 +22,7 @@ import {
 } from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
-import { ErrorService } from '../../services/error.service';
+import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
   selector: 'app-address-filter',
@@ -40,10 +39,9 @@ import { ErrorService } from '../../services/error.service';
   styleUrl: './address-filter.component.css',
 })
 export class AddressFilterComponent {
-  private messageService = inject(MessageService);
   private cdr = inject(ChangeDetectorRef);
   private addressService = inject(AddressService);
-  errorService = inject(ErrorService);
+  private readonly msgWrapper = inject(MessageWrapperService);
 
   params = input.required<AddressFilterParams>();
   defaultAddressParams = input.required<DefaultAddressParams>();
@@ -135,11 +133,11 @@ export class AddressFilterComponent {
               next: () => {
                 ////console.log('All operations completed successfully');
               },
-              error: (err) => this.errorService.handle(err),
+              error: (err) => this.msgWrapper.handle(err),
             });
         }
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -163,7 +161,7 @@ export class AddressFilterComponent {
       next: () => {
         console.log(`${levelName} selection change completed`);
       },
-      error: (err) => this.errorService.handle(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
@@ -185,7 +183,7 @@ export class AddressFilterComponent {
         this.emitAddressData();
       }),
       catchError((err) => {
-        this.errorService.handle(err);
+        this.msgWrapper.handle(err);
         return EMPTY;
       })
     );
@@ -205,7 +203,7 @@ export class AddressFilterComponent {
         this.emitAddressData();
       }),
       catchError((err) => {
-        this.errorService.handle(err);
+        this.msgWrapper.handle(err);
         return EMPTY;
       })
     );
@@ -222,7 +220,7 @@ export class AddressFilterComponent {
         this.emitAddressData();
       }),
       catchError((err) => {
-        this.errorService.handle(err);
+        this.msgWrapper.handle(err);
         return EMPTY;
       })
     );
@@ -351,7 +349,7 @@ export class AddressFilterComponent {
             )
             .subscribe({
               next: () => console.log('All selection changes completed'),
-              error: (err) => this.errorService.handle(err),
+              error: (err) => this.msgWrapper.handle(err),
             });
         } else {
           this.form.get('country')?.enable();
@@ -409,7 +407,7 @@ export class AddressFilterComponent {
           )
           .subscribe({
             next: () => console.log('All selection changes completed'),
-            error: (err) => this.errorService.handle(err),
+            error: (err) => this.msgWrapper.handle(err),
           });
       } else {
         this.form.get('country')?.disable();
@@ -490,7 +488,7 @@ export class AddressFilterComponent {
           }
         }),
         catchError((err) => {
-          this.errorService.handle(err);
+          this.msgWrapper.handle(err);
           return EMPTY;
         })
       );

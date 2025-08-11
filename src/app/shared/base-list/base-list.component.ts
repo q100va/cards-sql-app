@@ -25,7 +25,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 //import { CreateUserDialogComponent } from '../../shared/dialogs/create-user-dialog/create-user-dialog.component';
@@ -69,7 +68,6 @@ import { typedKeys } from '../../interfaces/types';
   styleUrl: './base-list.component.css',
 })
 export class BaseListComponent {
-  private messageService = inject(MessageService);
   private route = inject(ActivatedRoute);
   private injector = inject(Injector);
   readonly dialog = inject(MatDialog);

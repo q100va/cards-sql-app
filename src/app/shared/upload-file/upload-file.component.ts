@@ -6,10 +6,8 @@ import readXlsxFile from 'read-excel-file';
 import { schemas } from './schemas';
 import { FileService } from '../../services/file.service';
 import { MatIconModule } from '@angular/material/icon';
-
-import { MessageService } from 'primeng/api';
 import { ToponymType } from '../../interfaces/types';
-import { ErrorService } from '../../services/error.service';
+import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
   selector: 'app-upload-file',
@@ -25,8 +23,7 @@ import { ErrorService } from '../../services/error.service';
 })
 export class UploadFileComponent {
   private fileService = inject(FileService);
-  private messageService = inject(MessageService);
-  errorService = inject(ErrorService);
+  msgWrapper  = inject(MessageWrapperService);
   file?: File;
   errorMessage?: string;
   typeOfData = input.required<ToponymType>();
@@ -59,12 +56,12 @@ export class UploadFileComponent {
         })
         .catch((err) => {
           this.showSpinner.emit(false);
-          this.errorService.handle({error: 'Невозможно загрузить выбранный файл: ' + err});
+          this.msgWrapper.handle({error: 'Невозможно загрузить выбранный файл: ' + err});
           //this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
         });
     } else {
       this.showSpinner.emit(false);
-      this.errorService.handle({error: 'Невозможно загрузить выбранный файл!'});
+      this.msgWrapper.handle({error: 'Невозможно загрузить выбранный файл!'});
       //this.errorHandling({error: 'Невозможно загрузить выбранный файл!'});
     }
   }
@@ -74,18 +71,13 @@ export class UploadFileComponent {
       .createListOfAddressElement(rows, this.typeOfData())
       .subscribe({
         next: (res) => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Подтверждение',
-            detail: res.msg,
-            sticky: false,
-          });
+          this.msgWrapper.success(res.msg);
           this.showSpinner.emit(false);
           location.reload();//TODO: delete?
         },
         error: (err) => {
           this.showSpinner.emit(false);
-          this.errorService.handle(err)
+          this.msgWrapper.handle(err)
         },
       });
   }
