@@ -30,7 +30,7 @@ const handleError = (error, res, genericMessage) => {
 router.post(
   "/check-role-name",
   sanitizeBody({
-    roleName: { type: 'string', maxLength: 100, allowEmpty: false, allowNull: false, required: true },
+    roleName: { type: 'string', maxLength: 50, allowEmpty: false, allowNull: false, required: true },
   }),
   //authenticateUser,
   //authorizeAdmin,
@@ -44,7 +44,7 @@ router.post(
         attributes: ["name"],
         raw: true,
       });
-      res.status(200).send({ msg: "Проверка завершена.", data: duplicate });
+      res.status(200).send({ msg: "Проверка завершена.", data: duplicate?.length > 0 });
     } catch (error) {
       handleError(error, res, "Произошла ошибка при проверке названия роли.");
     }
@@ -57,7 +57,7 @@ router.post(
  */
 
 const newRoleSchema = {
-  name: { type: 'string', maxLength: 100, allowEmpty: false, allowNull: false, required: true },
+  name: { type: 'string', maxLength: 50, allowEmpty: false, allowNull: false, required: true },
   description: { type: 'string', maxLength: 500, allowEmpty: false, allowNull: false, required: true }
 };
 
@@ -87,7 +87,7 @@ router.post(
       await Promise.all(opPromises);
       res
         .status(200)
-        .send({ msg: "Роль успешно создана.", data: name });
+        .send({ msg: "Роль успешно создана.", data: role.name});
     } catch (error) {
       handleError(error, res, "Произошла ошибка. Роль не создана.");
     }
@@ -102,7 +102,7 @@ router.post(
 
 const updatingRoleSchema = {
   id: { type: 'number', allowEmpty: false, allowNull: false, required: true },
-  name: { type: 'string', maxLength: 100, allowEmpty: false, allowNull: false, required: true },
+  name: { type: 'string', maxLength: 50, allowEmpty: false, allowNull: false, required: true },
   description: { type: 'string', maxLength: 500, allowEmpty: false, allowNull: false, required: true }
 };
 
@@ -113,18 +113,22 @@ router.patch(
   //authorizeAdmin,
   async (req, res) => {
     try {
-      const { role } = req.body.role;
-      // Update the role record with trimmed name and description.
-      await Role.update(
+      const { id, name, description } = req.body;
+      // Update the role record.
+      const [_, [updatedRole]] = await Role.update(
         {
-          name: role.name,
-          description: role.description,
+          name,
+          description,
         },
         {
-          where: { id: role.id },
+          where: { id },
+          returning: true
         }
       );
-      res.status(200).send({ msg: "Роль успешно обновлена.", data: true });
+      if (!updatedRole) {
+        throw new CustomError("Обновление невозможно. Роль не найдена.", 404);
+      }
+      res.status(200).send({ msg: "Роль успешно обновлена.", data: updatedRole.name });
     } catch (error) {
       handleError(error, res, "Произошла ошибка. Роль не обновлена.");
     }
@@ -147,7 +151,7 @@ const roleAccessSchema = {
       fullAccess: { type: 'boolean', allowEmpty: false, allowNull: false, required: true },
       object: { type: 'string', allowEmpty: false, allowNull: false, required: true },
       operation: { type: 'string', allowEmpty: false, allowNull: false, required: true },
-      flag:  {type: 'string', enumValues: ['LIMITED', 'FULL'], allowEmpty: false, allowNull: true}
+      flag: { type: 'string', enumValues: ['LIMITED', 'FULL'], allowEmpty: false, allowNull: true }
     }
   }
 };
@@ -160,27 +164,26 @@ router.patch(
   async (req, res) => {
     try {
       const { access, roleId, operation } = req.body;
+      const updatedOperationsMap = new Map();
       // Update the main operation entry.
-      await changeRoleOperation(roleId, operation, access);
-      // Create a shallow copy of operations and add an empty roles list.
-      const listOfOperations = OPERATIONS.map((op) => ({ ...op, roles: [] }));
+      await changeRoleOperation(roleId, operation, access, updatedOperationsMap);
       // Filter operations related to the same object but excluding full access.
-      const filteredList = listOfOperations.filter(
+      const filteredList = OPERATIONS.filter(
         (item) => item.object === operation.object && !item.fullAccess
       );
       // Find the corresponding full access operation for the same object.
-      const fullAccessOperation = listOfOperations.find(
+      const fullAccessOperation = OPERATIONS.find(
         (item) => item.object === operation.object && item.fullAccess
       );
       // If the operation itself has full access enabled.
       if (operation.fullAccess) {
         await Promise.all(
-          filteredList.map((op) => changeRoleOperation(roleId, op, access))
+          filteredList.map((op) => changeRoleOperation(roleId, op, access, updatedOperationsMap))
         );
       } else {
         // If disabling access, update the full access operation.
         if (!access) {
-          await changeRoleOperation(roleId, fullAccessOperation, access);
+          await changeRoleOperation(roleId, fullAccessOperation, access, updatedOperationsMap);
         } else {
           // Check if all other related operations have access enabled.
           const checkPromises = filteredList.map((op) =>
@@ -193,11 +196,12 @@ router.patch(
           const results = await Promise.all(checkPromises);
           const allHaveAccess = results.every((result) => result === null);
           if (allHaveAccess) {
-            await changeRoleOperation(roleId, fullAccessOperation, true);
+            await changeRoleOperation(roleId, fullAccessOperation, true, updatedOperationsMap);
           }
         }
       }
-      res.status(200).send({ msg: "Роль успешно обновлена.", data: true });
+      const updatedOperations = Array.from(updatedOperationsMap.values());
+      res.status(200).send({ msg: "Роль успешно обновлена.", data: { ops: updatedOperations, object: operation.object } });
     } catch (error) {
       handleError(error, res, "Произошла ошибка (роль не обновлена).");
     }
@@ -211,14 +215,21 @@ router.patch(
  * @param {object} operation - The operation details object.
  * @param {boolean} access - Desired access state.
  */
-async function changeRoleOperation(roleId, operation, access) {
+async function changeRoleOperation(roleId, operation, access, updatedOperationsMap) {
   // Update the main operation record
-  await Operation.update(
+  const [_, [updatedOperation]] = await Operation.update(
     { access },
     {
       where: { roleId, name: operation.operation },
-    }
+      returning: true,
+    },
   );
+  updatedOperationsMap.set(updatedOperation.id, {
+    id: updatedOperation.id,
+    roleId: updatedOperation.roleId,
+    access: updatedOperation.access,
+    disabled: updatedOperation.disabled,
+  });
   // Only process if operation has a flag
   if (!operation.flag) {
     return;
@@ -236,16 +247,22 @@ async function changeRoleOperation(roleId, operation, access) {
     updateParams.access = access;
   }
   // Update the complementary operation
-  await Operation.update(
+  const [__, [updatedOperationWithFlag]] = await Operation.update(
     updateParams,
     {
       where: {
-        roleId: roleId,
+        roleId,
         name: complementaryOperation
-      }
+      },
+      returning: true,
     }
   );
-
+  updatedOperationsMap.set(updatedOperationWithFlag.id, {
+    id: updatedOperationWithFlag.id,
+    roleId: updatedOperationWithFlag.roleId,
+    access: updatedOperationWithFlag.access,
+    disabled: updatedOperationWithFlag.disabled,
+  });
 }
 
 /**
@@ -266,7 +283,7 @@ router.get(
       });
       res
         .status(200)
-        .send({ msg: "Data retrieved.", data: { roles } });
+        .send({ msg: "Data retrieved.", data: roles });
     } catch (error) {
       handleError(
         error,
@@ -296,29 +313,29 @@ router.get(
         raw: true,
       });
       // Retrieve operations associated with the roles.
-      const roleIds = roles.map((role) => role.id);
-      const roleOps = await Operation.findAll({
-        where: { roleId: roleIds },
+      const rolesIds = roles.map((role) => role.id);
+      const rolesOps = await Operation.findAll({
+        where: { roleId: rolesIds },
         attributes: ["id", "roleId", "name", "access", "disabled"],
         raw: true,
       });
+
       // Create a map with key "roleId_operationName" to quickly lookup operations.
       const opMap = new Map();
-      roleOps.forEach((op) => {
+      rolesOps.forEach((op) => {
         opMap.set(`${op.roleId}_${op.name}`, op);
       });
       // Clone operations array and add an empty roles list for each operation.
       const listOfOperations = OPERATIONS.map((op) => ({ ...op, rolesAccesses: [] }));
       // For each role, attach corresponding operation details.
-      let roleOperationId = 1;
       roles.forEach((role) => {
         listOfOperations.forEach((op) => {
           const key = `${role.id}_${op.operation}`;
           if (opMap.has(key)) {
             const found = opMap.get(key);
             op.rolesAccesses.push({
-              id: roleOperationId++,
-              roleId: role.id,
+              id: found.id,
+              roleId: found.roleId,
               access: found.access,
               disabled: found.disabled,
             });
@@ -355,15 +372,15 @@ router.get(
         throw new CustomError("Некорректное значение id.", 400);
       }
       // Find any users currently assigned this role.
-      const connectedUsers = await User.findAll({
+      let connectedUsers = await User.findAll({
         where: { roleId },
-        attributes: ["id"],
+        attributes: ["userName"],
         raw: true,
       });
-      const possibility = connectedUsers.length === 0;
+      const connectedUsersList = connectedUsers.map(item => item.userName).join(', ');
       res
         .status(200)
-        .send({ msg: "Role deletion possibility checked.", data: possibility });
+        .send({ msg: "Role deletion possibility checked.", data: connectedUsersList.length > 0 ? connectedUsersList : null });
     } catch (error) {
       handleError(error, res, "Произошла ошибка при проверке возможности удаления роли.");
     }
@@ -390,8 +407,11 @@ router.delete(
       if (isNaN(idNum) || idNum <= 0) {
         throw new CustomError("Некорректное значение id.", 400);
       }
-      await Role.destroy({ where: { id: roleId } });
-      res.status(200).send({ msg: "Role deleted.", data: true });
+      const destroyedRole = await Role.destroy({ where: { id: roleId } });
+      if (destroyedRole === 0) {
+        throw new CustomError("Роль не найдена.", 404);
+      }
+      res.status(200).send({ msg: "Role deleted.", deleted: true });
     } catch (error) {
       handleError(error, res, "Произошла ошибка при удалении роли.");
     }

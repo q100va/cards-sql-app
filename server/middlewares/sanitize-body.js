@@ -1,7 +1,8 @@
-// Middleware to sanitize the request body based on a provided schema.
+// Middleware to sanitize the request body based on a provided schema. TODO: test properly
 export default function sanitizeBody(schema) {
   return (req, res, next) => {
     try {
+      console.log('Sanitizing request body...', req.body);
       // Sanitize the request body according to the schema.
       const sanitized = sanitizeObject(req.body, schema);
       req.body = sanitized;
@@ -28,6 +29,7 @@ const sanitizeObject = (obj, schema) => {
   const result = {};
   // Iterate over each schema key to sanitize the corresponding value.
   Object.keys(schema).forEach((key) => {
+     console.log('key', key);
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       result[key] = sanitizeValue(obj[key], schema[key]);
     } else if (schema[key].required) {
