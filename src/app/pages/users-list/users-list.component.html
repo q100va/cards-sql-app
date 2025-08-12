@@ -1,30 +1,51 @@
-  <div>
-    <p-confirmdialog />
-    <p-toast position="center" />
-
-    <app-base-list [implicitlyDisplayedColumns]="implicitlyDisplayedColumns" (selectedColumns)="changeColumnsView($event)"
-  (allFilterParametersChange)="filterParameters.set($event)" (onAddUserWasClicked)="onAddUserClick()">
+<div>
+  <app-base-list [implicitlyDisplayedColumns]="implicitlyDisplayedColumns" (selectedColumns)="changeColumnsView($event)"
+    (allFilterParametersChange)="filterParameters.set($event)" (onAddUserWasClicked)="onAddUserClick()">
 
 
     <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
 
       <ng-container matColumnDef="userName">
-
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Имя пользователя </th>
-        <td mat-cell *matCellDef="let row"> {{row.userName}} </td>
+        <td mat-cell *matCellDef="let row">
+          <div>{{row.userName}}</div>
+          <br>
+          @if(allFilterParameters().notOnlyActual && hasOutdatedUserNames(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (item of row.outdatedData.userNames; track item.id) {
+          <span class="outdated-data">
+            {{item.userName}}
+          </span>
+          }
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="role">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Роль </th>
-        <td mat-cell *matCellDef="let row"> {{row.role.name}} </td>
+        <td mat-cell *matCellDef="let row"> {{row.roleName}} </td>
       </ng-container>
 
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef> ФИО </th>
         <td mat-cell *matCellDef="let row">
-          <span>{{row.firstName}}</span><br />
-          @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
-          <span>{{row.lastName}}</span><br />
+          <div> <span>{{row.firstName}}</span><br />
+            @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
+            <span>{{row.lastName}}</span>
+          </div>
+          <br>
+          @if(allFilterParameters().notOnlyActual && hasOutdatedNames(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (item of row.outdatedData.names; track item.id) {
+          @if(item.firstName) {
+          <div class="outdated-data">
+            <span>{{item.firstName}}</span><br />
+            @if (item.patronymic) {<span>{{row.patronymic}}</span><br />}
+            <span>{{item.lastName}}</span>
+          </div>
+          }
+          }
+          }
         </td>
       </ng-container>
 
@@ -32,38 +53,79 @@
         <th mat-header-cell *matHeaderCellDef> Контакты </th>
         <td mat-cell *matCellDef="let row">
           @for (item of contactTypes; track $index) {
-
           @if (row.orderedContacts[item.type]) {
           <div class="outer">
             <div class="inner-left" [title]="item.label">
               <mat-icon [svgIcon]="item.type"></mat-icon>
-              <!--       <mat-icon>{{item.icon}}</mat-icon> -->
             </div>
             <div class="inner-right">
-              @for (content of row.orderedContacts[item.type]; track $index) {
-              {{editContact(content, item.type)}}<br />
+              @for (contact of row.orderedContacts[item.type]; track $index) {
+              {{editContact(contact.content, item.type)}}<br />
               }
             </div>
           </div>
           }
           }
+          @if(allFilterParameters().notOnlyActual && hasOutdatedContacts(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (item of contactTypes; track $index) {
+
+          @if (row.outdatedData.contacts[item.type]) {
+
+          <div class="outdated-data">
+            <div class="outer">
+              <div class="inner-left" [title]="item.label">
+                <mat-icon [svgIcon]="item.type"></mat-icon>
+              </div>
+              <div class="inner-right">
+                @for (contact of row.outdatedData.contacts[item.type]; track $index) {
+                {{editContact(contact.content, item.type)}}<br />
+                }
+              </div>
+            </div>
+          </div>
+          }
+          }
+          }
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="addresses">
+      <ng-container matColumnDef="address">
         <th mat-header-cell *matHeaderCellDef> Адрес </th>
         <td mat-cell *matCellDef="let row">
-          @if (row.addresses[0]?.country) {
-          {{row.addresses[0].country.name}}<br />
+          @if (row.address.country) {
+          {{row.address.country.name}}<br />
           }
-          @if (row.addresses[0]?.region) {
-          {{row.addresses[0].region.shortName}}<br />
+          @if (row.address.region) {
+          {{row.address.region.shortName}}<br />
           }
-          @if (row.addresses[0]?.district) {
-          {{row.addresses[0].district.shortName}}<br />
+          @if (row.address.district) {
+          {{row.address.district.shortName}}<br />
           }
-          @if (row.addresses[0]?.locality) {
-          {{row.addresses[0].locality.shortName}}<br />
+          @if (row.address.locality) {
+          {{row.address.locality.shortName}}<br />
+          }
+
+          @if(allFilterParameters().notOnlyActual && hasOutdatedAddresses(row)) {
+          <div class="outdated-data">прежние значения:</div>
+          @for (address of row.outdatedData.addresses; track $index) {
+          <div class="outdated-data">
+
+            @if (address.country) {
+            {{address.country.name}}<br />
+            }
+            @if (address.region) {
+            {{address.region.shortName}}<br />
+            }
+            @if (address.district) {
+            {{address.district.shortName}}<br />
+            }
+            @if (address.locality) {
+            {{address.locality.shortName}}<br />
+            }
+
+          </div>
+          }
           }
         </td>
       </ng-container>
@@ -103,7 +165,7 @@
               </mat-icon>
             </button>
             <mat-menu #menu="matMenu" xPosition="before">
-              <button mat-menu-item (click)="onOpenUserCardClick(row)">
+              <button mat-menu-item (click)="onOpenUserCardClick(row.id)">
                 <mat-icon fontSet="material-icons-outlined">open_in_new</mat-icon>
                 <span>открыть карточку</span>
               </button>
@@ -146,5 +208,5 @@
     <mat-paginator [pageSizeOptions]="pageSizeOptions" [length]="length()" [pageSize]="pageSize"
       (page)="onChangedPage($event)"></mat-paginator>
 
-</app-base-list>
-  </div>
+  </app-base-list>
+</div>

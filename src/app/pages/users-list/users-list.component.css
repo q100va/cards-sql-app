@@ -48,4 +48,12 @@ th {
   cursor: pointer;
 }
 
+.outdated-data {
+  color: #7d7d7d;
+  font-style: italic;
+  font-size: 0.9em;
+  display: block;
+  margin-left: 10px;
+}
+
 

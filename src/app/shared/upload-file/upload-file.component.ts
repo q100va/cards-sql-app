@@ -6,9 +6,8 @@ import readXlsxFile from 'read-excel-file';
 import { schemas } from './schemas';
 import { FileService } from '../../services/file.service';
 import { MatIconModule } from '@angular/material/icon';
-
-import { MessageService } from 'primeng/api';
-import { GeographyLevels } from '../../interfaces/types';
+import { ToponymType } from '../../interfaces/types';
+import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
   selector: 'app-upload-file',
@@ -24,21 +23,21 @@ import { GeographyLevels } from '../../interfaces/types';
 })
 export class UploadFileComponent {
   private fileService = inject(FileService);
-  private messageService = inject(MessageService);
+  msgWrapper  = inject(MessageWrapperService);
   file?: File;
   errorMessage?: string;
-  typeOfData = input.required<GeographyLevels>();
+  typeOfData = input.required<ToponymType>();
   showSpinner = output<boolean>();
 
   addFile(event: Event) {
-    console.log('START', event);
+    //console.log('START', event);
     this.showSpinner.emit(true);
     const inputElement = event.target as HTMLInputElement;
     if (inputElement.files) {
       this.file = inputElement.files[0];
-      console.log('this.file');
-      console.log(this.file);
-      let schema = schemas[this.typeOfData() as keyof typeof schemas];
+      //console.log('this.file');
+      //console.log(this.file);
+      let schema = schemas[this.typeOfData()];
       readXlsxFile(this.file, { schema })
         .then(({ rows, errors }) => {
           if (rows.length == 0) {
@@ -49,19 +48,21 @@ export class UploadFileComponent {
           if (rows.length < Object.keys(schema).length) {
             throw new Error('В файле отсутствуют обязательные колонки!');
           }
-          console.log('rows');
-          console.log(rows);
-          console.log('errors');
-          console.log(errors);
+          //console.log('rows');
+          //console.log(rows);
+          //console.log('errors');
+          //console.log(errors);
           this.saveData(rows);
         })
         .catch((err) => {
           this.showSpinner.emit(false);
-          this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
+          this.msgWrapper.handle({error: 'Невозможно загрузить выбранный файл: ' + err});
+          //this.errorHandling({error: 'Невозможно загрузить выбранный файл: ' + err});
         });
     } else {
       this.showSpinner.emit(false);
-      this.errorHandling({error: 'Невозможно загрузить выбранный файл!'});
+      this.msgWrapper.handle({error: 'Невозможно загрузить выбранный файл!'});
+      //this.errorHandling({error: 'Невозможно загрузить выбранный файл!'});
     }
   }
 
@@ -70,31 +71,16 @@ export class UploadFileComponent {
       .createListOfAddressElement(rows, this.typeOfData())
       .subscribe({
         next: (res) => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Подтверждение',
-            detail: res.msg,
-            sticky: false,
-          });
+          this.msgWrapper.success(res.msg);
           this.showSpinner.emit(false);
           location.reload();//TODO: delete?
         },
         error: (err) => {
           this.showSpinner.emit(false);
-          this.errorHandling(err);
+          this.msgWrapper.handle(err)
         },
       });
   }
 
-  errorHandling(err: any) {
-    console.log(err);
-    let errorMessage =
-      typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Ошибка',
-      detail: errorMessage,
-      sticky: true,
-    });
-  }
+
 }

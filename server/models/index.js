@@ -4,22 +4,23 @@ import Locality from './locality.js';
 import District from './district.js';
 import Region from './region.js';
 import Country from './country.js';
-import Address from './address.js';
-import Contact from './contact.js';
+import UserAddress from './user-address.js';
+import UserContact from './user-contact.js';
 import User from './user.js';
 import Operation from './operation.js';
 import SearchUser from './search-user.js';
+import OutdatedName from './outdated-name.js';
 
 /* User.belongsTo(Role);
 Role.hasMany(User);
 Role.hasMany(Operation);
 Operation.belongsTo(Role); */
 
-User.hasMany(Contact, {
+User.hasMany(UserContact, { as: 'contacts' }, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 });
-Contact.belongsTo(User);
+UserContact.belongsTo(User);
 
 Country.hasMany(Region, {
   onDelete: 'RESTRICT',
@@ -39,28 +40,28 @@ District.hasMany(Locality, {
 });
 Locality.belongsTo(District);
 
-User.hasMany(Address, {
+User.hasMany(UserAddress, { as: 'addresses' }, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 });
-Address.belongsTo(User);
-Address.belongsTo(Country);
-Address.belongsTo(Region);
-Address.belongsTo(District);
-Address.belongsTo(Locality);
-Country.hasMany(Address, {
+UserAddress.belongsTo(User);
+UserAddress.belongsTo(Country);
+UserAddress.belongsTo(Region);
+UserAddress.belongsTo(District);
+UserAddress.belongsTo(Locality);
+Country.hasMany(UserAddress, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
 });
-Region.hasMany(Address, {
+Region.hasMany(UserAddress, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
 });
-District.hasMany(Address, {
+District.hasMany(UserAddress, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
 });
-Locality.hasMany(Address, {
+Locality.hasMany(UserAddress, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
 });
@@ -70,6 +71,13 @@ User.hasMany(SearchUser, {
   onUpdate: 'CASCADE',
 });
 SearchUser.belongsTo(User);
+
+User.hasMany(OutdatedName, { as: 'outdatedNames' }, {
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+OutdatedName.belongsTo(User);
 
 User.belongsTo(Role);
 Role.hasMany(User, {
@@ -83,5 +91,5 @@ Role.hasMany(Operation, {
 });
 Operation.belongsTo(Role);
 
-export { Role, Locality, District, Region, Country, Address, Contact, User, SearchUser, Operation };
+export { Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName};
 

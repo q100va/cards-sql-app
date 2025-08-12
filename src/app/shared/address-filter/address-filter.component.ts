@@ -11,13 +11,18 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSelectModule } from '@angular/material/select';
 import { AddressService } from '../../services/address.service';
-import { MessageService } from 'primeng/api';
 import { EMPTY, Observable, catchError, concatMap, of, tap } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 import { AddressFilterParams } from '../../interfaces/address-filter-params';
-import { GeographyLevels } from '../../interfaces/types';
+import {
+  AddressKey,
+  ToponymListMap,
+  ToponymType,
+  typedKeys,
+} from '../../interfaces/types';
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
+import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
   selector: 'app-address-filter',
@@ -34,19 +39,14 @@ import { AddressFilter } from '../../interfaces/address-filter';
   styleUrl: './address-filter.component.css',
 })
 export class AddressFilterComponent {
-  private messageService = inject(MessageService);
   private cdr = inject(ChangeDetectorRef);
   private addressService = inject(AddressService);
+  private readonly msgWrapper = inject(MessageWrapperService);
 
   params = input.required<AddressFilterParams>();
   defaultAddressParams = input.required<DefaultAddressParams>();
 
-  toponyms: {
-    countriesList: { id: number; name: string }[] | [];
-    regionsList: { id: number; name: string; countryId: number }[] | [];
-    districtsList: { id: number; name: string; regionId: number }[] | [];
-    localitiesList: { id: number; name: string; districtId: number }[] | [];
-  } = {
+  toponymsList: ToponymListMap = {
     countriesList: [],
     regionsList: [],
     districtsList: [],
@@ -58,27 +58,49 @@ export class AddressFilterComponent {
   addressString = output<string>();
   goToFirstPage = output<void>();
 
-  form = new FormGroup<Record<string, AbstractControl>>({
+  /*  form = new FormGroup<Record<string, AbstractControl>>({
     country: new FormControl({ value: null, disabled: false }),
     region: new FormControl({ value: null, disabled: true }),
     district: new FormControl({ value: null, disabled: true }),
     locality: new FormControl({ value: null, disabled: true }),
-  });
+  }); */
+
+  form = new FormGroup<Record<string, AbstractControl>>({});
+
+  emptyValue: null | [] = null;
 
   constructor() {}
   //TODO: spinner?
   ngOnInit() {
-    console.log('params in address-filter', this.params());
+    //console.log('params in address-filter', this.params());
 
+    this.emptyValue = this.params().multiple ? [] : null;
+
+    this.form.addControl(
+      'country',
+      new FormControl({ value: this.emptyValue, disabled: false })
+    );
+    this.form.addControl(
+      'region',
+      new FormControl({ value: this.emptyValue, disabled: true })
+    );
+    this.form.addControl(
+      'district',
+      new FormControl({ value: this.emptyValue, disabled: true })
+    );
+    this.form.addControl(
+      'locality',
+      new FormControl({ value: this.emptyValue, disabled: true })
+    );
     if (this.params().readonly) this.form.get('country')?.disable();
 
-    console.log(
+/*     //console.log(
       'defaultAddressParams in address-filter',
       this.defaultAddressParams()
-    );
+    ); */
     this.addressService.getListOfCountries().subscribe({
       next: (res) => {
-        this.toponyms.countriesList = res.data;
+        this.toponymsList.countriesList = res.data;
 
         if (this.defaultAddressParams().countryId) {
           this.setDefaultFormValue('country');
@@ -86,7 +108,7 @@ export class AddressFilterComponent {
             .pipe(
               concatMap(() => {
                 if (this.defaultAddressParams().regionId) {
-                  console.log('in process');
+                  ////console.log('in process');
                   this.setDefaultFormValue('region');
                   return this.onRegionSelectionChange();
                 }
@@ -109,59 +131,14 @@ export class AddressFilterComponent {
             )
             .subscribe({
               next: () => {
-                console.log('All operations completed successfully');
+                ////console.log('All operations completed successfully');
               },
-              error: (err) => this.errorHandling(err),
+              error: (err) => this.msgWrapper.handle(err),
             });
         }
       },
-      error: (err) => this.errorHandling(err),
+      error: (err) => this.msgWrapper.handle(err),
     });
-
-    /*       this.addressService.getListOfCountries().subscribe({
-        next: (res) => {
-          this.toponyms.countriesList = res.data;
-          if (this.defaultAddressParams().countryId) {
-            this.setDefaultFormValue('country');
-            this.onCountrySelectionChange().subscribe({
-              next: () => {
-                console.log('after this.onCountrySelectionChange();');
-                if (this.defaultAddressParams().regionId) {
-                  this.setDefaultFormValue('region');
-                  this.onRegionSelectionChange().subscribe({
-                    next: () => {
-                      if (this.defaultAddressParams().districtId) {
-                        this.setDefaultFormValue('district');
-                        this.onDistrictSelectionChange().subscribe({
-                          next: () => {
-                            if (this.defaultAddressParams().localityId) {
-                              this.setDefaultFormValue('locality');
-                              this.onLocalitySelectionChange();
-                            }
-                          },
-                          error: (err) => {
-                            this.errorHandling(err);
-                          },
-                        });
-                      }
-                    },
-                    error: (err) => {
-                      this.errorHandling(err);
-                    },
-                  });
-                }
-                console.log('All operations completed successfully');
-              },
-              error: (err) => {
-                this.errorHandling(err);
-              },
-            });
-          }
-        },
-        error: (err) => {
-          this.errorHandling(err);
-        },
-      }); */
   }
 
   private selectionChangeMethods: {
@@ -184,28 +161,29 @@ export class AddressFilterComponent {
       next: () => {
         console.log(`${levelName} selection change completed`);
       },
-      error: (err) => {
-        this.errorHandling(err);
-      },
+      error: (err) => this.msgWrapper.handle(err),
     });
   }
 
   onCountrySelectionChange(): Observable<any> {
+    ////console.log('Country selection changed' + this.form.get('country')?.value);
     return this.onToponymSelectionChange('country', 'region', 'regions').pipe(
-      tap(() => {
-        this.form.get('region')?.setValue(null);
+      tap((res) => {
+        //console.log('res', res);
+        ////console.log('Country selection changed' + this.form.get('country')?.value);
+        this.form.get('region')?.setValue(this.emptyValue);
         this.form.get('district')?.disable();
-        this.form.get('district')?.setValue(null);
-        this.toponyms.districtsList = [];
+        this.form.get('district')?.setValue(this.emptyValue);
+        this.toponymsList.districtsList = [];
         this.form.get('locality')?.disable();
-        this.form.get('locality')?.setValue(null);
-        this.toponyms.localitiesList = [];
+        this.form.get('locality')?.setValue(this.emptyValue);
+        this.toponymsList.localitiesList = [];
         if (this.params().readonly) this.form.get('country')?.disable();
 
         this.emitAddressData();
       }),
       catchError((err) => {
-        this.errorHandling(err);
+        this.msgWrapper.handle(err);
         return EMPTY;
       })
     );
@@ -217,15 +195,15 @@ export class AddressFilterComponent {
       'districts'
     ).pipe(
       tap(() => {
-        this.form.get('district')?.setValue(null);
+        this.form.get('district')?.setValue(this.emptyValue);
         this.form.get('locality')?.disable();
-        this.form.get('locality')?.setValue(null);
-        this.toponyms.localitiesList = [];
+        this.form.get('locality')?.setValue(this.emptyValue);
+        this.toponymsList.localitiesList = [];
         if (this.params().readonly) this.form.get('region')?.disable();
         this.emitAddressData();
       }),
       catchError((err) => {
-        this.errorHandling(err);
+        this.msgWrapper.handle(err);
         return EMPTY;
       })
     );
@@ -237,12 +215,12 @@ export class AddressFilterComponent {
       'localities'
     ).pipe(
       tap(() => {
-        this.form.get('locality')?.setValue(null);
+        this.form.get('locality')?.setValue(this.emptyValue);
         if (this.params().readonly) this.form.get('district')?.disable();
         this.emitAddressData();
       }),
       catchError((err) => {
-        this.errorHandling(err);
+        this.msgWrapper.handle(err);
         return EMPTY;
       })
     );
@@ -252,71 +230,78 @@ export class AddressFilterComponent {
     this.emitAddressData();
     return EMPTY;
   }
-  createAddressString(addressData: AddressFilter) {
+
+  createAddressString(addressData: AddressFilter): string {
+    const keyMap: Record<AddressKey, keyof ToponymListMap> = {
+      countries: 'countriesList',
+      regions: 'regionsList',
+      districts: 'districtsList',
+      localities: 'localitiesList',
+    };
+
     let addressString = '';
-    for (let key of this.objectKeys(addressData)) {
-      if (
-        addressData[key as keyof typeof addressData] &&
-        addressData[key as keyof typeof addressData]!.length > 0
-      ) {
-        for (let id of addressData[key as keyof typeof addressData]!) {
-          const source = key + 'List';
-          const name = this.toponyms[
-            source as
-              | 'countriesList'
-              | 'regionsList'
-              | 'districtsList'
-              | 'localitiesList'
-          ].find((item) => item.id == id)!.name;
-          addressString = addressString + name + ', ';
+
+    for (const key of typedKeys(addressData)) {
+      const ids = addressData[key];
+      //console.log('addressData, key, ids', addressData, key, ids);
+      if (ids.length > 0) {
+        const list = this.toponymsList[keyMap[key]];
+
+        for (const id of ids) {
+          const name = list.find((item) => item.id === id)?.name;
+          if (name) {
+            addressString += name + ', ';
+          }
         }
       }
     }
+
     return addressString.slice(0, -2);
   }
 
-  objectKeys(obj: any): string[] {
+  /*   objectKeys(obj: any): string[] {
     return Object.keys(obj);
-  }
+  } */
 
   emitAddressData() {
     let count = 0;
-    let addressData;
+    let addressData: AddressFilter;
 
-    if (this.params().multiple) {
-      addressData = {
-        countries: this.form.controls['country'].value,
-        regions: this.form.controls['region'].value,
-        districts: this.form.controls['district'].value,
-        localities: this.form.controls['locality'].value,
-      };
-    } else {
-      addressData = {
-        countries: this.form.controls['country'].value
-          ? [this.form.controls['country'].value]
-          : this.form.controls['country'].value,
-        regions: this.form.controls['region'].value
-          ? [this.form.controls['region'].value]
-          : this.form.controls['region'].value,
-        districts: this.form.controls['district'].value
-          ? [this.form.controls['district'].value]
-          : this.form.controls['district'].value,
-        localities: this.form.controls['locality'].value
-          ? [this.form.controls['locality'].value]
-          : this.form.controls['locality'].value,
-      };
-    }
+    const fields: AddressKey[] = [
+      'countries',
+      'regions',
+      'districts',
+      'localities',
+    ];
+    const controlMap: Record<AddressKey, ToponymType> = {
+      countries: 'country',
+      regions: 'region',
+      districts: 'district',
+      localities: 'locality',
+    };
+
+    addressData = Object.fromEntries(
+      fields.map((field) => {
+        const value = this.form.controls[controlMap[field]].value;
+        const values = this.params().multiple ? value : value ? [value] : [];
+        return [field, values];
+      })
+    ) as AddressFilter;
 
     if (
-      this.form.controls['country'].value &&
-      this.form.controls['country'].value.length > 0
+      //this.form.controls['country'].value &&
+      // this.form.controls['country'].value.length > 0
+      addressData.countries.length > 0
     ) {
       count = count + 1;
     }
-    console.log('this.emitAddressData', addressData);
-    console.log('this.addressFilter', this.addressFilter);
+    //console.log('this.emitAddressData', addressData);
+    ////console.log('this.addressFilter', this.addressFilter);
     this.addressFilter.emit(addressData);
-    if (this.params().source != 'toponymCard') {
+    if (
+      this.params().source != 'toponymCard' &&
+      this.params().source != 'userCard'
+    ) {
       this.addressFilterBadgeValue.emit(count);
       this.addressString.emit(this.createAddressString(addressData));
       this.goToFirstPage.emit();
@@ -331,49 +316,98 @@ export class AddressFilterComponent {
         this.form.get('district')?.enable();
         this.form.get('locality')?.enable();
       } else {
-        this.form.get('country')?.enable();
-        if (this.form.controls['country'].value)
-          this.form.get('region')?.enable();
-        if (this.form.controls['region'].value)
-          this.form.get('district')?.enable();
-        if (this.form.controls['district'].value)
-          this.form.get('locality')?.enable();
+        if (data) {
+          //console.log('data in onChangeMode', data);
+          // Sequentially execute the steps using concatMap
+          this.form.controls['country'].setValue(data!.countryId);
+          ////console.log('Country ID:', data?.countryId);
+          this.selectionChangeMethods['onCountrySelectionChange']()
+            .pipe(
+              tap(() => {
+                /*             this.form.controls['country'].setValue(data?.countryId);
+                ////console.log('Country ID:', data?.countryId); */
+              }),
+              concatMap(() => {
+                this.form.controls['region'].setValue(data!.regionId);
+                ////console.log('Region ID:', data?.regionId);
+                return this.selectionChangeMethods['onRegionSelectionChange']();
+              }),
+              concatMap(() => {
+                this.form.controls['district'].setValue(data!.districtId);
+                ////console.log('District ID:', data?.districtId);
+                return this.selectionChangeMethods[
+                  'onDistrictSelectionChange'
+                ]();
+              }),
+              concatMap(() => {
+                this.form.controls['locality'].setValue(data!.localityId);
+                ////console.log('Locality ID:', data?.localityId);
+                return this.selectionChangeMethods[
+                  'onLocalitySelectionChange'
+                ]();
+              })
+            )
+            .subscribe({
+              next: () => console.log('All selection changes completed'),
+              error: (err) => this.msgWrapper.handle(err),
+            });
+        } else {
+          this.form.get('country')?.enable();
+          if (
+            this.form.controls['country'].value &&
+            this.toponymsList['regionsList'].length > 0
+          )
+            this.form.get('region')?.enable();
+          if (
+            this.form.controls['region'].value &&
+            this.toponymsList['districtsList'].length > 0
+          )
+            this.form.get('district')?.enable();
+          if (
+            this.form.controls['district'].value &&
+            this.toponymsList['localitiesList'].length > 0
+          )
+            this.form.get('locality')?.enable();
+        }
       }
       this.params().class = 'none';
       this.params().readonly = false;
       this.emitAddressData();
     }
     if (mode == 'view') {
-      console.log('onChangeMode');
+     // //console.log('onChangeMode');
       this.params().class = 'view-mode';
       this.params().readonly = true;
       if (data) {
+       // //console.log('data in onChangeMode', data);
         // Sequentially execute the steps using concatMap
+        this.form.controls['country'].setValue(data!.countryId);
+        ////console.log('Country ID:', data?.countryId);
         this.selectionChangeMethods['onCountrySelectionChange']()
           .pipe(
             tap(() => {
-              this.form.controls['country'].setValue(data?.countryId);
-              console.log('Country ID:', data?.countryId);
+              /*             this.form.controls['country'].setValue(data?.countryId);
+              ////console.log('Country ID:', data?.countryId); */
             }),
             concatMap(() => {
-              this.form.controls['region'].setValue(data?.regionId);
-              console.log('Region ID:', data?.regionId);
+              this.form.controls['region'].setValue(data!.regionId);
+              ////console.log('Region ID:', data?.regionId);
               return this.selectionChangeMethods['onRegionSelectionChange']();
             }),
             concatMap(() => {
-              this.form.controls['district'].setValue(data?.districtId);
-              console.log('District ID:', data?.districtId);
+              this.form.controls['district'].setValue(data!.districtId);
+              ////console.log('District ID:', data?.districtId);
               return this.selectionChangeMethods['onDistrictSelectionChange']();
             }),
             concatMap(() => {
-              this.form.controls['locality'].setValue(data?.localityId);
-              console.log('Locality ID:', data?.localityId);
+              this.form.controls['locality'].setValue(data!.localityId);
+              ////console.log('Locality ID:', data?.localityId);
               return this.selectionChangeMethods['onLocalitySelectionChange']();
             })
           )
           .subscribe({
             next: () => console.log('All selection changes completed'),
-            error: (err) => this.errorHandling(err),
+            error: (err) => this.msgWrapper.handle(err),
           });
       } else {
         this.form.get('country')?.disable();
@@ -382,61 +416,39 @@ export class AddressFilterComponent {
         this.form.get('locality')?.disable();
       }
     }
-
-    /*       this.form.controls['country'].setValue(data?.countryId);
-      console.log(data?.countryId);
-      this.handleToponymSelectionChange('onCountrySelectionChange', 'Country');
-      this.form.controls['region'].setValue(data?.regionId);
-      console.log(data?.regionId);
-      this.handleToponymSelectionChange('onRegionSelectionChange', 'Region');
-      this.form.controls['district'].setValue(data?.districtId);
-      console.log(data?.districtId);
-      this.handleToponymSelectionChange('onDistrictSelectionChange', 'District');
-      this.form.controls['locality'].setValue(data?.localityId);
-      console.log(data?.localityId);
-      this.handleToponymSelectionChange('onLocalitySelectionChange', 'Locality'); */
-    /*       this.form.get('country')?.disable();
-      this.form.get('region')?.disable();
-      this.form.get('district')?.disable();
-      this.form.get('locality')?.disable();
-      this.emitAddressData(); */
   }
 
   clearForm() {
-    this.form.reset();
+    this.form.reset({
+      country: this.emptyValue,
+      region: this.emptyValue,
+      district: this.emptyValue,
+      locality: this.emptyValue,
+    });
+
+    this.handleToponymSelectionChange('onCountrySelectionChange', 'Country');
+
     let addressData = {
-      countries: null,
-      regions: null,
-      districts: null,
-      localities: null,
+      countries: [],
+      regions: [],
+      districts: [],
+      localities: [],
     };
 
     this.addressFilterBadgeValue.emit(0);
     this.addressFilter.emit(addressData);
   }
 
-  private errorHandling(err: any) {
-    console.log(err);
-    let errorMessage =
-      typeof err.error === 'string' ? err.error : 'Ошибка: ' + err.message;
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Ошибка',
-      detail: errorMessage,
-      sticky: true,
-    });
-  }
-
-  private setDefaultFormValue(key: GeographyLevels) {
+  private setDefaultFormValue(key: ToponymType) {
     const toponymType:
       | 'countryId'
       | 'regionId'
       | 'districtId'
       | 'localityId' = `${key}Id`;
 
-    const defaultAddressParams = this.defaultAddressParams()[toponymType]
-      ? +this.defaultAddressParams()[toponymType]!
-      : this.defaultAddressParams()[toponymType];
+    const defaultAddressParams = this.defaultAddressParams()[toponymType]; /*
+      ? this.defaultAddressParams()[toponymType]
+      : this.defaultAddressParams()[toponymType] */
     const defaultValue = this.params().multiple
       ? [defaultAddressParams]
       : defaultAddressParams;
@@ -445,28 +457,44 @@ export class AddressFilterComponent {
   }
 
   private onToponymSelectionChange(
-    key: 'country' | 'region' | 'district' | 'locality',
+    key: ToponymType,
     nextKey: 'region' | 'district' | 'locality',
     typeOfList: 'regions' | 'districts' | 'localities'
   ): Observable<any> {
-    const idValues = !this.params().multiple
-      ? [this.form.controls[key].value]
-      : this.form.controls[key].value;
+    //console.log(`key`, key);
+    //console.log(`this.form.controls[key]`, this.form.controls[key]);
+    if (
+      (!this.params().multiple && this.form.controls[key].value) ||
+      (this.params().multiple && this.form.controls[key].value.length > 0)
+    ) {
+      const idValues = !this.params().multiple
+        ? [this.form.controls[key].value]
+        : this.form.controls[key].value;
 
-    return this.addressService.getListOfToponyms(idValues, typeOfList).pipe(
-      tap((res) => {
-        this.toponyms[`${typeOfList}List` as keyof typeof this.toponyms] =
-          res.data;
-        if (res.data && res.data.length > 0) {
-          this.form.get(nextKey)?.enable();
-        } else {
-          this.form.get(nextKey)?.disable();
-        }
-      }),
-      catchError((err) => {
-        this.errorHandling(err);
-        return EMPTY;
-      })
-    );
+ /*      //console.log(
+        'this.form.controls[key].value',
+        this.form.controls[key].value
+      ); */
+
+      return this.addressService.getListOfToponyms(idValues, typeOfList).pipe(
+        tap((res) => {
+          this.toponymsList[`${typeOfList}List` as keyof ToponymListMap] =
+            res.data;
+          ////console.log(`Toponyms for ${typeOfList}:`, this.toponyms.regionsList);
+          if (res.data?.length > 0 && !this.params().readonly) {
+            this.form.get(nextKey)?.enable();
+          } else {
+            this.form.get(nextKey)?.disable();
+          }
+        }),
+        catchError((err) => {
+          this.msgWrapper.handle(err);
+          return EMPTY;
+        })
+      );
+    }
+    this.toponymsList[`${typeOfList}List` as keyof ToponymListMap] = [];
+    this.form.get(nextKey)?.disable();
+    return of(null);
   }
 }

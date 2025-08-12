@@ -39,10 +39,10 @@ export class SignInComponent {
   onSubmit() {
     const userName = this.form.controls.userName.value;
     const password = this.form.controls.password.value;
-    console.log(userName, password);
+    //console.log(userName, password);
     this.signInService.logIn(userName, password).subscribe((err: Error) => {
       this.errorMessage = err.message;
-      console.log('err');
+      //console.log('err');
       console.log(err);
     });
   }

@@ -33,19 +33,9 @@
   </div>
 </mat-grid-list>
 
-<p-confirmdialog />
-<p-toast position="center" />
 <mat-dialog-content class="full-width">
-  @if (data.componentType == 'toponym') {
-      <app-toponym-details [data]="data" (emittedIsEditMode)="isEditMode.set($event)" (emittedChanges)="changes.set($event)"
-    (emittedIsSaveDisabled)="isSaveDisabled.set($event)" (closeDialog)="closeDialog($event)"></app-toponym-details>
-  }
-  @if (data.componentType == 'user') {
-    <app-user-details [data]="data" (emittedIsEditMode)="isEditMode.set($event)" (emittedChanges)="changes.set($event)"
-  (emittedIsSaveDisabled)="isSaveDisabled.set($event)" (closeDialog)="closeDialog($event)"></app-user-details>
-}
-<!--
- <ng-content></ng-content> -->
+  <ng-template #container></ng-template>
+</mat-dialog-content>
 
   <mat-grid-list cols="9" gutterSize="16px" rowHeight="36px">
     <mat-grid-tile colspan="6" rowspan="1"></mat-grid-tile>

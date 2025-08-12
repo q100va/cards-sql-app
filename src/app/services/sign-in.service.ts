@@ -53,7 +53,7 @@ export class SignInService {
   }
 
   private setAuthTimer(duration: number) {
-    console.log('Setting timer: ' + duration);
+    //console.log('Setting timer: ' + duration);
     this.tokenTimer = setTimeout(() => {
       //TODO: added dialog for login without loosing data
       this.logout();
@@ -87,7 +87,7 @@ export class SignInService {
             now.getTime() + expiresInDuration * 1000
           );
           this.saveAuthData(this.token, expirationDate); */
-          console.log("logIn");
+          //console.log("logIn");
           this.router.navigate(['/']);
           return 'Success';
         })

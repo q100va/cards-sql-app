@@ -1,5 +1,19 @@
-<!-- navigation -->
+<!--   ToastModule notifications centered on the page -->
+ <p-toast position="center">
+  <ng-template let-msg pTemplate="message">
+    <div class="p-toast-message-text">
+      <div class="p-toast-summary">{{ msg.summary }}</div>
+      <div [class]="'ui-toast-' + msg.severity">
+        <div [innerHtml]="msg.detail"></div>
+      </div>
+    </div>
+  </ng-template>
+</p-toast>
 
+<!--  Confirmation dialog for user actions -->
+<p-confirmdialog></p-confirmdialog>
+
+<!-- navigation -->
 <mat-toolbar class="toolbar">
   <mat-toolbar-row class="toolbar-row">
 
@@ -19,27 +33,27 @@
       <p style="padding: 8px" class="drop-menu-item">Вы вошли как {{ name }}</p>
       <mat-divider></mat-divider>
       @for (item of menuItems; track $index) {
-        <ng-container>
-      @if(!item.subMenuItems){
-      <button mat-menu-item class="drop-menu-item" [routerLink]="item.link">
-        <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
-        <span>{{item.text}}</span>
-      </button>
-      } @else {
-     <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu">
-        <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
-        <span>{{item.text}}</span>
-      </button>
-      <mat-menu  #submenu="matMenu" xPosition="before">
-        @for(subItem of item.subMenuItems; track $index){
-        <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link">
-          <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
-          <span>{{subItem.text}}</span>
+      <ng-container>
+        @if(!item.subMenuItems){
+        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link">
+          <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
+          <span>{{item.text}}</span>
         </button>
+        } @else {
+        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu">
+          <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
+          <span>{{item.text}}</span>
+        </button>
+        <mat-menu #submenu="matMenu" xPosition="before">
+          @for(subItem of item.subMenuItems; track $index){
+          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link">
+            <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
+            <span>{{subItem.text}}</span>
+          </button>
+          }
+        </mat-menu>
         }
-      </mat-menu>
-      }
-</ng-container>
+      </ng-container>
 
 
       }

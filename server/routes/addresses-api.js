@@ -1,12 +1,5 @@
 import { Router } from "express";
-//import fs from "fs";
 import path from "path";
-//import { join } from "path";
-//import { fileURLToPath } from 'url';
-
-
-
-import checkAuth from "../middleware/check-auth.js";
 import Country from "../models/country.js";
 import Region from "../models/region.js";
 import District from "../models/district.js";
@@ -17,7 +10,7 @@ import { correctDistrictName } from '../controllers/addresses.js'
 import CustomError from "../shared/customError.js";
 
 import Sequelize from 'sequelize';
-import Address from "../models/address.js";
+import UserAddress from "../models/user-address.js";
 const Op = Sequelize.Op;
 const router = Router();
 
@@ -175,7 +168,8 @@ router.post("/create-toponym", async (req, res) => {
           isCapitalOfDistrict: req.body.data.mainValues.isCapitalOfDistrict,
         });
     }
-    res.status(200).send({ msg: "Топоним успешно добавлен.", data: createdToponym });
+   // const defaultAddressParams = formDefaultAddressParams(createdToponym, type);
+    res.status(200).send({ msg: "Топоним успешно добавлен.", data: {toponym: createdToponym}});
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -194,6 +188,9 @@ router.post("/update-toponym", async (req, res) => {
 
 
     let updatedToponym;
+    const config = toponymConfigs[type];
+    if (!config) throw new CustomError(`Указан неверный тип топонима!`, 404);
+
     if (type == 'country') {
       await Country.update(
         {
@@ -204,13 +201,14 @@ router.post("/update-toponym", async (req, res) => {
             id: id
           }
         });
-        updatedToponym = await Country.findOne({
-          attributes: ['id', 'name'],
-          raw: true,
-          where: {
-            id: id
-          }
-        });
+
+      updatedToponym = getToponymById(id, res, config.model, type, config.attributes, config.include);/* await Country.findOne({
+        attributes: ['id', 'name'],
+        raw: true,
+        where: {
+          id: id
+        }
+      }); */
     }
     if (type == 'region') {
       await Region.update(
@@ -224,19 +222,19 @@ router.post("/update-toponym", async (req, res) => {
             id: id
           }
         });
-        updatedToponym = await Region.findOne({
-          attributes: ['id', 'name', 'shortName',],
-          raw: true,
-          where: {
-            id: id
+      updatedToponym = getToponymById(id, res, config.model, type, config.attributes, config.include);/* await Region.findOne({
+        attributes: ['id', 'name', 'shortName',],
+        raw: true,
+        where: {
+          id: id
+        },
+        include: [
+          {
+            model: Country,
+            attributes: ['id', 'name'],
           },
-          include: [
-            {
-              model: Country,
-              attributes: ['id', 'name'],
-            },
-          ],
-        });
+        ],
+      }); */
     }
     if (type == 'district') {
       await District.update(
@@ -252,25 +250,26 @@ router.post("/update-toponym", async (req, res) => {
             id: id
           }
         });
-        updatedToponym = await District.findOne({
-          attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
-          raw: true,
-          where: {
-            id: id
+      updatedToponym = getToponymById(id, res, config.model, type, config.attributes, config.include);
+/*       await District.findOne({
+        attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
+        raw: true,
+        where: {
+          id: id
+        },
+        include: [
+          {
+            model: Region,
+            attributes: ['id', 'name'],
+            include: [
+              {
+                model: Country,
+                attributes: ['id', 'name'],
+              },
+            ],
           },
-          include: [
-            {
-              model: Region,
-              attributes: ['id', 'name'],
-              include: [
-                {
-                  model: Country,
-                  attributes: ['id', 'name'],
-                },
-              ],
-            },
-          ],
-        });
+        ],
+      }); */
     }
     if (type == 'locality') {
       await Locality.update(
@@ -288,7 +287,8 @@ router.post("/update-toponym", async (req, res) => {
           }
         }
       );
-      updatedToponym = await Locality.findOne({
+      updatedToponym = getToponymById(id, res, config.model, type, config.attributes, config.include);
+  /*     await Locality.findOne({
         attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
         raw: true,
         where: {
@@ -312,10 +312,10 @@ router.post("/update-toponym", async (req, res) => {
             ],
           },
         ],
-      });
+      }); */
 
     }
-    res.status(200).send({ msg: "Топоним успешно обновлен.", data: updatedToponym });
+    //res.status(200).send({ msg: "Топоним успешно обновлен.", data: updatedToponym });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -345,8 +345,6 @@ router.get("/get-countries-list", async (req, res) => {
 
 router.post("/get-regions-list", async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
     const countriesIds = req.body.data;//.map(item => item.id);
     let result = [];
     if (countriesIds.length > 0 && countriesIds[0]) {
@@ -361,6 +359,7 @@ router.post("/get-regions-list", async (req, res) => {
       });
       result = regions;
     }
+    console.log("result", countriesIds, result);
     res.status(200).send({ msg: "Данные получены.", data: result });
   } catch (e) {
     const err = errorHandling(e);
@@ -370,8 +369,6 @@ router.post("/get-regions-list", async (req, res) => {
 
 router.post("/get-districts-list", async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
     const regionsIds = req.body.data;//.map(item => item.id);
     let result = [];
     if (regionsIds.length > 0 && regionsIds[0]) {
@@ -395,8 +392,6 @@ router.post("/get-districts-list", async (req, res) => {
 
 router.post("/get-localities-list", async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
     const districtsIds = req.body.data;//.map(item => item.id);
     let result = [];
     if (districtsIds.length > 0 && districtsIds[0]) {
@@ -535,12 +530,143 @@ router.post("/get-countries", async (req, res) => {
     //console.log("localities");
     //console.log(localities);
 
+    for (let country of countries) {
+      country = addDefaultAddressParams(country, 'country');
+      country = formDefaultAddressNames(country, 'country');
+    }
+
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: countries, length: length } });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
   }
 });
+
+function addDefaultAddressParams(toponym, type) {
+  toponym.defaultAddressParams = formDefaultAddressParams(toponym, type);
+  return toponym;
+}
+
+function formDefaultAddressParams(toponym, type) {
+
+  console.log(toponym);
+  const idWays = {
+    locality: {
+      locality: 'id',
+      district: 'district.id',
+      region: 'district.region.id',
+      country: 'district.region.country.id',
+    },
+    district: {
+      locality: null,
+      district: 'id',
+      region: 'region.id',
+      country: 'region.country.id',
+    },
+    region: {
+      locality: null,
+      district: null,
+      region: 'id',
+      country: 'country.id',
+    },
+    country: {
+      locality: null,
+      district: null,
+      region: null,
+      country: 'id',
+    },
+  };
+
+  const idMap = idWays[type];
+
+  const getId = (key) => {
+    const way = idMap[key];
+    const id = toponym[way];
+    if (way != 'id') delete toponym[way];
+    return way ? id : null;
+  };
+
+  return {
+    countryId: getId('country'),
+    regionId: getId('region'),
+    districtId: getId('district'),
+    localityId: getId('locality'),
+  };
+}
+
+
+function formDefaultAddressNames(toponym, type) {
+  console.log(toponym);
+
+  const nameWays = {
+    locality: {
+      district: 'district.name',
+      region: 'district.region.name',
+      country: 'district.region.country.name',
+    },
+    district: {
+      district: null,
+      region: 'region.name',
+      country: 'region.country.name',
+    },
+    region: {
+      district: null,
+      region: null,
+      country: 'country.name',
+    },
+    country: {
+      district: null,
+      region: null,
+      country: null,
+    },
+  };
+
+  const nameMap = nameWays[type];
+
+  const getName = (key) => {
+    const way = nameMap[key];
+    const name = toponym[way];
+    delete toponym[way];
+    return way ? name : null;
+  };
+
+  toponym.countryName = getName('country');
+  toponym.regionName = getName('region');
+  toponym.districtName = getName('district');
+
+
+  return toponym;
+}
+
+/* function updateToponym() {
+  const nameWays = {
+    locality: {
+      district: 'district.name',
+      region: 'district.region.name',
+      country: 'district.region.country.name',
+    },
+    district: {
+      district: null,
+      region: 'region.name',
+      country: 'region.country.name',
+    },
+    region: {
+      district: null,
+      region: null,
+      country: 'country.name',
+    },
+    country: {
+      district: null,
+      region: null,
+      country: null,
+    },
+  };
+
+  const way = nameMap[key];
+  delete toponym[way];
+
+  return toponym;
+} */
 
 
 router.post("/get-regions", async (req, res) => {
@@ -681,8 +807,12 @@ router.post("/get-regions", async (req, res) => {
         },
       ],
     });
-    console.log("regions");
-    console.log(regions);
+    /*    console.log("regions");
+       console.log(regions); */
+    for (let region of regions) {
+      region = addDefaultAddressParams(region, 'region');
+      region = formDefaultAddressNames(region, 'region');
+    }
 
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: regions, length: length } });
   } catch (e) {
@@ -857,6 +987,10 @@ router.post("/get-districts", async (req, res) => {
     });
     //console.log("districts");
     //console.log(districts);
+    for (let district of districts) {
+      district = addDefaultAddressParams(district, 'district');
+      district = formDefaultAddressNames(district, 'district');
+    }
 
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: districts, length: length } });
   } catch (e) {
@@ -978,33 +1112,6 @@ router.post("/get-localities", async (req, res) => {
         console.log("innerQueryFinal");
         console.log(innerQuery);
 
-
-        /*         addressWhereParams.userId = {
-                  [Op.in]: Sequelize.literal(
-                    `(SELECT DISTINCT "userId" FROM addresses WHERE ${innerRestriction} "countryId" IN ${listOfCountriesIds})`
-                  )
-         */
-
-        /* SELECT "locality"."id", "locality"."name", "locality"."shortName", "district"."id" AS "district.id", "district"."name" AS "district.name", "district->region"."id" AS "district.region.id", "district->region"."name" AS "district.region.name", "district->region->country"."id" AS "district.region.country.id", "district->region->country"."name" AS "district.region.country.name"
-        FROM "localities" AS "locality"
-        LEFT OUTER JOIN "districts" AS "district" ON "locality"."districtId" = "district"."id"
-        LEFT OUTER JOIN "regions" AS "district->region" ON "district"."regionId" = "district->region"."id"
-        LEFT OUTER JOIN "countries" AS "district->region->country" ON "district->region"."countryId" = "district->region->country"."id"
-        WHERE "locality"."id" IN
-        (SELECT "locality"."id"
-        WHERE "locality"."isRestricted" = false AND
-        ("district->region->country"."name" ILIKE '%аверино%'
-        OR "district->region"."name" ILIKE '%аверино%' OR "district->region"."shortName" ILIKE '%аверино%'
-        OR "district"."name" ILIKE '%аверино%' OR "district"."shortName" ILIKE '%аверино%'
-        OR "locality"."name" ILIKE '%аверино%' OR "locality"."shortName" ILIKE '%аверино%')
-        AND  "locality"."id" IN
-        (SELECT "locality"."id"
-        WHERE (("district->region->country"."name" LIKE '%сысертский%')
-        OR ("district->region"."name" ILIKE '%сысертский%') OR ("district->region"."shortName" ILIKE '%сысертский%')
-        OR ("district"."name" ILIKE '%сысертский%') OR ("district"."shortName" ILIKE '%сысертский%')
-        OR ("locality"."name" ILIKE '%сысертский%') OR ("locality"."shortName" ILIKE '%сысертский%'))
-        AND "locality"."isRestricted" = false)); */
-
         searchParams.push({
           id: {
             [Op.in]: Sequelize.literal(innerQuery),
@@ -1123,6 +1230,10 @@ router.post("/get-localities", async (req, res) => {
     });
     //console.log("localities");
     //console.log(localities);
+    for (let locality of localities) {
+      locality = addDefaultAddressParams(locality, 'locality');
+      locality = formDefaultAddressNames(locality, 'locality');
+    }
 
     res.status(200).send({ msg: "Данные получены.", data: { toponyms: localities, length: length } });
   } catch (e) {
@@ -1130,6 +1241,94 @@ router.post("/get-localities", async (req, res) => {
     res.status(err.statusCode).send(err.message);
   }
 });
+
+
+// API get address element by id
+
+async function getToponymById(id, res, model, type, attributes, include = []) {
+  try {
+    const toponym = await model.findOne({
+      where: { id, isRestricted: false },
+      attributes,
+      include,
+      raw: true,
+    });
+
+    const defaultAddressParams = formDefaultAddressParams(toponym, type);
+    res.status(200).send({
+      msg: "Данные получены.",
+      data: { toponym, defaultAddressParams },
+    });
+  } catch (e) {
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
+  }
+}
+
+const toponymConfigs = {
+  country: {
+    model: Country,
+    attributes: ['id', 'name'],
+  },
+  region: {
+    model: Region,
+    attributes: ['id', 'name', 'shortName'],
+    include: [{ model: Country, attributes: ['id'] }],
+  },
+  district: {
+    model: District,
+    attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
+    include: [
+      {
+        model: Region,
+        attributes: ['id'],
+        include: [
+          {
+            model: Country,
+            attributes: ['id'],
+          },
+        ],
+      },
+    ],
+  },
+  locality: {
+    model: Locality,
+    attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
+    include: [
+      {
+        model: District,
+        attributes: ['id'],
+        include: [
+          {
+            model: Region,
+            attributes: ['id'],
+            include: [
+              {
+                model: Country,
+                attributes: ['id'],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+router.get("/get-:type-by-id/:id", (req, res) => {
+  try {
+ const { type } = req.params;
+ //const type = 'dfsss'
+  const config = toponymConfigs[type];
+  if (!config) throw new CustomError(`Указан неверный тип топонима!`, 404);
+  getToponymById(req.params.id, res, config.model, type, config.attributes, config.include);
+  } catch (e) {
+    const err = errorHandling(e);
+    res.status(err.statusCode).send(err.message);
+  }
+});
+
+//************************
 
 
 // API populate address elements
@@ -1286,7 +1485,7 @@ router.post("/populate-locality", async (req, res) => {
       if (district === null) {
         throw new CustomError(`"${locality.district}" не найден в базе данных! Ввод прекращен.`, 507);
       } else {
-      //TODO: ПРОТЕСТИРОВАТЬ проверять имя населенного пункта в пределах одного округа/района
+        //TODO: ПРОТЕСТИРОВАТЬ проверять имя населенного пункта в пределах одного округа/района
         const duplicate = await Locality.findOne(
           {
             where: {
@@ -1332,7 +1531,7 @@ router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
 
-    let foundToponymId = await Address.findOne({
+    let foundToponymId = await UserAddress.findOne({
       where: {
         isRestricted: false,
         [toponymType + 'Id']: toponymId,
@@ -1392,7 +1591,7 @@ router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
 
-    let foundToponymId = await Address.findOne({
+    let foundToponymId = await UserAddress.findOne({
       where: {
         [toponymType + 'Id']: toponymId,
       },

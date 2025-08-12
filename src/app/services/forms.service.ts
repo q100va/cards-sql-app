@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
-import { Control } from '../interfaces/toponym-props';
+import { Control } from '../interfaces/dialog-props';
 
 @Injectable({
   providedIn: 'root'

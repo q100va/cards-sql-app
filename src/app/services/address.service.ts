@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { GeographyLevels } from '../interfaces/types';
+import { ToponymType } from '../interfaces/types';
 import { AddressFilter } from '../interfaces/address-filter';
 import { ToponymFormControlsNames } from '../interfaces/toponymFormControlsNames';
 
@@ -14,35 +14,39 @@ export class AddressService {
 
   constructor() {}
 
+  toponymsTypes = {
+    locality: 'localities',
+    district: 'districts',
+    region: 'regions',
+    country: 'countries',
+  };
+
   getToponyms(
-    type: GeographyLevels,
+    type: ToponymType,
     filter: {
       searchValue: string;
       exactMatch: boolean;
       addressString: string;
       addressFilter: AddressFilter;
       sortParameters: {
-          active: string;
-          direction: "" | "asc" | "desc";
+        active: string;
+        direction: '' | 'asc' | 'desc';
       };
-  },
+    },
     pageSize: number,
     currentPage: number
   ): Observable<any> {
-    const toponymsTypes = {
-      locality: 'localities',
-      district: 'districts',
-      region: 'regions',
-      country: 'countries'
-    }
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/get-' + toponymsTypes[type], {
-      data: {
-        filter: filter,
-        pageSize: pageSize,
-        currentPage: currentPage,
-      },
-    });
+    return this.http.post(
+      BACKEND_URL + '/api/addresses/get-' + this.toponymsTypes[type],
+      {
+        data: {
+          filter: filter,
+          pageSize: pageSize,
+          currentPage: currentPage,
+        },
+      }
+    );
   }
 
   //address-filter
@@ -52,11 +56,26 @@ export class AddressService {
     return this.http.get(BACKEND_URL + '/api/addresses/get-countries-list');
   }
 
-  getListOfToponyms(idsOfToponym: number[], typeOfToponym: string): Observable<any> {
+  getListOfToponyms(
+    idsOfToponym: number[],
+    typeOfToponym: string
+  ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/addresses/get-' + typeOfToponym + '-list', {
-      data: idsOfToponym,
-    });
+    return this.http.post(
+      BACKEND_URL + '/api/addresses/get-' + typeOfToponym + '-list',
+      {
+        data: idsOfToponym,
+      }
+    );
+  }
+
+  //get toponym by id
+
+  getToponym(id: number, type: ToponymType): Observable<any> {
+    const BACKEND_URL = environment.apiUrl;
+    return this.http.get(
+      BACKEND_URL + '/api/addresses/get-' + type + '-by-id/' + id
+    );
   }
 
   //create toponym
@@ -65,7 +84,7 @@ export class AddressService {
     type: string,
     name: string,
     id: number | null,
-    addressFilter: AddressFilter,
+    addressFilter: AddressFilter
     //operation: string,
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
@@ -91,9 +110,10 @@ export class AddressService {
     isCapitalOfRegion: boolean,
     isCapitalOfDistrict: boolean, */
     addressFilter: AddressFilter,
-    operation: string,
+    operation: string
   ): Observable<any> {
-    const addressPoint = operation == 'create' ? 'create-toponym' : 'update-toponym';
+    const addressPoint =
+      operation == 'create' ? 'create-toponym' : 'update-toponym';
     const BACKEND_URL = environment.apiUrl;
     return this.http.post(BACKEND_URL + '/api/addresses/' + addressPoint, {
       data: {
@@ -101,7 +121,7 @@ export class AddressService {
         mainValues: mainValues,
         id: id,
         addressFilter: addressFilter,
-/*         name: name,
+        /*         name: name,
         shortName: shortName,
         postName: postName,
         shortPostName: shortPostName,
@@ -136,7 +156,8 @@ export class AddressService {
   blockToponym(type: string, id: number): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
     return this.http.patch(
-      BACKEND_URL + '/api/addresses/block-toponym/' + type + '/' + id, {}
+      BACKEND_URL + '/api/addresses/block-toponym/' + type + '/' + id,
+      {}
     );
   }
 }

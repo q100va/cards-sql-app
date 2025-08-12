@@ -1,8 +1,15 @@
+// List of available object types in the system
 export const objects = [
-  'toponyms', 'users', 'roles', 'homes', 'partners', 'seniors'
+  'toponyms', // geographical entities (countries, regions, districts, localities)
+  'users',    // system users
+  'roles',    // user roles/permissions
+  'homes',    // nursing homes or similar facilities
+  'partners', // institution representatives (employees, coordinators)
+  'seniors'   // residents of the nursing homes
 ];
 
-export const operations = [
+// List of operations available for each object type in the system
+export const OPERATIONS = [
   //countries, regions, districts, localities - страны, регионы, районы/округа, населенные пункты - топонимы
   {
     operation: 'FULL_ACCESS_TOPONYMS',
@@ -12,8 +19,6 @@ export const operations = [
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: true,
-
-    roles: [],
   },
   {
     operation: 'ADD_NEW_TOPONYM',
@@ -23,8 +28,6 @@ export const operations = [
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'EDIT_TOPONYM',
@@ -34,8 +37,6 @@ export const operations = [
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'DELETE_TOPONYM',
@@ -45,8 +46,6 @@ export const operations = [
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'BLOCK_TOPONYM',
@@ -56,8 +55,6 @@ export const operations = [
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'UNBLOCK_TOPONYM',
@@ -67,8 +64,6 @@ export const operations = [
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_LIMITED_TOPONYMS_LIST',
@@ -79,19 +74,15 @@ export const operations = [
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
     flag: 'LIMITED',
-
-
-    roles: [],
   },
   {
     operation: 'VIEW_FULL_TOPONYMS_LIST',
     operationName: 'доступ к доп. данным списка',
     description:
-      'просмотреть с полным доступом к данным списков с ограниченным доступом список стран, регионов, районов/округов, населенных пунктов',
+      'просмотреть с полным доступом к данным списков стран, регионов, районов/округов, населенных пунктов',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
     fullAccess: false,
-    roles: [],
     flag: 'FULL',
   },
   //users - пользователи
@@ -102,8 +93,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: true,
-
-    roles: [],
   },
   {
     operation: 'ADD_NEW_USER',
@@ -112,8 +101,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_USER',
@@ -122,8 +109,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'EDIT_USER',
@@ -132,8 +117,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'DELETE_USER',
@@ -143,8 +126,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'BLOCK_USER',
@@ -153,8 +134,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'UNBLOCK_USER',
@@ -163,8 +142,6 @@ export const operations = [
     object: 'users',
     objectName: 'пользователи',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_LIMITED_USERS_LIST',
@@ -174,8 +151,6 @@ export const operations = [
     objectName: 'пользователи',
     fullAccess: false,
     flag: 'LIMITED',
-
-    roles: [],
   },
   {
     operation: 'VIEW_FULL_USERS_LIST',
@@ -185,7 +160,6 @@ export const operations = [
     objectName: 'пользователи',
     fullAccess: false,
     flag: 'FULL',
-    roles: [],
   },
   //roles - роли
   {
@@ -195,7 +169,6 @@ export const operations = [
     object: 'roles',
     objectName: 'роли',
     fullAccess: true,
-    roles: [],
   },
   {
     operation: 'ADD_NEW_ROLE',
@@ -204,8 +177,6 @@ export const operations = [
     object: 'roles',
     objectName: 'роли',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'EDIT_ROLE',
@@ -214,8 +185,6 @@ export const operations = [
     object: 'roles',
     objectName: 'роли',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'DELETE_ROLE',
@@ -224,8 +193,6 @@ export const operations = [
     object: 'roles',
     objectName: 'роли',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_LIMITED_ROLES_LIST',
@@ -235,7 +202,6 @@ export const operations = [
     objectName: 'роли',
     fullAccess: false,
     flag: 'LIMITED',
-    roles: [],
   },
   {
     operation: 'VIEW_FULL_ROLES_LIST',
@@ -244,7 +210,6 @@ export const operations = [
     object: 'roles',
     objectName: 'роли',
     flag: 'FULL',
-    roles: [],
   },
   //nursing homes - интернаты
   {
@@ -254,7 +219,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: true,
-    roles: [],
   },
   {
     operation: 'ADD_NEW_HOME',
@@ -263,8 +227,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_HOME',
@@ -273,8 +235,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'EDIT_HOME',
@@ -283,8 +243,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'DELETE_HOME',
@@ -294,8 +252,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'BLOCK_HOME',
@@ -304,8 +260,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'UNBLOCK_HOME',
@@ -314,8 +268,6 @@ export const operations = [
     object: 'homes',
     objectName: 'интернаты',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_LIMITED_HOMES_LIST',
@@ -325,7 +277,6 @@ export const operations = [
     objectName: 'интернаты',
     fullAccess: false,
     flag: 'LIMITED',
-    roles: [],
   },
   {
     operation: 'VIEW_FULL_HOMES_LIST',
@@ -335,7 +286,6 @@ export const operations = [
     objectName: 'интернаты',
     fullAccess: false,
     flag: 'FULL',
-    roles: [],
   },
   //partners - представители интернатов (сотрудники и координаторы) - контрагенты
   {
@@ -345,8 +295,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: true,
-    roles:
-      [],
   },
   {
     operation: 'ADD_NEW_PARTNER',
@@ -355,8 +303,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_PARTNER',
@@ -365,7 +311,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: false,
-    roles: [],
   },
   {
     operation: 'EDIT_PARTNER',
@@ -374,8 +319,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'DELETE_PARTNER',
@@ -385,8 +328,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'BLOCK_PARTNER',
@@ -396,8 +337,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'UNBLOCK_PARTNER',
@@ -406,8 +345,6 @@ export const operations = [
     object: 'partners',
     objectName: 'представители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_LIMITED_PARTNERS_LIST',
@@ -417,7 +354,6 @@ export const operations = [
     objectName: 'представители\nинтернатов',
     fullAccess: false,
     flag: 'LIMITED',
-    roles: [],
   },
   {
     operation: 'VIEW_FULL_PARTNERS_LIST',
@@ -427,7 +363,6 @@ export const operations = [
     objectName: 'представители\nинтернатов',
     fullAccess: false,
     flag: 'FULL',
-    roles: [],
   },
   //seniors - жители интернатов
   {
@@ -438,8 +373,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: true,
-
-    roles: [],
   },
   {
     operation: 'ADD_NEW_SENIOR',
@@ -448,8 +381,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_SENIOR',
@@ -459,7 +390,6 @@ export const operations = [
     objectName: 'жители\nинтернатов',
     fullAccess: false,
 
-    roles: [],
   },
   {
     operation: 'EDIT_SENIOR',
@@ -468,8 +398,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'DELETE_SENIOR',
@@ -479,8 +407,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'BLOCK_SENIOR',
@@ -490,8 +416,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'UNBLOCK_SENIOR',
@@ -500,8 +424,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'UPDATE_LIST_OF_SENIORS',
@@ -510,8 +432,6 @@ export const operations = [
     object: 'seniors',
     objectName: 'жители\nинтернатов',
     fullAccess: false,
-
-    roles: [],
   },
   {
     operation: 'VIEW_LIMITED_SENIORS_LIST',
@@ -521,7 +441,6 @@ export const operations = [
     objectName: 'жители\nинтернатов',
     fullAccess: false,
     flag: 'LIMITED',
-    roles: [],
   },
   {
     operation: 'VIEW_FULL_SENIORS_LIST',
@@ -532,6 +451,5 @@ export const operations = [
     objectName: 'жители\nинтернатов',
     fullAccess: false,
     flag: 'FULL',
-    roles: [],
   },
 ];

@@ -1,0 +1,202 @@
+<mat-card class="list-card" appearance="outlined">
+  @if(showSpinner()){
+  <div class="card"
+    style="z-index: 100; position: fixed; width: 70%; height: 80vh; padding-top: 20%; background-color: #dddfd081; border-radius:12px;">
+    <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+      [style]="{ width: '150px', height: '150px' }" />
+  </div>
+  }
+  <mat-card-header>
+    <mat-grid-list cols="24" rowHeight="42px">
+      <mat-grid-tile colspan="8" rowspan="1">
+      </mat-grid-tile>
+      <mat-grid-tile colspan="8" rowspan="1">
+        <mat-card-title>{{toponymProps().title}}</mat-card-title>
+      </mat-grid-tile>
+      <mat-card-actions>
+        <mat-grid-tile colspan="5" rowspan="1">
+
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1" rowspan="1">
+          <div class="bottom-right">
+            <button mat-icon-button title="Добавить топоним" (click)="onAddToponymClick()" appBlurOnClick>
+              <mat-icon fontSet="material-icons-outlined">add_location_alt</mat-icon>
+            </button>
+          </div>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1" rowspan="1">
+          <div class="bottom-right">
+            <button mat-icon-button title="Скачать шаблон" (click)="onFileDownloadClick()">
+              <mat-icon fontSet="material-icons-outlined">file_download</mat-icon>
+            </button>
+          </div>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1" rowspan="1">
+          <div class="bottom-right">
+            <app-upload-file [typeOfData]="type()" (showSpinner)="showSpinner.set($event);"></app-upload-file>
+          </div>
+        </mat-grid-tile>
+      </mat-card-actions>
+    </mat-grid-list>
+  </mat-card-header>
+
+  <mat-card-content>
+    <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+      <mat-grid-tile colspan="4" rowspan="1">
+        <div class="bottom-left">
+          <app-address-filter [params]="params" [defaultAddressParams]="defaultAddressParams"
+            (addressFilter)="addressFilter.set($event)" (addressString)="addressString.set($event)"
+            (goToFirstPage)="goToFirstPage()">
+          </app-address-filter>
+        </div>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="2" rowspan="1">
+        <div class="bottom-left">
+          <mat-form-field>
+            <mat-label>Поиск (введите любое значение, допустимое в таблице)</mat-label>
+            <mat-icon fontSet="material-icons-outlined" matPrefix>search</mat-icon>
+            <input matInput [(ngModel)]="inputValue" (keydown.enter)="searchToponym($event)" [placeholder]="toponymProps().searchPlaceHolder">
+            @if (inputValue) {
+            <button matSuffix mat-icon-button (click)="onClearSearchClick()">
+              <mat-icon fontSet="material-icons-outlined">close</mat-icon>
+            </button>
+            }
+          </mat-form-field>
+        </div>
+      </mat-grid-tile>
+    </mat-grid-list>
+
+    <mat-grid-list cols="6" gutterSize="16px" rowHeight="26px">
+      <mat-grid-tile colspan="4" rowspan="1">
+        <div class="bottom-left small-text">
+          Примененные фильтры: {{filterString()}}
+        </div>
+      </mat-grid-tile>
+
+      <mat-grid-tile colspan="2" rowspan="1">
+        <div class="bottom-right-left-align">
+          <mat-checkbox [(ngModel)]="exactMatch">искомые значения должны присутствовать одновременно</mat-checkbox>
+        </div>
+      </mat-grid-tile>
+    </mat-grid-list>
+
+    <div class="mat-elevation-z8">
+      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Название </th>
+          <td mat-cell *matCellDef="let row"> {{row.name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="shortName">
+          <th mat-header-cell *matHeaderCellDef> Краткое название </th>
+          <td mat-cell *matCellDef="let row"> {{row.shortName}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="postName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Почтовое название </th>
+          <td mat-cell *matCellDef="let row"> {{row.postName}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="shortPostName">
+          <th mat-header-cell *matHeaderCellDef> Краткое почтовое название </th>
+          <td mat-cell *matCellDef="let row"> {{row.shortPostName}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="district">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Район/округ </th>
+          <td mat-cell *matCellDef="let row">{{row.districtName ? row.districtName : ''}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="region">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Регион </th>
+          <td mat-cell *matCellDef="let row">{{row.regionName ? row.regionName : ''}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="country">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Страна </th>
+          <td mat-cell *matCellDef="let row">{{row.countryName ? row.countryName : ''}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef> Действия </th>
+          <td mat-cell *matCellDef="let row">
+            <div class="center">
+              <button mat-icon-button [matMenuTriggerFor]="menu" title="Открыть перечень" appBlurOnClick>
+                <mat-icon fontSet="material-icons-outlined" >
+                  keyboard_double_arrow_down
+                </mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="onOpenToponymCardClick(row.id)">
+                  <mat-icon>open_in_new</mat-icon>
+                  <span>открыть карточку</span>
+                </button>
+                <button mat-menu-item (click)="onOpenListClick(row, '/users')">
+                  <mat-icon fontSet="material-icons-outlined">badge</mat-icon>
+                  <span>открыть список пользователей</span>
+                </button>
+                <button mat-menu-item (click)="onOpenListClick(row, '/clients')">
+                  <mat-icon fontSet="material-icons-outlined">contact_mail</mat-icon>
+                  <span>открыть список поздравляющих</span>
+                </button>
+                <button mat-menu-item (click)="onOpenListClick(row, '/seniors')">
+                  <mat-icon fontSet="material-icons-outlined">elderly_woman</mat-icon>
+                  <span>открыть список поздравляемых</span>
+                </button>
+                <button mat-menu-item (click)="onOpenListClick(row, '/houses')">
+                  <mat-icon fontSet="material-icons-outlined">house</mat-icon>
+                  <span>открыть список интернатов</span>
+                </button>
+                @if (!toponymProps().isShowRegion) {
+                <button mat-menu-item (click)="onOpenListClick(row, '/regions')">
+                  <mat-icon fontSet="material-icons-outlined">corporate_fare</mat-icon>
+                  <span>открыть список регионов</span>
+                </button>
+                }
+                @if (!toponymProps().isShowDistrict) {
+                <button mat-menu-item (click)="onOpenListClick(row, '/districts')">
+                  <mat-icon fontSet="material-icons-outlined">home_work</mat-icon>
+                  <span>открыть список р-нов/округов</span>
+                </button>
+                }
+                @if (!toponymProps().isShowLocality) {
+                <button mat-menu-item (click)="onOpenListClick(row, '/localities')">
+                  <mat-icon fontSet="material-icons-outlined">holiday_village</mat-icon>
+                  <span>открыть список нас. пунктов</span>
+                </button>
+                }
+
+                <button mat-menu-item [matMenuTriggerFor]="causeOfDelete">
+                  <mat-icon fontSet="material-icons-outlined">delete_outlined</mat-icon>
+                  <span>удалить</span>
+                </button>
+                <mat-menu #causeOfDelete="matMenu" xPosition="before">
+                  <button mat-menu-item
+                    (click)="onDeleteToponymClick(row.id, row.shortName ? row.shortName : row.name, true)">ошибочно
+                    создан</button>
+                  <button mat-menu-item
+                    (click)="onDeleteToponymClick(row.id, row.shortName ? row.shortName : row.name, false)">законодательно
+                    упразднен</button>
+                </mat-menu>
+              </mat-menu>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="toponymProps().displayedColumns;"></tr>
+        <tr mat-row *matRowDef="let row; columns: toponymProps().displayedColumns;"></tr>
+
+        <!-- Row shown when there is no matching data. -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">Не найдены данные, соответствующие запросу "{{filterString()}}"</td>
+        </tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="pageSizeOptions" [length]="length()" [pageSize]="pageSize"
+        (page)="onChangedPage($event)"></mat-paginator>
+
+    </div>
+
+  </mat-card-content>
+</mat-card>

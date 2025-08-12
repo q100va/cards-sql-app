@@ -1,9 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 import sequelize from '../database.js';
-import Address from './address.js';
-import District from './district.js';
-import Country from './country.js';
 
 const Region = sequelize.define('region', {
   id: {

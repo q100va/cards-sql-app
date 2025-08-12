@@ -11,7 +11,7 @@ const { sign } = pkg2;
 const router = Router();
 const saltRounds = 10;
 
-import checkAuth from "../middleware/check-auth.js";
+import checkAuth from "../middlewares/check-auth.js";
 
 //TODO: added protection against multiple requests from same IP-address or with same userName
 
@@ -103,7 +103,7 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
-const checkAuth = require("../middleware/check-auth");
+const checkAuth = require("../middlewares/check-auth");
 
 //TODO: added protection against multiple requests from same IP-address or with same userName
 

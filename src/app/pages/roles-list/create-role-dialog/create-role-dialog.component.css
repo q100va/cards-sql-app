@@ -1,0 +1,15 @@
+/*
+  The .full-width class makes the element take up the full container width.
+*/
+.full-width {
+  width: 100%;
+}
+/*
+  Styles for the .mdc-text-field when it is inside a .mat-mdc-form-field container:
+    - Applies only to text fields with the "filled" style,
+    - Excludes fields that are disabled.
+  Sets a light background color.
+*/
+.mat-mdc-form-field .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: #f9faf4;
+}
