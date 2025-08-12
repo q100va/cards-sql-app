@@ -24,7 +24,7 @@ import { ConfirmationService } from 'primeng/api';
 // Application imports
 import { CreateRoleDialogComponent } from './create-role-dialog/create-role-dialog.component';
 import { RoleService } from '../../services/role.service';
-import { Operation, Role } from '../../interfaces/role';
+import { Operation, Role } from '@shared/schemas/role.schema';
 import { trackById } from '../../utils/track-by-id.util';
 import { sanitizeText } from '../../utils/sanitize-text';
 import { MessageWrapperService } from '../../services/message.service';
@@ -82,13 +82,15 @@ export class RolesListComponent implements OnInit {
       minWidth: '400px',
       height: 'auto',
     });
-    dialogRef.afterClosed()
-    .pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roleName) => {
-      if (roleName) {
-        this.loadRoles();
-        this.msgWrapper.success(`Роль '${roleName}' создана.`);
-      }
-    });
+    dialogRef
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((roleName) => {
+        if (roleName) {
+          this.loadRoles();
+          this.msgWrapper.success(`Роль '${roleName}' создана.`);
+        }
+      });
   }
 
   /**
@@ -116,9 +118,9 @@ export class RolesListComponent implements OnInit {
     }
     // Helper function that performs the role update.
     const updateRole = () =>
-      this.roleService.updateRole(role).pipe(
-        takeUntilDestroyed(this.destroyRef)
-      );
+      this.roleService
+        .updateRole(role)
+        .pipe(takeUntilDestroyed(this.destroyRef));
     // If the role's name has been changed, check if the new name is already taken.
     if (nameChanged) {
       this.roleService
@@ -147,7 +149,10 @@ export class RolesListComponent implements OnInit {
             this.roles[index] = { ...updatedRole };
             this.originalRoles[index] = { ...updatedRole };
           },
-          error: (err) => this.msgWrapper.handle(err),
+          error: (err) => {
+            this.roles[index] = { ...originalRole };
+            this.msgWrapper.handle(err);
+          },
         });
     } else if (descriptionChanged) {
       // If only the description has changed, update without checking the name.
@@ -159,7 +164,10 @@ export class RolesListComponent implements OnInit {
           this.roles[index] = { ...updatedRole };
           this.originalRoles[index] = { ...updatedRole };
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) => {
+          this.roles[index] = { ...originalRole };
+          this.msgWrapper.handle(err);
+        },
       });
     }
   }
@@ -253,15 +261,16 @@ export class RolesListComponent implements OnInit {
    * @param safeRoleName - The sanitized role name.
    */
   private deleteRole(id: number, roleName: string): void {
-    this.roleService.deleteRole(id)
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe({
-      next: () => {
-        this.msgWrapper.success(`Роль '${roleName}'удалена.`);
-        this.loadRoles();
-      },
-      error: (err) => this.msgWrapper.handle(err),
-    });
+    this.roleService
+      .deleteRole(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.msgWrapper.success(`Роль '${roleName}'удалена.`);
+          this.loadRoles();
+        },
+        error: (err) => this.msgWrapper.handle(err),
+      });
   }
 
   /**

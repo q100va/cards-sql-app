@@ -209,6 +209,7 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка с ограниченным доступом список ролей',
     object: 'roles',
     objectName: 'роли',
+    fullAccess: false,
     flag: 'FULL',
   },
   //nursing homes - интернаты

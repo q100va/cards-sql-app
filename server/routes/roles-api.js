@@ -5,7 +5,8 @@ import User from "../models/user.js";
 import Operation from "../models/operation.js";
 import { OPERATIONS } from "../shared/operations.js";
 import CustomError from "../shared/customError.js";
-import sanitizeBody from "../middlewares/sanitize-body.js";
+import { validateRequest } from "../middlewares/validate-request.js";
+import * as roleSchemas from "../../shared/dist/role.schema.js";
 // TODO: Middleware for authentication and admin authorization.
 //import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
 const Op = Sequelize.Op;
@@ -24,20 +25,18 @@ const handleError = (error, res, genericMessage) => {
 };
 
 /**
- * POST /check-role-name
+ * GET /check-role-name
  * Checks if a role with the provided name already exists in the database.
  */
-router.post(
-  "/check-role-name",
-  sanitizeBody({
-    roleName: { type: 'string', maxLength: 50, allowEmpty: false, allowNull: false, required: true },
-  }),
+router.get(
+  "/check-role-name/:name",
+  validateRequest(roleSchemas.roleNameSchema, 'params'),
   //authenticateUser,
   //authorizeAdmin,
   async (req, res) => {
     try {
       // Convert role name to lower case to ensure case-insensitive matching.
-      const roleName = req.body.roleName.toLowerCase();
+      const roleName = req.params.name.toLowerCase();
       // Query the database for any existing role with the same name (case-insensitive).
       const duplicate = await Role.findOne({
         where: { name: { [Op.iLike]: roleName } },
@@ -56,14 +55,9 @@ router.post(
  * Access: Admin only.
  */
 
-const newRoleSchema = {
-  name: { type: 'string', maxLength: 50, allowEmpty: false, allowNull: false, required: true },
-  description: { type: 'string', maxLength: 500, allowEmpty: false, allowNull: false, required: true }
-};
-
 router.post(
   "/create-role",
-  sanitizeBody(newRoleSchema),
+  validateRequest(roleSchemas.roleDraftSchema),
   //authenticateUser,
   //authorizeAdmin,
   async (req, res) => {
@@ -87,7 +81,7 @@ router.post(
       await Promise.all(opPromises);
       res
         .status(200)
-        .send({ msg: "Роль успешно создана.", data: role.name});
+        .send({ msg: "Роль успешно создана.", data: role.name });
     } catch (error) {
       handleError(error, res, "Произошла ошибка. Роль не создана.");
     }
@@ -99,16 +93,9 @@ router.post(
  * Updates the details (name and description) of an existing role.
  * Access: Admin only.
  */
-
-const updatingRoleSchema = {
-  id: { type: 'number', allowEmpty: false, allowNull: false, required: true },
-  name: { type: 'string', maxLength: 50, allowEmpty: false, allowNull: false, required: true },
-  description: { type: 'string', maxLength: 500, allowEmpty: false, allowNull: false, required: true }
-};
-
 router.patch(
   "/update-role",
-  sanitizeBody(updatingRoleSchema),
+  validateRequest(roleSchemas.roleSchema),
   //authenticateUser,
   //authorizeAdmin,
   async (req, res) => {
@@ -141,24 +128,9 @@ router.patch(
  * or related operations based on the provided flag.
  * Access: Admin only.
  */
-
-const roleAccessSchema = {
-  access: { type: 'boolean', allowEmpty: false, allowNull: false, required: true },
-  roleId: { type: 'number', allowEmpty: false, allowNull: false, required: true },
-  operation: {
-    type: 'object', allowEmpty: false, allowNull: false, required: true,
-    schema: {
-      fullAccess: { type: 'boolean', allowEmpty: false, allowNull: false, required: true },
-      object: { type: 'string', allowEmpty: false, allowNull: false, required: true },
-      operation: { type: 'string', allowEmpty: false, allowNull: false, required: true },
-      flag: { type: 'string', enumValues: ['LIMITED', 'FULL'], allowEmpty: false, allowNull: true }
-    }
-  }
-};
-
 router.patch(
   "/update-role-access",
-  sanitizeBody(roleAccessSchema),
+  validateRequest(roleSchemas.roleChangeAccessSchema),
   //authenticateUser,
   //authorizeAdmin,
   async (req, res) => {
@@ -359,18 +331,12 @@ router.get(
  */
 router.get(
   "/check-role-before-delete/:id",
+  validateRequest(roleSchemas.roleIdSchema, 'params'),
   //authenticateUser,
   //authorizeAdmin,
   async (req, res) => {
     try {
       const roleId = req.params.id;
-      if (!roleId) {
-        throw new CustomError("Отсутствует id роли.", 400);
-      }
-      const idNum = Number(roleId);
-      if (isNaN(idNum) || idNum <= 0) {
-        throw new CustomError("Некорректное значение id.", 400);
-      }
       // Find any users currently assigned this role.
       let connectedUsers = await User.findAll({
         where: { roleId },
@@ -380,7 +346,7 @@ router.get(
       const connectedUsersList = connectedUsers.map(item => item.userName).join(', ');
       res
         .status(200)
-        .send({ msg: "Role deletion possibility checked.", data: connectedUsersList.length > 0 ? connectedUsersList : null });
+        .send({ msg: "Role deletion possibility checked.", data: connectedUsersList });
     } catch (error) {
       handleError(error, res, "Произошла ошибка при проверке возможности удаления роли.");
     }
@@ -394,24 +360,17 @@ router.get(
  */
 router.delete(
   "/delete-role/:id",
+  validateRequest(roleSchemas.roleIdSchema, 'params'),
   //authenticateUser,
   //authorizeAdmin,
   async (req, res) => {
     try {
       const roleId = req.params.id;
-      //const roleId = null;
-      if (!roleId) {
-        throw new CustomError("Отсутствует id роли.", 400);
-      }
-      const idNum = Number(roleId);
-      if (isNaN(idNum) || idNum <= 0) {
-        throw new CustomError("Некорректное значение id.", 400);
-      }
       const destroyedRole = await Role.destroy({ where: { id: roleId } });
       if (destroyedRole === 0) {
         throw new CustomError("Роль не найдена.", 404);
       }
-      res.status(200).send({ msg: "Role deleted.", deleted: true });
+      res.status(200).send({ msg: "Role deleted.", data: true });
     } catch (error) {
       handleError(error, res, "Произошла ошибка при удалении роли.");
     }

@@ -28,12 +28,13 @@ import { MatIconModule } from '@angular/material/icon';
 // Custom services and utilities
 import { RoleService } from '../../../services/role.service';
 import { ConfirmationService } from 'primeng/api';
-import { noOnlySpacesValidator } from '../../../utils/custom.validator';
 import { MessageWrapperService } from '../../../services/message.service';
 // RxJS imports for reactive programming
 import { EMPTY } from 'rxjs';
 import { switchMap, finalize } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { roleDraftSchema } from '@shared/schemas/role.schema';
+import { zodValidator } from 'src/app/utils/zod-validator';
 
 @Component({
   selector: 'app-create-role-dialog',
@@ -72,14 +73,12 @@ export class CreateRoleDialogComponent {
   // Form control for the role name with required validators
   roleName = new FormControl<string | null>(null, [
     Validators.required,
-    Validators.maxLength(50),
-    noOnlySpacesValidator,
+    zodValidator(roleDraftSchema.shape.name),
   ]);
   // Form control for the role description with required validators
   roleDescription = new FormControl<string | null>(null, [
     Validators.required,
-    Validators.maxLength(500),
-    noOnlySpacesValidator,
+    zodValidator(roleDraftSchema.shape.description),
   ]);
 
   // Method invoked when the user submits the role creation form

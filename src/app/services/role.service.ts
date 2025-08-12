@@ -3,7 +3,19 @@ import { Observable, throwError } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Operation, Role, RoleAccess } from '../interfaces/role';
+import {
+  Operation,
+  Role,
+  RoleAccess,
+  roleSchema,
+  roleAccessesSchema,
+  rolesListSchema,
+  rolesNamesListSchema,
+} from '@shared/schemas/role.schema';
+import {
+  validateNoSchemaResponse,
+  validateResponse,
+} from '../utils/validate-response';
 // Define response interfaces according to your API contract.
 interface ApiResponse<T> {
   data: T;
@@ -23,32 +35,46 @@ export class RoleService {
     //return throwError(() => new Error('Something went wrong; please try again later.'));
     return throwError(() => error);
   }
+
   /**
    * Check if the given role name exists.
    * @param roleName - The name of the role to check.
    * @returns Observable containing the response.
    */
-  checkRoleName(roleName: string): Observable<ApiResponse<boolean>> {
+  checkRoleName(name: string): Observable<ApiResponse<boolean>> {
     return this.http
-      .post<ApiResponse<boolean>>(`${this.BASE_URL}/check-role-name`, {
-        roleName,
-      })
-      .pipe(catchError(this.handleError));
+      .get<ApiResponse<boolean>>(
+        `${this.BASE_URL}/check-role-name/${encodeURIComponent(
+          name.toString()
+        )}`
+      )
+      .pipe(
+        validateNoSchemaResponse<boolean>('isBoolean'),
+        catchError(this.handleError)
+      );
   }
+
   /**
    * Create a new role with the provided name and description.
    * @param name - Name of the new role.
    * @param description - Description for the new role.
    * @returns Observable containing the response.
    */
-  createRole(name: string, description: string): Observable<ApiResponse<string>> {
+  createRole(
+    name: string,
+    description: string
+  ): Observable<ApiResponse<string>> {
     return this.http
       .post<ApiResponse<string>>(`${this.BASE_URL}/create-role`, {
         name,
         description,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        validateNoSchemaResponse<string>('isString'),
+        catchError(this.handleError)
+      );
   }
+
   /**
    * Update an existing role.
    * @param role - The role object with updated details.
@@ -57,8 +83,9 @@ export class RoleService {
   updateRole(role: Role): Observable<ApiResponse<Role>> {
     return this.http
       .patch<ApiResponse<Role>>(`${this.BASE_URL}/update-role`, role)
-      .pipe(catchError(this.handleError));
+      .pipe(validateResponse(roleSchema), catchError(this.handleError));
   }
+
   /**
    * Update role access by changing a specific permission (access) for an operation.
    * @param value - New access value (true/false).
@@ -80,8 +107,9 @@ export class RoleService {
           operation,
         }
       )
-      .pipe(catchError(this.handleError));
+      .pipe(validateResponse(roleAccessesSchema), catchError(this.handleError));
   }
+
   /**
    * Retrieve a list of all roles.
    * @returns Observable containing the list of roles.
@@ -93,8 +121,9 @@ export class RoleService {
       .get<ApiResponse<{ roles: Role[]; operations: Operation[] }>>(
         `${this.BASE_URL}/get-roles`
       )
-      .pipe(catchError(this.handleError));
+      .pipe(validateResponse(rolesListSchema), catchError(this.handleError));
   }
+
   /**
    * Retrieve a list of role names.
    * @returns Observable containing the list of role names.
@@ -116,24 +145,30 @@ export class RoleService {
           }[]
         >
       >(`${this.BASE_URL}/get-roles-names-list`)
-      .pipe(catchError(this.handleError));
+      .pipe(
+        validateResponse(rolesNamesListSchema),
+        catchError(this.handleError)
+      );
   }
+
   /**
    * Check if a role can be deleted.
    * @param id - The identifier of the role to be checked.
    * @returns Observable containing the response.
    */
-  checkPossibilityToDeleteRole(
-    id: number
-  ): Observable<ApiResponse<string | null>> {
+  checkPossibilityToDeleteRole(id: number): Observable<ApiResponse<string>> {
     return this.http
-      .get<ApiResponse<string | null>>(
+      .get<ApiResponse<string>>(
         `${this.BASE_URL}/check-role-before-delete/${encodeURIComponent(
           id.toString()
         )}`
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        validateNoSchemaResponse<string>('isString'),
+        catchError(this.handleError)
+      );
   }
+
   /**
    * Delete a role by its id.
    * @param id - The identifier of the role to delete.
@@ -144,6 +179,9 @@ export class RoleService {
       .delete<ApiResponse<boolean>>(
         `${this.BASE_URL}/delete-role/${encodeURIComponent(id.toString())}`
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        validateNoSchemaResponse<boolean>('isBoolean'),
+        catchError(this.handleError)
+      );
   }
 }

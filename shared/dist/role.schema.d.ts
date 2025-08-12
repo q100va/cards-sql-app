@@ -1,0 +1,15 @@
+import { z } from 'zod';
+export declare const roleSchema: any;
+export declare const roleNameSchema: any;
+export declare const roleIdSchema: any;
+export declare const roleShortSchema: any;
+export declare const roleDraftSchema: any;
+export declare const roleAccessSchema: any;
+export declare const roleChangeAccessSchema: any;
+export declare const operationSchema: any;
+export declare const roleAccessesSchema: any;
+export declare const rolesListSchema: any;
+export declare const rolesNamesListSchema: any;
+export type Role = z.infer<typeof roleSchema>;
+export type RoleAccess = z.infer<typeof roleAccessSchema>;
+export type Operation = z.infer<typeof operationSchema>;

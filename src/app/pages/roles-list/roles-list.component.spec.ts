@@ -202,7 +202,7 @@ describe('RolesListComponent', () => {
 
     it('should update role when role name is available', fakeAsync(() => {
       // Simulate extra spaces to test trimming functionality
-       component.roles[0].name = 'NewRoleName ';
+      component.roles[0].name = 'NewRoleName ';
       // Simulate role name check response indicating the role name is available
       roleServiceSpy.checkRoleName.and.returnValue(
         of({ msg: 'success', data: false })
@@ -262,6 +262,20 @@ describe('RolesListComponent', () => {
       // Assert:
       expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
     });
+    it('should handle error if checkRoleName fails', fakeAsync(() => {
+      // Arrange: change description to trigger update.
+      component.roles[0].name = 'Changed Name';
+      const error = new Error('CheckRoleName failed');
+      roleServiceSpy.checkRoleName.and.returnValue(throwError(() => error));
+      // Act:
+      component.onInputChange(0);
+      tick();
+      // Assert:
+      expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith('Changed Name');
+      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
+      expect(component.roles[0].name).toEqual('Admin');
+      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
+    }));
     it('should handle error if updateRole fails', fakeAsync(() => {
       // Arrange: change description to trigger update.
       component.roles[0].description = 'Changed Desc';
@@ -272,6 +286,7 @@ describe('RolesListComponent', () => {
       tick();
       // Assert:
       expect(roleServiceSpy.updateRole).toHaveBeenCalled();
+      expect(component.roles[0].description).toEqual('Administrator');
       expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
     }));
   });
@@ -280,7 +295,6 @@ describe('RolesListComponent', () => {
   describe('onAccessChangeCheck', () => {
     const fakeOperations = [
       {
-        id: 101,
         description: 'creating senior data',
         fullAccess: false,
         object: 'senior',
@@ -303,7 +317,6 @@ describe('RolesListComponent', () => {
         ],
       },
       {
-        id: 102,
         description: 'view senior data',
         fullAccess: false,
         object: 'senior',
@@ -328,7 +341,6 @@ describe('RolesListComponent', () => {
     ];
 
     const dummy = {
-      id: 101,
       description: 'creating senior data',
       fullAccess: false,
       object: 'senior',
@@ -380,7 +392,6 @@ describe('RolesListComponent', () => {
       // Verify that the operation with id 1 is updated and the operation with id 2 remains unchanged
       expect(component.operations).toEqual([
         {
-          id: 101,
           description: 'creating senior data',
           fullAccess: false,
           object: 'senior',
@@ -403,7 +414,6 @@ describe('RolesListComponent', () => {
           ],
         },
         {
-          id: 102,
           description: 'view senior data',
           fullAccess: false,
           object: 'senior',
@@ -528,7 +538,7 @@ describe('RolesListComponent', () => {
     it('should delete the role if check returns a falsy data', fakeAsync(() => {
       // Arrange: simulate check returns falsy (null) meaning the role is deletable.
       roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-        of({ msg: 'success', data: null })
+        of({ msg: 'success', data: '' })
       );
       spyOn(component as any, 'deleteRole').and.callFake(() => {});
       // Act:
@@ -609,7 +619,6 @@ describe('RolesListComponent', () => {
             roles: [{ id: 1, name: 'NewAdmin', description: 'Administrator' }],
             operations: [
               {
-                id: 101,
                 description: 'creation senior data',
                 fullAccess: false,
                 object: 'senior',
@@ -643,7 +652,6 @@ describe('RolesListComponent', () => {
       ]);
       expect(component.operations).toEqual([
         {
-          id: 101,
           description: 'creation senior data',
           fullAccess: false,
           object: 'senior',
