@@ -28,6 +28,8 @@ import { Operation, Role } from '@shared/schemas/role.schema';
 import { trackById } from '../../utils/track-by-id.util';
 import { sanitizeText } from '../../utils/sanitize-text';
 import { MessageWrapperService } from '../../services/message.service';
+// Imports for zod validation by schema
+import { roleDraftSchema } from '@shared/schemas/role.schema';
 
 @Component({
   selector: 'app-roles-list',
@@ -55,6 +57,7 @@ export class RolesListComponent implements OnInit {
   trackById = trackById;
   sanitizeText = sanitizeText;
   scrollHeight = '800px';
+  roleDraftSchema = roleDraftSchema;
 
   // Private properties
   private readonly destroyRef = inject(DestroyRef);
@@ -103,8 +106,11 @@ export class RolesListComponent implements OnInit {
     this.roles[index].description = this.roles[index].description.trim();
     // Get the updated role from the roles array.
     const role = this.roles[index];
-    // Exit if the role's name or description is empty.
-    if (!role.name || !role.description) {
+    // Exit if the role's name or description is not valid.
+    if (
+      !roleDraftSchema.shape.name.safeParse(role.name).success ||
+      !roleDraftSchema.shape.description.safeParse(role.description).success
+    ) {
       return;
     }
     // Retrieve the original copy of the role for change comparison.
