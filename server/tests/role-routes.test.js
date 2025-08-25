@@ -158,6 +158,7 @@ describe("Role Routes", () => {
     });
   });
 
+  // PATCH /update-role
   describe("PATCH /update-role", () => {
     it("updates an existing role's name/description", async () => {
       // Given
@@ -476,6 +477,7 @@ describe("Role Routes", () => {
     });
   });
 
+// GET /get-roles-names-list
   describe("GET /get-roles-names-list", () => {
     it("should return names and ids of roles", async () => {
       const roles = [
@@ -501,6 +503,7 @@ describe("Role Routes", () => {
     });
   });
 
+  // GET /get-roles
   describe("GET /get-roles", () => {
     it("should return detailed roles and operations", async () => {
       const roles = [
@@ -532,6 +535,7 @@ describe("Role Routes", () => {
     });
   });
 
+  // GET /check-role-before-delete/:id
   describe("GET /check-role-before-delete/:id", () => {
     it("should return a comma separated list of users associated with that role", async () => {
       const users = [{ userName: "alice" }, { userName: "bob" }];
@@ -554,6 +558,7 @@ describe("Role Routes", () => {
     });
   });
 
+  // DELETE /delete-role/:id
   describe("DELETE /delete-role/:id", () => {
     it("should delete the role and return success", async () => {
       jest.spyOn(Role, "destroy").mockResolvedValue(1);
