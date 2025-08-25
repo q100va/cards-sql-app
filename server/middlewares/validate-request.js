@@ -1,34 +1,34 @@
 import { z } from 'zod';
 
 /**
- * Middleware for validating parts of the request (e.g., body, query) against a Zod schema.
+ * Validates a specific request part (e.g. body, params, query) against a Zod schema.
  *
- * @param {z.Schema} schema - The Zod schema to validate against.
- * @param {string} [part='body'] - The part of the request to validate (default is 'body').
- * @returns {Function} Express middleware function.
+ * @param {z.Schema} schema - Zod schema to validate against.
+ * @param {'body'|'params'|'query'|'headers'|'cookies'} [part='body'] - Request part to validate.
+ * @returns {import('express').RequestHandler}
  */
 export function validateRequest(schema, part = 'body') {
-
-
   return (req, res, next) => {
     try {
-      console.log(part, req[part]);
-      // Validate the specified part of the request using the provided schema.
-      const parseResult = schema.safeParse(req[part]);
-      // If the validation fails, throw an error with a detailed message.
-      if (!parseResult.success) {
-        // Convert the error details to a tree-like structure for easier reading.
-        const errorMessage = JSON.stringify(z.treeifyError(parseResult.error), null, 2);
-        throw new Error(errorMessage);
+      // Validate the selected request part against the provided schema.
+      const parsed = schema.safeParse(req[part]);
+
+      // On validation failure, return a 400 without leaking details.
+      if (!parsed.success) {
+        const errorMessage = JSON.stringify(z.treeifyError(parsed.error), null, 2);
+        // Optional server-side logging for diagnostics.
+        console.error('Zod validation failed:', errorMessage);
+        return res.status(400).send('Неверный формат данных запроса.');
       }
-      // Replace the original request data with the parsed (validated & sanitized) data.
-      req[part] = parseResult.data;
-      // Proceed to the next middleware function.
+
+      // Overwrite request part with parsed (validated & coerced) data.
+      req[part] = parsed.data;
+
+      // Continue the pipeline.
       next();
     } catch (err) {
-      // Log detailed error information on the server.
-      console.error('Sanitization error:', err);
-      // Respond with a 400 status and a generic error message to avoid exposing internal details.
+      // Catch unexpected runtime errors during validation.
+      console.error('Validation middleware error:', err);
       res.status(400).send('Неверный формат данных запроса.');
     }
   };
