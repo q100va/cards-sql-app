@@ -12,13 +12,13 @@ export const objects = [
 export const OPERATIONS = [
   //countries, regions, districts, localities - страны, регионы, районы/округа, населенные пункты - топонимы
   {
-    operation: 'FULL_ACCESS_TOPONYMS',
+    operation: 'ALL_OPS_TOPONYMS',
     operationName: 'полный доступ ко всем операциям',
     description:
       'полный доступ ко всем операциям с данными стран, регионов, районов/округов, населенных пунктов',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: true,
+    accessToAllOps: true,
   },
   {
     operation: 'ADD_NEW_TOPONYM',
@@ -27,7 +27,7 @@ export const OPERATIONS = [
       'добавить новую страну, регион, район/округ, населенный пункт',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'EDIT_TOPONYM',
@@ -36,7 +36,7 @@ export const OPERATIONS = [
       'редактировать данные страны, региона, района/округа, населенного пункта',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'DELETE_TOPONYM',
@@ -45,7 +45,7 @@ export const OPERATIONS = [
       'удалить без возможности восстановления данные страны, региона, района/округа, населенного пункта',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'BLOCK_TOPONYM',
@@ -54,7 +54,7 @@ export const OPERATIONS = [
       'заблокировать доступ к данным страны, региона, района/округа, населенного пункта',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'UNBLOCK_TOPONYM',
@@ -63,7 +63,7 @@ export const OPERATIONS = [
       'разблокировать доступ к данным страны, региона, района/округа, населенного пункта',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_LIMITED_TOPONYMS_LIST',
@@ -72,7 +72,7 @@ export const OPERATIONS = [
       'просмотреть с ограниченным доступом к данным списков стран, регионов, районов/округов, населенных пунктов',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'LIMITED',
   },
   {
@@ -82,17 +82,17 @@ export const OPERATIONS = [
       'просмотреть с полным доступом к данным списков стран, регионов, районов/округов, населенных пунктов',
     object: 'toponyms',
     objectName: 'страны\nрегионы\nрайоны/округа\nнаселенные пункты',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'FULL',
   },
   //users - пользователи
   {
-    operation: 'FULL_ACCESS_USERS',
+    operation: 'ALL_OPS_USERS',
     operationName: 'полный доступ ко всем операциям',
     description: 'полный доступ ко всем операциям с данными пользователей',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: true,
+    accessToAllOps: true,
   },
   {
     operation: 'ADD_NEW_USER',
@@ -100,7 +100,7 @@ export const OPERATIONS = [
     description: 'добавить нового пользователя',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_USER',
@@ -108,7 +108,7 @@ export const OPERATIONS = [
     description: 'просмотреть карточку (данные) пользователя',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'EDIT_USER',
@@ -116,7 +116,7 @@ export const OPERATIONS = [
     description: 'редактировать карточку (данные) пользователя',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'DELETE_USER',
@@ -125,7 +125,7 @@ export const OPERATIONS = [
       'удалить без возможности восстановления карточку (данные) пользователя',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'BLOCK_USER',
@@ -133,7 +133,7 @@ export const OPERATIONS = [
     description: 'заблокировать пользователя',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'UNBLOCK_USER',
@@ -141,7 +141,7 @@ export const OPERATIONS = [
     description: 'разблокировать пользователя',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_LIMITED_USERS_LIST',
@@ -149,7 +149,7 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка пользователей',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'LIMITED',
   },
   {
@@ -158,17 +158,17 @@ export const OPERATIONS = [
     description: 'просмотреть с полным доступом к данным списка пользователей',
     object: 'users',
     objectName: 'пользователи',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'FULL',
   },
   //roles - роли
   {
-    operation: 'FULL_ACCESS_ROLES',
+    operation: 'ALL_OPS_ROLES',
     operationName: 'полный доступ ко всем операциям',
     description: 'полный доступ ко всем операциям с ролями',
     object: 'roles',
     objectName: 'роли',
-    fullAccess: true,
+    accessToAllOps: true,
   },
   {
     operation: 'ADD_NEW_ROLE',
@@ -176,7 +176,7 @@ export const OPERATIONS = [
     description: 'создать новую роль',
     object: 'roles',
     objectName: 'роли',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'EDIT_ROLE',
@@ -184,7 +184,7 @@ export const OPERATIONS = [
     description: 'редактировать роль (изменить права доступа)',
     object: 'roles',
     objectName: 'роли',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'DELETE_ROLE',
@@ -192,7 +192,7 @@ export const OPERATIONS = [
     description: 'удалить без возможности восстановления роль',
     object: 'roles',
     objectName: 'роли',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_LIMITED_ROLES_LIST',
@@ -200,7 +200,7 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка ролей',
     object: 'roles',
     objectName: 'роли',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'LIMITED',
   },
   {
@@ -209,17 +209,17 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка с ограниченным доступом список ролей',
     object: 'roles',
     objectName: 'роли',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'FULL',
   },
   //nursing homes - интернаты
   {
-    operation: 'FULL_ACCESS_HOMES',
+    operation: 'ALL_OPS_HOMES',
     operationName: 'полный доступ ко всем операциям',
     description: 'полный доступ ко всем операциям с интернатами',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: true,
+    accessToAllOps: true,
   },
   {
     operation: 'ADD_NEW_HOME',
@@ -227,7 +227,7 @@ export const OPERATIONS = [
     description: 'добавить новый интернат',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_HOME',
@@ -235,7 +235,7 @@ export const OPERATIONS = [
     description: 'просмотреть карточку (данные) интерната',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'EDIT_HOME',
@@ -243,7 +243,7 @@ export const OPERATIONS = [
     description: 'редактировать карточку (данные) интерната',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'DELETE_HOME',
@@ -252,7 +252,7 @@ export const OPERATIONS = [
       'удалить без возможности восстановления карточку (данные) интерната',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'BLOCK_HOME',
@@ -260,7 +260,7 @@ export const OPERATIONS = [
     description: 'исключить интернат из списка участвующих в поздравлении',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'UNBLOCK_HOME',
@@ -268,7 +268,7 @@ export const OPERATIONS = [
     description: 'вернуть интернат в список участвующих в поздравлении',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_LIMITED_HOMES_LIST',
@@ -276,7 +276,7 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка интернатов',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'LIMITED',
   },
   {
@@ -285,17 +285,17 @@ export const OPERATIONS = [
     description: 'просмотреть с полным доступом к данным списка интернатов',
     object: 'homes',
     objectName: 'интернаты',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'FULL',
   },
   //partners - представители интернатов (сотрудники и координаторы) - контрагенты
   {
-    operation: 'FULL_ACCESS_PARTNERS',
+    operation: 'ALL_OPS_PARTNERS',
     operationName: 'полный доступ ко всем операциям',
     description: 'полный доступ ко всем операциям с данными контрагентов',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: true,
+    accessToAllOps: true,
   },
   {
     operation: 'ADD_NEW_PARTNER',
@@ -303,7 +303,7 @@ export const OPERATIONS = [
     description: 'добавить нового контрагента',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_PARTNER',
@@ -311,7 +311,7 @@ export const OPERATIONS = [
     description: 'просмотреть карточку (данные) контрагента',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'EDIT_PARTNER',
@@ -319,7 +319,7 @@ export const OPERATIONS = [
     description: 'редактировать карточку (данные) контрагента',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'DELETE_PARTNER',
@@ -328,7 +328,7 @@ export const OPERATIONS = [
       'удалить без возможности восстановления карточку (данные) контрагента',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'BLOCK_PARTNER',
@@ -337,7 +337,7 @@ export const OPERATIONS = [
       'заблокировать контрагента (в случае увольнения, прекращения деятельности и т.д.)',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'UNBLOCK_PARTNER',
@@ -345,7 +345,7 @@ export const OPERATIONS = [
     description: 'разблокировать контрагента',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_LIMITED_PARTNERS_LIST',
@@ -353,7 +353,7 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка контрагентов',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'LIMITED',
   },
   {
@@ -362,18 +362,18 @@ export const OPERATIONS = [
     description: 'просмотреть с полным доступом к данным списка контрагентов',
     object: 'partners',
     objectName: 'представители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'FULL',
   },
   //seniors - жители интернатов
   {
-    operation: 'FULL_ACCESS_SENIORS',
+    operation: 'ALL_OPS_SENIORS',
     operationName: 'полный доступ ко всем операциям',
     description:
       'полный доступ ко всем операциям с данными жителей интернатов',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: true,
+    accessToAllOps: true,
   },
   {
     operation: 'ADD_NEW_SENIOR',
@@ -381,7 +381,7 @@ export const OPERATIONS = [
     description: 'добавить нового жителя интерната',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_SENIOR',
@@ -389,7 +389,7 @@ export const OPERATIONS = [
     description: 'просмотреть карточку (данные) жителя интерната',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
 
   },
   {
@@ -398,7 +398,7 @@ export const OPERATIONS = [
     description: 'редактировать карточку (данные) жителя интерната',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'DELETE_SENIOR',
@@ -407,7 +407,7 @@ export const OPERATIONS = [
       'удалить без возможности восстановления карточку (данные) жителя интерната',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'BLOCK_SENIOR',
@@ -416,7 +416,7 @@ export const OPERATIONS = [
       'заблокировать жителя интерната (исключить из списков поздравляемых в связи с временным отсутствием, отказом от получения открыток или по иным причинам)',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'UNBLOCK_SENIOR',
@@ -424,7 +424,7 @@ export const OPERATIONS = [
     description: 'разблокировать жителя интерната',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'UPDATE_LIST_OF_SENIORS',
@@ -432,7 +432,7 @@ export const OPERATIONS = [
     description: 'обновить список жителей интерната, загрузив xlsx-файл',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
   },
   {
     operation: 'VIEW_LIMITED_SENIORS_LIST',
@@ -440,7 +440,7 @@ export const OPERATIONS = [
     description: 'просмотреть с ограниченным доступом к данным списка жителей интернатов',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'LIMITED',
   },
   {
@@ -450,7 +450,7 @@ export const OPERATIONS = [
       'просмотреть с полным доступом к данным списка жителей интернатов',
     object: 'seniors',
     objectName: 'жители\nинтернатов',
-    fullAccess: false,
+    accessToAllOps: false,
     flag: 'FULL',
   },
 ];

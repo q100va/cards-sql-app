@@ -7,6 +7,7 @@ import { OPERATIONS } from "../shared/operations.js";
 import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import * as roleSchemas from "../../shared/dist/role.schema.js";
+import { withTransaction } from "../controllers/with-transaction.js";
 // TODO: Middleware for authentication and admin authorization.
 //import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
 const Op = Sequelize.Op;
@@ -65,23 +66,27 @@ router.post(
       // Expect request data to have "name" and "description" properties.
       const { name, description } = req.body;
       // Create the role record.
-      const role = await Role.create({
-        name,
-        description,
-      });
-      // Create all associated operation records in parallel.
-      const opPromises = OPERATIONS.map((operation) =>
-        Operation.create({
+      const roleName = await withTransaction(async (t) => {
+        const role = await Role.create({
+          name,
+          description,
+        },
+          { transaction: t });
+        // Create all associated operation records in parallel.
+        const rows = OPERATIONS.map((operation) => ({
           name: operation.operation,
           roleId: role.id,
           access: false,
           disabled: operation.flag === "FULL",
-        })
-      );
-      await Promise.all(opPromises);
+
+        }));
+        await Operation.bulkCreate(rows, { transaction: t });
+        return role.name;
+      });
+
       res
         .status(200)
-        .send({ msg: "Роль успешно создана.", data: role.name });
+        .send({ msg: "Роль успешно создана.", data: roleName });
     } catch (error) {
       handleError(error, res, "Произошла ошибка. Роль не создана.");
     }
@@ -109,7 +114,7 @@ router.patch(
         },
         {
           where: { id },
-          returning: true
+          returning: ['id', 'name', 'description'],
         }
       );
       if (!updatedRole) {
@@ -136,42 +141,53 @@ router.patch(
   async (req, res) => {
     try {
       const { access, roleId, operation } = req.body;
-      const updatedOperationsMap = new Map();
-      // Update the main operation entry.
-      await changeRoleOperation(roleId, operation, access, updatedOperationsMap);
-      // Filter operations related to the same object but excluding full access.
-      const filteredList = OPERATIONS.filter(
-        (item) => item.object === operation.object && !item.fullAccess
-      );
-      // Find the corresponding full access operation for the same object.
-      const fullAccessOperation = OPERATIONS.find(
-        (item) => item.object === operation.object && item.fullAccess
-      );
-      // If the operation itself has full access enabled.
-      if (operation.fullAccess) {
-        await Promise.all(
-          filteredList.map((op) => changeRoleOperation(roleId, op, access, updatedOperationsMap))
+      let updatedOperationsMap = new Map();
+      updatedOperationsMap = await withTransaction(async (t) => {
+        // Update the main operation entry.
+        await changeRoleOperation(roleId, operation, access, updatedOperationsMap, t);
+        // Filter operations related to the same object but excluding full access.
+        const relatedOps = OPERATIONS.filter(
+          (item) => item.object === operation.object && !item.accessToAllOps
         );
-      } else {
-        // If disabling access, update the full access operation.
-        if (!access) {
-          await changeRoleOperation(roleId, fullAccessOperation, access, updatedOperationsMap);
-        } else {
-          // Check if all other related operations have access enabled.
-          const checkPromises = filteredList.map((op) =>
-            Operation.findOne({
-              attributes: ["id"],
-              where: { name: op.operation, roleId, access: false },
-              raw: true,
-            })
+        // Find the corresponding full access operation for the same object.
+        const superAccessOperation = OPERATIONS.find(
+          (item) => item.object === operation.object && item.accessToAllOps
+        );
+        // If the operation itself has full access enabled.
+        if (operation.accessToAllOps) {
+          await Promise.all(
+            relatedOps.map((op) =>
+              changeRoleOperation(roleId, op, access, updatedOperationsMap, t)
+            )
           );
-          const results = await Promise.all(checkPromises);
-          const allHaveAccess = results.every((result) => result === null);
-          if (allHaveAccess) {
-            await changeRoleOperation(roleId, fullAccessOperation, true, updatedOperationsMap);
+        } else {
+          // If disabling access, update the full access operation.
+          if (!access) {
+            if (superAccessOperation) {
+              await changeRoleOperation(roleId, superAccessOperation, access, updatedOperationsMap, t);
+            }
+          } else {
+            // Check if all other related operations have access enabled.
+            const results = await Promise.all(
+              relatedOps.map((op) =>
+                Operation.findOne({
+                  attributes: ["id"],
+                  where: { name: op.operation, roleId, access: false },
+                  raw: true,
+                  transaction: t
+                })
+              )
+            );
+
+            const allHaveAccess = results.every((result) => result === null);
+            if (allHaveAccess && superAccessOperation) {
+              await changeRoleOperation(roleId, superAccessOperation, true, updatedOperationsMap, t);
+            }
           }
         }
-      }
+
+        return updatedOperationsMap;
+      });
       const updatedOperations = Array.from(updatedOperationsMap.values());
       res.status(200).send({ msg: "Роль успешно обновлена.", data: { ops: updatedOperations, object: operation.object } });
     } catch (error) {
@@ -187,13 +203,14 @@ router.patch(
  * @param {object} operation - The operation details object.
  * @param {boolean} access - Desired access state.
  */
-async function changeRoleOperation(roleId, operation, access, updatedOperationsMap) {
+async function changeRoleOperation(roleId, operation, access, updatedOperationsMap, transaction) {
   // Update the main operation record
   const [_, [updatedOperation]] = await Operation.update(
     { access },
     {
       where: { roleId, name: operation.operation },
       returning: true,
+      transaction
     },
   );
   updatedOperationsMap.set(updatedOperation.id, {
@@ -227,6 +244,7 @@ async function changeRoleOperation(roleId, operation, access, updatedOperationsM
         name: complementaryOperation
       },
       returning: true,
+      transaction
     }
   );
   updatedOperationsMap.set(updatedOperationWithFlag.id, {
