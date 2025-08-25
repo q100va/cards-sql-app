@@ -24,8 +24,4 @@ export default {
   moduleFileExtensions: ['js', 'mjs', 'cjs', 'ts'],
   // Transformation options (currently empty)
   transform: {},
-  // Module name mapping to handle imports correctly
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1.js' // Map imports to include .js extension
-  },
 };

@@ -3,25 +3,15 @@
 // - Passes the transaction object to the callback
 // - Commits on success, rolls back on error
 // - Re-throws the original error so callers can handle it upstream
-// controllers/with-transaction.ts (или .js)
+// controllers/with-transaction.js
 import sequelize from '../database.js';
 
 export async function withTransaction(callback) {
   const t = await sequelize.transaction();
-
   try {
-    // Run user code inside the transaction
     const result = await callback(t);
-
-    try {
-      // Try to commit
-      await t.commit();
-      return result;
-    } catch (commitErr) {
-      // If commit fails, best-effort rollback
-      try { await t.rollback(); } catch { /* swallow rollback error */ }
-      throw commitErr;
-    }
+    await t.commit();
+    return result;
   } catch (err) {
     // If callback fails, rollback
     try { await t.rollback(); } catch { /* swallow rollback error */ }

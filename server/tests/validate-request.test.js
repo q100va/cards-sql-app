@@ -1,4 +1,5 @@
-import { validateRequest } from './validate-request.js';
+import { jest } from '@jest/globals';
+import { validateRequest } from '../middlewares/validate-request.js';
 import { z } from 'zod';
 
 describe('validateRequest middleware', () => {

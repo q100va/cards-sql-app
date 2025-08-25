@@ -1,116 +1,135 @@
-// Express test setup
+// Express + test harness
 import express from "express";
 import request from "supertest";
-import { jest } from '@jest/globals';
+import { jest } from "@jest/globals";
 
-// Fixed transaction object used in mocks
-const fakeTx = { id: 'test-transaction' };
+// Sequelize + operators
+import Sequelize from "sequelize";
+const { Op } = Sequelize;
 
-// Mock the transaction helper before importing the router
-jest.unstable_mockModule('../controllers/with-transaction.js', () => ({
+// Use a fixed transaction object across tests
+const fakeTx = { id: "test-transaction" };
+
+// Mock transaction wrapper before loading the router
+jest.unstable_mockModule("../controllers/with-transaction.js", () => ({
   withTransaction: async (fn) => fn(fakeTx),
 }));
 
-// Import router and models after mocks are in place
-const { default: router } = await import('../routes/roles-api.js');
-import Operation from '../models/operation.js';
+// Load router and models after mocks
+const { default: router } = await import("../routes/roles-api.js");
+import Operation from "../models/operation.js";
 import Role from "../models/role.js";
 import User from "../models/user.js";
 import { OPERATIONS } from "../shared/operations.js";
 
-// Minimal app with JSON and the API router
+// Minimal app
 const app = express();
 app.use(express.json());
 app.use("/", router);
 
 describe("Role Routes", () => {
-  // Clear spies/mocks between tests
+  // Reset spies/stubs between tests
   beforeEach(() => {
     jest.restoreAllMocks();
   });
 
-  // Close ORM connections at the end
+  // Close ORM connections (prevents open handle warnings)
   afterAll(async () => {
     await Role.sequelize.close();
     await Operation.sequelize.close();
     await User.sequelize.close();
   });
 
-  // GET /check-role-name/:name route
+  // ── GET /check-role-name/:name ────────────────────────────────────────────────
   describe("GET /check-role-name/:name", () => {
-    it("returns true if role exists", async () => {
-      // Given: role exists
-      jest.spyOn(Role, "findOne").mockResolvedValue({ name: "admin" });
+    it("queries case-insensitively and returns true when role exists", async () => {
+      const findSpy = jest.spyOn(Role, "findOne").mockResolvedValue({ name: "admin" });
 
-      // When
-      const res = await request(app).get("/check-role-name/admin");
+      const res = await request(app).get("/check-role-name/AdMiN");
 
-      // Then
+      // Assert query shape
+      expect(findSpy).toHaveBeenCalledWith({
+        where: { name: expect.objectContaining({ [Op.iLike]: "admin" }) },
+        attributes: ["name"],
+        raw: true,
+      });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Проверка завершена.");
       expect(res.body.data).toBe(true);
     });
 
-    it("returns false if role does not exist", async () => {
-      // Given: role does not exist
-      jest.spyOn(Role, "findOne").mockResolvedValue(null);
-
-      // When
+    it("returns false when role does not exist", async () => {
+      const findSpy = jest.spyOn(Role, "findOne").mockResolvedValue(null);
       const res = await request(app).get("/check-role-name/unknown");
 
-      // Then
+      // Assert query shape
+      expect(findSpy).toHaveBeenCalledWith({
+        where: { name: expect.objectContaining({ [Op.iLike]: "unknown" }) },
+        attributes: ["name"],
+        raw: true,
+      });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Проверка завершена.");
       expect(res.body.data).toBe(false);
     });
 
     it("handles internal errors", async () => {
-      // Given: DB throws
-      jest.spyOn(Role, "findOne").mockRejectedValue(new Error("Check role name failure"));
+      jest.spyOn(Role, "findOne").mockRejectedValue(new Error("DB down"));
 
-      // When
       const res = await request(app).get("/check-role-name/error");
 
-      // Then
       expect(res.statusCode).toBe(500);
       expect(res.text).toBe("Произошла ошибка при проверке названия роли.");
     });
+
+    it("returns 400 when params fail schema validation", async () => {
+      // use an obviously invalid (e.g., too short or disallowed) param to trigger zod
+      const res = await request(app).get("/check-role-name/%00");
+      expect([400, 404]).toContain(res.statusCode); // depends on router match; 400 is ideal
+    });
   });
 
-  // POST /create-role route
+
+  // ── POST /create-role ─────────────────────────────────────────────────────────
   describe("POST /create-role", () => {
-    it("creates a role and bulk-inserts all operations using a transaction", async () => {
-      // Given
-      const roleData = { name: 'manager', description: 'Manages stuff' };
-      jest.spyOn(Role, 'create').mockResolvedValue({
+    it("creates a role and seeds all operations (transaction-used)", async () => {
+      const roleData = { name: "manager", description: "Manages stuff" };
+
+      const createSpy = jest.spyOn(Role, "create").mockResolvedValue({
         id: 42,
         name: roleData.name,
         description: roleData.description,
       });
+
       const bulkMock = jest
-        .spyOn(Operation, 'bulkCreate')
-        .mockImplementation((rows) =>
+        .spyOn(Operation, "bulkCreate")
+        .mockImplementation((rows, _opts) =>
           Promise.resolve(rows.map((r, i) => ({ ...r, id: 1000 + i })))
         );
 
-      // When
-      const res = await request(app).post('/create-role').send(roleData);
+      const res = await request(app).post("/create-role").send(roleData);
 
-      // Then: response
+      // Response
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe('Роль успешно создана.');
-      expect(res.body.data).toBe('manager');
+      expect(res.body.msg).toBe("Роль успешно создана.");
+      expect(res.body.data).toBe("manager");
 
-      // Then: bulkCreate called once with the transaction
+      // Role.create called with tx
+      expect(createSpy).toHaveBeenCalledTimes(1);
+      const [createArgs, createOpts] = createSpy.mock.calls[0];
+      expect(createArgs).toEqual(roleData);
+      expect(createOpts?.transaction).toBe(fakeTx);
+
+      // bulkCreate called with tx and correct rows
       expect(bulkMock).toHaveBeenCalledTimes(1);
       const [rowsArg, optsArg] = bulkMock.mock.calls[0];
-      expect(optsArg).toBeDefined();
-      expect(optsArg.transaction).toBe(fakeTx);
+      expect(optsArg?.transaction).toBe(fakeTx);
 
-      // Then: rows are well-formed
       expect(Array.isArray(rowsArg)).toBe(true);
-      expect(rowsArg.length).toBeGreaterThan(0);
-      for (const r of rowsArg) {
+      expect(rowsArg.length).toBe(OPERATIONS.length);
+      rowsArg.forEach((r) =>
         expect(r).toEqual(
           expect.objectContaining({
             name: expect.any(String),
@@ -118,10 +137,10 @@ describe("Role Routes", () => {
             access: false,
             disabled: expect.any(Boolean),
           })
-        );
-      }
+        )
+      );
 
-      // Then: representative rules
+      // Representative flag rules
       const byName = Object.fromEntries(rowsArg.map((r) => [r.name, r]));
       if (byName.ALL_OPS_PARTNERS) {
         expect(byName.ALL_OPS_PARTNERS.disabled).toBe(false);
@@ -133,77 +152,86 @@ describe("Role Routes", () => {
         expect(byName.VIEW_LIMITED_PARTNERS_LIST.disabled).toBe(false);
       }
 
-      // Then: all operations present, names match config
-      expect(rowsArg.length).toBe(OPERATIONS.length);
-      expect(rowsArg.map(r => r.name).sort())
-        .toEqual(OPERATIONS.map(o => o.operation).sort());
-
-      // Then: all access flags are false on creation
-      const accessArgs = rowsArg.map(r => r.access);
-      expect(accessArgs.length).toBe(OPERATIONS.length);
-      expect(accessArgs.every((a) => a === false)).toBe(true);
+      // Names match config
+      expect(rowsArg.map((r) => r.name).sort()).toEqual(
+        OPERATIONS.map((o) => o.operation).sort()
+      );
+      expect(rowsArg.every((r) => r.access === false)).toBe(true);
     });
 
-    it("returns 500 if role creation fails", async () => {
-      // Given
+    it("returns 500 if creation fails", async () => {
       jest.spyOn(Role, "create").mockRejectedValue(new Error("Create role failure"));
-      const roleData = { name: "failure", description: "This will fail" };
 
-      // When
-      const res = await request(app).post("/create-role").send(roleData);
+      const res = await request(app)
+        .post("/create-role")
+        .send({ name: "failure", description: "This will fail" });
 
-      // Then
       expect(res.statusCode).toBe(500);
-      expect(res.text).toBe("Произошла ошибка. Роль не создана");
+      expect(res.text).toBe("Произошла ошибка. Роль не создана.");
+    });
+
+    it("returns 400 when body fails schema validation", async () => {
+      const res = await request(app).post("/create-role").send({});
+      expect(res.statusCode).toBe(400);
+      expect(res.text).toBe("Неверный формат данных запроса.");
     });
   });
 
-  // PATCH /update-role
+  // ── PATCH /update-role ────────────────────────────────────────────────────────
   describe("PATCH /update-role", () => {
-    it("updates an existing role's name/description", async () => {
-      // Given
-      const updatedRole = { id: 1, name: "newName", description: "newDescription" };
-      jest.spyOn(Role, "update").mockResolvedValue([1, [updatedRole]]);
+    it("updates name/description for an existing role", async () => {
+      const payload = { id: 1, name: "newName", description: "newDescription" };
+      const updateSpy = jest.spyOn(Role, "update").mockResolvedValue([1, [payload]]);
 
-      // When
-      const res = await request(app).patch("/update-role").send(updatedRole);
+      const res = await request(app).patch("/update-role").send(payload);
 
-      // Then
+      expect(updateSpy).toHaveBeenCalledWith(
+        { name: "newName", description: "newDescription" },
+        {
+          where: { id: 1 },
+          returning: ['id', 'name', 'description'],
+        }
+      );
+
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Роль успешно обновлена.");
-      expect(res.body.data.name).toBe("newName");
+      expect(res.body.data).toEqual(payload);
     });
 
-    it("returns 404 when role is not found", async () => {
-      // Given
+    it("returns 404 when role not found", async () => {
       jest.spyOn(Role, "update").mockResolvedValue([0, [null]]);
-      const roleData = { id: 999, name: "nonexistent", description: "none" };
 
-      // When
-      const res = await request(app).patch("/update-role").send(roleData);
+      const res = await request(app)
+        .patch("/update-role")
+        .send({ id: 999, name: "nonexistent", description: "none" });
 
-      // Then
       expect(res.statusCode).toBe(404);
       expect(res.text).toBe("Обновление невозможно. Роль не найдена.");
     });
 
     it("handles internal errors", async () => {
-      // Given
       jest.spyOn(Role, "update").mockRejectedValue(new Error("Update role failure"));
-      const roleData = { id: 1, name: "errorName", description: "errorDescription" };
 
-      // When
-      const res = await request(app).patch("/update-role").send(roleData);
+      const res = await request(app)
+        .patch("/update-role")
+        .send({ id: 999, name: "newName", description: "newDescription" });
 
-      // Then
       expect(res.statusCode).toBe(500);
       expect(res.text).toBe("Произошла ошибка. Роль не обновлена.");
     });
+
+    it("returns 400 when body fails schema validation", async () => {
+      // Missing id/name/description → zod should fail
+      const res = await request(app).patch("/update-role").send({});
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
-  // PATCH /update-role-access
+  // ── PATCH /update-role-access ────────────────────────────────────────────────
   describe("PATCH /update-role-access", () => {
-    it("disables VIEW_FULL, keeps VIEW_LIMITED enabled, and disables ALL_OPS when turning off full view access", async () => {
+
+    it("turning OFF VIEW_FULL → sets FULL.access=false, LIMITED.disabled=false, ALL_OPS.access=false", async () => {
       const payload = {
         access: false,
         roleId: 2,
@@ -217,38 +245,54 @@ describe("Role Routes", () => {
           operationName: "доступ к доп. данным списка",
           rolesAccesses: [
             { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 200, roleId: 2, access: true, disabled: false }
-          ]
-        }
+            { id: 200, roleId: 2, access: true, disabled: false },
+          ],
+        },
       };
 
-      jest.spyOn(Operation, "update").mockImplementation((values, options) => {
-        switch (options?.where?.name) {
-          case "VIEW_FULL_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 200, roleId: 2, access: false, disabled: true }]]);
-          case "VIEW_LIMITED_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 201, roleId: 2, access: true, disabled: false }]]);
-          case "ALL_OPS_PARTNERS":
-            return Promise.resolve([1, [{ id: 202, roleId: 2, access: false, disabled: false }]]);
-          default:
-            return Promise.resolve([0, []]);
-        }
+      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
+        // We return minimal echo; assertions only check call args
+        return Promise.resolve([1, [{ id: 999, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]]);
       });
+
+      const findOneSpy = jest.spyOn(Operation, "findOne").mockResolvedValue(null);
 
       const res = await request(app).patch("/update-role-access").send(payload);
 
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Роль успешно обновлена.");
-      expect(res.body.data.ops).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 200, roleId: 2, access: false, disabled: true }),
-          expect.objectContaining({ id: 201, roleId: 2, access: true, disabled: false }),
-          expect.objectContaining({ id: 202, roleId: 2, access: false, disabled: false })
-        ])
+
+      // 1) FULL → { access:false }
+      expect(updateSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ access: false }),
+        expect.objectContaining({
+          where: { roleId: 2, name: "VIEW_FULL_PARTNERS_LIST" },
+        })
       );
+
+      // 2) LIMITED → { disabled:false }
+      expect(updateSpy).toHaveBeenNthCalledWith(
+        2,
+        { disabled: false },
+        expect.objectContaining({
+          where: { roleId: 2, name: "VIEW_LIMITED_PARTNERS_LIST" },
+        })
+      );
+
+      // 3) ALL_OPS → { access:false }
+      expect(updateSpy).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({ access: false }),
+        expect.objectContaining({
+          where: { roleId: 2, name: "ALL_OPS_PARTNERS" },
+        })
+      );
+      expect(findOneSpy).not.toHaveBeenCalled();
     });
 
-    it("enables ALL_OPS and marks VIEW_LIMITED as disabled when VIEW_FULL is turned on and all related operations already have access", async () => {
+
+    it("turning ON VIEW_FULL (all peers ON) → enables ALL_OPS and sets LIMITED.disabled=true", async () => {
       const payload = {
         access: true,
         roleId: 2,
@@ -257,47 +301,53 @@ describe("Role Routes", () => {
           object: "partners",
           accessToAllOps: false,
           flag: "FULL",
-          description: "просмотреть с полным доступом к данным списка контрагентов",
-          objectName: "представители\nинтернатов",
-          operationName: "доступ к доп. данным списка",
+          description: "",
+          objectName: "",
+          operationName: "",
           rolesAccesses: [
             { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 200, roleId: 2, access: false, disabled: false }
-          ]
-        }
+            { id: 200, roleId: 2, access: false, disabled: false },
+          ],
+        },
       };
 
-      // Related operations already enabled
-      jest.spyOn(Operation, "findOne").mockResolvedValue(null);
+      // Peers are already enabled → findOne returns null
+      const findOneSpy = jest.spyOn(Operation, "findOne").mockResolvedValue(null);
 
-      jest.spyOn(Operation, "update").mockImplementation((values, options) => {
-        switch (options?.where?.name) {
-          case "VIEW_FULL_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 200, roleId: 2, access: true, disabled: false }]]);
-          case "VIEW_LIMITED_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 201, roleId: 2, access: true, disabled: true }]]);
-          case "ALL_OPS_PARTNERS":
-            return Promise.resolve([1, [{ id: 202, roleId: 2, access: true, disabled: false }]]);
-          default:
-            return Promise.resolve([0, []]);
-        }
+      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
+        // We return minimal echo; assertions only check call args
+        return Promise.resolve([1, [{ id: 999, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]]);
       });
 
       const res = await request(app).patch("/update-role-access").send(payload);
-
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Роль успешно обновлена.");
-      expect(res.body.data.ops).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 202, roleId: 2, access: true, disabled: false }),
-          expect.objectContaining({ id: 201, roleId: 2, access: true, disabled: true }),
-          expect.objectContaining({ id: 200, roleId: 2, access: true, disabled: false })
-        ])
+
+      // 1) FULL → { access:true }
+      expect(updateSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ access: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "VIEW_FULL_PARTNERS_LIST" } })
       );
-      expect(Operation.findOne).toHaveBeenCalled();
+
+      // 2) LIMITED → { disabled:true } (stays enabled but becomes read-only)
+      expect(updateSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ disabled: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "VIEW_LIMITED_PARTNERS_LIST" } })
+      );
+
+      // 3) ALL_OPS → { access:true }
+      expect(updateSpy).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({ access: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "ALL_OPS_PARTNERS" } })
+      );
+
+      expect(findOneSpy).toHaveBeenCalled(); // peers check happened
     });
 
-    it("keeps ALL_OPS disabled when turning on a single operation while another related operation still has access=false", async () => {
+    it("turning ON a single op while another peer OFF → ALL_OPS not updated", async () => {
       const payload = {
         access: true,
         roleId: 2,
@@ -305,48 +355,40 @@ describe("Role Routes", () => {
           operation: "ADD_NEW_PARTNER",
           object: "partners",
           accessToAllOps: false,
-          description: "добавить нового контрагента",
-          objectName: "представители\nинтернатов",
-          operationName: "создать",
+          description: "",
+          objectName: "",
+          operationName: "",
           rolesAccesses: [
             { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 193, roleId: 2, access: false, disabled: false }
-          ]
-        }
+            { id: 193, roleId: 2, access: false, disabled: false },
+          ],
+        },
       };
 
-      // Simulate a related operation with access=false
-      const findOneMock = jest.spyOn(Operation, "findOne");
-      findOneMock.mockResolvedValueOnce({ id: 999 }).mockResolvedValue(null);
+      // Simulate another related op still OFF → first call returns a row
+      const findOneSpy = jest.spyOn(Operation, "findOne");
+      findOneSpy.mockResolvedValueOnce({ id: 999 }).mockResolvedValue(null);
 
-      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
-        switch (options?.where?.name) {
-          case "ADD_NEW_PARTNER":
-            return Promise.resolve([1, [{ id: 193, roleId: 2, access: true, disabled: false }]]);
-          case "ALL_OPS_PARTNERS":
-            throw new Error("ALL_OPS_PARTNERS must NOT be updated when not all related ops are enabled");
-          default:
-            return Promise.resolve([0, []]);
-        }
-      });
+      const updateSpy = jest.spyOn(Operation, "update").mockResolvedValue([1, [{ id: 193, roleId: 2, access: true, disabled: false }]]);
 
       const res = await request(app).patch("/update-role-access").send(payload);
-
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Роль успешно обновлена.");
-      expect(res.body.data.ops).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 193, roleId: 2, access: true, disabled: false })
-        ])
+
+      // 1) Only the requested op is updated to access:true
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ access: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "ADD_NEW_PARTNER" } })
       );
-      expect(res.body.data.ops).not.toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: 202, access: true })])
-      );
-      expect(updateSpy.mock.calls.find(([, opts]) => opts?.where?.name === "ALL_OPS_PARTNERS")).toBeUndefined();
-      expect(Operation.findOne).toHaveBeenCalled();
+
+      // 2) ALL_OPS must NOT be updated
+      const allOpsCall = updateSpy.mock.calls.find(([, opts]) => opts?.where?.name === "ALL_OPS_PARTNERS");
+      expect(allOpsCall).toBeUndefined();
+
+      expect(findOneSpy).toHaveBeenCalled(); // peers check happened
     });
 
-    it("enables ALL_OPS and turns on all related operations (VIEW_FULL on, VIEW_LIMITED stays enabled but disabled=true)", async () => {
+    it("turning ON ALL_OPS → enables all related ops; LIMITED.disabled=true", async () => {
       const payload = {
         access: true,
         roleId: 2,
@@ -354,51 +396,53 @@ describe("Role Routes", () => {
           operation: "ALL_OPS_PARTNERS",
           object: "partners",
           accessToAllOps: true,
-          description: "полный доступ ко всем операциям с данными контрагентов",
-          objectName: "представители\nинтернатов",
-          operationName: "полный доступ ко всем операциям",
+          description: "",
+          objectName: "",
+          operationName: "",
           rolesAccesses: [
             { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 299, roleId: 2, access: false, disabled: false }
-          ]
-        }
+            { id: 299, roleId: 2, access: false, disabled: false },
+          ],
+        },
       };
 
-      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
-        switch (options?.where?.name) {
-          case "ADD_NEW_PARTNER":
-            return Promise.resolve([1, [{ id: 299, roleId: 2, access: true, disabled: false }]]);
-          case "ALL_OPS_PARTNERS":
-            return Promise.resolve([1, [{ id: 300, roleId: 2, access: true, disabled: false }]]);
-          case "VIEW_FULL_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 301, roleId: 2, access: true, disabled: false }]]);
-          case "VIEW_LIMITED_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 302, roleId: 2, access: true, disabled: true }]]);
-          default:
-            return Promise.resolve([1, [{ roleId: 2, access: true, disabled: false }]]);
-        }
-      });
+      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) =>
+        Promise.resolve([1, [{ id: 900, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]])
+      );
 
       const res = await request(app).patch("/update-role-access").send(payload);
-
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Роль успешно обновлена.");
-      expect(res.body.data.ops).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 299, access: true, disabled: false }),
-          expect.objectContaining({ id: 300, access: true, disabled: false }),
-          expect.objectContaining({ id: 301, access: true, disabled: false }),
-          expect.objectContaining({ id: 302, access: true, disabled: true })
-        ])
+
+      // 1) ALL_OPS → { access:true }
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ access: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "ALL_OPS_PARTNERS" } })
       );
-      expect(updateSpy.mock.calls.map(([, opts]) => opts?.where?.name)).toEqual(
-        expect.arrayContaining(["ADD_NEW_PARTNER"])
+
+      // 2) Regular op(s) → { access:true } (example: ADD_NEW_PARTNER)
+      expect(updateSpy.mock.calls.some(
+        ([vals, opts]) => opts?.where?.name === "ADD_NEW_PARTNER" && vals?.access === true
+      )).toBe(true);
+
+      // 3) VIEW_FULL → { access:true, disabled:false }
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ access: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "VIEW_FULL_PARTNERS_LIST" } })
       );
-      const accessArgs = updateSpy.mock.calls.map(([values]) => values?.access).filter(Boolean);
-      expect(accessArgs.every((a) => a === true)).toBe(true);
+
+      // 4) VIEW_LIMITED → { disabled:true } (stays enabled but read-only)
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ disabled: true }),
+        expect.objectContaining({ where: { roleId: 2, name: "VIEW_LIMITED_PARTNERS_LIST" } })
+      );
+
+      // Optional sanity: no updates setting access:false for this scenario
+      const noFalse = updateSpy.mock.calls.every(([vals]) => vals?.access !== false);
+      expect(noFalse).toBe(true);
     });
 
-    it("disables ALL_OPS and sets all related operations to access=false (VIEW_FULL marked disabled)", async () => {
+    it("turning OFF ALL_OPS → sets all related ops access=false; FULL.disabled=true (if present)", async () => {
       const payload = {
         access: false,
         roleId: 2,
@@ -406,51 +450,74 @@ describe("Role Routes", () => {
           operation: "ALL_OPS_PARTNERS",
           object: "partners",
           accessToAllOps: true,
-          description: "полный доступ ко всем операциям с данными контрагентов",
-          objectName: "представители\nинтернатов",
-          operationName: "полный доступ ко всем операциям",
+          description: "",
+          objectName: "",
+          operationName: "",
           rolesAccesses: [
             { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 299, roleId: 2, access: true, disabled: false }
-          ]
-        }
+            { id: 299, roleId: 2, access: true, disabled: false },
+          ],
+        },
       };
 
-      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
-        switch (options?.where?.name) {
-          case "ADD_NEW_PARTNER":
-            return Promise.resolve([1, [{ id: 299, roleId: 2, access: false, disabled: false }]]);
-          case "ALL_OPS_PARTNERS":
-            return Promise.resolve([1, [{ id: 300, roleId: 2, access: false, disabled: false }]]);
-          case "VIEW_FULL_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 301, roleId: 2, access: false, disabled: true }]]);
-          case "VIEW_LIMITED_PARTNERS_LIST":
-            return Promise.resolve([1, [{ id: 302, roleId: 2, access: false, disabled: false }]]);
-          default:
-            return Promise.resolve([1, [{ roleId: 2, access: false, disabled: false }]]);
-        }
-      });
+      const updateSpy = jest
+        .spyOn(Operation, "update")
+        .mockImplementation((values, options) =>
+          Promise.resolve([1, [{ id: 1, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]])
+        );
 
       const res = await request(app).patch("/update-role-access").send(payload);
-
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Роль успешно обновлена.");
-      expect(res.body.data.ops).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 299, access: false, disabled: false }),
-          expect.objectContaining({ id: 300, access: false, disabled: false }),
-          expect.objectContaining({ id: 301, access: false, disabled: true }),
-          expect.objectContaining({ id: 302, access: false, disabled: false })
-        ])
+
+      // Derive names from OPERATIONS to avoid hardcoding.
+      const object = payload.operation.object;
+      const fullOp = OPERATIONS.find(o => o.object === object && o.flag === "FULL");
+      const limitedOp = OPERATIONS.find(o => o.object === object && o.flag === "LIMITED");
+      const allOpsName = payload.operation.operation;
+
+      // 1) ALL_OPS → access:false
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ access: false }),
+        expect.objectContaining({ where: { roleId: 2, name: allOpsName } })
       );
-      expect(updateSpy.mock.calls.map(([, opts]) => opts?.where?.name)).toEqual(
-        expect.arrayContaining(["ADD_NEW_PARTNER"])
+
+      // 2) Every update for this object (except maybe LIMITED/FULL specifics) should set access:false.
+      const callsForObject = updateSpy.mock.calls.filter(
+        ([, opts]) => typeof opts?.where?.name === "string" && opts.where.roleId === 2
       );
-      const accessArgs = updateSpy.mock.calls.map(([values]) => values?.access).filter((v) => v !== undefined);
-      expect(accessArgs.every((a) => a === false)).toBe(true);
+
+      // Ensure there is no call that sets access:true
+      const anyTrue = callsForObject.some(([vals]) => vals?.access === true);
+      expect(anyTrue).toBe(false);
+
+      // 3) If FULL op exists in config — disabled:true (access:false).
+      if (fullOp) {
+        const fullDisabledCall = callsForObject.find(
+          ([vals, opts]) =>
+            opts?.where?.name === fullOp.operation && vals?.disabled === true
+        );
+        expect(fullDisabledCall).toBeTruthy();
+        if (fullDisabledCall) {
+          const [vals] = fullDisabledCall;
+          if ('access' in vals) {
+            expect(vals.access).toBe(false);
+          }
+        }
+      }
+
+      // 4) If LIMITED op exists in config  — access:false (disabled:false).
+      if (limitedOp) {
+        const limitedAccessOff = callsForObject.find(
+          ([vals, opts]) =>
+            opts?.where?.name === limitedOp.operation && vals?.access === false
+        );
+        expect(limitedAccessOff).toBeTruthy();
+      }
+
     });
 
-    it("handles errors in update-role-access", async () => {
+    it("handles internal errors", async () => {
       jest.spyOn(Operation, "update").mockRejectedValue(new Error("Update role access failure"));
 
       const payload = {
@@ -465,9 +532,9 @@ describe("Role Routes", () => {
           operationName: "полный доступ ко всем операциям",
           rolesAccesses: [
             { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 299, roleId: 2, access: true, disabled: false }
-          ]
-        }
+            { id: 299, roleId: 2, access: true, disabled: false },
+          ],
+        },
       };
 
       const res = await request(app).patch("/update-role-access").send(payload);
@@ -475,26 +542,39 @@ describe("Role Routes", () => {
       expect(res.statusCode).toBe(500);
       expect(res.text).toBe("Произошла ошибка (роль не обновлена).");
     });
+
+    it("returns 400 when body fails schema validation", async () => {
+      const res = await request(app).patch("/update-role-access").send({});
+      expect(res.statusCode).toBe(400);
+    });
   });
 
-// GET /get-roles-names-list
+  // ── GET /get-roles-names-list ────────────────────────────────────────────────
   describe("GET /get-roles-names-list", () => {
-    it("should return names and ids of roles", async () => {
+    it("selects only id/name ordered asc and returns the pairs", async () => {
       const roles = [
         { id: 1, name: "admin" },
-        { id: 2, name: "user" }
+        { id: 2, name: "user" },
       ];
-      jest.spyOn(Role, "findAll").mockResolvedValue(roles);
+      const findAllSpy = jest.spyOn(Role, "findAll").mockResolvedValue(roles);
 
       const res = await request(app).get("/get-roles-names-list");
 
+      // Assert query shape
+      expect(findAllSpy).toHaveBeenCalledWith({
+        attributes: ["id", "name"],
+        order: [["name", "ASC"]],
+        raw: true,
+      });
+
+      // Assert response shape
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Data retrieved.");
       expect(res.body.data).toEqual(roles);
     });
 
-    it("should handle errors when fetching roles names list", async () => {
-      jest.spyOn(Role, "findAll").mockRejectedValue(new Error("Fetch roles names failure"));
+    it("handles internal errors", async () => {
+      jest.spyOn(Role, "findAll").mockRejectedValue(new Error("DB down"));
 
       const res = await request(app).get("/get-roles-names-list");
 
@@ -503,30 +583,64 @@ describe("Role Routes", () => {
     });
   });
 
-  // GET /get-roles
+
+  // ── GET /get-roles ───────────────────────────────────────────────────────────
   describe("GET /get-roles", () => {
-    it("should return detailed roles and operations", async () => {
+    it("returns roles with operations; operations are merged per role by id", async () => {
       const roles = [
         { id: 1, name: "admin", description: "Administrator" },
-        { id: 2, name: "user", description: "Regular user" }
+        { id: 2, name: "user", description: "Regular user" },
       ];
+      const roleIds = roles.map(r => r.id);
+
+      const findRolesSpy = jest.spyOn(Role, "findAll").mockResolvedValue(roles);
+
+      // Pick two real operation names from config to avoid mismatches
+      const [opA, opB] = OPERATIONS.slice(0, 2); // assumes at least 2 exist
       const roleOps = [
-        { id: 101, roleId: 1, name: "OP_READ", access: true, disabled: false },
-        { id: 102, roleId: 2, name: "OP_WRITE", access: false, disabled: false }
+        { id: 101, roleId: 1, name: opA.operation, access: true, disabled: false },
+        { id: 102, roleId: 2, name: opB.operation, access: false, disabled: true },
       ];
-      jest.spyOn(Role, "findAll").mockResolvedValue(roles);
-      jest.spyOn(Operation, "findAll").mockResolvedValue(roleOps);
+      const findOpsSpy = jest.spyOn(Operation, "findAll").mockResolvedValue(roleOps);
 
       const res = await request(app).get("/get-roles");
+
+      // Assert Role.findAll query shape
+      expect(findRolesSpy).toHaveBeenCalledWith({
+        attributes: ["id", "name", "description"],
+        order: [["id", "ASC"]],
+        raw: true,
+      });
+
+      // Assert Operation.findAll query shape
+      expect(findOpsSpy).toHaveBeenCalledWith({
+        where: { roleId: roleIds },
+        attributes: ["id", "roleId", "name", "access", "disabled"],
+        raw: true,
+      });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Data retrieved.");
       expect(res.body.data.roles).toEqual(roles);
-      expect(res.body.data.operations).toBeDefined();
+
+      // Check that operations array exists and contains our op names
+      const ops = res.body.data.operations;
+      expect(Array.isArray(ops)).toBe(true);
+
+      // Find in response the opA/opB entries and ensure rolesAccesses contains our roleOps by id
+      const entryA = ops.find((o) => o.operation === opA.operation);
+      const entryB = ops.find((o) => o.operation === opB.operation);
+      expect(entryA).toBeTruthy();
+      expect(entryB).toBeTruthy();
+
+      const raA = entryA.rolesAccesses.find((ra) => ra.id === 101);
+      const raB = entryB.rolesAccesses.find((ra) => ra.id === 102);
+      expect(raA).toEqual({ id: 101, roleId: 1, access: true, disabled: false });
+      expect(raB).toEqual({ id: 102, roleId: 2, access: false, disabled: true });
     });
 
-    it("should handle errors when retrieving roles information", async () => {
-      jest.spyOn(Role, "findAll").mockRejectedValue(new Error("Fetch roles failure"));
+    it("handles internal errors", async () => {
+      jest.spyOn(Role, "findAll").mockRejectedValue(new Error("DB down"));
 
       const res = await request(app).get("/get-roles");
 
@@ -535,42 +649,60 @@ describe("Role Routes", () => {
     });
   });
 
-  // GET /check-role-before-delete/:id
+
+  // ── GET /check-role-before-delete/:id ────────────────────────────────────────
   describe("GET /check-role-before-delete/:id", () => {
-    it("should return a comma separated list of users associated with that role", async () => {
-      const users = [{ userName: "alice" }, { userName: "bob" }];
-      jest.spyOn(User, "findAll").mockResolvedValue(users);
+    it("returns comma-separated usernames for that role", async () => {
+      const findSpy = jest.spyOn(User, "findAll").mockResolvedValue([
+        { userName: "alice" },
+        { userName: "bob" },
+      ]);
 
       const res = await request(app).get("/check-role-before-delete/1");
+
+      // Assert query shape
+      expect(findSpy).toHaveBeenCalledWith({
+        where: { roleId: 1 },
+        attributes: ["userName"],
+        raw: true,
+      });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Role deletion possibility checked.");
       expect(res.body.data).toBe("alice, bob");
     });
 
-    it("should handle errors for role delete check", async () => {
-      jest.spyOn(User, "findAll").mockRejectedValue(new Error("Check possibility to delete role failure"));
+    it("handles internal errors", async () => {
+      jest.spyOn(User, "findAll").mockRejectedValue(new Error("DB down"));
 
       const res = await request(app).get("/check-role-before-delete/1");
 
       expect(res.statusCode).toBe(500);
       expect(res.text).toBe("Произошла ошибка при проверке возможности удаления роли.");
     });
+
+    it("returns 400 when params fail schema validation", async () => {
+      const res = await request(app).get("/check-role-before-delete/not-a-number");
+      expect(res.statusCode).toBe(400);
+      expect(res.text).toBe("Неверный формат данных запроса.");
+    });
   });
 
-  // DELETE /delete-role/:id
+
+  // ── DELETE /delete-role/:id ──────────────────────────────────────────────────
   describe("DELETE /delete-role/:id", () => {
-    it("should delete the role and return success", async () => {
-      jest.spyOn(Role, "destroy").mockResolvedValue(1);
+    it("deletes an existing role", async () => {
+      const destroySpy = jest.spyOn(Role, "destroy").mockResolvedValue(1);
 
       const res = await request(app).delete("/delete-role/1");
 
+      expect(destroySpy).toHaveBeenCalledWith({ where: { id: 1 } });
       expect(res.statusCode).toBe(200);
       expect(res.body.msg).toBe("Role deleted.");
       expect(res.body.data).toBe(true);
     });
 
-    it("should return 404 if role is not found", async () => {
+    it("returns 404 when role is not found", async () => {
       jest.spyOn(Role, "destroy").mockResolvedValue(0);
 
       const res = await request(app).delete("/delete-role/999");
@@ -579,13 +711,19 @@ describe("Role Routes", () => {
       expect(res.text).toBe("Роль не найдена.");
     });
 
-    it("should handle errors when deleting a role", async () => {
-      jest.spyOn(Role, "destroy").mockRejectedValue(new Error("Delete role failure"));
+    it("handles internal errors", async () => {
+      jest.spyOn(Role, "destroy").mockRejectedValue(new Error("DB down"));
 
       const res = await request(app).delete("/delete-role/1");
 
       expect(res.statusCode).toBe(500);
       expect(res.text).toBe("Произошла ошибка при удалении роли.");
+    });
+
+    it("returns 400 when params fail schema validation", async () => {
+      const res = await request(app).delete("/delete-role/NaN");
+      expect(res.statusCode).toBe(400);
+      expect(res.text).toBe("Неверный формат данных запроса.");
     });
   });
 

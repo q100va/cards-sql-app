@@ -1,55 +1,49 @@
 import { jest } from '@jest/globals';
-
-// Mock the sequelize module before importing the helper
-jest.unstable_mockModule('../database.js', () => ({
-  default: { transaction: jest.fn() },
-}));
-
-// Import mocked sequelize and the helper under test
-const sequelize = (await import('../database.js')).default;
-const { withTransaction } = await import('../controllers/with-transaction.js');
+import * as db from '../database.js';
+import { withTransaction } from '../controllers/with-transaction.js';
 
 describe('withTransaction - hard failure paths', () => {
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
   });
 
-  it('propagates the original callback error even if rollback throws', async () => {
-    // Arrange: transaction object whose rollback itself fails
+  it('propagates the original commit error even if rollback throws', async () => {
+    // fresh tx per test
     const tx = {
-      commit: jest.fn().mockResolvedValue(),
-      rollback: jest.fn().mockRejectedValue(new Error('rollback failed')),
+      commit: jest.fn().mockRejectedValueOnce(new Error('commit failed')),
+      rollback: jest.fn().mockRejectedValueOnce(new Error('rollback failed')),
     };
-    sequelize.transaction.mockResolvedValue(tx);
 
-    const originalErr = new Error('callback failed');
+    // sequelize.transaction returns our fresh tx once
+    jest.spyOn(db.default, 'transaction').mockImplementationOnce(async () => tx);
 
-    // Act + Assert
     await expect(
-      withTransaction(async () => { throw originalErr; })
-    ).rejects.toBe(originalErr);
+      withTransaction(async (_t) => {
+        // callback ok -> commit will fail
+        return 123;
+      })
+    ).rejects.toThrow('commit failed');
 
-    // Ensure rollback was attempted and commit was not
+    // exactly once per this test
+    expect(tx.commit).toHaveBeenCalledTimes(1);
     expect(tx.rollback).toHaveBeenCalledTimes(1);
-    expect(tx.commit).not.toHaveBeenCalled();
   });
 
-  it('propagates the original commit error even if rollback throws', async () => {
-    // Arrange: commit fails; rollback also fails
-    const commitErr = new Error('commit failed');
+  it('propagates the original callback error even if rollback throws', async () => {
     const tx = {
-      commit: jest.fn().mockRejectedValue(commitErr),
-      rollback: jest.fn().mockRejectedValue(new Error('rollback failed')),
+      commit: jest.fn().mockResolvedValueOnce(undefined),
+      rollback: jest.fn().mockRejectedValueOnce(new Error('rollback failed')),
     };
-    sequelize.transaction.mockResolvedValue(tx);
+    jest.spyOn(db.default, 'transaction').mockImplementationOnce(async () => tx);
 
-    // Act + Assert
     await expect(
-      withTransaction(async () => 'ok')
-    ).rejects.toBe(commitErr);
+      withTransaction(async (_t) => {
+        throw new Error('callback failed');
+      })
+    ).rejects.toThrow('callback failed');
 
-    // Ensure both commit and rollback were attempted
-    expect(tx.commit).toHaveBeenCalledTimes(1);
+    expect(tx.commit).not.toHaveBeenCalled();
     expect(tx.rollback).toHaveBeenCalledTimes(1);
   });
 });
