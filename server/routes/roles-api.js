@@ -8,25 +8,13 @@ import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import * as roleSchemas from "../../shared/dist/role.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
+import handleError from "../controllers/error-handler.js";
+
 // TODO: add authentication/authorization middlewares
 // import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
 
 const Op = Sequelize.Op;
 const router = Router();
-
-/**
- * Error handler: log details and return a generic message to the client.
- *
- * @param error - thrown error
- * @param res - Express response
- * @param genericMessage - fallback message for the client
- */
-const handleError = (error, res, genericMessage) => {
-  console.error(error); // TODO: use a structured logger in production
-  res
-    .status(error.statusCode || 500)
-    .send(error.customError ? error.message : genericMessage);
-};
 
 /**
  * GET /check-role-name/:name
@@ -49,7 +37,7 @@ router.get(
         .status(200)
         .send({ msg: "Проверка завершена.", data: duplicate !== null });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка при проверке названия роли.");
+      handleError(error, req, res, "Произошла ошибка при проверке названия роли.");
     }
   }
 );
@@ -85,7 +73,7 @@ router.post(
 
       res.status(200).send({ msg: "Роль успешно создана.", data: roleName });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка. Роль не создана.");
+      handleError(error, req, res, "Произошла ошибка. Роль не создана.");
     }
   }
 );
@@ -117,7 +105,7 @@ router.patch(
 
       res.status(200).send({ msg: "Роль успешно обновлена.", data: updatedRole });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка. Роль не обновлена.");
+      handleError(error, req, res, "Произошла ошибка. Роль не обновлена.");
     }
   }
 );
@@ -193,7 +181,7 @@ router.patch(
           data: { ops: updatedOperations, object: operation.object },
         });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка (роль не обновлена).");
+      handleError(error, req, res, "Произошла ошибка (роль не обновлена).");
     }
   }
 );
@@ -344,7 +332,7 @@ router.get(
         .status(200)
         .send({ msg: "Data retrieved.", data: { operations: listOfOperations, roles } });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка при получении списка ролей.");
+      handleError(error, req, res, "Произошла ошибка при получении списка ролей.");
     }
   }
 );
@@ -400,7 +388,7 @@ router.delete(
 
       res.status(200).send({ msg: "Role deleted.", data: true });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка при удалении роли.");
+      handleError(error, req, res, "Произошла ошибка при удалении роли.");
     }
   }
 );

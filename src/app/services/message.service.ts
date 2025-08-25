@@ -43,8 +43,8 @@ export class MessageWrapperService {
   public handle(err: any): void {
     console.log(err);
     const errorMessage =
-      typeof err.error === 'string'
-      ? err.error : err.message || err.error?.message ||  'Произошла ошибка. Обратитесь к администратору.';
+      typeof err.error.message === 'string'
+      ? err.error.message: err.message ||  'Произошла ошибка. Обратитесь к администратору.';
     this.error(errorMessage);
   }
 }
