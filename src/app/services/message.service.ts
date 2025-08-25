@@ -44,8 +44,7 @@ export class MessageWrapperService {
     console.log(err);
     const errorMessage =
       typeof err.error === 'string'
-        ? err.error
-        : 'Произошла ошибка. Обратитесь к администратору.';
+      ? err.error : err.message || err.error?.message ||  'Произошла ошибка. Обратитесь к администратору.';
     this.error(errorMessage);
   }
 }

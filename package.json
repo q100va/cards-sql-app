@@ -2,14 +2,25 @@
   "name": "cards-sql-app",
   "type": "module",
   "version": "0.0.0",
-  "scripts": {
+
+   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 56379",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "server": "nodemon ./server/app.js"
+
+    "server": "nodemon ./server/app.js",
+
+    "build:shared:once": "tsc -p shared/tsconfig.json",
+    "build:shared": "tsc -p shared/tsconfig.json --watch",
+
+    "dev": "concurrently \"npm:build:shared\" \"npm:server\"",
+
+    "pretest:server": "npm run build:shared:once",
+    "test:server": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.mjs --runInBand"
   },
+
   "private": true,
   "dependencies": {
     "@angular/animations": "^19.0.0",
@@ -39,6 +50,7 @@
     "rxjs": "~7.8.0",
     "sequelize": "^6.37.6",
     "tslib": "^2.3.0",
+    "zod": "^4.0.17",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
@@ -46,12 +58,15 @@
     "@angular/cli": "^19.0.2",
     "@angular/compiler-cli": "^19.0.0",
     "@types/jasmine": "~5.1.0",
+    "concurrently": "^9.2.0",
+    "cross-env": "^10.0.0",
     "jasmine-core": "~5.4.0",
+    "jest": "^29.7.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.6.2"
+    "supertest": "^7.1.4"
   }
 }

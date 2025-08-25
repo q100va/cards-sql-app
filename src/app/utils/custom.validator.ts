@@ -139,13 +139,13 @@ export const mainContactsValidator: ValidatorFn = (
     : null;
 };
 
-export function noOnlySpacesValidator(control: AbstractControl): ValidationErrors | null {
+/* export function noOnlySpacesValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value;
   if (typeof value === 'string' && value.trim().length === 0) {
     return { onlySpaces: true };
   }
   return null;
-}
+} */
 
 /*
  export function minValidator(): ValidatorFn {

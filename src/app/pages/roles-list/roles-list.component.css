@@ -1,23 +1,27 @@
-/* Allow newlines in table cells by preserving line breaks */
+/* Preserve line breaks in table cells */
 .table-cell-with-newlines {
   white-space: pre-line;
 }
-/* Center the roles list card content and set responsive width */
+
+/* Center roles list card with responsive width */
 .roles-list-card {
   margin: auto;
   width: fit-content;
   min-width: 70%;
   text-align: center;
 }
-/* Adjust padding when the cell is in editing mode using host context styling */
+
+/* Remove vertical padding in editing cells */
 :host-context(.p-cell-editing) {
   padding-top: 0;
   padding-bottom: 0;
 }
-/* Change the delete button color on hover */
+
+/* Change delete button color on hover */
 .delete-button:hover {
   --mat-sys-on-surface-variant: rgb(197, 48, 48);
 }
+
 /* Utility classes for fixed widths */
 .width-5rem {
   width: 5rem;
@@ -31,24 +35,18 @@
 .width-20rem {
   width: 20rem;
 }
-/*
-  Utility class to add a right-side border.
-  The border is a light gray line.
-*/
+
+/* Utility: add right border */
 .right-bordered {
   border-right: 1px solid #e2e8f0;
 }
-/*
-  Utility class to add a bottom border.
-  The border is a darker line.
-*/
+
+/* Utility: add bottom border */
 .bottom-bordered {
   border-bottom: 1px solid #575a5d;
 }
-/*
-  Utility class to center align content.
-*/
+
+/* Utility: center-align text */
 .center {
   text-align: center;
 }
-
