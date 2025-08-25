@@ -5,684 +5,517 @@ import {
   tick,
 } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { Confirmation, ConfirmationService } from 'primeng/api';
-import { of, throwError, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
 import { RolesListComponent } from './roles-list.component';
 import { RoleService } from '../../services/role.service';
 import { MessageWrapperService } from '../../services/message.service';
+import { ConfirmationService } from 'primeng/api';
+import { MatDialog } from '@angular/material/dialog';
 
 describe('RolesListComponent', () => {
-  let component: RolesListComponent;
   let fixture: ComponentFixture<RolesListComponent>;
-  // Spies for service dependencies
-  let dialogSpy: jasmine.SpyObj<MatDialog>;
+  let component: RolesListComponent;
+
+  // Spies
   let roleServiceSpy: jasmine.SpyObj<RoleService>;
-  let msgWrapperSpy: jasmine.SpyObj<MessageWrapperService>;
-  let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
+  let msgSpy: jasmine.SpyObj<MessageWrapperService>;
+  let confirmSpy: jasmine.SpyObj<ConfirmationService>;
+  let dialogSpy: jasmine.SpyObj<MatDialog>;
 
   beforeEach(async () => {
-    // Create spy objects for service dependencies
-    const roleSvcMock = jasmine.createSpyObj('RoleService', [
+    roleServiceSpy = jasmine.createSpyObj('RoleService', [
       'getRoles',
-      'checkRoleName',
       'updateRole',
+      'checkRoleName',
       'updateRoleAccess',
       'deleteRole',
       'checkPossibilityToDeleteRole',
     ]);
-    const dialogMock = jasmine.createSpyObj('MatDialog', ['open']);
-    const msgWrapperMock = jasmine.createSpyObj('MessageWrapperService', [
+    msgSpy = jasmine.createSpyObj('MessageWrapperService', [
       'success',
       'warn',
       'handle',
     ]);
-    const confirmationSvcMock = jasmine.createSpyObj('ConfirmationService', [
-      'confirm',
-    ]);
+    confirmSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
 
-    // Configure the testing module with component imports and providers.
+    // Default getRoles to empty state to avoid hanging ngOnInit
+    roleServiceSpy.getRoles.and.returnValue(
+      of({ msg: 'ok', data: { roles: [], operations: [] } })
+    );
+
     await TestBed.configureTestingModule({
-      imports: [RolesListComponent],
+      imports: [RolesListComponent, NoopAnimationsModule],
       providers: [
-        { provide: RoleService, useValue: roleSvcMock },
-        { provide: MatDialog, useValue: dialogMock },
-        { provide: MessageWrapperService, useValue: msgWrapperMock },
-        { provide: ConfirmationService, useValue: confirmationSvcMock },
+        { provide: RoleService, useValue: roleServiceSpy },
+        { provide: MessageWrapperService, useValue: msgSpy },
+        { provide: ConfirmationService, useValue: confirmSpy },
+        { provide: MatDialog, useValue: dialogSpy },
       ],
-      // Ignore any unknown attributes/components from Angular Material/PrimeNG used in the template.
+      // Ignore heavy UI templates (Material/PrimeNG)
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
-    // Create component and inject the services
+
     fixture = TestBed.createComponent(RolesListComponent);
     component = fixture.componentInstance;
-    roleServiceSpy = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
-    dialogSpy = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
-    msgWrapperSpy = TestBed.inject(
-      MessageWrapperService
-    ) as jasmine.SpyObj<MessageWrapperService>;
-    confirmationServiceSpy = TestBed.inject(
-      ConfirmationService
-    ) as jasmine.SpyObj<ConfirmationService>;
-    // Spy on the private loadRoles method to check if it's been called.
-    spyOn(component as any, 'loadRoles').and.callThrough();
-    // Default behaviour for getRoles to return an empty list.
-    roleServiceSpy.getRoles.and.returnValue(
-      of({
-        msg: 'success',
-        data: {
-          roles: [],
-          operations: [],
-        },
-      })
-    );
+    fixture.detectChanges();
   });
 
   afterEach(() => {
-    // Clean up: destroy component fixture if defined.
-    if (fixture) {
-      fixture.destroy();
-    }
+    fixture.destroy();
   });
 
-  // Test initialization of the component.
-  describe('ngOnInit', () => {
-    it('should load roles and set scrollHeight based on window innerHeight', fakeAsync(() => {
-      // Arrange: set window height.
-      (window as any).innerHeight = 1000;
-      // Act: initialize component.
-      component.ngOnInit();
-      tick();
-      // Assert:
-      expect((component as any).loadRoles).toHaveBeenCalled();
-      expect(component.scrollHeight).toBe('750px');
-    }));
+  //#region Render & loading
+
+  it('shows empty state when roles=[] and hides table while loading', fakeAsync(() => {
+    // Arrange loading flow with Subject
+    const subj = new Subject<{
+      msg: string;
+      data: { roles: any[]; operations: any[] };
+    }>();
+    roleServiceSpy.getRoles.and.returnValue(subj as any);
+
+    // Re-init to trigger ngOnInit with new spy
+    fixture = TestBed.createComponent(RolesListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    // While pending: isLoading true, table not present, empty text not yet (roles undefined)
+    expect(component.isLoading()).toBeTrue();
+    let table = fixture.nativeElement.querySelector('p-table');
+    expect(table).toBeNull();
+
+    // Emit empty result to render empty state
+    subj.next({ msg: 'ok', data: { roles: [], operations: [] } });
+    subj.complete();
+    tick();
+    fixture.detectChanges();
+
+    // After response: isLoading false, empty message visible
+    expect(component.isLoading()).toBeFalse();
+    const emptyText = fixture.nativeElement.textContent || '';
+    expect(emptyText).toContain('Пока не создано ни одной роли.');
+  }));
+
+  it('initializes scrollHeight from window.innerHeight * 0.75', () => {
+    // ngOnInit already ran in beforeEach
+    const expected = window.innerHeight * 0.75;
+    const actual = parseFloat(component.scrollHeight);
+    expect(actual).toBeCloseTo(expected, 2);
   });
 
-  // Test adding a role.
-  describe('onAddRoleClick', () => {
-    it('should open CreateRoleDialogComponent and reload roles when result has roleName', fakeAsync(() => {
-      // Arrange: create a fake dialog reference that returns an observable.
-      const afterClosedSubject = new Subject<any>();
-      const fakeDialogRef = {
-        afterClosed: () => afterClosedSubject.asObservable(),
-      };
-      dialogSpy.open.and.returnValue(fakeDialogRef as any);
-      // Act: trigger add role click.
-      component.onAddRoleClick();
-      // Simulate dialog close with roleName.
-      afterClosedSubject.next('New Role');
-      afterClosedSubject.complete();
-      tick();
-      // Assert: verify that roles were reloaded and success message was shown.
-      expect((component as any).loadRoles).toHaveBeenCalled();
-      expect(msgWrapperSpy.success).toHaveBeenCalledWith(
-        `Роль 'New Role' создана.`
-      );
-    }));
-    it('should do nothing if dialog result does not contain a roleName', fakeAsync(() => {
-      // Arrange: create a fake dialog reference.
-      const afterClosedSubject = new Subject<any>();
-      const fakeDialogRef = {
-        afterClosed: () => afterClosedSubject.asObservable(),
-      };
-      dialogSpy.open.and.returnValue(fakeDialogRef as any);
-      // Act: click on add role.
-      component.onAddRoleClick();
-      // Simulate dialog close without roleName.
-      afterClosedSubject.next(null);
-      afterClosedSubject.complete();
-      tick();
-      // Assert: verify that neither reload nor success message is triggered.
-      expect((component as any).loadRoles).not.toHaveBeenCalled();
-      expect(msgWrapperSpy.success).not.toHaveBeenCalled();
-    }));
-  });
+  //#endregion
 
-  // Test inline editing of role fields.
-  describe('onInputChange', () => {
-    beforeEach(() => {
-      // Pre-load roles data.
-      component.roles = [
-        { id: 1, name: 'Admin', description: 'Administrator' },
-      ];
-      // Clone the original roles for change comparison.
-      component.originalRoles = [
-        { id: 1, name: 'Admin', description: 'Administrator' },
-      ];
-    });
-    it('should trim input and call updateRole when changes exist only in description', fakeAsync(() => {
-      // Arrange: simulate update by adding extra space.
-      component.roles[0].name = 'Admin';
-      component.roles[0].description = 'Admin Updated ';
-      roleServiceSpy.updateRole.and.returnValue(
-        of({
-          msg: 'success',
-          data: { id: 1, name: 'Admin', description: 'Admin Updated' },
-        })
-      );
-      // Act: trigger input change event.
-      component.onInputChange(0);
-      tick();
-      // Assert: updateRole should be called and originalRoles updated.
-      expect(roleServiceSpy.checkRoleName).not.toHaveBeenCalled();
-      expect(roleServiceSpy.updateRole).toHaveBeenCalledWith({
-        id: 1,
-        name: 'Admin',
-        description: 'Admin Updated',
-      });
-      expect(msgWrapperSpy.success).toHaveBeenCalledWith(
-        `Роль 'Admin' обновлена.`
-      );
-      expect(component.roles[0].description).toBe('Admin Updated');
-      expect(component.originalRoles[0].description).toBe('Admin Updated');
-    }));
+  //#region getRoles()
 
-    it('should warn if the role name is already taken', fakeAsync(() => {
-      // Arrange: simulate update by choosing existed name.
-      component.roles[0].name = 'NewAdmin';
-      component.roles[0].description = 'Administrator';
-
-      // Simulate role name check response indicating the role already exists
-      roleServiceSpy.checkRoleName.and.returnValue(
-        of({ msg: 'failed', data: true })
-      );
-      // Trigger the role updating
-      component.onInputChange(0);
-      tick();
-      // Verify proper service calls and display of a warning message
-      expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith('NewAdmin');
-      expect(msgWrapperSpy.warn).toHaveBeenCalledWith(
-        `Название 'NewAdmin' уже занято! Выберите другое.`
-      );
-      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
-      expect(component.roles[0].name).toBe('Admin');
-      expect(component.roles[0].description).toBe('Administrator');
-    }));
-
-    it('should update role when role name is available', fakeAsync(() => {
-      // Simulate extra spaces to test trimming functionality
-      component.roles[0].name = 'NewRoleName ';
-      // Simulate role name check response indicating the role name is available
-      roleServiceSpy.checkRoleName.and.returnValue(
-        of({ msg: 'success', data: false })
-      );
-      // Simulate successful role creation response
-      roleServiceSpy.updateRole.and.returnValue(
-        of({
-          msg: 'success',
-          data: { id: 1, name: 'NewRoleName', description: 'Administrator' },
-        })
-      );
-      // Trigger the role updating
-      component.onInputChange(0);
-      tick();
-      // Verify that the proper service calls were made and dialog closed with the created role name
-      expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith('NewRoleName');
-      expect(roleServiceSpy.updateRole).toHaveBeenCalledWith({
-        id: 1,
-        name: 'NewRoleName',
-        description: 'Administrator',
-      });
-      expect(msgWrapperSpy.success).toHaveBeenCalledWith(
-        `Роль 'NewRoleName' обновлена.`
-      );
-      expect(component.roles[0].name).toBe('NewRoleName');
-      expect(component.originalRoles[0].name).toBe('NewRoleName');
-      expect(component.roles[0].description).toBe('Administrator');
-      expect(component.originalRoles[0].description).toBe('Administrator');
-    }));
-
-    it('should not call updateRole if trimmed name or description is empty', () => {
-      // Arrange: set an empty name after trimming.
-      component.roles[0].name = '   ';
-      component.roles[0].description = 'Some description';
-      // Act:
-      component.onInputChange(0);
-      // Assert:
-      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
-    });
-    it('should not call updateRole if trimmed name or description is equal to original', () => {
-      // Arrange: simulate no real changes, only extra spaces.
-      component.roles[0].name = 'Admin';
-      component.roles[0].description = 'Administrator     ';
-      // Act: trigger change.
-      component.onInputChange(0);
-      // Assert: no update call should be made.
-      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
-      expect(component.roles[0].description).toEqual('Administrator');
-      expect(component.originalRoles[0].description).toEqual('Administrator');
-    });
-    it('should not call updateRole if no values have changed', () => {
-      // Arrange: set values identical to original.
-      component.roles[0].name = 'Admin';
-      component.roles[0].description = 'Administrator';
-      // Act:
-      component.onInputChange(0);
-      // Assert:
-      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
-    });
-    it('should handle error if checkRoleName fails', fakeAsync(() => {
-      // Arrange: change description to trigger update.
-      component.roles[0].name = 'Changed Name';
-      const error = new Error('CheckRoleName failed');
-      roleServiceSpy.checkRoleName.and.returnValue(throwError(() => error));
-      // Act:
-      component.onInputChange(0);
-      tick();
-      // Assert:
-      expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith('Changed Name');
-      expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
-      expect(component.roles[0].name).toEqual('Admin');
-      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
-    }));
-    it('should handle error if updateRole fails', fakeAsync(() => {
-      // Arrange: change description to trigger update.
-      component.roles[0].description = 'Changed Desc';
-      const error = new Error('Update failed');
-      roleServiceSpy.updateRole.and.returnValue(throwError(() => error));
-      // Act:
-      component.onInputChange(0);
-      tick();
-      // Assert:
-      expect(roleServiceSpy.updateRole).toHaveBeenCalled();
-      expect(component.roles[0].description).toEqual('Administrator');
-      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
-    }));
-  });
-
-  // Test changes on role access.
-  describe('onAccessChangeCheck', () => {
-    const fakeOperations = [
+  it('persists roles/operations on success and clones originalRoles', () => {
+    const roles = [
+      { id: 1, name: 'Admin', description: 'Administrator' },
+      { id: 2, name: 'User', description: 'Volunteer' },
+    ];
+    const operations = [
       {
-        description: 'creating senior data',
-        fullAccess: false,
-        object: 'senior',
-        objectName: 'senior',
-        operation: 'SENIOR_CREATING',
-        operationName: 'creating',
+        operation: 'ADD_NEW_PARTNER',
+        description: 'Add new partner',
+        object: 'partners',
+        objectName: 'partners',
+        operationName: 'add',
+        accessToAllOps: false,
         rolesAccesses: [
-          {
-            id: 201,
-            roleId: 1,
-            access: true,
-            disabled: false,
-          },
-          {
-            id: 202,
-            roleId: 2,
-            access: true,
-            disabled: false,
-          },
-        ],
-      },
-      {
-        description: 'view senior data',
-        fullAccess: false,
-        object: 'senior',
-        objectName: 'senior',
-        operation: 'SENIOR_VIEW',
-        operationName: 'view',
-        rolesAccesses: [
-          {
-            id: 203,
-            roleId: 1,
-            access: true,
-            disabled: false,
-          },
-          {
-            id: 204,
-            roleId: 2,
-            access: true,
-            disabled: false,
-          },
+          { id: 10, roleId: 1, access: false, disabled: false },
+          { id: 11, roleId: 2, access: false, disabled: false },
         ],
       },
     ];
 
-    const dummy = {
-      description: 'creating senior data',
-      fullAccess: false,
-      object: 'senior',
-      objectName: 'senior',
-      operation: 'SENIOR_CREATING',
-      operationName: 'creating',
-      rolesAccesses: [
-        {
-          id: 201,
-          roleId: 1,
-          access: true,
-          disabled: false,
-        },
-        {
-          id: 202,
-          roleId: 2,
-          access: false,
-          disabled: false,
-        },
-      ],
-    };
+    roleServiceSpy.getRoles.and.returnValue(
+      of({ msg: 'ok', data: { roles, operations } })
+    );
 
-    beforeEach(() => {
-      // Initialize operations with a sample dataset
-      component.operations = fakeOperations;
-    });
+    // Call private loader via casting (keeps test explicit)
+    (component as any).loadRoles();
+    fixture.detectChanges();
 
-    it('should update the operations correctly when roleService returns a successful response', () => {
-      // Create a fake successful response with updated role access for id 1 only
-      const fakeResponse = {
-        msg: 'success',
+    expect(component.roles).toEqual(roles);
+    expect(component.operations).toEqual(operations);
+    expect(component.originalRoles).toEqual(roles);
+    // Ensure clone, not same reference
+    expect(component.originalRoles).not.toBe(component.roles);
+  });
+
+  it('handles getRoles() error via msgWrapper and does not mutate existing data', () => {
+    // Seed with some data first
+    (component as any).roles = [{ id: 1, name: 'Old', description: 'Old' }];
+    (component as any).operations = [];
+    (component as any).originalRoles = structuredClone(component.roles);
+
+    roleServiceSpy.getRoles.and.returnValue(
+      throwError(() => new Error('boom'))
+    );
+
+    (component as any).loadRoles();
+
+    expect(msgSpy.handle).toHaveBeenCalled();
+    expect(component.roles).toEqual([
+      { id: 1, name: 'Old', description: 'Old' },
+    ]);
+  });
+
+  //#endregion
+
+  //#region onInputChange()
+
+  it('trims input and exits early if zod validation fails', () => {
+    component.roles = [{ id: 1, name: 'Same', description: ' x ' }] as any; // desc too short
+    component.originalRoles = [
+      { id: 1, name: 'Same', description: 'Desc' },
+    ] as any;
+
+    component.onInputChange(0);
+
+    expect(roleServiceSpy.checkRoleName).not.toHaveBeenCalled();
+    expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
+  });
+
+  it('exits early if nothing changed after trim', () => {
+    component.roles = [
+      { id: 1, name: ' Manager ', description: ' Desc ' },
+    ] as any;
+    component.originalRoles = [
+      { id: 1, name: 'Manager', description: 'Desc' },
+    ] as any;
+
+    component.onInputChange(0);
+
+    expect(roleServiceSpy.checkRoleName).not.toHaveBeenCalled();
+    expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
+  });
+
+  it('name changed: warns and rollback when name busy (data=true)', () => {
+    component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
+    component.originalRoles = [
+      { id: 1, name: 'Old', description: 'Same' },
+    ] as any;
+
+    roleServiceSpy.checkRoleName.and.returnValue(of({ msg: 'ok', data: true }));
+
+    component.onInputChange(0);
+
+    expect(msgSpy.warn).toHaveBeenCalled();
+    expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
+    expect(component.roles[0]).toEqual(component.originalRoles[0]); // rollback
+  });
+
+  it('name changed: handles checkRoleName error and rollback', () => {
+    component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
+    component.originalRoles = [
+      { id: 1, name: 'Old', description: 'Same' },
+    ] as any;
+
+    roleServiceSpy.checkRoleName.and.returnValue(
+      throwError(() => new Error('check fail'))
+    );
+
+    component.onInputChange(0);
+
+    expect(msgSpy.handle).toHaveBeenCalled();
+    expect(component.roles[0]).toEqual(component.originalRoles[0]); // rollback
+  });
+
+  it('name changed: passes when name free (data=false) and updates successfully', () => {
+    const updated = { id: 1, name: 'New', description: 'Same' } as any;
+
+    component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
+    component.originalRoles = [
+      { id: 1, name: 'Old', description: 'Same' },
+    ] as any;
+
+    roleServiceSpy.checkRoleName.and.returnValue(
+      of({ msg: 'ok', data: false })
+    );
+    roleServiceSpy.updateRole.and.returnValue(of({ msg: 'ok', data: updated }));
+
+    component.onInputChange(0);
+
+    expect(roleServiceSpy.updateRole).toHaveBeenCalledWith(updated);
+    expect(msgSpy.success).toHaveBeenCalled();
+    expect(component.roles[0]).toEqual(updated);
+    expect(component.originalRoles[0]).toEqual(updated);
+  });
+
+  it('description changed only: updates immediately on success', () => {
+    const updated = { id: 1, name: 'Same', description: 'NewDesc' } as any;
+
+    component.roles = [{ id: 1, name: 'Same', description: 'NewDesc' }] as any;
+    component.originalRoles = [
+      { id: 1, name: 'Same', description: 'OldDesc' },
+    ] as any;
+
+    roleServiceSpy.updateRole.and.returnValue(of({ msg: 'ok', data: updated }));
+
+    component.onInputChange(0);
+
+    expect(roleServiceSpy.checkRoleName).not.toHaveBeenCalled();
+    expect(roleServiceSpy.updateRole).toHaveBeenCalledWith(updated);
+    expect(msgSpy.success).toHaveBeenCalled();
+    expect(component.roles[0]).toEqual(updated);
+    expect(component.originalRoles[0]).toEqual(updated);
+  });
+
+  it('updateRole error: handled and roles rolled back', () => {
+    const original = { id: 1, name: 'Same', description: 'Old' } as any;
+
+    component.roles = [{ id: 1, name: 'Same', description: 'New' }] as any;
+    component.originalRoles = [original] as any;
+
+    roleServiceSpy.updateRole.and.returnValue(
+      throwError(() => new Error('update fail'))
+    );
+
+    component.onInputChange(0);
+
+    expect(msgSpy.handle).toHaveBeenCalled();
+    expect(component.roles[0]).toEqual(original);
+  });
+
+  //#endregion
+
+  //#region onAccessChangeCheck()
+
+  it('merges ops only for matching object; merge by id, not replace whole array', () => {
+    component.operations = [
+      {
+        operation: 'ADD_NEW_PARTNER',
+        description: 'Add new partner',
+        object: 'partners',
+        objectName: 'partners',
+        operationName: 'add',
+        accessToAllOps: false,
+        rolesAccesses: [
+          { id: 10, roleId: 1, access: false, disabled: false },
+          { id: 11, roleId: 2, access: false, disabled: false },
+        ],
+      },
+      {
+        operation: 'ADD_NEW_TOPONYM',
+        description: 'Add new toponym',
+        object: 'toponyms',
+        objectName: 'toponyms',
+        operationName: 'add',
+        accessToAllOps: false,
+        rolesAccesses: [
+          { id: 20, roleId: 1, access: false, disabled: false },
+          { id: 21, roleId: 2, access: false, disabled: false },
+        ],
+      },
+    ] as any;
+
+    roleServiceSpy.updateRoleAccess.and.returnValue(
+      of({
+        msg: 'ok',
         data: {
-          object: 'senior',
+          object: 'partners',
           ops: [
-            {
-              id: 202,
-              roleId: 2,
-              access: true,
-              disabled: false,
-            },
-            // Notice that operation with id 2 is not provided, so it should remain unchanged
+            { id: 10, roleId: 1, access: true, disabled: true }, // merged by id
+            // id: 11 intentionally omitted -> must stay as is
           ],
         },
-      };
-      // Set the roleService method to return an observable of the successful response
-      roleServiceSpy.updateRoleAccess.and.returnValue(of(fakeResponse));
-      // Invoke the function under test
-      component.onAccessChangeCheck(true, 101, dummy);
-      // Verify that the operation with id 1 is updated and the operation with id 2 remains unchanged
-      expect(component.operations).toEqual([
-        {
-          description: 'creating senior data',
-          fullAccess: false,
-          object: 'senior',
-          objectName: 'senior',
-          operation: 'SENIOR_CREATING',
-          operationName: 'creating',
-          rolesAccesses: [
-            {
-              id: 201,
-              roleId: 1,
-              access: true,
-              disabled: false,
-            },
-            {
-              id: 202,
-              roleId: 2,
-              access: true,
-              disabled: false,
-            },
-          ],
-        },
-        {
-          description: 'view senior data',
-          fullAccess: false,
-          object: 'senior',
-          objectName: 'senior',
-          operation: 'SENIOR_VIEW',
-          operationName: 'view',
-          rolesAccesses: [
-            {
-              id: 203,
-              roleId: 1,
-              access: true,
-              disabled: false,
-            },
-            {
-              id: 204,
-              roleId: 2,
-              access: true,
-              disabled: false,
-            },
-          ],
-        },
-      ]);
-    });
-    it('should call msgWrapperSpy.handle when the roleService returns an error', () => {
-      const error = new Error('Some error occurred');
-      // Make roleService return an error
-      roleServiceSpy.updateRoleAccess.and.returnValue(throwError(() => error));
-      // Invoke the function under test
-      component.onAccessChangeCheck(false, 101, dummy);
-      // Verify that msgWrapperSpy.handle is called with the error
-      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
-    });
-    it('should not update any operations if the returned updated object does not match any in the component.', () => {
-      // Create a fake response with an object that does not match 'OBJ1'
-      const fakeResponse = {
-        msg: 'success',
-        data: {
-          object: 'NonexistentObject',
-          ops: [
-            {
-              id: 202,
-              roleId: 2,
-              access: true,
-              disabled: false,
-            },
-          ],
-        },
-      };
-      roleServiceSpy.updateRoleAccess.and.returnValue(of(fakeResponse));
-      // Invoke the function under test
-      component.onAccessChangeCheck(true, 102, dummy);
-      // The role access should remain unchanged
-      expect(component.operations).toEqual(fakeOperations);
-    });
-    it('should handle the case when the response returns an empty ops array (boundary case)', () => {
-      // Ensure operations are setup correctly
-      component.operations = fakeOperations;
-      const fakeResponse = {
-        msg: 'success',
-        data: {
-          object: 'NonexistentObject',
-          ops: [],
-        },
-      };
-      roleServiceSpy.updateRoleAccess.and.returnValue(of(fakeResponse));
-      // Invoke the function under test
-      component.onAccessChangeCheck(true, 103, dummy);
-      // As there are no updates, the operation should remain unchanged
-      expect(component.operations).toEqual(fakeOperations);
-    });
+      })
+    );
+
+    component.onAccessChangeCheck(true, 1, component.operations[0]);
+
+    expect(component.operations[0].rolesAccesses).toEqual([
+      { id: 10, roleId: 1, access: true, disabled: true },
+      { id: 11, roleId: 2, access: false, disabled: false },
+    ]);
+    expect(component.operations[1].rolesAccesses).toEqual([
+          { id: 20, roleId: 1, access: false, disabled: false },
+          { id: 21, roleId: 2, access: false, disabled: false },
+        ]);
   });
 
-  // Test deletion of a role.
-  describe('onDeleteRoleClick', () => {
-    beforeEach(() => {
-      // Set up a role for deletion test.
-      component.roles = [
-        { id: 1, name: 'DeleteMe', description: 'To be deleted' },
-      ];
-    });
-    it('should confirm deletion and call checkPossibilityToDeleteRole on accept', () => {
-      // Arrange: simulate user confirming deletion.
-      confirmationServiceSpy.confirm.and.callFake((config: Confirmation) => {
-        // Invoke the accept callback.
-        config.accept?.();
-        return confirmationServiceSpy; // Return confirmation service for chaining.
-      });
-      // Spy on the private checkPossibilityToDeleteRole to ensure it's triggered.
-      spyOn(component as any, 'checkPossibilityToDeleteRole').and.callFake(
-        () => {}
-      );
-      // Act: trigger deletion.
-      component.onDeleteRoleClick(0);
-      // Assert:
-      expect(confirmationServiceSpy.confirm).toHaveBeenCalled();
-      expect(
-        (component as any).checkPossibilityToDeleteRole
-      ).toHaveBeenCalledWith(1, 'DeleteMe');
-    });
-    it('should not call checkPossibilityToDeleteRole if deletion is rejected', () => {
-      // Arrange: simulate user rejecting deletion.
-      confirmationServiceSpy.confirm.and.callFake((config: Confirmation) => {
-        // Invoke the reject callback.
-        config.reject?.();
-        return confirmationServiceSpy;
-      });
-      spyOn(component as any, 'checkPossibilityToDeleteRole').and.callFake(
-        () => {}
-      );
-      // Act:
-      component.onDeleteRoleClick(0);
-      // Assert:
-      expect(confirmationServiceSpy.confirm).toHaveBeenCalled();
-      expect(
-        (component as any).checkPossibilityToDeleteRole
-      ).not.toHaveBeenCalled();
-    });
+  it('handles updateRoleAccess error and keeps state intact', () => {
+    const snapshot = [
+      {
+        operation: 'ADD_NEW_PARTNER',
+        description: 'Add new partner',
+        object: 'partners',
+        objectName: 'partners',
+        operationName: 'add',
+        accessToAllOps: false,
+        rolesAccesses: [{ id: 1, roleId: 1, access: false, disabled: false }],
+      },
+    ] as any;
+
+    component.operations = structuredClone(snapshot);
+
+    roleServiceSpy.updateRoleAccess.and.returnValue(
+      throwError(() => new Error('access fail'))
+    );
+
+    component.onAccessChangeCheck(true, 1, component.operations[0]);
+
+    expect(msgSpy.handle).toHaveBeenCalled();
+    expect(component.operations).toEqual(snapshot);
   });
 
-  // Test checking if a role can be deleted.
-  describe('checkPossibilityToDeleteRole', () => {
-    it('should delete the role if check returns a falsy data', fakeAsync(() => {
-      // Arrange: simulate check returns falsy (null) meaning the role is deletable.
-      roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-        of({ msg: 'success', data: '' })
-      );
-      spyOn(component as any, 'deleteRole').and.callFake(() => {});
-      // Act:
-      (component as any).checkPossibilityToDeleteRole(1, 'RoleX');
-      tick();
-      // Assert:
-      expect(roleServiceSpy.checkPossibilityToDeleteRole).toHaveBeenCalledWith(
-        1
-      );
-      expect((component as any).deleteRole).toHaveBeenCalledWith(1, 'RoleX');
-    }));
-    it('should warn if the role is assigned to users', fakeAsync(() => {
-      // Arrange: simulate check returns non-falsy data (a list of users).
-      roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-        of({ msg: 'failed', data: 'User1, User2' })
-      );
-      spyOn(component as any, 'deleteRole').and.callFake(() => {});
-      // Act:
-      (component as any).checkPossibilityToDeleteRole(1, 'RoleX');
-      tick();
-      // Assert:
-      expect(msgWrapperSpy.warn).toHaveBeenCalledWith(
-        `Невозможно удалить роль 'RoleX'. Она назначена пользователям: 'User1, User2'.`
-      );
-      expect((component as any).deleteRole).not.toHaveBeenCalled();
-    }));
-    it('should handle error scenarios in checkPossibilityToDeleteRole', fakeAsync(() => {
-      // Arrange: simulate an error in the check.
-      const error = new Error('Check error');
-      roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-        throwError(() => error)
-      );
-      // Act:
-      (component as any).checkPossibilityToDeleteRole(1, 'RoleX');
-      tick();
-      // Assert:
-      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
-    }));
+  //#endregion
+
+  //#region Create role dialog flow
+
+  it('opens CreateRoleDialogComponent, reloads and shows success when a role is returned', () => {
+    const afterClosed$ = of('NewRole');
+    dialogSpy.open.and.returnValue({ afterClosed: () => afterClosed$ } as any);
+
+    // Spy reload to assert it was called
+    const reloadSpy = spyOn(component as any, 'loadRoles');
+
+    component.onAddRoleClick();
+
+    expect(dialogSpy.open).toHaveBeenCalled();
+    expect(reloadSpy).toHaveBeenCalled();
+    expect(msgSpy.success).toHaveBeenCalledWith(`Роль 'NewRole' создана.`);
   });
 
-  // Test actual deletion of the role.
-  describe('deleteRole', () => {
-    it('should delete role successfully then reload roles and show success message', fakeAsync(() => {
-      // Arrange: simulate successful role deletion.
-      roleServiceSpy.deleteRole.and.returnValue(
-        of({ msg: 'success', data: true })
-      );
-      // Act:
-      (component as any).deleteRole(3, 'RoleX');
-      tick();
-      // Assert:
-      expect(roleServiceSpy.deleteRole).toHaveBeenCalledWith(3);
-      expect(msgWrapperSpy.success).toHaveBeenCalledWith(
-        `Роль 'RoleX'удалена.`
-      );
-      expect((component as any).loadRoles).toHaveBeenCalled();
-    }));
-    it('should handle error if deleteRole fails', fakeAsync(() => {
-      // Arrange: simulate failure in role deletion.
-      const error = new Error('Deletion error');
-      roleServiceSpy.deleteRole.and.returnValue(throwError(() => error));
-      // Act:
-      (component as any).deleteRole(3, 'RoleX');
-      tick();
-      // Assert:
-      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
-    }));
+  it('opens dialog, does nothing when closed with null/undefined', () => {
+    const afterClosed$ = of(null);
+    dialogSpy.open.and.returnValue({ afterClosed: () => afterClosed$ } as any);
+
+    const reloadSpy = spyOn(component as any, 'loadRoles');
+
+    component.onAddRoleClick();
+
+    expect(dialogSpy.open).toHaveBeenCalled();
+    expect(reloadSpy).not.toHaveBeenCalled();
+    expect(msgSpy.success).not.toHaveBeenCalled();
   });
 
-  // Test loading roles data.
-  describe('loadRoles', () => {
-    it('should load roles, clone originalRoles and set operations, then reset isLoading', fakeAsync(() => {
-      // Arrange: simulate fetching roles and operations.
-      roleServiceSpy.getRoles.and.returnValue(
-        of({
-          msg: 'success',
-          data: {
-            roles: [{ id: 1, name: 'NewAdmin', description: 'Administrator' }],
-            operations: [
-              {
-                description: 'creation senior data',
-                fullAccess: false,
-                object: 'senior',
-                objectName: 'senior',
-                operation: 'SENIOR_CREATION',
-                operationName: 'creation',
-                rolesAccesses: [
-                  {
-                    id: 1,
-                    roleId: 1,
-                    access: true,
-                    disabled: false,
-                  },
-                ],
-              },
-            ],
-          },
-        })
-      );
-      // Ensure isLoading is false before loadRoles is called.
-      component.isLoading.set(false);
-      // Act:
-      (component as any).loadRoles();
-      tick();
-      // Assert:
-      expect(component.roles).toEqual([
-        { id: 1, name: 'NewAdmin', description: 'Administrator' },
-      ]);
-      expect(component.originalRoles).toEqual([
-        { id: 1, name: 'NewAdmin', description: 'Administrator' },
-      ]);
-      expect(component.operations).toEqual([
-        {
-          description: 'creation senior data',
-          fullAccess: false,
-          object: 'senior',
-          objectName: 'senior',
-          operation: 'SENIOR_CREATION',
-          operationName: 'creation',
-          rolesAccesses: [
-            {
-              id: 1,
-              roleId: 1,
-              access: true,
-              disabled: false,
-            },
-          ],
-        },
-      ]);
-      // isLoading should be false after finalization.
-      expect(component.isLoading()).toBeFalse();
-    }));
-    it('should handle error if getRoles fails and reset isLoading', fakeAsync(() => {
-      // Arrange: simulate error when fetching roles.
-      const error = new Error('Load error');
-      roleServiceSpy.getRoles.and.returnValue(throwError(() => error));
-      // Ensure isLoading is false before loadRoles is called.
-      component.isLoading.set(false);
-      // Act:
-      (component as any).loadRoles();
-      tick();
-      // Assert:
-      expect(msgWrapperSpy.handle).toHaveBeenCalledWith(error);
-      expect(component.isLoading()).toBeFalse();
-    }));
+  //#endregion
+
+  //#region Delete role flow
+
+  it('confirm accept: no users → deleteRole → success + reload', () => {
+    component.roles = [{ id: 1, name: 'Role', description: 'description' }] as any;
+    const target = document.createElement('div');
+
+    // Confirm accept
+    confirmSpy.confirm.and.callFake((cfg) => {
+      cfg.accept?.();
+      return confirmSpy as any;
+    });
+
+    roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
+      of({ msg: 'ok', data: '' }) // falsy → allowed to delete
+    );
+    roleServiceSpy.deleteRole.and.returnValue(of({ msg: 'ok', data: true }));
+
+    const reloadSpy = spyOn(component as any, 'loadRoles');
+
+    component.onDeleteRoleClick(0);
+
+    expect(roleServiceSpy.checkPossibilityToDeleteRole).toHaveBeenCalledWith(1);
+    expect(roleServiceSpy.deleteRole).toHaveBeenCalledWith(1);
+    expect(msgSpy.success).toHaveBeenCalledWith(`Роль 'Role' удалена.`);
+    expect(reloadSpy).toHaveBeenCalled();
   });
+
+  it('confirm accept: users returned → warn, no delete', () => {
+    component.roles = [{ id: 2, name: 'Name2', description: 'description' }] as any;
+
+    confirmSpy.confirm.and.callFake((cfg) => {
+      cfg.accept?.();
+      return confirmSpy as any;
+    });
+
+    roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
+      of({ msg: 'ok', data: 'alice, bob' })
+    );
+
+    component.onDeleteRoleClick(0);
+
+    expect(msgSpy.warn).toHaveBeenCalled();
+    expect(roleServiceSpy.deleteRole).not.toHaveBeenCalled();
+  });
+
+  it('confirm accept: error path handled', () => {
+    component.roles = [{ id: 3, name: 'Name3', description: 'description' }] as any;
+
+    confirmSpy.confirm.and.callFake((cfg) => {
+      cfg.accept?.();
+      return confirmSpy as any;
+    });
+
+    roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
+      throwError(() => new Error('check fail'))
+    );
+
+    component.onDeleteRoleClick(0);
+
+    expect(msgSpy.handle).toHaveBeenCalled();
+  });
+
+  it('confirm reject: does nothing', () => {
+    component.roles = [{ id: 4, name: 'Name4', description: 'description' }] as any;
+
+    confirmSpy.confirm.and.callFake((cfg) => {
+      cfg.reject?.();
+      return confirmSpy as any;
+    });
+
+    component.onDeleteRoleClick(0);
+
+    expect(roleServiceSpy.checkPossibilityToDeleteRole).not.toHaveBeenCalled();
+    expect(roleServiceSpy.deleteRole).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes role name before showing in confirm', () => {
+    component.roles = [
+      { id: 5, name: '<script>xox</script>', description: 'description' },
+    ] as any;
+    const sanitizeSpy = spyOn(
+      component as any,
+      'sanitizeText'
+    ).and.callThrough();
+
+    confirmSpy.confirm.and.callFake((cfg) => {
+      // Just open; we only care about sanitize being called before message is built
+      return confirmSpy as any;
+    });
+
+    component.onDeleteRoleClick(0);
+
+    expect(sanitizeSpy).toHaveBeenCalledWith('<script>xox</script>');
+    expect(confirmSpy.confirm).toHaveBeenCalled();
+  });
+
+  //#endregion
+
+  //#region Misc
+
+  it('trackById returns entity id', () => {
+    const id = component.trackById(0, { id: 123 } as any);
+    expect(id).toBe(123);
+  });
+
+  it('loadRoles toggles isLoading true→false around request', fakeAsync(() => {
+    const subj = new Subject<{
+      msg: string;
+      data: { roles: any[]; operations: any[] };
+    }>();
+    roleServiceSpy.getRoles.and.returnValue(subj as any);
+
+    (component as any).loadRoles();
+    expect(component.isLoading()).toBeTrue();
+
+    subj.next({ msg: 'ok', data: { roles: [], operations: [] } });
+    subj.complete();
+    tick();
+
+    expect(component.isLoading()).toBeFalse();
+  }));
+
+  //#endregion
 });
