@@ -1,21 +1,20 @@
 <mat-card class="roles-list-card" appearance="outlined">
-
-  <!-- Grid layout for the header section -->
+  <!-- Header -->
   <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
-    <!-- Spacer tile -->
+    <!-- Spacer -->
     <mat-grid-tile colspan="4" rowspan="1"></mat-grid-tile>
 
-    <!-- Tile containing the card title -->
+    <!-- Title -->
     <mat-grid-tile colspan="2" rowspan="1">
       <mat-card-header>
         <mat-card-title>Роли</mat-card-title>
       </mat-card-header>
     </mat-grid-tile>
 
-    <!-- Additional spacer tile -->
+    <!-- Spacer -->
     <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
 
-    <!-- Tile containing the 'Add Role' action button -->
+    <!-- Add role -->
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-card-actions>
         <div class="bottom-right">
@@ -27,95 +26,129 @@
     </mat-grid-tile>
   </mat-grid-list>
 
-  <!-- Main content area displaying roles and operations -->
+  <!-- Content -->
   <mat-card-content>
-    @if(roles && roles.length > 0){
-    <!-- Table for operations with row grouping by objectName -->
-    <p-table [value]="operations" rowGroupMode="rowspan" groupRowsBy="objectName" sortField="objectName"
-      sortMode="single" [tableStyle]="tableStyle" [scrollable]="true" [scrollHeight]="scrollHeight">
-      <!-- Header template -->
-      <ng-template #header let-editing="editing">
-        <tr>
-          <!-- Static header columns -->
-          <th rowspan="2" class="right-bordered bottom-bordered width-10rem">Объект</th>
-          <th rowspan="2" class="right-bordered bottom-bordered width-20rem">Операция</th>
+    @if (roles && roles.length > 0) {
+      <!-- Operations table (row-grouped by objectName) -->
+      <p-table
+        [value]="operations"
+        rowGroupMode="rowspan"
+        groupRowsBy="objectName"
+        sortField="objectName"
+        sortMode="single"
+        [tableStyle]="tableStyle"
+        [scrollable]="true"
+        [scrollHeight]="scrollHeight"
+      >
+        <!-- Header -->
+        <ng-template #header let-editing="editing">
+          <tr>
+            <th rowspan="2" class="right-bordered bottom-bordered width-10rem">Объект</th>
+            <th rowspan="2" class="right-bordered bottom-bordered width-20rem">Операция</th>
 
-          <!-- Dynamic header columns for each role's name and delete action -->
-          @for (role of roles; track trackById($index, role); let index = $index) {
-          <th [pEditableColumn]="role.name" pEditableColumnField="name" class="width-15rem">
-            <p-cellEditor>
-              <!-- Input template for editing role name -->
-              <ng-template #input>
-                <input [class]="roleDraftSchema.shape.name.safeParse(role.name).success  ? 'valid' : 'ng-invalid ng-dirty'" placeholder="2-50 символов" pInputText
-                  type="text" [(ngModel)]="role.name" (blur)="onInputChange(index)"
-                  (keydown.enter)="onInputChange(index)" />
-              </ng-template>
-              <!-- Output template for displaying role name -->
-              <ng-template #output>
-                {{ role.name }}
-              </ng-template>
-            </p-cellEditor>
-          </th>
-          <th [class.right-bordered]="index !== roles.length - 1" class="width-5rem">
-            <!-- Button to delete the specified role -->
-            <button class="delete-button" mat-icon-button title="Удалить роль" (click)="onDeleteRoleClick(index)">
-              <mat-icon>delete_outlined</mat-icon>
-            </button>
-          </th>
-          }
-        </tr>
-        <tr>
-          <!-- Dynamic header columns for each role's description -->
-          @for (role of roles; track trackById($index, role); let index = $index) {
-          <th [class.right-bordered]="index !== roles.length - 1" class="bottom-bordered"
-            [pEditableColumn]="role.description" pEditableColumnField="description" colspan="2">
-            <p-cellEditor>
-              <!-- Input template for editing role description -->
-              <ng-template #input>
-                <input [class]="roleDraftSchema.shape.description.safeParse(role.description).success ? 'valid' : 'ng-invalid ng-dirty'" placeholder="2-500 символов"
-                  pInputText type="text" [(ngModel)]="role.description" (blur)="onInputChange(index)"
-                  (keydown.enter)="onInputChange(index)" />
-              </ng-template>
-              <!-- Output template for displaying role description -->
-              <ng-template #output>
-                {{ role.description }}
-              </ng-template>
-            </p-cellEditor>
-          </th>
-          }
-        </tr>
-      </ng-template>
+            <!-- Role name + delete button per role -->
+            @for (role of roles; track trackById($index, role); let index = $index) {
+              <th [pEditableColumn]="role.name" pEditableColumnField="name" class="width-15rem">
+                <p-cellEditor>
+                  <ng-template #input>
+                    <input
+                      [class]="roleDraftSchema.shape.name.safeParse(role.name).success ? 'valid' : 'ng-invalid ng-dirty'"
+                      placeholder="2-50 символов"
+                      pInputText
+                      type="text"
+                      [(ngModel)]="role.name"
+                      (blur)="onInputChange(index)"
+                      (keydown.enter)="onInputChange(index)"
+                    />
+                  </ng-template>
+                  <ng-template #output>
+                    {{ role.name }}
+                  </ng-template>
+                </p-cellEditor>
+              </th>
+              <th [class.right-bordered]="index !== roles.length - 1" class="width-5rem">
+                <button
+                  class="delete-button"
+                  mat-icon-button
+                  title="Удалить роль"
+                  (click)="onDeleteRoleClick(index)"
+                >
+                  <mat-icon>delete_outlined</mat-icon>
+                </button>
+              </th>
+            }
+          </tr>
 
-      <!-- Body template for listing operations -->
-      <ng-template #body let-operation let-rowIndex="rowIndex" let-rowgroup="rowgroup" let-rowspan="rowspan">
-        <tr>
-          <!-- If this is the first row of a group, display the object name with rowspan -->
-          @if (rowgroup) {
-          <td class="right-bordered bottom-bordered table-cell-with-newlines" [attr.rowspan]="rowspan">
-            <div class="flex items-center gap-2">
-              <span>{{ operation.objectName }}</span>
-            </div>
-          </td>
-          }
-          <!-- Display the operation name -->
-          <td class="right-bordered" [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
-            {{ operation.operationName }}
-          </td>
-          <!-- Generate checkboxes for each role's access setting -->
-          @for (roleAccess of operation.rolesAccesses; track trackById($index, roleAccess); let index = $index) {
-          <td [class.right-bordered]="index !== roles.length - 1" class="center" colspan="2"
-            [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
-            <mat-checkbox [disabled]="roleAccess.disabled" [checked]="roleAccess.access"
-              (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)">
-            </mat-checkbox>
-          </td>
-          }
-        </tr>
-      </ng-template>
-    </p-table>
+          <tr>
+            <!-- Role description per role -->
+            @for (role of roles; track trackById($index, role); let index = $index) {
+              <th
+                [class.right-bordered]="index !== roles.length - 1"
+                class="bottom-bordered"
+                [pEditableColumn]="role.description"
+                pEditableColumnField="description"
+                colspan="2"
+              >
+                <p-cellEditor>
+                  <ng-template #input>
+                    <input
+                      [class]="roleDraftSchema.shape.description.safeParse(role.description).success ? 'valid' : 'ng-invalid ng-dirty'"
+                      placeholder="2-500 символов"
+                      pInputText
+                      type="text"
+                      [(ngModel)]="role.description"
+                      (blur)="onInputChange(index)"
+                      (keydown.enter)="onInputChange(index)"
+                    />
+                  </ng-template>
+                  <ng-template #output>
+                    {{ role.description }}
+                  </ng-template>
+                </p-cellEditor>
+              </th>
+            }
+          </tr>
+        </ng-template>
+
+        <!-- Body -->
+        <ng-template #body let-operation let-rowIndex="rowIndex" let-rowgroup="rowgroup" let-rowspan="rowspan">
+          <tr>
+            <!-- Group cell: object name -->
+            @if (rowgroup) {
+              <td class="right-bordered bottom-bordered table-cell-with-newlines" [attr.rowspan]="rowspan">
+                <div class="flex items-center gap-2">
+                  <span>{{ operation.objectName }}</span>
+                </div>
+              </td>
+            }
+
+            <!-- Operation -->
+            <td class="right-bordered" [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
+              {{ operation.operationName }}
+            </td>
+
+            <!-- Access checkboxes per role -->
+            @for (roleAccess of operation.rolesAccesses; track trackById($index, roleAccess); let index = $index) {
+              <td
+                [class.right-bordered]="index !== roles.length - 1"
+                class="center"
+                colspan="2"
+                [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')"
+              >
+                <mat-checkbox
+                  [disabled]="roleAccess.disabled"
+                  [checked]="roleAccess.access"
+                  (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)"
+                >
+                </mat-checkbox>
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
     } @else {
-    <!-- Message displayed when no roles exist -->
-    <p>Пока не создано ни одной роли.</p>
+      <!-- Empty state -->
+      <p>Пока не создано ни одной роли.</p>
     }
   </mat-card-content>
 </mat-card>
