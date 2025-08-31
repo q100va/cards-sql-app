@@ -18,12 +18,7 @@ import {
   validateNoSchemaResponse,
   validateResponse,
 } from '../utils/validate-response';
-
-// API envelope
-interface ApiResponse<T> {
-  data: T;
-  msg: string;
-}
+import { ApiResponse } from '../interfaces/api-response';
 
 @Injectable({ providedIn: 'root' })
 export class RoleService {

@@ -24,13 +24,13 @@ import { SignInService } from '../../services/sign-in.service';
     RouterOutlet,
     RouterModule,
     ConfirmDialogModule,
-    ToastModule
+    ToastModule,
   ],
   templateUrl: './base-layout.component.html',
   styleUrl: './base-layout.component.css',
 })
 export class BaseLayoutComponent {
-   @ViewChild(Toast) toast!: Toast;
+  @ViewChild(Toast) toast!: Toast;
   private signInService = inject(SignInService);
   private cookieService = inject(CookieService);
   // private roleService = inject(RoleService);
@@ -53,8 +53,7 @@ export class BaseLayoutComponent {
     });*/
   }
 
-
-/*   clear(msg: any) {
+  /*   clear(msg: any) {
     this.toast.clear(msg);
   } */
 
@@ -77,12 +76,13 @@ export class BaseLayoutComponent {
         new MenuItem('holiday_village', 'Насел. пункты', '/localities'),
       ])
     );
-/*     this.menuItems.push(
+    this.menuItems.push(new MenuItem('policy', 'Аудит', '/audit'));
+
+    /*     this.menuItems.push(
       new MenuItem('map', 'Люди', '/toponyms', [
         new MenuItem('place', 'Сеньоры', '/countries'),
         new MenuItem('location_city', 'Координаторы', '/localities'),
       ])
     ); */
-
   }
 }

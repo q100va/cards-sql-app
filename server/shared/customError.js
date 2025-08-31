@@ -1,8 +1,8 @@
 export default class CustomError extends Error {
-  constructor(message, statusCode) {
-    super(message),
-      this.statusCode = statusCode,
-      this.customError = true
+  constructor(customMessage, status) {
+    super();
+    this.status = status;
+    this.customMessage = customMessage;
   }
 }
 

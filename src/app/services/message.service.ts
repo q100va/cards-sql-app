@@ -40,6 +40,7 @@ export class MessageWrapperService {
 
 
 // Determines the appropriate error message to display.
+//TODO: разобраться с отображением ошибок - где они хранятся
   public handle(err: any): void {
     console.log(err);
     const errorMessage =

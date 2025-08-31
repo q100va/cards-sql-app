@@ -11,6 +11,7 @@ import { CountriesListComponent } from './pages/toponyms-lists/countries-list/co
 import { RegionsListComponent } from './pages/toponyms-lists/regions-list/regions-list.component';
 import { DistrictsListComponent } from './pages/toponyms-lists/districts-list/districts-list.component';
 import { LocalitiesListComponent } from './pages/toponyms-lists/localities-list/localities-list.component';
+import { AuditTableComponent } from './pages/audit-table/audit-table.component';
 
 
 export const routes: Routes = [
@@ -54,6 +55,12 @@ export const routes: Routes = [
         component: LocalitiesListComponent,
         canActivate: [authGuard],
       },
+            {
+        path: "audit",
+        component: AuditTableComponent,
+        canActivate: [authGuard],
+      },
+
    /*   {
         path: "addresses",
         component: UploadFileComponent,
