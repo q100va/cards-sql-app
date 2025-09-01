@@ -15,7 +15,7 @@ export class FormsService {
       this.mainForm.addControl(
         control.controlName,
         new FormControl(
-          { value: control.value, disabled: control.disabled },
+          { value: control.value, disabled: control.disabled ? control.disabled : false },
           control.validators || []
         )
       );

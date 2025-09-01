@@ -1,4 +1,5 @@
 import sequelize from '../database.js';
+import AuditLogModel from './audit-log.js';
 import Role from './role.js';
 import Locality from './locality.js';
 import District from './district.js';
@@ -11,10 +12,7 @@ import Operation from './operation.js';
 import SearchUser from './search-user.js';
 import OutdatedName from './outdated-name.js';
 
-/* User.belongsTo(Role);
-Role.hasMany(User);
-Role.hasMany(Operation);
-Operation.belongsTo(Role); */
+const AuditLog = AuditLogModel(sequelize);
 
 User.hasMany(UserContact, { as: 'contacts' }, {
   onDelete: 'CASCADE',
@@ -91,5 +89,5 @@ Role.hasMany(Operation, {
 });
 Operation.belongsTo(Role);
 
-export { Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName};
+export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName };
 

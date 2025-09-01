@@ -8,25 +8,12 @@ import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import * as roleSchemas from "../../shared/dist/role.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
+
 // TODO: add authentication/authorization middlewares
 // import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
 
 const Op = Sequelize.Op;
 const router = Router();
-
-/**
- * Error handler: log details and return a generic message to the client.
- *
- * @param error - thrown error
- * @param res - Express response
- * @param genericMessage - fallback message for the client
- */
-const handleError = (error, res, genericMessage) => {
-  console.error(error); // TODO: use a structured logger in production
-  res
-    .status(error.statusCode || 500)
-    .send(error.customError ? error.message : genericMessage);
-};
 
 /**
  * GET /check-role-name/:name
@@ -37,7 +24,7 @@ router.get(
   validateRequest(roleSchemas.roleNameSchema, "params"),
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const roleName = req.params.name.toLowerCase();
       const duplicate = await Role.findOne({
@@ -49,7 +36,8 @@ router.get(
         .status(200)
         .send({ msg: "Проверка завершена.", data: duplicate !== null });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка при проверке названия роли.");
+      error.userMessage = 'Произошла ошибка при проверке названия роли.';
+      next(error);
     }
   }
 );
@@ -63,7 +51,7 @@ router.post(
   validateRequest(roleSchemas.roleDraftSchema),
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const { name, description } = req.body;
 
@@ -85,7 +73,8 @@ router.post(
 
       res.status(200).send({ msg: "Роль успешно создана.", data: roleName });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка. Роль не создана.");
+      error.userMessage = 'Произошла ошибка. Роль не создана.';
+      next(error);
     }
   }
 );
@@ -99,7 +88,7 @@ router.patch(
   validateRequest(roleSchemas.roleSchema),
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const { id, name, description } = req.body;
 
@@ -107,6 +96,7 @@ router.patch(
         { name, description },
         {
           where: { id },
+          individualHooks: true,
           returning: ["id", "name", "description"],
         }
       );
@@ -117,7 +107,8 @@ router.patch(
 
       res.status(200).send({ msg: "Роль успешно обновлена.", data: updatedRole });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка. Роль не обновлена.");
+      error.userMessage = 'Произошла ошибка. Роль не обновлена.';
+      next(error);
     }
   }
 );
@@ -132,7 +123,7 @@ router.patch(
   validateRequest(roleSchemas.roleChangeAccessSchema),
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const { access, roleId, operation } = req.body;
 
@@ -193,7 +184,8 @@ router.patch(
           data: { ops: updatedOperations, object: operation.object },
         });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка (роль не обновлена).");
+      error.userMessage = 'Произошла ошибка. Роль не обновлена.';
+      next(error);
     }
   }
 );
@@ -219,6 +211,7 @@ async function changeRoleOperation(
     { access },
     {
       where: { roleId, name: operation.operation },
+      individualHooks: true,
       returning: true,
       transaction,
     }
@@ -244,7 +237,7 @@ async function changeRoleOperation(
   // - access value is synced when enabling FULL or disabling LIMITED
   const updateParams = {
     disabled: isLimited ? !access : access,
-    ...( (!isLimited && access) || (isLimited && !access) ? { access } : {} ),
+    ...((!isLimited && access) || (isLimited && !access) ? { access } : {}),
   };
 
   const [__, [updatedOperationWithFlag]] = await Operation.update(
@@ -252,6 +245,7 @@ async function changeRoleOperation(
     {
       where: { roleId, name: complementaryOperation },
       returning: true,
+      individualHooks: true,
       transaction,
     }
   );
@@ -271,7 +265,7 @@ router.get(
   "/get-roles-names-list",
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const roles = await Role.findAll({
         attributes: ["id", "name"],
@@ -280,11 +274,8 @@ router.get(
       });
       res.status(200).send({ msg: "Data retrieved.", data: roles });
     } catch (error) {
-      handleError(
-        error,
-        res,
-        "Произошла ошибка при получении списка названий ролей."
-      );
+      error.userMessage = 'Произошла ошибка при получении списка названий ролей.';
+      next(error);
     }
   }
 );
@@ -297,7 +288,7 @@ router.get(
   "/get-roles",
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       // Roles
       const roles = await Role.findAll({
@@ -344,7 +335,8 @@ router.get(
         .status(200)
         .send({ msg: "Data retrieved.", data: { operations: listOfOperations, roles } });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка при получении списка ролей.");
+      error.userMessage = 'Произошла ошибка при получении списка ролей.';
+      next(error);
     }
   }
 );
@@ -358,7 +350,7 @@ router.get(
   validateRequest(roleSchemas.roleIdSchema, "params"),
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const roleId = req.params.id;
       const connectedUsers = await User.findAll({
@@ -371,11 +363,8 @@ router.get(
         .status(200)
         .send({ msg: "Role deletion possibility checked.", data: list });
     } catch (error) {
-      handleError(
-        error,
-        res,
-        "Произошла ошибка при проверке возможности удаления роли."
-      );
+      error.userMessage = 'Произошла ошибка при проверке возможности удаления роли.';
+      next(error);
     }
   }
 );
@@ -384,23 +373,30 @@ router.get(
  * DELETE /delete-role/:id
  * Delete a role by id.
  */
+
 router.delete(
   "/delete-role/:id",
   validateRequest(roleSchemas.roleIdSchema, "params"),
   // authenticateUser,
   // authorizeAdmin,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const roleId = req.params.id;
-      const destroyed = await Role.destroy({ where: { id: roleId } });
-
-      if (destroyed === 0) {
-        throw new CustomError("Роль не найдена.", 404);
-      }
+      await withTransaction(async (t) => {
+        const destroyed = await Role.destroy({
+          where: { id: roleId },
+          individualHooks: true,
+          transaction: t,
+        });
+        if (destroyed === 0) {
+          throw new CustomError("Роль не найдена.", 404);
+        }
+      });
 
       res.status(200).send({ msg: "Role deleted.", data: true });
     } catch (error) {
-      handleError(error, res, "Произошла ошибка при удалении роли.");
+      error.userMessage = 'Произошла ошибка при удалении роли.';
+      next(error);
     }
   }
 );

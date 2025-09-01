@@ -1,11 +1,5 @@
 // Angular core & RxJS
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { EMPTY } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -111,7 +105,9 @@ export class RolesListComponent implements OnInit {
 
     const role = this.roles[index];
     const validName = roleDraftSchema.shape.name.safeParse(role.name).success;
-    const validDesc = roleDraftSchema.shape.description.safeParse(role.description).success;
+    const validDesc = roleDraftSchema.shape.description.safeParse(
+      role.description
+    ).success;
     if (!validName || !validDesc) return;
 
     const originalRole = this.originalRoles[index];
@@ -120,7 +116,9 @@ export class RolesListComponent implements OnInit {
     if (!nameChanged && !descriptionChanged) return;
 
     const updateRole = () =>
-      this.roleService.updateRole(role).pipe(takeUntilDestroyed(this.destroyRef));
+      this.roleService
+        .updateRole(role)
+        .pipe(takeUntilDestroyed(this.destroyRef));
 
     if (nameChanged) {
       // check uniqueness before update
@@ -129,7 +127,15 @@ export class RolesListComponent implements OnInit {
         .pipe(
           switchMap((res) => {
             if (res.data) {
-              this.msgWrapper.warn(`Название '${role.name}' уже занято! Выберите другое.`);
+              this.msgWrapper.warn(
+                `Название '${role.name}' уже занято! Выберите другое.`,
+                {
+                  source: 'RolesList',
+                  stage: 'checkRoleName',
+                  roleId: role.id,
+                  newNameLen: role.name.length,
+                }
+              );
               this.roles[index] = { ...originalRole };
               return EMPTY;
             }
@@ -145,7 +151,11 @@ export class RolesListComponent implements OnInit {
           },
           error: (err) => {
             this.roles[index] = { ...originalRole };
-            this.msgWrapper.handle(err);
+            this.msgWrapper.handle(err, {
+              source: 'RolesList',
+              stage: 'updateRole',
+              roleId: role.id,
+            });
           },
         });
     } else if (descriptionChanged) {
@@ -159,7 +169,12 @@ export class RolesListComponent implements OnInit {
         },
         error: (err) => {
           this.roles[index] = { ...originalRole };
-          this.msgWrapper.handle(err);
+
+          this.msgWrapper.handle(err, {
+            source: 'RolesList',
+            stage: 'updateRole',
+            roleId: role.id,
+          });
         },
       });
     }
@@ -190,7 +205,13 @@ export class RolesListComponent implements OnInit {
               );
             });
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'RolesList',
+            stage: 'changeAccess',
+            roleId: roleId,
+            operationName: operation.operationName,
+          }),
       });
   }
 
@@ -220,11 +241,22 @@ export class RolesListComponent implements OnInit {
             this.deleteRole(id, roleName);
           } else {
             this.msgWrapper.warn(
-              `Невозможно удалить роль '${roleName}'. Она назначена пользователям: '${res.data}'.`
+              `Невозможно удалить роль '${roleName}'. Она назначена пользователям: '${res.data}'.`,
+                {
+                  source: 'RolesList',
+                  stage: 'checkPossibilityToDeleteRole',
+                  roleId: id,
+                  amountOfUsers: res.data.length
+                }
             );
           }
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'RolesList',
+            stage: 'checkPossibilityToDeleteRole',
+            roleId: id,
+          }),
       });
   }
 
@@ -238,7 +270,12 @@ export class RolesListComponent implements OnInit {
           this.msgWrapper.success(`Роль '${roleName}' удалена.`);
           this.loadRoles();
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'RolesList',
+            stage: 'deleteRole',
+            roleId: id,
+          }),
       });
   }
 
@@ -257,7 +294,11 @@ export class RolesListComponent implements OnInit {
           this.originalRoles = structuredClone(this.roles);
           this.operations = res.data.operations;
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'RolesList',
+            stage: 'loadRoles',
+          }),
       });
   }
 }

@@ -1,0 +1,26 @@
+/* Center card with responsive width */
+.audit-table-card {
+  margin: auto;
+  width: 95%;
+  text-align: center;
+}
+mat-card-header {
+  justify-content: center;
+  width: 100%;
+  padding: 40px 20px 20px 20px;
+}
+.copy-button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.diff-list {
+  margin: 0;
+  padding-left: 20px;
+}
+.snapshot {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+

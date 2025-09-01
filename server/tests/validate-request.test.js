@@ -2,13 +2,7 @@ import { jest } from '@jest/globals';
 import { validateRequest } from '../middlewares/validate-request.js';
 import { z } from 'zod';
 
-describe('validateRequest middleware', () => {
-  const ok = (data = { name: 'Alice', age: 30 }) =>
-    z.object({
-      name: z.string().min(1),
-      age: z.coerce.number().int().min(0),
-    }).parse(data) && data; // helper just to keep defaults readable
-
+describe('validateRequest middleware (unit)', () => {
   const schema = z.object({
     name: z.string().min(1),
     age: z.coerce.number().int().min(0),
@@ -17,20 +11,12 @@ describe('validateRequest middleware', () => {
   const makeMocks = (part = 'body', initial = {}) => {
     const req = { body: {}, params: {}, query: {}, headers: {}, cookies: {} };
     req[part] = { ...initial };
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis(),
-    };
-
+    const res = { status: jest.fn(), send: jest.fn() };
     const next = jest.fn();
-
     return { req, res, next };
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.clearAllMocks());
 
   it('passes with valid body and replaces req.body with parsed data', () => {
     const { req, res, next } = makeMocks('body', { name: 'Alice', age: '25' });
@@ -38,74 +24,70 @@ describe('validateRequest middleware', () => {
 
     mw(req, res, next);
 
-    // coerced number was applied
-    expect(req.body).toEqual({ name: 'Alice', age: 25 });
     expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0].length).toBe(0); // без ошибки
+    expect(req.body).toEqual({ name: 'Alice', age: 25 });
     expect(res.status).not.toHaveBeenCalled();
     expect(res.send).not.toHaveBeenCalled();
   });
 
-  it('returns 400 and does not call next on invalid body', () => {
-    const { req, res, next } = makeMocks('body', { name: '', age: -1 });
+  it('calls next(error) with 400 on invalid body and does NOT mutate req.body', () => {
+    const initial = { name: '', age: -1 };
+    const { req, res, next } = makeMocks('body', initial);
     const mw = validateRequest(schema, 'body');
 
     mw(req, res, next);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith('Неверный формат данных запроса.');
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err).toBeInstanceOf(Error);
+    expect(err.status).toBe(400);
+    expect(err.userMessage).toBe('Неверный формат данных запроса.');
+    // req.body остался прежним
+    expect(req.body).toEqual(initial);
+    // мидлварь сама не шлёт ответ
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.send).not.toHaveBeenCalled();
   });
 
-  it('validates a non-body part (params) when specified', () => {
-    const paramsSchema = z.object({
-      id: z.coerce.number().int().positive(),
-    });
+  it('validates params when part="params"', () => {
+    const paramsSchema = z.object({ id: z.coerce.number().int().positive() });
     const { req, res, next } = makeMocks('params', { id: '42' });
     const mw = validateRequest(paramsSchema, 'params');
 
     mw(req, res, next);
 
-    expect(req.params).toEqual({ id: 42 });
     expect(next).toHaveBeenCalledTimes(1);
-    expect(res.status).not.toHaveBeenCalled();
+    expect(req.params).toEqual({ id: 42 });
   });
 
-  it('returns 400 for invalid params and keeps original params', () => {
-    const paramsSchema = z.object({
-      id: z.coerce.number().int().positive(),
-    });
-    const { req, res, next } = makeMocks('params', { id: '-3' });
-    const original = { ...req.params };
+  it('calls next(error) with 400 on invalid params', () => {
+    const paramsSchema = z.object({ id: z.coerce.number().int().positive() });
+    const initial = { id: '-3' };
+    const { req, res, next } = makeMocks('params', initial);
     const mw = validateRequest(paramsSchema, 'params');
 
     mw(req, res, next);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(req.params).toEqual(original); // not replaced on failure
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith('Неверный формат данных запроса.');
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err.status).toBe(400);
+    expect(err.userMessage).toBe('Неверный формат данных запроса.');
+    expect(req.params).toEqual(initial);
+    expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('does not leak internal error details (message is fixed)', () => {
-    // schema that always fails to force the error path
-    const failing = z.object({ field: z.string().min(1000) });
-    const { req, res, next } = makeMocks('body', { field: 'short' });
-    const mw = validateRequest(failing, 'body');
-
-    mw(req, res, next);
-
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(400);
-    // strictly the exact user-facing message
-    expect(res.send).toHaveBeenCalledWith('Неверный формат данных запроса.');
-  });
-
-  it('calls next exactly once on success', () => {
-    const { req, res, next } = makeMocks('body', ok());
-    const mw = validateRequest(schema, 'body');
+  it('propagates unexpected runtime errors as next(error) with userMessage', () => {
+    // Сломаем schema.safeParse симулируя рантайм-исключение
+    const badSchema = { safeParse: () => { throw new Error('boom'); } };
+    const { req, res, next } = makeMocks('body', { x: 1 });
+    const mw = validateRequest(badSchema, 'body');
 
     mw(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err).toBeInstanceOf(Error);
+    expect(err.userMessage).toBe('Неверный формат данных запроса.');
   });
 });

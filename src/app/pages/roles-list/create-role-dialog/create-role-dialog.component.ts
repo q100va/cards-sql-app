@@ -44,7 +44,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { roleDraftSchema } from '@shared/schemas/role.schema';
 import { zodValidator } from 'src/app/utils/zod-validator';
 
-
 @Component({
   selector: 'app-create-role-dialog',
   imports: [
@@ -66,7 +65,6 @@ import { zodValidator } from 'src/app/utils/zod-validator';
   styleUrls: ['./create-role-dialog.component.css'],
   encapsulation: ViewEncapsulation.None,
 })
-
 export class CreateRoleDialogComponent {
   // Dependencies
   private readonly destroyRef = inject(DestroyRef);
@@ -92,6 +90,13 @@ export class CreateRoleDialogComponent {
   // Handle submit
   public onCreateRoleClick(): void {
     if (this.roleName.invalid || this.roleDescription.invalid) {
+      this.msgWrapper.warn('Форма невалидна', {
+        source: 'CreateRoleDialog',
+        invalidControls: [
+          this.roleName.invalid ? 'roleName' : null,
+          this.roleDescription.invalid ? 'roleDescription' : null,
+        ].filter(Boolean),
+      });
       return;
     }
 
@@ -104,9 +109,11 @@ export class CreateRoleDialogComponent {
       .pipe(
         switchMap((res) => {
           if (res.data) {
-            this.msgWrapper.warn(
-              `Название '${trimmedRoleName}' уже занято! Выберите другое.`
-            );
+            this.msgWrapper.warn(`Название '${trimmedRoleName}' уже занято`, {
+              source: 'CreateRoleDialog',
+              stage: 'checkRoleName',
+              nameLen: trimmedRoleName.length,
+            });
             return EMPTY;
           } else {
             return this.roleService.createRole(
@@ -124,7 +131,13 @@ export class CreateRoleDialogComponent {
             this.dialogRef.close(res.data);
           }
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'CreateRoleDialog',
+            stage: 'createRole',
+            nameLen: trimmedRoleName.length,
+            descLen: trimmedRoleDescription.length,
+          }),
       });
   }
 
@@ -145,4 +158,3 @@ export class CreateRoleDialogComponent {
     });
   }
 }
-

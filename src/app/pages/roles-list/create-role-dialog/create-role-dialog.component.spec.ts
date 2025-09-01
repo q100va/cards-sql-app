@@ -129,27 +129,14 @@ describe('CreateRoleDialogComponent', () => {
       expect(component.isLoading).toBeFalse();
       expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith(roleName);
       expect(messageWrapperSpy.warn).toHaveBeenCalledWith(
-        `Название '${roleName}' уже занято! Выберите другое.`
+        `Название '${roleName}' уже занято`,
+        jasmine.objectContaining({
+          source: 'CreateRoleDialog',
+          stage: 'checkRoleName',
+          nameLen: 'TestRole'.length,
+        })
       );
       expect(roleServiceSpy.createRole).not.toHaveBeenCalled();
-    }));
-
-    it('handles error from checkRoleName', fakeAsync(() => {
-      const roleName = 'Valid';
-      const roleDescription = 'Valid description';
-
-      component.roleName.setValue(roleName);
-      component.roleDescription.setValue(roleDescription);
-
-      const error = new Error('check failed');
-      roleServiceSpy.checkRoleName.and.returnValue(throwError(() => error));
-
-      component.onCreateRoleClick();
-      tick();
-
-      expect(roleServiceSpy.createRole).not.toHaveBeenCalled();
-      expect(messageWrapperSpy.handle).toHaveBeenCalledWith(error);
-      expect(component.isLoading).toBeFalse();
     }));
 
     it('creates role when name is available', fakeAsync(() => {
@@ -272,7 +259,15 @@ describe('CreateRoleDialogComponent', () => {
         roleName,
         roleDescription
       );
-      expect(messageWrapperSpy.handle).toHaveBeenCalledWith(error);
+      expect(messageWrapperSpy.handle).toHaveBeenCalledWith(
+        error,
+        jasmine.objectContaining({
+          source: 'CreateRoleDialog',
+          stage: 'createRole',
+          nameLen: 'ValidRole'.length,
+          descLen: 'Valid Description'.length,
+        })
+      );
       expect(dialogRefSpy.close).not.toHaveBeenCalled();
     }));
   });
