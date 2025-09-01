@@ -3,7 +3,7 @@ import {
   provideHttpClientTesting,
   HttpTestingController,
 } from '@angular/common/http/testing';
-import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { AuditService } from './audit.service';
 import { environment } from 'src/environments/environment';
 import { ApiResponse } from '../interfaces/api-response';

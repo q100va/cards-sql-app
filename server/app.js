@@ -18,6 +18,7 @@ import AddressesApi from "./routes/addresses-api.js";
 import UsersApi from "./routes/users-api.js";
 import RolesApi from "./routes/roles-api.js";
 import AuditApi from "./routes/audit-api.js";
+import ClientLogsApi from "./routes/client-logs.js"
 
 import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, Operation, OutdatedName } from './models/index.js';
 import { runAuditCleanupCatchUp } from "./retention/startup-catchup.js";
@@ -105,6 +106,7 @@ app.use("/api/addresses", AddressesApi);
 app.use("/api/users", UsersApi);
 app.use("/api/roles", RolesApi);
 app.use("/api/audit", AuditApi);
+app.use('/api/client-logs', ClientLogsApi);
 
 // Not found and Error handlers
 app.use(notFound);

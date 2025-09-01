@@ -4,7 +4,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || (isProd ? 'info' : 'debug'),
-  base: { app: 'cards-congrats', env: process.env.NODE_ENV || 'development' },
+  base: { app: 'cards-sql-app', env: process.env.NODE_ENV || 'development' },
   timestamp: pino.stdTimeFunctions.isoTime,
   // hide sensitive data in logs
   redact: {

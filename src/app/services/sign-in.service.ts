@@ -5,6 +5,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { ClientLoggerService } from './client-logger.service';
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +14,7 @@ export class SignInService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private cookieService = inject(CookieService);
+  private log = inject(ClientLoggerService);
 
   private token = '';
   private tokenTimer: any;
@@ -72,14 +74,16 @@ export class SignInService {
           this.result = res;
           this.cookieService.set(
             'session_user',
-            "okskust", //this.result.data.user.userName,
+            'okskust', //this.result.data.user.userName,
             1
           );
           sessionStorage.setItem(
             'name',
-            "Оксана Кустова", //`${this.result.data.user.firstName} ${this.result.data.user.lastName}`
+            'Оксана Кустова' //`${this.result.data.user.firstName} ${this.result.data.user.lastName}`
           );
-         /*  this.token = this.result.data.token;
+
+          this.log.setUser(777); // TODO: add real user id
+          /*  this.token = this.result.data.token;
           const expiresInDuration = this.result.data.expiresIn;
           this.setAuthTimer(expiresInDuration);
           const now = new Date();

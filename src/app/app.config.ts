@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, ErrorHandler } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -14,11 +14,17 @@ import localeRu from '@angular/common/locales/ru';
 registerLocaleData(localeRu);
 
 import Material from '@primeng/themes/aura';
+
+import { GlobalErrorHandler } from './services/global-error-handler';
+import { httpErrorInterceptor } from './interceptors/http-error.interceptor';
+
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes), //, withHashLocation()
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([httpErrorInterceptor])),
+     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     //provideHttpClient( withInterceptors([sanitizeInterceptor])),
     provideAnimationsAsync(),
     providePrimeNG({
