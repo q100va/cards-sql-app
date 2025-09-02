@@ -38,7 +38,10 @@ Reports provide insights into the number of requests, participants, and resident
 **Planned:**  
 - Authentication (JWT, sessions)  
 - Email notifications / reminders  
-- Advanced reporting & analytics  
+- Advanced reporting & analytics
+
+**Tech Debt items:**
+- Add handling of err.fields on the frontend (automatic assignment of errors in FormGroup)
 
 ---
 
