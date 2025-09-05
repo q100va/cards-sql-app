@@ -1,4 +1,4 @@
-// src/server.js
+// server.js
 import app, { initInfrastructure } from './app.js';
 import logger from './logging/logger.js';
 

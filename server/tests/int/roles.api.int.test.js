@@ -1,5 +1,5 @@
 // tests/roles.api.int.test.js
-import sequelize from '../database.js';
+import sequelize from '../../database.js';
 import { QueryTypes } from 'sequelize';
 
 import { createRole, findRoleById } from './factories/role.js';
@@ -9,8 +9,8 @@ import {
   getOperationsByRole,
   getOperationIdByRoleAndName,
 } from './factories/operation.js';
-import { OPERATIONS } from '../shared/operations.js';
-import logger from '../logging/logger.js';
+import { OPERATIONS } from '../../shared/operations.js';
+import logger from '../../logging/logger.js';
 
 
 // маленький хелпер для SELECT-ов (возвращает массив строк)

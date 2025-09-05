@@ -1,5 +1,5 @@
 import express from 'express';
-import { handleError } from '../../server/middlewares/error-handler.js';
+import { handleError } from '../../middlewares/error-handler';
 
 export function makeTestApp(router, mount = '/') {
   const app = express();

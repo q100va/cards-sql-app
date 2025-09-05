@@ -1,6 +1,8 @@
 // tests/factories/operation.js
-import Operation from '../../models/operation.js';
-import { OPERATIONS } from '../../shared/operations.js';
+
+import { Operation } from "../../../models";
+import { OPERATIONS } from "../../../shared/operations";
+
 
 /**
  * Создать одну запись в operations через модель.

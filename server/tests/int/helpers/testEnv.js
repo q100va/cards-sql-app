@@ -1,8 +1,8 @@
 //import dotenv from 'dotenv';
 //dotenv.config({ path: 'server/.env.test' });
 import request from 'supertest';
-import app, { initInfrastructure } from '../../app.js';
-import sequelize from '../../database.js';
+import app, { initInfrastructure } from '../../../app.js';
+import sequelize from '../../../database.js';
 
 beforeAll(async () => {
   await initInfrastructure();           // гарантируем, что таблицы есть

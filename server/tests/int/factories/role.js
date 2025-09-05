@@ -1,7 +1,8 @@
 // server/tests/factories/role.js
-import Role from '../../models/role.js';
-import Operation from '../../models/operation.js';
-import { OPERATIONS } from '../../shared/operations.js';
+
+import Operation from '../../../models/operation.js';
+import Role from '../../../models/role.js';
+import { OPERATIONS } from '../../../shared/operations.js';
 
 /** Создать роль (с разумными дефолтами) */
 export async function createRole(attrs = {}) {
