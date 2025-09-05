@@ -31,7 +31,7 @@ describe('validateRequest middleware (unit)', () => {
     expect(res.send).not.toHaveBeenCalled();
   });
 
-  it('calls next(error) with 400 on invalid body and does NOT mutate req.body', () => {
+  it('calls next(error) with 422 on invalid body and does NOT mutate req.body', () => {
     const initial = { name: '', age: -1 };
     const { req, res, next } = makeMocks('body', initial);
     const mw = validateRequest(schema, 'body');
@@ -41,8 +41,8 @@ describe('validateRequest middleware (unit)', () => {
     expect(next).toHaveBeenCalledTimes(1);
     const err = next.mock.calls[0][0];
     expect(err).toBeInstanceOf(Error);
-    expect(err.status).toBe(400);
-    expect(err.userMessage).toBe('Неверный формат данных запроса.');
+    expect(err.status).toBe(422);
+    expect(err.code).toBe('ERRORS.VALIDATION');
     // req.body остался прежним
     expect(req.body).toEqual(initial);
     // мидлварь сама не шлёт ответ
@@ -61,7 +61,7 @@ describe('validateRequest middleware (unit)', () => {
     expect(req.params).toEqual({ id: 42 });
   });
 
-  it('calls next(error) with 400 on invalid params', () => {
+  it('calls next(error) with 422 on invalid params', () => {
     const paramsSchema = z.object({ id: z.coerce.number().int().positive() });
     const initial = { id: '-3' };
     const { req, res, next } = makeMocks('params', initial);
@@ -71,23 +71,23 @@ describe('validateRequest middleware (unit)', () => {
 
     expect(next).toHaveBeenCalledTimes(1);
     const err = next.mock.calls[0][0];
-    expect(err.status).toBe(400);
-    expect(err.userMessage).toBe('Неверный формат данных запроса.');
+    expect(err.status).toBe(422);
+    expect(err.code).toBe('ERRORS.VALIDATION');
     expect(req.params).toEqual(initial);
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('propagates unexpected runtime errors as next(error) with userMessage', () => {
-    // Сломаем schema.safeParse симулируя рантайм-исключение
-    const badSchema = { safeParse: () => { throw new Error('boom'); } };
-    const { req, res, next } = makeMocks('body', { x: 1 });
-    const mw = validateRequest(badSchema, 'body');
+  it('propagates unexpected runtime errors as next(error) with code', () => {
+  const badSchema = { safeParse: () => { throw new Error('boom'); } };
+  const { req, res, next } = makeMocks('body', { x: 1 });
+  const mw = validateRequest(badSchema, 'body');
 
-    mw(req, res, next);
+  mw(req, res, next);
 
-    expect(next).toHaveBeenCalledTimes(1);
-    const err = next.mock.calls[0][0];
-    expect(err).toBeInstanceOf(Error);
-    expect(err.userMessage).toBe('Неверный формат данных запроса.');
-  });
+  expect(next).toHaveBeenCalledTimes(1);
+  const err = next.mock.calls[0][0];
+  expect(err).toBeInstanceOf(Error);
+  expect(err.code).toBe('ERRORS.VALIDATION');   // ✅ проставится
+  expect(err.status).toBe(422);                 // можно тоже проверить
+});
 });

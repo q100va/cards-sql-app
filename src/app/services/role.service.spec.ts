@@ -6,16 +6,42 @@ import {
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { RoleService } from './role.service';
 import { environment } from '../../environments/environment';
+import { MessageWrapperService } from './message.service';
+import { of } from 'rxjs';
+import { MonoTypeOperatorFunction, tap } from 'rxjs';
 
 describe('RoleService', () => {
   let service: RoleService;
   let httpMock: HttpTestingController;
+  let messageWrapperSpy: jasmine.SpyObj<MessageWrapperService>;
   const BASE_URL = `${environment.apiUrl}/api/roles`;
 
   beforeEach(() => {
+    messageWrapperSpy = jasmine.createSpyObj('MessageWrapperService', [
+      'messageTap',
+      'handle',
+    ]);
+
+    // ВАЖНО: messageTap должен возвращать оператор (no-op)
+    messageWrapperSpy.messageTap.and.callFake(
+      (
+        _severity?: any,
+        _ctxOrFn?: any,
+        _paramsOrFn?: any
+      ): MonoTypeOperatorFunction<any> => {
+        return (source$) => source$; // просто пропускаем дальше
+      }
+    );
+
     TestBed.configureTestingModule({
-      providers: [RoleService, provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        RoleService,
+        { provide: MessageWrapperService, useValue: messageWrapperSpy },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     });
+
     service = TestBed.inject(RoleService);
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -26,13 +52,14 @@ describe('RoleService', () => {
 
   // ---------- checkRoleName ----------
   describe('checkRoleName', () => {
-    it('returns true when role exists (happy path)', () => {
+    it('returns true when role exists (happy path) and wires messageTap(warn, ...)', () => {
       const name = 'Admin';
-      const mock = { data: true, msg: 'ok' };
+      const mock = { data: true, code: 'ROLE.ALREADY_EXISTS' };
 
       service.checkRoleName(name).subscribe((res) => {
         expect(res.data).toBeTrue();
-        expect(res.msg).toBe('ok');
+        // code может быть, но компоненту это не важно — проверка здесь не принципиальна
+        expect(res.code).toBe('ROLE.ALREADY_EXISTS');
       });
 
       const req = httpMock.expectOne(
@@ -40,14 +67,25 @@ describe('RoleService', () => {
       );
       expect(req.request.method).toBe('GET');
       req.flush(mock);
+
+      // Проверяем интеграцию с messageTap
+      expect(messageWrapperSpy.messageTap).toHaveBeenCalled();
+      const args = messageWrapperSpy.messageTap.calls.mostRecent().args;
+      expect(args[0]).toBe('warn'); // severity
+      // ctx мы передавали объект → либо сам объект, либо функция; у нас объект:
+      expect(
+        typeof args[1] === 'function' || typeof args[1] === 'object'
+      ).toBeTrue();
+      // params не передавали
+      expect(args[2]).toBeUndefined();
     });
 
     it('encodes special characters in URL', () => {
       const name = 'Менеджер & Co/QA?';
-      const mock = { data: true, msg: 'ok' };
+      const mock = { data: false };
 
       service.checkRoleName(name).subscribe((res) => {
-        expect(res.data).toBeTrue();
+        expect(res.data).toBeFalse();
       });
 
       const req = httpMock.expectOne(
@@ -75,20 +113,26 @@ describe('RoleService', () => {
 
   // ---------- createRole ----------
   describe('createRole', () => {
-    it('creates role (happy path)', () => {
+    it('creates role (happy path) and wires messageTap(success, params)', () => {
       const name = 'User';
       const description = 'Regular role';
-      const mock = { data: 'User', msg: 'Created' };
+      const mock = { data: 'User', code: 'ROLE.CREATED' };
 
       service.createRole(name, description).subscribe((res) => {
         expect(res.data).toBe('User');
-        expect(res.msg).toBe('Created');
+        expect(res.code).toBe('ROLE.CREATED');
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/create-role`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ name, description });
       req.flush(mock);
+
+      expect(messageWrapperSpy.messageTap).toHaveBeenCalled();
+      const args = messageWrapperSpy.messageTap.calls.mostRecent().args;
+      expect(args[0]).toBe('success');
+      expect(typeof args[1]).toBe('undefined');
+      expect(typeof args[2]).toBe('function');
     });
 
     it('propagates HTTP error', () => {
@@ -109,34 +153,42 @@ describe('RoleService', () => {
   describe('updateRole', () => {
     const role = { id: 1, name: 'Admin', description: 'Administrator' };
 
-    it('updates role (happy path)', () => {
-      const mock = { data: role, msg: 'Updated' };
+    it('updates role (happy path) and wires messageTap(success, params)', () => {
+      const mock = { data: role, code: 'ROLE.UPDATED' };
 
-      service.updateRole(role).subscribe((res) => {
+      service.updateRole(role as any).subscribe((res) => {
         expect(res.data).toEqual(role);
-        expect(res.msg).toBe('Updated');
+        expect(res.code).toBe('ROLE.UPDATED');
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/update-role`);
       expect(req.request.method).toBe('PATCH');
       expect(req.request.body).toEqual(role);
       req.flush(mock);
+
+      expect(messageWrapperSpy.messageTap).toHaveBeenCalled();
+      const args = messageWrapperSpy.messageTap.calls.mostRecent().args;
+      expect(args[0]).toBe('success');
+      // ctx не передан
+      expect(args[1]).toBeUndefined();
+      // paramsFn должен быть function
+      expect(typeof args[2]).toBe('function');
     });
 
     it('fails on wrong schema shape', () => {
-      service.updateRole(role).subscribe({
+      service.updateRole(role as any).subscribe({
         next: () => fail('expected schema error'),
         error: (err) =>
-          expect((err as Error).message).toBe('Неверный формат данных ответа.'),
+          expect((err as Error).message).toBe('ERRORS.INVALID_SCHEMA'),
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/update-role`);
       // Wrong shape (string instead of role object)
-      req.flush({ data: 'oops', msg: 'bad' });
+      req.flush({ data: 'oops', code: 'BAD' });
     });
 
     it('propagates HTTP error', () => {
-      service.updateRole(role).subscribe({
+      service.updateRole(role as any).subscribe({
         next: () => fail('expected error'),
         error: (err: HttpErrorResponse) => expect(err.status).toBe(400),
       });
@@ -162,12 +214,11 @@ describe('RoleService', () => {
     };
 
     it('updates role access (happy path)', () => {
-      const mock = { data: { object: 'seniors', ops: [] }, msg: 'OK' };
+      const mock = { data: { object: 'seniors', ops: [] } };
 
       service.updateRoleAccess(true, 2, op as any).subscribe((res) => {
         expect(res.data.object).toBe('seniors');
         expect(res.data.ops).toEqual([]);
-        expect(res.msg).toBe('OK');
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/update-role-access`);
@@ -184,14 +235,13 @@ describe('RoleService', () => {
       service.updateRoleAccess(true, 2, op as any).subscribe({
         next: () => fail('expected schema error'),
         error: (err) =>
-          expect((err as Error).message).toBe('Неверный формат данных ответа.'),
+          expect((err as Error).message).toBe('ERRORS.INVALID_SCHEMA'),
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/update-role-access`);
       // Invalid ops shape (id/roleId must be numbers)
       req.flush({
         data: { object: 'seniors', ops: [{ id: 'bad', roleId: 'nope' }] },
-        msg: 'bad',
       });
     });
 
@@ -228,12 +278,11 @@ describe('RoleService', () => {
     ];
 
     it('returns roles + operations (happy path)', () => {
-      const mock = { data: { roles, operations }, msg: 'Fetched' };
+      const mock = { data: { roles, operations } };
 
       service.getRoles().subscribe((res) => {
         expect(res.data.roles).toEqual(roles);
         expect(res.data.operations).toEqual(operations);
-        expect(res.msg).toBe('Fetched');
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/get-roles`);
@@ -245,11 +294,11 @@ describe('RoleService', () => {
       service.getRoles().subscribe({
         next: () => fail('expected schema error'),
         error: (err) =>
-          expect((err as Error).message).toBe('Неверный формат данных ответа.'),
+          expect((err as Error).message).toBe('ERRORS.INVALID_SCHEMA'),
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/get-roles`);
-      req.flush({ data: { roles }, msg: 'bad' }); // operations missing
+      req.flush({ data: { roles } }); // operations missing
     });
 
     it('propagates HTTP error', () => {
@@ -266,11 +315,10 @@ describe('RoleService', () => {
   // ---------- getRolesNamesList ----------
   describe('getRolesNamesList', () => {
     it('returns id/name pairs (happy path)', () => {
-      const mock = { data: [{ id: 1, name: 'Admin' }], msg: 'OK' };
+      const mock = { data: [{ id: 1, name: 'Admin' }] };
 
       service.getRolesNamesList().subscribe((res) => {
         expect(res.data).toEqual([{ id: 1, name: 'Admin' }]);
-        expect(res.msg).toBe('OK');
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/get-roles-names-list`);
@@ -282,11 +330,11 @@ describe('RoleService', () => {
       service.getRolesNamesList().subscribe({
         next: () => fail('expected schema error'),
         error: (err) =>
-          expect((err as Error).message).toBe('Неверный формат данных ответа.'),
+          expect((err as Error).message).toBe('ERRORS.INVALID_SCHEMA'),
       });
 
       const req = httpMock.expectOne(`${BASE_URL}/get-roles-names-list`);
-      req.flush({ data: [{ id: '1', name: 2 }], msg: 'bad' });
+      req.flush({ data: [{ id: '1', name: 2 }] });
     });
 
     it('propagates HTTP error', () => {
@@ -302,13 +350,12 @@ describe('RoleService', () => {
 
   // ---------- checkPossibilityToDeleteRole ----------
   describe('checkPossibilityToDeleteRole', () => {
-    it('returns usernames string or empty (happy path)', () => {
+    it('returns number of dependent users (happy path) and wires messageTap(warn, ctxFn, paramsFn)', () => {
       const id = 1;
-      const mock = { data: '', msg: 'OK' };
+      const mock = { data: 0 };
 
       service.checkPossibilityToDeleteRole(id).subscribe((res) => {
-        expect(res.data).toBe('');
-        expect(res.msg).toBe('OK');
+        expect(res.data).toBe(0);
       });
 
       const req = httpMock.expectOne(
@@ -316,21 +363,30 @@ describe('RoleService', () => {
       );
       expect(req.request.method).toBe('GET');
       req.flush(mock);
+
+      expect(messageWrapperSpy.messageTap).toHaveBeenCalled();
+      const args = messageWrapperSpy.messageTap.calls.mostRecent().args;
+      expect(args[0]).toBe('warn');
+      // ctx передаётся как функция (res)=>({...})
+      expect(typeof args[1]).toBe('function');
+      // paramsFn тоже функция: (res)=>({ count: res.data })
+      expect(typeof args[2]).toBe('function');
     });
 
-    it('fails when data is not a string (validator error)', () => {
+    it('fails when data is not a number (validator error)', () => {
       const id = 1;
 
       service.checkPossibilityToDeleteRole(id).subscribe({
         next: () => fail('expected validator error'),
         error: (err) =>
-          expect((err as Error).message).toBe('Неверный тип данных ответа.'),
+          expect((err as Error).message).toBe('ERRORS.INVALID_TYPE'),
       });
 
       const req = httpMock.expectOne(
         `${BASE_URL}/check-role-before-delete/${encodeURIComponent(String(id))}`
       );
-      req.flush({ data: 123, msg: 'bad' }); // expects string
+      // Ошибочное значение типа
+      req.flush({ data: 'not-a-number' });
     });
 
     it('propagates HTTP error', () => {
@@ -350,13 +406,13 @@ describe('RoleService', () => {
 
   // ---------- deleteRole ----------
   describe('deleteRole', () => {
-    it('deletes a role (happy path)', () => {
+    it('deletes a role (happy path) and wires messageTap(success)', () => {
       const id = 1;
-      const mock = { data: true, msg: 'Deleted' };
+      const mock = { data: null, code: 'ROLE.DELETED' };
 
       service.deleteRole(id).subscribe((res) => {
-        expect(res.data).toBeTrue();
-        expect(res.msg).toBe('Deleted');
+        expect(res.data).toBeNull();
+        expect(res.code).toBe('ROLE.DELETED');
       });
 
       const req = httpMock.expectOne(
@@ -364,6 +420,12 @@ describe('RoleService', () => {
       );
       expect(req.request.method).toBe('DELETE');
       req.flush(mock);
+
+      expect(messageWrapperSpy.messageTap).toHaveBeenCalled();
+      const args = messageWrapperSpy.messageTap.calls.mostRecent().args;
+      expect(args[0]).toBe('success');
+      expect(args[1]).toBeUndefined(); // ctx?
+      expect(args[2]).toBeUndefined(); // params?
     });
 
     it('propagates HTTP error', () => {

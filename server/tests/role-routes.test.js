@@ -52,7 +52,7 @@ describe("Role Routes", () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Проверка завершена.");
+      expect(res.body.code).toBe("ROLE.ALREADY_EXISTS");
       expect(res.body.data).toBe(true);
     });
 
@@ -68,7 +68,6 @@ describe("Role Routes", () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Проверка завершена.");
       expect(res.body.data).toBe(false);
     });
 
@@ -80,20 +79,20 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка при проверке названия роли.'
+        code: 'ERRORS.ROLE.NAME_NOT_CHECKED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
 
-    it("returns 400 when params fail schema validation", async () => {
+    it("returns 422 when params fail schema validation", async () => {
       // use an obviously invalid (e.g., too short or disallowed) param to trigger zod
       const res = await request(app).get("/check-role-name/%00");
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect('correlationId' in res.body).toBe(true);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Неверный формат данных запроса.'
+        code: 'ERRORS.VALIDATION'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -121,7 +120,7 @@ describe("Role Routes", () => {
 
       // Response
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно создана.");
+      expect(res.body.code).toBe('ROLE.CREATED');
       expect(res.body.data).toBe("manager");
 
       // Role.create called with tx
@@ -177,18 +176,18 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка. Роль не создана.'
+        code: 'ERRORS.ROLE.NOT_CREATED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
 
-    it("returns 400 when body fails schema validation", async () => {
+    it("returns 422 when body fails schema validation", async () => {
       const res = await request(app).post("/create-role").send({});
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Неверный формат данных запроса.'
+        code: 'ERRORS.VALIDATION'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -212,7 +211,7 @@ describe("Role Routes", () => {
       );
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно обновлена.");
+      expect(res.body.code).toBe('ROLE.UPDATED');
       expect(res.body.data).toEqual(payload);
     });
 
@@ -226,7 +225,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(404);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Обновление невозможно. Роль не найдена.'
+        code: 'ERRORS.ROLE.NOT_FOUND'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -241,19 +240,19 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка. Роль не обновлена.'
+        code: 'ERRORS.ROLE.NOT_UPDATED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
 
-    it("returns 400 when body fails schema validation", async () => {
+    it("returns 422 when body fails schema validation", async () => {
       // Missing id/name/description → zod should fail
       const res = await request(app).patch("/update-role").send({});
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Неверный формат данных запроса.'
+        code: 'ERRORS.VALIDATION'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -291,7 +290,6 @@ describe("Role Routes", () => {
       const res = await request(app).patch("/update-role-access").send(payload);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно обновлена.");
 
       // 1) FULL → { access:false }
       expect(updateSpy).toHaveBeenNthCalledWith(
@@ -352,7 +350,6 @@ describe("Role Routes", () => {
 
       const res = await request(app).patch("/update-role-access").send(payload);
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно обновлена.");
 
       // 1) FULL → { access:true }
       expect(updateSpy).toHaveBeenNthCalledWith(
@@ -404,7 +401,6 @@ describe("Role Routes", () => {
 
       const res = await request(app).patch("/update-role-access").send(payload);
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно обновлена.");
 
       // 1) Only the requested op is updated to access:true
       expect(updateSpy).toHaveBeenCalledWith(
@@ -443,7 +439,6 @@ describe("Role Routes", () => {
 
       const res = await request(app).patch("/update-role-access").send(payload);
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно обновлена.");
 
       // 1) ALL_OPS → { access:true }
       expect(updateSpy).toHaveBeenCalledWith(
@@ -499,7 +494,6 @@ describe("Role Routes", () => {
 
       const res = await request(app).patch("/update-role-access").send(payload);
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Роль успешно обновлена.");
 
       // Derive names from OPERATIONS to avoid hardcoding.
       const object = payload.operation.object;
@@ -573,17 +567,17 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка. Роль не обновлена.'
+        code: 'ERRORS.ROLE.NOT_UPDATED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
 
-    it("returns 400 when body fails schema validation", async () => {
+    it("returns 422 when body fails schema validation", async () => {
       const res = await request(app).patch("/update-role-access").send({});
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Неверный формат данных запроса.'
+        code: 'ERRORS.VALIDATION'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -609,7 +603,6 @@ describe("Role Routes", () => {
 
       // Assert response shape
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Data retrieved.");
       expect(res.body.data).toEqual(roles);
     });
 
@@ -621,7 +614,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка при получении списка названий ролей.'
+        code: 'ERRORS.ROLE.NAME_LIST_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -664,7 +657,6 @@ describe("Role Routes", () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Data retrieved.");
       expect(res.body.data.roles).toEqual(roles);
 
       // Check that operations array exists and contains our op names
@@ -691,7 +683,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка при получении списка ролей.'
+        code: 'ERRORS.ROLE.LIST_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -701,44 +693,40 @@ describe("Role Routes", () => {
   // ── GET /check-role-before-delete/:id ────────────────────────────────────────
   describe("GET /check-role-before-delete/:id", () => {
     it("returns comma-separated usernames for that role", async () => {
-      const findSpy = jest.spyOn(User, "findAll").mockResolvedValue([
-        { userName: "alice" },
-        { userName: "bob" },
-      ]);
+      const countSpy = jest.spyOn(User, "count").mockResolvedValue(2);
 
       const res = await request(app).get("/check-role-before-delete/1");
 
       // Assert query shape
-      expect(findSpy).toHaveBeenCalledWith({
+      expect(countSpy).toHaveBeenCalledWith({
         where: { roleId: 1 },
-        attributes: ["userName"],
         raw: true,
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Role deletion possibility checked.");
-      expect(res.body.data).toBe("alice, bob");
+      expect(res.body.code).toBe('ROLE.HAS_DEPENDENCIES');
+      expect(res.body.data).toBe(2);
     });
 
     it("handles internal errors", async () => {
-      jest.spyOn(User, "findAll").mockRejectedValue(new Error("DB down"));
+      jest.spyOn(User, "count").mockRejectedValue(new Error("DB down"));
 
       const res = await request(app).get("/check-role-before-delete/1");
 
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка при проверке возможности удаления роли.'
+        code: 'ERRORS.ROLE.NOT_CHECKED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
 
-    it("returns 400 when params fail schema validation", async () => {
+    it("returns 422 when params fail schema validation", async () => {
       const res = await request(app).get("/check-role-before-delete/not-a-number");
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Неверный формат данных запроса.'
+        code: 'ERRORS.VALIDATION'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -760,8 +748,8 @@ describe("Role Routes", () => {
         },
       });
       expect(res.statusCode).toBe(200);
-      expect(res.body.msg).toBe("Role deleted.");
-      expect(res.body.data).toBe(true);
+      expect(res.body.code).toBe('ROLE.DELETED');
+      expect(res.body.data).toBe(null);
     });
 
     it("returns 404 when role is not found", async () => {
@@ -772,7 +760,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(404);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Роль не найдена.'
+        code: 'ERRORS.ROLE.NOT_FOUND'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -785,17 +773,17 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Произошла ошибка при удалении роли.'
+        code: 'ERRORS.ROLE.NOT_DELETED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
 
-    it("returns 400 when params fail schema validation", async () => {
+    it("returns 422 when params fail schema validation", async () => {
       const res = await request(app).delete("/delete-role/NaN");
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        message: 'Неверный формат данных запроса.'
+        code: 'ERRORS.VALIDATION'
       });
       expect('correlationId' in res.body).toBe(true);
     });

@@ -27,14 +27,13 @@ describe('validateRequest + handleError (integration)', () => {
     expect(res.body).toEqual({ ok: true, data: { name: 'Alice', age: 20 } });
   });
 
-  it('400 JSON on invalid body (from handleError)', async () => {
+  it('422 JSON on invalid body (from handleError)', async () => {
     const res = await request(makeApp()).post('/x').send({ name: '', age: -1 });
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.headers['content-type']).toMatch(/application\/json/i);
     expect(res.body).toMatchObject({
-      message: 'Неверный формат данных запроса.',
-      code: null,
+      code: 'ERRORS.VALIDATION'
     });
     // опционально проверить presence correlationId, если в тестовом app подключён middleware
     expect('correlationId' in res.body).toBe(true);
