@@ -35,11 +35,11 @@ describe('RolesListComponent', () => {
   beforeEach(async () => {
     roleServiceSpy = jasmine.createSpyObj('RoleService', [
       'getRoles',
-      'updateRole',
       'checkRoleName',
+      'updateRole',
       'updateRoleAccess',
-      'deleteRole',
       'checkPossibilityToDeleteRole',
+      'deleteRole',
     ]);
     msgSpy = jasmine.createSpyObj('MessageWrapperService', [
       'messageTap',
@@ -160,9 +160,9 @@ describe('RolesListComponent', () => {
 
   it('handles getRoles() error via msgWrapper and does not mutate existing data', () => {
     // Seed with some data first
-    (component as any).roles = [{ id: 1, name: 'Old', description: 'Old' }];
+    (component as any).roles = [{ id: 1, name: 'Old', description: 'OldDesc' }];
     (component as any).operations = [];
-    (component as any).originalRoles = structuredClone(component.roles);
+    (component as any).originalRoles = [{ id: 1, name: 'Old', description: 'OldDesc' }];
 
     roleServiceSpy.getRoles.and.returnValue(
       throwError(() => new Error('boom'))
@@ -172,7 +172,7 @@ describe('RolesListComponent', () => {
 
     expect(msgSpy.handle).toHaveBeenCalled();
     expect(component.roles).toEqual([
-      { id: 1, name: 'Old', description: 'Old' },
+      { id: 1, name: 'Old', description: 'OldDesc' },
     ]);
   });
 
@@ -183,7 +183,7 @@ describe('RolesListComponent', () => {
   it('trims input and exits early if zod validation fails', () => {
     component.roles = [{ id: 1, name: 'Same', description: ' x ' }] as any; // desc too short
     component.originalRoles = [
-      { id: 1, name: 'Same', description: 'Desc' },
+      { id: 1, name: 'Same', description: 'OldDesc' },
     ] as any;
 
     component.onInputChange(0);
@@ -194,10 +194,10 @@ describe('RolesListComponent', () => {
 
   it('exits early if nothing changed after trim', () => {
     component.roles = [
-      { id: 1, name: ' Manager ', description: ' Desc ' },
+      { id: 1, name: ' Manager ', description: ' OldDesc ' },
     ] as any;
     component.originalRoles = [
-      { id: 1, name: 'Manager', description: 'Desc' },
+      { id: 1, name: 'Manager', description: 'OldDesc' },
     ] as any;
 
     component.onInputChange(0);
@@ -207,12 +207,14 @@ describe('RolesListComponent', () => {
   });
 
   it('name changed: rollback when name busy (data=true)', () => {
-    component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
+    component.roles = [{ id: 1, name: 'New', description: 'SameDesc' }] as any;
     component.originalRoles = [
-      { id: 1, name: 'Old', description: 'Same' },
+      { id: 1, name: 'Old', description: 'SameDesc' },
     ] as any;
 
-    roleServiceSpy.checkRoleName.and.returnValue(of({ code: 'ROLE.ALREADY_EXISTS', data: true }));
+    roleServiceSpy.checkRoleName.and.returnValue(
+      of({ code: 'ROLE.ALREADY_EXISTS', data: true })
+    );
 
     component.onInputChange(0);
 
@@ -222,9 +224,9 @@ describe('RolesListComponent', () => {
   });
 
   it('name changed: handles checkRoleName error and rollback', () => {
-    component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
+    component.roles = [{ id: 1, name: 'New', description: 'Same description' }] as any;
     component.originalRoles = [
-      { id: 1, name: 'Old', description: 'Same' },
+      { id: 1, name: 'Old', description: 'Same description' },
     ] as any;
 
     roleServiceSpy.checkRoleName.and.returnValue(
@@ -238,17 +240,17 @@ describe('RolesListComponent', () => {
   });
 
   it('name changed: passes when name free (data=false) and updates successfully', () => {
-    const updated = { id: 1, name: 'New', description: 'Same' } as any;
+    const updated = { id: 1, name: 'New', description: 'Same description' } as any;
 
-    component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
+    component.roles = [{ id: 1, name: 'New', description: 'Same description' }] as any;
     component.originalRoles = [
-      { id: 1, name: 'Old', description: 'Same' },
+      { id: 1, name: 'Old', description: 'Same description' },
     ] as any;
 
-    roleServiceSpy.checkRoleName.and.returnValue(
-      of({ data: false })
+    roleServiceSpy.checkRoleName.and.returnValue(of({ data: false }));
+    roleServiceSpy.updateRole.and.returnValue(
+      of({ code: 'ROLE.UPDATED', data: updated })
     );
-    roleServiceSpy.updateRole.and.returnValue(of({ code: 'ROLE.UPDATED', data: updated }));
 
     component.onInputChange(0);
 
@@ -266,7 +268,9 @@ describe('RolesListComponent', () => {
       { id: 1, name: 'Same', description: 'OldDesc' },
     ] as any;
 
-    roleServiceSpy.updateRole.and.returnValue(of({ code: 'ROLE.UPDATED', data: updated }));
+    roleServiceSpy.updateRole.and.returnValue(
+      of({ code: 'ROLE.UPDATED', data: updated })
+    );
 
     component.onInputChange(0);
 
@@ -278,9 +282,9 @@ describe('RolesListComponent', () => {
   });
 
   it('updateRole error: handled and roles rolled back', () => {
-    const original = { id: 1, name: 'Same', description: 'Old' } as any;
+    const original = { id: 1, name: 'Same', description: 'OldDesc' } as any;
 
-    component.roles = [{ id: 1, name: 'Same', description: 'New' }] as any;
+    component.roles = [{ id: 1, name: 'Same', description: 'NewDesc' }] as any;
     component.originalRoles = [original] as any;
 
     roleServiceSpy.updateRole.and.returnValue(
