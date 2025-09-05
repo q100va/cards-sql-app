@@ -74,12 +74,12 @@ export async function initInfrastructure() {
   await Region.sync({ alter: !isProd });
   await District.sync({ alter: !isProd });
   await Locality.sync({ alter: !isProd });
-  await UserContact.sync({ alter: !isProd });
-  await UserAddress.sync({ alter: !isProd });
-  await SearchUser.sync({ alter: !isProd });
   await Role.sync({ alter: !isProd });
   await Operation.sync({ alter: !isProd });
   await User.sync({ alter: !isProd });
+  await UserContact.sync({ alter: !isProd });
+  await UserAddress.sync({ alter: !isProd });
+  await SearchUser.sync({ alter: !isProd });
   await OutdatedName.sync({ alter: !isProd });
   await AuditLog.sync({ alter: !isProd });
 

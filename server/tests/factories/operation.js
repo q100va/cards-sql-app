@@ -1,5 +1,6 @@
 // tests/factories/operation.js
-import { q } from '../helpers/db.js';
+import sequelize from '../../database.js';
+import { QueryTypes } from 'sequelize';
 import { OPERATIONS } from '../../shared/operations.js';
 
 /**
@@ -19,11 +20,14 @@ export async function createOperation(overrides = {}) {
     throw new Error('createOperation: roleId и name обязательны');
   }
 
-  const { rows } = await q(
+  const rows = await sequelize.query(
     `INSERT INTO operations (role_id, name, access, disabled)
      VALUES ($1, $2, $3, $4)
      RETURNING id, role_id AS "roleId", name, access, disabled`,
-    [op.roleId, op.name, op.access, op.disabled]
+    {
+      bind: [op.roleId, op.name, op.access, op.disabled],
+      type: QueryTypes.SELECT, // с RETURNING удобно забирать строки так
+    }
   );
   return rows[0];
 }
@@ -48,10 +52,10 @@ export async function seedDefaultOperationsForRole(roleId) {
     values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
   });
 
-  await q(
+  await sequelize.query(
     `INSERT INTO operations (role_id, name, access, disabled)
      VALUES ${values.join(',')}`,
-    params
+    { bind: params }
   );
 }
 
@@ -59,27 +63,29 @@ export async function seedDefaultOperationsForRole(roleId) {
  * Удобно вытащить все операции роли (для ассертов).
  */
 export async function getOperationsByRole(roleId) {
-  const { rows } = await q(
+  return sequelize.query(
     `SELECT id, role_id AS "roleId", name, access, disabled
        FROM operations
       WHERE role_id = $1
       ORDER BY name ASC`,
-    [roleId]
+    { bind: [roleId], type: QueryTypes.SELECT }
   );
-  return rows;
 }
 
 /**
  * Быстро включить/выключить одну операцию роли.
  */
 export async function setOperationAccess(roleId, name, { access, disabled }) {
-  const { rows } = await q(
+  const rows = await sequelize.query(
     `UPDATE operations
         SET access = COALESCE($3, access),
             disabled = COALESCE($4, disabled)
       WHERE role_id = $1 AND name = $2
       RETURNING id, role_id AS "roleId", name, access, disabled`,
-    [roleId, name, access ?? null, disabled ?? null]
+    {
+      bind: [roleId, name, access ?? null, disabled ?? null],
+      type: QueryTypes.SELECT,
+    }
   );
   return rows[0] ?? null;
 }

@@ -4,13 +4,13 @@ import Operation from '../../models/operation.js';
 import { OPERATIONS } from '../../shared/operations.js';
 
 /** Создать роль (с разумными дефолтами) */
-export async function createRole(attrs = {}, { transaction = null } = {}) {
+export async function createRole(attrs = {}) {
   const defaults = {
     name: `role_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     description: 'Test role',
   };
   const data = { ...defaults, ...attrs };
-  const role = await Role.create(data, { transaction });
+  const role = await Role.create(data);
   return role.get({ plain: true });
 }
 
@@ -20,19 +20,19 @@ export async function findRoleById(id) {
 }
 
 /** Удалить роль (мягко через destroy) */
-export async function destroyRoleById(id, { transaction = null } = {}) {
-  return Role.destroy({ where: { id }, transaction });
+export async function destroyRoleById(id) {
+  return Role.destroy({ where: { id }});
 }
 
 /** Посеять записи в Operation для роли по OPERATIONS */
-export async function seedOperationsForRole(roleId, { transaction = null } = {}) {
+export async function seedOperationsForRole(roleId) {
   const rows = OPERATIONS.map((op) => ({
     name: op.operation,
     roleId,
     access: false,
     disabled: op.flag === 'FULL',
   }));
-  await Operation.bulkCreate(rows, { transaction });
+  await Operation.bulkCreate(rows);
 }
 
 /** Очистить таблицы ролей/операций (аккуратно, только для тестов) */

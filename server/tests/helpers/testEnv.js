@@ -1,21 +1,21 @@
+//import dotenv from 'dotenv';
+//dotenv.config({ path: 'server/.env.test' });
 import request from 'supertest';
 import app, { initInfrastructure } from '../../app.js';
-//import { dbConnect, dbDisconnect, begin, rollback } from './db.js'; // если используешь свою обёртку
+import sequelize from '../../database.js';
 
 beforeAll(async () => {
-  // если у тебя dbConnect уже делает sequelize.authenticate — достаточно initInfrastructure()
-  await initInfrastructure();       // синк моделей, без listen
-  global.api = request(app);        // <-- теперь точно есть
+  await initInfrastructure();           // гарантируем, что таблицы есть
+  global.api = request(app);
 });
 
-/* beforeEach(async () => {
-  await begin();   // BEGIN;
-});
-
-afterEach(async () => {
-  await rollback(); // ROLLBACK;
+beforeEach(async () => {
+  await sequelize.truncate({ cascade: true, restartIdentity: true });
 });
 
 afterAll(async () => {
-  await dbDisconnect?.(); // если есть
-}); */
+  await sequelize.close(); // закрываем пул
+});
+
+
+

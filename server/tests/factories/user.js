@@ -1,6 +1,6 @@
 import { User } from '../../models';
 
-export async function createUser(attrs = {}, { transaction = null } = {}) {
+export async function createUser(attrs = {}) {
   const defaults = {
     name: `user_${Date.now()}`,
     email: `u_${Math.random().toString(36).slice(2,8)}@test.local`,
@@ -8,7 +8,7 @@ export async function createUser(attrs = {}, { transaction = null } = {}) {
     isBlocked: false,
   };
   const data = { ...defaults, ...attrs };
-  const user = await User.create(data, { transaction });
+  const user = await User.create(data);
   return user.get({ plain: true });
 }
 

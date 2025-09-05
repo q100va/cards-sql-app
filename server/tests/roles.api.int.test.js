@@ -1,5 +1,7 @@
 // tests/roles.api.int.test.js
-import { q } from './helpers/db.js';
+import sequelize from '../database.js';
+import { QueryTypes } from 'sequelize';
+
 import { createRole, findRoleById } from './factories/role.js';
 import { createUser } from './factories/user.js';
 import {
@@ -7,10 +9,14 @@ import {
   getOperationsByRole,
 } from './factories/operation.js';
 import { OPERATIONS } from '../shared/operations.js';
-//import { jest } from "@jest/globals";
+
+
+// маленький хелпер для SELECT-ов (возвращает массив строк)
+async function select(text, bind = []) {
+  return sequelize.query(text, { bind, type: QueryTypes.SELECT });
+}
 
 describe('Roles API (integration)', () => {
-  // Небольшой хелпер: часто шлём x-lang
   const langRu = { 'x-lang': 'ru' };
 
   // ---------- GET /check-role-name/:name ----------
@@ -56,8 +62,8 @@ describe('Roles API (integration)', () => {
       expect(body.code).toBe('ROLE.CREATED');
       expect(body.data).toBe('Editors');
 
-      // Роль реально создалась?
-      const { rows: roleRows } = await q(
+      // Роль действительно создалась (имя хранится lowercased)
+      const roleRows = await select(
         `SELECT id, name, description FROM roles WHERE name = $1`,
         [payload.name.toLowerCase()]
       );
@@ -69,16 +75,17 @@ describe('Roles API (integration)', () => {
       const ops = await getOperationsByRole(roleId);
       expect(ops.length).toBe(OPERATIONS.length);
 
-      // Проверим дефолты: FULL → disabled=true, остальное disabled=false
-      const fullOps = OPERATIONS.filter((o) => o.flag === 'FULL').map((o) => o.operation);
+      // Проверим дефолты: FULL → disabled=true, остальное disabled=false; access=false у всех
+      const fullOps = new Set(
+        OPERATIONS.filter(o => o.flag === 'FULL').map(o => o.operation)
+      );
       for (const op of ops) {
-        if (fullOps.includes(op.name)) {
-          expect(op.disabled).toBeTrue();
+        if (fullOps.has(op.name)) {
+          expect(op.disabled).toBe(true);
         } else {
-          expect(op.disabled).toBeFalse();
+          expect(op.disabled).toBe(false);
         }
-        // по умолчанию access=false
-        expect(op.access).toBeFalse();
+        expect(op.access).toBe(false);
       }
     });
   });
@@ -125,7 +132,6 @@ describe('Roles API (integration)', () => {
       const role = await createRole({ name: 'opsall', description: 'Role description' });
       await seedDefaultOperationsForRole(role.id);
 
-      // берём объект "roles", ALL_OPS_ROLES
       const allOps = OPERATIONS.find(
         (o) => o.object === 'roles' && o.accessToAllOps
       );
@@ -142,22 +148,22 @@ describe('Roles API (integration)', () => {
 
       expect(status).toBe(200);
       expect(body.data.object).toBe(allOps.object);
-      expect(Array.isArray(body.data.ops)).toBeTrue();
-      expect(body.data.ops.length).toBeGreaterThan(1); // как минимум ALL_OPС + несколько связанных
+      expect(Array.isArray(body.data.ops)).toBe(true);
+      expect(body.data.ops.length).toBeGreaterThan(1);
 
-      // Все операции этого объекта должны стать access=true (и FULL-пара автоматически подстроится)
+      // Все операции этого объекта должны стать access=true
       const after = await getOperationsByRole(role.id);
       const affected = after.filter((x) =>
         OPERATIONS.some((o) => o.object === allOps.object && o.operation === x.name)
       );
-      expect(affected.every((x) => x.access === true)).toBeTrue();
+      expect(affected.every((x) => x.access === true)).toBe(true);
     });
 
     it('turning off any single op disables ALL_OPS_* (if existed)', async () => {
       const role = await createRole({ name: 'cascade', description: 'Role description' });
       await seedDefaultOperationsForRole(role.id);
 
-      // Сначала включим ALL_OPS для объекта "users"
+      // включим ALL_OPS для "users"
       const allOpsUsers = OPERATIONS.find(
         (o) => o.object === 'users' && o.accessToAllOps
       );
@@ -167,7 +173,7 @@ describe('Roles API (integration)', () => {
         operation: allOpsUsers,
       });
 
-      // затем выключим одну из "простых" операций этого же объекта
+      // выключим одну «простую» операцию этого же объекта
       const anySimple = OPERATIONS.find(
         (o) => o.object === 'users' && !o.accessToAllOps && !o.flag
       );
@@ -185,14 +191,13 @@ describe('Roles API (integration)', () => {
 
       const ops = await getOperationsByRole(role.id);
       const allOpsRow = ops.find((x) => x.name === allOpsUsers.operation);
-      expect(allOpsRow.access).toBeFalse(); // ALL_OPS должен выключиться
+      expect(allOpsRow.access).toBe(false); // ALL_OPS выключился
     });
 
     it('LIMITED/FULL complementary pair updates disabled/access correctly', async () => {
       const role = await createRole({ name: 'pairtest', description: 'Role description' });
       await seedDefaultOperationsForRole(role.id);
 
-      // возьмём VIEW_LIMITED_USERS_LIST → complementary = VIEW_FULL_USERS_LIST
       const limited = OPERATIONS.find(
         (o) => o.object === 'users' && o.flag === 'LIMITED'
       );
@@ -202,7 +207,7 @@ describe('Roles API (integration)', () => {
       expect(limited).toBeTruthy();
       expect(full).toBeTruthy();
 
-      // Включаем LIMITED (access=true) → complementary FULL получает disabled=true (и access НЕ синхронизируется)
+      // Включаем LIMITED → FULL получает disabled=true (access не синхронизируется)
       await global.api.patch('/api/roles/update-role-access').send({
         access: true,
         roleId: role.id,
@@ -210,12 +215,12 @@ describe('Roles API (integration)', () => {
       });
 
       let ops = await getOperationsByRole(role.id);
-      const limitedRow = ops.find((x) => x.name === limited.operation);
-      const fullRow = ops.find((x) => x.name === full.operation);
-      expect(limitedRow.access).toBeTrue();
-      expect(fullRow.disabled).toBeTrue();
+      let limitedRow = ops.find((x) => x.name === limited.operation);
+      let fullRow = ops.find((x) => x.name === full.operation);
+      expect(limitedRow.access).toBe(true);
+      expect(fullRow.disabled).toBe(true);
 
-      // Включаем FULL (access=true) → complementary LIMITED получает disabled=true, и access для LIMITED синхронизируется в false
+      // Включаем FULL → LIMITED.disabled=true (и access LIMITED может быть сброшен)
       await global.api.patch('/api/roles/update-role-access').send({
         access: true,
         roleId: role.id,
@@ -225,9 +230,8 @@ describe('Roles API (integration)', () => {
       ops = await getOperationsByRole(role.id);
       const limitedAfter = ops.find((x) => x.name === limited.operation);
       const fullAfter = ops.find((x) => x.name === full.operation);
-      expect(fullAfter.access).toBeTrue();
-      expect(limitedAfter.disabled).toBeTrue();
-      // в твоей логике: при включении FULL — LIMITED может стать disabled=true; access LIMITED может быть синхронизирован (тут оставляем проверку disabled)
+      expect(fullAfter.access).toBe(true);
+      expect(limitedAfter.disabled).toBe(true);
     });
   });
 
@@ -242,7 +246,8 @@ describe('Roles API (integration)', () => {
         .set(langRu);
 
       expect(status).toBe(200);
-      expect(Array.isArray(body.data)).toBeTrue();
+      expect(Array.isArray(body.data)).toBe(true);
+
       const names = body.data.map((r) => r.name);
       const sorted = [...names].sort((a, b) => a.localeCompare(b));
       expect(names).toEqual(sorted);
@@ -265,9 +270,8 @@ describe('Roles API (integration)', () => {
       expect(roles.length).toBeGreaterThanOrEqual(2);
       expect(operations.length).toBe(OPERATIONS.length);
 
-      // у каждой операции должен быть массив rolesAccesses длиной = кол-ву ролей
       for (const op of operations) {
-        expect(Array.isArray(op.rolesAccesses)).toBeTrue();
+        expect(Array.isArray(op.rolesAccesses)).toBe(true);
         expect(op.rolesAccesses.length).toBeGreaterThanOrEqual(roles.length);
       }
     });
@@ -276,7 +280,7 @@ describe('Roles API (integration)', () => {
   // ---------- GET /check-role-before-delete/:id ----------
   describe('GET /api/roles/check-role-before-delete/:id', () => {
     it('returns {data:0} if no users attached (no code)', async () => {
-      const role = await createRole({ name: 'empty', description: '' });
+      const role = await createRole({ name: 'empty', description: 'ok' });
 
       const { body, status } = await global.api
         .get(`/api/roles/check-role-before-delete/${role.id}`);
@@ -315,11 +319,11 @@ describe('Roles API (integration)', () => {
       expect(body.data).toBeNull();
 
       // роли нет
-      const { rows: roles } = await q(`SELECT id FROM roles WHERE id = $1`, [role.id]);
+      const roles = await select(`SELECT id FROM roles WHERE id = $1`, [role.id]);
       expect(roles.length).toBe(0);
 
       // операций роли нет
-      const { rows: ops } = await q(`SELECT id FROM operations WHERE role_id = $1`, [role.id]);
+      const ops = await select(`SELECT id FROM operations WHERE role_id = $1`, [role.id]);
       expect(ops.length).toBe(0);
     });
 
