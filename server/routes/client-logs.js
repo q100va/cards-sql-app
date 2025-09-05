@@ -34,7 +34,7 @@ router.post(
       // TODO (опционально): складывать в таблицу client_logs
       res.status(204).send();
     } catch (err) {
-      err.userMessage = 'Не удалось принять логи клиента.';
+     err.code = 'ERRORS.LOGS_NOT_ACCEPTED';
       return next(err);
     }
   }

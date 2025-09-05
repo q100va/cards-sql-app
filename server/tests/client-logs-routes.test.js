@@ -81,16 +81,16 @@ describe('POST /api/client-logs', () => {
     );
   });
 
-  it('returns 400 (via validateRequest) on invalid payload', async () => {
+  it('returns 422 (via validateRequest) on invalid payload', async () => {
     const res = await request(makeTestApp(router, '/'))
       .post('/')
       .set('Content-Type', 'application/json')
       .send({}); // заведомо невалидно
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.headers['content-type']).toMatch(/application\/json/i);
     expect(res.body).toMatchObject({
-      message: 'Неверный формат данных запроса.',
+      code: 'ERRORS.VALIDATION',
     });
   });
 
@@ -108,8 +108,7 @@ describe('POST /api/client-logs', () => {
     expect(res.status).toBe(500);
     expect(res.headers['content-type']).toMatch(/application\/json/i);
     expect(res.body).toMatchObject({
-      message: 'Не удалось принять логи клиента.',
-      code: null,
+      code: "ERRORS.LOGS_NOT_ACCEPTED"
     });
   });
 });

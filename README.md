@@ -1,4 +1,4 @@
-# CardsSqlApp
+# CardsSqlApp - Greeting Cards Management App
 
 **cards-sql-app** is a full-stack web application built *pro bono* for the charity foundation **“Starost v radost”** (Moscow, Russia).  
 It supports the program **“Grandchildren by Correspondence: Send a Greeting Card,”** which enables volunteers to send birthday and holiday cards to nursing home residents.  
@@ -38,7 +38,10 @@ Reports provide insights into the number of requests, participants, and resident
 **Planned:**  
 - Authentication (JWT, sessions)  
 - Email notifications / reminders  
-- Advanced reporting & analytics  
+- Advanced reporting & analytics
+
+**Tech Debt items:**
+- Add handling of err.fields on the frontend (automatic assignment of errors in FormGroup)
 
 ---
 

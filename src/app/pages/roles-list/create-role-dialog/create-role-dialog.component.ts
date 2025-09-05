@@ -34,6 +34,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RoleService } from '../../../services/role.service';
 import { ConfirmationService } from 'primeng/api';
 import { MessageWrapperService } from '../../../services/message.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // RxJS
 import { EMPTY } from 'rxjs';
@@ -60,6 +61,7 @@ import { zodValidator } from 'src/app/utils/zod-validator';
     // Angular forms
     FormsModule,
     ReactiveFormsModule,
+    TranslateModule,
   ],
   templateUrl: './create-role-dialog.component.html',
   styleUrls: ['./create-role-dialog.component.css'],
@@ -73,24 +75,23 @@ export class CreateRoleDialogComponent {
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly roleService = inject(RoleService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly translateService = inject(TranslateService);
 
   // UI state
   isLoading = false;
 
   // Form controls
-  roleName = new FormControl<string | null>(null, [
-    Validators.required,
+  roleName = new FormControl<string>('', [
     zodValidator(roleDraftSchema.shape.name),
   ]);
-  roleDescription = new FormControl<string | null>(null, [
-    Validators.required,
+  roleDescription = new FormControl<string>('', [
     zodValidator(roleDraftSchema.shape.description),
   ]);
 
   // Handle submit
   public onCreateRoleClick(): void {
     if (this.roleName.invalid || this.roleDescription.invalid) {
-      this.msgWrapper.warn('Форма невалидна', {
+      this.msgWrapper.warn('ROLE.INVALID_FORM', {
         source: 'CreateRoleDialog',
         invalidControls: [
           this.roleName.invalid ? 'roleName' : null,
@@ -109,11 +110,6 @@ export class CreateRoleDialogComponent {
       .pipe(
         switchMap((res) => {
           if (res.data) {
-            this.msgWrapper.warn(`Название '${trimmedRoleName}' уже занято`, {
-              source: 'CreateRoleDialog',
-              stage: 'checkRoleName',
-              nameLen: trimmedRoleName.length,
-            });
             return EMPTY;
           } else {
             return this.roleService.createRole(
@@ -142,17 +138,28 @@ export class CreateRoleDialogComponent {
   }
 
   // Handle cancel
-  public onCancelClick(event: Event): void {
-    const target = event.target as EventTarget;
+  public onCancelClick(event: MouseEvent): void {
+    const target = event.currentTarget as HTMLElement;
+
     this.confirmationService.confirm({
       target,
-      message: 'Вы уверены, что хотите выйти без сохранения?',
-      header: 'Предупреждение',
+      message: this.translateService.instant(
+        'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE'
+      ),
+      header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
+      icon: 'pi pi-exclamation-triangle',
       closable: true,
       closeOnEscape: true,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Нет' },
-      acceptButtonProps: { label: 'Да', severity: 'secondary', outlined: true },
+
+      rejectButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+      },
+      acceptButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+        severity: 'secondary',
+        outlined: true,
+      },
+
       accept: () => this.dialogRef.close(null),
       reject: () => {},
     });

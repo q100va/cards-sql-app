@@ -1,5 +1,5 @@
 <!--   ToastModule notifications centered on the page -->
- <p-toast position="center">
+<p-toast position="center">
   <ng-template let-msg pTemplate="message">
     <div class="p-toast-message-text">
       <div class="p-toast-summary">{{ msg.summary }}</div>
@@ -18,11 +18,11 @@
   <mat-toolbar-row class="toolbar-row">
 
     <img class="nav-logo" src="LOGO.png" height="50px" routerLink="/" />
-    <span class="logo">&nbsp;Проект "Внуки по переписке: Поздравить открыткой"</span>
+    <span class="logo">&nbsp;{{'TOOLBAR.TITLE' | translate}}</span>
 
     <span class="spacer"></span>
     <button mat-button class="navbar-link">
-      Мои заявки
+      {{'TOOLBAR.MY_ORDERS' | translate}}
     </button>
 
     <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu">
@@ -30,57 +30,56 @@
     </button>
 
     <mat-menu #profileMenu="matMenu">
-      <p style="padding: 8px" class="drop-menu-item">Вы вошли как {{ name }}</p>
+      <p style="padding: 8px" class="drop-menu-item">{{'TOOLBAR.SIGNED_IN_AS' | translate :{ name: name } }}</p>
       <mat-divider></mat-divider>
       @for (item of menuItems; track $index) {
       <ng-container>
         @if(!item.subMenuItems){
         <button mat-menu-item class="drop-menu-item" [routerLink]="item.link">
           <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
-          <span>{{item.text}}</span>
+          <span>{{item.text | translate}}</span>
         </button>
         } @else {
         <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu">
           <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
-          <span>{{item.text}}</span>
+          <span>{{item.text | translate}}</span>
         </button>
         <mat-menu #submenu="matMenu" xPosition="before">
           @for(subItem of item.subMenuItems; track $index){
           <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link">
             <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
-            <span>{{subItem.text}}</span>
+            <span>{{subItem.text | translate}}</span>
           </button>
           }
         </mat-menu>
         }
       </ng-container>
-
-
       }
 
-      <!--       <mat-menu #mainMenu="matMenu">
-        <ng-container *ngFor="let item of menuItems">
-          <button mat-menu-item
-                  *ngIf="!item.subMenuItems; else nestedMenu"
-                  [routerLink]="item.link">
-            <mat-icon>{{ item.icon }}</mat-icon>
-            {{ item.label }}
-          </button>
-
-          <ng-template #nestedMenu>
-
-
-              <ng-container *ngFor="let subItem of item.subMenuItems">
-
-              </ng-container>
-
-          </ng-template>
-        </ng-container>
-      </mat-menu> -->
       <mat-divider></mat-divider>
       <button mat-menu-item class="drop-menu-item" (click)="signOut()">
         <mat-icon>logout</mat-icon>
-        <span>Выйти</span>
+        <span>{{'TOOLBAR.EXIT' | translate}}</span>
+      </button>
+    </mat-menu>
+
+    <!-- Button in the toolbar -->
+    <button mat-icon-button [matMenuTriggerFor]="langMenu">
+      <mat-icon>language</mat-icon>
+    </button>
+
+    <!-- Menu with languages -->
+    <mat-menu #langMenu="matMenu">
+      <button mat-menu-item (click)="setLanguage('en')">
+        <span>{{ 'LANG.EN' | translate }}</span>
+        <span class="spacer"></span>
+        <mat-icon *ngIf="langService.current === 'en'">check</mat-icon>
+      </button>
+
+      <button mat-menu-item (click)="setLanguage('ru')">
+        <span>{{ 'LANG.RU' | translate }}</span>
+        <span class="spacer"></span>
+        <mat-icon *ngIf="langService.current === 'ru'">check</mat-icon>
       </button>
     </mat-menu>
 
@@ -99,8 +98,7 @@
 
 <mat-toolbar class="footer">
   <p>
-    &copy; {{ year | date: "yyyy" }} - OksanaKustova -
-    <a href="https://starikam.org/" class="main-link" target="_blank">БФ помощи пожилым людям и инвалидам "Старость
-      в радость"</a>
+    &copy; {{ year | date: "yyyy" }} - {{'APP.AUTHOR' | translate}} -
+    <a href="https://starikam.org/" class="main-link" target="_blank">{{'APP.FOUNDATION' | translate}}</a>
   </p>
 </mat-toolbar>

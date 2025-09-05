@@ -14,6 +14,14 @@ import { MessageWrapperService } from '../../services/message.service';
 import { ConfirmationService } from 'primeng/api';
 import { MatDialog } from '@angular/material/dialog';
 
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+
+class EmptyLoader implements TranslateLoader {
+  getTranslation(lang: string) {
+    return of({}); // всегда пустой словарь → ключи вернутся как есть
+  }
+}
+
 describe('RolesListComponent', () => {
   let fixture: ComponentFixture<RolesListComponent>;
   let component: RolesListComponent;
@@ -34,8 +42,7 @@ describe('RolesListComponent', () => {
       'checkPossibilityToDeleteRole',
     ]);
     msgSpy = jasmine.createSpyObj('MessageWrapperService', [
-      'success',
-      'warn',
+      'messageTap',
       'handle',
     ]);
     confirmSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
@@ -43,11 +50,17 @@ describe('RolesListComponent', () => {
 
     // Default getRoles to empty state to avoid hanging ngOnInit
     roleServiceSpy.getRoles.and.returnValue(
-      of({ msg: 'ok', data: { roles: [], operations: [] } })
+      of({ data: { roles: [], operations: [] } })
     );
 
     await TestBed.configureTestingModule({
-      imports: [RolesListComponent, NoopAnimationsModule],
+      imports: [
+        RolesListComponent,
+        NoopAnimationsModule,
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useClass: EmptyLoader },
+        }),
+      ],
       providers: [
         { provide: RoleService, useValue: roleServiceSpy },
         { provide: MessageWrapperService, useValue: msgSpy },
@@ -96,7 +109,7 @@ describe('RolesListComponent', () => {
     // After response: isLoading false, empty message visible
     expect(component.isLoading()).toBeFalse();
     const emptyText = fixture.nativeElement.textContent || '';
-    expect(emptyText).toContain('Пока не создано ни одной роли.');
+    expect(emptyText).toContain('TABLE_EMPTY');
   }));
 
   it('initializes scrollHeight from window.innerHeight * 0.75', () => {
@@ -131,7 +144,7 @@ describe('RolesListComponent', () => {
     ];
 
     roleServiceSpy.getRoles.and.returnValue(
-      of({ msg: 'ok', data: { roles, operations } })
+      of({ data: { roles, operations } })
     );
 
     // Call private loader via casting (keeps test explicit)
@@ -193,17 +206,17 @@ describe('RolesListComponent', () => {
     expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
   });
 
-  it('name changed: warns and rollback when name busy (data=true)', () => {
+  it('name changed: rollback when name busy (data=true)', () => {
     component.roles = [{ id: 1, name: 'New', description: 'Same' }] as any;
     component.originalRoles = [
       { id: 1, name: 'Old', description: 'Same' },
     ] as any;
 
-    roleServiceSpy.checkRoleName.and.returnValue(of({ msg: 'ok', data: true }));
+    roleServiceSpy.checkRoleName.and.returnValue(of({ code: 'ROLE.ALREADY_EXISTS', data: true }));
 
     component.onInputChange(0);
 
-    expect(msgSpy.warn).toHaveBeenCalled();
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
     expect(roleServiceSpy.updateRole).not.toHaveBeenCalled();
     expect(component.roles[0]).toEqual(component.originalRoles[0]); // rollback
   });
@@ -233,14 +246,14 @@ describe('RolesListComponent', () => {
     ] as any;
 
     roleServiceSpy.checkRoleName.and.returnValue(
-      of({ msg: 'ok', data: false })
+      of({ data: false })
     );
-    roleServiceSpy.updateRole.and.returnValue(of({ msg: 'ok', data: updated }));
+    roleServiceSpy.updateRole.and.returnValue(of({ code: 'ROLE.UPDATED', data: updated }));
 
     component.onInputChange(0);
 
     expect(roleServiceSpy.updateRole).toHaveBeenCalledWith(updated);
-    expect(msgSpy.success).toHaveBeenCalled();
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
     expect(component.roles[0]).toEqual(updated);
     expect(component.originalRoles[0]).toEqual(updated);
   });
@@ -253,13 +266,13 @@ describe('RolesListComponent', () => {
       { id: 1, name: 'Same', description: 'OldDesc' },
     ] as any;
 
-    roleServiceSpy.updateRole.and.returnValue(of({ msg: 'ok', data: updated }));
+    roleServiceSpy.updateRole.and.returnValue(of({ code: 'ROLE.UPDATED', data: updated }));
 
     component.onInputChange(0);
 
     expect(roleServiceSpy.checkRoleName).not.toHaveBeenCalled();
     expect(roleServiceSpy.updateRole).toHaveBeenCalledWith(updated);
-    expect(msgSpy.success).toHaveBeenCalled();
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
     expect(component.roles[0]).toEqual(updated);
     expect(component.originalRoles[0]).toEqual(updated);
   });
@@ -271,7 +284,7 @@ describe('RolesListComponent', () => {
     component.originalRoles = [original] as any;
 
     roleServiceSpy.updateRole.and.returnValue(
-      throwError(() => new Error('update fail'))
+      throwError(() => new Error('ERRORS.ROLE.NOT_UPDATED'))
     );
 
     component.onInputChange(0);
@@ -314,7 +327,7 @@ describe('RolesListComponent', () => {
 
     roleServiceSpy.updateRoleAccess.and.returnValue(
       of({
-        msg: 'ok',
+        code: 'ROLE.UPDATED',
         data: {
           object: 'partners',
           ops: [
@@ -332,9 +345,9 @@ describe('RolesListComponent', () => {
       { id: 11, roleId: 2, access: false, disabled: false },
     ]);
     expect(component.operations[1].rolesAccesses).toEqual([
-          { id: 20, roleId: 1, access: false, disabled: false },
-          { id: 21, roleId: 2, access: false, disabled: false },
-        ]);
+      { id: 20, roleId: 1, access: false, disabled: false },
+      { id: 21, roleId: 2, access: false, disabled: false },
+    ]);
   });
 
   it('handles updateRoleAccess error and keeps state intact', () => {
@@ -353,7 +366,7 @@ describe('RolesListComponent', () => {
     component.operations = structuredClone(snapshot);
 
     roleServiceSpy.updateRoleAccess.and.returnValue(
-      throwError(() => new Error('access fail'))
+      throwError(() => new Error('ERRORS.ROLE.NOT_UPDATED'))
     );
 
     component.onAccessChangeCheck(true, 1, component.operations[0]);
@@ -377,7 +390,7 @@ describe('RolesListComponent', () => {
 
     expect(dialogSpy.open).toHaveBeenCalled();
     expect(reloadSpy).toHaveBeenCalled();
-    expect(msgSpy.success).toHaveBeenCalledWith(`Роль 'NewRole' создана.`);
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
   });
 
   it('opens dialog, does nothing when closed with null/undefined', () => {
@@ -390,15 +403,17 @@ describe('RolesListComponent', () => {
 
     expect(dialogSpy.open).toHaveBeenCalled();
     expect(reloadSpy).not.toHaveBeenCalled();
-    expect(msgSpy.success).not.toHaveBeenCalled();
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
   });
 
   //#endregion
 
   //#region Delete role flow
 
-  it('confirm accept: no users → deleteRole → success + reload', () => {
-    component.roles = [{ id: 1, name: 'Role', description: 'description' }] as any;
+  it('confirm accept: no users → deleteRole → reload', () => {
+    component.roles = [
+      { id: 1, name: 'Role', description: 'description' },
+    ] as any;
     const target = document.createElement('div');
 
     // Confirm accept
@@ -408,9 +423,9 @@ describe('RolesListComponent', () => {
     });
 
     roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-      of({ msg: 'ok', data: '' }) // falsy → allowed to delete
+      of({ data: 0 }) // falsy → allowed to delete
     );
-    roleServiceSpy.deleteRole.and.returnValue(of({ msg: 'ok', data: true }));
+    roleServiceSpy.deleteRole.and.returnValue(of({ data: null }));
 
     const reloadSpy = spyOn(component as any, 'loadRoles');
 
@@ -418,12 +433,14 @@ describe('RolesListComponent', () => {
 
     expect(roleServiceSpy.checkPossibilityToDeleteRole).toHaveBeenCalledWith(1);
     expect(roleServiceSpy.deleteRole).toHaveBeenCalledWith(1);
-    expect(msgSpy.success).toHaveBeenCalledWith(`Роль 'Role' удалена.`);
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
     expect(reloadSpy).toHaveBeenCalled();
   });
 
-  it('confirm accept: users returned → warn, no delete', () => {
-    component.roles = [{ id: 2, name: 'Name2', description: 'description' }] as any;
+  it('confirm accept: users returned → no delete', () => {
+    component.roles = [
+      { id: 2, name: 'Name2', description: 'description' },
+    ] as any;
 
     confirmSpy.confirm.and.callFake((cfg) => {
       cfg.accept?.();
@@ -431,17 +448,19 @@ describe('RolesListComponent', () => {
     });
 
     roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-      of({ msg: 'ok', data: 'alice, bob' })
+      of({ code: 'ROLE.HAS_DEPENDENCIES', data: 2 })
     );
 
     component.onDeleteRoleClick(0);
 
-    expect(msgSpy.warn).toHaveBeenCalled();
+    expect(msgSpy.messageTap).not.toHaveBeenCalled();
     expect(roleServiceSpy.deleteRole).not.toHaveBeenCalled();
   });
 
   it('confirm accept: error path handled', () => {
-    component.roles = [{ id: 3, name: 'Name3', description: 'description' }] as any;
+    component.roles = [
+      { id: 3, name: 'Name3', description: 'description' },
+    ] as any;
 
     confirmSpy.confirm.and.callFake((cfg) => {
       cfg.accept?.();
@@ -449,7 +468,7 @@ describe('RolesListComponent', () => {
     });
 
     roleServiceSpy.checkPossibilityToDeleteRole.and.returnValue(
-      throwError(() => new Error('check fail'))
+      throwError(() => new Error('ERRORS.ROLE.NOT_CHECKED'))
     );
 
     component.onDeleteRoleClick(0);
@@ -458,7 +477,9 @@ describe('RolesListComponent', () => {
   });
 
   it('confirm reject: does nothing', () => {
-    component.roles = [{ id: 4, name: 'Name4', description: 'description' }] as any;
+    component.roles = [
+      { id: 4, name: 'Name4', description: 'description' },
+    ] as any;
 
     confirmSpy.confirm.and.callFake((cfg) => {
       cfg.reject?.();
@@ -502,7 +523,6 @@ describe('RolesListComponent', () => {
 
   it('loadRoles toggles isLoading true→false around request', fakeAsync(() => {
     const subj = new Subject<{
-      msg: string;
       data: { roles: any[]; operations: any[] };
     }>();
     roleServiceSpy.getRoles.and.returnValue(subj as any);
@@ -510,7 +530,7 @@ describe('RolesListComponent', () => {
     (component as any).loadRoles();
     expect(component.isLoading()).toBeTrue();
 
-    subj.next({ msg: 'ok', data: { roles: [], operations: [] } });
+    subj.next({ data: { roles: [], operations: [] } });
     subj.complete();
     tick();
 
