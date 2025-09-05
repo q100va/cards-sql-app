@@ -83,7 +83,7 @@ scheduleAuditCleanup();
 
 // CORS
 
-app.use((req, res, next) => {
+/* app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");// allow all domains
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -93,6 +93,17 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Methods",
     "GET, POST, PATCH, PUT, DELETE, OPTIONS"
   );
+  next();
+});
+ */
+
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:56379');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-lang');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 

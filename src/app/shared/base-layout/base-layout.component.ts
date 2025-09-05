@@ -11,6 +11,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Toast, ToastModule } from 'primeng/toast';
 import { MenuItem } from './menu-item';
 import { SignInService } from '../../services/sign-in.service';
+import { LanguageService } from '../../services/language.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-base-layout',
@@ -25,6 +27,7 @@ import { SignInService } from '../../services/sign-in.service';
     RouterModule,
     ConfirmDialogModule,
     ToastModule,
+    TranslateModule,
   ],
   templateUrl: './base-layout.component.html',
   styleUrl: './base-layout.component.css',
@@ -33,6 +36,7 @@ export class BaseLayoutComponent {
   @ViewChild(Toast) toast!: Toast;
   private signInService = inject(SignInService);
   private cookieService = inject(CookieService);
+  public langService = inject(LanguageService);
   // private roleService = inject(RoleService);
   year: number = Date.now();
   name: string | null = sessionStorage.getItem('name');
@@ -64,19 +68,19 @@ export class BaseLayoutComponent {
 
   populateMenuItems() {
     this.menuItems.push(
-      new MenuItem('settings', 'Профайл', '/users/user/profile')
+      new MenuItem('settings', 'MENU.PROFILE', '/users/user/profile')
     );
-    this.menuItems.push(new MenuItem('verified_user', 'Роли', '/roles'));
-    this.menuItems.push(new MenuItem('badge', 'Пользователи', '/users'));
+    this.menuItems.push(new MenuItem('verified_user', 'MENU.ROLES', '/roles'));
+    this.menuItems.push(new MenuItem('badge', 'MENU.USERS', '/users'));
     this.menuItems.push(
-      new MenuItem('map', 'Топонимы', '/toponyms', [
-        new MenuItem('place', 'Страны', '/countries'),
-        new MenuItem('corporate_fare', 'Регионы', '/regions'),
-        new MenuItem('home_work', 'Р-ны/округа', '/districts'),
-        new MenuItem('holiday_village', 'Насел. пункты', '/localities'),
+      new MenuItem('map', 'MENU.TOPONYMS', '/toponyms', [
+        new MenuItem('place', 'MENU.COUNTRIES', '/countries'),
+        new MenuItem('corporate_fare', 'MENU.REGIONS', '/regions'),
+        new MenuItem('home_work', 'MENU.DISTRICTS', '/districts'),
+        new MenuItem('holiday_village', 'MENU.LOCALITIES', '/localities'),
       ])
     );
-    this.menuItems.push(new MenuItem('policy', 'Аудит', '/audit'));
+    this.menuItems.push(new MenuItem('policy', 'MENU.AUDIT', '/audit'));
 
     /*     this.menuItems.push(
       new MenuItem('map', 'Люди', '/toponyms', [
@@ -84,5 +88,9 @@ export class BaseLayoutComponent {
         new MenuItem('location_city', 'Координаторы', '/localities'),
       ])
     ); */
+  }
+
+  setLanguage(code: 'en' | 'ru') {
+    this.langService.set(code);
   }
 }

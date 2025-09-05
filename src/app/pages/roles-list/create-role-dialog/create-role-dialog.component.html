@@ -1,7 +1,7 @@
 <mat-grid-list cols="10" gutterSize="16px" rowHeight="76px">
   <!-- Title -->
   <mat-grid-tile colspan="5" rowspan="1">
-    <h3 mat-dialog-title>Новая роль</h3>
+    <h3 mat-dialog-title>{{'ROLE.CARD_TITLE' | translate}}</h3>
   </mat-grid-tile>
 
   <!-- Spacer -->
@@ -9,7 +9,7 @@
 
   <!-- Close button -->
   <mat-grid-tile colspan="2" rowspan="1">
-    <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
+    <button mat-icon-button [title]="'ROLE.CARD_CLOSE' | translate" (click)="onCancelClick($event)">
       <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
     </button>
   </mat-grid-tile>
@@ -19,27 +19,21 @@
   <form>
     <!-- Role name -->
     <mat-form-field class="full-width">
-      <mat-label>Название</mat-label>
+      <mat-label>{{'ROLE.CARD_LABEL_NAME' | translate}}</mat-label>
       <input matInput [formControl]="roleName" />
 
-      @if (roleName.hasError('required')) {
-        <mat-error>Поле не может быть пустым!</mat-error>
-      }
       @if(roleName.hasError('zodError')){
-        <mat-error>{{roleName.errors!['zodError']}}</mat-error>
+      <mat-error>{{roleName.errors!['zodError'] | translate}}</mat-error>
       }
     </mat-form-field>
 
     <!-- Role description -->
     <mat-form-field class="full-width">
-      <mat-label>Описание</mat-label>
+      <mat-label>{{'ROLE.CARD_LABEL_DESCRIPTION' | translate}}</mat-label>
       <textarea rows="5" matInput [formControl]="roleDescription"></textarea>
 
-      @if (roleDescription.hasError('required')) {
-        <mat-error>Поле не может быть пустым!</mat-error>
-      }
       @if(roleDescription.hasError('zodError')){
-        <mat-error>{{roleDescription.errors!['zodError']}}</mat-error>
+      <mat-error>{{roleDescription.errors!['zodError'] | translate }}</mat-error>
       }
     </mat-form-field>
   </form>
@@ -47,12 +41,8 @@
 
 <!-- Actions -->
 <mat-dialog-actions>
-  <button
-    class="dialog-submit-button"
-    mat-button
-    [disabled]="!roleName.valid || !roleDescription.valid || isLoading"
-    (click)="onCreateRoleClick()"
-  >
-    Сохранить и выйти
+  <button class="dialog-submit-button" mat-button [disabled]="!roleName.valid || !roleDescription.valid || isLoading"
+    (click)="onCreateRoleClick()">
+    {{'ROLE.CARD_SAVE_AND_EXIT' | translate}}
   </button>
 </mat-dialog-actions>

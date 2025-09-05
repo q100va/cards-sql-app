@@ -524,14 +524,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             closable: true,
             closeOnEscape: true,
             icon: 'pi pi-exclamation-triangle',
-            rejectButtonProps: {
+  /*           rejectButtonProps: {
               label: 'Нет',
             },
             acceptButtonProps: {
               label: 'Да',
               severity: 'secondary',
               outlined: true,
-            },
+            }, */
             accept: () => {
               if (this.data().operation == 'view-edit') {
                 this.checkNotActualDataDuplicates(action, user);
@@ -880,14 +880,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
-        rejectButtonProps: {
+ /*        rejectButtonProps: {
           label: 'Нет',
         },
         acceptButtonProps: {
           label: 'Да',
           severity: 'secondary',
           outlined: true,
-        },
+        }, */
         accept: () => resolve(true),
         reject: () => resolve(false),
       });
@@ -1151,14 +1151,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
-        rejectButtonProps: {
+/*         rejectButtonProps: {
           label: 'Нет',
         },
         acceptButtonProps: {
           label: 'Да',
           severity: 'secondary',
           outlined: true,
-        },
+        }, */
         accept: () => resolve(true),
         reject: () => resolve(false),
       });

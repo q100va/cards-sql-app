@@ -32,11 +32,14 @@ router.get(
         attributes: ["name"],
         raw: true,
       });
+      let response = {};
+      response.data = duplicate !== null;
+      if (duplicate !== null) response.code = 'ROLE.ALREADY_EXISTS';
       res
         .status(200)
-        .send({ msg: "Проверка завершена.", data: duplicate !== null });
+        .send(response);
     } catch (error) {
-      error.userMessage = 'Произошла ошибка при проверке названия роли.';
+      error.code = 'ERRORS.ROLE.NAME_NOT_CHECKED';
       next(error);
     }
   }
@@ -71,9 +74,9 @@ router.post(
         return role.name;
       });
 
-      res.status(200).send({ msg: "Роль успешно создана.", data: roleName });
+      res.status(200).send({ code: 'ROLE.CREATED', data: roleName });
     } catch (error) {
-      error.userMessage = 'Произошла ошибка. Роль не создана.';
+      error.code = 'ERRORS.ROLE.NOT_CREATED';
       next(error);
     }
   }
@@ -102,12 +105,12 @@ router.patch(
       );
 
       if (!updatedRole) {
-        throw new CustomError("Обновление невозможно. Роль не найдена.", 404);
+        throw new CustomError('ERRORS.ROLE.NOT_FOUND', 404);
       }
 
-      res.status(200).send({ msg: "Роль успешно обновлена.", data: updatedRole });
+      res.status(200).send({ code: 'ROLE.UPDATED', data: updatedRole });
     } catch (error) {
-      error.userMessage = 'Произошла ошибка. Роль не обновлена.';
+      error.code = error.code ?? 'ERRORS.ROLE.NOT_UPDATED';
       next(error);
     }
   }
@@ -180,11 +183,10 @@ router.patch(
       res
         .status(200)
         .send({
-          msg: "Роль успешно обновлена.",
           data: { ops: updatedOperations, object: operation.object },
         });
     } catch (error) {
-      error.userMessage = 'Произошла ошибка. Роль не обновлена.';
+      error.code = 'ERRORS.ROLE.NOT_UPDATED';
       next(error);
     }
   }
@@ -272,9 +274,9 @@ router.get(
         order: [["name", "ASC"]],
         raw: true,
       });
-      res.status(200).send({ msg: "Data retrieved.", data: roles });
+      res.status(200).send({ data: roles });
     } catch (error) {
-      error.userMessage = 'Произошла ошибка при получении списка названий ролей.';
+      error.code = 'ERRORS.ROLE.NAME_LIST_FAILED';
       next(error);
     }
   }
@@ -333,9 +335,9 @@ router.get(
 
       res
         .status(200)
-        .send({ msg: "Data retrieved.", data: { operations: listOfOperations, roles } });
+        .send({ data: { operations: listOfOperations, roles } });
     } catch (error) {
-      error.userMessage = 'Произошла ошибка при получении списка ролей.';
+      error.code = 'ERRORS.ROLE.LIST_FAILED';
       next(error);
     }
   }
@@ -353,17 +355,18 @@ router.get(
   async (req, res, next) => {
     try {
       const roleId = req.params.id;
-      const connectedUsers = await User.findAll({
+      const connectedUsersAmount = await User.count({
         where: { roleId },
-        attributes: ["userName"],
         raw: true,
       });
-      const list = connectedUsers.map((u) => u.userName).join(", ");
+
+      let response = { data: connectedUsersAmount };
+      if (connectedUsersAmount > 0) response.code = 'ROLE.HAS_DEPENDENCIES';
       res
         .status(200)
-        .send({ msg: "Role deletion possibility checked.", data: list });
+        .send(response);
     } catch (error) {
-      error.userMessage = 'Произошла ошибка при проверке возможности удаления роли.';
+      error.code = 'ERRORS.ROLE.NOT_CHECKED';
       next(error);
     }
   }
@@ -389,13 +392,13 @@ router.delete(
           transaction: t,
         });
         if (destroyed === 0) {
-          throw new CustomError("Роль не найдена.", 404);
+          throw new CustomError('ERRORS.ROLE.NOT_FOUND', 404);
         }
       });
 
-      res.status(200).send({ msg: "Role deleted.", data: true });
+      res.status(200).send({ code: 'ROLE.DELETED', data: null });
     } catch (error) {
-      error.userMessage = 'Произошла ошибка при удалении роли.';
+      error.code = error.code ?? 'ERRORS.ROLE.NOT_DELETED';
       next(error);
     }
   }

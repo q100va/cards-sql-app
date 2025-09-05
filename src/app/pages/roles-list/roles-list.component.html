@@ -1,24 +1,22 @@
 <mat-card class="roles-list-card" appearance="outlined">
   <!-- Header -->
   <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
-    <!-- Spacer -->
-    <mat-grid-tile colspan="4" rowspan="1"></mat-grid-tile>
+    <mat-grid-tile colspan="4"></mat-grid-tile>
 
     <!-- Title -->
-    <mat-grid-tile colspan="2" rowspan="1">
+    <mat-grid-tile colspan="2">
       <mat-card-header>
-        <mat-card-title>Роли</mat-card-title>
+        <mat-card-title>{{ 'ROLE.TABLE_TITLE' | translate }}</mat-card-title>
       </mat-card-header>
     </mat-grid-tile>
 
-    <!-- Spacer -->
-    <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+    <mat-grid-tile colspan="3"></mat-grid-tile>
 
     <!-- Add role -->
-    <mat-grid-tile colspan="1" rowspan="1">
+    <mat-grid-tile colspan="1">
       <mat-card-actions>
         <div class="bottom-right">
-          <button mat-icon-button title="Добавить роль" (click)="onAddRoleClick()">
+          <button mat-icon-button [title]="'ROLE.TABLE_ADD_ROLE' | translate" (click)="onAddRoleClick()">
             <mat-icon fontSet="material-icons-outlined">add_moderator</mat-icon>
           </button>
         </div>
@@ -29,126 +27,89 @@
   <!-- Content -->
   <mat-card-content>
     @if (roles && roles.length > 0) {
-      <!-- Operations table (row-grouped by objectName) -->
-      <p-table
-        [value]="operations"
-        rowGroupMode="rowspan"
-        groupRowsBy="objectName"
-        sortField="objectName"
-        sortMode="single"
-        [tableStyle]="tableStyle"
-        [scrollable]="true"
-        [scrollHeight]="scrollHeight"
-      >
-        <!-- Header -->
-        <ng-template #header let-editing="editing">
-          <tr>
-            <th rowspan="2" class="right-bordered bottom-bordered width-10rem">Объект</th>
-            <th rowspan="2" class="right-bordered bottom-bordered width-20rem">Операция</th>
+    <p-table [value]="operations" rowGroupMode="rowspan" groupRowsBy="objectName" sortField="objectName"
+      sortMode="single" [tableStyle]="tableStyle" [scrollable]="true" [scrollHeight]="scrollHeight">
+      <!-- Header -->
+      <ng-template #header let-editing="editing">
+        <tr>
+          <th rowspan="2" class="right-bordered bottom-bordered width-10rem">
+            {{ 'ROLE.TABLE_OBJECT' | translate }}
+          </th>
+          <th rowspan="2" class="right-bordered bottom-bordered width-20rem">
+            {{ 'ROLE.TABLE_OPERATION' | translate }}
+          </th>
 
-            <!-- Role name + delete button per role -->
-            @for (role of roles; track trackById($index, role); let index = $index) {
-              <th [pEditableColumn]="role.name" pEditableColumnField="name" class="width-15rem">
-                <p-cellEditor>
-                  <ng-template #input>
-                    <input
-                      [class]="roleDraftSchema.shape.name.safeParse(role.name).success ? 'valid' : 'ng-invalid ng-dirty'"
-                      placeholder="2-50 символов"
-                      pInputText
-                      type="text"
-                      [(ngModel)]="role.name"
-                      (blur)="onInputChange(index)"
-                      (keydown.enter)="onInputChange(index)"
-                    />
-                  </ng-template>
-                  <ng-template #output>
-                    {{ role.name }}
-                  </ng-template>
-                </p-cellEditor>
-              </th>
-              <th [class.right-bordered]="index !== roles.length - 1" class="width-5rem">
-                <button
-                  class="delete-button"
-                  mat-icon-button
-                  title="Удалить роль"
-                  (click)="onDeleteRoleClick(index)"
-                >
-                  <mat-icon>delete_outlined</mat-icon>
-                </button>
-              </th>
-            }
-          </tr>
+          @for (role of roles; track trackById($index, role); let index = $index) {
+          <th [pEditableColumn]="role.name" pEditableColumnField="name" class="width-15rem">
+            <p-cellEditor>
+              <ng-template #input>
+                <input
+                  [class]="roleDraftSchema.shape.name.safeParse(role.name).success ? 'valid' : 'ng-invalid ng-dirty'"
+                  [placeholder]="'ROLE.TABLE_NAME_PLACEHOLDER' | translate" pInputText type="text"
+                  [(ngModel)]="role.name" (blur)="onInputChange(index)" (keydown.enter)="onInputChange(index)" />
+              </ng-template>
+              <ng-template #output>
+                {{ role.name }}
+              </ng-template>
+            </p-cellEditor>
+          </th>
+          <th [class.right-bordered]="index !== roles.length - 1" class="width-5rem">
+            <button class="delete-button" mat-icon-button [title]="'ROLE.TABLE_DELETE_ROLE' | translate"
+              (click)="onDeleteRoleClick(index)">
+              <mat-icon>delete_outlined</mat-icon>
+            </button>
+          </th>
+          }
+        </tr>
 
-          <tr>
-            <!-- Role description per role -->
-            @for (role of roles; track trackById($index, role); let index = $index) {
-              <th
-                [class.right-bordered]="index !== roles.length - 1"
-                class="bottom-bordered"
-                [pEditableColumn]="role.description"
-                pEditableColumnField="description"
-                colspan="2"
-              >
-                <p-cellEditor>
-                  <ng-template #input>
-                    <input
-                      [class]="roleDraftSchema.shape.description.safeParse(role.description).success ? 'valid' : 'ng-invalid ng-dirty'"
-                      placeholder="2-500 символов"
-                      pInputText
-                      type="text"
-                      [(ngModel)]="role.description"
-                      (blur)="onInputChange(index)"
-                      (keydown.enter)="onInputChange(index)"
-                    />
-                  </ng-template>
-                  <ng-template #output>
-                    {{ role.description }}
-                  </ng-template>
-                </p-cellEditor>
-              </th>
-            }
-          </tr>
-        </ng-template>
+        <tr>
+          @for (role of roles; track trackById($index, role); let index = $index) {
+          <th [class.right-bordered]="index !== roles.length - 1" class="bottom-bordered"
+            [pEditableColumn]="role.description" pEditableColumnField="description" colspan="2">
+            <p-cellEditor>
+              <ng-template #input>
+                <input
+                  [class]="roleDraftSchema.shape.description.safeParse(role.description).success ? 'valid' : 'ng-invalid ng-dirty'"
+                  [placeholder]="'ROLE.TABLE_DESCRIPTION_PLACEHOLDER' | translate" pInputText type="text"
+                  [(ngModel)]="role.description" (blur)="onInputChange(index)" (keydown.enter)="onInputChange(index)" />
+              </ng-template>
+              <ng-template #output>
+                {{ role.description }}
+              </ng-template>
+            </p-cellEditor>
+          </th>
+          }
+        </tr>
+      </ng-template>
 
-        <!-- Body -->
-        <ng-template #body let-operation let-rowIndex="rowIndex" let-rowgroup="rowgroup" let-rowspan="rowspan">
-          <tr>
-            <!-- Group cell: object name -->
-            @if (rowgroup) {
-              <td class="right-bordered bottom-bordered table-cell-with-newlines" [attr.rowspan]="rowspan">
-                <div class="flex items-center gap-2">
-                  <span>{{ operation.objectName }}</span>
-                </div>
-              </td>
-            }
+      <!-- Body -->
+      <ng-template #body let-operation let-rowIndex="rowIndex" let-rowgroup="rowgroup" let-rowspan="rowspan">
+        <tr>
+          @if (rowgroup) {
+          <td class="right-bordered bottom-bordered table-cell-with-newlines" [attr.rowspan]="rowspan">
+            <div class="flex items-center gap-2">
+              <span>{{ operation.objectName | translate }}</span>
+            </div>
+          </td>
+          }
 
-            <!-- Operation -->
-            <td class="right-bordered" [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
-              {{ operation.operationName }}
-            </td>
+          <td class="right-bordered" [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
+            {{ operation.operationName | translate }}
+          </td>
 
-            <!-- Access checkboxes per role -->
-            @for (roleAccess of operation.rolesAccesses; track trackById($index, roleAccess); let index = $index) {
-              <td
-                [class.right-bordered]="index !== roles.length - 1"
-                class="center"
-                colspan="2"
-                [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')"
-              >
-                <mat-checkbox
-                  [disabled]="roleAccess.disabled"
-                  [checked]="roleAccess.access"
-                  (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)"
-                >
-                </mat-checkbox>
-              </td>
-            }
-          </tr>
-        </ng-template>
-      </p-table>
+          @for (roleAccess of operation.rolesAccesses; track trackById($index, roleAccess); let index = $index) {
+          <td [class.right-bordered]="index !== roles.length - 1" class="center" colspan="2"
+            [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
+            <mat-checkbox [disabled]="roleAccess.disabled" [checked]="roleAccess.access"
+              (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)">
+            </mat-checkbox>
+          </td>
+          }
+        </tr>
+      </ng-template>
+    </p-table>
     } @else {
-      <!-- Empty state -->
-      <p>Пока не создано ни одной роли.</p>
+    <p>{{ 'ROLE.TABLE_EMPTY' | translate }}</p>
     }
   </mat-card-content>
 </mat-card>
