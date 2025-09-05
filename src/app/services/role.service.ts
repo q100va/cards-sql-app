@@ -19,6 +19,8 @@ import {
   validateResponse,
 } from '../utils/validate-response';
 import { ApiResponse } from '../interfaces/api-response';
+import { MessageWrapperService } from './message.service';
+import z from 'zod';
 
 @Injectable({ providedIn: 'root' })
 export class RoleService {
@@ -29,6 +31,8 @@ export class RoleService {
   // HTTP error passthrough (handled by MessageWrapperService at call sites)
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
+  constructor(private msgWrapper: MessageWrapperService) {}
+
   // Check if a role name is already taken.
   checkRoleName(name: string): Observable<ApiResponse<boolean>> {
     return this.http
@@ -37,16 +41,30 @@ export class RoleService {
       )
       .pipe(
         validateNoSchemaResponse<boolean>('isBoolean'),
+        this.msgWrapper.messageTap('warn', {
+          source: 'CreateRoleDialog',
+          stage: 'checkRoleName',
+          nameLen: name.length,
+        }),
         catchError(this.handleError)
       );
   }
 
   // Create a new role.
-  createRole(name: string, description: string): Observable<ApiResponse<string>> {
+  createRole(
+    name: string,
+    description: string
+  ): Observable<ApiResponse<string>> {
     return this.http
-      .post<ApiResponse<string>>(`${this.BASE_URL}/create-role`, { name, description })
+      .post<ApiResponse<string>>(`${this.BASE_URL}/create-role`, {
+        name,
+        description,
+      })
       .pipe(
         validateNoSchemaResponse<string>('isString'),
+        this.msgWrapper.messageTap('success', undefined, (res) => ({
+          name: res.data,
+        })),
         catchError(this.handleError)
       );
   }
@@ -55,7 +73,13 @@ export class RoleService {
   updateRole(role: Role): Observable<ApiResponse<Role>> {
     return this.http
       .patch<ApiResponse<Role>>(`${this.BASE_URL}/update-role`, role)
-      .pipe(validateResponse(roleSchema), catchError(this.handleError));
+      .pipe(
+        validateResponse(roleSchema),
+        this.msgWrapper.messageTap('success', undefined, (res) => ({
+          name: res.data.name,
+        })),
+        catchError(this.handleError)
+      );
   }
 
   // Toggle access for a specific operation of a role.
@@ -73,7 +97,9 @@ export class RoleService {
   }
 
   // Get roles and operations (for the table).
-  getRoles(): Observable<ApiResponse<{ roles: Role[]; operations: Operation[] }>> {
+  getRoles(): Observable<
+    ApiResponse<{ roles: Role[]; operations: Operation[] }>
+  > {
     return this.http
       .get<ApiResponse<{ roles: Role[]; operations: Operation[] }>>(
         `${this.BASE_URL}/get-roles`
@@ -87,29 +113,45 @@ export class RoleService {
       .get<ApiResponse<{ id: number; name: string }[]>>(
         `${this.BASE_URL}/get-roles-names-list`
       )
-      .pipe(validateResponse(rolesNamesListSchema), catchError(this.handleError));
+      .pipe(
+        validateResponse(rolesNamesListSchema),
+        catchError(this.handleError)
+      );
   }
 
   // Check if a role can be deleted (returns usernames string or empty).
-  checkPossibilityToDeleteRole(id: number): Observable<ApiResponse<string>> {
+  checkPossibilityToDeleteRole(id: number): Observable<ApiResponse<number>> {
     return this.http
-      .get<ApiResponse<string>>(
-        `${this.BASE_URL}/check-role-before-delete/${encodeURIComponent(String(id))}`
+      .get<ApiResponse<number>>(
+        `${this.BASE_URL}/check-role-before-delete/${encodeURIComponent(
+          String(id)
+        )}`
       )
       .pipe(
-        validateNoSchemaResponse<string>('isString'),
+        validateNoSchemaResponse<number>('isNumber'),
+        this.msgWrapper.messageTap(
+          'warn',
+          (res) => ({
+            source: 'RolesList',
+            stage: 'checkPossibilityToDeleteRole',
+            roleId: id,
+            amountOfUsers: res.data,
+          }),
+          (res) => ({ count: res.data })
+        ),
         catchError(this.handleError)
       );
   }
 
   // Delete role by id.
-  deleteRole(id: number): Observable<ApiResponse<boolean>> {
+  deleteRole(id: number): Observable<ApiResponse<null>> {
     return this.http
-      .delete<ApiResponse<boolean>>(
+      .delete<ApiResponse<null>>(
         `${this.BASE_URL}/delete-role/${encodeURIComponent(String(id))}`
       )
       .pipe(
-        validateNoSchemaResponse<boolean>('isBoolean'),
+        validateNoSchemaResponse<null>('isNull'),
+        this.msgWrapper.messageTap('success'),
         catchError(this.handleError)
       );
   }

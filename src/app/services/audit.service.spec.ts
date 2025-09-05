@@ -9,13 +9,31 @@ import { environment } from 'src/environments/environment';
 import { ApiResponse } from '../interfaces/api-response';
 import { AuditPage } from '@shared/schemas/audit.schema';
 
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { of } from 'rxjs';
+
+class EmptyLoader implements TranslateLoader {
+  getTranslation(lang: string) {
+    return of({}); // всегда пустой словарь → ключи вернутся как есть
+  }
+}
+
 describe('AuditService', () => {
   let service: AuditService;
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [AuditService, provideHttpClient(), provideHttpClientTesting()],
+      imports: [
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useClass: EmptyLoader },
+        }),
+      ],
+      providers: [
+        AuditService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     });
     service = TestBed.inject(AuditService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -26,7 +44,6 @@ describe('AuditService', () => {
   it('should GET with only non-empty params (drop undefined/empty)', () => {
     const resp: ApiResponse<AuditPage> = {
       data: { rows: [], count: 0 },
-      msg: 'OK',
     };
 
     service
@@ -116,9 +133,9 @@ describe('AuditService', () => {
       (u) => u.url === `${environment.apiUrl}/api/audit`
     );
     // data неверного формата — провалится в validateResponse(auditPageSchema)
-    req.flush({ data: {}, msg: 'OK' });
+    req.flush({ data: {} });
 
     expect(caught).toBeTruthy();
-    expect(String(caught)).toContain('Неверный формат данных ответа');
+    expect(String(caught)).toContain('INVALID_SCHEMA');
   });
 });

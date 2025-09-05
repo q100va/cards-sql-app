@@ -329,14 +329,14 @@ export class ToponymsListComponent {
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
+/*       rejectButtonProps: {
         label: 'Нет',
       },
       acceptButtonProps: {
         label: 'Да',
         severity: 'secondary',
         outlined: true,
-      },
+      }, */
       accept: () => {
         this.checkPossibilityToDeleteToponym(rowId, rowShortName, destroy);
       },

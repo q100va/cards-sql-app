@@ -105,7 +105,7 @@ describe('GET /api/audit (Jest + supertest)', () => {
     expect(res.status).toBe(500);
     expect(res.headers['content-type']).toMatch(/application\/json/i);
     expect(res.body).toMatchObject({
-      message: 'Произошла ошибка. Данные не получены.'
+      code: 'ERRORS.NO_DATA_RECEIVED'
     });
     expect('correlationId' in res.body).toBe(true);
   });

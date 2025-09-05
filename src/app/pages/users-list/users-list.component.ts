@@ -312,14 +312,14 @@ export class UsersListComponent {
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
+/*       rejectButtonProps: {
         label: 'Нет',
       },
       acceptButtonProps: {
         label: 'Да',
         severity: 'secondary',
         outlined: true,
-      },
+      }, */
       accept: () => {
         this.unblockUser(id, unblockingUser);
       },
@@ -346,14 +346,14 @@ export class UsersListComponent {
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
+/*       rejectButtonProps: {
         label: 'Нет',
       },
       acceptButtonProps: {
         label: 'Да',
         severity: 'secondary',
         outlined: true,
-      },
+      }, */
       accept: () => {
         this.checkPossibilityToDeleteUser(id, deletingUser);
       },

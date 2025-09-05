@@ -1,0 +1,142 @@
+{
+  "APP": {
+    "TITLE": "Send a Greeting Card",
+    "AUTHOR": "OksanaFinch",
+    "FOUNDATION": "Enjoyable Aging Charity Foundation"
+  },
+  "TOOLBAR": {
+    "TITLE": "Project “Grandchildren by Correspondence: Send a Greeting Card”",
+    "MY_ORDERS": "My Requests",
+    "SIGNED_IN_AS": "Signed in as {{ name }}",
+    "EXIT": "Exit"
+  },
+  "MENU": {
+    "PROFILE": "Profile",
+    "ROLES": "Roles",
+    "USERS": "Users",
+    "TOPONYMS": "Toponyms",
+    "COUNTRIES": "Countries",
+    "REGIONS": "Regions",
+    "DISTRICTS": "Districts",
+    "LOCALITIES": "Localities",
+    "AUDIT": "Audit"
+  },
+  "LANG": { "SWITCH": "Language", "EN": "English", "RU": "Русский" },
+  "PRIME_CONFIRM": {
+    "WARNING_HEADER": "Warning",
+    "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
+    "DELETE_ROLE_MESSAGE": "Delete role '{{name}}'?<br>Data cannot be restored.",
+    "ACCEPT": "Yes",
+    "REJECT": "No"
+  },
+  "TOAST": {
+    "INFO": "Information",
+    "WARN": "Warning",
+    "ERROR": "Error",
+    "SUCCESS": "Success"
+  },
+  "ROLE": {
+    "CREATED": "Role \"{{name}}\" created",
+    "UPDATED": "Role \"{{name}}\" updated",
+    "DELETED": "Role deleted",
+    "ALREADY_EXISTS": "Role with this name already exists",
+    "HAS_DEPENDENCIES": "The role cannot be deleted: {{count}} related user(s)",
+
+    "CARD_TITLE": "New role",
+    "CARD_CLOSE": "Close",
+    "CARD_SAVE_AND_EXIT": "Save and exit",
+    "CARD_LABEL_NAME": "Name",
+    "CARD_LABEL_DESCRIPTION": "Description",
+
+    "TABLE_TITLE": "Roles",
+    "TABLE_ADD_ROLE": "Add role",
+    "TABLE_DELETE_ROLE": "Delete role",
+    "TABLE_EMPTY": "No roles have been created yet.",
+    "TABLE_OBJECT": "Object",
+    "TABLE_OPERATION": "Operation",
+    "TABLE_NAME_PLACEHOLDER": "2–50 characters",
+    "TABLE_DESCRIPTION_PLACEHOLDER": "2–500 characters"
+  },
+
+  "ERRORS": {
+    "VALIDATION": "Validation error",
+    "FORBIDDEN": "Not enough permissions",
+    "BAD_REQUEST": "Bad request",
+    "DB_ERROR": "Storage error",
+    "SERVER": "Unexpected server error. Please try again later.",
+    "UNAUTHORIZED": "Unauthorized",
+    "NOT_FOUND": "Resource not found",
+    "CONFLICT": "Data conflict",
+    "LOGS_NOT_ACCEPTED": "Failed to accept client logs",
+    "NO_DATA_RECEIVED": "An error occurred. No data received.",
+    "INVALID_SCHEMA": "Invalid response data format",
+    "INVALID_TYPE": "Invalid response data type",
+    "NO_VALIDATOR": "Validation is not available",
+    "UNKNOWN": "Unknown error occurred",
+
+    "ROLE": {
+      "NOT_FOUND": "Role not found",
+      "NAME_NOT_CHECKED": "Failed to check the role name",
+      "NOT_CREATED": "Failed to create the role",
+      "NOT_UPDATED": "Failed to update the role",
+      "NAME_LIST_FAILED": "Failed to get the list of role names",
+      "LIST_FAILED": "Failed to get the list of roles",
+      "NOT_CHECKED": "Failed to check the role dependencies",
+      "NOT_DELETED": "Failed to delete the role"
+    }
+  },
+  "FORM_VALIDATION": {
+    "INVALID_FORM": "Invalid form",
+    "REQUIRED": "This field cannot be empty!",
+    "ROLE": {
+      "NAME_MIN": "Name must contain at least 2 characters",
+      "NAME_MAX": "Name must not be longer than 50 characters",
+      "DESCRIPTION_MIN": "Description must contain at least 2 characters",
+      "DESCRIPTION_MAX": "Description must not be longer than 500 characters"
+    }
+  },
+  "INTERNAL_VALIDATION": {
+    "FLAG_INVALID": "Flag is allowed only for VIEW_LIMITED_* or VIEW_FULL_* operations",
+    "SUPER_OPS_WITH_FLAG": "Super-operations (accessToAllOps=true) must not have flag"
+  },
+  "OBJECT": {
+    "TOPONYMS": "Countries\nRegions\nDistricts\nLocalities",
+    "USERS": "Users",
+    "ROLES": "Roles",
+    "HOMES": "Nursing homes",
+    "PARTNERS": "Institution\nrepresentatives",
+    "SENIORS": "Residents"
+  },
+  "OPS": {
+    "ALL_OPS": {
+      "NAME": "Full access to all operations"
+    },
+    "ADD": {
+      "NAME": "Create"
+    },
+    "VIEW": {
+      "NAME": "View"
+    },
+    "EDIT": {
+      "NAME": "Edit"
+    },
+    "DELETE": {
+      "NAME": "Delete"
+    },
+    "BLOCK": {
+      "NAME": "Block"
+    },
+    "UNBLOCK": {
+      "NAME": "Unblock"
+    },
+    "VIEW_LIMITED_LIST": {
+      "NAME": "Access to basic list data"
+    },
+    "VIEW_FULL_LIST": {
+      "NAME": "Access to extended list data"
+    },
+    "BULK_UPDATE": {
+      "NAME": "Bulk update"
+    }
+  }
+}

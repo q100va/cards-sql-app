@@ -42,10 +42,10 @@ router.get(
         AuditLog.count({ where }),
       ]);
 
-      res.status(200).send({ msg: "Данные получены.", data: { rows, count: total } });
+      res.status(200).send({ data: { rows, count: total } });
 
     } catch (err) {
-      err.userMessage = 'Произошла ошибка. Данные не получены.';
+      err.code = 'ERRORS.NO_DATA_RECEIVED';
       next(err);
     }
   });

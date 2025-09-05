@@ -16,43 +16,16 @@ const Operation = sequelize.define('operation', {
       notEmpty: true,
     }
   },
-/*   object: {
-    type: DataTypes.STRING,
-    unique: false,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-    }
-  },*/
   access:
   {
     type: DataTypes.BOOLEAN,
     allowNull: false,
-    //default: false,
   },
   disabled:
   {
     type: DataTypes.BOOLEAN,
     allowNull: false,
-   // default: false,
   },
-
-
-
-  /*   comment: {
-      type: DataTypes.TEXT
-    },
-    isRestricted: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false
-    },
-    dateOfRestriction: {
-      type: DataTypes.DATE
-    }, */
-
 });
-
-//Associations
-
 
 export default Operation;

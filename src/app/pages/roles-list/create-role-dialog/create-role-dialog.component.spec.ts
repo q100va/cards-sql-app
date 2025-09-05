@@ -14,6 +14,14 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+
+class EmptyLoader implements TranslateLoader {
+  getTranslation(lang: string) {
+    return of({}); // всегда пустой словарь → ключи вернутся как есть
+  }
+}
+
 describe('CreateRoleDialogComponent', () => {
   let component: CreateRoleDialogComponent;
   let fixture: ComponentFixture<CreateRoleDialogComponent>;
@@ -30,6 +38,7 @@ describe('CreateRoleDialogComponent', () => {
     ]);
     messageWrapperSpy = jasmine.createSpyObj('MessageWrapperService', [
       'warn',
+      'messageTap',
       'handle',
     ]);
     confirmationServiceSpy = jasmine.createSpyObj('ConfirmationService', [
@@ -44,6 +53,9 @@ describe('CreateRoleDialogComponent', () => {
         FormsModule,
         CreateRoleDialogComponent,
         NoopAnimationsModule,
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useClass: EmptyLoader },
+        }),
       ],
       providers: [
         { provide: RoleService, useValue: roleServiceSpy },
@@ -111,32 +123,27 @@ describe('CreateRoleDialogComponent', () => {
       expect(roleServiceSpy.createRole).not.toHaveBeenCalled();
     });
 
-    it('warns if the role name is already taken', fakeAsync(() => {
+    it('does not proceed when role name is already taken', fakeAsync(() => {
       const roleName = 'TestRole';
       const roleDescription = 'Test Description';
 
       component.roleName.setValue(roleName);
       component.roleDescription.setValue(roleDescription);
 
-      // checkRoleName returns "exists"
       roleServiceSpy.checkRoleName.and.returnValue(
-        of({ msg: 'failed', data: true })
+        of({ code: 'ROLE.ALREADY_EXISTS', data: true })
       );
 
       component.onCreateRoleClick();
       tick();
 
-      expect(component.isLoading).toBeFalse();
       expect(roleServiceSpy.checkRoleName).toHaveBeenCalledWith(roleName);
-      expect(messageWrapperSpy.warn).toHaveBeenCalledWith(
-        `Название '${roleName}' уже занято`,
-        jasmine.objectContaining({
-          source: 'CreateRoleDialog',
-          stage: 'checkRoleName',
-          nameLen: 'TestRole'.length,
-        })
-      );
       expect(roleServiceSpy.createRole).not.toHaveBeenCalled();
+      expect(component.isLoading).toBeFalse();
+      expect(dialogRefSpy.close).not.toHaveBeenCalled();
+
+      // тост теперь в сервисе → компонент его не вызывает
+      expect(messageWrapperSpy.messageTap).not.toHaveBeenCalled();
     }));
 
     it('creates role when name is available', fakeAsync(() => {
@@ -147,11 +154,9 @@ describe('CreateRoleDialogComponent', () => {
       component.roleName.setValue('   ' + roleName + '   ');
       component.roleDescription.setValue('   ' + roleDescription + '   ');
 
-      roleServiceSpy.checkRoleName.and.returnValue(
-        of({ msg: 'success', data: false })
-      );
+      roleServiceSpy.checkRoleName.and.returnValue(of({ data: false }));
       roleServiceSpy.createRole.and.returnValue(
-        of({ msg: 'success', data: roleName })
+        of({ code: 'ROLE.CREATED', data: roleName })
       );
 
       component.onCreateRoleClick();
@@ -173,9 +178,7 @@ describe('CreateRoleDialogComponent', () => {
       component.roleName.setValue(roleName);
       component.roleDescription.setValue(roleDescription);
 
-      roleServiceSpy.checkRoleName.and.returnValue(
-        of({ msg: 'ok', data: false })
-      );
+      roleServiceSpy.checkRoleName.and.returnValue(of({ data: false }));
       roleServiceSpy.createRole.and.returnValue(of(undefined as any));
 
       component.onCreateRoleClick();
@@ -191,8 +194,8 @@ describe('CreateRoleDialogComponent', () => {
       component.roleName.setValue(roleName);
       component.roleDescription.setValue(roleDescription);
 
-      const check$ = new Subject<{ msg: string; data: boolean }>();
-      const create$ = new Subject<{ msg: string; data: string }>();
+      const check$ = new Subject<{ data: boolean }>();
+      const create$ = new Subject<{ code: string; data: string }>();
 
       roleServiceSpy.checkRoleName.and.returnValue(check$);
       roleServiceSpy.createRole.and.returnValue(create$);
@@ -202,12 +205,12 @@ describe('CreateRoleDialogComponent', () => {
       expect(component.isLoading).toBeTrue();
 
       // Resolve check: name available
-      check$.next({ msg: 'ok', data: false });
+      check$.next({ data: false });
       check$.complete();
       expect(component.isLoading).toBeTrue();
 
       // Resolve creation
-      create$.next({ msg: 'ok', data: roleName });
+      create$.next({ code: 'ROLE.CREATED', data: roleName });
       create$.complete();
       tick();
 
@@ -243,11 +246,9 @@ describe('CreateRoleDialogComponent', () => {
       component.roleName.setValue(roleName);
       component.roleDescription.setValue(roleDescription);
 
-      roleServiceSpy.checkRoleName.and.returnValue(
-        of({ msg: 'success', data: false })
-      );
+      roleServiceSpy.checkRoleName.and.returnValue(of({ data: false }));
 
-      const error = new Error('Creation failed');
+      const error = new Error('ERRORS.ROLE.NOT_CREATED');
       roleServiceSpy.createRole.and.returnValue(throwError(() => error));
 
       component.onCreateRoleClick();
@@ -283,7 +284,7 @@ describe('CreateRoleDialogComponent', () => {
       });
 
       // Trigger cancel click
-      component.onCancelClick(fakeEvent as unknown as Event);
+      component.onCancelClick(fakeEvent as unknown as MouseEvent);
 
       // Confirm called and dialog closed with null
       expect(confirmationServiceSpy.confirm).toHaveBeenCalled();
@@ -300,7 +301,7 @@ describe('CreateRoleDialogComponent', () => {
       });
 
       // Trigger cancel click
-      component.onCancelClick(fakeEvent as unknown as Event);
+      component.onCancelClick(fakeEvent as unknown as MouseEvent);
 
       // Confirm called but dialog not closed
       expect(confirmationServiceSpy.confirm).toHaveBeenCalled();

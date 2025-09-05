@@ -139,14 +139,14 @@ export class DetailsDialogComponent<T extends BaseModel>
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
-        rejectButtonProps: {
+/*         rejectButtonProps: {
           label: 'Нет',
         },
         acceptButtonProps: {
           label: 'Да',
           severity: 'secondary',
           outlined: true,
-        },
+        }, */
         accept: () => {
           this.dialogRef.close({ name: null });
         },

@@ -28,6 +28,7 @@ import { trackById } from '../../utils/track-by-id.util';
 import { sanitizeText } from '../../utils/sanitize-text';
 import { MessageWrapperService } from '../../services/message.service';
 import { roleDraftSchema } from '@shared/schemas/role.schema';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-roles-list',
@@ -43,6 +44,7 @@ import { roleDraftSchema } from '@shared/schemas/role.schema';
     // PrimeNG
     TableModule,
     InputTextModule,
+    TranslateModule,
   ],
   providers: [],
   templateUrl: './roles-list.component.html',
@@ -55,6 +57,7 @@ export class RolesListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly dialog = inject(MatDialog);
   private readonly msgWrapper = inject(MessageWrapperService);
+  private readonly translateService = inject(TranslateService);
 
   // UI state
   isLoading = signal<boolean>(false);
@@ -92,7 +95,6 @@ export class RolesListComponent implements OnInit {
       .subscribe((roleName) => {
         if (roleName) {
           this.loadRoles();
-          this.msgWrapper.success(`Роль '${roleName}' создана.`);
         }
       });
   }
@@ -127,15 +129,6 @@ export class RolesListComponent implements OnInit {
         .pipe(
           switchMap((res) => {
             if (res.data) {
-              this.msgWrapper.warn(
-                `Название '${role.name}' уже занято! Выберите другое.`,
-                {
-                  source: 'RolesList',
-                  stage: 'checkRoleName',
-                  roleId: role.id,
-                  newNameLen: role.name.length,
-                }
-              );
               this.roles[index] = { ...originalRole };
               return EMPTY;
             }
@@ -145,7 +138,6 @@ export class RolesListComponent implements OnInit {
         .subscribe({
           next: (res) => {
             const updatedRole = res.data;
-            this.msgWrapper.success(`Роль '${updatedRole.name}' обновлена.`);
             this.roles[index] = { ...updatedRole };
             this.originalRoles[index] = { ...updatedRole };
           },
@@ -163,7 +155,6 @@ export class RolesListComponent implements OnInit {
       updateRole().subscribe({
         next: (res) => {
           const updatedRole = res.data;
-          this.msgWrapper.success(`Роль '${updatedRole.name}' обновлена.`);
           this.roles[index] = { ...updatedRole };
           this.originalRoles[index] = { ...updatedRole };
         },
@@ -219,36 +210,38 @@ export class RolesListComponent implements OnInit {
   onDeleteRoleClick(index: number): void {
     const role = this.roles[index];
     const safeRoleName = this.sanitizeText(role.name);
-
     this.confirmationService.confirm({
-      message: `Удалить роль '${safeRoleName}'?<br \>Данные невозможно будет восстановить.`,
-      header: 'Подтверждение',
+      message: this.translateService.instant(
+        'PRIME_CONFIRM.DELETE_ROLE_MESSAGE',
+        { name: safeRoleName }
+      ),
+      header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
       icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Нет' },
-      acceptButtonProps: { label: 'Да', severity: 'secondary', outlined: true },
-      accept: () => this.checkPossibilityToDeleteRole(role.id, role.name),
+
+      rejectButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+      },
+      acceptButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+        severity: 'secondary',
+        outlined: true,
+      },
+
+      accept: () => this.checkPossibilityToDeleteRole(role.id),
     });
   }
 
   // Private: check role usage before delete
-  private checkPossibilityToDeleteRole(id: number, roleName: string): void {
+  private checkPossibilityToDeleteRole(
+    id: number /* , roleName: string */
+  ): void {
     this.roleService
       .checkPossibilityToDeleteRole(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           if (!res.data) {
-            this.deleteRole(id, roleName);
-          } else {
-            this.msgWrapper.warn(
-              `Невозможно удалить роль '${roleName}'. Она назначена пользователям: '${res.data}'.`,
-                {
-                  source: 'RolesList',
-                  stage: 'checkPossibilityToDeleteRole',
-                  roleId: id,
-                  amountOfUsers: res.data.length
-                }
-            );
+            this.deleteRole(id);
           }
         },
         error: (err) =>
@@ -261,13 +254,12 @@ export class RolesListComponent implements OnInit {
   }
 
   // Private: delete role
-  private deleteRole(id: number, roleName: string): void {
+  private deleteRole(id: number /* , roleName: string */): void {
     this.roleService
       .deleteRole(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.msgWrapper.success(`Роль '${roleName}' удалена.`);
           this.loadRoles();
         },
         error: (err) =>

@@ -1,122 +1,112 @@
-import { of, lastValueFrom } from 'rxjs';
-import { toArray } from 'rxjs/operators';
+import { EMPTY, of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { z } from 'zod';
+
 import {
-  validateNoSchemaResponse,
   validateResponse,
+  validateNoSchemaResponse,
+  ValidationError,
 } from './validate-response';
+import { RawApiResponse } from '../interfaces/api-response';
 
-describe('validateResponse', () => {
-  let consoleErrorSpy: jasmine.Spy;
-
-  beforeEach(() => {
-    // silence console noise on negative-path tests
-    consoleErrorSpy = spyOn(console, 'error').and.stub();
-  });
-
-  afterEach(() => {
-    consoleErrorSpy.calls.reset();
-  });
-
-  it('validates a matching schema and returns typed data', async () => {
-    const schema = z.object({ id: z.number(), name: z.string() });
-    const source$ = of({ data: { id: 1, name: 'Alice' }, msg: 'Success' });
-
-    const result = await lastValueFrom(source$.pipe(validateResponse(schema)));
-    expect(result.data).toEqual({ id: 1, name: 'Alice' });
-    expect(result.msg).toBe('Success');
-  });
-
-  it('throws when data does not match schema and logs an error', async () => {
-    const schema = z.object({ id: z.number(), name: z.string() });
-    const source$ = of({
-      data: { id: 'not-a-number', name: 'Alice' },
-      msg: 'Failure',
+describe('validate-response', () => {
+  describe('validateResponse (with Zod schema)', () => {
+    const schema = z.object({
+      id: z.number(),
+      name: z.string(),
     });
 
-    await expectAsync(
-      lastValueFrom(source$.pipe(validateResponse(schema)))
-    ).toBeRejectedWithError('Неверный формат данных ответа.');
+    it('passes when schema is valid', (done) => {
+      const resp: RawApiResponse = {
+        data: { id: 1, name: 'ok' },
+        code: 'ROLE.CREATED',
+      };
 
-    expect(console.error).toHaveBeenCalled(); // ensures error path executed
+      of(resp)
+        .pipe(validateResponse(schema))
+        .subscribe((res) => {
+          expect(res.data).toEqual({ id: 1, name: 'ok' });
+          expect(res.code).toBe('ROLE.CREATED');
+          done();
+        });
+    });
+
+    it('throws ValidationError with code ERRORS.INVALID_SCHEMA on schema mismatch', (done) => {
+      const resp: RawApiResponse = {
+        data: { id: 'bad', name: 123 },
+      };
+
+      of(resp)
+        .pipe(validateResponse(schema))
+        .pipe(
+          catchError((err) => {
+            expect(err).toBeInstanceOf(ValidationError);
+            expect((err as ValidationError).code).toBe('ERRORS.INVALID_SCHEMA');
+            expect((err as ValidationError).status).toBeUndefined();
+            done();
+            return EMPTY;
+          })
+        )
+        .subscribe();
+    });
   });
 
-  it('works with primitive schemas too', async () => {
-    const schema = z.string();
-    const source$ = of({ data: 'hello', msg: 'ok' });
+  describe('validateNoSchemaResponse (type guards)', () => {
+    it('accepts valid boolean (isBoolean)', (done) => {
+      const resp: RawApiResponse = { data: true };
 
-    const result = await lastValueFrom(source$.pipe(validateResponse(schema)));
-    expect(result.data).toBe('hello');
-    expect(result.msg).toBe('ok');
-  });
-});
+      of(resp)
+        .pipe(validateNoSchemaResponse<boolean>('isBoolean'))
+        .subscribe((res) => {
+          expect(res.data).toBeTrue();
+          expect(res.code).toBeUndefined();
+          done();
+        });
+    });
 
-describe('validateNoSchemaResponse', () => {
-  it('validates using isBoolean and returns data/msg as-is', async () => {
-    const source$ = of({ data: true, msg: 'Success' });
+    it('accepts valid string array (isStringArray)', (done) => {
+      const resp: RawApiResponse = { data: ['a', 'b'], code: 'LIST.OK' };
 
-    const result = await lastValueFrom(
-      source$.pipe(validateNoSchemaResponse<boolean>('isBoolean'))
-    );
-    expect(result.data).toBe(true);
-    expect(result.msg).toBe('Success');
-  });
+      of(resp)
+        .pipe(validateNoSchemaResponse<string[]>('isStringArray'))
+        .subscribe((res) => {
+          expect(res.data).toEqual(['a', 'b']);
+          expect(res.code).toBe('LIST.OK');
+          done();
+        });
+    });
 
-  it('throws when validator (isNumber) fails', async () => {
-    const source$ = of({ data: 'not-a-number', msg: 'Failure' });
+    it('throws ValidationError with ERRORS.INVALID_TYPE when type mismatch', (done) => {
+      const resp: RawApiResponse = { data: 42 };
 
-    await expectAsync(
-      lastValueFrom(source$.pipe(validateNoSchemaResponse<number>('isNumber')))
-    ).toBeRejectedWithError('Неверный тип данных ответа.');
-  });
+      of(resp)
+        .pipe(validateNoSchemaResponse<boolean>('isBoolean'))
+        .pipe(
+          catchError((err) => {
+            expect(err).toBeInstanceOf(ValidationError);
+            expect((err as ValidationError).code).toBe('ERRORS.INVALID_TYPE');
+            done();
+            return EMPTY;
+          })
+        )
+        .subscribe();
+    });
 
-  it('throws if a non-registered validator is used', async () => {
-    const source$ = of({ data: 'anything', msg: 'Message' });
+    it('throws ValidationError with ERRORS.NO_VALIDATOR when validator is unknown', (done) => {
+      const resp: RawApiResponse = { data: 'test' };
 
-    // simulate a wrong validator name at runtime
-    await expectAsync(
-      lastValueFrom(
-        source$
-          // @ts-expect-error
-          .pipe(validateNoSchemaResponse<any>('nonexistentValidator'))
-      )
-    ).toBeRejectedWithError('Невозможно осуществить валидацию.');
-  });
-});
-
-describe('Performance and Scalability', () => {
-  it('processes many responses efficiently', async () => {
-    const schema = z.object({ value: z.number() });
-    const responses = Array.from({ length: 1000 }, (_, i) => ({
-      data: { value: i },
-      msg: 'OK',
-    }));
-
-    const resultArray = await lastValueFrom(
-      of(...responses).pipe(validateResponse(schema), toArray())
-    );
-    expect(resultArray.length).toBe(1000);
-    expect(resultArray[0].data).toEqual({ value: 0 });
-    expect(resultArray[999].data).toEqual({ value: 999 });
-  });
-});
-
-describe('Message passthrough', () => {
-  it('preserves msg field through validateResponse', async () => {
-    const schema = z.object({ id: z.number() });
-    const result = await lastValueFrom(
-      of({ data: { id: 7 }, msg: 'Ping' }).pipe(validateResponse(schema))
-    );
-    expect(result.msg).toBe('Ping');
-  });
-
-  it('preserves msg field through validateNoSchemaResponse', async () => {
-    const result = await lastValueFrom(
-      of({ data: ['a', 'b'], msg: 'ArrayOK' }).pipe(
-        validateNoSchemaResponse<string[]>('isStringArray')
-      )
-    );
-    expect(result.msg).toBe('ArrayOK');
-    expect(result.data).toEqual(['a', 'b']);
+      of(resp)
+        // @ts-expect-error intentionally wrong validator
+        .pipe(validateNoSchemaResponse('noSuchValidator'))
+        .pipe(
+          catchError((err) => {
+            expect(err).toBeInstanceOf(ValidationError);
+            expect((err as ValidationError).code).toBe('ERRORS.NO_VALIDATOR');
+            done();
+            return EMPTY;
+          })
+        )
+        .subscribe();
+    });
   });
 });

@@ -197,14 +197,14 @@ export class BaseDetailsComponent<T extends BaseModel> {
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
-        rejectButtonProps: {
+/*         rejectButtonProps: {
           label: 'Нет',
         },
         acceptButtonProps: {
           label: 'Да',
           severity: 'secondary',
           outlined: true,
-        },
+        }, */
         accept: () => {
           this.setInitialValues('view');
           this.changeToViewMode(this.data().defaultAddressParams!);
