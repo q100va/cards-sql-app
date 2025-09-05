@@ -40,7 +40,7 @@ export const roleDraftSchema = z
       .string({})
       .trim()
       .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-      .min(2, { message: 'FORM_VALIDATION.ROLE.DESCRIPTION_MIN' })
+      .min(5, { message: 'FORM_VALIDATION.ROLE.DESCRIPTION_MIN' })
       .max(500, { message: 'FORM_VALIDATION.ROLE.DESCRIPTION_MAX' }),
   })
   .strict();

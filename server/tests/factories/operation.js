@@ -1,18 +1,14 @@
 // tests/factories/operation.js
-import sequelize from '../../database.js';
-import { QueryTypes } from 'sequelize';
+import Operation from '../../models/operation.js';
 import { OPERATIONS } from '../../shared/operations.js';
 
 /**
- * Создать одну запись в operations.
- * @param {Object} overrides - поля для перезаписи
- * @example
- *  await createOperation({ roleId: r.id, name: 'EDIT_ROLE', access: true })
+ * Создать одну запись в operations через модель.
  */
 export async function createOperation(overrides = {}) {
   const op = {
     roleId: overrides.roleId,              // обязательный
-    name: overrides.name,                  // обязательный (одно из OPERATIONS[i].operation)
+    name: overrides.name,                  // обязательный
     access: overrides.access ?? false,
     disabled: overrides.disabled ?? false,
   };
@@ -20,72 +16,61 @@ export async function createOperation(overrides = {}) {
     throw new Error('createOperation: roleId и name обязательны');
   }
 
-  const rows = await sequelize.query(
-    `INSERT INTO operations (role_id, name, access, disabled)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, role_id AS "roleId", name, access, disabled`,
-    {
-      bind: [op.roleId, op.name, op.access, op.disabled],
-      type: QueryTypes.SELECT, // с RETURNING удобно забирать строки так
-    }
-  );
-  return rows[0];
+  const row = await Operation.create(op, { returning: true });
+  // plain JS объект:
+  return row.get({ plain: true });
 }
 
 /**
- * Засидить ВЕСЬ дефолтный набор операций для роли по списку OPERATIONS.
- * Повторяет поведение твоего /create-role.
+ * Засидить ВЕСЬ дефолтный набор операций для роли (точно повторяет логику /create-role).
  */
 export async function seedDefaultOperationsForRole(roleId) {
   const rows = OPERATIONS.map(o => ({
-    role_id: roleId,
+    roleId,
     name: o.operation,
     access: false,
     disabled: o.flag === 'FULL',
   }));
-
-  const values = [];
-  const params = [];
-  rows.forEach((r, i) => {
-    const base = i * 4;
-    params.push(r.role_id, r.name, r.access, r.disabled);
-    values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
-  });
-
-  await sequelize.query(
-    `INSERT INTO operations (role_id, name, access, disabled)
-     VALUES ${values.join(',')}`,
-    { bind: params }
-  );
+  await Operation.bulkCreate(rows);
 }
 
 /**
- * Удобно вытащить все операции роли (для ассертов).
+ * Вытащить все операции роли (для ассертов).
  */
 export async function getOperationsByRole(roleId) {
-  return sequelize.query(
-    `SELECT id, role_id AS "roleId", name, access, disabled
-       FROM operations
-      WHERE role_id = $1
-      ORDER BY name ASC`,
-    { bind: [roleId], type: QueryTypes.SELECT }
-  );
+  const rows = await Operation.findAll({
+    where: { roleId},
+    attributes: ['id', 'roleId', 'name', 'access', 'disabled'],
+    order: [['name', 'ASC']],
+    raw: true,
+  });
+  return rows;
+}
+
+export async function getOperationIdByRoleAndName(roleId, name) {
+  const row = await Operation.findOne({
+    where: { roleId, name },
+    attributes: ['id'],
+    order: [['name', 'ASC']],
+    raw: true,
+  });
+  return row.id;
 }
 
 /**
  * Быстро включить/выключить одну операцию роли.
  */
 export async function setOperationAccess(roleId, name, { access, disabled }) {
-  const rows = await sequelize.query(
-    `UPDATE operations
-        SET access = COALESCE($3, access),
-            disabled = COALESCE($4, disabled)
-      WHERE role_id = $1 AND name = $2
-      RETURNING id, role_id AS "roleId", name, access, disabled`,
+  const [affected, updated] = await Operation.update(
     {
-      bind: [roleId, name, access ?? null, disabled ?? null],
-      type: QueryTypes.SELECT,
+      ...(access   !== undefined ? { access }   : {}),
+      ...(disabled !== undefined ? { disabled } : {}),
+    },
+    {
+      where: { roleId, name },
+      individualHooks: true,
+      returning: true,
     }
   );
-  return rows[0] ?? null;
+  return affected > 0 ? updated[0].get({ plain: true }) : null;
 }

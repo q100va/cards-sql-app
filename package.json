@@ -13,7 +13,7 @@
     "build:shared": "tsc -p shared/tsconfig.json --watch",
     "dev": "concurrently \"npm:build:shared\" \"npm:server\"",
     "pretest:server": "npm run build:shared:once",
-    "test:init": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.mjs --runInBand",
+    "test:unit": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.mjs --runInBand",
     "test:int": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.int.mjs --runInBand"
   },
   "private": true,

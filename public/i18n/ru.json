@@ -55,7 +55,7 @@
     "TABLE_OBJECT": "Объект",
     "TABLE_OPERATION": "Операция",
     "TABLE_NAME_PLACEHOLDER": "2–50 символов",
-    "TABLE_DESCRIPTION_PLACEHOLDER": "2–500 символов"
+    "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 символов"
   },
   "ERRORS": {
     "VALIDATION": "Ошибка валидации",
@@ -90,7 +90,7 @@
     "ROLE": {
       "NAME_MIN": "Имя должно содержать минимум 2 символа",
       "NAME_MAX": "Имя не должно быть длиннее 50 символов",
-      "DESCRIPTION_MIN": "Описание должно содержать минимум 2 символа",
+      "DESCRIPTION_MIN": "Описание должно содержать минимум 5 символов",
       "DESCRIPTION_MAX": "Описание не должно быть длиннее 500 символов"
     }
   },

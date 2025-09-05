@@ -2,10 +2,12 @@ import { User } from '../../models';
 
 export async function createUser(attrs = {}) {
   const defaults = {
-    name: `user_${Date.now()}`,
-    email: `u_${Math.random().toString(36).slice(2,8)}@test.local`,
+    userName: `user_${Date.now()}`,
     roleId: null,
     isBlocked: false,
+    firstName: 'John',
+    lastName: 'Fox',
+    password: 'password2025',
   };
   const data = { ...defaults, ...attrs };
   const user = await User.create(data);

@@ -55,7 +55,7 @@
     "TABLE_OBJECT": "Object",
     "TABLE_OPERATION": "Operation",
     "TABLE_NAME_PLACEHOLDER": "2–50 characters",
-    "TABLE_DESCRIPTION_PLACEHOLDER": "2–500 characters"
+    "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 characters"
   },
 
   "ERRORS": {
@@ -91,7 +91,7 @@
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",
-      "DESCRIPTION_MIN": "Description must contain at least 2 characters",
+      "DESCRIPTION_MIN": "Description must contain at least 5 characters",
       "DESCRIPTION_MAX": "Description must not be longer than 500 characters"
     }
   },
