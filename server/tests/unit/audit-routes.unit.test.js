@@ -2,23 +2,23 @@ import request from 'supertest';
 import { jest } from "@jest/globals";
 import express from 'express';
 import Sequelize from 'sequelize';
-import { handleError } from '../middlewares/error-handler.js';
+import { handleError } from '../../middlewares/error-handler.js';
 const { Op } = Sequelize;
 
-jest.unstable_mockModule('../models/index.js', () => ({
+jest.unstable_mockModule('../../models/index.js', () => ({
   AuditLog: {
     findAll: jest.fn(),
     count: jest.fn(),
   },
 }));
 
-jest.unstable_mockModule('../middlewares/validate-request.js', () => ({
+jest.unstable_mockModule('../../middlewares/validate-request.js', () => ({
   validateRequest: () => (_req, _res, next) => next(), // пропускаем валидацию в юните
 }));
 
 // теперь можно импортировать тестируемый роут и модель
-const { default: auditRouter } = await import('../routes/audit-api.js');
-const { AuditLog } = await import('../models/index.js');
+const { default: auditRouter } = await import('../../routes/audit-api.js');
+const { AuditLog } = await import('../../models/index.js');
 
 function makeApp() {
   const app = express();

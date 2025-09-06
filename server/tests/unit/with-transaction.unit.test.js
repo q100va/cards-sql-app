@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
-import * as db from '../database.js';
-import { withTransaction } from '../controllers/with-transaction.js';
+import * as db from '../../database.js';
+import { withTransaction } from '../../controllers/with-transaction.js';
 
 describe('withTransaction - hard failure paths', () => {
   beforeEach(() => {

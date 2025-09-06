@@ -10,10 +10,10 @@ const loggerMock = {
     error: jest.fn(),  // реальный мок — переопределим ниже
   },
 };
-jest.unstable_mockModule('../logging/logger.js', () => loggerMock);
+jest.unstable_mockModule('../../logging/logger.js', () => loggerMock);
 
-const { default: router } = await import('../routes/client-logs.js');
-const { default: logger } = await import('../logging/logger.js');
+const { default: router } = await import('../../routes/client-logs.js');
+const { default: logger } = await import('../../logging/logger.js');
 
 // 4) Валидный батч (под твою схему)
 const goodBatch = {

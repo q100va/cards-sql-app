@@ -9,17 +9,17 @@ const { Op } = Sequelize;
 const fakeTx = { id: "test-transaction" };
 
 // Mock transaction wrapper before loading the router
-jest.unstable_mockModule("../controllers/with-transaction.js", () => ({
+jest.unstable_mockModule("../../controllers/with-transaction.js", () => ({
   withTransaction: async (fn) => fn(fakeTx),
 }));
 
 // Load router and models after mocks
-const { default: router } = await import("../routes/roles-api.js");
-import Operation from "../models/operation.js";
-import Role from "../models/role.js";
-import User from "../models/user.js";
-import { OPERATIONS } from "../shared/operations.js";
-import { makeTestApp } from './makeApp.js';
+const { default: router } = await import("../../routes/roles-api.js");
+import Operation from "../../models/operation.js";
+import Role from "../../models/role.js";
+import User from "../../models/user.js";
+import { OPERATIONS } from "../../shared/operations.js";
+import { makeTestApp } from "./makeApp.js";
 
 // Minimal app
 const app = makeTestApp(router, '/');
