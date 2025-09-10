@@ -112,8 +112,9 @@ router.post("/check-user-data", async (req, res) => {
 
 
 router.post("/create-user", async (req, res) => {
-  let newContact, newAddress, createdUser, newSearchString;
+ let newContact, newAddress, newSearchString,createdUser;
   try {
+
     let creatingUser = req.body.data;
     console.log("creatingUser");
     console.log(creatingUser);
@@ -195,8 +196,8 @@ router.post("/create-user", async (req, res) => {
     }
     //   }
 
-    const createdUser = await User.findOne({
-      where: { id },
+    createdUser = await User.findOne({
+      where: { id: createdUser.id },
       include: [
         {
           model: UserContact,

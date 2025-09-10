@@ -16,7 +16,8 @@
     <mat-grid-tile colspan="1">
       <mat-card-actions>
         <div class="bottom-right">
-          <button mat-icon-button [title]="'ROLE.TABLE_ADD_ROLE' | translate" (click)="onAddRoleClick()">
+          <button data-cy="add-role-btn" mat-icon-button [title]="'ROLE.TABLE_ADD_ROLE' | translate"
+            (click)="onAddRoleClick()">
             <mat-icon fontSet="material-icons-outlined">add_moderator</mat-icon>
           </button>
         </div>
@@ -27,8 +28,9 @@
   <!-- Content -->
   <mat-card-content>
     @if (roles && roles.length > 0) {
-    <p-table [value]="operations" rowGroupMode="rowspan" groupRowsBy="objectName" sortField="objectName"
-      sortMode="single" [tableStyle]="tableStyle" [scrollable]="true" [scrollHeight]="scrollHeight">
+    <p-table data-cy="roles-table" [value]="operations" rowGroupMode="rowspan" groupRowsBy="objectName"
+      sortField="objectName" sortMode="single" [tableStyle]="tableStyle" [scrollable]="true"
+      [scrollHeight]="scrollHeight">
       <!-- Header -->
       <ng-template #header let-editing="editing">
         <tr>
@@ -43,19 +45,21 @@
           <th [pEditableColumn]="role.name" pEditableColumnField="name" class="width-15rem">
             <p-cellEditor>
               <ng-template #input>
-                <input
+                <input [attr.data-cy]="'role-name-'+role.id"
                   [class]="roleDraftSchema.shape.name.safeParse(role.name).success ? 'valid' : 'ng-invalid ng-dirty'"
                   [placeholder]="'ROLE.TABLE_NAME_PLACEHOLDER' | translate" pInputText type="text"
                   [(ngModel)]="role.name" (blur)="onInputChange(index)" (keydown.enter)="onInputChange(index)" />
               </ng-template>
               <ng-template #output>
-                {{ role.name }}
+                <span [attr.data-cy]="'role-name-out-'+role.id">
+                  {{ role.name }}
+                </span>
               </ng-template>
             </p-cellEditor>
           </th>
           <th [class.right-bordered]="index !== roles.length - 1" class="width-5rem">
-            <button class="delete-button" mat-icon-button [title]="'ROLE.TABLE_DELETE_ROLE' | translate"
-              (click)="onDeleteRoleClick(index)">
+            <button [attr.data-cy]="'delete-role-'+role.id" class="delete-button" mat-icon-button
+              [title]="'ROLE.TABLE_DELETE_ROLE' | translate" (click)="onDeleteRoleClick(index)">
               <mat-icon>delete_outlined</mat-icon>
             </button>
           </th>
@@ -68,13 +72,15 @@
             [pEditableColumn]="role.description" pEditableColumnField="description" colspan="2">
             <p-cellEditor>
               <ng-template #input>
-                <input
+                <input [attr.data-cy]="'role-desc-' + role.id"
                   [class]="roleDraftSchema.shape.description.safeParse(role.description).success ? 'valid' : 'ng-invalid ng-dirty'"
                   [placeholder]="'ROLE.TABLE_DESCRIPTION_PLACEHOLDER' | translate" pInputText type="text"
                   [(ngModel)]="role.description" (blur)="onInputChange(index)" (keydown.enter)="onInputChange(index)" />
               </ng-template>
               <ng-template #output>
+                 <span [attr.data-cy]="'role-desc-out-'+role.id">
                 {{ role.description }}
+                </span>
               </ng-template>
             </p-cellEditor>
           </th>
@@ -100,7 +106,8 @@
           @for (roleAccess of operation.rolesAccesses; track trackById($index, roleAccess); let index = $index) {
           <td [class.right-bordered]="index !== roles.length - 1" class="center" colspan="2"
             [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
-            <mat-checkbox [disabled]="roleAccess.disabled" [checked]="roleAccess.access"
+            <mat-checkbox [attr.data-cy]="'access-' + operation.object + '-role-' + roleAccess.roleId"
+              [disabled]="roleAccess.disabled" [checked]="roleAccess.access"
               (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)">
             </mat-checkbox>
           </td>

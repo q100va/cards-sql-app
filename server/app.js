@@ -2,6 +2,7 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path, { join } from 'path';
+import cookieParser from 'cookie-parser';
 
 import sequelize from './database.js';
 import logger from './logging/logger.js';
@@ -21,11 +22,12 @@ import ClientLogsApi from './routes/client-logs.js';
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
-import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, Operation, OutdatedName } from './models/index.js';
+import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, Operation, OutdatedName, RefreshToken } from './models/index.js';
 
 const app = express();
 
 app.use(express.json({ limit: '50mb' }));
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(correlationId());
 app.use(requestLogger);
@@ -37,8 +39,19 @@ global.__basedir = __dirname;
 app.use(express.static(join(__dirname, '../public')));
 
 // CORS
+
+const allowed = new Set([
+  'http://localhost:56379',
+  'http://127.0.0.1:56379',
+]);
+
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:56379');
+  const origin = req.headers.origin;
+  if (origin && allowed.has(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  // res.header('Access-Control-Allow-Origin', 'http://localhost:56379');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-lang');
@@ -48,6 +61,9 @@ app.use((req, res, next) => {
 
 // request context
 app.use(withRequestContext);
+
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+app.head('/healthz', (_req, res) => res.sendStatus(200));
 
 // API
 app.use('/api/session', SessionApi);
@@ -70,18 +86,21 @@ export async function initInfrastructure() {
   await sequelize.authenticate();
   logger.info('DB authenticated');
 
-  await Country.sync({ alter: !isProd });
-  await Region.sync({ alter: !isProd });
-  await District.sync({ alter: !isProd });
-  await Locality.sync({ alter: !isProd });
-  await Role.sync({ alter: !isProd });
-  await Operation.sync({ alter: !isProd });
-  await User.sync({ alter: !isProd });
-  await UserContact.sync({ alter: !isProd });
-  await UserAddress.sync({ alter: !isProd });
-  await SearchUser.sync({ alter: !isProd });
-  await OutdatedName.sync({ alter: !isProd });
-  await AuditLog.sync({ alter: !isProd });
+  const syncOpts = isProd ? { alter: true } : { force: false };
+
+  await Country.sync(syncOpts);
+  await Region.sync(syncOpts);
+  await District.sync(syncOpts);
+  await Locality.sync(syncOpts);
+  await Role.sync(syncOpts);
+  await Operation.sync(syncOpts);
+  await User.sync(syncOpts);
+  await UserContact.sync(syncOpts);
+  await UserAddress.sync(syncOpts);
+  await SearchUser.sync(syncOpts);
+  await OutdatedName.sync(syncOpts);
+  await AuditLog.sync(syncOpts);
+  await RefreshToken.sync(syncOpts);
 
   initAuditHooks(sequelize);
 

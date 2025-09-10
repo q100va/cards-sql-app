@@ -11,8 +11,10 @@ import User from './user.js';
 import Operation from './operation.js';
 import SearchUser from './search-user.js';
 import OutdatedName from './outdated-name.js';
+import RefreshToken from './refresh-token.js';
 
 const AuditLog = AuditLogModel(sequelize);
+
 
 User.hasMany(UserContact, { as: 'contacts' }, {
   onDelete: 'CASCADE',
@@ -89,5 +91,5 @@ Role.hasMany(Operation, {
 });
 Operation.belongsTo(Role);
 
-export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName };
+export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName, RefreshToken};
 
