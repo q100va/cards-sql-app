@@ -9,7 +9,7 @@
 
   <!-- Close button -->
   <mat-grid-tile colspan="2" rowspan="1">
-    <button mat-icon-button [title]="'ROLE.CARD_CLOSE' | translate" (click)="onCancelClick($event)">
+    <button data-cy="dlg-cancel" mat-icon-button [title]="'ROLE.CARD_CLOSE' | translate" (click)="onCancelClick($event)">
       <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
     </button>
   </mat-grid-tile>
@@ -20,7 +20,7 @@
     <!-- Role name -->
     <mat-form-field class="full-width">
       <mat-label>{{'ROLE.CARD_LABEL_NAME' | translate}}</mat-label>
-      <input matInput [formControl]="roleName" />
+      <input data-cy="dlg-role-name" matInput [formControl]="roleName" />
 
       @if(roleName.hasError('zodError')){
       <mat-error>{{roleName.errors!['zodError'] | translate}}</mat-error>
@@ -30,7 +30,7 @@
     <!-- Role description -->
     <mat-form-field class="full-width">
       <mat-label>{{'ROLE.CARD_LABEL_DESCRIPTION' | translate}}</mat-label>
-      <textarea rows="5" matInput [formControl]="roleDescription"></textarea>
+      <textarea data-cy="dlg-role-desc" rows="5" matInput [formControl]="roleDescription"></textarea>
 
       @if(roleDescription.hasError('zodError')){
       <mat-error>{{roleDescription.errors!['zodError'] | translate }}</mat-error>
@@ -41,7 +41,7 @@
 
 <!-- Actions -->
 <mat-dialog-actions>
-  <button class="dialog-submit-button" mat-button [disabled]="!roleName.valid || !roleDescription.valid || isLoading"
+  <button data-cy="dlg-create" class="dialog-submit-button" mat-button [disabled]="!roleName.valid || !roleDescription.valid || isLoading"
     (click)="onCreateRoleClick()">
     {{'ROLE.CARD_SAVE_AND_EXIT' | translate}}
   </button>

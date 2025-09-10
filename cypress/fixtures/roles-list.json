@@ -1,0 +1,34 @@
+{
+  "data": {
+    "roles": [
+      { "id": 1, "name": "Admin", "description": "Administrator" },
+      { "id": 2, "name": "User", "description": "Volunteer" }
+    ],
+    "operations": [
+      {
+        "object": "partners",
+        "operation": "VIEW_PARTNER",
+        "accessToAllOps": false,
+        "operationName": "OPS.VIEW.NAME",
+        "description": "View partner profile",
+        "objectName": "OBJECT.PARTNERS",
+        "rolesAccesses": [
+          { "id": 10, "roleId": 1, "access": false, "disabled": false },
+          { "id": 11, "roleId": 2, "access": false, "disabled": false }
+        ]
+      },
+      {
+        "object": "toponyms",
+        "operation": "EDIT_TOPONYM",
+        "accessToAllOps": false,
+        "operationName": "OPS.EDIT.NAME",
+        "description": "Edit data of a country, region, district, or locality",
+        "objectName": "OBJECT.TOPONYMS",
+        "rolesAccesses": [
+          { "id": 20, "roleId": 1, "access": false, "disabled": false },
+          { "id": 21, "roleId": 2, "access": false, "disabled": false }
+        ]
+      }
+    ]
+  }
+}
