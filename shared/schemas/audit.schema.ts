@@ -12,13 +12,14 @@ export const auditQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
-// 'create' | 'update' | 'delete'
-export const auditActionSchema = z.enum(['create', 'update', 'delete']);
+// 'create' | 'update' | 'delete' | 'auth'
+export const auditActionSchema = z.enum(['create', 'update', 'delete', 'auth']);
 
 // Diff:
 // - create: { after: Record<string, unknown> }
 // - delete: { before: Record<string, unknown> }
 // - update: { changed: Record<string, [unknown, unknown]> }
+// - auth: { event: string, reason?: string, details?: Record<string, [unknown, unknown]> }
 export const auditDiffCreateSchema = z
   .object({
     after: z.record(z.string(), z.unknown()),
@@ -37,10 +38,20 @@ export const auditDiffUpdateSchema = z
   })
   .strict();
 
+  export const auditDiffAuthSchema = z
+  .object({
+    event: z.string().trim(),
+    reason: z.string().trim().optional(),
+    details: z.record(z.string(), z.tuple([z.unknown(), z.unknown()])).optional(),
+  })
+  .strict();
+
+
 export const auditDiffSchema = z.union([
   auditDiffCreateSchema,
   auditDiffDeleteSchema,
   auditDiffUpdateSchema,
+  auditDiffAuthSchema,
 ]);
 
 export const auditItemSchema = z

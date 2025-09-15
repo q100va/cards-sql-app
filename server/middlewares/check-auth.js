@@ -1,27 +1,62 @@
-//import { verify } from "jsonwebtoken";
-import pkg from 'jsonwebtoken';
-const { verify } = pkg;
+// ESM
+import jwt from 'jsonwebtoken';
 
-export default (req, res, next) => {
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+
+// Обязательная аутентификация: 401 при любой проблеме с access-токеном
+export function requireAuth(req, res, next) {
   try {
-      const token = req.headers.authorization.split(" ")[1];
-      verify(token, "Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals. Set time aside to learn and get reminders using your learning scheduler.");
-      next();
-  } catch (error) {
-      res.status(401).json({ msg: "Отказано в авторизации!" });
+    // пропускаем preflight
+    if (req.method === 'OPTIONS') return next();
+
+    const auth = req.headers['authorization'] || '';
+    const [scheme, token] = auth.split(' ');
+
+    if (scheme !== 'Bearer' || !token) {
+      return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
+    }
+
+    const payload = jwt.verify(token, ACCESS_SECRET, {
+      issuer: 'cards-sql-app',
+      audience: 'web',
+    });
+
+    // прокидываем в req данные пользователя (то, что клали в access)
+    req.user = {
+      id: Number(payload.sub),
+      userName: payload.uname,
+      role: payload.role ?? null,
+    };
+
+    return next();
+  } catch (err) {
+    // access просрочен/битый/нет — отдаём 401.
+    // Клиентский интерсептор сам вызовет /api/session/refresh и переиграет запрос.
+    return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
   }
-};
+}
 
-
-//*********/
-/* const jwt = require("jsonwebtoken");
-
-module.exports = (req, res, next) => {
+// Опциональная аутентификация (если нужно): не валит запрос, просто ставит req.user при наличии токена
+export function optionalAuth(req, res, next) {
   try {
-      const token = req.headers.authorization.split(" ")[1];
-      jwt.verify(token, "Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals. Set time aside to learn and get reminders using your learning scheduler.");
-      next();
-  } catch (error) {
-      res.status(401).json({ msg: "Отказано в авторизации!" });
+    const auth = req.headers['authorization'] || '';
+    const [scheme, token] = auth.split(' ');
+    if (scheme === 'Bearer' && token) {
+      const payload = jwt.verify(token, ACCESS_SECRET, {
+        issuer: 'cards-sql-app',
+        audience: 'web',
+      });
+      req.user = {
+        id: Number(payload.sub),
+        userName: payload.uname,
+        role: payload.role ?? null,
+      };
+    }
+  } catch {
+    // игнорим ошибки — это "optional"
+  } finally {
+    next();
   }
-}; */
+}
+
+export default requireAuth;

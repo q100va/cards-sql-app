@@ -1,6 +1,4 @@
 import { Router } from "express";
-import pkg from 'bcryptjs';
-const { hashSync } = pkg;
 import Country from "../models/country.js";
 import Region from "../models/region.js";
 import District from "../models/district.js";
@@ -14,6 +12,7 @@ import Role from "../models/role.js";
 import SearchUser from "../models/search-user.js";
 import CustomError from "../shared/customError.js";
 import OutdatedName from "../models/outdated-name.js";
+import { hashPassword } from "../controllers/passwords.mjs";
 const Op = Sequelize.Op;
 
 const router = Router();
@@ -112,17 +111,18 @@ router.post("/check-user-data", async (req, res) => {
 
 
 router.post("/create-user", async (req, res) => {
- let newContact, newAddress, newSearchString,createdUser;
+  let newContact, newAddress, newSearchString, createdUser;
   try {
 
     let creatingUser = req.body.data;
     console.log("creatingUser");
     console.log(creatingUser);
-    const hashedPassword = hashSync(creatingUser.password, saltRounds);
+
+    const hashed = await hashPassword(creatingUser.password);
     createdUser = await User.create(
       {
         userName: creatingUser.userName,
-        password: hashedPassword,
+        password: hashed,
         firstName: creatingUser.firstName,
         patronymic: creatingUser.patronymic,
         lastName: creatingUser.lastName,
@@ -327,9 +327,9 @@ router.post("/update-user", async (req, res) => {
 
     if (restoringData.userNames && restoringData.userNames.length > 0) {
       for (let userNameId of restoringData.userNames) {
-      await OutdatedName.destroy({ where: { id: userNameId} });
+        await OutdatedName.destroy({ where: { id: userNameId } });
+      }
     }
-  }
 
     if (restoringData.contacts) {
       for (let key in restoringData.contacts) {
@@ -346,20 +346,20 @@ router.post("/update-user", async (req, res) => {
     // outdatingData
 
     if (outdatingData.names) {
-        await OutdatedName.create({
-          userId: id,
-          firstName: outdatingData.names.firstName,
-          patronymic: outdatingData.names.patronymic,
-          lastName: outdatingData.names.lastName
-        });
+      await OutdatedName.create({
+        userId: id,
+        firstName: outdatingData.names.firstName,
+        patronymic: outdatingData.names.patronymic,
+        lastName: outdatingData.names.lastName
+      });
     }
 
-      if (outdatingData.userName) {
-        await OutdatedName.create({
-          userId: id,
-          userName: outdatingData.userName,
-        });
-      }
+    if (outdatingData.userName) {
+      await OutdatedName.create({
+        userId: id,
+        userName: outdatingData.userName,
+      });
+    }
 
 
     if (outdatingData.address) {
@@ -500,9 +500,11 @@ async function createSearchString(updatedUser) {
 router.post("/change-password", async (req, res) => {
   try {
     const { userId, value } = req.body.data;
-    const hashedPassword = hashSync(value, saltRounds);
+
+    const hashed = await hashPassword(value);
+
     await User.update(
-      { password: hashedPassword },
+      { password: hashed },
       { where: { id: userId } }
     );
     res.status(200).send({

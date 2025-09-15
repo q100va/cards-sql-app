@@ -8,9 +8,11 @@ import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import * as roleSchemas from "../../shared/dist/role.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
+import requireAuth from '../middlewares/check-auth.js';
+
 
 // TODO: add authentication/authorization middlewares
-// import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
+// import { authorizeAdmin } from "../middlewares/auth.js";
 
 const Op = Sequelize.Op;
 const router = Router();
@@ -22,7 +24,7 @@ const router = Router();
 router.get(
   "/check-role-name/:name",
   validateRequest(roleSchemas.roleNameSchema, "params"),
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -52,7 +54,7 @@ router.get(
 router.post(
   "/create-role",
   validateRequest(roleSchemas.roleDraftSchema),
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -89,7 +91,7 @@ router.post(
 router.patch(
   "/update-role",
   validateRequest(roleSchemas.roleSchema),
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -124,7 +126,7 @@ router.patch(
 router.patch(
   "/update-role-access",
   validateRequest(roleSchemas.roleChangeAccessSchema),
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -265,7 +267,7 @@ async function changeRoleOperation(
  */
 router.get(
   "/get-roles-names-list",
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -288,7 +290,7 @@ router.get(
  */
 router.get(
   "/get-roles",
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -350,7 +352,7 @@ router.get(
 router.get(
   "/check-role-before-delete/:id",
   validateRequest(roleSchemas.roleIdSchema, "params"),
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {
@@ -380,7 +382,7 @@ router.get(
 router.delete(
   "/delete-role/:id",
   validateRequest(roleSchemas.roleIdSchema, "params"),
-  // authenticateUser,
+  requireAuth,
   // authorizeAdmin,
   async (req, res, next) => {
     try {

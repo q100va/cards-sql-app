@@ -84,3 +84,46 @@
 }
 
 .spacer { flex: 1 1 auto; }
+
+:host ::ng-deep .idle-dialog .p-dialog-header {
+  align-items: center;
+}
+.idle-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* блок сообщения */
+.idle-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+}
+.idle-msg__icon {
+  font-size: 2rem;
+  opacity: .8;
+  margin-top: .15rem;
+}
+.idle-msg__text {
+  line-height: 1.5;
+}
+
+/* «пилюля» со счётчиком */
+.idle-countdown {
+  display: inline-block;
+  margin: 0 .35rem;
+  padding: .1rem .5rem;
+  border-radius: 9999px;
+  background: var(--p-orange-50, #fff7ed);
+  color: var(--p-orange-700, #9a3412);
+/*   background: var(--p-primary-50, #eef2ff);
+  color: var(--p-primary-700, #3730a3); */
+  font-weight: 600;
+}
+/* .idle-countdown.warn {
+  background: var(--p-orange-50, #fff7ed);
+  color: var(--p-orange-700, #9a3412);
+}
+ */

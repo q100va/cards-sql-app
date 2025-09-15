@@ -4,6 +4,20 @@
     "AUTHOR": "OksanaFinch",
     "FOUNDATION": "Enjoyable Aging Charity Foundation"
   },
+  "COMMON": {
+    "STAY": "Stay",
+    "LOGOUT": "Log Out"
+  },
+  "SESSION": {
+    "IDLE_HEADER": "Are you still there?",
+    "IDLE_MSG_PREFIX": "You have been inactive.\nAuto sign out in",
+    "IDLE_MSG_SUFFIX": "sec.",
+    "IDLE_MSG_SOME": "some",
+    "SIGN_IN_TITLE": "Log In",
+    "USER_NAME_LABEL": "User Name",
+    "PASSWORD_LABEL": "Password",
+    "ENTER_BUTTON_LABEL": "Log In"
+  },
   "TOOLBAR": {
     "TITLE": "Project “Grandchildren by Correspondence: Send a Greeting Card”",
     "MY_ORDERS": "My Requests",
@@ -74,6 +88,11 @@
     "INVALID_TYPE": "Invalid response data type",
     "NO_VALIDATOR": "Validation is not available",
     "UNKNOWN": "Unknown error occurred",
+    "TOO_MANY_ATTEMPTS": "Too many attempts. Try again in {{retryAfterSec}} sec.",
+    "ACCOUNT_RESTRICTED": "Your account is restricted by an administrator.",
+    "ACCOUNT_LOCKED": "Temporary lock after multiple failed attempts. Please try later.",
+    "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
+    "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
 
     "ROLE": {
       "NOT_FOUND": "Role not found",

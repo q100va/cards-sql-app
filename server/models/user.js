@@ -54,6 +54,24 @@ const User = sequelize.define('user', {
   dateOfRestriction: {
     type: DataTypes.DATE
   },
+  failedLoginCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
+  lockedUntil: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  bruteWindowStart: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  bruteStrikeCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
 });
 
 //Associations
