@@ -157,7 +157,14 @@
                 }
               </ul>
             </ng-container>
-            } @else {
+            } @else if(record.action === 'auth') {
+            event: {{ record.diff?.event }}
+            @if(record.diff?.reason){
+              <br/>
+            reason: {{ record.diff.reason }}
+            }
+            }
+            @else{
             <ng-container>
               <pre class="snapshot">{{ snapshot(record) }}</pre>
             </ng-container>
