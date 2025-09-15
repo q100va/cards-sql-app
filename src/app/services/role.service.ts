@@ -18,7 +18,7 @@ import {
   validateNoSchemaResponse,
   validateResponse,
 } from '../utils/validate-response';
-import { ApiResponse } from '../interfaces/api-response';
+import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 
@@ -36,11 +36,12 @@ export class RoleService {
   // Check if a role name is already taken.
   checkRoleName(name: string): Observable<ApiResponse<boolean>> {
     return this.http
-      .get<ApiResponse<boolean>>(
+      .get<RawApiResponse>(
         `${this.BASE_URL}/check-role-name/${encodeURIComponent(name)}`
       )
       .pipe(
-        validateNoSchemaResponse<boolean>('isBoolean'),
+         validateResponse(z.boolean()),
+        //validateNoSchemaResponse<boolean>('isBoolean'),
         this.msgWrapper.messageTap('warn', {
           source: 'CreateRoleDialog',
           stage: 'checkRoleName',
@@ -56,12 +57,13 @@ export class RoleService {
     description: string
   ): Observable<ApiResponse<string>> {
     return this.http
-      .post<ApiResponse<string>>(`${this.BASE_URL}/create-role`, {
+      .post<RawApiResponse>(`${this.BASE_URL}/create-role`, {
         name,
         description,
       })
       .pipe(
-        validateNoSchemaResponse<string>('isString'),
+        validateResponse(z.string().trim()),
+        //validateNoSchemaResponse<string>('isString'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           name: res.data,
         })),
@@ -70,9 +72,11 @@ export class RoleService {
   }
 
   // Update role name/description.
-  updateRole(role: Role): Observable<ApiResponse<Role>> {
+  updateRole(
+    role: Role
+  ): Observable<ApiResponse<Role>> {
     return this.http
-      .patch<ApiResponse<Role>>(`${this.BASE_URL}/update-role`, role)
+      .patch<RawApiResponse>(`${this.BASE_URL}/update-role`, role)
       .pipe(
         validateResponse(roleSchema),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
@@ -89,7 +93,7 @@ export class RoleService {
     operation: Operation
   ): Observable<ApiResponse<{ object: string; ops: RoleAccess[] }>> {
     return this.http
-      .patch<ApiResponse<{ object: string; ops: RoleAccess[] }>>(
+      .patch<RawApiResponse>(
         `${this.BASE_URL}/update-role-access`,
         { access: value, roleId, operation }
       )
@@ -101,7 +105,7 @@ export class RoleService {
     ApiResponse<{ roles: Role[]; operations: Operation[] }>
   > {
     return this.http
-      .get<ApiResponse<{ roles: Role[]; operations: Operation[] }>>(
+      .get<RawApiResponse>(
         `${this.BASE_URL}/get-roles`
       )
       .pipe(validateResponse(rolesListSchema), catchError(this.handleError));
@@ -110,7 +114,7 @@ export class RoleService {
   // Get id/name pairs for dropdowns.
   getRolesNamesList(): Observable<ApiResponse<{ id: number; name: string }[]>> {
     return this.http
-      .get<ApiResponse<{ id: number; name: string }[]>>(
+      .get<RawApiResponse>(
         `${this.BASE_URL}/get-roles-names-list`
       )
       .pipe(
@@ -122,13 +126,14 @@ export class RoleService {
   // Check if a role can be deleted (returns usernames string or empty).
   checkPossibilityToDeleteRole(id: number): Observable<ApiResponse<number>> {
     return this.http
-      .get<ApiResponse<number>>(
+      .get<RawApiResponse>(
         `${this.BASE_URL}/check-role-before-delete/${encodeURIComponent(
           String(id)
         )}`
       )
       .pipe(
-        validateNoSchemaResponse<number>('isNumber'),
+         validateResponse(z.number().int().positive()),
+       // validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap(
           'warn',
           (res) => ({
@@ -146,7 +151,7 @@ export class RoleService {
   // Delete role by id.
   deleteRole(id: number): Observable<ApiResponse<null>> {
     return this.http
-      .delete<ApiResponse<null>>(
+      .delete<RawApiResponse>(
         `${this.BASE_URL}/delete-role/${encodeURIComponent(String(id))}`
       )
       .pipe(
