@@ -16,11 +16,45 @@ export const enPrime: PrimeTranslation = {
   choose: 'Choose',
   upload: 'Upload',
   cancel: 'Cancel',
-  dayNames: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
-  dayNamesShort: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-  dayNamesMin: ['Su','Mo','Tu','We','Th','Fr','Sa'],
-  monthNames: ['January','February','March','April','May','June','July','August','September','October','November','December'],
-  monthNamesShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  dayNames: [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ],
+  dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  dayNamesMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  monthNames: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+  monthNamesShort: [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ],
   today: 'Today',
   clear: 'Clear',
   weekHeader: 'Wk',
@@ -34,6 +68,12 @@ export const enPrime: PrimeTranslation = {
     selectAll: 'Select all',
     unselectAll: 'Unselect all',
     close: 'Close',
+    firstPageLabel: 'First page',
+    lastPageLabel: 'Last page',
+    nextPageLabel: 'Next page',
+    previousPageLabel: 'Previous page',
+    pageLabel: 'Page {page}',
+    rowsPerPageLabel: 'Rows per page',
   },
 };
 
@@ -43,11 +83,45 @@ export const ruPrime: PrimeTranslation = {
   choose: 'Выбрать',
   upload: 'Загрузить',
   cancel: 'Отмена',
-  dayNames: ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'],
-  dayNamesShort: ['вс','пн','вт','ср','чт','пт','сб'],
-  dayNamesMin: ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
-  monthNames: ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'],
-  monthNamesShort: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
+  dayNames: [
+    'воскресенье',
+    'понедельник',
+    'вторник',
+    'среда',
+    'четверг',
+    'пятница',
+    'суббота',
+  ],
+  dayNamesShort: ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'],
+  dayNamesMin: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+  monthNames: [
+    'январь',
+    'февраль',
+    'март',
+    'апрель',
+    'май',
+    'июнь',
+    'июль',
+    'август',
+    'сентябрь',
+    'октябрь',
+    'ноябрь',
+    'декабрь',
+  ],
+  monthNamesShort: [
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'май',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
+  ],
   today: 'Сегодня',
   clear: 'Очистить',
   weekHeader: 'Нед',
@@ -61,6 +135,12 @@ export const ruPrime: PrimeTranslation = {
     selectAll: 'Выбрать всё',
     unselectAll: 'Снять выбор',
     close: 'Закрыть',
+    firstPageLabel: 'Первая страница',
+    lastPageLabel: 'Последняя страница',
+    nextPageLabel: 'Следующая страница',
+    previousPageLabel: 'Предыдущая страница',
+    pageLabel: 'Страница {page}', // <-- критично, иначе .replace падает
+    rowsPerPageLabel: 'Строк на странице', // некоторые компоненты тоже читают
   },
 };
 
@@ -75,14 +155,20 @@ export class LanguageService {
 
   constructor() {
     this.translateService.addLangs(['en', 'ru']);
-    const saved = (localStorage.getItem(LS_KEY) as Lang | null);
-    const browser = (this.translateService.getBrowserLang?.() as Lang | undefined);
+    const saved = localStorage.getItem(LS_KEY) as Lang | null;
+    const browser = this.translateService.getBrowserLang?.() as
+      | Lang
+      | undefined;
     const initial: Lang = saved ?? (browser === 'ru' ? 'ru' : 'en');
     this.apply(initial);
   }
 
-  get current(): Lang { return this._lang$.value; }
-  get locale(): string { return LOCALE_MAP[this.current]; }
+  get current(): Lang {
+    return this._lang$.value;
+  }
+  get locale(): string {
+    return LOCALE_MAP[this.current];
+  }
 
   set(lang: Lang): void {
     if (lang === this.current) return;
@@ -97,9 +183,8 @@ export class LanguageService {
     this._lang$.next(lang);
     this.dateAdapter.setLocale(LOCALE_MAP[lang]);
 
-
     this.primeng.translation = { ...(lang === 'ru' ? ruPrime : enPrime) };
-/*      const tr = lang === 'ru' ? ruPrime : enPrime;
+    /*      const tr = lang === 'ru' ? ruPrime : enPrime;
     this.primeng.translation = { ...tr }; // <-- вот ключевая строка */
   }
 }
