@@ -14,13 +14,14 @@ import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 
 import { MenuItem } from './menu-item';
-import { AuthUser, SignInService } from '../../services/sign-in.service';
+import { SignInService } from '../../services/sign-in.service';
 import { LanguageService } from '../../services/language.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import { IdleService } from '../../services/idle.service';
 import { interval, Subscription, takeWhile } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
+import { AuthUser } from '@shared/schemas/auth.schema';
 
 @Component({
   selector: 'app-base-layout',

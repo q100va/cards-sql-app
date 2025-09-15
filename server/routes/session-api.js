@@ -1,13 +1,15 @@
 // server/routes/session-api.js
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { requireAccess } from '../middlewares/require-access.js';
+import { validateRequest } from '../middlewares/validate-request.js';
+import { signInReqSchema } from '../../shared/dist/auth.schema.js';
+import { auditAuthFail } from '../logging/audit-auth.js';
 import { verify, DUMMY_ARGON2_HASH } from '../controllers/passwords.mjs';
-import { User, Role, RefreshToken } from '../models/index.js';
 import { signInIpLimiter, signInUserLimiter, resetKey, loginKey, signInUaLimiter, signInGlobalLimiter } from '../controllers/rate-limit.js';
 import { mintTokenPair, setRefreshCookie, clearRefreshCookie, ACCESS_TTL_SEC, REFRESH_SECRET } from '../controllers/token.js';
-import { auditAuthFail } from '../logging/audit-auth.js';
-import crypto from 'crypto';
+import { User, Role, RefreshToken } from '../models/index.js';
 const router = Router();
 
 // Параметры DB-блокировок
@@ -17,7 +19,7 @@ const ESCALATION_WINDOW = 24 * 60 * 60_000; // 24 часа
 const ESCALATION_STRIKES = 3;             // 3 блокировки за 24ч => isRestricted=true
 
 // === POST /api/session/sign-in ===
-router.post('/sign-in', async (req, res, next) => {
+router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next) => {
   const { userName, password } = req.body ?? {};
   const userKey = loginKey(userName);
   const ipKey = req.ip;
@@ -111,6 +113,8 @@ router.post('/sign-in', async (req, res, next) => {
 
         if ((user.bruteStrikeCount ?? 0) >= ESCALATION_STRIKES) {
           user.isRestricted = true;
+          user.causeOfRestriction = 'daily_lockout';
+          user.dateOfRestriction = now;
           await auditAuthFail(req, {
             event: 'user_restricted',
             userId: user.id,
@@ -204,8 +208,6 @@ router.post('/refresh', async (req, res, next) => {
     // помечаем текущий refresh как "повёрнутый"
     tokenRow.rotatedAt = now;
     await tokenRow.save();
-
-
 
     // выдаём новую пару
     const { accessToken, refreshToken } = await mintTokenPair(user, {

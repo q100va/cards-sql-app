@@ -37,8 +37,8 @@ export class SignInComponent {
   isLoad = false;
 
   form = new FormGroup({
-    userName: new FormControl(null, Validators.compose([Validators.required])),
-    password: new FormControl(null, Validators.compose([Validators.required])),
+    userName: new FormControl<string>('', Validators.compose([Validators.required])),
+    password: new FormControl<string>('', Validators.compose([Validators.required])),
   });
   errorMessage?: string;
 
@@ -46,13 +46,13 @@ export class SignInComponent {
 
   onSubmit() {
     this.isLoad = true;
-    const userName = this.form.controls.userName.value;
-    const password = this.form.controls.password.value;
+    const userName = this.form.controls.userName.value ?? '';
+    const password = this.form.controls.password.value ?? '';
 
     this.signInService.logIn(userName, password).subscribe({
       next: () => {
         this.form.reset();
-         this.isLoad = false;
+        this.isLoad = false;
         this.router.navigate(['/']);
       },
       error: (err) => {
