@@ -73,7 +73,6 @@ const MODELS = [
   'region',
   'district',
   'locality',
-  'RefreshToken',
   'session'
 ] as const;
 
