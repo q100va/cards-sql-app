@@ -93,6 +93,7 @@
     "ACCOUNT_LOCKED": "Temporary lock after multiple failed attempts. Please try later.",
     "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
     "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
+     "USER_WITHOUT_ROLE": "User without role",
 
     "ROLE": {
       "NOT_FOUND": "Role not found",

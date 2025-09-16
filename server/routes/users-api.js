@@ -19,7 +19,7 @@ const router = Router();
 const saltRounds = 10;
 
 // API create user
-
+//TODO: гарантировать что у пользователя есть роль!!!
 router.post("/check-username", async (req, res) => {
   try {
     const userName = req.body.data.userName.toLowerCase();

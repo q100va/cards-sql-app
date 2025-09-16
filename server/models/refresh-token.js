@@ -26,7 +26,7 @@ RefreshToken.init(
   {
     sequelize,
     tableName: 'refresh_tokens',
-    modelName: 'RefreshToken',
+    modelName: 'refresh_token',
     timestamps: true,
     indexes: [{ fields: ['userId'] }],
   }

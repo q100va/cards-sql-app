@@ -53,8 +53,20 @@ const signRefresh = (payload) =>
     audience: 'web',
   });
 
+function assertUserHasRole(user) {
+  const roleName = user?.role?.name;
+  if (typeof roleName !== 'string' || roleName.trim() === '') {
+    const err = new Error('ERRORS.USER_WITHOUT_ROLE');
+    err.code = 'ERRORS.USER_WITHOUT_ROLE';
+    err.status = 500;
+    throw err;
+  }
+  return roleName;
+}
+
 // Создаёт новую пару токенов + запись в БД для refresh
 export async function mintTokenPair(user, ctx = {}) {
+  const roleName = assertUserHasRole(user);
   const jti = uuidv4();
   const now = new Date();
   const refresh = await RefreshToken.create({
@@ -68,7 +80,7 @@ export async function mintTokenPair(user, ctx = {}) {
   const accessToken = signAccess({
     sub: String(user.id),
     uname: user.userName,
-    role: user.role?.name ?? null,
+    role: roleName,
   });
 
   const refreshToken = signRefresh({

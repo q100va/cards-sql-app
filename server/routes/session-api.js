@@ -91,55 +91,33 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     // 4) Проверяем пароль
     const ok = await verify(user.password, password ?? '');
     if (!ok) {
-      // инкрементим счётчик
-      user.failedLoginCount = (user.failedLoginCount ?? 0) + 1;
-
-      // порог лок-аута
-      if (user.failedLoginCount >= FAILS_TO_LOCK) {
-        user.failedLoginCount = 0;
-        user.lockedUntil = new Date(now.getTime() + LOCK_DURATION_MS);
+      const { events, state } = await user.registerFailedLogin(now /*, SECURITY, { transaction: t }*/);
+      if (events.includes('locked')) {
         await auditAuthFail(req, {
           event: 'user_locked', userId: user.id, reason: 'user_rate_limit',
-          details: { lockedUntil: user.lockedUntil },
+          details: { lockedUntil: state.lockedUntil },
         });
-        const winStart = user.bruteWindowStart ? new Date(user.bruteWindowStart) : null;
-
-        if (!winStart || (now.getTime() - winStart.getTime()) > ESCALATION_WINDOW) {
-          user.bruteWindowStart = now;
-          user.bruteStrikeCount = 1;
-        } else {
-          user.bruteStrikeCount = (user.bruteStrikeCount ?? 0) + 1;
-        }
-
-        if ((user.bruteStrikeCount ?? 0) >= ESCALATION_STRIKES) {
-          user.isRestricted = true;
-          user.causeOfRestriction = 'daily_lockout';
-          user.dateOfRestriction = now;
-          await auditAuthFail(req, {
-            event: 'user_restricted',
-            userId: user.id,
-            reason: 'daily_lockout',
-            details: { strikeCount: user.bruteStrikeCount, windowStart: user.bruteWindowStart },
-          });
-        }
       }
-      await user.save();
-
-      await auditAuthFail(req, {
-        event: 'login_failed',
-        userId: user.id,
-        reason: 'bad_password',
-        details: { attemptsLeft: Math.max(0, FAILS_TO_LOCK - (user.failedLoginCount ?? 0)) },
-      });
+      if (events.includes('restricted')) {
+        await auditAuthFail(req, {
+          event: 'user_restricted', userId: user.id, reason: 'daily_lockout',
+          details: { strikeCount: state.bruteStrikeCount, windowStart: state.bruteWindowStart },
+        });
+      }
+      const attemptsLeft = events.includes('locked')
+        ? 0
+        : Math.max(0, FAILS_TO_LOCK - (state.failedLoginCount ?? 0));
+      await auditAuthFail(req, { event: 'login_failed', userId: user.id, reason: 'bad_password', details: { attemptsLeft } });
       return res.status(401).json({ code: 'ERRORS.INVALID_AUTHORIZATION', data: null });
     }
 
     // 5) Успех → сбрасываем флаги и лимитер
-    if (user.failedLoginCount || user.lockedUntil) {
-      user.failedLoginCount = 0;
-      user.lockedUntil = null;
-      await user.save();
-    }
+    /*    if (user.failedLoginCount || user.lockedUntil) {
+         user.failedLoginCount = 0;
+         user.lockedUntil = null;
+         await user.save();
+       } */
+    await user.resetAfterSuccess(/* { transaction: t } */);
     try { await resetKey(signInUserLimiter, userKey); } catch { }
 
     // 6) Мятим токены

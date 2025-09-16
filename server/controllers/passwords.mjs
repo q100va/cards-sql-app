@@ -27,11 +27,15 @@ export async function hashPassword(plain) {
  * @param {string} plain — введённый пароль
  * @returns {Promise<boolean>}
  */
+
 export async function verify(hash, plain) {
   if (!hash || !plain) return false;
-  const ok = argon2.verify(hash, plain, { secret: Buffer.from(PEPPER) });
-  return ok;
+  try {
+    return await argon2.verify(hash, plain, { secret: Buffer.from(PEPPER) });
+  } catch {
+    return false; // мягкое поведение вместо исключения
+  }
+
 }
 
-
-export const DUMMY_ARGON2_HASH ='$argon2id$v=19$m=65536,t=3,p=1$Jf/qggjeV3hTdEIsNYUWBw$VbWco1IUr04/pxpbcjKEnz0EBiJMYSMWQQ2LyuJWFYo';
+export const DUMMY_ARGON2_HASH = '$argon2id$v=19$m=65536,t=3,p=1$Jf/qggjeV3hTdEIsNYUWBw$VbWco1IUr04/pxpbcjKEnz0EBiJMYSMWQQ2LyuJWFYo';

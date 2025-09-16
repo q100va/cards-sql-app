@@ -1,16 +1,14 @@
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
-
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": ["jasmine", "node"]
+    "types": ["jasmine"],          // ← только jasmine
+    "esModuleInterop": true
   },
-  "include": [
-    "src/**/*.spec.ts",
-    "src/**/*.int.spec.ts",
-    "src/**/*.int.test.ts"
-  ],
-  "exclude": ["cypress/**"]          // <— важно!
+
+  "include": ["src/**/*.spec.ts", "src/**/*.d.ts"],
+  "exclude": ["cypress/**/*"]      // ← не тащим cypress в юниты
 }
+
