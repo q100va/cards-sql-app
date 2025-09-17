@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 
 // Обязательная аутентификация: 401 при любой проблеме с access-токеном
-export function requireAuth(req, res, next) {
+export default function requireAuth(req, res, next) {
   try {
     // пропускаем preflight
     if (req.method === 'OPTIONS') return next();
@@ -58,5 +58,3 @@ export function optionalAuth(req, res, next) {
     next();
   }
 }
-
-export default requireAuth;

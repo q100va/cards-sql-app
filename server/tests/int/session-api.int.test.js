@@ -255,7 +255,7 @@ describe('integration: /api/session', () => {
     models.User.findOne.mockResolvedValue(userRow);
 
     const { app, mocks } = await loadApp({ models });
-    const res = await request(app).post('/api/session/sign-in').send({ userName: 'Alice', password: 'p@ss' }).expect(200);
+    const res = await request(app).post('/api/session/sign-in').send({ userName: 'Alice', password: 'p@ss12345' }).expect(200);
 
     expect(res.body.data.user).toMatchObject({
       id: 10,

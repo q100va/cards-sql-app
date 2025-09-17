@@ -9,10 +9,10 @@ export const langHeaderInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  if (req.headers.has('x-lang')) return next(req);
+
   const lang =
-    localStorage.getItem(LS_KEY) ||
-    document.documentElement.lang ||
-    'en';
+    localStorage.getItem(LS_KEY) || document.documentElement.lang || 'en';
 
   const cloned = req.clone({ setHeaders: { 'x-lang': lang } });
   return next(cloned);

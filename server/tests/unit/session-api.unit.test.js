@@ -258,7 +258,7 @@ describe('routes: /api/session', () => {
     // verify → true по умолчанию, лимитеры пропускают
     const res = await request(app)
       .post('/api/session/sign-in')
-      .send({ userName: 'Alice', password: 'p@ss' })
+      .send({ userName: 'Alice', password: 'p@ss12345' })
       .expect(200);
 
     expect(res.body.data.user).toMatchObject({

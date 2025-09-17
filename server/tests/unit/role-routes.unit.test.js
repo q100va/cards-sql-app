@@ -13,6 +13,17 @@ jest.unstable_mockModule("../../controllers/with-transaction.js", () => ({
   withTransaction: async (fn) => fn(fakeTx),
 }));
 
+jest.unstable_mockModule("../../middlewares/check-auth.js", () => ({
+  default: (req, _res, next) => {
+    // если хендлеры смотрят на req.user — подкинем роль
+    req.user = { id: 1, userName: "unit", role: "Admin" };
+    next();
+  },
+  optionalAuth: (_req, _res, next) => next(),
+}));
+
+
+
 // Load router and models after mocks
 const { default: router } = await import("../../routes/roles-api.js");
 import Operation from "../../models/operation.js";
