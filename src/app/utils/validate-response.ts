@@ -26,7 +26,7 @@ export function validateResponse<TSchema extends ZodType<any, any>>(
       map((response) => {
         const parseResult = schema.safeParse(response.data);
         if (!parseResult.success) {
-          console.error('Schema validation failed:', z.treeifyError(parseResult.error));
+          console.error('Schema validation failed:', parseResult);
           throw new ValidationError('ERRORS.INVALID_SCHEMA');
         }
         return {

@@ -1,4 +1,6 @@
 // tests/roles.api.int.test.js
+import 'dotenv/config';
+import jwt from 'jsonwebtoken';
 import sequelize from '../../database.js';
 import { QueryTypes } from 'sequelize';
 
@@ -20,6 +22,24 @@ async function select(text, bind = []) {
 
 describe('Roles API (integration)', () => {
   const langRu = { 'x-lang': 'ru' };
+  let auth = {};
+  //const withHeaders = (req) => req.set({ ...langRu, ...auth });
+
+  beforeAll(() => {
+    const secret = process.env.JWT_ACCESS_SECRET;
+    if (!secret) {
+      throw new Error('JWT_ACCESS_SECRET is not set (check .env.test)');
+    }
+
+    // check-auth.js ожидает именно эти iss/aud и поля payload:
+    const token = jwt.sign(
+      { sub: '1', uname: 'superAdmin', role: 'Admin' },
+      secret,
+      { issuer: 'cards-sql-app', audience: 'web', expiresIn: '15m' }
+    );
+
+    auth = { Authorization: `Bearer ${token}` };
+  });
 
   // ---------- GET /check-role-name/:name ----------
   describe('GET /api/roles/check-role-name/:name', () => {
@@ -28,7 +48,7 @@ describe('Roles API (integration)', () => {
 
       const { body, status } = await global.api
         .get(`/api/roles/check-role-name/${encodeURIComponent(role.name)}`)
-        .set(langRu);
+        .set({ ...langRu, ...auth });
 
       expect(status).toBe(200);
       expect(body).toEqual(
@@ -42,7 +62,7 @@ describe('Roles API (integration)', () => {
     it('returns {data:false} when name is free (no code)', async () => {
       const { body, status } = await global.api
         .get('/api/roles/check-role-name/UniqueName123')
-        .set(langRu);
+        .set({ ...langRu, ...auth });
 
       expect(status).toBe(200);
       expect(body.data).toBe(false);
@@ -57,7 +77,7 @@ describe('Roles API (integration)', () => {
 
       const { body, status } = await global.api
         .post('/api/roles/create-role')
-        .set(langRu)
+        .set({ ...langRu, ...auth })
         .send(payload);
 
       expect(status).toBe(200);
@@ -99,7 +119,7 @@ describe('Roles API (integration)', () => {
 
       const { body, status } = await global.api
         .patch('/api/roles/update-role')
-        .set(langRu)
+        .set({ ...langRu, ...auth })
         .send({ id: role.id, name: 'viewer', description: 'read-only' });
 
       expect(status).toBe(200);
@@ -120,7 +140,7 @@ describe('Roles API (integration)', () => {
     it('404 + ERRORS.ROLE.NOT_FOUND when role missing', async () => {
       const { body, status } = await global.api
         .patch('/api/roles/update-role')
-        .set(langRu)
+        .set({ ...langRu, ...auth })
         .send({ id: 999999, name: 'xxxxxx', description: 'Role description' });
 
       expect(status).toBe(404);
@@ -136,7 +156,7 @@ describe('Roles API (integration)', () => {
 
       const { body, status } = await global.api
         .patch('/api/roles/update-role-access')
-        .set(langRu)
+        .set({ ...langRu, ...auth })
         .send({
           access: true,
           roleId: role.id,
@@ -198,7 +218,7 @@ describe('Roles API (integration)', () => {
 
       const { status } = await global.api
         .patch('/api/roles/update-role-access')
-        .set(langRu)
+        .set({ ...langRu, ...auth })
         .send({
           access: false,
           roleId: role.id,
@@ -234,7 +254,9 @@ describe('Roles API (integration)', () => {
 
       const opIdLimited = await getOperationIdByRoleAndName(role.id, 'VIEW_LIMITED_USERS_LIST');
 
-      await global.api.patch('/api/roles/update-role-access').send({
+      await global.api.patch('/api/roles/update-role-access')
+      .set(auth)
+      .send({
         access: true,
         roleId: role.id,
         operation: {
@@ -267,7 +289,9 @@ describe('Roles API (integration)', () => {
       // Включаем FULL → LIMITED.disabled=true
       const opIdFull = await getOperationIdByRoleAndName(role.id, 'VIEW_FULL_USERS_LIST');
 
-      await global.api.patch('/api/roles/update-role-access').send({
+      await global.api.patch('/api/roles/update-role-access')
+      .set(auth)
+      .send({
         access: true,
         roleId: role.id,
         operation: {
@@ -304,7 +328,7 @@ describe('Roles API (integration)', () => {
 
       const { body, status } = await global.api
         .get('/api/roles/get-roles-names-list')
-        .set(langRu);
+        .set({ ...langRu, ...auth });
 
       expect(status).toBe(200);
       expect(Array.isArray(body.data)).toBe(true);
@@ -323,7 +347,7 @@ describe('Roles API (integration)', () => {
       await seedDefaultOperationsForRole(r1.id);
       await seedDefaultOperationsForRole(r2.id);
 
-      const { body, status } = await global.api.get('/api/roles/get-roles');
+      const { body, status } = await global.api.get('/api/roles/get-roles').set(auth);;
 
       expect(status).toBe(200);
       expect(body.data).toBeTruthy();
@@ -344,7 +368,8 @@ describe('Roles API (integration)', () => {
       const role = await createRole({ name: 'empty', description: 'Role description' });
 
       const { body, status } = await global.api
-        .get(`/api/roles/check-role-before-delete/${role.id}`);
+        .get(`/api/roles/check-role-before-delete/${role.id}`)
+        .set(auth);
 
       expect(status).toBe(200);
       expect(body.data).toBe(0);
@@ -357,7 +382,8 @@ describe('Roles API (integration)', () => {
       await createUser({ roleId: role.id, email: 'u2@example.com' });
 
       const { body, status } = await global.api
-        .get(`/api/roles/check-role-before-delete/${role.id}`);
+        .get(`/api/roles/check-role-before-delete/${role.id}`)
+        .set(auth);
 
       expect(status).toBe(200);
       expect(body.data).toBe(2);
@@ -373,7 +399,7 @@ describe('Roles API (integration)', () => {
 
       const { body, status } = await global.api
         .delete(`/api/roles/delete-role/${role.id}`)
-        .set(langRu);
+        .set({ ...langRu, ...auth });
 
       expect(status).toBe(200);
       expect(body.code).toBe('ROLE.DELETED');
@@ -391,7 +417,7 @@ describe('Roles API (integration)', () => {
     it('404 + ERRORS.ROLE.NOT_FOUND when deleting missing role', async () => {
       const { body, status } = await global.api
         .delete(`/api/roles/delete-role/999999`)
-        .set(langRu);
+        .set({ ...langRu, ...auth });
 
       expect(status).toBe(404);
       expect(body.code).toBe('ERRORS.ROLE.NOT_FOUND');

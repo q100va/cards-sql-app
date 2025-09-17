@@ -53,12 +53,7 @@
               <ng-template #filter let-value let-filter="filterCallback">
                 <p-select [options]="actions" (onChange)="filter($event.value)" placeholder="Select One"
                   [showClear]="true" [style]="{ 'min-width': '12rem' }">
-                  <ng-template let-action #item>
-                    <p-tag [value]="action"
-                      [severity]="action==='create' ? 'success' : action==='update' ? 'info' : 'warn'">
-                    </p-tag>
-                  </ng-template>
-                </p-select>
+                 </p-select>
               </ng-template>
             </p-columnFilter>
           </th>
@@ -157,7 +152,14 @@
                 }
               </ul>
             </ng-container>
-            } @else {
+            } @else if(record.action === 'auth') {
+            event: {{ record.diff?.event }}
+            @if(record.diff?.reason){
+              <br/>
+            reason: {{ record.diff.reason }}
+            }
+            }
+            @else{
             <ng-container>
               <pre class="snapshot">{{ snapshot(record) }}</pre>
             </ng-container>

@@ -3,6 +3,8 @@ import { RouterOutlet } from '@angular/router';
 import { SignInService } from './services/sign-in.service';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
+import { IdleService } from './services/idle.service';
+import { distinctUntilChanged, map, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -14,13 +16,32 @@ export class AppComponent implements OnInit {
   private signInService = inject(SignInService);
   private translate = inject(TranslateService);
   private title = inject(Title);
-  //constructor(private signInService: SignInService) {}
+  private idle = inject(IdleService);
+  private subIdle?: Subscription;
+  private subTranslate?: Subscription;
+
+  constructor() {
+    this.signInService.hydrateFromSession().subscribe();
+    this.subIdle = this.signInService.currentUser$
+      .pipe(
+        map((u) => !!u),
+        distinctUntilChanged()
+      )
+      .subscribe((isAuthed) => {
+        if (isAuthed) this.idle.start();
+        else this.idle.stop();
+      });
+  }
 
   ngOnInit() {
-    this.signInService.autoAuthUser();
-    this.translate.onLangChange.subscribe(() => {
+    this.subTranslate = this.translate.onLangChange.subscribe(() => {
       this.title.setTitle(this.translate.instant('APP.TITLE'));
     });
     this.title.setTitle(this.translate.instant('APP.TITLE'));
+  }
+
+  ngOnDestroy() {
+    this.subIdle?.unsubscribe();
+    this.subTranslate?.unsubscribe();
   }
 }

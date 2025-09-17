@@ -1,4 +1,10 @@
 import { z } from 'zod';
+export declare const auditActionSchema: z.ZodEnum<{
+    create: "create";
+    update: "update";
+    delete: "delete";
+    auth: "auth";
+}>;
 export declare const auditQuerySchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     entityId: z.ZodOptional<z.ZodString>;
@@ -6,6 +12,7 @@ export declare const auditQuerySchema: z.ZodObject<{
         create: "create";
         update: "update";
         delete: "delete";
+        auth: "auth";
     }>>;
     correlationId: z.ZodOptional<z.ZodString>;
     userId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
@@ -14,11 +21,6 @@ export declare const auditQuerySchema: z.ZodObject<{
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     offset: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strip>;
-export declare const auditActionSchema: z.ZodEnum<{
-    create: "create";
-    update: "update";
-    delete: "delete";
-}>;
 export declare const auditDiffCreateSchema: z.ZodObject<{
     after: z.ZodRecord<z.ZodString, z.ZodUnknown>;
 }, z.core.$strict>;
@@ -28,12 +30,21 @@ export declare const auditDiffDeleteSchema: z.ZodObject<{
 export declare const auditDiffUpdateSchema: z.ZodObject<{
     changed: z.ZodRecord<z.ZodString, z.ZodTuple<[z.ZodUnknown, z.ZodUnknown], null>>;
 }, z.core.$strict>;
+export declare const auditDiffAuthSchema: z.ZodObject<{
+    event: z.ZodString;
+    reason: z.ZodOptional<z.ZodString>;
+    details: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+}, z.core.$strict>;
 export declare const auditDiffSchema: z.ZodUnion<readonly [z.ZodObject<{
     after: z.ZodRecord<z.ZodString, z.ZodUnknown>;
 }, z.core.$strict>, z.ZodObject<{
     before: z.ZodRecord<z.ZodString, z.ZodUnknown>;
 }, z.core.$strict>, z.ZodObject<{
     changed: z.ZodRecord<z.ZodString, z.ZodTuple<[z.ZodUnknown, z.ZodUnknown], null>>;
+}, z.core.$strict>, z.ZodObject<{
+    event: z.ZodString;
+    reason: z.ZodOptional<z.ZodString>;
+    details: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, z.core.$strict>]>;
 export declare const auditItemSchema: z.ZodObject<{
     id: z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>;
@@ -41,6 +52,7 @@ export declare const auditItemSchema: z.ZodObject<{
         create: "create";
         update: "update";
         delete: "delete";
+        auth: "auth";
     }>;
     model: z.ZodString;
     entityId: z.ZodString;
@@ -50,12 +62,16 @@ export declare const auditItemSchema: z.ZodObject<{
         before: z.ZodRecord<z.ZodString, z.ZodUnknown>;
     }, z.core.$strict>, z.ZodObject<{
         changed: z.ZodRecord<z.ZodString, z.ZodTuple<[z.ZodUnknown, z.ZodUnknown], null>>;
+    }, z.core.$strict>, z.ZodObject<{
+        event: z.ZodString;
+        reason: z.ZodOptional<z.ZodString>;
+        details: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     }, z.core.$strict>]>;
     actorUserId: z.ZodNullable<z.ZodNumber>;
     correlationId: z.ZodNullable<z.ZodString>;
     ip: z.ZodNullable<z.ZodString>;
     userAgent: z.ZodNullable<z.ZodString>;
-    createdAt: z.ZodString;
+    createdAt: z.ZodCoercedDate<unknown>;
 }, z.core.$strict>;
 export declare const auditPageSchema: z.ZodObject<{
     rows: z.ZodArray<z.ZodObject<{
@@ -64,6 +80,7 @@ export declare const auditPageSchema: z.ZodObject<{
             create: "create";
             update: "update";
             delete: "delete";
+            auth: "auth";
         }>;
         model: z.ZodString;
         entityId: z.ZodString;
@@ -73,12 +90,16 @@ export declare const auditPageSchema: z.ZodObject<{
             before: z.ZodRecord<z.ZodString, z.ZodUnknown>;
         }, z.core.$strict>, z.ZodObject<{
             changed: z.ZodRecord<z.ZodString, z.ZodTuple<[z.ZodUnknown, z.ZodUnknown], null>>;
+        }, z.core.$strict>, z.ZodObject<{
+            event: z.ZodString;
+            reason: z.ZodOptional<z.ZodString>;
+            details: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         }, z.core.$strict>]>;
         actorUserId: z.ZodNullable<z.ZodNumber>;
         correlationId: z.ZodNullable<z.ZodString>;
         ip: z.ZodNullable<z.ZodString>;
         userAgent: z.ZodNullable<z.ZodString>;
-        createdAt: z.ZodString;
+        createdAt: z.ZodCoercedDate<unknown>;
     }, z.core.$strict>>;
     count: z.ZodNumber;
 }, z.core.$strict>;

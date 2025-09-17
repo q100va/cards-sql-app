@@ -5,7 +5,7 @@ export default function AuditLogModel(sequelize) {
 
   AuditLog.init({
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
-    action: { type: DataTypes.ENUM('create', 'update', 'delete'), allowNull: false },
+    action: { type: DataTypes.ENUM('create', 'update', 'delete', 'auth'), allowNull: false },
     model: { type: DataTypes.STRING(64), allowNull: false },
     entityId: { type: DataTypes.STRING(64), allowNull: false },
     diff: { type: DataTypes.JSONB, allowNull: true }, // { changed: { field: [before, after] } }

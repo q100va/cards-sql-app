@@ -1,6 +1,4 @@
-
 import { Routes } from '@angular/router';
-
 import { AuthLayoutComponent } from './shared/auth-layout/auth-layout.component';
 import { SignInComponent } from './pages/sign-in/sign-in.component';
 import { BaseLayoutComponent } from './shared/base-layout/base-layout.component';
@@ -13,85 +11,34 @@ import { DistrictsListComponent } from './pages/toponyms-lists/districts-list/di
 import { LocalitiesListComponent } from './pages/toponyms-lists/localities-list/localities-list.component';
 import { AuditTableComponent } from './pages/audit-table/audit-table.component';
 
-
 export const routes: Routes = [
+  // Публичные маршруты (без гарда)
   {
-    path: "",
-    component: BaseLayoutComponent,
-    canActivate: [authGuard],
-    children: [
-      {
-        path: "",
-        component: UsersListComponent,
-        canActivate: [authGuard],
-      },
-      {
-        path: "users",
-        component: UsersListComponent,
-        canActivate: [authGuard],
-      },
-      {
-        path: "roles",
-        component: RolesListComponent,
-        canActivate: [authGuard],
-      },
-       {
-        path: "countries",
-        component: CountriesListComponent,
-        canActivate: [authGuard],
-      },
-      {
-        path: "regions",
-        component: RegionsListComponent,
-        canActivate: [authGuard],
-      },
-      {
-        path: "districts",
-        component: DistrictsListComponent,
-        canActivate: [authGuard],
-      },
-      {
-        path: "localities",
-        component: LocalitiesListComponent,
-        canActivate: [authGuard],
-      },
-            {
-        path: "audit",
-        component: AuditTableComponent,
-        canActivate: [authGuard],
-      },
-
-   /*   {
-        path: "addresses",
-        component: UploadFileComponent,
-        canActivate: [authGuard],
-      }, */
-    ]
-  },
-  {
-    path: "session",
+    path: 'session',
     component: AuthLayoutComponent,
     children: [
-      {
-        path: "sign-in",
-        component: SignInComponent,
-      },
-/*       {
-        path: "reset-password",
-        component: ResetPasswordFormComponent,
-      },
-      {
-        path: "404",
-        component: NotFoundComponent,
-      },
-      {
-        path: "500",
-        component: ErrorComponent,
-      }, */
+      { path: 'sign-in', component: SignInComponent },//{ path: "404", component: NotFoundComponent, },
     ],
   },
-/*   {
-    path: "**",
-    redirectTo: "session/404",
-  }, */
+
+  // Защищённая зона
+  {
+    path: '',
+    component: BaseLayoutComponent,
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'users' }, // дефолт
+      { path: 'users', component: UsersListComponent },
+      { path: 'roles', component: RolesListComponent },
+      { path: 'countries', component: CountriesListComponent },
+      { path: 'regions', component: RegionsListComponent },
+      { path: 'districts', component: DistrictsListComponent },
+      { path: 'localities', component: LocalitiesListComponent },
+      { path: 'audit', component: AuditTableComponent },
+    ],
+  },
+
+  // Фоллбек
+  { path: '**', redirectTo: '' },
 ];

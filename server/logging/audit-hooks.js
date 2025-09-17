@@ -5,7 +5,13 @@ import { getRequestContext } from '../middlewares/request-context.js';
 //
 // Config
 //
-const EXCLUDE_MODELS = new Set(['audit_logs', 'audit_log', 'SequelizeMeta']); // models/tables to skip
+const EXCLUDE_MODELS = new Set([
+  'audit_logs',
+  'audit_log',
+  'SequelizeMeta',
+  'refresh_tokens',
+  'refresh_token',
+]); // models/tables to skip
 const EXCLUDE_FIELDS = new Set(['createdAt', 'updatedAt', 'password', 'salt']); // fields not stored in diff
 
 //

@@ -9,7 +9,8 @@
 
   <!-- Close button -->
   <mat-grid-tile colspan="2" rowspan="1">
-    <button data-cy="dlg-cancel" mat-icon-button [title]="'ROLE.CARD_CLOSE' | translate" (click)="onCancelClick($event)">
+    <button data-cy="dlg-cancel" mat-icon-button [title]="'ROLE.CARD_CLOSE' | translate"
+      (click)="onCancelClick($event)">
       <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
     </button>
   </mat-grid-tile>
@@ -41,8 +42,8 @@
 
 <!-- Actions -->
 <mat-dialog-actions>
-  <button data-cy="dlg-create" class="dialog-submit-button" mat-button [disabled]="!roleName.valid || !roleDescription.valid || isLoading"
-    (click)="onCreateRoleClick()">
+  <button mat-raised-button data-cy="dlg-create" class="dialog-submit-button"
+    [disabled]="!roleName.valid || !roleDescription.valid || isLoading" (click)="onCreateRoleClick()">
     {{'ROLE.CARD_SAVE_AND_EXIT' | translate}}
   </button>
 </mat-dialog-actions>

@@ -1,17 +1,22 @@
+// src/app/guards/auth.guard.ts
+
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { CookieService } from 'ngx-cookie-service';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { SignInService } from '../services/sign-in.service';
+import { firstValueFrom } from 'rxjs';
+import { map, take } from 'rxjs/operators';
 
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = async () => {
   const router = inject(Router);
-  const cookieService = inject(CookieService);
+  const auth = inject(SignInService);
 
-  const sessionUser = cookieService.get('session_user');
+  const allowed = await firstValueFrom(
+    auth.currentUser$.pipe(
+      take(1),
+      map(u => !!u)
+    )
+  );
+  console.log("allowed", allowed);
 
-  if (sessionUser) {
-    return true;
-  } else {
-    router.navigate(['/session/sign-in']);
-    return false;
-  }
+  return allowed ? true : router.parseUrl('/session/sign-in');
 };

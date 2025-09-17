@@ -38,7 +38,7 @@ import { MessageWrapperService } from '../../services/message.service';
 
 // --- Types & constants -------------------------------------------------------
 
-type AuditAction = '' | 'create' | 'update' | 'delete';
+type AuditAction = '' | 'create' | 'update' | 'delete' | 'auth';
 
 type Filters = {
   model: string;
@@ -73,9 +73,10 @@ const MODELS = [
   'region',
   'district',
   'locality',
+  'session'
 ] as const;
 
-const ACTIONS: Exclude<AuditAction, ''>[] = ['create', 'update', 'delete'];
+const ACTIONS: Exclude<AuditAction, ''>[] = ['create', 'update', 'delete', 'auth'];
 
 // --- Component ---------------------------------------------------------------
 

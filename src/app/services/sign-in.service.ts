@@ -1,117 +1,95 @@
-import { HttpClient } from '@angular/common/http';
+// src/app/services/sign-in.service.ts
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { CookieService } from 'ngx-cookie-service';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient, HttpBackend } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { tap, switchMap, catchError, map, finalize } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { Router } from '@angular/router';
 import { ClientLoggerService } from './client-logger.service';
+import {
+  signInRespSchema,
+  SignInResp,
+  RefreshResp,
+  refreshRespSchema,
+  userSchema,
+  AuthUser,
+} from '@shared/schemas/auth.schema';
+import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
+import { validateResponse } from '../utils/validate-response';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class SignInService {
   private http = inject(HttpClient);
+  private rawHttp = new HttpClient(inject(HttpBackend)); // без интерсепторов
   private router = inject(Router);
-  private cookieService = inject(CookieService);
   private log = inject(ClientLoggerService);
 
   private token = '';
-  private tokenTimer: any;
-
-  result: any;
-  signInResult!: string;
-
-  constructor() {}
-
   getToken() {
     return this.token;
   }
-
-  autoAuthUser() {
-    const authInformation = this.getAuthData();
-    if (!authInformation) {
-      return;
-    }
-    const now = new Date();
-    const expiresIn = authInformation.expirationDate.getTime() - now.getTime();
-    if (expiresIn > 0) {
-      this.token = authInformation.token;
-
-      this.setAuthTimer(expiresIn / 1000);
-    }
+  setToken(t: string) {
+    this.token = t ?? '';
   }
 
-  private getAuthData() {
-    const token = localStorage.getItem('token');
-    const expirationDate = localStorage.getItem('expiration');
-    if (!token || !expirationDate) {
-      return;
-    }
-    return {
-      token: token,
-      expirationDate: new Date(expirationDate),
-    };
-  }
+  private user$ = new BehaviorSubject<AuthUser | null>(null);
+  readonly currentUser$ = this.user$.asObservable();
 
-  private setAuthTimer(duration: number) {
-    //console.log('Setting timer: ' + duration);
-    this.tokenTimer = setTimeout(() => {
-      //TODO: added dialog for login without loosing data
-      this.logout();
-    }, duration * 1000);
-  }
-
-  logIn(userName: string | null, password: string | null): Observable<any> {
-    const BACKEND_URL = environment.apiUrl;
+  logIn(userName: string, password: string): Observable<void> {
+    const url = `${environment.apiUrl}/api/session/sign-in`;
     return this.http
-      .post(BACKEND_URL + '/api/session/sign-in', {
-        userName: userName,
-        password: password,
-      })
+      .post<RawApiResponse>(
+        url,
+        { userName, password },
+        { withCredentials: true }
+      )
       .pipe(
-        map((res) => {
-          this.result = res;
-          this.cookieService.set(
-            'session_user',
-            'okskust', //this.result.data.user.userName,
-            1
-          );
-          sessionStorage.setItem(
-            'name',
-            'Оксана Кустова' //`${this.result.data.user.firstName} ${this.result.data.user.lastName}`
-          );
-
-          this.log.setUser(777); // TODO: add real user id
-          /*  this.token = this.result.data.token;
-          const expiresInDuration = this.result.data.expiresIn;
-          this.setAuthTimer(expiresInDuration);
-          const now = new Date();
-          const expirationDate = new Date(
-            now.getTime() + expiresInDuration * 1000
-          );
-          this.saveAuthData(this.token, expirationDate); */
-          //console.log("logIn");
-          this.router.navigate(['/']);
-          return 'Success';
-        })
+        validateResponse(signInRespSchema),
+        tap((res) => {
+          this.setToken(res.data.token);
+          this.user$.next(res.data.user);
+          this.log.setUser(res.data.user.id);
+        }),
+        map(() => void 0)
       );
   }
 
-  private saveAuthData(token: string, expirationDate: Date) {
-    localStorage.setItem('token', token);
-    localStorage.setItem('expiration', expirationDate.toISOString());
+  hydrateFromSession(): Observable<void> {
+    return this.rawHttp
+      .post<RawApiResponse>(
+        `${environment.apiUrl}/api/session/refresh`,
+        null,
+        { withCredentials: true }
+      )
+      .pipe(
+        validateResponse(refreshRespSchema),
+        tap((res) => this.setToken(res.data.accessToken)),
+        switchMap(() =>
+          this.http.get<RawApiResponse>(
+            `${environment.apiUrl}/api/session/me`,
+            { withCredentials: true }
+          )
+        ),
+        validateResponse(userSchema),
+        tap((res) => this.user$.next(res.data)),
+        map(() => void 0),
+        catchError(() => of(void 0))
+      );
   }
 
-  logout() {
-    this.token = '';
-    clearTimeout(this.tokenTimer);
-    this.clearAuthData();
-    this.router.navigate(['/session/sign-in']);
-  }
-
-  private clearAuthData() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('expiration');
+  // 🔹 ВЫХОД: дергаем /sign-out, затем локально чистим состояние и редиректим
+  logout(): Observable<void> {
+    const url = `${environment.apiUrl}/api/session/sign-out`;
+    return this.rawHttp
+      .post<ApiResponse<null>>(url, null, { withCredentials: true })
+      .pipe(
+        catchError(() => of(void 0)), // даже если сервер вернул 4xx/5xx — локально всё равно выходим
+        finalize(() => {
+          this.setToken('');
+          this.user$.next(null);
+          this.router.navigate(['/session/sign-in']);
+        }),
+        map(() => void 0)
+      );
   }
 }

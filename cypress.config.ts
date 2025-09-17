@@ -25,12 +25,9 @@ export default defineConfig({
           console.log('[cypress task] db:reset → start');
           await mod.reset();
           console.log('[cypress task] db:reset → done');
-          return null;
+          return 'db-reset:done:v1';
         },
       });
     },
-/*      retries: { runMode: 2, openMode: 1 },
-    defaultCommandTimeout: 8000,
-    requestTimeout: 15000, */
   },
 });

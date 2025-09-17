@@ -22,7 +22,7 @@ export class AuditService {
   getAuditPage(params: {
     model: string | undefined;
     entityId: string | undefined;
-    action: 'create' | 'update' | 'delete' | undefined;
+    action: 'create' | 'update' | 'delete' | 'auth' | undefined;
     correlationId: string | undefined;
     userId: string | undefined;
     from: string| undefined; // ISO
