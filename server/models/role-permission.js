@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../database.js';
 
-const Operation = sequelize.define('operation', {
+const RolePermission = sequelize.define('role-permission', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -28,4 +28,4 @@ const Operation = sequelize.define('operation', {
   },
 });
 
-export default Operation;
+export default RolePermission;

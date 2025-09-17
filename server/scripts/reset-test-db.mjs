@@ -41,16 +41,17 @@ async function seedRolesAndOperations() {
   try {
     // 1) Базовые роли
     const baseRoles = [
+      { name: 'Admin', description: 'Administrator' },
       { name: 'Coordinator', description: 'Coordinator' },
       { name: 'User',        description: 'Volunteer'  },
     ];
     await Role.bulkCreate(baseRoles, { transaction: t });
 
-    const [adminRole] = await Role.findOrCreate({
+/*     await Role.findOrCreate({
       where: { name: 'Admin' },
       defaults: { description: 'Administrator' },
       transaction: t,
-    });
+    }); */
 
     // 2) Получим все роли и снесём их операции (на случай повторного запуска)
     const roles = await Role.findAll({ transaction: t });

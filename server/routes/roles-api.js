@@ -2,7 +2,7 @@ import { Router } from "express";
 import Sequelize from "sequelize";
 import Role from "../models/role.js";
 import User from "../models/user.js";
-import Operation from "../models/operation.js";
+import RolePermission from "../models/role-permission.js";
 import { OPERATIONS } from "../shared/operations.js";
 import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
@@ -71,7 +71,7 @@ router.post(
           access: false,
           disabled: operation.flag === "FULL",
         }));
-        await Operation.bulkCreate(rows, { transaction: t });
+        await RolePermission.bulkCreate(rows, { transaction: t });
 
         return role.name;
       });
@@ -163,7 +163,7 @@ router.patch(
             // If all related ops are enabled, enable ALL_OPS
             const results = await Promise.all(
               relatedOps.map((op) =>
-                Operation.findOne({
+                RolePermission.findOne({
                   attributes: ["id"],
                   where: { name: op.operation, roleId, access: false },
                   raw: true,
@@ -211,7 +211,7 @@ async function changeRoleOperation(
   transaction
 ) {
   // Update main operation
-  const [_, [updatedOperation]] = await Operation.update(
+  const [_, [updatedOperation]] = await RolePermission.update(
     { access },
     {
       where: { roleId, name: operation.operation },
@@ -244,7 +244,7 @@ async function changeRoleOperation(
     ...((!isLimited && access) || (isLimited && !access) ? { access } : {}),
   };
 
-  const [__, [updatedOperationWithFlag]] = await Operation.update(
+  const [__, [updatedOperationWithFlag]] = await RolePermission.update(
     updateParams,
     {
       where: { roleId, name: complementaryOperation },
@@ -303,7 +303,7 @@ router.get(
 
       // Operations per role
       const rolesIds = roles.map((r) => r.id);
-      const rolesOps = await Operation.findAll({
+      const rolesOps = await RolePermission.findAll({
         where: { roleId: rolesIds },
         attributes: ["id", "roleId", "name", "access", "disabled"],
         raw: true,

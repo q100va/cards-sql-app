@@ -22,7 +22,7 @@ import ClientLogsApi from './routes/client-logs.js';
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
-import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, Operation, OutdatedName, RefreshToken } from './models/index.js';
+import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, RolePermission, OutdatedName, RefreshToken } from './models/index.js';
 
 const app = express();
 
@@ -93,7 +93,7 @@ export async function initInfrastructure() {
   await District.sync(syncOpts);
   await Locality.sync(syncOpts);
   await Role.sync(syncOpts);
-  await Operation.sync(syncOpts);
+  await RolePermission.sync(syncOpts);
   await User.sync(syncOpts);
   await UserContact.sync(syncOpts);
   await UserAddress.sync(syncOpts);

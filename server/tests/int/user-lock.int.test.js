@@ -23,7 +23,7 @@ describe('User lock/restrict (model integration on Postgres)', () => {
 
   // утилита: создать валидного пользователя (через модель или фабрику)
   async function makeUser(fields = {}) {
-    // если в схеме users есть NOT NULL на role_id — создадим роль фабрикой
+    // если в схеме users есть NOT NULL на roleId — создадим роль фабрикой
     const role = await createRole({ name: `user_role_${Date.now()}`, description: 'description' });
     try {
       const user = await User.create({

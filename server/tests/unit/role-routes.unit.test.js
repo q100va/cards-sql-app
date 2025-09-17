@@ -26,7 +26,7 @@ jest.unstable_mockModule("../../middlewares/check-auth.js", () => ({
 
 // Load router and models after mocks
 const { default: router } = await import("../../routes/roles-api.js");
-import Operation from "../../models/operation.js";
+import RolePermission from "../../models/role-permission.js";
 import Role from "../../models/role.js";
 import User from "../../models/user.js";
 import { OPERATIONS } from "../../shared/operations.js";
@@ -44,7 +44,7 @@ describe("Role Routes", () => {
   // Close ORM connections (prevents open handle warnings)
   afterAll(async () => {
     await Role.sequelize.close();
-    await Operation.sequelize.close();
+    await RolePermission.sequelize.close();
     await User.sequelize.close();
   });
 
@@ -122,7 +122,7 @@ describe("Role Routes", () => {
       });
 
       const bulkMock = jest
-        .spyOn(Operation, "bulkCreate")
+        .spyOn(RolePermission, "bulkCreate")
         .mockImplementation((rows, _opts) =>
           Promise.resolve(rows.map((r, i) => ({ ...r, id: 1000 + i })))
         );
@@ -291,12 +291,12 @@ describe("Role Routes", () => {
         },
       };
 
-      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
+      const updateSpy = jest.spyOn(RolePermission, "update").mockImplementation((values, options) => {
         // We return minimal echo; assertions only check call args
         return Promise.resolve([1, [{ id: 999, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]]);
       });
 
-      const findOneSpy = jest.spyOn(Operation, "findOne").mockResolvedValue(null);
+      const findOneSpy = jest.spyOn(RolePermission, "findOne").mockResolvedValue(null);
 
       const res = await request(app).patch("/update-role-access").send(payload);
 
@@ -352,9 +352,9 @@ describe("Role Routes", () => {
       };
 
       // Peers are already enabled → findOne returns null
-      const findOneSpy = jest.spyOn(Operation, "findOne").mockResolvedValue(null);
+      const findOneSpy = jest.spyOn(RolePermission, "findOne").mockResolvedValue(null);
 
-      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) => {
+      const updateSpy = jest.spyOn(RolePermission, "update").mockImplementation((values, options) => {
         // We return minimal echo; assertions only check call args
         return Promise.resolve([1, [{ id: 999, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]]);
       });
@@ -405,10 +405,10 @@ describe("Role Routes", () => {
       };
 
       // Simulate another related op still OFF → first call returns a row
-      const findOneSpy = jest.spyOn(Operation, "findOne");
+      const findOneSpy = jest.spyOn(RolePermission, "findOne");
       findOneSpy.mockResolvedValueOnce({ id: 999 }).mockResolvedValue(null);
 
-      const updateSpy = jest.spyOn(Operation, "update").mockResolvedValue([1, [{ id: 193, roleId: 2, access: true, disabled: false }]]);
+      const updateSpy = jest.spyOn(RolePermission, "update").mockResolvedValue([1, [{ id: 193, roleId: 2, access: true, disabled: false }]]);
 
       const res = await request(app).patch("/update-role-access").send(payload);
       expect(res.statusCode).toBe(200);
@@ -444,7 +444,7 @@ describe("Role Routes", () => {
         },
       };
 
-      const updateSpy = jest.spyOn(Operation, "update").mockImplementation((values, options) =>
+      const updateSpy = jest.spyOn(RolePermission, "update").mockImplementation((values, options) =>
         Promise.resolve([1, [{ id: 900, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]])
       );
 
@@ -498,7 +498,7 @@ describe("Role Routes", () => {
       };
 
       const updateSpy = jest
-        .spyOn(Operation, "update")
+        .spyOn(RolePermission, "update")
         .mockImplementation((values, options) =>
           Promise.resolve([1, [{ id: 1, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]])
         );
@@ -554,7 +554,7 @@ describe("Role Routes", () => {
     });
 
     it("handles internal errors", async () => {
-      jest.spyOn(Operation, "update").mockRejectedValue(new Error("Update role access failure"));
+      jest.spyOn(RolePermission, "update").mockRejectedValue(new Error("Update role access failure"));
 
       const payload = {
         access: false,
@@ -649,7 +649,7 @@ describe("Role Routes", () => {
         { id: 101, roleId: 1, name: opA.operation, access: true, disabled: false },
         { id: 102, roleId: 2, name: opB.operation, access: false, disabled: true },
       ];
-      const findOpsSpy = jest.spyOn(Operation, "findAll").mockResolvedValue(roleOps);
+      const findOpsSpy = jest.spyOn(RolePermission, "findAll").mockResolvedValue(roleOps);
 
       const res = await request(app).get("/get-roles");
 
@@ -660,7 +660,7 @@ describe("Role Routes", () => {
         raw: true,
       });
 
-      // Assert Operation.findAll query shape
+      // Assert RolePermission.findAll query shape
       expect(findOpsSpy).toHaveBeenCalledWith({
         where: { roleId: roleIds },
         attributes: ["id", "roleId", "name", "access", "disabled"],

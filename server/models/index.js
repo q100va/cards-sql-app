@@ -8,7 +8,7 @@ import Country from './country.js';
 import UserAddress from './user-address.js';
 import UserContact from './user-contact.js';
 import User from './user.js';
-import Operation from './operation.js';
+import RolePermission from './role-permission.js';
 import SearchUser from './search-user.js';
 import OutdatedName from './outdated-name.js';
 import RefreshToken from './refresh-token.js';
@@ -85,11 +85,11 @@ Role.hasMany(User, {
   onUpdate: 'CASCADE',
 });
 
-Role.hasMany(Operation, {
+Role.hasMany(RolePermission, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 });
-Operation.belongsTo(Role);
+RolePermission.belongsTo(Role);
 
-export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, Operation, OutdatedName, RefreshToken};
+export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, RolePermission, OutdatedName, RefreshToken};
 
