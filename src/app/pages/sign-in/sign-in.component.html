@@ -1,34 +1,35 @@
-<div class="main">
-  <mat-card appearance="outlined" class="sign-in-card">
+<div class="main" data-cy="sign-in-page">
+  <mat-card appearance="outlined" class="sign-in-card" data-cy="sign-in-card">
     <mat-card-header>
       <mat-card-title>{{ 'SESSION.SIGN_IN_TITLE' | translate }}</mat-card-title>
     </mat-card-header>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" data-cy="sign-in-form">
       <mat-card-content>
         @if (errorMessage) {
-        <mat-error class="error">{{ errorMessage }}</mat-error>
+          <mat-error class="error" data-cy="error">{{ errorMessage }}</mat-error>
         }
 
         <mat-form-field class="full-width">
           <mat-label>{{ 'SESSION.USER_NAME_LABEL' | translate }}</mat-label>
-          <input matInput type="text" [formControl]="form.controls.userName" />
+          <input matInput type="text" [formControl]="form.controls.userName" data-cy="user-input" />
           @if (form.controls.userName.hasError('required') && form.controls.userName.touched) {
-          <mat-error class="error">{{ 'FORM_VALIDATION.REQUIRED' | translate }}</mat-error>
+            <mat-error class="error" data-cy="user-required">{{ 'FORM_VALIDATION.REQUIRED' | translate }}</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field class="full-width">
           <mat-label>{{ 'SESSION.PASSWORD_LABEL' | translate }}</mat-label>
-          <input matInput type="password" [formControl]="form.controls.password" />
+          <input matInput type="password" [formControl]="form.controls.password" data-cy="pass-input" />
           @if (form.controls.password.hasError('required') && form.controls.password.touched) {
-          <mat-error class="error">{{ 'FORM_VALIDATION.REQUIRED' | translate }}</mat-error>
+            <mat-error class="error" data-cy="pass-required">{{ 'FORM_VALIDATION.REQUIRED' | translate }}</mat-error>
           }
         </mat-form-field>
       </mat-card-content>
 
       <mat-card-actions>
-        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isLoad">
+        <button mat-raised-button color="primary" type="submit"
+                [disabled]="form.invalid || isLoad" data-cy="submit-btn">
           {{ 'SESSION.ENTER_BUTTON_LABEL' | translate }}
         </button>
       </mat-card-actions>

@@ -132,8 +132,8 @@ export class RoleService {
         )}`
       )
       .pipe(
-         validateResponse(z.number().int().positive()),
-       // validateNoSchemaResponse<number>('isNumber'),
+        // validateResponse(z.number().int().positive()),
+        validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap(
           'warn',
           (res) => ({

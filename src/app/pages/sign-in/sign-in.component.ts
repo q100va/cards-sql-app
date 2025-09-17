@@ -13,7 +13,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 
 import { SignInService } from '../../services/sign-in.service';
-import { MessageWrapperService } from 'src/app/services/message.service';
+import { MessageWrapperService } from '../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({

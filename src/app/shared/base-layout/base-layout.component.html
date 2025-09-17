@@ -16,7 +16,7 @@
 
 <!--  Confirmation dialog for stay or logout-->
 
-<p-confirmDialog
+<p-confirmdialog
   #idleDlg
   key="idleConfirm"
   [appendTo]="'body'"
@@ -62,7 +62,7 @@
       outlined=true
     >{{'COMMON.LOGOUT' | translate}}</p-button>
   </ng-template>
-</p-confirmDialog>
+</p-confirmdialog>
 
 
 
@@ -79,7 +79,7 @@
       {{'TOOLBAR.MY_ORDERS' | translate}}
     </button>
 
-    <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu">
+    <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu">
       <mat-icon>flutter_dash</mat-icon>
     </button>
 
@@ -89,18 +89,18 @@
       @for (item of menuItems; track $index) {
       <ng-container>
         @if(!item.subMenuItems){
-        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link">
+        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy">
           <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         } @else {
-        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu">
+        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy">
           <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         <mat-menu #submenu="matMenu" xPosition="before">
           @for(subItem of item.subMenuItems; track $index){
-          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link">
+          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy">
             <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
             <span>{{subItem.text | translate}}</span>
           </button>

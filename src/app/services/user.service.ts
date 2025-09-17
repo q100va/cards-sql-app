@@ -71,7 +71,7 @@ changePassword(userId: number, value: string): Observable<any> {
     currentPage: number
   ): Observable<any> {
     const BACKEND_URL = environment.apiUrl;
-    return this.http.post(BACKEND_URL + '/api/users/get-users/', {
+    return this.http.post(BACKEND_URL + '/api/users/get-users', {
       allFilterParameters: allFilterParameters,
       pageSize: pageSize,
       currentPage: currentPage,

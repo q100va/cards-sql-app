@@ -1,7 +1,7 @@
 {
   "data": {
     "roles": [
-      { "id": 1, "name": "Admin", "description": "Administrator" },
+      { "id": 1, "name": "Coordinator", "description": "Coordinator" },
       { "id": 2, "name": "User", "description": "Volunteer" }
     ],
     "operations": [

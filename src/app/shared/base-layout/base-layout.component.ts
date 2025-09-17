@@ -91,18 +91,18 @@ export class BaseLayoutComponent {
 
   private populateMenuItems() {
     this.menuItems.push(
-      new MenuItem('settings', 'MENU.PROFILE', '/users/user/profile')
+      new MenuItem('nav-profile', 'settings', 'MENU.PROFILE', '/users/user/profile')
     );
-    this.menuItems.push(new MenuItem('verified_user', 'MENU.ROLES', '/roles'));
-    this.menuItems.push(new MenuItem('badge', 'MENU.USERS', '/users'));
+    this.menuItems.push(new MenuItem('nav-roles', 'verified_user', 'MENU.ROLES', '/roles'));
+    this.menuItems.push(new MenuItem('nav-users', 'badge', 'MENU.USERS', '/users'));
     this.menuItems.push(
-      new MenuItem('map', 'MENU.TOPONYMS', '/toponyms', [
-        new MenuItem('place', 'MENU.COUNTRIES', '/countries'),
-        new MenuItem('corporate_fare', 'MENU.REGIONS', '/regions'),
-        new MenuItem('home_work', 'MENU.DISTRICTS', '/districts'),
-        new MenuItem('holiday_village', 'MENU.LOCALITIES', '/localities'),
+      new MenuItem('nav-toponyms', 'map', 'MENU.TOPONYMS', '/toponyms', [
+        new MenuItem('nav-countries', 'place', 'MENU.COUNTRIES', '/countries'),
+        new MenuItem('nav-regions', 'corporate_fare', 'MENU.REGIONS', '/regions'),
+        new MenuItem('nav-districts', 'home_work', 'MENU.DISTRICTS', '/districts'),
+        new MenuItem('nav-localities', 'holiday_village', 'MENU.LOCALITIES', '/localities'),
       ])
     );
-    this.menuItems.push(new MenuItem('policy', 'MENU.AUDIT', '/audit'));
+    this.menuItems.push(new MenuItem('nav-audit', 'policy', 'MENU.AUDIT', '/audit'));
   }
 }

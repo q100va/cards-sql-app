@@ -11,7 +11,9 @@
  *  - (опц.) cy.task('db:reset') настроен в cypress.config.ts
  */
 
-const API = (p: string) => `${Cypress.env('API_URL')}/api/roles${p}`;
+const API_BASE = String(Cypress.env('API_URL') || 'http://localhost:8080');
+const apiRoles = (p: string) => `${API_BASE}/api/roles${p}`;
+const API = (p: string) => `**/api/roles${p}`;
 const useStubs = () => String(Cypress.env('USE_STUBS')) === '1';
 const maybe = (cond: boolean) => (cond ? it : it.skip);
 
@@ -27,62 +29,19 @@ function registerGetRolesRoute() {
   }
 }
 
-/* function openRolesPage() {
-  cy.login();
-  registerGetRolesRoute();
-  cy.visit('/roles');
-  cy.wait('@getRoles');
-}
- */
-function openRolesPage() {
-  registerGetRolesRoute(); // ставим intercept ДО визита
-  cy.login(); // выставляем cookie/session
-
-  cy.visit('/roles', {
-    retryOnStatusCodeFailure: true,
-    retryOnNetworkFailure: true,
-  });
-
-  cy.wait('@getRoles', { timeout: 20000 });
-
-  cy.get('p-table').should('be.visible');
-}
-
-/** Seed для LIVE: создаёт роль, если она нужна сценарию */
-function seedRoleLive(name: string, description = 'desc') {
-  return cy
-    .request('POST', API('/create-role'), { name, description })
-    .its('status')
-    .should('be.oneOf', [200, 201]);
-}
+/** LIVE: reset БД (если не отключён) и посев стартовых ролей */
 
 type SeedRole = { name: string; description?: string };
 
-/** LIVE: reset БД (если не отключён) и посев стартовых ролей */
-function prepareLiveDB(initialRoles: SeedRole[]) {
-  const seed = () =>
-    cy
-      .wrap<SeedRole[]>(initialRoles) // 👈 даём правильный generic
-      .each(
-        (
-          r: SeedRole // 👈 тип элемента
-        ) =>
-          cy.request('POST', API('/create-role'), {
-            name: r.name,
-            description: r.description ?? 'description',
-          })
-      );
+function prepareLiveDB() {
+  console.log('[cypress task] -> prepareLiveDB() ');
+  const API_BASE = String(Cypress.env('API_URL') || 'http://localhost:8080');
+  const apiRoles = (p: string) => `${API_BASE}/api/roles${p}`;
 
-  // Если хочешь иметь возможность пропускать reset (например, когда таск не настроен),
-  // управляй через env-флаг: --env NO_DB_RESET=1
-  /*   if (String(Cypress.env('NO_DB_RESET')) === '1') {
-    return seed();
-  } */
-
-  // Стандартный путь: сначала reset, затем seed
   return cy
-    .task('db:reset', null, { timeout: 120000, log: false })
-    .then(() => seed());
+    .task('db:reset', null, { timeout: 180_000, log: false })
+    .should('eq', 'db-reset:done:v1');
+
 }
 
 describe('Roles — E2E (stubbed or live)', () => {
@@ -94,15 +53,30 @@ describe('Roles — E2E (stubbed or live)', () => {
     if (!useStubs()) {
       console.log('[cypress task] -> useStubs()', useStubs());
       // LIVE: чистая база и фиксированный сид для предсказуемости
-      prepareLiveDB([
-        { name: 'Admin', description: 'Administrator' },
-        { name: 'User', description: 'Volunteer' },
-      ]);
+      return prepareLiveDB();
     }
   });
 
   beforeEach(() => {
-    openRolesPage();
+    registerGetRolesRoute();
+    if (useStubs()) {
+      cy.login();
+
+    } else {
+       cy.login({
+        user: 'superAdmin',
+        pass: 'p@ss12345',
+      });
+    }
+    cy.get('button[data-cy="profileMenu"]')
+      .scrollIntoView()
+      .click({ force: true });
+    cy.get('button[data-cy="nav-roles"]')
+      .scrollIntoView()
+      .click({ force: true });
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/roles');
+    cy.wait('@getRoles', { timeout: 20000 });
+    cy.get('p-table .p-datatable', { timeout: 10000 }).should('be.visible');
   });
 
   // ==== ОБЩИЕ СМУКИ ====
@@ -152,7 +126,10 @@ describe('Roles — E2E (stubbed or live)', () => {
       cy.wait('@checkBusy');
 
       // 5) имя ОТКАТИЛОСЬ в ИНПУТЕ (ячейка всё ещё в edit-режиме)
-      cy.get('input[data-cy="role-name-1"]').should('have.value', 'Admin');
+      cy.get('input[data-cy="role-name-1"]').should(
+        'have.value',
+        'Coordinator'
+      );
 
       // 6) выходим из edit-режима (любой способ):
       // вариант A: клавиатура
@@ -161,7 +138,10 @@ describe('Roles — E2E (stubbed or live)', () => {
       // cy.get('body').click(0, 0);
 
       // 7) теперь вернулся output-шаблон
-      cy.get('[data-cy="role-name-out-1"]').should('contain.text', 'Admin');
+      cy.get('[data-cy="role-name-out-1"]').should(
+        'contain.text',
+        'Coordinator'
+      );
 
       // и не осталось активного инпута
       cy.get('input[data-cy="role-name-1"]').should('not.exist');
@@ -174,15 +154,15 @@ describe('Roles — E2E (stubbed or live)', () => {
       .click({ force: true });
 
     // интерсепты ДО действий
-    cy.intercept('GET', API('/check-role-name/SuperAdmin'), {
+    cy.intercept('GET', API('/check-role-name/NewCoordinator'), {
       body: { data: false },
     }).as('checkFree');
 
     cy.intercept('PATCH', API('/update-role'), (req) => {
-      expect(req.body).to.include({ id: 1, name: 'SuperAdmin' });
+      expect(req.body).to.include({ id: 1, name: 'NewCoordinator' });
       req.reply({
         body: {
-          data: { id: 1, name: 'SuperAdmin', description: 'Administrator' },
+          data: { id: 1, name: 'NewCoordinator', description: 'Coordinator' },
         },
       });
     }).as('updateRole');
@@ -191,7 +171,7 @@ describe('Roles — E2E (stubbed or live)', () => {
     cy.get('input[data-cy="role-name-1"]')
       .should('be.visible')
       .clear()
-      .type('SuperAdmin')
+      .type('NewCoordinator')
       .blur();
 
     // дождаться сетки
@@ -199,13 +179,19 @@ describe('Roles — E2E (stubbed or live)', () => {
     cy.wait('@updateRole');
 
     // в инпуте уже новое значение
-    cy.get('input[data-cy="role-name-1"]').should('have.value', 'SuperAdmin');
+    cy.get('input[data-cy="role-name-1"]').should(
+      'have.value',
+      'NewCoordinator'
+    );
 
     // выйти из режима редактирования (Enter/Esc или клик вне)
     cy.get('input[data-cy="role-name-1"]').type('{enter}');
 
     // теперь вернулся output и он обновлён
-    cy.get('[data-cy="role-name-out-1"]').should('contain.text', 'SuperAdmin');
+    cy.get('[data-cy="role-name-out-1"]').should(
+      'contain.text',
+      'NewCoordinator'
+    );
   });
 
   maybe(useStubs())('inline description only → single PATCH', () => {
@@ -276,17 +262,17 @@ describe('Roles — E2E (stubbed or live)', () => {
     cy.wait('@deleteRole');
     cy.wait('@reload');
 
-    cy.contains('Admin').should('not.exist');
+    cy.contains('Coordinator').should('not.exist');
   });
 
   // ==== CREATE (STUBBED) ====
   maybe(useStubs())('create: busy name → only GET check, no POST', () => {
     cy.get('[data-cy="add-role-btn"]').click();
 
-    cy.get('[data-cy="dlg-role-name"]').clear().type('Admin');
+    cy.get('[data-cy="dlg-role-name"]').clear().type('Coordinator');
     cy.get('[data-cy="dlg-role-desc"]').clear().type('Some desc');
 
-    cy.intercept('GET', API('/check-role-name/Admin'), {
+    cy.intercept('GET', API('/check-role-name/Coordinator'), {
       body: { data: true },
     }).as('checkBusy');
     cy.intercept('POST', API('/create-role'), () => {
@@ -383,14 +369,14 @@ describe('Roles — E2E (stubbed or live)', () => {
 
   // ==== LIVE-ONLY сценарии (проверки реальной валидации имени) ====
   maybe(!useStubs())(
-    'LIVE: checkRoleName returns true for existing name (Admin)',
+    'LIVE: checkRoleName returns true for existing name (Coordinator)',
     () => {
       cy.get('button[data-cy="add-role-btn"]')
         .scrollIntoView()
         .click('center', { force: true });
 
       // cy.get('[data-cy="add-role-btn"]').click();
-      cy.get('[data-cy="dlg-role-name"]').clear().type('Admin');
+      cy.get('[data-cy="dlg-role-name"]').clear().type('Coordinator');
       cy.get('[data-cy="dlg-role-desc"]').clear().type('Live created');
 
       // spy — просто ждём реальный ответ
