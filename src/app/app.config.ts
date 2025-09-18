@@ -36,7 +36,7 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { PublicTranslateLoader } from './utils/public-translate-loader';
 import { langHeaderInterceptor } from './interceptors/lang-header.interceptor';
 import { ruPrime } from './services/language.service';
-import { SignInService } from './services/sign-in.service';
+import { AuthService } from './services/auth.service';
 import { catchError, firstValueFrom, of } from 'rxjs';
 
 export const appConfig: ApplicationConfig = {
@@ -45,19 +45,13 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
 
     provideHttpClient(
-      // функциональные перехватчики
       withInterceptors([httpErrorInterceptor, langHeaderInterceptor]),
-      // подключаем DI-интерсепторы (классический HTTP_INTERCEPTORS)
       withInterceptorsFromDi()
     ),
-    // КЛАССИЧЕСКИЙ перехватчик — один раз!
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
-
-    // Инициализация сессии ДО старта роутинга
     provideAppInitializer(() => {
-      const auth = inject(SignInService);
+      const auth = inject(AuthService);
       return firstValueFrom(
         auth.hydrateFromSession().pipe(catchError(() => of(void 0)))
       );

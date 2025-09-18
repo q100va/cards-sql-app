@@ -159,7 +159,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
 
   modifyContactTypesList() {
     for (let contact of this.possibleContactTypes) {
-      //console.log(this.mainForm.controls[contact.name].value);
+      ////console.log(this.mainForm.controls[contact.name].value);
       if (
         this.mainForm.controls[contact.name].value.findIndex(
           (item: string | null) => item == null
@@ -302,7 +302,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           break;
         case 'addresses':
           if ('country' in data) {
-            console.log('data', data);
+            //console.log('data', data);
             this.addressFilterComponent.onChangeMode('edit', {
               localityId: data.locality?.id ?? null,
               districtId: data.district?.id ?? null,
@@ -315,7 +315,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     }
 
     this.deleteFromNewOutdatedData(type, data.id);
-    console.log(`this.newOutdatedData[${type}]`, this.newOutdatedData[type]);
+    //console.log(`this.newOutdatedData[${type}]`, this.newOutdatedData[type]);
     this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
@@ -326,18 +326,18 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   //TODO: пользователь может восстановить данные, потом изменить их, потом опять, как это все контролировать - меняем только внешний вид, все изменения формируем только после нажатия сохранить
 
   onDeleteOutdatedData(type: DeletingOutdatedDataType, id: number) {
-    console.log(`this.newOutdatedData`, this.newOutdatedData);
+    //console.log(`this.newOutdatedData`, this.newOutdatedData);
 
     this.deletingDataDraft[type] ??= [];
     this.deletingDataDraft[type].push(id);
     this.deleteFromNewOutdatedData(type, id);
 
-    console.log(`Deleting ${type} with id ${id}`);
-    console.log(`this.newOutdatedData`, this.newOutdatedData);
+    //console.log(`Deleting ${type} with id ${id}`);
+    //console.log(`this.newOutdatedData`, this.newOutdatedData);
   }
 
   deleteFromNewOutdatedData(type: DeletingOutdatedDataType, id: number) {
-    console.log(`this.newOutdatedData1`, this.newOutdatedData);
+    //console.log(`this.newOutdatedData1`, this.newOutdatedData);
     if (type == 'contacts') {
       //this.newOutdatedData[type];
       for (const key of typedKeys(this.newOutdatedData.contacts)) {
@@ -352,11 +352,11 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     } else {
       const index = this.newOutdatedData[type].findIndex((c) => c.id === id);
       if (index != -1) {
-        console.log(`Deleting ${type} with id ${id}`);
+        //console.log(`Deleting ${type} with id ${id}`);
         this.newOutdatedData[type].splice(index, 1);
       }
     }
-    console.log(`this.newOutdatedData2`, this.newOutdatedData);
+    //console.log(`this.newOutdatedData2`, this.newOutdatedData);
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
@@ -457,7 +457,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           'telegram'
         >[];
       } else {
-        //console.log('There are not duplicates!');
+        ////console.log('There are not duplicates!');
       }
     }
 
@@ -570,8 +570,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           (addr) => addr.id === restoredAddressId
         );
         if (restoredAddress && currentAddress) {
-          console.log('currentAddress', currentAddress);
-          console.log('restoredAddress', restoredAddress);
+          //console.log('currentAddress', currentAddress);
+          //console.log('restoredAddress', restoredAddress);
           // Compare all address fields
           if (
             restoredAddress.country?.id != currentAddress.countryId ||
@@ -579,7 +579,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             restoredAddress.district?.id != currentAddress.districtId ||
             restoredAddress.locality?.id != currentAddress.localityId
           ) {
-            console.log('this.newOutdatedData.addresses.push');
+            //console.log('this.newOutdatedData.addresses.push');
             this.newOutdatedData.addresses.push(restoredAddress);
             addressesToRemove.push(restoredAddress.id);
             break;
@@ -699,14 +699,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       contacts: null,
     }; */
     // const outdatedAddresses = this.existedUser!['outdatedData'].addresses;
-
-    console.log(
+/*
+   console.log(
       'this.newOutdatedData.addresses',
       this.newOutdatedData.addresses
-    );
+    ); */
     const outdatedAddresses = this.newOutdatedData.addresses;
     if (outdatedAddresses.length > 0 && user.draftAddress?.countryId) {
-      console.log(outdatedAddresses.length, user.draftAddress?.countryId);
+      //console.log(outdatedAddresses.length, user.draftAddress?.countryId);
       for (const address of outdatedAddresses) {
         const isMatch =
           address.country?.id == user.draftAddress.countryId &&
@@ -715,7 +715,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           address.locality?.id == user.draftAddress.localityId;
 
         if (isMatch) {
-          console.log('address', address);
+          //console.log('address', address);
           const fullAddress = `${address.country?.name + ' ' || ''}
           ${address.region?.shortName || ''}
           ${address.district?.shortName || ''}
@@ -725,7 +725,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             fullAddress
           );
           if (confirmed) {
-            console.log('this.deleteFromOutdatedData("address", address.id)');
+            //console.log('this.deleteFromOutdatedData("address", address.id)');
             restoringData.addresses ??= [];
             restoringData.addresses.push(address.id);
           } else {
@@ -743,16 +743,16 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         this.normalize(item.lastName) === this.normalize(user.lastName)
       );
     });
-    //  console.log('outdatedNames', outdatedNames);
+    //  //console.log('outdatedNames', outdatedNames);
     if (outdatedNames.length > 0) {
       const fullName = `${user.firstName} ${user.patronymic || ''} ${
         user.lastName
       }`.trim();
       const confirmed = await this.confirmDataCorrectness('names', fullName);
       if (confirmed) {
-        console.log(
+/*         console.log(
           'this.deleteFromOutdatedData("names", outdatedNames[0].id,)'
-        );
+        ); */
         restoringData.names ??= [];
         restoringData.names.push(outdatedNames[0].id);
       } else {
@@ -764,16 +764,16 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     const outdatedUserNames = this.newOutdatedData.userNames.filter((item) => {
       return item.userName === user.userName;
     });
-    console.log('outdatedNames', outdatedNames);
+    //console.log('outdatedNames', outdatedNames);
 
-    console.log('user', user);
+    //console.log('user', user);
     if (outdatedUserNames.length > 0) {
       const userName = user.userName;
       const confirmed = await this.confirmDataCorrectness('userName', userName);
       if (confirmed) {
-        console.log(
+ /*       console.log(
           'this.deleteFromOutdatedData("userName", outdatedUserNames[0].id,)'
-        );
+        ); */
         restoringData.userNames ??= [];
         restoringData.userNames.push(outdatedUserNames[0].id);
       } else {
@@ -784,8 +784,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
 
     const outdatedContacts = this.newOutdatedData.contacts;
 
-    console.log('outdatedContacts', outdatedContacts);
-    console.log('user.orderedContacts', user.draftContacts);
+    //console.log('outdatedContacts', outdatedContacts);
+    //console.log('user.orderedContacts', user.draftContacts);
 
     if (outdatedContacts && Object.keys(outdatedContacts).length != 0) {
       const currentContacts = user.draftContacts;
@@ -803,7 +803,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           }
         }
         if (duplicates.length > 0) {
-          console.log('duplicates', duplicates);
+          //console.log('duplicates', duplicates);
           const contentString =
             type + ' ' + duplicates.map((c) => c.content).join(', ');
           const confirmed = await this.confirmDataCorrectness(
@@ -811,7 +811,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             contentString
           );
           if (confirmed) {
-            console.log('this.deleteFromOutdatedData("contacts", contacts.id)');
+            //console.log('this.deleteFromOutdatedData("contacts", contacts.id)');
             restoringData.contacts ??= {};
             restoringData.contacts[type] ??= [];
             restoringData.contacts[type] = [
@@ -825,7 +825,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         }
       }
     }
-    console.log('restoringData', restoringData);
+    //console.log('restoringData', restoringData);
     this.checkAllChanges(action, user, restoringData);
   }
 
@@ -964,7 +964,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
 
     const newAddress = user.draftAddress!;
 
-    console.log('oldAddress', 'newAddress', oldAddress, newAddress);
+    //console.log('oldAddress', 'newAddress', oldAddress, newAddress);
 
     const isAddressChanged =
       !isFieldEqual(
@@ -986,8 +986,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     if (isAddressChanged) {
       if (!restoringData.addresses) {
         changes['address'] = user.draftAddress;
-        // console.log('changes', changes);
-        //console.log('oldAddress.country', oldAddress.country);
+        // //console.log('changes', changes);
+        ////console.log('oldAddress.country', oldAddress.country);
       } else {
         for (const restoredAddressId of restoringData.addresses) {
           const restoredAddress = this.existedUser!.outdatedData.addresses.find(
@@ -1008,7 +1008,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       }
 
       if (oldAddress.country) {
-        // console.log('oldAddress.country', oldAddress.country);
+        // //console.log('oldAddress.country', oldAddress.country);
         const oldValue = `${oldAddress.country?.name + ' ' || ''}
         ${oldAddress.region?.shortName || ''}
         ${oldAddress.district?.shortName || ''}
@@ -1034,25 +1034,25 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     >; */
     const newContacts = user.draftContacts;
 
-    console.log('oldContacts', 'newContacts', oldContacts, newContacts);
+    //console.log('oldContacts', 'newContacts', oldContacts, newContacts);
     for (const type of this.contactTypes) {
       //changes['contacts'][type] = [];
       for (const contact of newContacts[type]) {
-        console.log('contact', contact);
-        console.log('oldContacts[type]', oldContacts[type]);
+        //console.log('contact', contact);
+        //console.log('oldContacts[type]', oldContacts[type]);
         const indexInOldContactsArray = oldContacts[type]?.findIndex(
           (item) => item.content == contact
         );
-        console.log('indexInOldContactsArray', indexInOldContactsArray);
+        //console.log('indexInOldContactsArray', indexInOldContactsArray);
         if (!oldContacts[type] || indexInOldContactsArray == -1) {
           if (restoringData.contacts && restoringData.contacts[type]) {
             const indexInRestoringContactsArray = restoringData.contacts[
               type
             ].findIndex((item) => item.content === contact);
-            console.log(
+  /*          console.log(
               'indexInRestoringContactsArray',
               indexInRestoringContactsArray
-            );
+            ); */
             if (indexInRestoringContactsArray == -1) {
               changes['contacts'] ??= {};
               changes['contacts'][type] ??= [];
@@ -1111,10 +1111,10 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       }
     }
 
-    console.log('outdatingData', outdatingData);
-    console.log('deletingData', deletingData);
-    console.log('restoringData', restoringData);
-    console.log('changes', changes);
+    //console.log('outdatingData', outdatingData);
+    //console.log('deletingData', deletingData);
+    //console.log('restoringData', restoringData);
+    //console.log('changes', changes);
 
     this.saveUpdatedUser(action, {
       changes,
@@ -1174,12 +1174,12 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           this.closeDialogDataSignal.set(res.data.userName);
           this.emittedCloseDialogData.emit(res.data.userName);
         } else {
-          //console.log('this.existedUser', this.existedUser);
+          ////console.log('this.existedUser', this.existedUser);
 
           //TODO: вернуть новые данные юзера и обновить значения полей, исходя из этого
           this.data().object = res.data;
           //this.existedUser= this.data().object;
-          console.log('this.existedUser', this.existedUser);
+          //console.log('this.existedUser', this.existedUser);
           this.changeToViewMode(null);
           this.setInitialValues('view');
           this.msgWrapper.success(`Аккаунт пользователя ${res.data.userName} создан.`);
@@ -1208,7 +1208,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             this.closeDialogDataSignal.set(res.data.userName);
             this.emittedCloseDialogData.emit(res.data.userName);
           } else {
-            //console.log('this.existedUser', this.existedUser);
+            ////console.log('this.existedUser', this.existedUser);
 
             //TODO: вернуть новые данные юзера и обновить значения полей, исходя из этого
             if (
@@ -1249,9 +1249,9 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
               countryId: this.existedUser!.address.country ? this.existedUser!.address.country.id : null,
             });*/
 
-            console.log('  this.newOutdatedData', this.newOutdatedData);
+            //console.log('  this.newOutdatedData', this.newOutdatedData);
             //this.existedUser= this.data().object;
-            console.log('this.existedUser', this.existedUser);
+            //console.log('this.existedUser', this.existedUser);
             //TODO: test it
             this.changeToViewMode(null);
             this.setInitialValues('view');

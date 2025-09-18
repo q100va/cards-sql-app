@@ -14,9 +14,6 @@ const router = Router();
 
 // Параметры DB-блокировок
 const FAILS_TO_LOCK = 7;             // после 7 неверных паролей
-const LOCK_DURATION_MS = 15 * 60_000;   // 15 минут
-const ESCALATION_WINDOW = 24 * 60 * 60_000; // 24 часа
-const ESCALATION_STRIKES = 3;             // 3 блокировки за 24ч => isRestricted=true
 
 // === POST /api/session/sign-in ===
 router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next) => {
@@ -61,10 +58,10 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     const user = await User.findOne({
       where: { userName },
       attributes: [
-        'id', 'userName', 'firstName', 'lastName', 'password',
+        'id', 'userName', 'firstName', 'lastName', 'password', 'roleId',
         'isRestricted', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount'
       ],
-      include: [{ model: Role, attributes: ['name'] }],
+      include: [{ model: Role, attributes: ['id','name'] }],
     });
 
     if (!user) {
@@ -124,6 +121,8 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     const { accessToken, refreshToken } = await mintTokenPair(user, { ua, ip: req.ip });
     setRefreshCookie(res, refreshToken);
 
+    console.log('roleId', user.role.id)
+
     return res.status(200).json({
       data: {
         user: {
@@ -132,6 +131,7 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
           firstName: user.firstName,
           lastName: user.lastName,
           roleName: user.role?.name ?? null,
+          roleId: user.role?.id ?? null,
         },
         token: accessToken,
         expiresIn: ACCESS_TTL_SEC,
@@ -163,8 +163,8 @@ router.post('/refresh', async (req, res, next) => {
 
     // находим пользователя
     const user = await User.findByPk(sub, {
-      attributes: ['id', 'userName', 'firstName', 'lastName'],
-      include: [{ model: Role, attributes: ['name'] }],
+      attributes: ['id', 'userName', 'firstName', 'lastName', 'roleId'],
+      include: [{ model: Role, attributes: ['id', 'name'] }],
     });
     if (!user) return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
 
@@ -248,7 +248,7 @@ router.get('/me', requireAccess, async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: ['id', 'userName', 'firstName', 'lastName'],
-      include: [{ model: Role, attributes: ['name'] }],
+      include: [{ model: Role, attributes: ['id', 'name'] }],
     });
     if (!user) return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
 
@@ -259,6 +259,7 @@ router.get('/me', requireAccess, async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         roleName: user.role?.name ?? null,
+        roleId: user.role?.id ?? null,
       }
     });
   } catch (err) {

@@ -9,7 +9,7 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import * as roleSchemas from "../../shared/dist/role.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import requireAuth from '../middlewares/check-auth.js';
-
+import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';
 
 // TODO: add authentication/authorization middlewares
 // import { authorizeAdmin } from "../middlewares/auth.js";
@@ -23,9 +23,9 @@ const router = Router();
  */
 router.get(
   "/check-role-name/:name",
-  validateRequest(roleSchemas.roleNameSchema, "params"),
   requireAuth,
-  // authorizeAdmin,
+  requireAny('ADD_NEW_ROLE', 'EDIT_ROLE'),
+  validateRequest(roleSchemas.roleNameSchema, "params"),
   async (req, res, next) => {
     try {
       const roleName = req.params.name.toLowerCase();
@@ -53,9 +53,9 @@ router.get(
  */
 router.post(
   "/create-role",
-  validateRequest(roleSchemas.roleDraftSchema),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('ADD_NEW_ROLE'),
+  validateRequest(roleSchemas.roleDraftSchema),
   async (req, res, next) => {
     try {
       const { name, description } = req.body;
@@ -90,9 +90,9 @@ router.post(
  */
 router.patch(
   "/update-role",
-  validateRequest(roleSchemas.roleSchema),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('EDIT_ROLE'),
+  validateRequest(roleSchemas.roleSchema),
   async (req, res, next) => {
     try {
       const { id, name, description } = req.body;
@@ -125,9 +125,9 @@ router.patch(
  */
 router.patch(
   "/update-role-access",
-  validateRequest(roleSchemas.roleChangeAccessSchema),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('EDIT_ROLE'),
+  validateRequest(roleSchemas.roleChangeAccessSchema),
   async (req, res, next) => {
     try {
       const { access, roleId, operation } = req.body;
@@ -268,7 +268,7 @@ async function changeRoleOperation(
 router.get(
   "/get-roles-names-list",
   requireAuth,
-  // authorizeAdmin,
+  requireAny('ADD_NEW_USER', 'EDIT_USER', 'VIEW_LIMITED_USERS_LIST'),
   async (req, res, next) => {
     try {
       const roles = await Role.findAll({
@@ -291,7 +291,7 @@ router.get(
 router.get(
   "/get-roles",
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('VIEW_LIMITED_ROLES_LIST'),
   async (req, res, next) => {
     try {
       // Roles
@@ -351,9 +351,9 @@ router.get(
  */
 router.get(
   "/check-role-before-delete/:id",
-  validateRequest(roleSchemas.roleIdSchema, "params"),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('DELETE_ROLE'),
+  validateRequest(roleSchemas.roleIdSchema, "params"),
   async (req, res, next) => {
     try {
       const roleId = req.params.id;
@@ -381,9 +381,9 @@ router.get(
 
 router.delete(
   "/delete-role/:id",
-  validateRequest(roleSchemas.roleIdSchema, "params"),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('DELETE_ROLE'),
+  validateRequest(roleSchemas.roleIdSchema, "params"),
   async (req, res, next) => {
     try {
       const roleId = req.params.id;

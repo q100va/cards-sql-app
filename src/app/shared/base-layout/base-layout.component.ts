@@ -13,8 +13,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 
-import { MenuItem } from './menu-item';
-import { SignInService } from '../../services/sign-in.service';
+import { Menu } from './menu-item';
+import { AuthService, OperationCode } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
@@ -22,6 +22,7 @@ import { IdleService } from '../../services/idle.service';
 import { interval, Subscription, takeWhile } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
 import { AuthUser } from '@shared/schemas/auth.schema';
+import { HasOpDirective } from '../../directives/has-op.directive';
 
 @Component({
   selector: 'app-base-layout',
@@ -45,24 +46,22 @@ import { AuthUser } from '@shared/schemas/auth.schema';
 
     // i18n
     TranslateModule,
+
+    HasOpDirective
   ],
   templateUrl: './base-layout.component.html',
   styleUrl: './base-layout.component.css',
 })
 export class BaseLayoutComponent {
-  private readonly signIn = inject(SignInService);
+  readonly auth = inject(AuthService);
   readonly lang = inject(LanguageService);
-  private confirmationService = inject(ConfirmationService);
   countdown = 60;
-  private idleSub?: Subscription;
 
-  // Делаем IdleService публичным, чтобы в шаблоне читать idle.countdown$
   readonly idle = inject(IdleService);
-
   readonly year: number = new Date().getFullYear();
 
   // Текущий пользователь
-  readonly user = toSignal<AuthUser | null>(this.signIn.currentUser$, {
+  readonly user = toSignal<AuthUser | null>(this.auth.currentUser$, {
     initialValue: null,
   });
   readonly name = computed(() => {
@@ -71,10 +70,106 @@ export class BaseLayoutComponent {
   });
   readonly userName = computed(() => this.user()?.userName ?? '');
 
-  menuItems: MenuItem[] = [];
+  menu: Menu = [
+    {
+      params: {
+        codes: [],
+        mode: 'any',
+      },
+      dataCy: 'nav-profile',
+      icon: 'settings',
+      text: 'MENU.PROFILE',
+      link: '/users/user/profile',
+    },
+    {
+      params: {
+       // codes: ['ALL_OPS_ROLES'],
+       codes: [],
+        mode: 'all',
+      },
+      dataCy: 'nav-roles',
+      icon: 'verified_user',
+      text: 'MENU.ROLES',
+      link: '/roles',
+    },
+    {
+      params: {
+        codes: ['VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-users',
+      icon: 'badge',
+      text: 'MENU.USERS',
+      link: '/users',
+    },
+    {
+      params: {
+        codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-toponyms',
+      icon: 'map',
+      text: 'MENU.TOPONYMS',
+      link: '/toponyms',
+      subMenuItems: [
+        {
+          params: {
+            codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
+            mode: 'any',
+          },
+          dataCy: 'nav-countries',
+          icon: 'place',
+          text: 'MENU.COUNTRIES',
+          link: '/countries',
+        },
+        {
+          params: {
+            codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
+            mode: 'any',
+          },
+          dataCy: 'nav-regions',
+          icon: 'corporate_fare',
+          text: 'MENU.REGIONS',
+          link: '/regions',
+        },
+        {
+          params: {
+            codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
+            mode: 'any',
+          },
+          dataCy: 'nav-districts',
+          icon: 'home_work',
+          text: 'MENU.DISTRICTS',
+          link: '/districts',
+        },
+        {
+          params: {
+            codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
+            mode: 'any',
+          },
+          dataCy: 'nav-localities',
+          icon: 'holiday_village',
+          text: 'MENU.LOCALITIES',
+          link: '/localities',
+        },
+      ],
+    },
+    {
+      params: {
+        codes: ['VIEW_FULL_ROLES_LIST'], //TODO: create operation
+        mode: 'all',
+      },
+      dataCy: 'nav-audit',
+      icon: 'policy',
+      text: 'MENU.AUDIT',
+      link: '/audit',
+    },
+  ];
+
+  menuItems: Menu = [];
 
   ngOnInit(): void {
-    this.populateMenuItems();
+    this.menuItems = [...this.menu];
   }
 
   ngOnDestroy(): void {
@@ -82,27 +177,30 @@ export class BaseLayoutComponent {
   }
 
   signOut(): void {
-    this.signIn.logout().subscribe();
+    this.auth.logout().subscribe();
   }
 
   setLanguage(code: 'en' | 'ru') {
     this.lang.set(code);
   }
+  /*   private computeCan(
+    mode: 'any' | 'all' | '',
+    codes: OperationCode[]
+  ): boolean {
+    const has = (op: OperationCode) => this.auth.has(op);
+    return mode === 'all' ? codes.every(has) : codes.some(has);
+  } */
 
-  private populateMenuItems() {
-    this.menuItems.push(
-      new MenuItem('nav-profile', 'settings', 'MENU.PROFILE', '/users/user/profile')
-    );
-    this.menuItems.push(new MenuItem('nav-roles', 'verified_user', 'MENU.ROLES', '/roles'));
-    this.menuItems.push(new MenuItem('nav-users', 'badge', 'MENU.USERS', '/users'));
-    this.menuItems.push(
-      new MenuItem('nav-toponyms', 'map', 'MENU.TOPONYMS', '/toponyms', [
-        new MenuItem('nav-countries', 'place', 'MENU.COUNTRIES', '/countries'),
-        new MenuItem('nav-regions', 'corporate_fare', 'MENU.REGIONS', '/regions'),
-        new MenuItem('nav-districts', 'home_work', 'MENU.DISTRICTS', '/districts'),
-        new MenuItem('nav-localities', 'holiday_village', 'MENU.LOCALITIES', '/localities'),
-      ])
-    );
-    this.menuItems.push(new MenuItem('nav-audit', 'policy', 'MENU.AUDIT', '/audit'));
-  }
+  /*   private populateMenuItems(menu: Menu): Menu {
+    let menuItems: Menu = [];
+    for (let item of menu) {
+      if (item.codes.length == 0 || this.computeCan(item.mode, item.codes)) {
+        if (item.subMenuItems) {
+          item.subMenuItems = [...this.populateMenuItems(item.subMenuItems)];
+        }
+        menuItems.push(item);
+      }
+    }
+    return menuItems;
+  } */
 }

@@ -18,6 +18,7 @@ import UsersApi from './routes/users-api.js';
 import RolesApi from './routes/roles-api.js';
 import AuditApi from './routes/audit-api.js';
 import ClientLogsApi from './routes/client-logs.js';
+import AuthApi from './routes/auth-api.js';
 
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
@@ -72,6 +73,7 @@ app.use('/api/users', UsersApi);
 app.use('/api/roles', RolesApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/client-logs', ClientLogsApi);
+app.use('/api/auth', AuthApi);
 
 // 404 + errors
 app.use(notFound);

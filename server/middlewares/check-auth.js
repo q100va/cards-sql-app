@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 
 // Обязательная аутентификация: 401 при любой проблеме с access-токеном
-export default function requireAuth(req, res, next) {
+export function requireAuth(req, res, next) {
   try {
     // пропускаем preflight
     if (req.method === 'OPTIONS') return next();
@@ -20,12 +20,15 @@ export default function requireAuth(req, res, next) {
       issuer: 'cards-sql-app',
       audience: 'web',
     });
+      // console.log('SERVER!!! payload', payload)
+
 
     // прокидываем в req данные пользователя (то, что клали в access)
     req.user = {
       id: Number(payload.sub),
       userName: payload.uname,
-      role: payload.role ?? null,
+      role: payload.role,
+      roleId: payload.roleId
     };
 
     return next();
@@ -46,10 +49,13 @@ export function optionalAuth(req, res, next) {
         issuer: 'cards-sql-app',
         audience: 'web',
       });
+
+
       req.user = {
         id: Number(payload.sub),
         userName: payload.uname,
         role: payload.role ?? null,
+        roleId: payload.roleId ?? null,
       };
     }
   } catch {
@@ -58,3 +64,4 @@ export function optionalAuth(req, res, next) {
     next();
   }
 }
+export default requireAuth;

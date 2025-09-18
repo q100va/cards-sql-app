@@ -222,7 +222,7 @@ export class BaseListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      console.log('this.route.queryParams.subscribe((params)', params)
+      //console.log('this.route.queryParams.subscribe((params)', params)
         this.defaultAddressParams.localityId = params['localityId'] ? +params['localityId'] : this.defaultAddressParams.localityId;
         this.defaultAddressParams.districtId = params['districtId'] ? +params['districtId'] : this.defaultAddressParams.districtId;
         this.defaultAddressParams.regionId = params['regionId'] ? +params['regionId'] : this.defaultAddressParams.regionId;

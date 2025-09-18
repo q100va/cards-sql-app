@@ -5,7 +5,7 @@ import { HTTP_INTERCEPTORS, HttpClient, HttpErrorResponse } from '@angular/commo
 import { of, Subject, throwError } from 'rxjs';
 
 import { AuthInterceptor } from './auth.interceptor';
-import { SignInService } from '../services/sign-in.service';
+import { AuthService } from '../services/auth.service';
 import { environment } from '../../environments/environment';
 
 class SignInServiceStub {
@@ -34,7 +34,7 @@ describe('AuthInterceptor', () => {
         provideHttpClientTesting(),
 
         // dependencies
-        { provide: SignInService, useClass: SignInServiceStub },
+        { provide: AuthService, useClass: SignInServiceStub },
 
         // interceptor under test
         { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
@@ -43,7 +43,7 @@ describe('AuthInterceptor', () => {
 
     http = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
-    signIn = TestBed.inject(SignInService) as unknown as SignInServiceStub;
+    signIn = TestBed.inject(AuthService) as unknown as SignInServiceStub;
   });
 
   afterEach(() => {

@@ -12,6 +12,8 @@
     "build:shared:once": "tsc -p shared/tsconfig.json",
     "build:shared": "tsc -p shared/tsconfig.json --watch",
     "dev": "concurrently \"npm:build:shared\" \"npm:server\"",
+    "perms:sync": "node server/scripts/perms-sync.mjs",
+    "reset:test:db": "node -r dotenv/config server/scripts/reset-test-db.mjs",
     "pretest:server": "npm run build:shared:once",
     "test:unit": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.mjs --runInBand",
     "test:int": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.int.mjs --runInBand",

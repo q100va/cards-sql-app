@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 
-import { SignInService } from '../../services/sign-in.service';
+import { AuthService } from '../../services/auth.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
@@ -30,7 +30,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   styleUrl: './sign-in.component.css',
 })
 export class SignInComponent {
-  private signInService = inject(SignInService);
+  private signInService = inject(AuthService);
   private router = inject(Router);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly translateService = inject(TranslateService);
@@ -42,7 +42,9 @@ export class SignInComponent {
   });
   errorMessage?: string;
 
-  constructor() {}
+  constructor() {
+    //this.signInService.resetAuthState?.();
+  }
 
   onSubmit() {
     this.isLoad = true;

@@ -1,15 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 
-import { SignInService } from './sign-in.service';
+import { AuthService } from './auth.service';
 import { ClientLoggerService } from './client-logger.service';
 import { environment } from '../../environments/environment';
 
 import type { AuthUser, SignInResp, RefreshResp } from '@shared/schemas/auth.schema';
 
-describe('SignInService', () => {
-  let service: SignInService;
+describe('AuthService', () => {
+  let service: AuthService;
   let httpMock: HttpTestingController;
 
   const api = environment.apiUrl;
@@ -19,15 +19,15 @@ describe('SignInService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
-        SignInService,
+        provideHttpClientTesting(),
+        AuthService,
         { provide: Router, useValue: routerSpy },
         { provide: ClientLoggerService, useValue: loggerSpy },
       ],
     });
 
-    service = TestBed.inject(SignInService);
+    service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
     routerSpy.navigate.calls.reset();
     loggerSpy.setUser.calls.reset();
@@ -52,6 +52,7 @@ describe('SignInService', () => {
       firstName: 'Alice',
       lastName: 'Smith',
       roleName: 'ADMIN',
+      roleId: 1
     };
     const resp: { data: SignInResp } = {
       data: { user, token: 'tok_1234567890', expiresIn: 900 },
@@ -103,6 +104,7 @@ describe('SignInService', () => {
         firstName: 'Zoe',
         lastName: 'Lee',
         roleName: 'USER',
+        roleId: 1
       },
     };
 

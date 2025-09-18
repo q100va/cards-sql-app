@@ -3,6 +3,7 @@ import Country from "../models/country.js";
 import Region from "../models/region.js";
 import District from "../models/district.js";
 import Locality from "../models/locality.js";
+import requireAuth from "../middlewares/check-auth.js";
 
 import User from "../models/user.js";
 import UserContact from "../models/user-contact.js";
@@ -20,7 +21,7 @@ const saltRounds = 10;
 
 // API create user
 //TODO: гарантировать что у пользователя есть роль!!!
-router.post("/check-username", async (req, res) => {
+router.post("/check-username", requireAuth, async (req, res) => {
   try {
     const userName = req.body.data.userName.toLowerCase();
     const id = req.body.data.id;
@@ -44,7 +45,7 @@ router.post("/check-username", async (req, res) => {
   }
 });
 
-router.post("/check-user-data", async (req, res) => {
+router.post("/check-user-data", requireAuth, async (req, res) => {
   try {
     let user = req.body.data;
     const whereParams = user.id ?
@@ -110,7 +111,7 @@ router.post("/check-user-data", async (req, res) => {
 });
 
 
-router.post("/create-user", async (req, res) => {
+router.post("/create-user", requireAuth, async (req, res) => {
   let newContact, newAddress, newSearchString, createdUser;
   try {
 
@@ -256,7 +257,7 @@ router.post("/create-user", async (req, res) => {
   }
 });
 
-router.post("/update-user", async (req, res) => {
+router.post("/update-user", requireAuth, async (req, res) => {
 
   try {
     console.log("req.body.data");
@@ -497,7 +498,7 @@ async function createSearchString(updatedUser) {
   return searchString.trim();
 }
 //TODO: test
-router.post("/change-password", async (req, res) => {
+router.post("/change-password", requireAuth, async (req, res) => {
   try {
     const { userId, value } = req.body.data;
 
@@ -532,7 +533,7 @@ router.post("/change-password", async (req, res) => {
 pageSize: number,
 currentPage: number */
 
-router.post("/get-users", async (req, res) => {
+router.post("/get-users", requireAuth, async (req, res) => {
 
   //console.log('req.body');
   //console.log(req.body);
@@ -910,7 +911,7 @@ router.post("/get-users", async (req, res) => {
   }
 });
 
-router.get("/get-user-by-id/:id", async (req, res) => {
+router.get("/get-user-by-id/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.params.id;
     const user = await User.findOne({
@@ -964,7 +965,7 @@ router.get("/get-user-by-id/:id", async (req, res) => {
   }
 });
 
-router.get("/check-user-before-delete/:id", async (req, res) => {
+router.get("/check-user-before-delete/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.params.id;
     //TODO: find does this user has clients and orders
@@ -976,7 +977,7 @@ router.get("/check-user-before-delete/:id", async (req, res) => {
   }
 });
 
-router.delete("/delete-user/:id", async (req, res) => {
+router.delete("/delete-user/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.params.id;
     await User.destroy({
@@ -989,7 +990,7 @@ router.delete("/delete-user/:id", async (req, res) => {
   }
 });
 
-router.patch("/block-user/:id", async (req, res) => {
+router.patch("/block-user/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.params.id;
     await User.update(
@@ -1009,7 +1010,7 @@ router.patch("/block-user/:id", async (req, res) => {
   }
 });
 
-router.patch("/unblock-user", async (req, res) => {
+router.patch("/unblock-user", requireAuth, async (req, res) => {
   try {
     let userId = req.body.data;
     await User.update(

@@ -17,7 +17,7 @@
       <mat-card-actions>
         <div class="bottom-right">
           <button data-cy="add-role-btn" mat-icon-button [title]="'ROLE.TABLE_ADD_ROLE' | translate"
-            (click)="onAddRoleClick()">
+            (click)="onAddRoleClick()" *hasOp="{codes:['ADD_NEW_ROLE'], mode:'all'}">
             <mat-icon fontSet="material-icons-outlined">add_moderator</mat-icon>
           </button>
         </div>
@@ -41,9 +41,9 @@
             {{ 'ROLE.TABLE_OPERATION' | translate }}
           </th>
 
-          @for (role of roles; track trackById($index, role); let index = $index) {
+          @for (role of roles; track role.id; let index = $index) {
           <th [pEditableColumn]="role.name" pEditableColumnField="name" class="width-15rem">
-            <p-cellEditor>
+            <p-cellEditor *hasOp="{codes:['EDIT_ROLE'], mode:'all'}; else noInputName">
               <ng-template #input>
                 <input [attr.data-cy]="'role-name-'+role.id"
                   [class]="roleDraftSchema.shape.name.safeParse(role.name).success ? 'valid' : 'ng-invalid ng-dirty'"
@@ -56,10 +56,17 @@
                 </span>
               </ng-template>
             </p-cellEditor>
+            <ng-template #noInputName>
+              <span [attr.data-cy]="'role-name-out-'+role.id">
+                {{ role.name }}
+              </span>
+            </ng-template>
+
           </th>
           <th [class.right-bordered]="index !== roles.length - 1" class="width-5rem">
             <button [attr.data-cy]="'delete-role-'+role.id" class="delete-button" mat-icon-button
-              [title]="'ROLE.TABLE_DELETE_ROLE' | translate" (click)="onDeleteRoleClick(index)">
+              [title]="'ROLE.TABLE_DELETE_ROLE' | translate" (click)="onDeleteRoleClick(index)"
+              *hasOp="{codes:['DELETE_ROLE'], mode:'all'}">
               <mat-icon>delete_outlined</mat-icon>
             </button>
           </th>
@@ -67,10 +74,10 @@
         </tr>
 
         <tr>
-          @for (role of roles; track trackById($index, role); let index = $index) {
+          @for (role of roles; track role.id; let index = $index) {
           <th [class.right-bordered]="index !== roles.length - 1" class="bottom-bordered"
             [pEditableColumn]="role.description" pEditableColumnField="description" colspan="2">
-            <p-cellEditor>
+            <p-cellEditor *hasOp="{codes:['EDIT_ROLE'], mode:'all'}; else noInputDescription">
               <ng-template #input>
                 <input [attr.data-cy]="'role-desc-' + role.id"
                   [class]="roleDraftSchema.shape.description.safeParse(role.description).success ? 'valid' : 'ng-invalid ng-dirty'"
@@ -78,11 +85,16 @@
                   [(ngModel)]="role.description" (blur)="onInputChange(index)" (keydown.enter)="onInputChange(index)" />
               </ng-template>
               <ng-template #output>
-                 <span [attr.data-cy]="'role-desc-out-'+role.id">
-                {{ role.description }}
+                <span [attr.data-cy]="'role-desc-out-'+role.id">
+                  {{ role.description }}
                 </span>
               </ng-template>
             </p-cellEditor>
+            <ng-template #noInputDescription>
+              <span>
+                {{ role.description }}
+              </span>
+            </ng-template>
           </th>
           }
         </tr>
@@ -103,7 +115,7 @@
             {{ operation.operationName | translate }}
           </td>
 
-          @for (roleAccess of operation.rolesAccesses; track trackById($index, roleAccess); let index = $index) {
+          @for (roleAccess of operation.rolesAccesses; track roleAccess.id; let index = $index) {
           <td [class.right-bordered]="index !== roles.length - 1" class="center" colspan="2"
             [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
             <mat-checkbox [attr.data-cy]="'access-' + operation.object + '-role-' + roleAccess.roleId"

@@ -520,11 +520,6 @@ describe('RolesListComponent', () => {
 
   //#region Misc
 
-  it('trackById returns entity id', () => {
-    const id = component.trackById(0, { id: 123 } as any);
-    expect(id).toBe(123);
-  });
-
   it('loadRoles toggles isLoading true→false around request', fakeAsync(() => {
     const subj = new Subject<{
       data: { roles: any[]; operations: any[] };

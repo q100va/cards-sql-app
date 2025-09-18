@@ -7,7 +7,7 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
 import { AuditPage, auditPageSchema } from '@shared/schemas/audit.schema';
 import { ApiResponse } from '../interfaces/api-response';
-import { environment } from 'src/environments/environment';
+import { environment } from '../../environments/environment';
 import { validateResponse } from '../utils/validate-response';
 
 @Injectable({ providedIn: 'root' })

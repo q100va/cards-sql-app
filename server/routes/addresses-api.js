@@ -7,6 +7,7 @@ import Locality from "../models/locality.js";
 
 import { correctLocalityName } from '../controllers/addresses.js'
 import { correctDistrictName } from '../controllers/addresses.js'
+import requireAuth from "../middlewares/check-auth.js";
 import CustomError from "../shared/customError.js";
 
 import Sequelize from 'sequelize';
@@ -16,10 +17,10 @@ const router = Router();
 
 //API create toponym
 
-router.post("/check-toponym-name", async (req, res) => {
+router.post("/check-toponym-name", requireAuth, async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
+    /*     //console.log("req.body.data");
+        //console.log(req.body.data); */
 
     const type = req.body.data.type;
     const name = req.body.data.name;
@@ -123,10 +124,10 @@ router.post("/check-toponym-name", async (req, res) => {
 });
 
 
-router.post("/create-toponym", async (req, res) => {
+router.post("/create-toponym", requireAuth, async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
+    /*    //console.log("req.body.data");
+       //console.log(req.body.data); */
 
     const type = req.body.data.type;
     const name = req.body.data.mainValues.name;
@@ -168,18 +169,18 @@ router.post("/create-toponym", async (req, res) => {
           isCapitalOfDistrict: req.body.data.mainValues.isCapitalOfDistrict,
         });
     }
-   // const defaultAddressParams = formDefaultAddressParams(createdToponym, type);
-    res.status(200).send({ msg: "Топоним успешно добавлен.", data: {toponym: createdToponym}});
+    // const defaultAddressParams = formDefaultAddressParams(createdToponym, type);
+    res.status(200).send({ msg: "Топоним успешно добавлен.", data: { toponym: createdToponym } });
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
   }
 });
 
-router.post("/update-toponym", async (req, res) => {
+router.post("/update-toponym", requireAuth, async (req, res) => {
   try {
-    console.log("req.body.data");
-    console.log(req.body.data);
+    /*     //console.log("req.body.data");
+        //console.log(req.body.data); */
 
     const type = req.body.data.type;
     const name = req.body.data.mainValues.name;
@@ -251,25 +252,25 @@ router.post("/update-toponym", async (req, res) => {
           }
         });
       updatedToponym = getToponymById(id, res, config.model, type, config.attributes, config.include);
-/*       await District.findOne({
-        attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
-        raw: true,
-        where: {
-          id: id
-        },
-        include: [
-          {
-            model: Region,
-            attributes: ['id', 'name'],
-            include: [
-              {
-                model: Country,
-                attributes: ['id', 'name'],
+      /*       await District.findOne({
+              attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
+              raw: true,
+              where: {
+                id: id
               },
-            ],
-          },
-        ],
-      }); */
+              include: [
+                {
+                  model: Region,
+                  attributes: ['id', 'name'],
+                  include: [
+                    {
+                      model: Country,
+                      attributes: ['id', 'name'],
+                    },
+                  ],
+                },
+              ],
+            }); */
     }
     if (type == 'locality') {
       await Locality.update(
@@ -288,31 +289,31 @@ router.post("/update-toponym", async (req, res) => {
         }
       );
       updatedToponym = getToponymById(id, res, config.model, type, config.attributes, config.include);
-  /*     await Locality.findOne({
-        attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
-        raw: true,
-        where: {
-          id: id
-        },
-        include: [
-          {
-            model: District,
-            attributes: ['id', 'name'],
+      /*     await Locality.findOne({
+            attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
+            raw: true,
+            where: {
+              id: id
+            },
             include: [
               {
-                model: Region,
+                model: District,
                 attributes: ['id', 'name'],
                 include: [
                   {
-                    model: Country,
+                    model: Region,
                     attributes: ['id', 'name'],
+                    include: [
+                      {
+                        model: Country,
+                        attributes: ['id', 'name'],
+                      },
+                    ],
                   },
                 ],
               },
             ],
-          },
-        ],
-      }); */
+          }); */
 
     }
     //res.status(200).send({ msg: "Топоним успешно обновлен.", data: updatedToponym });
@@ -326,7 +327,7 @@ router.post("/update-toponym", async (req, res) => {
 
 // API get address elements for address filter
 
-router.get("/get-countries-list", async (req, res) => {
+router.get("/get-countries-list", requireAuth, async (req, res) => {
   try {
     const countries = await Country.findAll({
       where: { isRestricted: false },
@@ -343,7 +344,7 @@ router.get("/get-countries-list", async (req, res) => {
   }
 });
 
-router.post("/get-regions-list", async (req, res) => {
+router.post("/get-regions-list", requireAuth, async (req, res) => {
   try {
     const countriesIds = req.body.data;//.map(item => item.id);
     let result = [];
@@ -359,7 +360,7 @@ router.post("/get-regions-list", async (req, res) => {
       });
       result = regions;
     }
-    console.log("result", countriesIds, result);
+    ////console.log("result", countriesIds, result);
     res.status(200).send({ msg: "Данные получены.", data: result });
   } catch (e) {
     const err = errorHandling(e);
@@ -367,7 +368,7 @@ router.post("/get-regions-list", async (req, res) => {
   }
 });
 
-router.post("/get-districts-list", async (req, res) => {
+router.post("/get-districts-list", requireAuth, async (req, res) => {
   try {
     const regionsIds = req.body.data;//.map(item => item.id);
     let result = [];
@@ -390,7 +391,7 @@ router.post("/get-districts-list", async (req, res) => {
   }
 });
 
-router.post("/get-localities-list", async (req, res) => {
+router.post("/get-localities-list", requireAuth, async (req, res) => {
   try {
     const districtsIds = req.body.data;//.map(item => item.id);
     let result = [];
@@ -416,8 +417,8 @@ router.post("/get-localities-list", async (req, res) => {
 // APT get toponyms for lists of toponyms
 
 
-router.post("/get-countries", async (req, res) => {
-  console.log("countries");
+router.post("/get-countries", requireAuth, async (req, res) => {
+  //console.log("countries");
   const searchValue = req.body.data.filter.searchValue.trim();
   const exactMatch = req.body.data.filter.exactMatch;
   const sortParameters = req.body.data.filter.sortParameters;
@@ -442,8 +443,8 @@ router.post("/get-countries", async (req, res) => {
     orderParams.push(orderByName);
     orderParams.push(orderDirection);
 
-    console.log("orderParams");
-    console.log(orderParams);
+    //console.log("orderParams");
+    //console.log(orderParams);
 
     //search
 
@@ -453,8 +454,8 @@ router.post("/get-countries", async (req, res) => {
     if (searchValue) {
       const searchColumnNames = ['name'];
       let arrayOfSearchValues = searchValue.split(" ");
-      console.log('arrayOfSearchValues');
-      console.log(arrayOfSearchValues);
+      //console.log('arrayOfSearchValues');
+      //console.log(arrayOfSearchValues);
       if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
         let opLikeValues = [];
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
@@ -466,12 +467,12 @@ router.post("/get-countries", async (req, res) => {
               [Op.or]: opLikeValues
             }
           });
-          console.log("opLikeValues");
-          console.log(opLikeValues);
+          //console.log("opLikeValues");
+          //console.log(opLikeValues);
         }
         whereParams = { ...whereParams, [Op.or]: searchParams };
-        console.log("whereParams");
-        console.log(whereParams);
+        //console.log("whereParams");
+        //console.log(whereParams);
       } else {
         const searchColumnRowNames = [
           '"country"."name"'
@@ -481,14 +482,14 @@ router.post("/get-countries", async (req, res) => {
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
           innerQuery = innerQuery + '(SELECT DISTINCT "country"."id" WHERE "country"."isRestricted" = false AND (';
           const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
-          console.log("searchWord");
-          console.log(searchWord);
+          //console.log("searchWord");
+          //console.log(searchWord);
           for (let columnName of searchColumnRowNames) {
             innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
           }
           innerQuery = innerQuery.slice(0, -4) + `)`;
-          console.log("innerQuery");
-          console.log(innerQuery);
+          //console.log("innerQuery");
+          //console.log(innerQuery);
           if (i != arrayOfSearchValues.length - 1) {
             innerQuery = innerQuery + 'AND  "country"."id" IN ';
           }
@@ -497,8 +498,8 @@ router.post("/get-countries", async (req, res) => {
           innerQuery = innerQuery + ')';
         }
 
-        console.log("innerQueryFinal");
-        console.log(innerQuery);
+        //console.log("innerQueryFinal");
+        //console.log(innerQuery);
 
         searchParams.push({
           id: {
@@ -527,8 +528,8 @@ router.post("/get-countries", async (req, res) => {
       raw: true,
       where: whereParams,
     });
-    //console.log("localities");
-    //console.log(localities);
+    ////console.log("localities");
+    ////console.log(localities);
 
     for (let country of countries) {
       country = addDefaultAddressParams(country, 'country');
@@ -549,7 +550,7 @@ function addDefaultAddressParams(toponym, type) {
 
 function formDefaultAddressParams(toponym, type) {
 
-  console.log(toponym);
+  //console.log(toponym);
   const idWays = {
     locality: {
       locality: 'id',
@@ -596,7 +597,7 @@ function formDefaultAddressParams(toponym, type) {
 
 
 function formDefaultAddressNames(toponym, type) {
-  console.log(toponym);
+  //console.log(toponym);
 
   const nameWays = {
     locality: {
@@ -669,8 +670,8 @@ function formDefaultAddressNames(toponym, type) {
 } */
 
 
-router.post("/get-regions", async (req, res) => {
-  console.log("regions");
+router.post("/get-regions", requireAuth, async (req, res) => {
+  //console.log("regions");
   const searchValue = req.body.data.filter.searchValue.trim();
   const exactMatch = req.body.data.filter.exactMatch;
   const sortParameters = req.body.data.filter.sortParameters;
@@ -707,8 +708,8 @@ router.post("/get-regions", async (req, res) => {
     orderParams.push(orderByName);
     orderParams.push(orderDirection);
 
-    console.log("orderParams");
-    console.log(orderParams);
+    //console.log("orderParams");
+    //console.log(orderParams);
 
     //search
 
@@ -719,8 +720,8 @@ router.post("/get-regions", async (req, res) => {
     if (searchValue) {
       const searchColumnNames = ['$country.name$', 'name', 'shortName'];
       let arrayOfSearchValues = searchValue.split(" ");
-      console.log('arrayOfSearchValues');
-      console.log(arrayOfSearchValues);
+      //console.log('arrayOfSearchValues');
+      //console.log(arrayOfSearchValues);
       if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
         let opLikeValues = [];
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
@@ -732,12 +733,12 @@ router.post("/get-regions", async (req, res) => {
               [Op.or]: opLikeValues
             }
           });
-          console.log("opLikeValues");
-          console.log(opLikeValues);
+          //console.log("opLikeValues");
+          //console.log(opLikeValues);
         }
         whereParams = { ...whereParams, [Op.or]: searchParams };
-        console.log("whereParams");
-        console.log(whereParams);
+        //console.log("whereParams");
+        //console.log(whereParams);
       } else {
         const searchColumnRowNames = [
           '"country"."name"',
@@ -748,14 +749,14 @@ router.post("/get-regions", async (req, res) => {
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
           innerQuery = innerQuery + '(SELECT DISTINCT "region"."id" WHERE "region"."isRestricted" = false AND (';
           const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
-          console.log("searchWord");
-          console.log(searchWord);
+          //console.log("searchWord");
+          //console.log(searchWord);
           for (let columnName of searchColumnRowNames) {
             innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
           }
           innerQuery = innerQuery.slice(0, -4) + `)`;
-          console.log("innerQuery");
-          console.log(innerQuery);
+          //console.log("innerQuery");
+          //console.log(innerQuery);
           if (i != arrayOfSearchValues.length - 1) {
             innerQuery = innerQuery + 'AND  "region"."id" IN ';
           }
@@ -763,8 +764,8 @@ router.post("/get-regions", async (req, res) => {
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
           innerQuery = innerQuery + ')';
         }
-        console.log("innerQueryFinal");
-        console.log(innerQuery);
+        //console.log("innerQueryFinal");
+        //console.log(innerQuery);
         searchParams.push({
           id: {
             [Op.in]: Sequelize.literal(innerQuery),
@@ -807,8 +808,8 @@ router.post("/get-regions", async (req, res) => {
         },
       ],
     });
-    /*    console.log("regions");
-       console.log(regions); */
+    /*    //console.log("regions");
+       //console.log(regions); */
     for (let region of regions) {
       region = addDefaultAddressParams(region, 'region');
       region = formDefaultAddressNames(region, 'region');
@@ -821,8 +822,8 @@ router.post("/get-regions", async (req, res) => {
   }
 });
 
-router.post("/get-districts", async (req, res) => {
-  console.log("districts");
+router.post("/get-districts", requireAuth, async (req, res) => {
+  //console.log("districts");
   const searchValue = req.body.data.filter.searchValue.trim();
   const exactMatch = req.body.data.filter.exactMatch;
   const sortParameters = req.body.data.filter.sortParameters;
@@ -864,8 +865,8 @@ router.post("/get-districts", async (req, res) => {
     orderParams.push(orderByName);
     orderParams.push(orderDirection);
 
-    console.log("orderParams");
-    console.log(orderParams);
+    //console.log("orderParams");
+    //console.log(orderParams);
 
     //search
 
@@ -876,8 +877,8 @@ router.post("/get-districts", async (req, res) => {
     if (searchValue) {
       const searchColumnNames = ['$region.country.name$', '$region.name$', '$region.shortName$', 'name', 'shortName'];
       let arrayOfSearchValues = searchValue.split(" ");
-      console.log('arrayOfSearchValues');
-      console.log(arrayOfSearchValues);
+      //console.log('arrayOfSearchValues');
+      //console.log(arrayOfSearchValues);
       if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
         let opLikeValues = [];
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
@@ -889,12 +890,12 @@ router.post("/get-districts", async (req, res) => {
               [Op.or]: opLikeValues
             }
           });
-          console.log("opLikeValues");
-          console.log(opLikeValues);
+          //console.log("opLikeValues");
+          //console.log(opLikeValues);
         }
         whereParams = { ...whereParams, [Op.or]: searchParams };
-        console.log("whereParams");
-        console.log(whereParams);
+        //console.log("whereParams");
+        //console.log(whereParams);
       } else {
         const searchColumnRowNames = [
           '"region->country"."name"',
@@ -906,14 +907,14 @@ router.post("/get-districts", async (req, res) => {
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
           innerQuery = innerQuery + '(SELECT DISTINCT "district"."id" WHERE "district"."isRestricted" = false AND (';
           const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
-          console.log("searchWord");
-          console.log(searchWord);
+          //console.log("searchWord");
+          //console.log(searchWord);
           for (let columnName of searchColumnRowNames) {
             innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
           }
           innerQuery = innerQuery.slice(0, -4) + `)`;
-          console.log("innerQuery");
-          console.log(innerQuery);
+          //console.log("innerQuery");
+          //console.log(innerQuery);
           if (i != arrayOfSearchValues.length - 1) {
             innerQuery = innerQuery + 'AND  "district"."id" IN ';
           }
@@ -922,8 +923,8 @@ router.post("/get-districts", async (req, res) => {
           innerQuery = innerQuery + ')';
         }
 
-        console.log("innerQueryFinal");
-        console.log(innerQuery);
+        //console.log("innerQueryFinal");
+        //console.log(innerQuery);
 
         searchParams.push({
           id: {
@@ -985,8 +986,8 @@ router.post("/get-districts", async (req, res) => {
       ],
 
     });
-    //console.log("districts");
-    //console.log(districts);
+    ////console.log("districts");
+    ////console.log(districts);
     for (let district of districts) {
       district = addDefaultAddressParams(district, 'district');
       district = formDefaultAddressNames(district, 'district');
@@ -1000,8 +1001,8 @@ router.post("/get-districts", async (req, res) => {
 });
 
 
-router.post("/get-localities", async (req, res) => {
-  console.log("localities");
+router.post("/get-localities", requireAuth, async (req, res) => {
+  //console.log("localities");
   const searchValue = req.body.data.filter.searchValue.trim();
   const exactMatch = req.body.data.filter.exactMatch;
   const sortParameters = req.body.data.filter.sortParameters;
@@ -1050,8 +1051,8 @@ router.post("/get-localities", async (req, res) => {
     orderParams.push(orderByName);
     orderParams.push(orderDirection);
 
-    console.log("orderParams");
-    console.log(orderParams);
+    //console.log("orderParams");
+    //console.log(orderParams);
 
     //search
 
@@ -1062,8 +1063,8 @@ router.post("/get-localities", async (req, res) => {
     if (searchValue) {
       const searchColumnNames = ['$district.region.country.name$', '$district.region.name$', '$district.region.shortName$', '$district.name$', '$district.shortName$', 'name', 'shortName'];
       let arrayOfSearchValues = searchValue.split(" ");
-      console.log('arrayOfSearchValues');
-      console.log(arrayOfSearchValues);
+      //console.log('arrayOfSearchValues');
+      //console.log(arrayOfSearchValues);
       if (!exactMatch || (exactMatch && arrayOfSearchValues.length == 1)) {
         let opLikeValues = [];
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
@@ -1075,12 +1076,12 @@ router.post("/get-localities", async (req, res) => {
               [Op.or]: opLikeValues
             }
           });
-          console.log("opLikeValues");
-          console.log(opLikeValues);
+          //console.log("opLikeValues");
+          //console.log(opLikeValues);
         }
         whereParams = { ...whereParams, [Op.or]: searchParams };
-        console.log("whereParams");
-        console.log(whereParams);
+        //console.log("whereParams");
+        //console.log(whereParams);
       } else {
         const searchColumnRowNames = [
           '"district->region->country"."name"',
@@ -1093,14 +1094,14 @@ router.post("/get-localities", async (req, res) => {
         for (let i = 0; i < arrayOfSearchValues.length; i++) {
           innerQuery = innerQuery + '(SELECT DISTINCT "locality"."id" WHERE "locality"."isRestricted" = false AND (';
           const searchWord = "'%" + arrayOfSearchValues[i] + "%'";
-          console.log("searchWord");
-          console.log(searchWord);
+          //console.log("searchWord");
+          //console.log(searchWord);
           for (let columnName of searchColumnRowNames) {
             innerQuery = innerQuery + ' ' + columnName + ' ILIKE ' + searchWord + ' OR ';
           }
           innerQuery = innerQuery.slice(0, -4) + `)`;
-          console.log("innerQuery");
-          console.log(innerQuery);
+          //console.log("innerQuery");
+          //console.log(innerQuery);
           if (i != arrayOfSearchValues.length - 1) {
             innerQuery = innerQuery + 'AND  "locality"."id" IN ';
           }
@@ -1109,8 +1110,8 @@ router.post("/get-localities", async (req, res) => {
           innerQuery = innerQuery + ')';
         }
 
-        console.log("innerQueryFinal");
-        console.log(innerQuery);
+        //console.log("innerQueryFinal");
+        //console.log(innerQuery);
 
         searchParams.push({
           id: {
@@ -1228,8 +1229,8 @@ router.post("/get-localities", async (req, res) => {
         },
       ],
     });
-    //console.log("localities");
-    //console.log(localities);
+    ////console.log("localities");
+    ////console.log(localities);
     for (let locality of localities) {
       locality = addDefaultAddressParams(locality, 'locality');
       locality = formDefaultAddressNames(locality, 'locality');
@@ -1315,13 +1316,13 @@ const toponymConfigs = {
   },
 };
 
-router.get("/get-:type-by-id/:id", (req, res) => {
+router.get("/get-:type-by-id/:id", requireAuth, async (req, res) => {
   try {
- const { type } = req.params;
- //const type = 'dfsss'
-  const config = toponymConfigs[type];
-  if (!config) throw new CustomError(`Указан неверный тип топонима!`, 404);
-  getToponymById(req.params.id, res, config.model, type, config.attributes, config.include);
+    const { type } = req.params;
+    //const type = 'dfsss'
+    const config = toponymConfigs[type];
+    if (!config) throw new CustomError(`Указан неверный тип топонима!`, 404);
+    await getToponymById(req.params.id, res, config.model, type, config.attributes, config.include);
   } catch (e) {
     const err = errorHandling(e);
     res.status(err.statusCode).send(err.message);
@@ -1333,9 +1334,9 @@ router.get("/get-:type-by-id/:id", (req, res) => {
 
 // API populate address elements
 
-router.get("/download/:filename", async (req, res) => {
-  console.log("filename");
-  console.log(req.params.filename);
+router.get("/download/:filename", requireAuth, async (req, res) => {
+  //console.log("filename");
+  //console.log(req.params.filename);
   /*   const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
     const __dirname = path.dirname(__filename);
     const filename = req.params.filename;
@@ -1344,14 +1345,14 @@ router.get("/download/:filename", async (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__basedir, '../public', filename)
 
-  console.log(filePath);
+  //console.log(filePath);
 
   res.download(filePath, (e) => {
     if (e) {
-      console.log('error file');
-      console.log(e);
+      //console.log('error file');
+      //console.log(e);
       let message = `Произошла ошибка:  ${e.message}`;
-      console.log(message);
+      //console.log(message);
       const statusCode = e.statusCode ? e.statusCode : 500;
       res.status(statusCode).send(message);
       //TODO: не приходит текст ошибки, как здесь
@@ -1362,7 +1363,7 @@ router.get("/download/:filename", async (req, res) => {
 
 
 
-router.post("/populate-country", async (req, res) => {
+router.post("/populate-country", requireAuth, async (req, res) => {
   try {
     const countries = req.body.data;
     for (let country of countries) {
@@ -1375,7 +1376,7 @@ router.post("/populate-country", async (req, res) => {
   }
 });
 
-router.post("/populate-region", async (req, res) => {
+router.post("/populate-region", requireAuth, async (req, res) => {
   try {
     const regions = req.body.data;
     for (let region of regions) {
@@ -1399,11 +1400,11 @@ router.post("/populate-region", async (req, res) => {
   }
 });
 
-router.post("/populate-district", async (req, res) => {
+router.post("/populate-district", requireAuth, async (req, res) => {
   try {
     const districts = req.body.data;
-    /*     console.log("districts");
-        console.log(districts); */
+    /*     //console.log("districts");
+        //console.log(districts); */
     for (let district of districts) {
       //TODO: ПРОТЕСТИРОВАТЬ в разных регионах могут быть одинаковые названия округов/районов, проверять имя в пределах одного региона
 
@@ -1413,8 +1414,8 @@ router.post("/populate-district", async (req, res) => {
       } catch (e) {
         throw new CustomError(e.message, 507);
       }
-      console.log("districtData");
-      console.log(districtData);
+      //console.log("districtData");
+      //console.log(districtData);
 
       const region = await Region.findOne({ where: { name: district.region } });
       if (region === null) {
@@ -1456,11 +1457,11 @@ router.post("/populate-district", async (req, res) => {
   }
 });
 
-router.post("/populate-locality", async (req, res) => {
+router.post("/populate-locality", requireAuth, async (req, res) => {
   try {
     const localities = Array.from(new Set(req.body.data));
-    /*     console.log("localities");
-        console.log(localities); */
+    /*     //console.log("localities");
+        //console.log(localities); */
 
     for (let locality of localities) {
       let localityData;
@@ -1469,8 +1470,8 @@ router.post("/populate-locality", async (req, res) => {
       } catch (e) {
         throw new CustomError(e.message, 507);
       }
-      console.log("localityData");
-      console.log(localityData);
+      //console.log("localityData");
+      //console.log(localityData);
       const district = await District.findOne(
         {
           where: { name: localityData.districtFullName, isRestricted: false, '$region.name$': locality.region },
@@ -1526,7 +1527,7 @@ router.post("/populate-locality", async (req, res) => {
 
 //delete toponym
 
-router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
+router.get("/check-toponym-before-block/:type/:id", requireAuth, async (req, res) => {
   try {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
@@ -1539,8 +1540,8 @@ router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
       attributes: ['id'],
     }
     );
-    console.log("foundToponymId");
-    console.log(foundToponymId);
+    //console.log("foundToponymId");
+    //console.log(foundToponymId);
 
     if (!foundToponymId) {
       if (toponymType == 'country') {
@@ -1586,7 +1587,7 @@ router.get("/check-toponym-before-block/:type/:id", async (req, res) => {
   }
 });
 
-router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
+router.get("/check-toponym-before-delete/:type/:id", requireAuth, async (req, res) => {
   try {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
@@ -1598,8 +1599,8 @@ router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
       attributes: ['id'],
     }
     );
-    console.log("foundToponymId");
-    console.log(foundToponymId);
+    //console.log("foundToponymId");
+    //console.log(foundToponymId);
 
     if (!foundToponymId) {
       if (toponymType == 'country') {
@@ -1645,7 +1646,7 @@ router.get("/check-toponym-before-delete/:type/:id", async (req, res) => {
   }
 });
 
-router.delete("/delete-toponym/:type/:id", async (req, res) => {
+router.delete("/delete-toponym/:type/:id", requireAuth, async (req, res) => {
   try {
     //throw new Error(`Ввод прекращен.`);
     const toponymId = req.params.id;
@@ -1662,7 +1663,7 @@ router.delete("/delete-toponym/:type/:id", async (req, res) => {
   }
 });
 
-router.patch("/block-toponym/:type/:id", async (req, res) => {
+router.patch("/block-toponym/:type/:id", requireAuth, async (req, res) => {
   try {
     const toponymId = req.params.id;
     const toponymType = req.params.type;
@@ -1684,8 +1685,8 @@ router.patch("/block-toponym/:type/:id", async (req, res) => {
 });
 
 function errorHandling(e) {
-  console.log("error");
-  console.log(e);
+  //console.log("error");
+  //console.log(e);
   let message = `Произошла ошибка:  ${e.message}`;
   if (e.parent?.detail) {
     message = message + ': ' + e.parent.detail;

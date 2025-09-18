@@ -3,6 +3,8 @@ import Sequelize from "sequelize";
 import { validateRequest } from "../middlewares/validate-request.js";
 import { auditQuerySchema } from "../../shared/dist/audit.schema.js";
 import { AuditLog } from "../models/index.js";
+import requireAuth from "../middlewares/check-auth.js";
+import { requireAny, requireOperation } from "../middlewares/require-permission.js";
 
 // TODO: add authentication/authorization middlewares
 // import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
@@ -11,9 +13,9 @@ const Op = Sequelize.Op;
 const router = Router();
 router.get(
   '/',
+  requireAuth,
+  requireOperation('VIEW_FULL_ROLES_LIST'),
   validateRequest(auditQuerySchema, 'query'),
-  // authenticateUser,
-  // authorizeAdmin,
   async (req, res, next) => {
     try {
       const { model, action, entityId, userId, correlationId, from, to } = req.query;
