@@ -40,21 +40,14 @@ export class HasOpDirective {
     });
   }
 
-  /** Один код: *hasOp="'EDIT_USER'" */
+  /** Один код: *hasOp="{codes:['ADD_NEW_ROLE'], mode:'all'}" */
   @Input('hasOp') set hasOpInput(params: Params) {
     this.mode = params.mode;
     this.codes = params.codes ?? [];
     this.render();
   }
 
-  /** Все коды: *hasOpAll="['VIEW_USER','EDIT_USER']" */
-/*   @Input() set hasOpAll(codes: OperationCode[]) {
-    this.codes = codes ?? [];
-    this.mode = 'all';
-    this.render();
-  } */
-
-  /** Альтернативный шаблон: *hasOp="'EDIT_USER'; else noAccess" */
+  /** Альтернативный шаблон: *hasOp="{codes:['EDIT_ROLE'], mode:'all'}; else noInputName" */
   @Input() set hasOpElse(tpl: TemplateRef<any> | null) {
     this.elseTpl = tpl;
     this.render();
@@ -82,20 +75,3 @@ export class HasOpDirective {
     }
   }
 }
-/* Примеры использования в шаблоне:
-
-<!-- Показать кнопку только если есть EDIT_USER; прокинуть disabled из прав -->
-<button *hasOp="'EDIT_USER'; let disabled=disabled" [disabled]="disabled">
-  Edit user
-</button>
-
-<!-- Требуются обе операции -->
-<div *hasOpAll="['VIEW_USER','EDIT_USER']; else noPerms">
-  <!-- защищённый блок -->
-</div>
-<ng-template #noPerms><p>Недостаточно прав</p></ng-template>
-
-
-Директива standalone — просто добавь её в imports компонента:
-
-@Component({ standalone: true, imports: [CommonModule, HasOpDirective], ... }) */

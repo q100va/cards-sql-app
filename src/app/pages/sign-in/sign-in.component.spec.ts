@@ -89,7 +89,7 @@ describe('SignInComponent', () => {
 
     expect(component.isLoad).toBeFalse();
     expect(i18n.instant).toHaveBeenCalledWith('ERRORS.INVALID_AUTHORIZATION', {});
-    expect(component.errorMessage).toBe('t:ERRORS.INVALID_AUTHORIZATION');
+    expect(component.errorMessage).toBe('t:ERRORS.INVALID_AUTHORIZATION:{}');
     expect(msgWrapper.handle).toHaveBeenCalledWith(err, { source: 'SignIn', stage: 'logIn' });
     expect(router.navigate).not.toHaveBeenCalled();
   });
@@ -102,7 +102,7 @@ describe('SignInComponent', () => {
     component.onSubmit();
 
     expect(i18n.instant).toHaveBeenCalledWith('ERRORS.ACCOUNT_LOCKED', {});
-    expect(component.errorMessage).toBe('t:ERRORS.ACCOUNT_LOCKED');
+    expect(component.errorMessage).toBe('t:ERRORS.ACCOUNT_LOCKED:{}');
   });
 
   it('maps 429 to ERRORS.TOO_MANY_ATTEMPTS with retryAfterSec from body first', () => {
@@ -134,6 +134,6 @@ describe('SignInComponent', () => {
     component.onSubmit();
 
     expect(i18n.instant).toHaveBeenCalledWith('CUSTOM.ERROR', {});
-    expect(component.errorMessage).toBe('t:CUSTOM.ERROR');
+    expect(component.errorMessage).toBe('t:CUSTOM.ERROR:{}');
   });
 });

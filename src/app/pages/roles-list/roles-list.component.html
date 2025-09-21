@@ -120,8 +120,12 @@
             [class.bottom-bordered]="operation.operation.startsWith('VIEW_FULL')">
             <mat-checkbox [attr.data-cy]="'access-' + operation.object + '-role-' + roleAccess.roleId"
               [disabled]="roleAccess.disabled" [checked]="roleAccess.access"
-              (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)">
+              (change)="onAccessChangeCheck($event.checked, roleAccess.roleId, operation)"
+              *hasOp="{codes:['EDIT_ROLE'], mode:'all'}; else disabledCheck">
             </mat-checkbox>
+            <ng-template #disabledCheck>
+              <mat-checkbox disabled=true [checked]="roleAccess.access"></mat-checkbox>
+            </ng-template>
           </td>
           }
         </tr>

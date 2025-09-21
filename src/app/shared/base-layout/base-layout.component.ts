@@ -14,13 +14,11 @@ import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 
 import { Menu } from './menu-item';
-import { AuthService, OperationCode } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import { IdleService } from '../../services/idle.service';
-import { interval, Subscription, takeWhile } from 'rxjs';
-import { ConfirmationService } from 'primeng/api';
 import { AuthUser } from '@shared/schemas/auth.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
 
@@ -47,7 +45,7 @@ import { HasOpDirective } from '../../directives/has-op.directive';
     // i18n
     TranslateModule,
 
-    HasOpDirective
+    HasOpDirective,
   ],
   templateUrl: './base-layout.component.html',
   styleUrl: './base-layout.component.css',
@@ -83,8 +81,7 @@ export class BaseLayoutComponent {
     },
     {
       params: {
-       // codes: ['ALL_OPS_ROLES'],
-       codes: [],
+        codes: ['ALL_OPS_ROLES'],
         mode: 'all',
       },
       dataCy: 'nav-roles',
@@ -183,24 +180,4 @@ export class BaseLayoutComponent {
   setLanguage(code: 'en' | 'ru') {
     this.lang.set(code);
   }
-  /*   private computeCan(
-    mode: 'any' | 'all' | '',
-    codes: OperationCode[]
-  ): boolean {
-    const has = (op: OperationCode) => this.auth.has(op);
-    return mode === 'all' ? codes.every(has) : codes.some(has);
-  } */
-
-  /*   private populateMenuItems(menu: Menu): Menu {
-    let menuItems: Menu = [];
-    for (let item of menu) {
-      if (item.codes.length == 0 || this.computeCan(item.mode, item.codes)) {
-        if (item.subMenuItems) {
-          item.subMenuItems = [...this.populateMenuItems(item.subMenuItems)];
-        }
-        menuItems.push(item);
-      }
-    }
-    return menuItems;
-  } */
 }

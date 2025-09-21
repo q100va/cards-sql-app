@@ -8,6 +8,8 @@ import { CreateRoleDialogComponent } from './create-role-dialog.component';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { RoleService } from '../../../services/role.service';
 import { MessageWrapperService } from '../../../services/message.service';
+import { AuthServiceHarness } from '../../../utils/auth-harness';
+import { AuthService } from '../../../services/auth.service';
 import { Confirmation, ConfirmationService } from 'primeng/api';
 import { of, Subject, throwError } from 'rxjs';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -15,6 +17,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+
 
 class EmptyLoader implements TranslateLoader {
   getTranslation(lang: string) {
@@ -24,6 +27,7 @@ class EmptyLoader implements TranslateLoader {
 
 describe('CreateRoleDialogComponent', () => {
   let component: CreateRoleDialogComponent;
+  let auth: AuthServiceHarness;
   let fixture: ComponentFixture<CreateRoleDialogComponent>;
   let roleServiceSpy: jasmine.SpyObj<RoleService>;
   let messageWrapperSpy: jasmine.SpyObj<MessageWrapperService>;
@@ -45,6 +49,11 @@ describe('CreateRoleDialogComponent', () => {
       'confirm',
     ]);
     dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
+    auth = new AuthServiceHarness();
+    auth.setUser({ id: 1, userName: 'test' });
+    auth.grantAllCommon();
+    auth.setAuthReady(true);
+    auth.setPermsReady(true);
 
     // Configure the testing module
     await TestBed.configureTestingModule({
@@ -62,6 +71,7 @@ describe('CreateRoleDialogComponent', () => {
         { provide: MessageWrapperService, useValue: messageWrapperSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
         { provide: MatDialogRef, useValue: dialogRefSpy },
+        { provide: AuthService, useValue: auth },
         {
           provide: MAT_DIALOG_DATA,
           useValue: { userId: 1, userName: 'TestUser' },

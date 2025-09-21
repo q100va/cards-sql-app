@@ -15,7 +15,6 @@
 
 
 <!--  Confirmation dialog for stay or logout-->
-
 <p-confirmdialog #idleDlg key="idleConfirm" [appendTo]="'body'" [blockScroll]="true" [closable]="false"
   [closeOnEscape]="false" [dismissableMask]="true" [style]="{ width: '28rem' }"
   [breakpoints]="{ '960px': '90vw', '640px': '95vw' }" styleClass="idle-dialog">
@@ -47,8 +46,6 @@
 </p-confirmdialog>
 
 
-
-
 <!-- navigation -->
 <mat-toolbar class="toolbar">
   <mat-toolbar-row class="toolbar-row">
@@ -61,13 +58,9 @@
       {{'TOOLBAR.MY_ORDERS' | translate}}
     </button>
 
-<!-- {{auth.permsReady$ | async}}
-
-    @if(auth.permsReady$ | async){ -->
     <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu">
       <mat-icon>flutter_dash</mat-icon>
     </button>
-
 
     <mat-menu #profileMenu="matMenu">
       <p style="padding: 8px" class="drop-menu-item">{{'TOOLBAR.SIGNED_IN_AS' | translate :{ name: name() } }}</p>
@@ -86,7 +79,7 @@
         </button>
         <mat-menu #submenu="matMenu" xPosition="before">
           @for(subItem of item.subMenuItems; track $index){
-          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy" *hasOp="item.params">
+          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy" *hasOp="subItem.params">
             <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
             <span>{{subItem.text | translate}}</span>
           </button>
@@ -100,11 +93,7 @@
         <mat-icon>logout</mat-icon>
         <span>{{'TOOLBAR.EXIT' | translate}}</span>
       </button>
-    </mat-menu><!-- }
-    @else{
-      <p height="2rem" width="80%"></p>
-    } -->
-
+    </mat-menu>
 
     <!-- Button in the toolbar -->
     <button mat-icon-button [matMenuTriggerFor]="langMenu">
@@ -130,7 +119,6 @@
 </mat-toolbar>
 
 <!-- main content -->
-
 <main class="main-content">
   <div id="content-wrap">
     <router-outlet></router-outlet>
@@ -138,7 +126,6 @@
 </main>
 
 <!-- footer -->
-
 <mat-toolbar class="footer">
   <p>
     &copy; {{ year }} - {{'APP.AUTHOR' | translate}} -
