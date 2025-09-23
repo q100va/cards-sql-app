@@ -1,6 +1,6 @@
-// server/middlewares/require-operation.js
+// server/middlewares/require-permission.js
 import { Op } from 'sequelize';
-import RolePermission from '../models/role-permission.js';
+import { RolePermission } from '../models/index.js';
 
 function unauth() {
   return Object.assign(new Error('Unauthorized'), { status: 401, code: 'ERRORS.UNAUTHORIZED' });
@@ -36,6 +36,7 @@ export function requireAll(...opCodes) {
   return async (req, _res, next) => {
     try {
       const roleId = req.user?.roleId;
+      console.log('roleId', roleId);
       if (!roleId) return next(unauth());
 
       const rows = await RolePermission.findAll({
@@ -43,6 +44,7 @@ export function requireAll(...opCodes) {
         attributes: ['name'],
         raw: true,
       });
+      console.log('rows', rows);
       const have = new Set(rows.map(r => r.name));
       const missing = codes.filter(c => !have.has(c));
 

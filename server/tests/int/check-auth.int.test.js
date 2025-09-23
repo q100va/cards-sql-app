@@ -11,8 +11,8 @@ const __dirname  = path.dirname(__filename);
 
 const mwPath = path.resolve(__dirname, '../../middlewares/check-auth.js');
 
-function makeToken({ id = 1, userName = 'user', role = 'USER', exp = null } = {}, secret = 'acc') {
-  const payload = { sub: String(id), uname: userName, role };
+function makeToken({ id = 1, userName = 'user', role = 'USER', exp = null, roleId = 999 } = {}, secret = 'acc') {
+  const payload = { sub: String(id), uname: userName, role, roleId };
   const opts = { issuer: 'cards-sql-app', audience: 'web', expiresIn: '1h' };
   if (typeof exp === 'number') { delete opts.expiresIn; payload.exp = exp; }
   return jwt.sign(payload, secret, opts);
@@ -30,7 +30,7 @@ describe('integration: requireAuth / optionalAuth', () => {
       app.get('/protected', requireAuth, (req, res) => res.json({ ok: true, user: req.user }));
       app.get('/optional', optionalAuth, (req, res) => res.json({ ok: true, user: req.user ?? null }));
 
-      const good = makeToken({ id: 77, userName: 'Zoe', role: 'ADMIN' }, 'acc');
+      const good = makeToken({ id: 77, userName: 'Zoe', role: 'ADMIN', roleId: 999 }, 'acc');
       await request(app).get('/protected').set('Authorization', `Bearer ${good}`).expect(200);
 
       await request(app).get('/protected').expect(401);
@@ -42,7 +42,7 @@ describe('integration: requireAuth / optionalAuth', () => {
       expect(r1.body.user).toBeNull();
 
       const r2 = await request(app).get('/optional').set('Authorization', `Bearer ${good}`).expect(200);
-      expect(r2.body.user).toMatchObject({ id: 77, userName: 'Zoe', role: 'ADMIN' });
+      expect(r2.body.user).toMatchObject({ id: 77, userName: 'Zoe', role: 'ADMIN', roleId: 999 });
     });
   });
 });

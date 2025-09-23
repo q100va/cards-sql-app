@@ -2,8 +2,7 @@ import request from "supertest";
 import { jest } from "@jest/globals";
 
 // Sequelize + operators
-import Sequelize from "sequelize";
-const { Op } = Sequelize;
+import { Op } from 'sequelize';
 
 // Use a fixed transaction object across tests
 const fakeTx = { id: "test-transaction" };
@@ -13,20 +12,34 @@ jest.unstable_mockModule("../../controllers/with-transaction.js", () => ({
   withTransaction: async (fn) => fn(fakeTx),
 }));
 
-jest.unstable_mockModule("../../middlewares/check-auth.js", () => ({
-  default: (req, _res, next) => {
+/*jest.unstable_mockModule("../../middlewares/check-auth.js", () => ({
+   default: (req, _res, next) => {
     // если хендлеры смотрят на req.user — подкинем роль
     req.user = { id: 1, userName: "unit", role: "Admin" };
     next();
   },
   optionalAuth: (_req, _res, next) => next(),
+})); */
+
+// ✅ мок аутентификации (иначе 401)
+jest.unstable_mockModule('../../middlewares/check-auth.js', () => ({
+  requireAuth: (_req, _res, next) => next(),
+  optionalAuth: (_req, _res, next) => next(),
+  default: (_req, _res, next) => next(),
+}));
+
+// (опц.) ✅ если роут защищён правами — пропускаем
+jest.unstable_mockModule('../../middlewares/require-permission.js', () => ({
+  requireAny: () => (_req, _res, next) => next(),
+  requireAll: () => (_req, _res, next) => next(),
+  requireOperation: () => (_req, _res, next) => next(),
 }));
 
 
 
 // Load router and models after mocks
 const { default: router } = await import("../../routes/roles-api.js");
-import RolePermission from "../../models/role-permission.js";
+import {RolePermission} from "../../models/index.js";
 import Role from "../../models/role.js";
 import User from "../../models/user.js";
 import { OPERATIONS } from "../../shared/operations.js";

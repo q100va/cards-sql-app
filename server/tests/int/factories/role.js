@@ -1,18 +1,23 @@
 // server/tests/factories/role.js
 
-import RolePermission from '../../../models/role-permission.js';
-import Role from '../../../models/role.js';
+import {RolePermission, Role} from '../../../models/index.js';
 import { OPERATIONS } from '../../../shared/operations.js';
 
 /** Создать роль (с разумными дефолтами) */
 export async function createRole(attrs = {}) {
-  const defaults = {
+  try{
+      const defaults = {
     name: `role_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     description: 'Test role',
   };
   const data = { ...defaults, ...attrs };
   const role = await Role.create(data);
   return role.get({ plain: true });
+  }
+  catch(err){
+    console.log(err);
+  }
+
 }
 
 /** Найти роль по id (raw) — то, чего не хватает тесту */

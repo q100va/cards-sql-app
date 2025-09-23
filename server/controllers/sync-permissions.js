@@ -1,7 +1,7 @@
 // ESM
 import sequelize from '../database.js';
 import Role from '../models/role.js';
-import RoleOperation from '../models/role-permission.js';
+import {RolePermission} from '../models/index.js';
 import { OPERATIONS } from '../shared/operations.js';
 import { applyAllOpsRule } from './apply-all-ops-rule.js';
 
@@ -13,13 +13,13 @@ export async function syncRolePermissionsFor(roleId) {
   // advisory lock, чтобы не гонялись несколько инстансов
   await sequelize.query('SELECT pg_advisory_lock(42042)');
   try {
-    const current = await RoleOperation.findAll({ where: { roleId: roleId }, raw: true });
+    const current = await RolePermission.findAll({ where: { roleId: roleId }, raw: true });
     const currentMap = new Map(current.map(r => [r.name, r]));
 
     // добавить недостающие из OPERATIONS
     for (const op of OPERATIONS) {
       if (!currentMap.has(op.operation)) {
-        await RoleOperation.create({
+        await RolePermission.create({
           roleId: roleId,
           name: op.operation,
           access: op.accessToAllOps ? true : false,
@@ -32,11 +32,11 @@ export async function syncRolePermissionsFor(roleId) {
     for (const [code] of currentMap) {
       if (!ALL_CODES.has(code)) {
  /*        // можно мягко выключить...
-        await RoleOperation.update(
+        await RolePermission.update(
           { access: false, disabled: true },
           { where: { roleId: roleId, name: code } }
         ); */
-        await RoleOperation.destroy({ where: { roleId: roleId, name: code } });
+        await RolePermission.destroy({ where: { roleId: roleId, name: code } });
       }
     }
 

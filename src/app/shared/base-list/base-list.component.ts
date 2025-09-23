@@ -39,6 +39,8 @@ import { AddressFilter } from '../../interfaces/address-filter';
 import { GeneralFilter } from '../../interfaces/filter';
 import { typedKeys } from '../../interfaces/types';
 
+import { HasOpDirective } from '../../directives/has-op.directive';
+
 @Component({
   selector: 'app-base-list',
   imports: [
@@ -62,6 +64,7 @@ import { typedKeys } from '../../interfaces/types';
     MatCheckboxModule,
     BlurOnClickDirective,
     //  UserColumnsComponent
+    HasOpDirective
   ],
   providers: [],
   templateUrl: './base-list.component.html',

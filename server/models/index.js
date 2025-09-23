@@ -8,13 +8,14 @@ import Country from './country.js';
 import UserAddress from './user-address.js';
 import UserContact from './user-contact.js';
 import User from './user.js';
-import RolePermission from './role-permission.js';
+//import RolePermission from './role-permission.js';
 import SearchUser from './search-user.js';
 import OutdatedName from './outdated-name.js';
 import RefreshToken from './refresh-token.js';
+import RolePermissionModel from './role-permission.js';
 
 const AuditLog = AuditLogModel(sequelize);
-
+const RolePermission = RolePermissionModel(sequelize);
 
 User.hasMany(UserContact, { as: 'contacts' }, {
   onDelete: 'CASCADE',

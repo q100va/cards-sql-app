@@ -219,9 +219,9 @@ async function loadApp({
 }
 
 // ---------- утилиты ----------
-function makeAccess(user = { id: 1, userName: 'u', role: { name: 'USER' } }) {
+function makeAccess(user = { id: 1, userName: 'u', role: { name: 'USER' }, roleId: 999 }) {
   return jwt.sign(
-    { sub: String(user.id), uname: user.userName, role: user.role?.name ?? 'USER' },
+    { sub: String(user.id), uname: user.userName, role: user.role?.name ?? 'USER', roleId: user.roleId ?? 999 },
     ACCESS_SECRET,
     { issuer: 'cards-sql-app', audience: 'web', expiresIn: 3600 }
   );
@@ -406,19 +406,19 @@ describe('routes: /api/session', () => {
   test('GET /me — success', async () => {
     const models = makeModelsMock();
     models.User.findByPk.mockResolvedValue({
-      id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', role: { name: 'ADMIN' },
+      id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', role: { name: 'ADMIN' }, roleId: 1
     });
     const { app } = await loadApp({ models });
 
     // Проставим реальный Bearer access, а requireAccessMock пропустит
-    const access = makeAccess({ id: 5, userName: 'ME', role: { name: 'ADMIN' } });
+    const access = makeAccess({ id: 5, userName: 'ME', role: { name: 'ADMIN' }, roleId: 1 });
     const res = await request(app)
       .get('/api/session/me')
       .set('Authorization', `Bearer ${access}`)
       .expect(200);
 
     expect(res.body.data).toEqual({
-      id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', roleName: 'ADMIN',
+      id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', roleName: 'ADMIN', roleId: 1
     });
   });
 

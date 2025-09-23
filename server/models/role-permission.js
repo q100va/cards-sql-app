@@ -1,7 +1,9 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 import sequelize from '../database.js';
 
-const RolePermission = sequelize.define('role-permission', {
+export default function RolePermissionModel(sequelize) {
+  class RolePermission extends Model { }
+RolePermission.init({
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -25,7 +27,21 @@ const RolePermission = sequelize.define('role-permission', {
   {
     type: DataTypes.BOOLEAN,
     allowNull: false,
-  },
-});
+  }
+},
+{
+    sequelize,
+    modelName: 'role-permission',
+    tableName: 'role-permissions',
+    timestamps: true, // createdAt
+    updatedAt: true,
+      indexes: [
+    { name: 'role_permissions_role_id_idx', fields: ['roleId'] },
+    { name: 'role_permissions_role_id_name_uk', unique: true, fields: ['roleId', 'name'] },
+  ],
+  });
 
-export default RolePermission;
+  return RolePermission;
+}
+
+

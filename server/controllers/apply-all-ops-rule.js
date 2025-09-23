@@ -1,6 +1,6 @@
-// server/permissions/apply-all-ops-rule.ts
+// server/controllers/apply-all-ops-rule.ts
 import sequelize from '../database.js';
-import RoleOperation from '../models/role-permission.js';
+import {RolePermission} from '../models/index.js';
 import { OPERATIONS } from '../shared/operations.js';
 
 function groupOpsByObject() {
@@ -28,7 +28,7 @@ async function normalizeObjectOps(roleId, codes) {
   const { all, full, limited, others, allCodes } = codes;
 
   // Подтягиваем все записи по объекту
-  const recs = await RoleOperation.findAll({
+  const recs = await RolePermission.findAll({
     where: { roleId: roleId, name: allCodes },
     raw: true,
   });
@@ -59,29 +59,41 @@ async function normalizeObjectOps(roleId, codes) {
 
   // === 1) Если ALL_OPS включен сейчас → силой включаем всё,
   // FULL.disabled=false, LIMITED.disabled=true
-  if (allRec?.access === true) {
-    for (const code of allCodes) set(code, { access: true });
-    if (full) set(full, { disabled: false });
-    if (limited) set(limited, { disabled: true });
-  } else {
-    // === 2) ALL_OPS выключен → применяем зависимости FULL/LIMITED
-    if (limRec) {
-      if (limRec.access === false) {
-        if (full) set(full, { access: false, disabled: true });
-      } else if (limRec.access === true) {
-        if (full) set(full, { disabled: false });
+  /*   if (allRec?.access === true) {
+      for (const code of allCodes) set(code, { access: true });
+      if (full) set(full, { disabled: false });
+      if (limited) set(limited, { disabled: true });
+
+    } else { */
+  // применяем зависимости FULL/LIMITED
+  if (limRec) {
+    if (limRec.access === false) {
+      set(limited, { disabled: false });
+      if (full) set(full, { access: false, disabled: true });
+    } else {
+      if (full) {
+        if (fullRec.access === true) {
+          set(limited, { disabled: true });
+          set(full, { disabled: false });
+        } else {
+          set(limited, { disabled: false });
+          set(full, { disabled: false });
+        }
       }
     }
-    if (fullRec) {
-      if (fullRec.access === true) {
-        if (limited) set(limited, { access: true, disabled: true });
-        set(full, { disabled: false });
-      } else {
-        if (limited) set(limited, { disabled: false });
-      }
-    }
-    // Другие операции (не FULL/LIMITED) остаются как есть — правил для них нет.
+   // console.log('LIMITED', patches);
   }
+/*   if (fullRec) {
+    if (fullRec.access === true) {
+      if (limited) set(limited, { disabled: true });
+      set(full, { disabled: false });
+    } else {
+      if (limited) set(limited, { disabled: false });
+    }
+    console.log('Full', patches);
+  } */
+  // Другие операции (не FULL/LIMITED) остаются как есть — правил для них нет.
+  // }
 
   // === 3) Пересчитать факт "все access=true?"
   const effectiveAll = allCodes
@@ -98,14 +110,18 @@ async function normalizeObjectOps(roleId, codes) {
       // и гарантируем access=true у всех (на случай рассинхронизации)
       for (const code of allCodes) if (code !== all) set(code, { access: true });
     }
+    /* console.log('effectiveAll', effectiveAll);
+    console.log('allRec?.access', allRec?.access); */
     if (!effectiveAll && allRec?.access !== false) {
+
+      //console.log('LIMITED', patches);
       set(all, { access: false });
     }
   }
 
   // === 5) Применяем изменения минимальными апдейтами
   for (const p of patches) {
-    await RoleOperation.update(p.data, {
+    await RolePermission.update(p.data, {
       where: { roleId: roleId, name: p.code },
     });
   }

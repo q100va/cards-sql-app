@@ -39,7 +39,7 @@ function makeTokensMock() {
   const clearRefreshCookie = jest.fn((res) => res.clearCookie('rt', { path: '/api/session' }));
   const mintTokenPair = jest.fn(async (user) => {
     const accessToken = jwt.sign(
-      { sub: String(user.id), uname: user.userName, role: user.role?.name ?? 'USER' },
+      { sub: String(user.id), uname: user.userName, role: user.role?.name ?? 'USER', roleId: user.roleId ?? 999 },
       ACCESS_SECRET, { issuer: 'cards-sql-app', audience: 'web', expiresIn: ACCESS_TTL_SEC }
     );
     const refreshToken = jwt.sign(
@@ -228,9 +228,9 @@ async function loadApp({
 }
 
 // ——— helpers токенов для теста ———
-function makeAccess(user = { id: 1, userName: 'u', role: { name: 'USER' } }) {
+function makeAccess(user = { id: 1, userName: 'u', role: { name: 'USER' }, roleId: 999  }) {
   return jwt.sign(
-    { sub: String(user.id), uname: user.userName, role: user.role?.name ?? 'USER' },
+    { sub: String(user.id), uname: user.userName, role: user.role?.name ?? 'USER', roleId: user.roleId ?? 999  },
     ACCESS_SECRET, { issuer: 'cards-sql-app', audience: 'web', expiresIn: 3600 }
   );
 }
@@ -250,6 +250,7 @@ describe('integration: /api/session', () => {
     const userRow = makeMockUser({
       id: 10, userName: 'Alice', firstName: 'A', lastName: 'L',
       role: { name: 'ADMIN' },
+      roleId: 1,
       failedLoginCount: 2,
     });
     models.User.findOne.mockResolvedValue(userRow);
@@ -262,6 +263,7 @@ describe('integration: /api/session', () => {
       userName: 'Alice',
       firstName: 'A',
       lastName: 'L',
+      roleId: 1
     });
     expect(typeof res.body.data.token).toBe('string');
     expect(res.body.data.expiresIn).toBe(ACCESS_TTL_SEC);
@@ -321,13 +323,13 @@ describe('integration: /api/session', () => {
 
   test('GET /me → 200', async () => {
     const models = makeModelsMock();
-    models.User.findByPk.mockResolvedValue({ id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', role: { name: 'ADMIN' } });
+    models.User.findByPk.mockResolvedValue({ id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', role: { name: 'ADMIN' }, roleId: 1  });
     const { app } = await loadApp({ models });
 
-    const access = makeAccess({ id: 5, userName: 'ME', role: { name: 'ADMIN' } });
+    const access = makeAccess({ id: 5, userName: 'ME', role: { name: 'ADMIN' }, roleId: 1  });
     const res = await request(app).get('/api/session/me').set('Authorization', `Bearer ${access}`).expect(200);
 
-    expect(res.body.data).toEqual({ id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', roleName: 'ADMIN' });
+    expect(res.body.data).toEqual({ id: 5, userName: 'ME', firstName: 'First', lastName: 'Last', roleName: 'ADMIN', roleId: 1 });
   });
 
   test('GET /me → 401, если пользователя нет', async () => {

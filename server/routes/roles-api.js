@@ -2,7 +2,7 @@ import { Router } from "express";
 import Sequelize from "sequelize";
 import Role from "../models/role.js";
 import User from "../models/user.js";
-import RolePermission from "../models/role-permission.js";
+import {RolePermission} from "../models/index.js";
 import { OPERATIONS } from "../shared/operations.js";
 import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";

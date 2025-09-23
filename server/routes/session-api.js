@@ -131,7 +131,7 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
           firstName: user.firstName,
           lastName: user.lastName,
           roleName: user.role?.name ?? null,
-          roleId: user.role?.id ?? null,
+          roleId: user.roleId ?? null,
         },
         token: accessToken,
         expiresIn: ACCESS_TTL_SEC,
@@ -247,7 +247,7 @@ router.post('/sign-out', async (req, res, next) => {
 router.get('/me', requireAccess, async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ['id', 'userName', 'firstName', 'lastName'],
+      attributes: ['id', 'userName', 'firstName', 'lastName', 'roleId'],
       include: [{ model: Role, attributes: ['id', 'name'] }],
     });
     if (!user) return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
@@ -259,7 +259,7 @@ router.get('/me', requireAccess, async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         roleName: user.role?.name ?? null,
-        roleId: user.role?.id ?? null,
+        roleId: user.roleId ?? null,
       }
     });
   } catch (err) {

@@ -77,6 +77,7 @@ describe('Sign In page (stub/live aware)', () => {
             firstName: 'Alice',
             lastName: 'Smith',
             roleName: 'ADMIN',
+            roleId: 999
           },
           token: 'tok_1234567890',
           expiresIn: 900,
@@ -157,6 +158,7 @@ describe('Sign In page (stub/live aware)', () => {
               firstName: 'F',
               lastName: 'L',
               roleName: 'USER',
+              roleId: 999
             },
             token: 'tok_1234567890',
             expiresIn: 900,

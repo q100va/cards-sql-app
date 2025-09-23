@@ -3,7 +3,7 @@ import express from 'express';
 import request from 'supertest';
 import { jest } from '@jest/globals';
 import { requireOperation } from '../../middlewares/require-permission.js';
-import RolePermission from '../../models/role-permission.js';
+import {RolePermission} from '../../models/index.js';
 
 const makeApp = () => {
   const app = express();

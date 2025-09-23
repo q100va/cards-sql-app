@@ -26,6 +26,7 @@ function makeToken(opts = {}, secret = 'access-secret') {
     userName = 'alice',
     // роль без дефолта, чтобы можно было протестить отсутствие клейма
     role,
+    roleId,
     exp = undefined, // unix seconds; если задан, используем вместо expiresIn
     issuer = 'cards-sql-app',
     audience = 'web',
@@ -33,7 +34,7 @@ function makeToken(opts = {}, secret = 'access-secret') {
 
   const payload = { sub: String(userId), uname: userName };
   if (role !== undefined) payload.role = role;
-
+  if (roleId !== undefined) payload.roleId = roleId;
   const signOpts = { issuer, audience, expiresIn: '1h' };
   if (typeof exp === 'number') {
     delete signOpts.expiresIn;
@@ -97,7 +98,7 @@ describe('middlewares: requireAuth & optionalAuth', () => {
     const secret = 'acc';
     const { requireAuth } = await loadMiddlewares(secret);
 
-    const token = makeToken({ userId: 101, userName: 'Bob', role: 'ADMIN' }, secret);
+    const token = makeToken({ userId: 101, userName: 'Bob', role: 'ADMIN', roleId: 1 }, secret);
     const req = { method: 'GET', headers: { authorization: `Bearer ${token}` } };
     const res = createRes();
     const next = jest.fn();
@@ -106,23 +107,25 @@ describe('middlewares: requireAuth & optionalAuth', () => {
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.status).not.toHaveBeenCalled();
-    expect(req.user).toEqual({ id: 101, userName: 'Bob', role: 'ADMIN' });
+    expect(req.user).toEqual({ id: 101, userName: 'Bob', role: 'ADMIN', roleId: 1 });
   });
 
-  test('requireAuth: sets role null when role claim is absent', async () => {
+  test('requireAuth: 401 when role is absent', async () => {
     const secret = 'acc';
     const { requireAuth } = await loadMiddlewares(secret);
 
-    // роль не задаём → клейма role нет
+    // роль не задана
     const token = makeToken({ userId: 7, userName: 'no-role' }, secret);
     const req = { method: 'GET', headers: { authorization: `Bearer ${token}` } };
     const res = createRes();
     const next = jest.fn();
 
     await requireAuth(req, res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
 
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(req.user).toEqual({ id: 7, userName: 'no-role', role: null });
+    //expect(next).toHaveBeenCalledTimes(1);
+    //expect(req.user).toEqual({ id: 7, userName: 'no-role', role: null });
   });
 
   test('requireAuth: 401 on wrong signature / issuer / audience / expired', async () => {
@@ -179,7 +182,7 @@ describe('middlewares: requireAuth & optionalAuth', () => {
     const secret = 'acc';
     const { optionalAuth } = await loadMiddlewares(secret);
 
-    const token = makeToken({ userId: 501, userName: 'Zoe', role: 'USER' }, secret);
+    const token = makeToken({ userId: 501, userName: 'Zoe', role: 'USER', roleId: 2 }, secret);
     const req = { method: 'GET', headers: { authorization: `Bearer ${token}` } };
     const res = createRes();
     const next = jest.fn();
@@ -187,7 +190,7 @@ describe('middlewares: requireAuth & optionalAuth', () => {
     await optionalAuth(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(req.user).toEqual({ id: 501, userName: 'Zoe', role: 'USER' });
+    expect(req.user).toEqual({ id: 501, userName: 'Zoe', role: 'USER', roleId: 2 });
   });
 
   test('optionalAuth: no token or bad token -> no req.user, but next() called', async () => {

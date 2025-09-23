@@ -8,7 +8,7 @@ process.env.DOTENV_CONFIG_PATH =
 // БД/модели грузим после env
 const { default: sequelize } = await import('../database.js');
 const models = await import('../models/index.js');
-const { Role, User, Operation } = models;
+const { Role, User, RolePermission } = models;
 
 // !!! Подставь правильный путь к константе OPERATIONS
 // Ожидается формат: [{ operation: 'partners.read', flag: 'FULL'|'PART'|... }, ...]
@@ -43,21 +43,21 @@ async function seedRolesAndOperations() {
     const baseRoles = [
       { name: 'Admin', description: 'Administrator' },
       { name: 'Coordinator', description: 'Coordinator' },
-      { name: 'User',        description: 'Volunteer'  },
+      { name: 'User', description: 'Volunteer' },
     ];
     await Role.bulkCreate(baseRoles, { transaction: t });
 
-/*     await Role.findOrCreate({
-      where: { name: 'Admin' },
-      defaults: { description: 'Administrator' },
-      transaction: t,
-    }); */
+    /*     await Role.findOrCreate({
+          where: { name: 'Admin' },
+          defaults: { description: 'Administrator' },
+          transaction: t,
+        }); */
 
     // 2) Получим все роли и снесём их операции (на случай повторного запуска)
     const roles = await Role.findAll({ transaction: t });
 
     // Для надёжности удалим все старые операции этих ролей (если сидим повторно)
-    await Operation.destroy({
+    await RolePermission.destroy({
       where: { roleId: roles.map(r => r.id) },
       transaction: t,
     });
@@ -75,7 +75,21 @@ async function seedRolesAndOperations() {
 
     // Если в модели есть уникальный индекс (roleId,name), то этого достаточно;
     // при повторном сидинге мы уже сделали destroy выше.
-    await Operation.bulkCreate(allRows, { transaction: t });
+    await RolePermission.bulkCreate(allRows, { transaction: t });
+    await RolePermission.update(
+      { access: true },
+      {
+        where: { roleId: 1 },
+        transaction: t,
+      }
+    );
+    const rows = await RolePermission.findAll(
+      {
+        where: { roleId: 1 },
+        transaction: t,
+      }
+    );
+    console.log(`[reset-db] role id1:`, rows);
 
     await t.commit();
     console.log(`[reset-db] roles+operations seeded: roles=${roles.length}, opsPerRole=${OPERATIONS.length}`);
@@ -102,20 +116,20 @@ async function seedAdminUser() {
       defaults: {
         userName: 'superAdmin',
         firstName: 'Admin',
-        lastName:  'User',
-        password:  passwordHash,
-        roleId:    adminRole.id,
+        lastName: 'User',
+        password: passwordHash,
+        roleId: adminRole.id,
         patronymic: null,
-        comment:    null,
+        comment: null,
       },
       transaction: t,
     });
 
     if (!created) {
       adminUser.firstName = 'Admin';
-      adminUser.lastName  = 'User';
-      adminUser.password  = passwordHash;
-      adminUser.roleId    = adminRole.id;
+      adminUser.lastName = 'User';
+      adminUser.password = passwordHash;
+      adminUser.roleId = adminRole.id;
       await adminUser.save({ transaction: t });
     }
 

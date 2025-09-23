@@ -2,18 +2,19 @@
 import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import sequelize from '../../database.js';
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, Op } from 'sequelize';
 
-import { createRole, findRoleById } from './factories/role.js';
+import { beforeEach, jest } from '@jest/globals';
+import { createRole, findRoleById, seedOperationsForRole } from './factories/role.js';
 import { createUser } from './factories/user.js';
 import {
   seedDefaultOperationsForRole,
   getOperationsByRole,
   getOperationIdByRoleAndName,
 } from './factories/operation.js';
-import { OPERATIONS } from '../../shared/operations.js';
 import logger from '../../logging/logger.js';
-
+import { Role, RolePermission } from '../../models/index.js';
+import { OPERATIONS } from '../../shared/operations.js';
 
 // маленький хелпер для SELECT-ов (возвращает массив строк)
 async function select(text, bind = []) {
@@ -25,7 +26,7 @@ describe('Roles API (integration)', () => {
   let auth = {};
   //const withHeaders = (req) => req.set({ ...langRu, ...auth });
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const secret = process.env.JWT_ACCESS_SECRET;
     if (!secret) {
       throw new Error('JWT_ACCESS_SECRET is not set (check .env.test)');
@@ -33,12 +34,41 @@ describe('Roles API (integration)', () => {
 
     // check-auth.js ожидает именно эти iss/aud и поля payload:
     const token = jwt.sign(
-      { sub: '1', uname: 'superAdmin', role: 'Admin' },
+      { sub: '1', uname: 'superAdmin', role: 'ADMIN', roleId: 1 },
       secret,
       { issuer: 'cards-sql-app', audience: 'web', expiresIn: '15m' }
     );
 
     auth = { Authorization: `Bearer ${token}` };
+
+  });
+
+  beforeEach(async () => {
+
+    await Role.destroy({ where: { id: 1, }, truncate: true, cascade: true, restartIdentity: true });
+
+    const role = await createRole({ name: 'ADMIN', description: 'test-admin' });
+    //console.log('role', role);
+    await RolePermission.destroy({ where: { roleId: 1, } });
+    await seedOperationsForRole(1);
+    const perms = ['VIEW_FULL_ROLES_LIST', 'VIEW_LIMITED_ROLES_LIST', 'ADD_NEW_ROLE',
+      'EDIT_ROLE', 'DELETE_ROLE', 'ADD_NEW_USER', 'EDIT_USER', 'VIEW_LIMITED_USERS_LIST',
+    ];
+
+    await RolePermission.update(
+      { access: true },
+      { where: { roleId: 1, name: { [Op.in]: perms } } }
+    );
+    //await RolePermission.bulkUpdate();
+    const rows = await RolePermission.findAll({
+      where: { roleId: 1, access: true },
+      raw: true,
+    });
+    //console.log('RolePermission.findAll', rows);
+    if (rows.length === 0) {
+      throw new Error('Seeded permission not found via RolePermission.findAll()');
+    }
+
   });
 
   // ---------- GET /check-role-name/:name ----------
@@ -255,27 +285,27 @@ describe('Roles API (integration)', () => {
       const opIdLimited = await getOperationIdByRoleAndName(role.id, 'VIEW_LIMITED_USERS_LIST');
 
       await global.api.patch('/api/roles/update-role-access')
-      .set(auth)
-      .send({
-        access: true,
-        roleId: role.id,
-        operation: {
-          description: 'any',
-          accessToAllOps: false,
-          object: 'users',
-          objectName: 'any',
-          operation: 'VIEW_LIMITED_USERS_LIST',
-          operationName: 'any',
-          flag: "LIMITED",
-          rolesAccesses: [
-            {
-              id: opIdLimited,
-              roleId: role.id,
-              access: false,
-              disabled: false,
-            }]
-        },
-      });
+        .set(auth)
+        .send({
+          access: true,
+          roleId: role.id,
+          operation: {
+            description: 'any',
+            accessToAllOps: false,
+            object: 'users',
+            objectName: 'any',
+            operation: 'VIEW_LIMITED_USERS_LIST',
+            operationName: 'any',
+            flag: "LIMITED",
+            rolesAccesses: [
+              {
+                id: opIdLimited,
+                roleId: role.id,
+                access: false,
+                disabled: false,
+              }]
+          },
+        });
 
       let ops = await getOperationsByRole(role.id);
       logger.debug(ops, 'ops');
@@ -290,27 +320,27 @@ describe('Roles API (integration)', () => {
       const opIdFull = await getOperationIdByRoleAndName(role.id, 'VIEW_FULL_USERS_LIST');
 
       await global.api.patch('/api/roles/update-role-access')
-      .set(auth)
-      .send({
-        access: true,
-        roleId: role.id,
-        operation: {
-          description: 'any',
-          accessToAllOps: false,
-          object: 'users',
-          objectName: 'any',
-          operation: 'VIEW_FULL_USERS_LIST',
-          operationName: 'any',
-          flag: "FULL",
-          rolesAccesses: [
-            {
-              id: opIdFull,
-              roleId: role.id,
-              access: false,
-              disabled: false,
-            }]
-        },
-      });
+        .set(auth)
+        .send({
+          access: true,
+          roleId: role.id,
+          operation: {
+            description: 'any',
+            accessToAllOps: false,
+            object: 'users',
+            objectName: 'any',
+            operation: 'VIEW_FULL_USERS_LIST',
+            operationName: 'any',
+            flag: "FULL",
+            rolesAccesses: [
+              {
+                id: opIdFull,
+                roleId: role.id,
+                access: false,
+                disabled: false,
+              }]
+          },
+        });
 
       ops = await getOperationsByRole(role.id);
       const limitedAfter = ops.find((x) => x.name === 'VIEW_LIMITED_USERS_LIST');
@@ -352,6 +382,8 @@ describe('Roles API (integration)', () => {
       expect(status).toBe(200);
       expect(body.data).toBeTruthy();
       const { roles, operations } = body.data;
+      //console.log('roles', roles);
+      //console.log('operations', operations)
       expect(roles.length).toBeGreaterThanOrEqual(2);
       expect(operations.length).toBe(OPERATIONS.length);
 

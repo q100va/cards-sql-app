@@ -6,9 +6,6 @@ import { AuditLog } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireAny, requireOperation } from "../middlewares/require-permission.js";
 
-// TODO: add authentication/authorization middlewares
-// import { authenticateUser, authorizeAdmin } from "../middlewares/auth.js";
-
 const Op = Sequelize.Op;
 const router = Router();
 router.get(
