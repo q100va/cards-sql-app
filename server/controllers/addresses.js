@@ -193,10 +193,10 @@ export function correctDistrictName(rowName, rowPostName = null, rowPostNameType
       break;
     }
   }
-  console.log("name");
+/*   console.log("name");
   console.log(name);
   console.log("shortName");
-  console.log(shortName);
+  console.log(shortName); */
   if (!name || !shortName) {
     throw new Error(`Отсутствующий или неверный тип региона в названии "${rowName}"! Ввод прекращен.`);
   }
@@ -225,8 +225,8 @@ export function correctDistrictName(rowName, rowPostName = null, rowPostNameType
 
 export function correctLocalityName(rowName, type, district = null) {
   //district = district;
-  console.log("rowName, type, district");
-  console.log(rowName, type, district);
+/*   console.log("rowName, type, district");
+  console.log(rowName, type, district); */
   type = type.replace('ё', 'е').trim().toLowerCase();
   if(type == 'поселок городского типа') {
     type = 'пгт';
@@ -249,10 +249,10 @@ export function correctLocalityName(rowName, type, district = null) {
   let name = rowName + " " + addressType.name;
   let shortName = addressType.shortName + " " + rowName;
 
-  console.log("name");
+/*   console.log("name");
   console.log(name);
   console.log("shortName");
-  console.log(shortName);
+  console.log(shortName); */
 
   return {
     name: name,

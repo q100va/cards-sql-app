@@ -1,15 +1,24 @@
 // idle.service.ts
 import { Injectable, NgZone, inject } from '@angular/core';
-import { fromEvent, merge, timer, Subject, Subscription, BehaviorSubject, interval, firstValueFrom  } from 'rxjs';
-import { startWith, switchMap, takeUntil } from 'rxjs/operators';
+import {
+  fromEvent,
+  merge,
+  timer,
+  Subject,
+  Subscription,
+  BehaviorSubject,
+  interval,
+  firstValueFrom,
+} from 'rxjs';
+import { auditTime, filter, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfirmationService } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
-import { SignInService } from '../services/sign-in.service';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class IdleService {
   private zone = inject(NgZone);
-  private auth = inject(SignInService);
+  private auth = inject(AuthService);
   private confirm = inject(ConfirmationService);
   private i18n = inject(TranslateService);
 
@@ -25,53 +34,72 @@ export class IdleService {
   private dialogOpen = false;
 
   start(idleMs = 20 * 60_000, confirmMs = 60_000) {
-    this.stop();                     // стопим прошлое
-    this.stop$ = new Subject<void>(); // ✅ создаём новый stop$ на каждый старт
+    this.stop(); // остановка старого
+    this.stop$ = new Subject<void>(); // новый стоп-триггер
 
-  this.zone.runOutsideAngular(() => {
-    const activity$ = merge(
-      fromEvent<MouseEvent>(document, 'mousemove'),
-      fromEvent<KeyboardEvent>(document, 'keydown'),
-      fromEvent<Event>(document, 'click'),
-      fromEvent<Event>(document, 'scroll'),
-      fromEvent<Event>(document, 'visibilitychange'),
-      fromEvent<FocusEvent>(window, 'focus'),
-      fromEvent<TouchEvent>(window, 'touchstart'),
-      fromEvent<TouchEvent>(window, 'touchmove'),
-    );
+    this.zone.runOutsideAngular(() => {
+      const passive = { passive: true } as AddEventListenerOptions;
+
+      // Редкие/дискретные события — можно без троттлинга
+      const discrete$ = merge(
+        fromEvent<KeyboardEvent>(document, 'keydown'),
+        fromEvent<MouseEvent>(document, 'click'),
+        fromEvent<Event>(document, 'visibilitychange'),
+        fromEvent<FocusEvent>(window, 'focus')
+      );
+
+      // Шумные события — притормаживаем, чтобы не ресетить таймер сотни раз в секунду
+      const bursty$ = merge(
+        fromEvent<Event>(document, 'scroll', passive),
+        fromEvent<WheelEvent>(window, 'wheel', passive),
+        fromEvent<TouchEvent>(window, 'touchstart', passive),
+        fromEvent<TouchEvent>(window, 'touchmove', passive),
+/*         fromEvent(document, 'visibilitychange').pipe(
+          filter(() => document.hidden),
+          tap(() => this.zone.run(() => this.onIdle(confirmMs)))
+        ) */
+        //s fromEvent<PointerEvent>(window, 'pointermove', passive), // можно убрать mousemove
+      ).pipe(
+        // один «сигнал активности» не чаще, чем раз в 250мс
+        auditTime(250)
+      );
+
+      const activity$ = merge(discrete$, bursty$);
 
       this.sub = activity$
         .pipe(
-          startWith(null),
-          switchMap(() => timer(idleMs)),
-          takeUntil(this.stop$),
+          startWith(null), // сразу запустить первый таймер
+          takeUntil(this.stop$), // корректный teardown всех fromEvent
+          switchMap(() => timer(idleMs)) // любой сигнал активности — перезапуск таймера
         )
         .subscribe(() => this.zone.run(() => this.onIdle(confirmMs)));
     });
   }
 
   stop() {
-    this.stop$.next();
+    // триггерим и завершаем стоп-сабжект, освобождаем подписку
+    this.stop$?.next();
+    this.stop$?.complete();
     this.sub?.unsubscribe();
     this.sub = undefined;
   }
 
-private async onIdle(confirmMs: number) {
-  const ok = await this.askStaySignedIn(confirmMs);
+  private async onIdle(confirmMs: number) {
+    const ok = await this.askStaySignedIn(confirmMs);
 
-  if (ok) {
-    // обновим access по refresh-cookie
-    try {
-      await firstValueFrom(this.auth.hydrateFromSession());
-    } catch {
-      // игнорим: даже если refresh упал, дальше сработает интерсептор/логаут
-    } finally {
-      this.start(); // всегда перезапускаем цикл ожидания активности
+    if (ok) {
+      // обновим access по refresh-cookie
+      try {
+        await firstValueFrom(this.auth.hydrateFromSession());
+      } catch {
+        // игнорим: даже если refresh упал, дальше сработает интерсептор/логаут
+      } finally {
+        this.start(); // всегда перезапускаем цикл ожидания активности
+      }
+    } else {
+      this.auth.logout().subscribe(); // явный выход
     }
-  } else {
-    this.auth.logout().subscribe(); // явный выход
   }
-}
 
   /** Показываем диалог с собственным футером, считаем сек, ждём ответа/таймаута */
   private askStaySignedIn(timeoutMs: number): Promise<boolean> {
@@ -89,7 +117,9 @@ private async onIdle(confirmMs: number) {
         this.resolver = undefined;
         this.dialogOpen = false;
         this._countdown$.next(0);
-        try { this.confirm.close(); } catch {}
+        try {
+          this.confirm.close();
+        } catch {}
         resolve(v);
       };
 
@@ -99,21 +129,23 @@ private async onIdle(confirmMs: number) {
       // обратный отсчёт
       const totalSec = Math.max(1, Math.round(timeoutMs / 1000));
       this._countdown$.next(totalSec);
-      const tick$ = interval(1000).pipe(takeUntil(this.stop$)).subscribe(() => {
-        const next = (this._countdown$.value || totalSec) - 1;
-        this._countdown$.next(next);
-        if (next <= 0) {
-          tick$.unsubscribe();
-          finish(false); // авто-выход по таймауту
-        }
-      });
+      const tick$ = interval(1000)
+        .pipe(takeUntil(this.stop$))
+        .subscribe(() => {
+          const next = (this._countdown$.value || totalSec) - 1;
+          this._countdown$.next(next);
+          if (next <= 0) {
+            tick$.unsubscribe();
+            finish(false); // авто-выход по таймауту
+          }
+        });
 
       // показываем диалог (кнопки — в кастомном footer)
       this.confirm.confirm({
         key: 'idleConfirm',
         closable: false,
         closeOnEscape: false,
-        accept: () => finish(true),  // если вдруг кликнут «встроенные» кнопки
+        accept: () => finish(true), // если вдруг кликнут «встроенные» кнопки
         reject: () => finish(false),
       });
     });

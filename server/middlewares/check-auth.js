@@ -2,59 +2,76 @@
 import jwt from 'jsonwebtoken';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const VERIFY_OPTS = {
+  issuer: 'cards-sql-app',
+  audience: 'web',
+  algorithms: ['HS256'],   // ✅ зафиксировали алгоритм
+  clockTolerance: 15,      // ✅ +/- 15s на дрейф часов
+};
 
-// Обязательная аутентификация: 401 при любой проблеме с access-токеном
-export default function requireAuth(req, res, next) {
+function badAuth(res) {
+  return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
+}
+
+export function requireAuth(req, res, next) {
   try {
-    // пропускаем preflight
     if (req.method === 'OPTIONS') return next();
 
-    const auth = req.headers['authorization'] || '';
-    const [scheme, token] = auth.split(' ');
+    if (!ACCESS_SECRET) return badAuth(res);
 
-    if (scheme !== 'Bearer' || !token) {
-      return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
+    const auth = req.headers.authorization || '';
+    const m = auth.match(/^Bearer\s+(.+)$/i);   // ✅ case-insensitive
+    const token = m?.[1];
+    if (!token) return badAuth(res);
+
+    const payload = jwt.verify(token, ACCESS_SECRET, VERIFY_OPTS);
+
+    // валидация критичных полей
+    const subNum = Number(payload.sub);
+    const roleIdNum = Number(payload.roleId);
+    if (!Number.isFinite(subNum) || !Number.isFinite(roleIdNum)) {
+      return badAuth(res);
     }
 
-    const payload = jwt.verify(token, ACCESS_SECRET, {
-      issuer: 'cards-sql-app',
-      audience: 'web',
-    });
-
-    // прокидываем в req данные пользователя (то, что клали в access)
     req.user = {
-      id: Number(payload.sub),
+      id: subNum,
       userName: payload.uname,
-      role: payload.role ?? null,
+      role: payload.role,
+      roleId: roleIdNum,
     };
 
     return next();
-  } catch (err) {
-    // access просрочен/битый/нет — отдаём 401.
-    // Клиентский интерсептор сам вызовет /api/session/refresh и переиграет запрос.
-    return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
+  } catch {
+    return badAuth(res);
   }
 }
 
-// Опциональная аутентификация (если нужно): не валит запрос, просто ставит req.user при наличии токена
 export function optionalAuth(req, res, next) {
   try {
-    const auth = req.headers['authorization'] || '';
-    const [scheme, token] = auth.split(' ');
-    if (scheme === 'Bearer' && token) {
-      const payload = jwt.verify(token, ACCESS_SECRET, {
-        issuer: 'cards-sql-app',
-        audience: 'web',
-      });
-      req.user = {
-        id: Number(payload.sub),
-        userName: payload.uname,
-        role: payload.role ?? null,
-      };
+    if (!ACCESS_SECRET) return next();
+
+    const auth = req.headers.authorization || '';
+    const m = auth.match(/^Bearer\s+(.+)$/i);
+    const token = m?.[1];
+    if (token) {
+      const payload = jwt.verify(token, ACCESS_SECRET, VERIFY_OPTS);
+      const subNum = Number(payload.sub);
+      const roleIdNum = payload.roleId != null ? Number(payload.roleId) : null;
+
+      if (Number.isFinite(subNum)) {
+        req.user = {
+          id: subNum,
+          userName: payload.uname ?? null,
+          role: payload.role ?? null,
+          roleId: Number.isFinite(roleIdNum) ? roleIdNum : null,
+        };
+      }
     }
   } catch {
-    // игнорим ошибки — это "optional"
+    // игнорим — optional
   } finally {
     next();
   }
 }
+
+export default requireAuth;

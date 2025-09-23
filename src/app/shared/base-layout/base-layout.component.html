@@ -15,19 +15,9 @@
 
 
 <!--  Confirmation dialog for stay or logout-->
-
-<p-confirmdialog
-  #idleDlg
-  key="idleConfirm"
-  [appendTo]="'body'"
-  [blockScroll]="true"
-  [closable]="false"
-  [closeOnEscape]="false"
-  [dismissableMask]="true"
-  [style]="{ width: '28rem' }"
-  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
-  styleClass="idle-dialog"
->
+<p-confirmdialog #idleDlg key="idleConfirm" [appendTo]="'body'" [blockScroll]="true" [closable]="false"
+  [closeOnEscape]="false" [dismissableMask]="true" [style]="{ width: '28rem' }"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }" styleClass="idle-dialog">
   <ng-template pTemplate="header">
     <span class="idle-title">
       {{ 'SESSION.IDLE_HEADER' | translate }}
@@ -39,8 +29,7 @@
       <i class="pi pi-info-circle idle-msg__icon" aria-hidden="true"></i>
       <div class="idle-msg__text">
         <span>{{ 'SESSION.IDLE_MSG_PREFIX' | translate }}</span>
-        <span
-          class="idle-countdown">
+        <span class="idle-countdown">
           {{ (idle.countdown$ | async) ?? ('SESSION.IDLE_MSG_SOME' | translate) }}
         </span>
         <span>{{ 'SESSION.IDLE_MSG_SUFFIX' | translate }}</span>
@@ -49,22 +38,12 @@
   </ng-template>
 
   <ng-template pTemplate="footer">
-    <p-button
-      pRipple
-      (click)="idle.confirmAccept()"
-      pAutoFocus
-    >{{'COMMON.STAY' | translate}}</p-button>
+    <p-button pRipple (click)="idle.confirmAccept()" pAutoFocus>{{'COMMON.STAY' | translate}}</p-button>
 
-    <p-button
-      pRipple
-      (click)="idle.confirmReject()"
-      severity="secondary"
-      outlined=true
-    >{{'COMMON.LOGOUT' | translate}}</p-button>
+    <p-button pRipple (click)="idle.confirmReject()" severity="secondary" outlined=true>{{'COMMON.LOGOUT' |
+      translate}}</p-button>
   </ng-template>
 </p-confirmdialog>
-
-
 
 
 <!-- navigation -->
@@ -89,18 +68,18 @@
       @for (item of menuItems; track $index) {
       <ng-container>
         @if(!item.subMenuItems){
-        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy">
+        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy" *hasOp="item.params">
           <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         } @else {
-        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy">
+        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy" *hasOp="item.params">
           <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         <mat-menu #submenu="matMenu" xPosition="before">
           @for(subItem of item.subMenuItems; track $index){
-          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy">
+          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy" *hasOp="subItem.params">
             <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
             <span>{{subItem.text | translate}}</span>
           </button>
@@ -109,7 +88,6 @@
         }
       </ng-container>
       }
-
       <mat-divider></mat-divider>
       <button mat-menu-item class="drop-menu-item" (click)="signOut()">
         <mat-icon>logout</mat-icon>
@@ -141,7 +119,6 @@
 </mat-toolbar>
 
 <!-- main content -->
-
 <main class="main-content">
   <div id="content-wrap">
     <router-outlet></router-outlet>
@@ -149,7 +126,6 @@
 </main>
 
 <!-- footer -->
-
 <mat-toolbar class="footer">
   <p>
     &copy; {{ year }} - {{'APP.AUTHOR' | translate}} -

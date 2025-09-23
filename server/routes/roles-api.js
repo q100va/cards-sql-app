@@ -2,14 +2,14 @@ import { Router } from "express";
 import Sequelize from "sequelize";
 import Role from "../models/role.js";
 import User from "../models/user.js";
-import Operation from "../models/operation.js";
+import {RolePermission} from "../models/index.js";
 import { OPERATIONS } from "../shared/operations.js";
 import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import * as roleSchemas from "../../shared/dist/role.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import requireAuth from '../middlewares/check-auth.js';
-
+import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';
 
 // TODO: add authentication/authorization middlewares
 // import { authorizeAdmin } from "../middlewares/auth.js";
@@ -23,9 +23,9 @@ const router = Router();
  */
 router.get(
   "/check-role-name/:name",
-  validateRequest(roleSchemas.roleNameSchema, "params"),
   requireAuth,
-  // authorizeAdmin,
+  requireAny('ADD_NEW_ROLE', 'EDIT_ROLE'),
+  validateRequest(roleSchemas.roleNameSchema, "params"),
   async (req, res, next) => {
     try {
       const roleName = req.params.name.toLowerCase();
@@ -53,9 +53,9 @@ router.get(
  */
 router.post(
   "/create-role",
-  validateRequest(roleSchemas.roleDraftSchema),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('ADD_NEW_ROLE'),
+  validateRequest(roleSchemas.roleDraftSchema),
   async (req, res, next) => {
     try {
       const { name, description } = req.body;
@@ -71,7 +71,7 @@ router.post(
           access: false,
           disabled: operation.flag === "FULL",
         }));
-        await Operation.bulkCreate(rows, { transaction: t });
+        await RolePermission.bulkCreate(rows, { transaction: t });
 
         return role.name;
       });
@@ -90,9 +90,9 @@ router.post(
  */
 router.patch(
   "/update-role",
-  validateRequest(roleSchemas.roleSchema),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('EDIT_ROLE'),
+  validateRequest(roleSchemas.roleSchema),
   async (req, res, next) => {
     try {
       const { id, name, description } = req.body;
@@ -125,9 +125,9 @@ router.patch(
  */
 router.patch(
   "/update-role-access",
-  validateRequest(roleSchemas.roleChangeAccessSchema),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('EDIT_ROLE'),
+  validateRequest(roleSchemas.roleChangeAccessSchema),
   async (req, res, next) => {
     try {
       const { access, roleId, operation } = req.body;
@@ -163,7 +163,7 @@ router.patch(
             // If all related ops are enabled, enable ALL_OPS
             const results = await Promise.all(
               relatedOps.map((op) =>
-                Operation.findOne({
+                RolePermission.findOne({
                   attributes: ["id"],
                   where: { name: op.operation, roleId, access: false },
                   raw: true,
@@ -211,7 +211,7 @@ async function changeRoleOperation(
   transaction
 ) {
   // Update main operation
-  const [_, [updatedOperation]] = await Operation.update(
+  const [_, [updatedOperation]] = await RolePermission.update(
     { access },
     {
       where: { roleId, name: operation.operation },
@@ -244,7 +244,7 @@ async function changeRoleOperation(
     ...((!isLimited && access) || (isLimited && !access) ? { access } : {}),
   };
 
-  const [__, [updatedOperationWithFlag]] = await Operation.update(
+  const [__, [updatedOperationWithFlag]] = await RolePermission.update(
     updateParams,
     {
       where: { roleId, name: complementaryOperation },
@@ -268,7 +268,7 @@ async function changeRoleOperation(
 router.get(
   "/get-roles-names-list",
   requireAuth,
-  // authorizeAdmin,
+  requireAny('ADD_NEW_USER', 'EDIT_USER', 'VIEW_LIMITED_USERS_LIST'),
   async (req, res, next) => {
     try {
       const roles = await Role.findAll({
@@ -291,7 +291,7 @@ router.get(
 router.get(
   "/get-roles",
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('VIEW_LIMITED_ROLES_LIST'),
   async (req, res, next) => {
     try {
       // Roles
@@ -303,7 +303,7 @@ router.get(
 
       // Operations per role
       const rolesIds = roles.map((r) => r.id);
-      const rolesOps = await Operation.findAll({
+      const rolesOps = await RolePermission.findAll({
         where: { roleId: rolesIds },
         attributes: ["id", "roleId", "name", "access", "disabled"],
         raw: true,
@@ -351,9 +351,9 @@ router.get(
  */
 router.get(
   "/check-role-before-delete/:id",
-  validateRequest(roleSchemas.roleIdSchema, "params"),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('DELETE_ROLE'),
+  validateRequest(roleSchemas.roleIdSchema, "params"),
   async (req, res, next) => {
     try {
       const roleId = req.params.id;
@@ -381,9 +381,9 @@ router.get(
 
 router.delete(
   "/delete-role/:id",
-  validateRequest(roleSchemas.roleIdSchema, "params"),
   requireAuth,
-  // authorizeAdmin,
+  requireOperation('DELETE_ROLE'),
+  validateRequest(roleSchemas.roleIdSchema, "params"),
   async (req, res, next) => {
     try {
       const roleId = req.params.id;

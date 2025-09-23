@@ -1,6 +1,6 @@
 // tests/factories/operation.js
 
-import { Operation } from "../../../models";
+import { RolePermission } from "../../../models";
 import { OPERATIONS } from "../../../shared/operations";
 
 
@@ -18,7 +18,7 @@ export async function createOperation(overrides = {}) {
     throw new Error('createOperation: roleId и name обязательны');
   }
 
-  const row = await Operation.create(op, { returning: true });
+  const row = await RolePermission.create(op, { returning: true });
   // plain JS объект:
   return row.get({ plain: true });
 }
@@ -33,14 +33,14 @@ export async function seedDefaultOperationsForRole(roleId) {
     access: false,
     disabled: o.flag === 'FULL',
   }));
-  await Operation.bulkCreate(rows);
+  await RolePermission.bulkCreate(rows);
 }
 
 /**
  * Вытащить все операции роли (для ассертов).
  */
 export async function getOperationsByRole(roleId) {
-  const rows = await Operation.findAll({
+  const rows = await RolePermission.findAll({
     where: { roleId},
     attributes: ['id', 'roleId', 'name', 'access', 'disabled'],
     order: [['name', 'ASC']],
@@ -50,7 +50,7 @@ export async function getOperationsByRole(roleId) {
 }
 
 export async function getOperationIdByRoleAndName(roleId, name) {
-  const row = await Operation.findOne({
+  const row = await RolePermission.findOne({
     where: { roleId, name },
     attributes: ['id'],
     order: [['name', 'ASC']],
@@ -63,7 +63,7 @@ export async function getOperationIdByRoleAndName(roleId, name) {
  * Быстро включить/выключить одну операцию роли.
  */
 export async function setOperationAccess(roleId, name, { access, disabled }) {
-  const [affected, updated] = await Operation.update(
+  const [affected, updated] = await RolePermission.update(
     {
       ...(access   !== undefined ? { access }   : {}),
       ...(disabled !== undefined ? { disabled } : {}),

@@ -1,22 +1,34 @@
 import request from 'supertest';
-import { jest } from "@jest/globals";
+import { jest } from '@jest/globals';
 import express from 'express';
-import Sequelize from 'sequelize';
+import { Op } from 'sequelize'; // ✅ так надёжнее в ESM
 import { handleError } from '../../middlewares/error-handler.js';
-const { Op } = Sequelize;
 
+// ✅ мок модели
 jest.unstable_mockModule('../../models/index.js', () => ({
-  AuditLog: {
-    findAll: jest.fn(),
-    count: jest.fn(),
-  },
+  AuditLog: { findAll: jest.fn(), count: jest.fn() },
 }));
 
+// ✅ мок валидации
 jest.unstable_mockModule('../../middlewares/validate-request.js', () => ({
-  validateRequest: () => (_req, _res, next) => next(), // пропускаем валидацию в юните
+  validateRequest: () => (_req, _res, next) => next(),
 }));
 
-// теперь можно импортировать тестируемый роут и модель
+// ✅ мок аутентификации (иначе 401)
+jest.unstable_mockModule('../../middlewares/check-auth.js', () => ({
+  requireAuth: (_req, _res, next) => next(),
+  optionalAuth: (_req, _res, next) => next(),
+  default: (_req, _res, next) => next(),
+}));
+
+// (опц.) ✅ если роут защищён правами — пропускаем
+jest.unstable_mockModule('../../middlewares/require-permission.js', () => ({
+  requireAny: () => (_req, _res, next) => next(),
+  requireAll: () => (_req, _res, next) => next(),
+  requireOperation: () => (_req, _res, next) => next(),
+}));
+
+// теперь можно импортировать тестируемый роут после моков
 const { default: auditRouter } = await import('../../routes/audit-api.js');
 const { AuditLog } = await import('../../models/index.js');
 
@@ -26,6 +38,9 @@ function makeApp() {
   app.use(handleError);
   return app;
 }
+
+// ...дальше твои тесты без изменений
+
 
 describe('GET /api/audit (Jest + supertest)', () => {
   beforeEach(() => {

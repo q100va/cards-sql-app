@@ -5,7 +5,11 @@ export const objects = [
   'roles',    // user roles/permissions
   'homes',    // nursing homes or similar facilities
   'partners', // institution representatives (employees, coordinators)
-  'seniors'   // residents of the nursing homes
+  'seniors',   // residents of the nursing homes
+  'volunteers', // volunteers who send cards
+  'holidays',  // holidays
+  'reports', // reports
+  'statistics', // statistics
 ];
 
 // List of operations available for each object type in the system
@@ -109,6 +113,14 @@ export const OPERATIONS = [
     accessToAllOps: false,
     operationName: 'OPS.EDIT.NAME',
     description: 'Edit user profile data',
+    objectName: 'OBJECT.USERS',
+  },
+    {
+    operation: 'CHANGE_USER_PASSWORD',
+    object: 'users',
+    accessToAllOps: false,
+    operationName: 'OPS.CHANGE_PASSWORD.NAME',
+    description: 'Edit user password',
     objectName: 'OBJECT.USERS',
   },
   {

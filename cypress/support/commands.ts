@@ -64,6 +64,8 @@ Cypress.Commands.add(
     const user = options?.user ?? 'superAdmin';
     const pass = options?.pass ?? 'p@ss12345';
 
+    console.log('STUBS', STUBS);
+
     if (STUBS) {
       cy.intercept('POST', '**/api/client-logs', {
         statusCode: 204,
@@ -95,6 +97,7 @@ Cypress.Commands.add(
             firstName: 'F',
             lastName: 'L',
             roleName: 'USER',
+            roleId: 999,
           },
         },
       }).as('me');
@@ -110,6 +113,7 @@ Cypress.Commands.add(
               firstName: 'F',
               lastName: 'L',
               roleName: 'USER',
+              roleId: 999,
             },
             token: 'tok_1234567890',
             expiresIn: 900,

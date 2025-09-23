@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { SignInService } from './services/sign-in.service';
+import { AuthService } from './services/auth.service';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { IdleService } from './services/idle.service';
@@ -13,7 +13,7 @@ import { distinctUntilChanged, map, Subscription } from 'rxjs';
   styles: [``],
 })
 export class AppComponent implements OnInit {
-  private signInService = inject(SignInService);
+  private signInService = inject(AuthService);
   private translate = inject(TranslateService);
   private title = inject(Title);
   private idle = inject(IdleService);
@@ -21,7 +21,7 @@ export class AppComponent implements OnInit {
   private subTranslate?: Subscription;
 
   constructor() {
-    this.signInService.hydrateFromSession().subscribe();
+    //this.signInService.hydrateFromSession().subscribe();
     this.subIdle = this.signInService.currentUser$
       .pipe(
         map((u) => !!u),

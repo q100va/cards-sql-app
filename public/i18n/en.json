@@ -75,6 +75,7 @@
   "ERRORS": {
     "VALIDATION": "Validation error",
     "FORBIDDEN": "Not enough permissions",
+    "ACCESS": "Failed to check permissions",
     "BAD_REQUEST": "Bad request",
     "DB_ERROR": "Storage error",
     "SERVER": "Unexpected server error. Please try again later.",
@@ -93,7 +94,7 @@
     "ACCOUNT_LOCKED": "Temporary lock after multiple failed attempts. Please try later.",
     "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
     "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
-     "USER_WITHOUT_ROLE": "User without role",
+    "USER_WITHOUT_ROLE": "User without role",
 
     "ROLE": {
       "NOT_FOUND": "Role not found",
@@ -140,6 +141,9 @@
     },
     "EDIT": {
       "NAME": "Edit"
+    },
+    "CHANGE_PASSWORD": {
+      "NAME": "Edit password"
     },
     "DELETE": {
       "NAME": "Delete"

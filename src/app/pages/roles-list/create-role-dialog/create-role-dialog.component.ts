@@ -12,7 +12,6 @@ import {
   MatDialogActions,
   MatDialogContent,
   MatDialogRef,
-  MatDialogTitle,
 } from '@angular/material/dialog';
 
 // Forms and validation
@@ -43,7 +42,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Validation
 import { roleDraftSchema } from '@shared/schemas/role.schema';
-import { zodValidator } from 'src/app/utils/zod-validator';
+import { zodValidator } from '../../../utils/zod-validator';
+
+//Directives
+import { HasOpDirective } from '../../../directives/has-op.directive';
 
 @Component({
   selector: 'app-create-role-dialog',
@@ -51,7 +53,6 @@ import { zodValidator } from 'src/app/utils/zod-validator';
     // Material dialog
     MatDialogActions,
     MatDialogContent,
-    MatDialogTitle,
     // Material form + UI
     MatFormFieldModule,
     MatInputModule,
@@ -62,6 +63,7 @@ import { zodValidator } from 'src/app/utils/zod-validator';
     FormsModule,
     ReactiveFormsModule,
     TranslateModule,
+    HasOpDirective
   ],
   templateUrl: './create-role-dialog.component.html',
   styleUrls: ['./create-role-dialog.component.css'],

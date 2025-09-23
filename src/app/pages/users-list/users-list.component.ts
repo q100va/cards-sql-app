@@ -131,7 +131,7 @@ export class UsersListComponent {
   });
 
   allFilterParameters = computed(() => {
-    console.log('this.allFilterParameters() recomputed');
+    //console.log('this.allFilterParameters() recomputed');
     return {
       ...this.filterParameters(),
       sortParameters: { ...this.sortParameters() }, // важно делать копию
@@ -140,7 +140,7 @@ export class UsersListComponent {
 
   //waitForAddressFilter = true;
 
-  constructor(@Inject(Injector) private injector: Injector) {
+  constructor(private injector: Injector) {
     const iconRegistry = inject(MatIconRegistry);
     const sanitizer = inject(DomSanitizer);
     for (let item of this.contactTypes) {
@@ -154,7 +154,7 @@ export class UsersListComponent {
   ngOnInit(): void {
     runInInjectionContext(this.injector, () => {
       effect(() => {
-        //   console.log('allFilterParameters changed:', this.allFilterParameters());
+        //   //console.log('allFilterParameters changed:', this.allFilterParameters());
         // Прочитав signal, мы на него подписываемся
         this.allFilterParameters();
         /*         if (this.waitForAddressFilter) {
@@ -169,21 +169,21 @@ export class UsersListComponent {
   //TODO: запросы отправляются по два раза
 
   sortData(sort: Sort) {
-    console.log('sort');
-    console.log(sort);
+    //console.log('sort');
+    //console.log(sort);
     this.sortParameters.set(sort);
-    console.log(' this.sortParameters');
-    console.log(this.sortParameters());
+    //console.log(' this.sortParameters');
+    //console.log(this.sortParameters());
     //this.getUsers();
   }
 
   onChangedPage(pageData: PageEvent) {
-    /*  //console.log('pageData');
-  //console.log(pageData); */
+    /*  ////console.log('pageData');
+  ////console.log(pageData); */
     this.currentPage = pageData.pageIndex + 1;
     this.pageSize = pageData.pageSize;
     if (!this.avoidDoubleRequest) {
-      ////console.log('pageData');
+      //////console.log('pageData');
       this.getUsers();
     } else {
       this.avoidDoubleRequest = false;
@@ -197,7 +197,7 @@ export class UsersListComponent {
 
   changeColumnsView(selectedColumns: string[]) {
     this.displayedColumns = [...selectedColumns];
-    ////console.log(this.displayedColumns);
+    //////console.log(this.displayedColumns);
   }
 
   onAddUserClick() {
@@ -222,7 +222,7 @@ export class UsersListComponent {
     });
 
     dialogRefCreate.afterClosed().subscribe((result) => {
-      //console.log('The dialog was closed', result);
+      ////console.log('The dialog was closed', result);
 
       if (result.name) {
         this.msgWrapper.success(`Аккаунт пользователя ${result.name} создан.`);
@@ -240,7 +240,7 @@ export class UsersListComponent {
         this.dialogProps.addressFilterParams.readonly = true;
         this.dialogProps.addressFilterParams.class = 'view-mode';
         this.dialogProps.object = user;
-        console.log('this.dialogProps.object', this.dialogProps.object);
+        //console.log('this.dialogProps.object', this.dialogProps.object);
 
         if (user.isRestricted) {
           this.dialogProps.controls.push({
@@ -253,7 +253,7 @@ export class UsersListComponent {
             formType: 'formControl',
           });
         }
-        //console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
+        ////console.log('this.dialogProps.addressFilterParams', this.dialogProps.addressFilterParams);
 
         const dialogData: DialogData<User> = {
           ...this.dialogProps,
@@ -283,7 +283,7 @@ export class UsersListComponent {
   }
 
   onBlockUserClick(id: number) {
-    ////console.log(id);
+    //////console.log(id);
     const blockingUser = this.users.find((item) => item.id == id)!.userName;
     const dialogRef = this.dialog.open(CauseOfBlockingDialogComponent, {
       data: { userName: blockingUser, userId: id },
@@ -292,7 +292,7 @@ export class UsersListComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      ////console.log('The dialog was closed');
+      //////console.log('The dialog was closed');
       if (result.success) {
         this.getUsers();
         this.msgWrapper.success(`Пользователь ${blockingUser} был заблокирова.`);
@@ -338,7 +338,7 @@ export class UsersListComponent {
   }
 
   onDeleteUserClick(id: number) {
-    ////console.log(id);
+    //////console.log(id);
     const deletingUser = this.users.find((item) => item.id == id)!.userName;
     this.confirmationService.confirm({
       message: `Вы уверены, что хотите удалить пользователя ${deletingUser}?<br />Данные невозможно будет восстановить!`,
@@ -385,8 +385,8 @@ export class UsersListComponent {
   }
 
   getUsers() {
-    console.log('this.allFilterParameters()');
-    console.log(this.allFilterParameters());
+    //console.log('this.allFilterParameters()');
+    //console.log(this.allFilterParameters());
     this.userService
       .getListOfUsers(
         this.allFilterParameters(),
@@ -400,8 +400,8 @@ export class UsersListComponent {
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;
-          console.log('this.users');
-          console.log(this.users);
+          //console.log('this.users');
+          //console.log(this.users);
         },
         error: (err) => this.msgWrapper.handle(err),
       });
@@ -451,7 +451,7 @@ export class UsersListComponent {
       default:
         result = value;
     }
-    // //console.log('editContact', type, value, result);
+    // ////console.log('editContact', type, value, result);
     return result;
   }
 }

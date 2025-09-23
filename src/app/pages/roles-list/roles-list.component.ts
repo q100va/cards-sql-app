@@ -1,7 +1,7 @@
 // Angular core & RxJS
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { EMPTY } from 'rxjs';
-import { finalize, switchMap } from 'rxjs/operators';
+import { finalize, switchMap, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Angular Material
@@ -23,12 +23,13 @@ import { ConfirmationService } from 'primeng/api';
 // App services, utils, schemas
 import { CreateRoleDialogComponent } from './create-role-dialog/create-role-dialog.component';
 import { RoleService } from '../../services/role.service';
-import { Operation, Role } from '@shared/schemas/role.schema';
-import { trackById } from '../../utils/track-by-id.util';
+import { Operation, Role, roleDraftSchema } from '@shared/schemas/role.schema';
 import { sanitizeText } from '../../utils/sanitize-text';
 import { MessageWrapperService } from '../../services/message.service';
-import { roleDraftSchema } from '@shared/schemas/role.schema';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AuthService } from '../../services/auth.service';
+import { RoleAccess } from '../../../../shared/dist/role.schema';
+import { HasOpDirective } from '../../directives/has-op.directive';
 
 @Component({
   selector: 'app-roles-list',
@@ -45,6 +46,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     TableModule,
     InputTextModule,
     TranslateModule,
+    HasOpDirective
   ],
   providers: [],
   templateUrl: './roles-list.component.html',
@@ -54,6 +56,7 @@ export class RolesListComponent implements OnInit {
   // Dependencies
   private readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
+  private readonly authService = inject(AuthService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly dialog = inject(MatDialog);
   private readonly msgWrapper = inject(MessageWrapperService);
@@ -70,7 +73,6 @@ export class RolesListComponent implements OnInit {
   originalRoles!: Role[];
 
   // Utils & schemas (exposed to template)
-  trackById = trackById;
   sanitizeText = sanitizeText;
   roleDraftSchema = roleDraftSchema;
 
@@ -179,7 +181,15 @@ export class RolesListComponent implements OnInit {
   ): void {
     this.roleService
       .updateRoleAccess(value, roleId, operation)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => {
+          const me = this.authService.getCurrentUserSnapshot();
+          if (me?.roleId === roleId) {
+            this.authService.fetchPermissions(); // подтянуть /api/auth/permissions
+          }
+        })
+      )
       .subscribe({
         next: (res) => {
           const updatedObject = res.data.object;
@@ -189,12 +199,13 @@ export class RolesListComponent implements OnInit {
           this.operations
             .filter((op) => op.object === updatedObject)
             .forEach((op) => {
-              op.rolesAccesses = op.rolesAccesses.map((roleAccess) =>
+              op.rolesAccesses = op.rolesAccesses.map((roleAccess: RoleAccess) =>
                 opsMap.has(roleAccess.id)
                   ? { ...roleAccess, ...opsMap.get(roleAccess.id) }
                   : roleAccess
               );
             });
+            console.log(this.operations.filter((op) => op.object === updatedObject));
         },
         error: (err) =>
           this.msgWrapper.handle(err, {

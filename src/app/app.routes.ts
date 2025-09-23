@@ -10,6 +10,8 @@ import { RegionsListComponent } from './pages/toponyms-lists/regions-list/region
 import { DistrictsListComponent } from './pages/toponyms-lists/districts-list/districts-list.component';
 import { LocalitiesListComponent } from './pages/toponyms-lists/localities-list/localities-list.component';
 import { AuditTableComponent } from './pages/audit-table/audit-table.component';
+import { waitAuthReady } from './guards/auth-ready.guard';
+import { requireAnyOp, requireOp } from './guards/route-perms.guard';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -17,7 +19,7 @@ export const routes: Routes = [
     path: 'session',
     component: AuthLayoutComponent,
     children: [
-      { path: 'sign-in', component: SignInComponent },//{ path: "404", component: NotFoundComponent, },
+      { path: 'sign-in', component: SignInComponent }, //{ path: "404", component: NotFoundComponent, },
     ],
   },
 
@@ -27,15 +29,24 @@ export const routes: Routes = [
     component: BaseLayoutComponent,
     canActivate: [authGuard],
     canActivateChild: [authGuard],
+    canMatch: [waitAuthReady],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'users' }, // дефолт
       { path: 'users', component: UsersListComponent },
-      { path: 'roles', component: RolesListComponent },
+      {
+        path: 'roles',
+        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')],
+        component: RolesListComponent,
+      },
       { path: 'countries', component: CountriesListComponent },
       { path: 'regions', component: RegionsListComponent },
       { path: 'districts', component: DistrictsListComponent },
       { path: 'localities', component: LocalitiesListComponent },
-      { path: 'audit', component: AuditTableComponent },
+      {
+        path: 'audit',
+        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')],
+        component: AuditTableComponent,
+      },
     ],
   },
 

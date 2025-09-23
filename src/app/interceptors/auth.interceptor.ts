@@ -6,11 +6,11 @@ import {
 import { Observable, ReplaySubject, throwError } from 'rxjs';
 import { catchError, finalize, switchMap, filter, take } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { SignInService } from '../services/sign-in.service';
+import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  private readonly signIn = inject(SignInService);
+  private readonly signIn = inject(AuthService);
 
   private refreshInProgress = false;
   private refresh$ = new ReplaySubject<boolean>(1);
@@ -23,6 +23,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     // 2) Подкладываем токен, если есть
     const token = this.signIn.getToken();
+    //console.log('token', token)
     const authedReq = token ? this.withAuth(req, token) : req;
 
     return next.handle(authedReq).pipe(
@@ -61,8 +62,8 @@ export class AuthInterceptor implements HttpInterceptor {
   }
 
   private isAuthError(err: unknown): boolean {
-    return err instanceof HttpErrorResponse && (err.status === 401 || err.status === 403);
-  }
+  return err instanceof HttpErrorResponse && err.status === 401; // только 401!
+}
 
   private handleAuthError(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Если рефреш уже идёт — ждём результат

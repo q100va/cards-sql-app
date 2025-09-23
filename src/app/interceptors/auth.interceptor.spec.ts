@@ -1,20 +1,36 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { HTTP_INTERCEPTORS, HttpClient, HttpErrorResponse } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
+import {
+  provideHttpClientTesting,
+  HttpTestingController,
+} from '@angular/common/http/testing';
+import {
+  HTTP_INTERCEPTORS,
+  HttpClient,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { of, Subject, throwError } from 'rxjs';
 
 import { AuthInterceptor } from './auth.interceptor';
-import { SignInService } from '../services/sign-in.service';
+import { AuthService } from '../services/auth.service';
 import { environment } from '../../environments/environment';
 
 class SignInServiceStub {
   private token = '';
-  getToken() { return this.token; }
-  setToken(t: string) { this.token = t; }
+  getToken() {
+    return this.token;
+  }
+  setToken(t: string) {
+    this.token = t;
+  }
 
   // by default refresh succeeds
-  hydrateFromSession = jasmine.createSpy('hydrateFromSession').and.returnValue(of(void 0));
+  hydrateFromSession = jasmine
+    .createSpy('hydrateFromSession')
+    .and.returnValue(of(void 0));
 
   logout = jasmine.createSpy('logout').and.returnValue(of(void 0));
 }
@@ -34,7 +50,7 @@ describe('AuthInterceptor', () => {
         provideHttpClientTesting(),
 
         // dependencies
-        { provide: SignInService, useClass: SignInServiceStub },
+        { provide: AuthService, useClass: SignInServiceStub },
 
         // interceptor under test
         { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
@@ -43,7 +59,7 @@ describe('AuthInterceptor', () => {
 
     http = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
-    signIn = TestBed.inject(SignInService) as unknown as SignInServiceStub;
+    signIn = TestBed.inject(AuthService) as unknown as SignInServiceStub;
   });
 
   afterEach(() => {
@@ -107,7 +123,10 @@ describe('AuthInterceptor', () => {
     // first attempt → 401
     const first = httpMock.expectOne('/api/protected');
     expect(first.request.headers.get('Authorization')).toBe('Bearer old');
-    first.flush({ code: 'ERRORS.UNAUTHORIZED' }, { status: 401, statusText: 'Unauthorized' });
+    first.flush(
+      { code: 'ERRORS.UNAUTHORIZED' },
+      { status: 401, statusText: 'Unauthorized' }
+    );
 
     // retry → second attempt with new token
     const second = httpMock.expectOne('/api/protected');
@@ -123,7 +142,9 @@ describe('AuthInterceptor', () => {
 
     // control refresh completion manually
     const gate = new Subject<void>();
-    (signIn.hydrateFromSession as jasmine.Spy).and.returnValue(gate.asObservable());
+    (signIn.hydrateFromSession as jasmine.Spy).and.returnValue(
+      gate.asObservable()
+    );
 
     // fire two parallel requests
     let res1: any, res2: any;
@@ -159,7 +180,9 @@ describe('AuthInterceptor', () => {
 
   it('if refresh fails — calls logout and rethrows the error', (done) => {
     signIn.setToken('old');
-    (signIn.hydrateFromSession as jasmine.Spy).and.returnValue(throwError(() => new Error('refresh-fail')));
+    (signIn.hydrateFromSession as jasmine.Spy).and.returnValue(
+      throwError(() => new Error('refresh-fail'))
+    );
 
     http.get('/api/protected').subscribe({
       next: () => done.fail('should fail'),
@@ -174,21 +197,29 @@ describe('AuthInterceptor', () => {
     r1.flush({ code: 'ERR' }, { status: 401, statusText: 'Unauthorized' });
   });
 
-  it('works the same for 403 (not only 401)', () => {
+  it('does not refresh or retry on 403; propagates the error', (done) => {
+    // initial token
     signIn.setToken('t1');
-    (signIn.hydrateFromSession as jasmine.Spy).and.callFake(() => {
-      signIn.setToken('t2');
-      return of(void 0);
+
+    // make sure interceptor won't try to refresh/logout on 403
+
+    http.get('/api/z').subscribe({
+      next: () => done.fail('expected 403 error'),
+      error: (err) => {
+        expect(err.status).toBe(403);
+        // no refresh, no logout on 403
+        expect(signIn.hydrateFromSession).not.toHaveBeenCalled();
+        expect(signIn.logout).not.toHaveBeenCalled();
+        done();
+      },
     });
 
-    http.get('/api/z').subscribe();
+    const req = httpMock.expectOne('/api/z');
+    // original token is used
+    expect(req.request.headers.get('Authorization')).toBe('Bearer t1');
+    req.flush({ code: 'ERR' }, { status: 403, statusText: 'Forbidden' });
 
-    const z1 = httpMock.expectOne('/api/z');
-    expect(z1.request.headers.get('Authorization')).toBe('Bearer t1');
-    z1.flush({ code: 'ERR' }, { status: 403, statusText: 'Forbidden' });
-
-    const z2 = httpMock.expectOne('/api/z');
-    expect(z2.request.headers.get('Authorization')).toBe('Bearer t2');
-    z2.flush({ ok: true });
+    // ensure there was no retry
+    httpMock.expectNone('/api/z');
   });
 });

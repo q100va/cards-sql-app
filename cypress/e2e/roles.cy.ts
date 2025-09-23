@@ -11,8 +11,8 @@
  *  - (опц.) cy.task('db:reset') настроен в cypress.config.ts
  */
 
-const API_BASE = String(Cypress.env('API_URL') || 'http://localhost:8080');
-const apiRoles = (p: string) => `${API_BASE}/api/roles${p}`;
+//const API_BASE = String(Cypress.env('API_URL') || 'http://localhost:8080');
+//const apiRoles = (p: string) => `${API_BASE}/api/roles${p}`;
 const API = (p: string) => `**/api/roles${p}`;
 const useStubs = () => String(Cypress.env('USE_STUBS')) === '1';
 const maybe = (cond: boolean) => (cond ? it : it.skip);
@@ -34,14 +34,87 @@ function registerGetRolesRoute() {
 type SeedRole = { name: string; description?: string };
 
 function prepareLiveDB() {
-  console.log('[cypress task] -> prepareLiveDB() ');
+  /*   console.log('[cypress task] -> prepareLiveDB() ');
   const API_BASE = String(Cypress.env('API_URL') || 'http://localhost:8080');
-  const apiRoles = (p: string) => `${API_BASE}/api/roles${p}`;
+  const apiRoles = (p: string) => `${API_BASE}/api/roles${p}`; */
 
   return cy
     .task('db:reset', null, { timeout: 180_000, log: false })
     .should('eq', 'db-reset:done:v1');
+}
 
+function stubPermissionsLimited() {
+  // Возвращаем минимально достаточный набор прав
+  const PERMS = [
+    {
+      id: 1,
+      roleId: 999,
+      operation: 'VIEW_FULL_USERS_LIST',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 2,
+      roleId: 999,
+      operation: 'VIEW_LIMITED_ROLES_LIST',
+      access: true,
+      disabled: true,
+    },
+    {
+      id: 3,
+      roleId: 999,
+      operation: 'VIEW_FULL_ROLES_LIST',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 4,
+      roleId: 999,
+      operation: 'ALL_OPS_ROLES',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 8,
+      roleId: 999,
+      operation: 'ADD_NEW_ROLE',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 9,
+      roleId: 999,
+      operation: 'EDIT_ROLE',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 10,
+      roleId: 999,
+      operation: 'DELETE_ROLE',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 6,
+      roleId: 999,
+      operation: 'ADD_NEW_USER',
+      access: true,
+      disabled: false,
+    },
+    {
+      id: 5,
+      roleId: 999,
+      operation: 'EDIT_USER',
+      access: true,
+      disabled: false,
+    },
+  ];
+
+  cy.intercept('GET', `**/api/auth/permissions`, {
+    statusCode: 200,
+    body: { data: PERMS },
+  }).as('perms');
 }
 
 describe('Roles — E2E (stubbed or live)', () => {
@@ -60,17 +133,28 @@ describe('Roles — E2E (stubbed or live)', () => {
   beforeEach(() => {
     registerGetRolesRoute();
     if (useStubs()) {
-      cy.login();
-
+      cy.login({noVisit: true});
+      stubPermissionsLimited();
+       cy.visit('/');
+       cy.wait('@perms');
     } else {
-       cy.login({
+      cy.login({
         user: 'superAdmin',
         pass: 'p@ss12345',
+        noVisit: true
       });
+      cy.intercept('GET', `**/api/auth/permissions`).as('getPerms');
+      cy.visit('/');
+       cy.wait('@getPerms');
     }
+    //stubPermissionsLimited();
+    //cy.visit('/');
+    //cy.wait('@perms');
+
     cy.get('button[data-cy="profileMenu"]')
       .scrollIntoView()
       .click({ force: true });
+
     cy.get('button[data-cy="nav-roles"]')
       .scrollIntoView()
       .click({ force: true });

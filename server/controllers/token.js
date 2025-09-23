@@ -81,10 +81,14 @@ export async function mintTokenPair(user, ctx = {}) {
     sub: String(user.id),
     uname: user.userName,
     role: roleName,
+    roleId: user.roleId,
   });
 
   const refreshToken = signRefresh({
     sub: String(user.id),
+    uname: user.userName,
+    role: roleName,
+    roleId: user.roleId,
     jti: refresh.id,
   });
 

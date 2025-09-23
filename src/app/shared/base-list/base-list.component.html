@@ -37,7 +37,7 @@
             </mat-grid-tile>
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
-                <button mat-icon-button title="Добавить пользователя" (click)="onAddUserClick()" appBlurOnClick>
+                <button mat-icon-button data-cy="btn-create-item" title="Добавить пользователя" (click)="onAddUserClick()" appBlurOnClick *hasOp="{codes:['ADD_NEW_USER'], mode:'any'}">
                   <mat-icon>person_add_alt</mat-icon>
                 </button>
               </div>

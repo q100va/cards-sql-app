@@ -7,7 +7,8 @@ import {
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
+import { AuthServiceHarness } from '../../utils/auth-harness';
+import { AuthService } from '../../services/auth.service';
 import { RolesListComponent } from './roles-list.component';
 import { RoleService } from '../../services/role.service';
 import { MessageWrapperService } from '../../services/message.service';
@@ -25,6 +26,7 @@ class EmptyLoader implements TranslateLoader {
 describe('RolesListComponent', () => {
   let fixture: ComponentFixture<RolesListComponent>;
   let component: RolesListComponent;
+  let auth: AuthServiceHarness;
 
   // Spies
   let roleServiceSpy: jasmine.SpyObj<RoleService>;
@@ -33,6 +35,12 @@ describe('RolesListComponent', () => {
   let dialogSpy: jasmine.SpyObj<MatDialog>;
 
   beforeEach(async () => {
+    auth = new AuthServiceHarness();
+    auth.setUser({ id: 999, userName: 'test' });
+    auth.grantAllCommon();
+    auth.setAuthReady(true);
+    auth.setPermsReady(true);
+    auth.getCurrentUserSnapshot(999);
     roleServiceSpy = jasmine.createSpyObj('RoleService', [
       'getRoles',
       'checkRoleName',
@@ -62,6 +70,7 @@ describe('RolesListComponent', () => {
         }),
       ],
       providers: [
+        { provide: AuthService, useValue: auth },
         { provide: RoleService, useValue: roleServiceSpy },
         { provide: MessageWrapperService, useValue: msgSpy },
         { provide: ConfirmationService, useValue: confirmSpy },
@@ -162,7 +171,9 @@ describe('RolesListComponent', () => {
     // Seed with some data first
     (component as any).roles = [{ id: 1, name: 'Old', description: 'OldDesc' }];
     (component as any).operations = [];
-    (component as any).originalRoles = [{ id: 1, name: 'Old', description: 'OldDesc' }];
+    (component as any).originalRoles = [
+      { id: 1, name: 'Old', description: 'OldDesc' },
+    ];
 
     roleServiceSpy.getRoles.and.returnValue(
       throwError(() => new Error('boom'))
@@ -224,7 +235,9 @@ describe('RolesListComponent', () => {
   });
 
   it('name changed: handles checkRoleName error and rollback', () => {
-    component.roles = [{ id: 1, name: 'New', description: 'Same description' }] as any;
+    component.roles = [
+      { id: 1, name: 'New', description: 'Same description' },
+    ] as any;
     component.originalRoles = [
       { id: 1, name: 'Old', description: 'Same description' },
     ] as any;
@@ -240,9 +253,15 @@ describe('RolesListComponent', () => {
   });
 
   it('name changed: passes when name free (data=false) and updates successfully', () => {
-    const updated = { id: 1, name: 'New', description: 'Same description' } as any;
+    const updated = {
+      id: 1,
+      name: 'New',
+      description: 'Same description',
+    } as any;
 
-    component.roles = [{ id: 1, name: 'New', description: 'Same description' }] as any;
+    component.roles = [
+      { id: 1, name: 'New', description: 'Same description' },
+    ] as any;
     component.originalRoles = [
       { id: 1, name: 'Old', description: 'Same description' },
     ] as any;
@@ -335,7 +354,7 @@ describe('RolesListComponent', () => {
         data: {
           object: 'partners',
           ops: [
-            { id: 10, roleId: 1, access: true, disabled: true }, // merged by id
+            { id: 10, roleId: 1, access: true, disabled: false }, // merged by id
             // id: 11 intentionally omitted -> must stay as is
           ],
         },
@@ -345,7 +364,7 @@ describe('RolesListComponent', () => {
     component.onAccessChangeCheck(true, 1, component.operations[0]);
 
     expect(component.operations[0].rolesAccesses).toEqual([
-      { id: 10, roleId: 1, access: true, disabled: true },
+      { id: 10, roleId: 1, access: true, disabled: false },
       { id: 11, roleId: 2, access: false, disabled: false },
     ]);
     expect(component.operations[1].rolesAccesses).toEqual([
@@ -519,11 +538,6 @@ describe('RolesListComponent', () => {
   //#endregion
 
   //#region Misc
-
-  it('trackById returns entity id', () => {
-    const id = component.trackById(0, { id: 123 } as any);
-    expect(id).toBe(123);
-  });
 
   it('loadRoles toggles isLoading true→false around request', fakeAsync(() => {
     const subj = new Subject<{

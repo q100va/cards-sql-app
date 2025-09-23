@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 
 import { SignInComponent } from './sign-in.component';
-import { SignInService } from '../../services/sign-in.service';
+import { AuthService } from '../../services/auth.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
@@ -14,13 +14,13 @@ describe('SignInComponent', () => {
   let component: SignInComponent;
 
   // Spies
-  let signInSvc: jasmine.SpyObj<SignInService>;
+  let signInSvc: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
   let msgWrapper: jasmine.SpyObj<MessageWrapperService>;
   let i18n: jasmine.SpyObj<TranslateService>;
 
   beforeEach(async () => {
-    signInSvc = jasmine.createSpyObj<SignInService>('SignInService', ['logIn']);
+    signInSvc = jasmine.createSpyObj<AuthService>('AuthService', ['logIn']);
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
     msgWrapper = jasmine.createSpyObj<MessageWrapperService>('MessageWrapperService', ['handle']);
     i18n = jasmine.createSpyObj<TranslateService>('TranslateService', ['instant']);
@@ -32,7 +32,7 @@ describe('SignInComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SignInComponent], // standalone component
       providers: [
-        { provide: SignInService, useValue: signInSvc },
+        { provide: AuthService, useValue: signInSvc },
         { provide: Router, useValue: router },
         { provide: MessageWrapperService, useValue: msgWrapper },
         { provide: TranslateService, useValue: i18n },
@@ -89,7 +89,7 @@ describe('SignInComponent', () => {
 
     expect(component.isLoad).toBeFalse();
     expect(i18n.instant).toHaveBeenCalledWith('ERRORS.INVALID_AUTHORIZATION', {});
-    expect(component.errorMessage).toBe('t:ERRORS.INVALID_AUTHORIZATION');
+    expect(component.errorMessage).toBe('t:ERRORS.INVALID_AUTHORIZATION:{}');
     expect(msgWrapper.handle).toHaveBeenCalledWith(err, { source: 'SignIn', stage: 'logIn' });
     expect(router.navigate).not.toHaveBeenCalled();
   });
@@ -102,7 +102,7 @@ describe('SignInComponent', () => {
     component.onSubmit();
 
     expect(i18n.instant).toHaveBeenCalledWith('ERRORS.ACCOUNT_LOCKED', {});
-    expect(component.errorMessage).toBe('t:ERRORS.ACCOUNT_LOCKED');
+    expect(component.errorMessage).toBe('t:ERRORS.ACCOUNT_LOCKED:{}');
   });
 
   it('maps 429 to ERRORS.TOO_MANY_ATTEMPTS with retryAfterSec from body first', () => {
@@ -134,6 +134,6 @@ describe('SignInComponent', () => {
     component.onSubmit();
 
     expect(i18n.instant).toHaveBeenCalledWith('CUSTOM.ERROR', {});
-    expect(component.errorMessage).toBe('t:CUSTOM.ERROR');
+    expect(component.errorMessage).toBe('t:CUSTOM.ERROR:{}');
   });
 });
