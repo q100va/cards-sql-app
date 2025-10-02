@@ -11,9 +11,6 @@ import { withTransaction } from "../controllers/with-transaction.js";
 import requireAuth from '../middlewares/check-auth.js';
 import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';
 
-// TODO: add authentication/authorization middlewares
-// import { authorizeAdmin } from "../middlewares/auth.js";
-
 const Op = Sequelize.Op;
 const router = Router();
 

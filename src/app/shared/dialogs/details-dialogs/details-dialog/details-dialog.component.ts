@@ -75,7 +75,7 @@ export class DetailsDialogComponent<T extends BaseModel>
       ? this.data.creationTitle
       : this.data.viewTitle;
 
-      constructor(@Inject(Injector) private injector: Injector) {}
+      constructor( private injector: Injector) {}
 
 
   ngAfterViewInit(): void {

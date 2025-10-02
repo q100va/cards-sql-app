@@ -1,12 +1,10 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { DefaultAddressParams } from './default-address-params';
+import { DefaultAddressParams } from './address-filter';
 import { AddressFilterParams } from './address-filter-params';
-import { AddressKey, ToponymType } from './types';
-import { User } from './user';
+import { AddressKey, ToponymType } from './address-filter';
 import { Toponym } from './toponym';
 import { BaseModel } from './base-model';
 import { DetailsComponentType } from '../shared/dialogs/details-dialogs/details-dialog/details-component-registry';
-import { AddressFilter } from './address-filter';
 
 export interface ToponymProps {
   title: string;

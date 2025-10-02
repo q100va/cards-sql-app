@@ -14,7 +14,7 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { ToponymFormControlsValues } from '../../interfaces/toponym';
 import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
 import { Toponym } from '../../interfaces/toponym';
-import { DefaultAddressParams } from '../../interfaces/default-address-params';
+import { DefaultAddressParams } from '../../interfaces/address-filter';
 
 @Component({
   selector: 'app-toponym-details',

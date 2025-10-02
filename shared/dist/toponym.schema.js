@@ -45,9 +45,9 @@ export const toponymSchema = z
     isFederalCity: z.boolean().optional(),
     isCapitalOfRegion: z.boolean().optional(),
     isCapitalOfDistrict: z.boolean().optional(),
-    countryName: z.string().nullable().optional(), // string | null | undefined
-    regionName: z.string().nullable().optional(),
-    districtName: z.string().nullable().optional(),
+    countryName: z.string().optional(), // string | undefined
+    regionName: z.string().optional(),
+    districtName: z.string().optional(),
 })
     .strict();
 export const findToponymByIdSchema = z

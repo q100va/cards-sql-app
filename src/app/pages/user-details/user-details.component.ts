@@ -43,7 +43,7 @@ import { UserService } from '../../services/user.service';
 import * as Validator from '../../utils/custom.validator';
 import { UserDraft } from '../../interfaces/userDraft';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advances-details/advanced-details.component';
-import { typedKeys } from '../../interfaces/types';
+import { typedKeys } from '../../interfaces/address-filter';
 import { ChangePasswordDialogComponent } from '../../shared/dialogs/change-password-dialog/change-password-dialog';
 import { MatDialog } from '@angular/material/dialog';
 

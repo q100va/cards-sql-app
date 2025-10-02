@@ -54,9 +54,9 @@ export const toponymSchema = z
     isCapitalOfRegion: z.boolean().optional(),
     isCapitalOfDistrict: z.boolean().optional(),
 
-    countryName: z.string().nullable().optional(), // string | null | undefined
-    regionName: z.string().nullable().optional(),
-    districtName: z.string().nullable().optional(),
+    countryName: z.string().optional(), // string | undefined
+    regionName: z.string().optional(),
+    districtName: z.string().optional(),
   })
   .strict();
 
@@ -178,3 +178,6 @@ export const bulkToponymsSchema = z.discriminatedUnion('type', [
 
 export type SaveToponym = z.infer<typeof saveToponymSchema>;
 export type ToponymNamesList = z.infer<typeof toponymNamesListSchema>;
+export type ToponymType = z.infer<typeof toponymTypeSchema>;
+export type Toponym = z.infer<typeof toponymSchema>;
+export type DefaultAddressParams = z.infer<typeof DefaultAddressParamsSchema>;

@@ -19,8 +19,8 @@ import {
   ToponymListMap,
   ToponymType,
   typedKeys,
-} from '../../interfaces/types';
-import { DefaultAddressParams } from '../../interfaces/default-address-params';
+  DefaultAddressParams
+} from '../../interfaces/address-filter';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { MessageWrapperService } from '../../services/message.service';
 import { ToponymNamesList } from '../../../../shared/dist/toponym.schema';

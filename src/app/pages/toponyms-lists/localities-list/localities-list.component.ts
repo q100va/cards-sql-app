@@ -2,8 +2,8 @@ import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps } from '../../../interfaces/dialog-props';
 import { ActivatedRoute } from '@angular/router';
-import { ToponymType } from '../../../interfaces/types';
-import { DefaultAddressParams } from '../../../interfaces/default-address-params';
+import { ToponymType } from '../../../interfaces/address-filter';
+import { DefaultAddressParams } from '../../../interfaces/address-filter';
 import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 
 @Component({

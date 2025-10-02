@@ -1,7 +1,11 @@
-import { BaseModel } from "./base-model";
-import { DefaultAddressParams } from "./default-address-params";
+//import { BaseModel } from "./base-model";
+//import { DefaultAddressParams } from "./address-filter";
 
-export interface Toponym extends BaseModel {
+import type { Toponym } from "@shared/schemas/toponym.schema";
+
+export type { Toponym };
+
+/* export interface Toponym {
   id: number;
   name: string;
   defaultAddressParams?: DefaultAddressParams;
@@ -11,10 +15,10 @@ export interface Toponym extends BaseModel {
   isFederalCity?: boolean;
   isCapitalOfRegion?: boolean;
   isCapitalOfDistrict?: boolean;
-  countryName?: string | null;
-  regionName?: string | null;
-  districtName?: string | null;
-}
+  countryName?: string;
+  regionName?: string;
+  districtName?: string;
+} */
 
   export interface ToponymFormControlsValues {
   name: string;

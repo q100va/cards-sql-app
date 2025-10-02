@@ -34,10 +34,9 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
 //import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
-import { DefaultAddressParams } from '../../interfaces/default-address-params';
-import { AddressFilter } from '../../interfaces/address-filter';
+import { DefaultAddressParams } from '../../interfaces/address-filter';
+import { AddressFilter, typedKeys } from '../../interfaces/address-filter';
 import { GeneralFilter } from '../../interfaces/filter';
-import { typedKeys } from '../../interfaces/types';
 
 import { HasOpDirective } from '../../directives/has-op.directive';
 

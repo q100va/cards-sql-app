@@ -23,8 +23,7 @@ import { AddressService } from '../../../../services/address.service';
 import { DialogData } from '../../../../interfaces/dialog-props';
 import { ContactType, isContactType } from '../../../../interfaces/user';
 import { BaseModel } from '../../../../interfaces/base-model';
-import { DefaultAddressParams } from '../../../../interfaces/default-address-params';
-import { hasKey } from '../../../../interfaces/types';
+import { DefaultAddressParams, hasKey } from '../../../../interfaces/address-filter';
 import { MessageWrapperService } from '../../../../services/message.service';
 
 @Component({

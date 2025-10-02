@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps } from '../../../interfaces/dialog-props';
-import { ToponymType } from '../../../interfaces/types';
+import { ToponymType } from '../../../interfaces/address-filter';
 import { Validators } from '@angular/forms';
 
 @Component({

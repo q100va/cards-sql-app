@@ -6,7 +6,7 @@ import readXlsxFile from 'read-excel-file';
 import { schemas } from './schemas';
 import { FileService } from '../../services/file.service';
 import { MatIconModule } from '@angular/material/icon';
-import { ToponymType } from '../../interfaces/types';
+import { ToponymType } from '../../interfaces/address-filter';
 import { MessageWrapperService } from '../../services/message.service';
 import { AddressService } from '../../services/address.service';
 

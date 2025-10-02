@@ -6,7 +6,7 @@ import {
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ToponymType } from '../interfaces/types';
+import { ToponymType } from '../interfaces/address-filter';
 import { AddressFilter } from '../interfaces/address-filter';
 import { Toponym, ToponymFormControlsValues } from '../interfaces/toponym';
 import { catchError } from 'rxjs/operators';
@@ -25,7 +25,6 @@ import {
   toponymNamesListSchema,
   toponymsSchema,
 } from '@shared/schemas/toponym.schema';
-
 @Injectable({
   providedIn: 'root',
 })

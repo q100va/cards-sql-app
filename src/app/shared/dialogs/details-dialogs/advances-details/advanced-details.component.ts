@@ -6,7 +6,7 @@ import { AdvancedModel } from '../../../../interfaces/advanced-model';
 import {
   AddressKey,
   typedKeys,
-} from '../../../../interfaces/types';
+} from '../../../../interfaces/address-filter';
 
 @Component({
   selector: 'app-advanced-details',
