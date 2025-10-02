@@ -8,11 +8,20 @@ export interface Toponym extends BaseModel {
   shortName?: string;
   postName?: string;
   shortPostName?: string;
- /*  districtId?: number;
-  regionId?: number;
-  countryId?: number; */
   isFederalCity?: boolean;
   isCapitalOfRegion?: boolean;
-  isCapitalOfDistrict?: boolean;}
+  isCapitalOfDistrict?: boolean;
+  countryName?: string | null;
+  regionName?: string | null;
+  districtName?: string | null;
+}
 
-
+  export interface ToponymFormControlsValues {
+  name: string;
+  shortName?: string;
+  postName?: string;
+  shortPostName?: string;
+  isFederalCity?: boolean;
+  isCapitalOfRegion?: boolean;
+  isCapitalOfDistrict?: boolean;
+}

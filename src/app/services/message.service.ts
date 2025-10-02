@@ -96,14 +96,16 @@ export class MessageWrapperService {
         ? 'warn'
         : 'error'
       : severityHint;
-
+    const params = parsed.data;
+    console.log('params', params);
     if (severity === 'warn') this.logService.warn(parsed.devMessage, mergedCtx);
     else this.logService.error(parsed.devMessage, mergedCtx);
 
     // Тост: короткое понятное сообщение
     const msg = parsed.code
-      ? this.translateService.instant(parsed.code)
+      ? this.translateService.instant(parsed.code, params)
       : this.fallbackUserMessage(parsed.status);
+    console.log('msg', msg);
     this.showToast(severity, msg, mergedCtx.correlationId);
   }
 
@@ -132,6 +134,7 @@ export class MessageWrapperService {
     devMessage: string;
     correlationId?: string | null;
     route?: string;
+    data?: any;
   } {
     if (err instanceof ValidationError) {
       return {
@@ -152,6 +155,7 @@ export class MessageWrapperService {
       const correlationId =
         body?.correlationId ?? err.headers?.get?.('X-Request-Id') ?? null;
       const route = err.url ?? undefined;
+      const data = body?.data ?? undefined;
       const dev = `HTTP ${status} ${route ?? ''}${code ? ` — ${code}` : ''}`;
 
       return {
@@ -161,6 +165,7 @@ export class MessageWrapperService {
         correlationId,
         route,
         devMessage: dev,
+        data,
       };
     }
 

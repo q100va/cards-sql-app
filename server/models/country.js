@@ -1,30 +1,36 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 
-import sequelize from '../database.js';
-
-const Country = sequelize.define('country', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true
-  },
-  name: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
+export default function CountryModel(sequelize) {
+  class Country extends Model { }
+  Country.init({
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true
+    },
+    name: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: false,
+      validate: {
+        notEmpty: true,
+        len: [1, 200]
+      }
+    },
+    isRestricted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
     }
   },
-  isRestricted: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    allowNull: false,
-  }
-});
+    {
+      sequelize,
+      modelName: 'country',
+      tableName: 'countries',
+      timestamps: true, // createdAt
+      updatedAt: true,
+    });
 
-//Associations
-
-
-export default Country;
+  return Country;
+}

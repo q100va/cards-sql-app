@@ -23,6 +23,7 @@ import {
 import { DefaultAddressParams } from '../../interfaces/default-address-params';
 import { AddressFilter } from '../../interfaces/address-filter';
 import { MessageWrapperService } from '../../services/message.service';
+import { ToponymNamesList } from '../../../../shared/dist/toponym.schema';
 
 @Component({
   selector: 'app-address-filter',
@@ -98,7 +99,7 @@ export class AddressFilterComponent {
       'defaultAddressParams in address-filter',
       this.defaultAddressParams()
     ); */
-    this.addressService.getListOfCountries().subscribe({
+    this.addressService.getListOfToponyms([], 'countries').subscribe({
       next: (res) => {
         this.toponymsList.countriesList = res.data;
 
@@ -245,7 +246,7 @@ export class AddressFilterComponent {
       const ids = addressData[key];
       //console.log('addressData, key, ids', addressData, key, ids);
       if (ids.length > 0) {
-        const list = this.toponymsList[keyMap[key]];
+        const list: ToponymNamesList = this.toponymsList[keyMap[key]];
 
         for (const id of ids) {
           const name = list.find((item) => item.id === id)?.name;

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from 'src/environments/environment';
 import { ClientLogBatch, ClientLogItem, ClientLogLevel } from '../interfaces/client-log';
+import { environment } from '../../environments/environment';
 
 function uuid(): string {
   const c = crypto?.getRandomValues?.(new Uint8Array(16));
@@ -11,6 +11,7 @@ function uuid(): string {
   const h = Array.from(c, b => b.toString(16).padStart(2, '0')).join('');
   return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
 }
+//TODO: не всегда добавляется юзер ID
 
 @Injectable({ providedIn: 'root' })
 export class ClientLoggerService {

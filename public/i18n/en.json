@@ -71,6 +71,25 @@
     "TABLE_NAME_PLACEHOLDER": "2–50 characters",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 characters"
   },
+  "TOPONYM": {
+    "CREATED": "Toponym \"{{name}}\" created",
+    "UPDATED": "Toponym \"{{name}}\" updated",
+    "DELETED": "Toponym deleted",
+    "BULK_CREATED": "{{count}} toponyms created",
+    "ALREADY_EXISTS": "This name is already in use for this area. If this isn’t a mistake, please contact an administrator.",
+    "HAS_DEPENDENCIES": "The toponym cannot be deleted: {{count}} related item(s)",
+
+    "CARD_TITLE": "New toponym",
+    "CARD_CLOSE": "Close",
+    "CARD_SAVE_AND_EXIT": "Save and exit",
+    "CARD_LABEL_NAME": "Name",
+    "CARD_LABEL_DESCRIPTION": "Description",
+
+    "TABLE_TITLE": "Roles",
+    "TABLE_ADD_ROLE": "Add toponym",
+    "TABLE_DELETE_ROLE": "Delete toponym",
+    "TABLE_EMPTY": "No toponyms have been created yet."
+  },
 
   "ERRORS": {
     "VALIDATION": "Validation error",
@@ -105,6 +124,20 @@
       "LIST_FAILED": "Failed to get the list of roles",
       "NOT_CHECKED": "Failed to check the role dependencies",
       "NOT_DELETED": "Failed to delete the role"
+    },
+    "TOPONYM": {
+      "NOT_FOUND": "Toponym not found",
+      "NAME_NOT_CHECKED": "Failed to check the toponym name",
+      "NOT_CREATED": "Failed to create the toponym",
+      "NOT_UPDATED": "Failed to update the toponym",
+      "NAME_LIST_FAILED": "Failed to get the list of toponym names",
+      "LIST_FAILED": "Failed to get the list of toponyms",
+      "NOT_CHECKED": "Failed to check the toponym dependencies",
+      "NOT_DELETED": "Failed to delete the toponym",
+      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}",
+      "FROM_BULK_ALREADY_EXISTS": "These names: {{conflicts}} are already in use for this area. If this isn’t a mistake, please contact an administrator.",
+      "BULK_NOT_CREATED": "Toponyms were not created due to an error",
+      "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling."
     }
   },
   "FORM_VALIDATION": {

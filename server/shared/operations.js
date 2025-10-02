@@ -31,6 +31,14 @@ export const OPERATIONS = [
     description: 'Create a new country, region, district, or locality',
     objectName: 'OBJECT.TOPONYMS',
   },
+    {
+    operation: 'VIEW_TOPONYM',
+    object: 'toponyms',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW.NAME',
+    description: 'View data of a country, region, district, or locality',
+    objectName: 'OBJECT.TOPONYMS',
+  },
   {
     operation: 'EDIT_TOPONYM',
     object: 'toponyms',

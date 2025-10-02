@@ -11,9 +11,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
-import { ToponymFormControlsNames } from '../../interfaces/toponymFormControlsNames';
+import { ToponymFormControlsValues } from '../../interfaces/toponym';
 import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
 import { Toponym } from '../../interfaces/toponym';
+import { DefaultAddressParams } from '../../interfaces/default-address-params';
 
 @Component({
   selector: 'app-toponym-details',
@@ -92,59 +93,63 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
   }
 
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
+    const name = this.mainForm.controls[this.data().checkingName].value!.trim();
+    const type = this.data().toponymType!;
     this.addressService
       .checkToponymName(
-        this.data().toponymType!,
-        this.mainForm.controls[this.data().checkingName].value!,
+        type,
+        name,
         this.data().object ? this.data().object!['id'] : null,
         this.addressFilter()
-        //this.data().operation
       )
       .subscribe({
         next: (res) => {
           if (res.data) {
-            this.msgWrapper.warn(
-              `Топоним с названием '${this.mainForm.controls[
-                this.data().checkingName
-              ]
-                .value!}' уже существует в этом кластере. Если это не ошибка, обратитесь к администратору.`
-            );
           } else {
             this.saveToponym(action);
           }
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'CreateToponymDialog',
+            stage: 'checkToponymName',
+            name: name,
+            type: type,
+          }),
       });
   }
 
   saveToponym(action: 'justSave' | 'saveAndExit') {
+    const name = this.mainForm.controls[this.data().checkingName].value!.trim();
+    const type = this.data().toponymType!;
     this.addressService
       .saveToponym(
-        this.data().toponymType!,
+        type,
         this.data().object ? this.data().object!['id'] : null,
-        this.mainForm.value as ToponymFormControlsNames,
+        this.mainForm.value as ToponymFormControlsValues,
         this.addressFilter(),
         this.data().operation!
       )
       .subscribe({
         next: (res) => {
           if (action == 'saveAndExit') {
-            //this.dialogRef.close({ name: res.data });
-            this.closeDialogDataSignal.set(res.data.toponym.name);
-            this.emittedCloseDialogData.emit(res.data.toponym.name);
+            this.closeDialogDataSignal.set(res.data.name);
+            this.emittedCloseDialogData.emit(res.data.name);
           } else {
-            //console.log('this.data().object', this.data().object);
-            this.data().object = res.data.toponym;
+            this.data().object = res.data;
             this.data().defaultAddressParams = res.data.defaultAddressParams;
             console.log('this.data().object', this.data().object);
             this.changeToViewMode(this.data().defaultAddressParams!);
             this.setInitialValues('view');
-            this.msgWrapper.success(
-              `Топоним '${res.data.toponym.name}' обновлен.`
-            );
           }
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'ToponymDetailsDialog',
+            stage: 'saveToponym',
+            name: name,
+            type: type,
+          }),
       });
   }
 }

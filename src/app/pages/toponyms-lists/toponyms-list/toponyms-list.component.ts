@@ -252,11 +252,8 @@ export class ToponymsListComponent {
       ...this.dialogConfig,
       data: dialogData,
     });
-    dialogRefCreate.afterClosed().subscribe((result) => {
-      if (result.name) {
-        this.getToponyms();
-        this.msgWrapper.success(`Топоним '${result.name}' создан.`);
-      }
+    dialogRefCreate.afterClosed().subscribe(() => {
+      this.getToponyms();
     });
   }
 
@@ -265,7 +262,7 @@ export class ToponymsListComponent {
       next: (res) => {
         this.dialogData().addressFilterParams.readonly = true;
         this.dialogData().addressFilterParams.class = 'view-mode';
-        this.dialogData().object = res.data.toponym;
+        this.dialogData().object = res.data;
         const dialogData: DialogData<Toponym> = {
           ...this.dialogData(),
           operation: 'view-edit',
@@ -278,14 +275,17 @@ export class ToponymsListComponent {
           ...this.dialogConfig,
           data: dialogData,
         });
-        dialogRefCreate.afterClosed().subscribe((result) => {
+        dialogRefCreate.afterClosed().subscribe(() => {
           this.getToponyms();
-          if (result.name) {
-            this.msgWrapper.success(`Топоним '${result.name}' обновлен.`);
-          }
         });
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) =>
+        this.msgWrapper.handle(err, {
+          source: 'ToponymList',
+          stage: 'onOpenToponymCardClick',
+          toponymId: id,
+          type: this.type(),
+        }),
     });
   }
 
@@ -303,19 +303,6 @@ export class ToponymsListComponent {
     this.inputValue = '';
   }
 
-  onFileDownloadClick() {
-    this.fileService.downloadFile(this.toponymProps().filename!).subscribe({
-      next: (blob) => {
-        saveAs(blob, this.toponymProps().filename);
-      },
-      error: (err) => {
-        this.msgWrapper.handle({
-          error: 'Невозможно загрузить выбранный файл: ' + err,
-        });
-      },
-    });
-  }
-
   onOpenListClick(toponym: Toponym, way: string) {
     this.router.navigate([way], {
       queryParams: toponym.defaultAddressParams, //this.addDefaultAddressParams(toponym),
@@ -329,52 +316,60 @@ export class ToponymsListComponent {
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
-/*       rejectButtonProps: {
+      rejectButtonProps: {
         label: 'Нет',
       },
       acceptButtonProps: {
         label: 'Да',
         severity: 'secondary',
         outlined: true,
-      }, */
+      },
       accept: () => {
-        this.checkPossibilityToDeleteToponym(rowId, rowShortName, destroy);
+        this.checkPossibilityToDeleteToponym(rowId, destroy);
       },
       reject: () => {},
     });
   }
 
-  checkPossibilityToDeleteToponym(
-    id: number,
-    deletingToponym: string,
-    destroy: boolean
-  ) {
+  checkPossibilityToDeleteToponym(id: number, destroy: boolean) {
     this.addressService
       .checkPossibilityToDeleteToponym(this.type(), id, destroy)
       .subscribe({
         next: (res) => {
-          if (res.data) {
-            this.deleteToponym(id, destroy, deletingToponym);
+          if (res.data === 0) {
+            this.deleteToponym(id, destroy);
           } else {
-            //TODO: проверить на неактуальных адресах
+            /*             //TODO: проверить на неактуальных адресах
             const detail = destroy
               ? `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей адресов или имеет подчиненные топонимы.\nПроверьте список связанных с ним топонимов, интернатов, поздравляющих и пользователей.\nЭти адреса, в т.ч. неактуальные, и топонимы должны быть изменены или удалены.`
               : `Топоним '${deletingToponym}' невозможно удалить!\nОн является составляющей актуальных адресов или имеет подчиненные топонимы.\nПроверьте список связанных с ним топонимов, интернатов, поздравляющих и пользователей.\nЭти адреса и топонимы должны быть изменены, удалены или помечены как неактуальные.`;
-            this.msgWrapper.warn(detail);
+            this.msgWrapper.warn(detail); */
           }
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'ToponymList',
+            stage: 'checkPossibilityToDeleteToponym',
+            toponymId: id,
+            type: this.type(),
+            destroy,
+          }),
       });
   }
 
-  deleteToponym(id: number, destroy: boolean, deletingToponym: string) {
-    const serviceFuncName = destroy ? 'deleteToponym' : 'blockToponym';
-    this.addressService[serviceFuncName](this.type(), id).subscribe({
+  deleteToponym(id: number, destroy: boolean) {
+    this.addressService.deleteToponym(this.type(), id, destroy).subscribe({
       next: (res) => {
-        this.msgWrapper.success(`Топоним ${deletingToponym} удален.`);
         this.getToponyms();
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) =>
+        this.msgWrapper.handle(err, {
+          source: 'ToponymList',
+          stage: 'deleteToponym',
+          toponymId: id,
+          type: this.type(),
+          destroy,
+        }),
     });
   }
 
@@ -411,7 +406,44 @@ export class ToponymsListComponent {
           this.dataSource = new MatTableDataSource(this.toponyms);
           this.dataSource.sort = this.sort;
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'ToponymList',
+            stage: 'getToponyms',
+            type: this.type(),
+            filter: this.filterValue(),
+          }),
       });
+  }
+
+  onFileDownloadClick() {
+    this.fileService.downloadFile(this.toponymProps().filename!).subscribe({
+      next: (blob) => saveAs(blob, this.toponymProps().filename),
+      error: (err) => {
+        // если сервер прислал текст ошибки — можно прочитать
+        if (err?.error instanceof Blob) {
+          err = new Error(`Download error: ${err.error.text()}`);
+        }
+        this.msgWrapper.handle(
+          err,
+          {
+            source: 'ToponymList',
+            stage: 'fileDownload',
+            type: this.type()
+          }
+        );
+      }
+    });
+
+    /*    this.fileService.downloadFile(this.toponymProps().filename!).subscribe({
+      next: (blob) => {
+        saveAs(blob, this.toponymProps().filename);
+      },
+      error: (err) => {
+        this.msgWrapper.handle({
+          error: 'Невозможно загрузить выбранный файл: ' + err,
+        });
+      },
+    }); */
   }
 }

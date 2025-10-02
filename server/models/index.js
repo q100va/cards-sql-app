@@ -1,21 +1,26 @@
 import sequelize from '../database.js';
 import AuditLogModel from './audit-log.js';
 import Role from './role.js';
-import Locality from './locality.js';
-import District from './district.js';
-import Region from './region.js';
-import Country from './country.js';
-import UserAddress from './user-address.js';
+import LocalityModel from './locality.js';
+import DistrictModel from './district.js';
+import RegionModel from './region.js';
+import CountryModel from './country.js';
+import UserAddressModel from './user-address.js';
 import UserContact from './user-contact.js';
 import User from './user.js';
-//import RolePermission from './role-permission.js';
 import SearchUser from './search-user.js';
 import OutdatedName from './outdated-name.js';
 import RefreshToken from './refresh-token.js';
 import RolePermissionModel from './role-permission.js';
 
+
 const AuditLog = AuditLogModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
+const Country = CountryModel(sequelize);
+const Region = RegionModel(sequelize);
+const District = DistrictModel(sequelize);
+const Locality = LocalityModel(sequelize);
+const UserAddress = UserAddressModel(sequelize);
 
 User.hasMany(UserContact, { as: 'contacts' }, {
   onDelete: 'CASCADE',
