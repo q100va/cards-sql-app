@@ -39,7 +39,7 @@
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Предупреждение",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Вы уверены, что хотите выйти без сохранения?",
-    "DELETE_ROLE_MESSAGE": "Удалить роль «{{name}}»?<br>Данные невозможно будет восстановить.",
+    "DELETE_ITEM_MESSAGE": "Удалить «{{name}}»?<br>Данные невозможно будет восстановить.",
     "ACCEPT": "Да",
     "REJECT": "Нет"
   },
@@ -85,14 +85,45 @@
     "CARD_LABEL_NAME": "Имя",
     "CARD_LABEL_DESCRIPTION": "Описание",
 
-    "TABLE_TITLE": "Топонимы",
-    "TABLE_ADD_ROLE": "Добавить топоним",
-    "TABLE_DELETE_ROLE": "Удалить топоним",
-    "TABLE_EMPTY": "Пока не создано ни одного топонима.",
-    "TABLE_OBJECT": "Объект",
-    "TABLE_OPERATION": "Операция",
-    "TABLE_NAME_PLACEHOLDER": "2–50 символов",
-    "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 символов"
+    "TABLE_TITLE_COUNTRIES": "Страны",
+    "TABLE_TITLE_REGIONS": "Регионы",
+    "TABLE_TITLE_DISTRICTS": "Районы и округа",
+    "TABLE_TITLE_LOCALITIES": "Населенные пункты",
+    "ADD_TOPONYM": "Добавить топоним",
+    "DOWNLOAD_TEMPLATE": "Скачать шаблон",
+    "TABLE_SEARCH_INPUT": "Поиск (введите любое значение, допустимое в таблице)",
+    "TABLE_EMPTY": "Пока не создано ни одного топонима",
+    "SEARCH_LABEL": "Поиск (введите любое значение, допустимое в таблице)",
+    "SEARCH_PLACEHOLDER": "{{placeholder}}",
+    "APPLIED_FILTERS": "Примененные фильтры: {{value}}",
+    "EXACT_MATCH_HINT": "искомые значения должны присутствовать одновременно",
+    "COLUMNS": {
+      "NAME": "Название",
+      "SHORT_NAME": "Краткое название",
+      "POST_NAME": "Почтовое название",
+      "SHORT_POST_NAME": "Краткое почтовое название",
+      "DISTRICT": "Район/округ",
+      "REGION": "Регион",
+      "COUNTRY": "Страна",
+      "ACTIONS": "Действия"
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Открыть перечень",
+      "OPEN_CARD": "открыть карточку",
+      "OPEN_USERS": "открыть список пользователей",
+      "OPEN_CLIENTS": "открыть список волонтеров",
+      "OPEN_SENIORS": "открыть список поздравляемых",
+      "OPEN_HOUSES": "открыть список интернатов",
+      "OPEN_REGIONS": "открыть список регионов",
+      "OPEN_DISTRICTS": "открыть список р-нов/округов",
+      "OPEN_LOCALITIES": "открыть список нас. пунктов",
+      "DELETE_TOPONYM": "удалить",
+      "DELETE_REASON_CREATED_BY_MISTAKE": "ошибочно создан",
+      "DELETE_REASON_ABOLISHED_BY_LAW": "законодательно упразднен"
+    },
+    "EMPTY": {
+      "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу \"{{query}}\""
+    }
   },
   "ERRORS": {
     "VALIDATION": "Ошибка валидации",
@@ -140,7 +171,8 @@
       "BULK_INPUT_DUPLICATES": "В списке есть повторяющиеся названия: {{duplicates}}",
       "FROM_BULK_ALREADY_EXISTS": "Эти названия: {{conflicts}} уже используются. Если вы уверены, что это не ошибка, обратитесь к администратору.",
       "BULK_NOT_CREATED": "Топонимы не были созданы из-за ошибки",
-      "BULK_PARENT_NOT_FOUND": "Tопоним(ы): {{parents}} не найден(ы). Проверьте правильность написания."
+      "BULK_PARENT_NOT_FOUND": "Tопоним(ы): {{parents}} не найден(ы). Проверьте правильность написания.",
+      "INVALID_TOPONYM_TYPE": "Неверный или отсутствующий тип топонима: {{name}}"
     }
   },
   "FORM_VALIDATION": {

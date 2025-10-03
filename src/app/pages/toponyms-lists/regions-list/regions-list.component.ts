@@ -16,7 +16,7 @@ export class RegionsListComponent {
   private route = inject(ActivatedRoute);
   type: ToponymType = 'region';
   props: ToponymProps = {
-    title: 'Регионы',
+    title: 'TOPONYM.TABLE_TITLE_REGIONS',
     displayedColumns: ['name', 'shortName', 'country', 'actions'],
     isShowCountry: true,
     isShowRegion: true,

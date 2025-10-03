@@ -105,27 +105,27 @@ export class AddressFilterComponent {
 
         if (this.defaultAddressParams().countryId) {
           this.setDefaultFormValue('country');
-          this.onCountrySelectionChange()
+          this.onCountrySelectionChange(false)
             .pipe(
               concatMap(() => {
                 if (this.defaultAddressParams().regionId) {
                   ////console.log('in process');
                   this.setDefaultFormValue('region');
-                  return this.onRegionSelectionChange();
+                  return this.onRegionSelectionChange(false);
                 }
                 return EMPTY;
               }),
               concatMap(() => {
                 if (this.defaultAddressParams().districtId) {
                   this.setDefaultFormValue('district');
-                  return this.onDistrictSelectionChange();
+                  return this.onDistrictSelectionChange(false);
                 }
                 return EMPTY;
               }),
               concatMap(() => {
                 if (this.defaultAddressParams().localityId) {
                   this.setDefaultFormValue('locality');
-                  return this.onLocalitySelectionChange();
+                  return this.onLocalitySelectionChange(false);
                 }
                 return EMPTY;
               })
@@ -166,7 +166,7 @@ export class AddressFilterComponent {
     });
   }
 
-  onCountrySelectionChange(): Observable<any> {
+  onCountrySelectionChange(isEmit=true): Observable<any> {
     ////console.log('Country selection changed' + this.form.get('country')?.value);
     return this.onToponymSelectionChange('country', 'region', 'regions').pipe(
       tap((res) => {
@@ -181,7 +181,7 @@ export class AddressFilterComponent {
         this.toponymsList.localitiesList = [];
         if (this.params().readonly) this.form.get('country')?.disable();
 
-        this.emitAddressData();
+        if(isEmit) this.emitAddressData();
       }),
       catchError((err) => {
         this.msgWrapper.handle(err);
@@ -189,7 +189,7 @@ export class AddressFilterComponent {
       })
     );
   }
-  onRegionSelectionChange(): Observable<any> {
+  onRegionSelectionChange(isEmit=true): Observable<any> {
     return this.onToponymSelectionChange(
       'region',
       'district',
@@ -201,7 +201,7 @@ export class AddressFilterComponent {
         this.form.get('locality')?.setValue(this.emptyValue);
         this.toponymsList.localitiesList = [];
         if (this.params().readonly) this.form.get('region')?.disable();
-        this.emitAddressData();
+        if(isEmit) this.emitAddressData();
       }),
       catchError((err) => {
         this.msgWrapper.handle(err);
@@ -209,7 +209,7 @@ export class AddressFilterComponent {
       })
     );
   }
-  onDistrictSelectionChange(): Observable<any> {
+  onDistrictSelectionChange(isEmit=true): Observable<any> {
     return this.onToponymSelectionChange(
       'district',
       'locality',
@@ -218,7 +218,7 @@ export class AddressFilterComponent {
       tap(() => {
         this.form.get('locality')?.setValue(this.emptyValue);
         if (this.params().readonly) this.form.get('district')?.disable();
-        this.emitAddressData();
+        if(isEmit) this.emitAddressData();
       }),
       catchError((err) => {
         this.msgWrapper.handle(err);
@@ -226,9 +226,9 @@ export class AddressFilterComponent {
       })
     );
   }
-  onLocalitySelectionChange(): Observable<any> {
+  onLocalitySelectionChange(isEmit=true): Observable<any> {
     if (this.params().readonly) this.form.get('locality')?.disable();
-    this.emitAddressData();
+    if(isEmit) this.emitAddressData();
     return EMPTY;
   }
 

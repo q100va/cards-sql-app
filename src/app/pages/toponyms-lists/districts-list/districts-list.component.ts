@@ -16,7 +16,7 @@ export class DistrictsListComponent {
   private route = inject(ActivatedRoute);
   type: ToponymType = 'district';
   props: ToponymProps = {
-    title: 'Районы/округа',
+    title: 'TOPONYM.TABLE_TITLE_DISTRICTS',
     displayedColumns: [
       'name',
       'shortName',

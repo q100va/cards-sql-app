@@ -13,7 +13,7 @@ import { Validators } from '@angular/forms';
 export class CountriesListComponent {
   type: ToponymType = 'country';
   props: ToponymProps = {
-    title: 'Страны',
+    title: 'TOPONYM.TABLE_TITLE_COUNTRIES',
     displayedColumns: ['name', 'actions'],
     isShowCountry: true,
     isShowRegion: false,

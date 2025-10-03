@@ -39,7 +39,7 @@
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Warning",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
-    "DELETE_ROLE_MESSAGE": "Delete role '{{name}}'?<br>Data cannot be restored.",
+    "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?<br>Data cannot be restored.",
     "ACCEPT": "Yes",
     "REJECT": "No"
   },
@@ -85,10 +85,44 @@
     "CARD_LABEL_NAME": "Name",
     "CARD_LABEL_DESCRIPTION": "Description",
 
-    "TABLE_TITLE": "Roles",
-    "TABLE_ADD_ROLE": "Add toponym",
-    "TABLE_DELETE_ROLE": "Delete toponym",
-    "TABLE_EMPTY": "No toponyms have been created yet."
+    "TABLE_TITLE_COUNTRIES": "Countries",
+    "TABLE_TITLE_REGIONS": "Regions",
+    "TABLE_TITLE_DISTRICTS": "Districts",
+    "TABLE_TITLE_LOCALITIES": "Localities",
+    "ADD_TOPONYM": "Add toponym",
+    "DOWNLOAD_TEMPLATE": "Download template",
+    "TABLE_EMPTY": "No toponyms have been created yet",
+    "SEARCH_LABEL": "Search (enter any value present in the table)",
+    "SEARCH_PLACEHOLDER": "{{placeholder}}",
+    "APPLIED_FILTERS": "Applied filters: {{value}}",
+    "EXACT_MATCH_HINT": "search terms must be present simultaneously",
+    "COLUMNS": {
+      "NAME": "Name",
+      "SHORT_NAME": "Short name",
+      "POST_NAME": "Postal name",
+      "SHORT_POST_NAME": "Short postal name",
+      "DISTRICT": "District",
+      "REGION": "Region",
+      "COUNTRY": "Country",
+      "ACTIONS": "Actions"
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Open menu",
+      "OPEN_CARD": "open card",
+      "OPEN_USERS": "open users list",
+      "OPEN_CLIENTS": "open volunteers list",
+      "OPEN_SENIORS": "open seniors list",
+      "OPEN_HOUSES": "open institutions list",
+      "OPEN_REGIONS": "open regions list",
+      "OPEN_DISTRICTS": "open districts list",
+      "OPEN_LOCALITIES": "open localities list",
+      "DELETE_TOPONYM": "delete",
+      "DELETE_REASON_CREATED_BY_MISTAKE": "created by mistake",
+      "DELETE_REASON_ABOLISHED_BY_LAW": "abolished by law"
+    },
+    "EMPTY": {
+      "NO_DATA_FOR_QUERY": "No data found for \"{{query}}\""
+    }
   },
 
   "ERRORS": {
@@ -137,7 +171,8 @@
       "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}",
       "FROM_BULK_ALREADY_EXISTS": "These names: {{conflicts}} are already in use for this area. If this isn’t a mistake, please contact an administrator.",
       "BULK_NOT_CREATED": "Toponyms were not created due to an error",
-      "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling."
+      "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling.",
+      "INVALID_TOPONYM_TYPE": "Invalid type of the toponym: {{name}}"
     }
   },
   "FORM_VALIDATION": {

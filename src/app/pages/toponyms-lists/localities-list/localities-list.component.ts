@@ -16,7 +16,7 @@ export class LocalitiesListComponent {
   private route = inject(ActivatedRoute);
   type: ToponymType = 'locality';
   props: ToponymProps = {
-    title: 'Населенные пункты',
+    title: 'TOPONYM.TABLE_TITLE_LOCALITIES',
     displayedColumns: [
       'name',
       'shortName',

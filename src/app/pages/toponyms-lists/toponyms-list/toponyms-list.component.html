@@ -1,7 +1,6 @@
 <mat-card class="list-card" appearance="outlined">
   @if(showSpinner()){
-  <div class="card"
-    style="z-index: 100; position: fixed; width: 70%; height: 80vh; padding-top: 20%; background-color: #dddfd081; border-radius:12px;">
+  <div class="overlay">
     <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
       [style]="{ width: '150px', height: '150px' }" />
   </div>
@@ -11,22 +10,21 @@
       <mat-grid-tile colspan="8" rowspan="1">
       </mat-grid-tile>
       <mat-grid-tile colspan="8" rowspan="1">
-        <mat-card-title>{{toponymProps().title}}</mat-card-title>
+        <mat-card-title>{{toponymProps().title | translate}}</mat-card-title>
       </mat-grid-tile>
       <mat-card-actions>
         <mat-grid-tile colspan="5" rowspan="1">
-
         </mat-grid-tile>
         <mat-grid-tile colspan="1" rowspan="1">
           <div class="bottom-right">
-            <button mat-icon-button title="Добавить топоним" (click)="onAddToponymClick()" appBlurOnClick>
+            <button mat-icon-button [title]="'TOPONYM.ADD_TOPONYM' | translate" (click)="onAddToponymClick()" appBlurOnClick>
               <mat-icon fontSet="material-icons-outlined">add_location_alt</mat-icon>
             </button>
           </div>
         </mat-grid-tile>
         <mat-grid-tile colspan="1" rowspan="1">
           <div class="bottom-right">
-            <button mat-icon-button title="Скачать шаблон" (click)="onFileDownloadClick()">
+            <button mat-icon-button [title]="'TOPONYM.DOWNLOAD_TEMPLATE' | translate" (click)="onFileDownloadClick()">
               <mat-icon fontSet="material-icons-outlined">file_download</mat-icon>
             </button>
           </div>
@@ -53,9 +51,10 @@
       <mat-grid-tile colspan="2" rowspan="1">
         <div class="bottom-left">
           <mat-form-field>
-            <mat-label>Поиск (введите любое значение, допустимое в таблице)</mat-label>
+            <mat-label>{{'TOPONYM.SEARCH_LABEL' | translate}}</mat-label>
             <mat-icon fontSet="material-icons-outlined" matPrefix>search</mat-icon>
-            <input matInput [(ngModel)]="inputValue" (keydown.enter)="searchToponym($event)" [placeholder]="toponymProps().searchPlaceHolder">
+            <input matInput [(ngModel)]="inputValue" (keydown.enter)="searchToponym($event)"
+              [placeholder]="toponymProps().searchPlaceHolder">
             @if (inputValue) {
             <button matSuffix mat-icon-button (click)="onClearSearchClick()">
               <mat-icon fontSet="material-icons-outlined">close</mat-icon>
@@ -69,115 +68,113 @@
     <mat-grid-list cols="6" gutterSize="16px" rowHeight="26px">
       <mat-grid-tile colspan="4" rowspan="1">
         <div class="bottom-left small-text">
-          Примененные фильтры: {{filterString()}}
+          {{'TOPONYM.APPLIED_FILTERS' | translate :{ value: filterString() } }}
         </div>
       </mat-grid-tile>
 
       <mat-grid-tile colspan="2" rowspan="1">
         <div class="bottom-right-left-align">
-          <mat-checkbox [(ngModel)]="exactMatch">искомые значения должны присутствовать одновременно</mat-checkbox>
+          <mat-checkbox [(ngModel)]="exactMatch">{{'TOPONYM.EXACT_MATCH_HINT' | translate}}</mat-checkbox>
         </div>
       </mat-grid-tile>
     </mat-grid-list>
 
     <div class="mat-elevation-z8">
-      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
+      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)">
 
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Название </th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> {{'TOPONYM.COLUMNS.NAME' | translate}} </th>
           <td mat-cell *matCellDef="let row"> {{row.name}} </td>
         </ng-container>
 
         <ng-container matColumnDef="shortName">
-          <th mat-header-cell *matHeaderCellDef> Краткое название </th>
+          <th mat-header-cell *matHeaderCellDef> {{'TOPONYM.COLUMNS.SHORT_NAME' | translate}} </th>
           <td mat-cell *matCellDef="let row"> {{row.shortName}} </td>
         </ng-container>
 
         <ng-container matColumnDef="postName">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Почтовое название </th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> {{'TOPONYM.COLUMNS.POST_NAME' | translate}} </th>
           <td mat-cell *matCellDef="let row"> {{row.postName}} </td>
         </ng-container>
 
         <ng-container matColumnDef="shortPostName">
-          <th mat-header-cell *matHeaderCellDef> Краткое почтовое название </th>
+          <th mat-header-cell *matHeaderCellDef> {{'TOPONYM.COLUMNS.SHORT_POST_NAME' | translate}} </th>
           <td mat-cell *matCellDef="let row"> {{row.shortPostName}} </td>
         </ng-container>
 
         <ng-container matColumnDef="district">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Район/округ </th>
-          <td mat-cell *matCellDef="let row">{{row.districtName ? row.districtName : ''}}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> {{'TOPONYM.COLUMNS.DISTRICT' | translate}} </th>
+          <td mat-cell *matCellDef="let row">{{row.districtName}}</td>
         </ng-container>
 
         <ng-container matColumnDef="region">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Регион </th>
-          <td mat-cell *matCellDef="let row">{{row.regionName ? row.regionName : ''}}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> {{'TOPONYM.COLUMNS.REGION' | translate}} </th>
+          <td mat-cell *matCellDef="let row">{{row.regionName}}</td>
         </ng-container>
 
         <ng-container matColumnDef="country">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Страна </th>
-          <td mat-cell *matCellDef="let row">{{row.countryName ? row.countryName : ''}}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> {{'TOPONYM.COLUMNS.COUNTRY' | translate}} </th>
+          <td mat-cell *matCellDef="let row">{{row.countryName}}</td>
         </ng-container>
 
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef> Действия </th>
+          <th mat-header-cell *matHeaderCellDef> {{'TOPONYM.COLUMNS.ACTIONS' | translate}} </th>
           <td mat-cell *matCellDef="let row">
             <div class="center">
-              <button mat-icon-button [matMenuTriggerFor]="menu" title="Открыть перечень" appBlurOnClick>
-                <mat-icon fontSet="material-icons-outlined" >
+              <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'TOPONYM.MENU.OPEN_LIST_TITLE' | translate" appBlurOnClick>
+                <mat-icon fontSet="material-icons-outlined">
                   keyboard_double_arrow_down
                 </mat-icon>
               </button>
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item (click)="onOpenToponymCardClick(row.id)">
                   <mat-icon>open_in_new</mat-icon>
-                  <span>открыть карточку</span>
+                  <span>{{'TOPONYM.MENU.OPEN_CARD' | translate}}</span>
                 </button>
                 <button mat-menu-item (click)="onOpenListClick(row, '/users')">
                   <mat-icon fontSet="material-icons-outlined">badge</mat-icon>
-                  <span>открыть список пользователей</span>
+                  <span>{{'TOPONYM.MENU.OPEN_USERS' | translate}}</span>
                 </button>
                 <button mat-menu-item (click)="onOpenListClick(row, '/clients')">
                   <mat-icon fontSet="material-icons-outlined">contact_mail</mat-icon>
-                  <span>открыть список поздравляющих</span>
+                  <span>{{'TOPONYM.MENU.OPEN_CLIENTS' | translate}}</span>
                 </button>
                 <button mat-menu-item (click)="onOpenListClick(row, '/seniors')">
                   <mat-icon fontSet="material-icons-outlined">elderly_woman</mat-icon>
-                  <span>открыть список поздравляемых</span>
+                  <span>{{'TOPONYM.MENU.OPEN_SENIORS' | translate}}</span>
                 </button>
                 <button mat-menu-item (click)="onOpenListClick(row, '/houses')">
                   <mat-icon fontSet="material-icons-outlined">house</mat-icon>
-                  <span>открыть список интернатов</span>
+                  <span>{{'TOPONYM.MENU.OPEN_HOUSES' | translate}}</span>
                 </button>
                 @if (!toponymProps().isShowRegion) {
                 <button mat-menu-item (click)="onOpenListClick(row, '/regions')">
                   <mat-icon fontSet="material-icons-outlined">corporate_fare</mat-icon>
-                  <span>открыть список регионов</span>
+                  <span>{{'TOPONYM.MENU.OPEN_REGIONS' | translate}}</span>
                 </button>
                 }
                 @if (!toponymProps().isShowDistrict) {
                 <button mat-menu-item (click)="onOpenListClick(row, '/districts')">
                   <mat-icon fontSet="material-icons-outlined">home_work</mat-icon>
-                  <span>открыть список р-нов/округов</span>
+                  <span>{{'TOPONYM.MENU.OPEN_DISTRICTS' | translate}}</span>
                 </button>
                 }
                 @if (!toponymProps().isShowLocality) {
                 <button mat-menu-item (click)="onOpenListClick(row, '/localities')">
                   <mat-icon fontSet="material-icons-outlined">holiday_village</mat-icon>
-                  <span>открыть список нас. пунктов</span>
+                  <span>{{'TOPONYM.MENU.OPEN_LOCALITIES' | translate}}</span>
                 </button>
                 }
 
                 <button mat-menu-item [matMenuTriggerFor]="causeOfDelete">
                   <mat-icon fontSet="material-icons-outlined">delete_outlined</mat-icon>
-                  <span>удалить</span>
+                  <span>{{'TOPONYM.MENU.DELETE_TOPONYM' | translate}}</span>
                 </button>
                 <mat-menu #causeOfDelete="matMenu" xPosition="before">
                   <button mat-menu-item
-                    (click)="onDeleteToponymClick(row.id, row.shortName ? row.shortName : row.name, true)">ошибочно
-                    создан</button>
+                    (click)="onDeleteToponymClick(row.id, row.shortName ? row.shortName : row.name, true)">{{'TOPONYM.MENU.DELETE_REASON_CREATED_BY_MISTAKE' | translate}}</button>
                   <button mat-menu-item
-                    (click)="onDeleteToponymClick(row.id, row.shortName ? row.shortName : row.name, false)">законодательно
-                    упразднен</button>
+                    (click)="onDeleteToponymClick(row.id, row.shortName ? row.shortName : row.name, false)">{{'TOPONYM.MENU.DELETE_REASON_ABOLISHED_BY_LAW' | translate}}</button>
                 </mat-menu>
               </mat-menu>
             </div>
@@ -189,7 +186,7 @@
 
         <!-- Row shown when there is no matching data. -->
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" colspan="4">Не найдены данные, соответствующие запросу "{{filterString()}}"</td>
+          <td class="mat-cell" colspan="4">{{'TOPONYM.EMPTY.NO_DATA_FOR_QUERY' | translate: {query: filterString()} }}</td>
         </tr>
       </table>
 

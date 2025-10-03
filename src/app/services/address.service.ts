@@ -135,7 +135,7 @@ export class AddressService {
     filter: {
       searchValue: string;
       exactMatch: boolean;
-      addressString: string;
+      //addressString: string;
       addressFilter: AddressFilter;
       sortParameters: {
         active: string;
