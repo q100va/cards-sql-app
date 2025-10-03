@@ -108,7 +108,7 @@ const BoolFromQuery = z.preprocess((v) => {
     const s = v.trim().toLowerCase();
     if (['true', '1', 'yes', 'y', 'on'].includes(s)) return true;
     if (['false', '0', 'no', 'n', 'off', ''].includes(s)) return false;
-    return false; // или бросай ошибку, если хочешь строже
+    return false;
   }
   if (typeof v === 'number') return v === 1;
   if (typeof v === 'boolean') return v;
@@ -125,7 +125,7 @@ export const getToponymsSchema = z
       .optional()
       .default('name'),
     sortDir: z.enum(['asc', 'desc']).optional().default('asc'),
-    page: z.coerce.number().int().min(1).optional().default(1),
+    page: z.coerce.number().int().min(0).optional().default(0),
     pageSize: z.coerce.number().int().min(1).max(200).optional().default(20),
     countries: ArrNum.optional().default([]), // filter by id(s)
     regions: ArrNum.optional().default([]),

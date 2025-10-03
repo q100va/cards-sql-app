@@ -197,7 +197,7 @@ router.get(
       const order = cfg.order(q);
       const limit = q.pageSize;
       const attributes = cfg.attributes;
-      const offset = (q.page - 1) * q.pageSize;
+      const offset = q.page * q.pageSize;
 
       const [length, rows] = await Promise.all([
         cfg.Model.count({
