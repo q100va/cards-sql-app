@@ -10,14 +10,42 @@ export const checkToponymNameSchema = z
     districtId: z.coerce.number().int().optional(),
 })
     .strict();
+export const toponymDraftSchema = z
+    .object({
+    name: z
+        .string()
+        .trim()
+        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
+    shortName: z
+        .string()
+        .trim()
+        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
+    postName: z
+        .string()
+        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
+    shortPostName: z
+        .string()
+        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
+    isFederalCity: z.boolean(),
+    isCapitalOfRegion: z.boolean(),
+    isCapitalOfDistrict: z.boolean(),
+    countryId: z.coerce.number().int(),
+    regionId: z.coerce.number().int(),
+    districtId: z.coerce.number().int(),
+})
+    .strict();
 export const saveToponymSchema = z
     .object({
     id: z.coerce.number().int().optional(),
     type: toponymTypeSchema,
     name: z.string().trim().min(1).max(200),
-    shortName: z.string().trim().optional(),
-    postName: z.string().trim().optional(),
-    shortPostName: z.string().trim().optional(),
+    shortName: z.string().trim().min(1).max(200).optional(),
+    postName: z.string().trim().min(1).max(200).optional(),
+    shortPostName: z.string().trim().min(1).max(200).optional(),
     isFederalCity: z.boolean().optional(),
     isCapitalOfRegion: z.boolean().optional(),
     isCapitalOfDistrict: z.boolean().optional(),
@@ -147,8 +175,22 @@ const LocalityInput = z.object({
     isFederalCity: z.boolean(),
 });
 export const bulkToponymsSchema = z.discriminatedUnion('type', [
-    z.object({ type: z.literal('country'), data: z.array(CountryInput).min(1) }).strip(),
-    z.object({ type: z.literal('region'), data: z.array(RegionInput).min(1) }).strip(),
-    z.object({ type: z.literal('district'), data: z.array(DistrictInput).min(1) }).strip(),
-    z.object({ type: z.literal('locality'), data: z.array(LocalityInput).min(1) }).strip(),
+    z
+        .object({ type: z.literal('country'), data: z.array(CountryInput).min(1) })
+        .strip(),
+    z
+        .object({ type: z.literal('region'), data: z.array(RegionInput).min(1) })
+        .strip(),
+    z
+        .object({
+        type: z.literal('district'),
+        data: z.array(DistrictInput).min(1),
+    })
+        .strip(),
+    z
+        .object({
+        type: z.literal('locality'),
+        data: z.array(LocalityInput).min(1),
+    })
+        .strip(),
 ]);

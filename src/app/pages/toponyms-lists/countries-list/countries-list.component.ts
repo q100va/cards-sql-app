@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
-import { ToponymProps } from '../../../interfaces/dialog-props';
-import { ToponymType } from '../../../interfaces/address-filter';
-import { Validators } from '@angular/forms';
+import { ToponymProps, ToponymType } from '../../../interfaces/toponym';
+import { toponymDraftSchema } from '@shared/schemas/toponym.schema';
+import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
   selector: 'app-countries-list',
@@ -20,23 +20,26 @@ export class CountriesListComponent {
     isShowDistrict: false,
     isShowLocality: false,
     searchPlaceHolder: 'Беларусь',
-    queryParams: null,
-    filename: 'шаблон-страны.xlsx',
-    defaultCountryId: null,
-    defaultRegionId: null,
-    defaultDistrictId: null,
-    defaultLocalityId: null,
+    queryParams: {
+      countryId: null,
+      regionId: null,
+      districtId: null,
+      localityId: null,
+      addressFilterString: '',
+    },
+    filename: 'template-countries.xlsx',
+
     dialogProps: {
-      creationTitle: 'Новая страна',
-      viewTitle: 'Страна',
+      creationTitle: 'TOPONYM.CREATION_TITLE_COUNTRY',
+      viewTitle: 'TOPONYM.VIEW_TITLE_COUNTRY',
       controls: [
         {
           controlName: 'name',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.name)], // [Validators.required],
           type: 'inputText',
-          label: 'Название',
+          label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Лапландия',
           formType: 'formControl',
         },

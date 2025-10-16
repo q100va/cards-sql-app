@@ -177,7 +177,7 @@ export function correctDistrictName(rowName, rowPostName = null, rowPostNameType
     }
   }
   if (!name || !shortName) {
-    throw new CustomError('ERRORS.TOPONYM.INVALID_TOPONYM_TYPE', 422, { name: rowName });
+    throw new CustomError('ERRORS.TOPONYM.INVALID_TYPE', 422, { name: rowName });
   }
   let postData;
 
@@ -210,7 +210,7 @@ export function correctLocalityName(rowName, type, district = null) {
   rowName = rowName.replace('ё', 'е').trim();
   const addressType = namesOfAddressTypes.localities.find(item => item.name == type);
 
-  if (!addressType) throw new CustomError('ERRORS.TOPONYM.INVALID_TOPONYM_TYPE', 422, { name: `${rowName} ${type}` });
+  if (!addressType) throw new CustomError('ERRORS.TOPONYM.INVALID_TYPE', 422, { name: `${rowName} ${type}` });
   let districtData;
   if (district) {
     try {

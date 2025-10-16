@@ -1,48 +1,13 @@
-import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { DefaultAddressParams } from './address-filter';
-import { AddressFilterParams } from './address-filter-params';
-import { AddressKey, ToponymType } from './address-filter';
-import { Toponym } from './toponym';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  AddressFilterParams,
+  DefaultAddressParams,
+  AddressKey,
+  ToponymType,
+  AddressFilterControl,
+} from './toponym';
 import { BaseModel } from './base-model';
 import { DetailsComponentType } from '../shared/dialogs/details-dialogs/details-dialog/details-component-registry';
-
-export interface ToponymProps {
-  title: string;
-  displayedColumns: (
-    | 'name'
-    | 'shortName'
-    | 'postName'
-    | 'shortPostName'
-    | 'district'
-    | 'region'
-    | 'country'
-    | 'actions'
-  )[];
-  filename: string;
-  queryParams: DefaultAddressParams | null;
-  defaultCountryId: number | null;
-  defaultRegionId: number | null;
-  defaultDistrictId: number | null;
-  defaultLocalityId: number | null;
-  isShowCountry: boolean;
-  isShowRegion: boolean;
-  isShowDistrict: boolean;
-  isShowLocality: boolean;
-  searchPlaceHolder: string;
-  dialogProps: DialogData<Toponym>;
-}
-
-/* export interface DialogProps {
-  creationTitle: string;
-  viewTitle: string;
-  controls: Control[];
-  checkingName: string;
-  addressFilterControls?: {
-    addressFilterProp: string;
-    toponymProp: string;
-  }[];
-  addressFilterParams: AddressFilterParams;
-} */
 
 export interface DialogData<T extends BaseModel> {
   creationTitle: string;
@@ -51,19 +16,17 @@ export interface DialogData<T extends BaseModel> {
   checkingName: string;
   addressFilterControls?: AddressFilterControl<AddressKey>[];
   addressFilterParams: AddressFilterParams;
-
   operation?: 'create' | 'view-edit';
-   controlsDisable?: boolean;
-   componentType: DetailsComponentType;
+  controlsDisable?: boolean;
+  componentType: DetailsComponentType;
   defaultAddressParams?: DefaultAddressParams;
   object: T | null;
-
   toponymType?: ToponymType;
 }
 
 export interface Control {
   controlName: string;
-  value: string | boolean | null;// | Date | string[];
+  value: string | boolean | null; // | Date | string[];
   disabled?: boolean;
   validators?: ((
     control: AbstractControl<any, any>
@@ -84,13 +47,3 @@ export interface Control {
   colspan?: number;
   rowspan?: number;
 }
-
-
-interface AddressFilterControl<
-  AFKey extends AddressKey
-> {
-  addressFilterProp: AFKey;
-  toponymProp: string;
-}
-
-

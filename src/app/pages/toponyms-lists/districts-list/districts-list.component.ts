@@ -1,10 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
-import { ToponymProps } from '../../../interfaces/dialog-props';
+import {
+  ToponymProps,
+  ToponymType,
+  DefaultAddressParams,
+  QueryParams,
+} from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';
-import { ToponymType } from '../../../interfaces/address-filter';
-import { DefaultAddressParams } from '../../../interfaces/address-filter';
-import { Validators } from '@angular/forms';
+import { toponymDraftSchema } from '@shared/schemas/toponym.schema';
+import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
   selector: 'app-districts-list',
@@ -26,58 +30,60 @@ export class DistrictsListComponent {
       'country',
       'actions',
     ],
-    filename: 'шаблон-районы-округа.xlsx',
+    filename: 'template-districts.xlsx',
     isShowCountry: true,
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: false,
-    defaultCountryId: 143,
-    defaultRegionId: null,
-    defaultDistrictId: null,
-    defaultLocalityId: null,
-    queryParams: null,
+    queryParams: {
+      countryId: 143,
+      regionId: null,
+      districtId: null,
+      localityId: null,
+      addressFilterString: 'Россия',
+    },
     searchPlaceHolder: 'Белогорский',
     dialogProps: {
-      creationTitle: 'Новый р-н/округ',
-      viewTitle: 'Район/округ',
+      creationTitle: 'TOPONYM.CREATION_TITLE_DISTRICT',
+      viewTitle: 'TOPONYM.VIEW_TITLE_DISTRICT',
       controls: [
         {
           controlName: 'name',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.name)],
           type: 'inputText',
-          label: 'Название',
+          label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Диксонский район',
           formType: 'formControl',
         },
         {
           controlName: 'shortName',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.shortName)],
           type: 'inputText',
-          label: 'Краткое название',
+          label: 'TOPONYM.LABEL_SHORT_NAME',
           placeholder: 'Диксонский р-н',
           formType: 'formControl',
         },
         {
           controlName: 'postName',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.postName)],
           type: 'inputText',
-          label: 'Почтовое название',
+          label: 'TOPONYM.LABEL_POST_NAME',
           placeholder: 'Диксонский район',
           formType: 'formControl',
         },
         {
           controlName: 'shortPostName',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.shortPostName)],
           type: 'inputText',
-          label: 'Краткое почтовое название',
+          label: 'TOPONYM.LABEL_SHORT_POST_NAME',
           placeholder: 'Диксонский р-н',
           formType: 'formControl',
         },
@@ -94,7 +100,6 @@ export class DistrictsListComponent {
         },
       ],
       addressFilterParams: {
-
         isShowCountry: true,
         isShowRegion: true,
         isShowDistrict: false,
@@ -103,12 +108,11 @@ export class DistrictsListComponent {
       object: null,
       componentType: 'toponym',
     },
-
   };
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.queryParams = params as DefaultAddressParams;
+      if(Object.keys(params).length != 0 ) this.props.queryParams = params as QueryParams;
     });
   }
 }

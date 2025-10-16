@@ -6,9 +6,12 @@ import {
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ToponymType } from '../interfaces/address-filter';
-import { AddressFilter } from '../interfaces/address-filter';
-import { Toponym, ToponymFormControlsValues } from '../interfaces/toponym';
+import {
+  Toponym,
+  ToponymFormControlsValues,
+  AddressFilter,
+  ToponymType,
+} from '../interfaces/toponym';
 import { catchError } from 'rxjs/operators';
 
 import {
@@ -135,7 +138,6 @@ export class AddressService {
     filter: {
       searchValue: string;
       exactMatch: boolean;
-      //addressString: string;
       addressFilter: AddressFilter;
       sortParameters: {
         active: string;
@@ -226,15 +228,16 @@ export class AddressService {
       );
   }
 
+  //populate toponyms
   createListOfToponyms(
     data: any,
     type: string
   ): Observable<ApiResponse<number>> {
     return this.http
-      .post<RawApiResponse>(
-        `${this.BASE_URL}/populate-toponyms`,
-        { type, data: data }
-      )
+      .post<RawApiResponse>(`${this.BASE_URL}/populate-toponyms`, {
+        type,
+        data: data,
+      })
       .pipe(
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({

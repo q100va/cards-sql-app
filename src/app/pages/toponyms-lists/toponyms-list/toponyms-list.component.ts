@@ -58,12 +58,14 @@ import { MessageWrapperService } from '../../../services/message.service';
 import { DetailsDialogComponent } from '../../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 
 import {
+  Toponym,
   AddressFilter,
   DefaultAddressParams,
   ToponymType,
-} from '../../../interfaces/address-filter';
-import { Toponym } from '../../../interfaces/toponym';
-import { DialogData, ToponymProps } from '../../../interfaces/dialog-props';
+  ToponymProps,
+  typeOfListMap,
+} from '../../../interfaces/toponym';
+import { DialogData } from '../../../interfaces/dialog-props';
 
 import { AddressFilterComponent } from '../../../shared/address-filter/address-filter.component';
 import { UploadFileComponent } from '../../../shared/upload-file/upload-file.component';
@@ -123,6 +125,8 @@ export class ToponymsListComponent {
   // --- view refs
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(AddressFilterComponent)
+  addressFilterComponent!: AddressFilterComponent;
 
   // --- table state
   dataSource = new MatTableDataSource<Toponym>([]);
@@ -245,28 +249,15 @@ export class ToponymsListComponent {
       class: 'none',
     };
 
-    // Default address context (with optional query params override)
-    this.defaultAddressParams = {
-      localityId: this.toponymProps().defaultLocalityId,
-      districtId: this.toponymProps().defaultDistrictId,
-      regionId: this.toponymProps().defaultRegionId,
-      countryId: this.toponymProps().defaultCountryId,
-    };
+    // Default address context
     const qp = this.toponymProps().queryParams;
-    if (qp) {
-      this.defaultAddressParams.countryId = qp['countryId']
-        ? +qp['countryId']!
-        : this.defaultAddressParams.countryId;
-      this.defaultAddressParams.regionId = qp['regionId']
-        ? +qp['regionId']!
-        : this.defaultAddressParams.regionId;
-      this.defaultAddressParams.districtId = qp['districtId']
-        ? +qp['districtId']!
-        : this.defaultAddressParams.districtId;
-      this.defaultAddressParams.localityId = qp['localityId']
-        ? +qp['localityId']!
-        : this.defaultAddressParams.localityId;
-    }
+    this.defaultAddressParams = {
+      localityId: qp['localityId'] ? +qp['localityId']! : null,
+      districtId: qp['districtId'] ? +qp['districtId']! : null,
+      regionId: qp['regionId'] ? +qp['regionId']! : null,
+      countryId: qp['countryId'] ? +qp['countryId']! : null,
+    };
+
     this.addressFilter.set({
       countries: this.defaultAddressParams.countryId
         ? [this.defaultAddressParams.countryId]
@@ -281,6 +272,7 @@ export class ToponymsListComponent {
         ? [this.defaultAddressParams.localityId]
         : [],
     });
+    this.addressString.set(qp['addressFilterString']);
   }
 
   ngAfterViewInit() {
@@ -289,8 +281,7 @@ export class ToponymsListComponent {
   }
 
   // === UI handlers ===
-
-  private forceReload() {
+  forceReload() {
     this.reloadTick.update((n) => n + 1);
   }
 
@@ -330,12 +321,24 @@ export class ToponymsListComponent {
   onClearSearchClick() {
     this.inputValue = '';
     this.searchValue.set('');
+    this.exactMatch.set(false);
     this.goToFirstPage();
   }
 
   /** Reset paginator to the first page (signals-friendly). */
   goToFirstPage() {
     if (this.pageIndex() !== 0) this.paginator.firstPage();
+  }
+
+  /** Reset table after creating, editing, deleting, uploading */
+  resetTable(id: number = -1) {
+    this.addressFilterComponent.correctSelectionList(
+      this.type(),
+      this.addressFilter(),
+      id
+    );
+    if (id != this.addressFilter()[typeOfListMap[this.type()]][0])
+      this.forceReload();
   }
 
   /** Open toponym details dialog (create). */
@@ -362,7 +365,15 @@ export class ToponymsListComponent {
 
   /** Navigate to external lists keeping address context. */
   onOpenListClick(toponym: Toponym, way: string) {
-    this.router.navigate([way], { queryParams: toponym.defaultAddressParams });
+    const addressFilterString =
+      (toponym.countryName == undefined ? '' : `${toponym.countryName}, `) +
+      (toponym.regionName == undefined ? '' : `${toponym.regionName}, `) +
+      (toponym.districtName == undefined ? '' : `${toponym.districtName}, `) +
+      toponym.name;
+
+    this.router.navigate([way], {
+      queryParams: { ...toponym.defaultAddressParams, addressFilterString },
+    });
   }
 
   /** Delete flow with reason selector. */
@@ -399,7 +410,7 @@ export class ToponymsListComponent {
             : of(null)
         ),
         tap(() => {
-          this.forceReload();
+          this.resetTable(id);
         }),
         catchError((err) => {
           this.msgWrapper.handle(err, {
@@ -433,9 +444,6 @@ export class ToponymsListComponent {
         },
       });
   }
-
-  /** trackBy for table rows to reduce DOM churn */
-  //trackById = (_: number, row: Toponym) => row.id;
 
   // --- dialog helper
   private openToponymDialog(op: 'create' | 'view-edit', obj: Toponym | null) {
@@ -476,9 +484,9 @@ export class ToponymsListComponent {
       })
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((toponymName) => {
-        if (toponymName) {
-          this.forceReload();
+      .subscribe((data) => {
+        if (data.name) {
+          this.resetTable(op == 'view-edit' ? obj!.id : -1);
         }
       });
   }

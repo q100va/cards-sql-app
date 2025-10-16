@@ -1,34 +1,39 @@
-
 <mat-grid-list [cols]="params().cols" [gutterSize]="params().gutterSize!" [rowHeight]="params().rowHeight!">
-  <form [formGroup]="form" [class]="params().class" >
 
+  <form [formGroup]="form" [class]="params().class">
 
     @if (params().isShowCountry) {
     <mat-grid-tile colspan="1" rowspan="1">
-      <mat-form-field >
-        <mat-label>Страна</mat-label>
-        <mat-select  formControlName="country" [multiple]="params().multiple"
+      <mat-form-field>
+        <mat-label>{{ 'ADDRESS_FILTER.LABEL_COUNTRY' | translate }}</mat-label>
+        <mat-select formControlName="country" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onCountrySelectionChange', 'Country')">
           @if (!params().multiple) {<mat-option [value]=null> </mat-option>}
           @for (country of toponymsList.countriesList; track $index ) {
           <mat-option [value]="country.id">{{country.name}}</mat-option>
           }
         </mat-select>
+        @if(form.controls['country'].hasError('required')){
+        <mat-error>{{ 'FORM_VALIDATION.REQUIRED' | translate}}</mat-error>
+        }
       </mat-form-field>
     </mat-grid-tile>
-  }
+    }
 
     @if (params().isShowRegion) {
     <mat-grid-tile colspan="1" rowspan="1">
-      <mat-form-field >
-        <mat-label>Регион</mat-label>
-        <mat-select  formControlName="region" [multiple]="params().multiple"
+      <mat-form-field>
+        <mat-label>{{ 'ADDRESS_FILTER.LABEL_REGION' | translate }}</mat-label>
+        <mat-select formControlName="region" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onRegionSelectionChange', 'Region')">
           @if (!params().multiple) {<mat-option [value]=null></mat-option>}
           @for (region of toponymsList.regionsList; track $index) {
           <mat-option [value]="region.id">{{region.name}}</mat-option>
           }
         </mat-select>
+        @if(form.controls['region'].hasError('required')){
+        <mat-error>{{ 'FORM_VALIDATION.REQUIRED' | translate}}</mat-error>
+        }
       </mat-form-field>
     </mat-grid-tile>
     }
@@ -36,14 +41,17 @@
     @if (params().isShowDistrict) {
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
-        <mat-label>Район/округ</mat-label>
-        <mat-select  formControlName="district" [multiple]="params().multiple"
+        <mat-label>{{ 'ADDRESS_FILTER.LABEL_DISTRICT' | translate }}</mat-label>
+        <mat-select formControlName="district" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onDistrictSelectionChange', 'District')">
           @if (!params().multiple) {<mat-option [value]=null></mat-option>}
           @for (district of toponymsList.districtsList; track $index) {
           <mat-option [value]="district.id">{{district.name}}</mat-option>
           }
         </mat-select>
+        @if(form.controls['district'].hasError('required')){
+        <mat-error>{{ 'FORM_VALIDATION.REQUIRED' | translate}}</mat-error>
+        }
       </mat-form-field>
     </mat-grid-tile>
     }
@@ -51,8 +59,8 @@
     @if (params().isShowLocality) {
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field>
-        <mat-label>Населенный пункт</mat-label>
-        <mat-select  formControlName="locality" [multiple]="params().multiple"
+        <mat-label>{{ 'ADDRESS_FILTER.LABEL_LOCALITY' | translate }}</mat-label>
+        <mat-select formControlName="locality" [multiple]="params().multiple"
           (selectionChange)="handleToponymSelectionChange('onLocalitySelectionChange', 'Locality')">
           @if (!params().multiple) {<mat-option [value]=null></mat-option>}
           @for (locality of toponymsList.localitiesList; track $index) {
@@ -62,6 +70,5 @@
       </mat-form-field>
     </mat-grid-tile>
     }
-  </form>
-</mat-grid-list>
 
+  </form></mat-grid-list>

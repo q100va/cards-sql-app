@@ -3,13 +3,12 @@ import { z, ZodType } from 'zod';
 import { Observable, map } from 'rxjs';
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 
-// Специальная ошибка для валидации
 export class ValidationError extends Error {
   code: string;
   status?: number;
 
   constructor(code: string, status?: number) {
-    super(code); // теперь message = code
+    super(code); // message = code
     this.code = code;
     this.status = status;
   }

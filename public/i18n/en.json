@@ -35,7 +35,11 @@
     "LOCALITIES": "Localities",
     "AUDIT": "Audit"
   },
-  "LANG": { "SWITCH": "Language", "EN": "English", "RU": "Русский" },
+  "LANG": {
+    "SWITCH": "Language",
+    "EN": "English",
+    "RU": "Русский"
+  },
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Warning",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
@@ -59,8 +63,8 @@
     "CARD_TITLE": "New role",
     "CARD_CLOSE": "Close",
     "CARD_SAVE_AND_EXIT": "Save and exit",
-    "CARD_LABEL_NAME": "Name",
-    "CARD_LABEL_DESCRIPTION": "Description",
+    "CARD_LABEL_NAME": "Name*",
+    "CARD_LABEL_DESCRIPTION": "Description*",
 
     "TABLE_TITLE": "Roles",
     "TABLE_ADD_ROLE": "Add role",
@@ -71,6 +75,19 @@
     "TABLE_NAME_PLACEHOLDER": "2–50 characters",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 characters"
   },
+  "ADDRESS_FILTER": {
+    "LABEL_COUNTRY": "Country",
+    "LABEL_REGION": "Region",
+    "LABEL_DISTRICT": "District",
+    "LABEL_LOCALITY": "Locality"
+  },
+  "DETAILS_DIALOG": {
+    "CARD_CLOSE": "Close",
+    "CARD_SAVE": "Save",
+    "CARD_EDIT": "Edit",
+    "CARD_VIEW": "View",
+    "CARD_SAVE_AND_EXIT": "Save and exit"
+  },
   "TOPONYM": {
     "CREATED": "Toponym \"{{name}}\" created",
     "UPDATED": "Toponym \"{{name}}\" updated",
@@ -79,11 +96,22 @@
     "ALREADY_EXISTS": "This name is already in use for this area. If this isn’t a mistake, please contact an administrator.",
     "HAS_DEPENDENCIES": "The toponym cannot be deleted: {{count}} related item(s)",
 
-    "CARD_TITLE": "New toponym",
-    "CARD_CLOSE": "Close",
-    "CARD_SAVE_AND_EXIT": "Save and exit",
-    "CARD_LABEL_NAME": "Name",
-    "CARD_LABEL_DESCRIPTION": "Description",
+    "CREATION_TITLE_COUNTRY": "New country",
+    "VIEW_TITLE_COUNTRY": "Country",
+    "CREATION_TITLE_REGION": "New region",
+    "VIEW_TITLE_REGION": "Region",
+    "CREATION_TITLE_DISTRICT": "New district",
+    "VIEW_TITLE_DISTRICT": "District",
+    "CREATION_TITLE_LOCALITY": "New locality",
+    "VIEW_TITLE_LOCALITY": "Locality",
+
+    "LABEL_NAME": "Name*",
+    "LABEL_SHORT_NAME": "Short name*",
+    "LABEL_POST_NAME": "Post name*",
+    "LABEL_SHORT_POST_NAME": "Short post name*",
+    "FEDERAL_CITY": "Federal city",
+    "REGION_CAPITAL": "Capital of region",
+    "DISTRICT_CAPITAL": "Capital of district",
 
     "TABLE_TITLE_COUNTRIES": "Countries",
     "TABLE_TITLE_REGIONS": "Regions",
@@ -123,6 +151,9 @@
     "EMPTY": {
       "NO_DATA_FOR_QUERY": "No data found for \"{{query}}\""
     }
+  },
+  "FILE": {
+    "UPLOAD_LIST": "Import list"
   },
 
   "ERRORS": {
@@ -172,7 +203,15 @@
       "FROM_BULK_ALREADY_EXISTS": "These names: {{conflicts}} are already in use for this area. If this isn’t a mistake, please contact an administrator.",
       "BULK_NOT_CREATED": "Toponyms were not created due to an error",
       "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling.",
-      "INVALID_TOPONYM_TYPE": "Invalid type of the toponym: {{name}}"
+      "INVALID_TYPE": "Invalid type of the toponym: {{name}}"
+    },
+    "FILE": {
+      "EMPTY": "The file contains no data",
+      "INVALID_STRUCTURE": "Required columns are missing",
+      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx)",
+      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'",
+      "NOT_UPLOADED": "Failed to upload the file",
+      "NOT_CHOSEN": "The file isn't chosen"
     }
   },
   "FORM_VALIDATION": {
@@ -183,6 +222,9 @@
       "NAME_MAX": "Name must not be longer than 50 characters",
       "DESCRIPTION_MIN": "Description must contain at least 5 characters",
       "DESCRIPTION_MAX": "Description must not be longer than 500 characters"
+    },
+    "TOPONYM": {
+      "NAME_MAX": "Name must not be longer than 200 characters"
     }
   },
   "INTERNAL_VALIDATION": {

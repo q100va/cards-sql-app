@@ -42,7 +42,4 @@ export class FileService {
       })
       .pipe(catchError(this.handleError));
   }
-
-
-
 }

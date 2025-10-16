@@ -31,7 +31,7 @@
         </mat-grid-tile>
         <mat-grid-tile colspan="1" rowspan="1">
           <div class="bottom-right">
-            <app-upload-file [typeOfData]="type()" (showSpinner)="showSpinner.set($event);"></app-upload-file>
+            <app-upload-file [typeOfData]="type()" (showSpinner)="showSpinner.set($event);" (resetRequested)="resetTable()"></app-upload-file>
           </div>
         </mat-grid-tile>
       </mat-card-actions>
@@ -74,7 +74,7 @@
 
       <mat-grid-tile colspan="2" rowspan="1">
         <div class="bottom-right-left-align">
-          <mat-checkbox [(ngModel)]="exactMatch">{{'TOPONYM.EXACT_MATCH_HINT' | translate}}</mat-checkbox>
+          <mat-checkbox [disabled]="!searchValue()" [(ngModel)]="exactMatch">{{'TOPONYM.EXACT_MATCH_HINT' | translate}}</mat-checkbox>
         </div>
       </mat-grid-tile>
     </mat-grid-list>

@@ -8,6 +8,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { MonoTypeOperatorFunction, of, tap } from 'rxjs';
 import { ApiResponse } from '../interfaces/api-response';
 import { ValidationError } from '../utils/validate-response';
+import { CustomError } from '../shared/upload-file/custom-error';
 
 type Severity = 'info' | 'warn' | 'error' | 'success';
 
@@ -142,6 +143,17 @@ export class MessageWrapperService {
         code: err.code,
         status: err.status,
         devMessage: err.message ?? err.code,
+      };
+    }
+
+    if (err instanceof CustomError) {
+      const data = err.data ?? undefined;
+      return {
+        isHttp: false,
+        code: err.code,
+        status: err.status,
+        devMessage: err.message ?? err.code,
+        data
       };
     }
     // HTTP-ошибка

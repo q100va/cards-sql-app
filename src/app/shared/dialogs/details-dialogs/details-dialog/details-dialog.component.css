@@ -1,3 +1,23 @@
 .full-width {
   width: 100%;
 }
+
+p-progress-spinner {
+  --p-progressspinner-color-1: #fbc02d;
+  --p-progressspinner-color-2: #d6c616;
+  --p-progressspinner-color-3: #45d233;
+  --p-progressspinner-color-4: #66bb6a;
+}
+
+/* spinner overlay */
+.overlay {
+  z-index: 100;
+  position:absolute;
+  width: 100%;
+  height: 100%;
+  /* place-items: center; */
+  padding-top: 25%;
+  padding-left: 35%;
+  background-color: #dddfd081;
+  border-radius: 20px;
+}

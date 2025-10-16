@@ -16,20 +16,22 @@ import {
 import { ConfirmationService } from 'primeng/api';
 
 import { AddressFilterComponent } from '../../../address-filter/address-filter.component';
-import { AddressFilterParams } from '../../../../interfaces/address-filter-params';
-import { AddressFilter } from '../../../../interfaces/address-filter';
-import { Control } from '../../../../interfaces/dialog-props';
-import { AddressService } from '../../../../services/address.service';
-import { DialogData } from '../../../../interfaces/dialog-props';
+import {
+  AddressFilter,
+  DefaultAddressParams,
+  hasKey,
+  AddressFilterParams,
+} from '../../../../interfaces/toponym';
+import { Control, DialogData } from '../../../../interfaces/dialog-props';
 import { ContactType, isContactType } from '../../../../interfaces/user';
 import { BaseModel } from '../../../../interfaces/base-model';
-import { DefaultAddressParams, hasKey } from '../../../../interfaces/address-filter';
 import { MessageWrapperService } from '../../../../services/message.service';
+import { AddressService } from '../../../../services/address.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-base-details',
-  imports: [],
-  providers: [],
+  imports: [TranslateModule],
   templateUrl: './base-details.component.html',
   styleUrl: './base-details.component.css',
 })
@@ -37,16 +39,19 @@ export class BaseDetailsComponent<T extends BaseModel> {
   get object(): T | null {
     return this.data().object;
   }
-  //object: T | null = null;
+
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
 
-  confirmationService = inject(ConfirmationService);
-  addressService = inject(AddressService);
-  msgWrapper = inject(MessageWrapperService);
+  protected readonly confirmationService = inject(ConfirmationService);
+  protected readonly addressService = inject(AddressService);
+  protected readonly msgWrapper = inject(MessageWrapperService);
+  protected readonly translateService = inject(TranslateService);
 
+  // Input data (as a signal from parent wrapper)
   data = input.required<DialogData<T>>();
-  controlsNames!: string[];
+
+  // Address filter state
   params!: AddressFilterParams;
   addressFilter = signal<AddressFilter>({
     countries: [],
@@ -56,26 +61,25 @@ export class BaseDetailsComponent<T extends BaseModel> {
   });
   invalidAddressFilter = true;
 
+  // Outputs as signals (parent bridges them)
   readonly emittedIsEditMode = output<boolean>();
   readonly emittedChanges = output<boolean>();
   readonly emittedIsSaveDisabled = output<boolean>();
-  readonly emittedCloseDialogData = output<string>();
-  /*   emittedIsEditMode = output<boolean>();
-  emittedChanges = output<boolean>();
-  closeDialog = output<string>();
-  emittedIsSaveDisabled = output<boolean>(); */
-  //isEditMode = false;
-  //changes = false;
+  readonly emittedCloseDialogData = output<string | true | null>();
+  readonly emittedShowSpinner = output<boolean>();
 
+  // Local UI state signals
   isEditModeSignal = signal(false);
   changesSignal = signal(false);
   IsSaveDisabledSignal = signal(true);
-  closeDialogDataSignal = signal<string | null>(null);
+  closeDialogDataSignal = signal<string | true | null>(null);
+  showSpinner = signal(true);
 
-  onChangeMode = output<string>();
-
+  // Reactive form
   mainForm: FormGroup<Record<string, AbstractControl>> = new FormGroup({});
+  controlsNames!: string[];
 
+  // Supported contact fields
   contactTypes: Exclude<ContactType, 'telegram'>[] = [
     'email',
     'phoneNumber',
@@ -88,40 +92,33 @@ export class BaseDetailsComponent<T extends BaseModel> {
     'facebook',
     'otherContact',
   ];
-  // object: User | Toponym | null = null;
 
   ngOnInit() {
-    console.log('changesSignal', this.changesSignal());
-    //console.log('ngOnInit', this.data());
     this.params = this.data().addressFilterParams;
+
+    // build form from config
     this.createFormGroup(this.data().controls, this.data().controlsDisable!);
-    ////console.log('this.mainForm', this.mainForm);
 
-    this.controlsNames = this.data().controls.map(
-      (control) => control.controlName
-    );
-    ////console.log('this.controlsNames', this.controlsNames);
+    // cache control names for quick loops
+    this.controlsNames = this.data().controls.map((c) => c.controlName);
 
-    // this.object = this.data().object;
-
+    // init values by mode
     if (this.object) {
       this.setInitialValues(
-        // this.controlsNames,
-        this.data().operation == 'view-edit' ? 'view' : 'create',
-        true
+        this.data().operation == 'view-edit' ? 'view' : 'create'
       );
-    } else {
-      if (this.data().toponymType == 'country') {
-        this.updateControlsValidity(this.controlsNames, true);
-      }
+    } else if (this.data().toponymType == 'country') {
+      // country form starts enabled
+      this.updateControlsValidity(this.controlsNames, true);
     }
-    console.log('changesSignal', this.changesSignal());
   }
 
+  // Hook for specific components to implement
   checkIsSaveDisabled() {}
 
-  createFormGroup(controls: Control[], controlsDisable: boolean) {
-    for (let control of controls) {
+  // Build reactive form from declarative controls config
+  protected createFormGroup(controls: Control[], controlsDisable: boolean) {
+    for (const control of controls) {
       if (control.formType == 'formControl') {
         this.mainForm.addControl(
           control.controlName,
@@ -130,16 +127,14 @@ export class BaseDetailsComponent<T extends BaseModel> {
             control.validators || []
           )
         );
-      }
-      if (control.formType == 'formArray') {
-        this.mainForm.addControl(control.controlName, new FormArray([]));
-        (this.mainForm.controls[control.controlName] as FormArray).push(
+      } else if (control.formType == 'formArray') {
+        const fa = new FormArray([
           new FormControl(
             { value: control.value, disabled: controlsDisable },
             control.validators || []
-          )
-        );
-        //}
+          ),
+        ]);
+        this.mainForm.addControl(control.controlName, fa);
       }
     }
   }
@@ -148,62 +143,56 @@ export class BaseDetailsComponent<T extends BaseModel> {
     return this.mainForm.get(name) as FormArray;
   }
 
-  onSaveClick(action: 'justSave' | 'saveAndExit') {}
+  // To be implemented by concrete details
+  onSaveClick(_action: 'justSave' | 'saveAndExit') {}
 
+  // Address changes from child filter
   onChangeAddress(event: AddressFilter) {
-    //console.log('onChangeAddress', event);
-    //console.log('this.data()', this.data());
     if (this.data().operation == 'create' || this.isEditModeSignal()) {
       this.addressFilter.set(event);
-      // console.log('onChangeAddress', event);
-      //console.log('this.data().toponymType', this.data().toponymType);
 
-      let condition = true;
+      // validate minimal address depth by toponym type
+      let ok = true;
       if (this.data().toponymType == 'locality')
-        condition = this.addressFilter().districts?.length! > 0;
+        ok = !!this.addressFilter().districts?.length;
       if (this.data().toponymType == 'district')
-        condition = this.addressFilter().regions?.length! > 0;
+        ok = !!this.addressFilter().regions?.length;
       if (this.data().toponymType == 'region')
-        condition = this.addressFilter().countries?.length! > 0;
+        ok = !!this.addressFilter().countries?.length;
 
-      this.updateControlsValidity(this.controlsNames, condition);
-
+      this.updateControlsValidity(this.controlsNames, ok);
       this.onChangeValidation();
     }
   }
 
+  // Switch to edit mode
   onEditClick() {
-    console.log('changesSignal', this.changesSignal());
     this.isEditModeSignal.set(true);
-    //this.isEditMode = true;
     this.emittedIsEditMode.emit(true);
     this.changesSignal.set(false);
-    //this.changes = false;
     this.emittedChanges.emit(false);
-    //this.checkIsSaveDisabled();
     this.setInitialValues('edit');
     this.updateControlsValidity(this.controlsNames, true);
-    console.log('changesSignal1', this.changesSignal());
     this.addressFilterComponent.onChangeMode('edit', null);
-    console.log('changesSignal2', this.changesSignal());
   }
 
+  // Switch to view mode (with confirm if there are changes)
   onViewClick() {
     if (this.changesSignal()) {
       this.confirmationService.confirm({
-        message: 'Вы уверены, что хотите выйти без сохранения?',
-        header: 'Предупреждение',
-        closable: true,
-        closeOnEscape: true,
+        message: this.translateService.instant(
+          'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE'
+        ),
+        header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
         icon: 'pi pi-exclamation-triangle',
-/*         rejectButtonProps: {
-          label: 'Нет',
+        rejectButtonProps: {
+          label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
         },
         acceptButtonProps: {
-          label: 'Да',
+          label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
           severity: 'secondary',
           outlined: true,
-        }, */
+        },
         accept: () => {
           this.setInitialValues('view');
           this.changeToViewMode(this.data().defaultAddressParams!);
@@ -216,37 +205,59 @@ export class BaseDetailsComponent<T extends BaseModel> {
     }
   }
 
-  onChangeValidation() {
+  // Cancel dialog (with confirm if dirty or create mode)
+  onCancelClick() {
+    if (this.changesSignal() || this.data().operation === 'create') {
+      this.confirmationService.confirm({
+        message: this.translateService.instant(
+          'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE'
+        ),
+        header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
+        icon: 'pi pi-exclamation-triangle',
+        rejectButtonProps: {
+          label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+        },
+        acceptButtonProps: {
+          label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+          severity: 'secondary',
+          outlined: true,
+        },
+        accept: () => {
+          this.closeDialogDataSignal.set(true);
+          this.emittedCloseDialogData.emit(true);
+        },
+        reject: () => {},
+      });
+    } else {
+      this.closeDialogDataSignal.set(true);
+      this.emittedCloseDialogData.emit(true);
+    }
+  }
+
+  // Recalculate `changes` + save-disabled
+  protected onChangeValidation() {
     if (this.data().operation == 'view-edit') {
       this.changesSignal.set(false);
-      for (let controlName of this.controlsNames) {
-        if (controlName != 'password' && !isContactType(controlName)) {
-          // if (!this.contactTypes.includes(controlName)) {
-          if (hasKey(this.object!, controlName)) {
-            if (
-              this.mainForm.controls[controlName].value !=
-                this.object![controlName] &&
-              !(
-                this.mainForm.controls[controlName].value === '\u00A0' &&
-                this.object![controlName] === null
-              )
-            ) {
-              console.log(
-                'this.mainForm.controls[controlName].value, this.object![controlName]',
-                this.mainForm.controls[controlName].value,
-                this.object![controlName]
-              );
-              this.changesSignal.set(true);
-            }
+
+      for (const controlName of this.controlsNames) {
+        if (
+          controlName != 'password' &&
+          !isContactType(controlName) &&
+          hasKey(this.object!, controlName)
+        ) {
+          const newVal = this.mainForm.controls[controlName].value;
+          const oldVal = this.object![controlName];
+          const isNbspToNull = newVal === '\u00A0' && oldVal === null;
+          if (newVal != oldVal && !isNbspToNull) {
+            this.changesSignal.set(true);
+            break;
           }
         }
       }
 
       if (!this.changesSignal()) {
-        const newChangesValue = this.additionalValidationHooks();
-        console.log('newChangesValue', newChangesValue);
-
-        this.changesSignal.set(newChangesValue);
+        // let specific component add extra dirty rules (address filter, etc.)
+        this.changesSignal.set(this.additionalValidationHooks());
       }
 
       this.emittedChanges.emit(this.changesSignal());
@@ -255,55 +266,45 @@ export class BaseDetailsComponent<T extends BaseModel> {
     this.checkIsSaveDisabled();
   }
 
+  // Extension point for domain-specific dirty checks
   protected additionalValidationHooks(): boolean {
-    return false; // по умолчанию — ничего не добавляет
+    return false;
   }
 
-  changeToViewMode(addressParams: DefaultAddressParams | null) {
+  // View-mode: disable controls and sync address-filter child
+  protected changeToViewMode(addressParams: DefaultAddressParams | null) {
     this.isEditModeSignal.set(false);
     this.emittedIsEditMode.emit(false);
     this.updateControlsValidity(this.controlsNames, false);
-    //this.invalidAddressFilter = false; ???
     this.addressFilterComponent.onChangeMode('view', addressParams);
   }
 
-  updateControlsValidity(controlsToUpdate: string[], conditions: boolean) {
-    // console.log('controlsToUpdate', controlsToUpdate, conditions);
-    controlsToUpdate.forEach((control) => {
-      /*       if (control != 'userName') { */
-      conditions
+  // Enable/disable a set of controls; also flip address-filter validity flag
+  protected updateControlsValidity(
+    controlsToUpdate: string[],
+    enable: boolean
+  ) {
+    for (const control of controlsToUpdate) {
+      enable
         ? this.mainForm.controls[control].enable()
         : this.mainForm.controls[control].disable();
-      /*    } */
-    });
-    this.invalidAddressFilter = !conditions;
-    //console.log('invalidAddressFilter', this.invalidAddressFilter);
+    }
+    this.invalidAddressFilter = !enable;
     this.checkIsSaveDisabled();
   }
 
-  setInitialValues(
-    //controlsToSetValues: string[],
-    mode: 'view' | 'edit' | 'create',
-    firstInitialization = false
-  ) {
-    /* console.log(
-      'this.data().object, this.object,',
-      this.data().object,
-      this.object
-    ); */
+  // Fill controls from current object (special casing for password/nbsp)
+  protected setInitialValues(mode: 'view' | 'edit' | 'create') {
     for (const controlName of this.controlsNames) {
-      //  console.log('controlName', controlName);
       if (isContactType(controlName)) continue;
-
       if (hasKey(this.object!, controlName)) {
-        const controlValue = this.object![controlName];
-
+        const v = this.object![controlName];
         this.mainForm.controls[controlName].setValue(
-          mode === 'view' && controlValue === null
+          mode === 'view' && v === null
             ? '\u00A0'
             : controlName === 'password'
             ? 'password123'
-            : controlValue
+            : v
         );
       }
     }

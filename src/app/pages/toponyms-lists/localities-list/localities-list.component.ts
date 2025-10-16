@@ -1,10 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
-import { ToponymProps } from '../../../interfaces/dialog-props';
+import {
+  ToponymProps,
+  ToponymType,
+  QueryParams,
+} from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';
-import { ToponymType } from '../../../interfaces/address-filter';
-import { DefaultAddressParams } from '../../../interfaces/address-filter';
-import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
+import { toponymDraftSchema } from '@shared/schemas/toponym.schema';
+import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
   selector: 'app-localities-list',
@@ -29,34 +32,36 @@ export class LocalitiesListComponent {
     isShowRegion: true,
     isShowDistrict: true,
     isShowLocality: true,
-    defaultCountryId: 143,
-    defaultRegionId: null,
-    defaultDistrictId: null,
-    defaultLocalityId: null,
-    queryParams: null,
+    queryParams: {
+      countryId: 143,
+      regionId: null,
+      districtId: null,
+      localityId: null,
+      addressFilterString: 'Россия',
+    },
     searchPlaceHolder: 'Лихоборы или Малаховка Московская',
-    filename: 'шаблон-населенные-пункты.xlsx',
+    filename: 'template-localities.xlsx',
     dialogProps: {
-      creationTitle: 'Новый насел. пункт',
-      viewTitle: 'Населенный пункт',
+      creationTitle: 'TOPONYM.TABLE_TITLE_DISTRICTS',
+      viewTitle: 'TOPONYM.TABLE_TITLE_DISTRICTS',
       controls: [
         {
           controlName: 'name',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.name)],
           type: 'inputText',
-          label: 'Название',
+          label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Синицыно поселок',
           formType: 'formControl',
         },
         {
           controlName: 'shortName',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.shortName)],
           type: 'inputText',
-          label: 'Краткое название',
+          label: 'TOPONYM.LABEL_SHORT_NAME',
           placeholder: 'п. Синицыно',
           formType: 'formControl',
         },
@@ -65,7 +70,7 @@ export class LocalitiesListComponent {
           value: false,
           disabled: true,
           type: 'checkbox',
-          label: 'Федеральный город',
+          label: 'TOPONYM.FEDERAL_CITY',
           formType: 'formControl',
         },
         {
@@ -73,7 +78,7 @@ export class LocalitiesListComponent {
           value: false,
           disabled: true,
           type: 'checkbox',
-          label: 'Столица региона',
+          label: 'TOPONYM.REGION_CAPITAL',
           formType: 'formControl',
         },
         {
@@ -81,7 +86,7 @@ export class LocalitiesListComponent {
           value: false,
           disabled: true,
           type: 'checkbox',
-          label: 'Столица округа',
+          label: 'TOPONYM.DISTRICT_CAPITAL',
           formType: 'formControl',
         },
       ],
@@ -101,7 +106,6 @@ export class LocalitiesListComponent {
         },
       ],
       addressFilterParams: {
-
         isShowCountry: true,
         isShowRegion: true,
         isShowDistrict: true,
@@ -114,7 +118,7 @@ export class LocalitiesListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.queryParams = params as DefaultAddressParams;
+      if(Object.keys(params).length != 0 ) this.props.queryParams = params as QueryParams;
     });
   }
 }
