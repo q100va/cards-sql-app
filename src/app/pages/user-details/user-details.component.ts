@@ -41,9 +41,9 @@ import {
 } from '../../interfaces/user';
 import { UserService } from '../../services/user.service';
 import * as Validator from '../../utils/custom.validator';
-import { UserDraft } from '../../interfaces/userDraft';
+import { UserDraft } from '../../interfaces/user';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advances-details/advanced-details.component';
-import { typedKeys } from '../../interfaces/address-filter';
+import { typedKeys } from '../../interfaces/toponym';
 import { ChangePasswordDialogComponent } from '../../shared/dialogs/change-password-dialog/change-password-dialog';
 import { MatDialog } from '@angular/material/dialog';
 

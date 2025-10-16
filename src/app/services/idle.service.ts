@@ -1,4 +1,4 @@
-// idle.service.ts
+// idle.service.ts //TODO: странно ведет себя при отсутствии на странице
 import { Injectable, NgZone, inject } from '@angular/core';
 import {
   fromEvent,
@@ -54,11 +54,11 @@ export class IdleService {
         fromEvent<WheelEvent>(window, 'wheel', passive),
         fromEvent<TouchEvent>(window, 'touchstart', passive),
         fromEvent<TouchEvent>(window, 'touchmove', passive),
-/*         fromEvent(document, 'visibilitychange').pipe(
+        fromEvent(document, 'visibilitychange') .pipe(
           filter(() => document.hidden),
-          tap(() => this.zone.run(() => this.onIdle(confirmMs)))
-        ) */
-        //s fromEvent<PointerEvent>(window, 'pointermove', passive), // можно убрать mousemove
+         /* tap(() => this.zone.run(() => this.onIdle(confirmMs)))*/
+        )
+        // fromEvent<PointerEvent>(window, 'pointermove', passive), // можно убрать mousemove
       ).pipe(
         // один «сигнал активности» не чаще, чем раз в 250мс
         auditTime(250)

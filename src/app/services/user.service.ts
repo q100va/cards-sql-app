@@ -3,8 +3,8 @@ import { map, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ChangedData, DeletingData, OutdatedData, OutdatingData, RestoringData, User } from '../interfaces/user';
 import { environment } from '../../environments/environment';
-import { AddressFilter } from '../interfaces/address-filter';
-import { UserDraft } from '../interfaces/userDraft';
+import { AddressFilter } from '../interfaces/toponym';
+import { UserDraft } from '../interfaces/user';
 import { GeneralFilter } from '../interfaces/filter';
 
 @Injectable({
