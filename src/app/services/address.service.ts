@@ -33,7 +33,7 @@ import {
 })
 export class AddressService {
   private http = inject(HttpClient);
-  private readonly BASE_URL = `${environment.apiUrl}/api/addresses`;
+  private readonly BASE_URL = `${environment.apiUrl}/api/toponyms`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
   constructor(private msgWrapper: MessageWrapperService) {}

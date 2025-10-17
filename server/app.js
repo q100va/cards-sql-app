@@ -69,7 +69,7 @@ app.head('/healthz', (_req, res) => res.sendStatus(200));
 
 // API
 app.use('/api/session', SessionApi);
-app.use('/api/addresses', ToponymsApi);
+app.use('/api/toponyms', ToponymsApi);
 app.use('/api/files', FilesApi);
 app.use('/api/users', UsersApi);
 app.use('/api/roles', RolesApi);

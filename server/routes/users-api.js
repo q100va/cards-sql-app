@@ -964,7 +964,7 @@ router.get("/get-user-by-id/:id", requireAuth, async (req, res) => {
 router.get("/check-user-before-delete/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.params.id;
-    //TODO: find does this user has clients and orders
+    //TODO: find does this user has volunteers and orders
 
     res.status(200).send({ msg: "Пользователь может быть удален.", data: true });
   } catch (e) {
