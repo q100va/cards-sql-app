@@ -35,16 +35,32 @@ export const routes: Routes = [
       { path: 'users', component: UsersListComponent },
       {
         path: 'roles',
-        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')],
+        canMatch: [requireOp('ALL_OPS_ROLES')],
         component: RolesListComponent,
       },
-      { path: 'countries', component: CountriesListComponent },
-      { path: 'regions', component: RegionsListComponent },
-      { path: 'districts', component: DistrictsListComponent },
-      { path: 'localities', component: LocalitiesListComponent },
+      {
+        path: 'countries',
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        component: CountriesListComponent,
+      },
+      {
+        path: 'regions',
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        component: RegionsListComponent,
+      },
+      {
+        path: 'districts',
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        component: DistrictsListComponent,
+      },
+      {
+        path: 'localities',
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        component: LocalitiesListComponent,
+      },
       {
         path: 'audit',
-        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')],
+        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')],//TODO: create operations for audit
         component: AuditTableComponent,
       },
     ],

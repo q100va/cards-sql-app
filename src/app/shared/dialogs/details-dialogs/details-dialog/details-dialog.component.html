@@ -14,19 +14,21 @@
     <mat-grid-tile colspan="2" rowspan="1">
       @if (data.operation == 'view-edit' && isEditMode()) {
       <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_SAVE' | translate" [disabled]="isSaveDisabled()"
-        (click)="onSaveClick('justSave')">
+        (click)="onSaveClick('justSave')" *hasOp="permissions.edit">
         <mat-icon fontSet="material-icons-outlined">save</mat-icon>
       </button>
       }
     </mat-grid-tile>
     <mat-grid-tile colspan="2" rowspan="1">
       @if (data.operation == 'view-edit' && !isEditMode()) {
-      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_EDIT' | translate" (click)="onEditClick()">
+      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_EDIT' | translate" (click)="onEditClick()"
+        *hasOp="permissions.edit">
         <mat-icon fontSet="material-icons-outlined">edit_square</mat-icon>
       </button>
       }
       @if (data.operation == 'view-edit' && isEditMode()) {
-      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_VIEW' | translate" (click)="onViewClick()">
+      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_VIEW' | translate" (click)="onViewClick()"
+        *hasOp="permissions.edit">
         <mat-icon fontSet="material-icons-outlined">find_in_page</mat-icon>
       </button>
       }
@@ -49,8 +51,8 @@
   <mat-grid-tile colspan="3" rowspan="1">
     <mat-dialog-actions>
       @if (data.operation == 'create' || isEditMode()){
-      <button class="dialog-submit-button" mat-button [disabled]="isSaveDisabled()"
-        (click)="onSaveClick('saveAndExit')">{{ 'DETAILS_DIALOG.CARD_SAVE_AND_EXIT' | translate }}</button>}
+      <button class="dialog-submit-button" mat-button [disabled]="isSaveDisabled()" (click)="onSaveClick('saveAndExit')"
+        *hasOp="permissions.createOrEdit">{{ 'DETAILS_DIALOG.CARD_SAVE_AND_EXIT' | translate }}</button>}
     </mat-dialog-actions>
   </mat-grid-tile>
 </mat-grid-list>

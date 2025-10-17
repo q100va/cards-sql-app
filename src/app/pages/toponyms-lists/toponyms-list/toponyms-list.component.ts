@@ -51,6 +51,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import { BlurOnClickDirective } from '../../../directives/blur-on-click.directive';
+import { HasOpDirective } from '../../../directives/has-op.directive';
 
 import { AddressService } from '../../../services/address.service';
 import { FileService } from '../../../services/file.service';
@@ -97,6 +98,7 @@ import { sanitizeText } from '../../../utils/sanitize-text';
     AddressFilterComponent,
     UploadFileComponent,
     BlurOnClickDirective,
+    HasOpDirective,
     TranslateModule,
   ],
   providers: [],

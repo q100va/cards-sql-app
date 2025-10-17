@@ -138,9 +138,9 @@
       "OPEN_LIST_TITLE": "Open menu",
       "OPEN_CARD": "open card",
       "OPEN_USERS": "open users list",
-      "OPEN_CLIENTS": "open volunteers list",
+      "OPEN_VOLUNTEERS": "open volunteers list",
       "OPEN_SENIORS": "open seniors list",
-      "OPEN_HOUSES": "open institutions list",
+      "OPEN_HOMES": "open institutions list",
       "OPEN_REGIONS": "open regions list",
       "OPEN_DISTRICTS": "open districts list",
       "OPEN_LOCALITIES": "open localities list",
@@ -237,7 +237,8 @@
     "ROLES": "Roles",
     "HOMES": "Nursing homes",
     "PARTNERS": "Institution\nrepresentatives",
-    "SENIORS": "Residents"
+    "SENIORS": "Residents",
+    "VOLUNTEERS": "Volunteers"
   },
   "OPS": {
     "ALL_OPS": {
@@ -270,8 +271,11 @@
     "VIEW_FULL_LIST": {
       "NAME": "Access to extended list data"
     },
-    "BULK_UPDATE": {
-      "NAME": "Bulk update"
+    "BULK_UPLOAD": {
+      "NAME": "Bulk upload"
+    },
+    "DOWNLOAD_TEMPLATE": {
+      "NAME": "Download template"
     }
   }
 }

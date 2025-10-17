@@ -20,12 +20,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-import { DETAILS_COMPONENT_REGISTRY } from './details-component-registry';
+import {
+  DETAILS_COMPONENT_REGISTRY,
+  PERMISSIONS_COMPONENT_REGISTRY,
+} from './details-component-registry';
 import { DialogData } from '../../../../interfaces/dialog-props';
 import { BaseModel } from '../../../../interfaces/base-model';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 
 import { TranslateModule } from '@ngx-translate/core';
+import { HasOpDirective } from '../../../../directives/has-op.directive';
 
 @Component({
   selector: 'app-details-dialog',
@@ -37,6 +41,7 @@ import { TranslateModule } from '@ngx-translate/core';
     MatButtonModule,
     TranslateModule,
     ProgressSpinner,
+    HasOpDirective,
   ],
   templateUrl: './details-dialog.component.html',
   styleUrl: './details-dialog.component.css',
@@ -58,6 +63,7 @@ export class DetailsDialogComponent<T extends BaseModel>
 
   // pick component class from registry by type
   readonly componentType = DETAILS_COMPONENT_REGISTRY[this.data.componentType];
+  permissions = PERMISSIONS_COMPONENT_REGISTRY[this.data.componentType];
 
   // child injector so the nested component sees MAT_DIALOG_DATA / MatDialogRef
   readonly customInjector: Injector = Injector.create({
