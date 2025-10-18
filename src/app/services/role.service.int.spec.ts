@@ -10,19 +10,17 @@ import {
   HttpHandler,
   HttpRequest,
 } from '@angular/common/http';
-
-import { RoleService } from './role.service';
-import { LanguageService } from '../services/language.service'; // adjust path if needed
-import { environment } from '../../environments/environment';
 import { TestBed } from '@angular/core/testing';
-import { MessageWrapperService } from './message.service';
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
+import { MessageWrapperService } from './message.service';
+import { LanguageService } from '../services/language.service';
+import { RoleService } from './role.service';
 
 @Injectable()
 class LangHeaderInterceptor implements HttpInterceptor {
   constructor(private lang: LanguageService) {}
   intercept(req: HttpRequest<any>, next: HttpHandler) {
-    // В твоём сервисе есть только геттер .current
     const code = this.lang?.current ?? 'en';
     return next.handle(req.clone({ setHeaders: { 'x-lang': code } }));
   }
@@ -45,22 +43,18 @@ describe('RoleService (integration)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        // HttpClient + тестовый backend
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-
         RoleService,
-
-        // Стаб LanguageService с нужным полем `current`
         { provide: LanguageService, useValue: { current: 'uk' } },
-
-        // Подключаем интерсептор через DI
-        { provide: HTTP_INTERCEPTORS, useClass: LangHeaderInterceptor, multi: true },
-
+        {
+          provide: HTTP_INTERCEPTORS,
+          useClass: LangHeaderInterceptor,
+          multi: true,
+        },
         { provide: MessageWrapperService, useValue: msgStub },
       ],
     });
-
     svc = TestBed.inject(RoleService);
     http = TestBed.inject(HttpTestingController);
   });
@@ -88,7 +82,10 @@ describe('RoleService (integration)', () => {
       .subscribe((r) => expect(typeof r.data).toBe('string'));
     const req = http.expectOne(`${BASE}/create-role`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ name: 'Role', description: 'Valid desc' });
+    expect(req.request.body).toEqual({
+      name: 'Role',
+      description: 'Valid desc',
+    });
     req.flush({ data: 'Role' });
   });
 

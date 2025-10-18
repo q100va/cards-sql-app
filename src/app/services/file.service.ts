@@ -1,8 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { catchError, from, mergeMap, Observable, throwError } from 'rxjs';
+import { catchError, from, mergeMap, throwError } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { MessageWrapperService } from './message.service';
 
 @Injectable({
   providedIn: 'root',
@@ -22,14 +21,12 @@ export class FileService {
           error: parsed ?? { message: text },
           headers: err.headers, status: err.status, statusText: err.statusText, url: err.url || undefined,
         });
-        return throwError(() => normalized);   // ← пробрасываем в MessageWrapperService
+        return throwError(() => normalized);
       })
     );
   }
   return throwError(() => err);
 };
-
-  constructor(private msgWrapper: MessageWrapperService) {}
 
   downloadFile(filename: string) {
     const url = `${this.BASE_URL}/download/${encodeURIComponent(
@@ -38,7 +35,6 @@ export class FileService {
     return this.http
       .get(url, {
         responseType: 'blob',
-        //observe: 'response', // чтобы достать имя из Content-Disposition
       })
       .pipe(catchError(this.handleError));
   }
