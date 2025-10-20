@@ -111,6 +111,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
       // country form starts enabled
       this.updateControlsValidity(this.controlsNames, true);
     }
+    console.log('ngOnInit ', this.addressFilter());
   }
 
   // Hook for specific components to implement
@@ -174,6 +175,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     this.setInitialValues('edit');
     this.updateControlsValidity(this.controlsNames, true);
     this.addressFilterComponent.onChangeMode('edit', null);
+    console.log('onEditClick ', this.addressFilter());
   }
 
   // Switch to view mode (with confirm if there are changes)

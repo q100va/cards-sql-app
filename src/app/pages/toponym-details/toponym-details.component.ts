@@ -48,10 +48,12 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
 
   override ngOnInit(): void {
     super.ngOnInit();
+
   }
 
   // evaluate save button disabled state
   override checkIsSaveDisabled() {
+    console.log('checkIsSaveDisabled ', this.addressFilter());
     const disabled =
       !this.mainForm.valid ||
       this.invalidAddressFilter ||
@@ -89,6 +91,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
     const type = this.data().toponymType!;
 
     this.emitShowSpinner(true);
+     console.log('HttpParams ', this.addressFilter());
 
     this.addressService
       .checkToponymName(

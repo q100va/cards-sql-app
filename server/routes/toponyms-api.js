@@ -32,6 +32,7 @@ router.get(
   async (req, res, next) => {
     try {
       const query = req.query;
+       console.log('HttpParams ', req.query);
       const duplicateCount = await findDuplicate(query);
       //console.log("duplicate", duplicateCount);
       const response = {
@@ -137,7 +138,7 @@ router.get("/get-:type-by-id/:id",
 
 router.get("/get-toponyms-list",
   requireAuth,
-  requireAny('ADD_TOPONYM', 'EDIT_TOPONYM', 'VIEW_TOPONYM', 'VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'),//TODO: add more permissions
+  requireAny('ADD_NEW_TOPONYM', 'EDIT_TOPONYM', 'VIEW_TOPONYM', 'VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'),//TODO: add more permissions
   validateRequest(toponymSchemas.getToponymsListSchema, 'query'),
   async (req, res, next) => {
     try {

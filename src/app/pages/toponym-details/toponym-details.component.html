@@ -12,7 +12,7 @@
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-form-field class="full-width">
         <mat-label>{{control.label | translate}}</mat-label>
-        <input class="full-width" matInput [formControlName]="control.controlName | translate"
+        <input [attr.data-cy]="control.controlName" class="full-width" matInput [formControlName]="control.controlName | translate"
           [placeholder]="control.placeholder! | translate">
         @if(mainForm.controls[control.controlName].hasError('zodError')){
         <mat-error>{{mainForm.controls[control.controlName].errors!['zodError'] | translate}}</mat-error>

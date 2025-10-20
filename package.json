@@ -19,7 +19,7 @@
     "test:int": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --config server/jest.config.int.mjs --runInBand",
     "api:test": "cross-env NODE_ENV=test PORT=8080 DOTENV_CONFIG_PATH=server/.env.test node -r dotenv/config server/server.js",
     "start:e2e": "ng serve --port 56379 --host 0.0.0.0",
-    "cypress:open": "cypress open --project .",
+    "cypress:open": "cypress open --project . --env USE_STUBS=0",
     "cypress:run": "cypress run --project .",
     "cypress:open:stub": "cypress open --project . --env USE_STUBS=1,API_URL=http://localhost:8080",
     "cypress:run:stub": "cypress run --project . --env USE_STUBS=1,API_URL=http://localhost:8080",

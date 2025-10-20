@@ -5,12 +5,14 @@ import requireAuth from '../middlewares/check-auth.js';
 import { validateRequest } from '../middlewares/validate-request.js';
 import { downloadQuery } from '../../shared/dist/file.schema.js';
 import CustomError from '../shared/customError.js';
+import { requireOperation } from '../middlewares/require-permission.js';
 
 const router = Router();
 
 router.get(
   '/download/:filename',
   requireAuth,
+  requireOperation('DOWNLOAD_TEMPLATE_FOR_TOPONYM'),
   validateRequest(downloadQuery, 'params'),
   async (req, res, next) => {
     try {

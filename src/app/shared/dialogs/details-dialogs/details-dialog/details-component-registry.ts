@@ -26,7 +26,7 @@ export const PERMISSIONS_COMPONENT_REGISTRY = {
       mode: 'all',
     },
     createOrEdit: {
-      codes: ['ADD_USER', 'EDIT_USER'],
+      codes: ['ADD_NEW_USER', 'EDIT_USER'],
       mode: 'any',
     },
   },
@@ -36,7 +36,7 @@ export const PERMISSIONS_COMPONENT_REGISTRY = {
       mode: 'all',
     },
     createOrEdit: {
-      codes: ['ADD_TOPONYM', 'EDIT_TOPONYM'],
+      codes: ['ADD_NEW_TOPONYM', 'EDIT_TOPONYM'],
       mode: 'any',
     },
   },
