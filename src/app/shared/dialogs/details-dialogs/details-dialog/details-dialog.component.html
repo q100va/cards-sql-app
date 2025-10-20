@@ -1,31 +1,40 @@
+@if(showSpinner()){
+<div class="overlay">
+  <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+    [style]="{ width: '150px', height: '150px' }" />
+</div>
+}
 <mat-grid-list cols="18" gutterSize="16px" rowHeight="76px">
   <div mat-dialog-title>
+
     <mat-grid-tile colspan="11" rowspan="1">
-      <h3 mat-dialog-title>{{title}}</h3>
+      <h3 mat-dialog-title>{{title | translate}}</h3>
     </mat-grid-tile>
 
     <mat-grid-tile colspan="2" rowspan="1">
-
       @if (data.operation == 'view-edit' && isEditMode()) {
-      <button mat-icon-button title="Сохранить" [disabled]="isSaveDisabled()" (click)="onSaveClick('justSave')">
+      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_SAVE' | translate" [disabled]="isSaveDisabled()"
+        (click)="onSaveClick('justSave')" *hasOp="permissions.edit">
         <mat-icon fontSet="material-icons-outlined">save</mat-icon>
       </button>
       }
     </mat-grid-tile>
     <mat-grid-tile colspan="2" rowspan="1">
       @if (data.operation == 'view-edit' && !isEditMode()) {
-      <button mat-icon-button title="Изменить" (click)="onEditClick()">
+      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_EDIT' | translate" (click)="onEditClick()"
+        *hasOp="permissions.edit">
         <mat-icon fontSet="material-icons-outlined">edit_square</mat-icon>
       </button>
       }
       @if (data.operation == 'view-edit' && isEditMode()) {
-      <button mat-icon-button title="К просмотру" (click)="onViewClick()">
+      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_VIEW' | translate" (click)="onViewClick()"
+        *hasOp="permissions.edit">
         <mat-icon fontSet="material-icons-outlined">find_in_page</mat-icon>
       </button>
       }
     </mat-grid-tile>
     <mat-grid-tile colspan="2" rowspan="1">
-      <button mat-icon-button title="Закрыть" (click)="onCancelClick($event)">
+      <button mat-icon-button [title]="'DETAILS_DIALOG.CARD_CLOSE' | translate" (click)="onCancelClick()">
         <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
       </button>
     </mat-grid-tile>
@@ -37,16 +46,15 @@
   <ng-template #container></ng-template>
 </mat-dialog-content>
 
-  <mat-grid-list cols="9" gutterSize="16px" rowHeight="36px">
-    <mat-grid-tile colspan="6" rowspan="1"></mat-grid-tile>
-    <mat-grid-tile colspan="3" rowspan="1">
-      <mat-dialog-actions>
-        @if (data.operation == 'create' || isEditMode()){
-        <button class="dialog-submit-button" mat-button [disabled]="isSaveDisabled()"
-          (click)="onSaveClick('saveAndExit')">Сохранить и
-          выйти</button>}
-      </mat-dialog-actions>
-    </mat-grid-tile>
-  </mat-grid-list>
+<mat-grid-list cols="9" gutterSize="16px" rowHeight="36px">
+  <mat-grid-tile colspan="6" rowspan="1"></mat-grid-tile>
+  <mat-grid-tile colspan="3" rowspan="1">
+    <mat-dialog-actions>
+      @if (data.operation == 'create' || isEditMode()){
+      <button class="dialog-submit-button" mat-button [disabled]="isSaveDisabled()" (click)="onSaveClick('saveAndExit')"
+        *hasOp="permissions.createOrEdit">{{ 'DETAILS_DIALOG.CARD_SAVE_AND_EXIT' | translate }}</button>}
+    </mat-dialog-actions>
+  </mat-grid-tile>
+</mat-grid-list>
 
-  <br />
+<br />

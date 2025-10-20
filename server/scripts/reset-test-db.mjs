@@ -1,5 +1,6 @@
 // server/scripts/reset-test-db.mjs
 import 'dotenv/config';
+import { Op } from 'sequelize';
 
 process.env.NODE_ENV = 'test';
 process.env.DOTENV_CONFIG_PATH =
@@ -8,19 +9,10 @@ process.env.DOTENV_CONFIG_PATH =
 // БД/модели грузим после env
 const { default: sequelize } = await import('../database.js');
 const models = await import('../models/index.js');
-const { Role, User, RolePermission } = models;
+const { Role, User, RolePermission, Country } = models;
 
-// !!! Подставь правильный путь к константе OPERATIONS
-// Ожидается формат: [{ operation: 'partners.read', flag: 'FULL'|'PART'|... }, ...]
-import { OPERATIONS } from '../shared/operations.js'; // <-- поправь путь
 
-// Если нет общей константы, можно временно задать локально:
-// const OPERATIONS = [
-//   { operation: 'partners.read',   flag: 'PART' },
-//   { operation: 'partners.write',  flag: 'FULL' },
-//   { operation: 'users.read',      flag: 'PART' },
-//   { operation: 'users.write',     flag: 'FULL' },
-// ];
+import { OPERATIONS } from '../shared/operations.js';
 
 export async function reset() {
   console.log('[cypress task] -> reset()');
@@ -32,6 +24,9 @@ export async function reset() {
   await sequelize.sync({ force: true });
   await seedRolesAndOperations();
   await seedAdminUser();
+  await seedViewer();
+  await seedCountry();
+
   return true;
 }
 
@@ -39,63 +34,70 @@ export async function reset() {
 async function seedRolesAndOperations() {
   const t = await sequelize.transaction();
   try {
-    // 1) Базовые роли
+    // 1) роли
     const baseRoles = [
-      { name: 'Admin', description: 'Administrator' },
+      { name: 'Admin',       description: 'Administrator' },
       { name: 'Coordinator', description: 'Coordinator' },
-      { name: 'User', description: 'Volunteer' },
+      { name: 'User',        description: 'Volunteer' },
+      { name: 'Viewer',      description: 'Viewer' },
     ];
     await Role.bulkCreate(baseRoles, { transaction: t });
 
-    /*     await Role.findOrCreate({
-          where: { name: 'Admin' },
-          defaults: { description: 'Administrator' },
-          transaction: t,
-        }); */
-
-    // 2) Получим все роли и снесём их операции (на случай повторного запуска)
     const roles = await Role.findAll({ transaction: t });
+    const roleByName = Object.fromEntries(roles.map(r => [r.name, r]));
+    const adminRoleId  = roleByName.Admin.id;
+    const viewerRoleId = roleByName.Viewer.id;
 
-    // Для надёжности удалим все старые операции этих ролей (если сидим повторно)
+    // 2) зачистка старых прав
     await RolePermission.destroy({
       where: { roleId: roles.map(r => r.id) },
       transaction: t,
     });
 
-    // 3) Для каждой роли — полный набор операций (как в реальном /create-role)
+    // 3) полная матрица прав
+    //    ВАЖНО: пишем в колонку "name" (а не "operation")
     const mkRows = (roleId) =>
       OPERATIONS.map(op => ({
-        name: op.operation,
         roleId,
+        name: op.operation,            // 👈 колонка в БД — "name"
         access: false,
-        disabled: op.flag === 'FULL', // как в твоём роуте
+        disabled: op.flag === 'FULL',
       }));
 
-    const allRows = roles.flatMap(r => mkRows(r.id));
+    await RolePermission.bulkCreate(
+      roles.flatMap(r => mkRows(r.id)),
+      { transaction: t }
+    );
 
-    // Если в модели есть уникальный индекс (roleId,name), то этого достаточно;
-    // при повторном сидинге мы уже сделали destroy выше.
-    await RolePermission.bulkCreate(allRows, { transaction: t });
+    // 4) Admin — всё включено
     await RolePermission.update(
       { access: true },
+      { where: { roleId: adminRoleId }, transaction: t }
+    );
+
+    // 5) Viewer — только выбранные операции
+    const viewerOps = [
+      'VIEW_LIMITED_USERS_LIST',
+      'VIEW_LIMITED_TOPONYMS_LIST',
+      'VIEW_TOPONYM',
+      // 'ADD_NEW_TOPONYM', // добавь сюда, если Viewer должен уметь добавлять
+    ];
+
+    const [updated] = await RolePermission.update(
+      { access: true },
       {
-        where: { roleId: 1 },
+        where: {
+          roleId: viewerRoleId,            // 👈 обязательно сузить по роли
+          name: { [Op.in]: viewerOps },    // 👈 фильтр по колонке "name"
+        },
         transaction: t,
       }
     );
-    const rows = await RolePermission.findAll(
-      {
-        where: { roleId: 1 },
-        transaction: t,
-      }
-    );
-    console.log(`[reset-db] role id1:`, rows);
+    console.log(`[reset-db] viewer perms updated: ${updated}`);
 
     await t.commit();
-    console.log(`[reset-db] roles+operations seeded: roles=${roles.length}, opsPerRole=${OPERATIONS.length}`);
   } catch (e) {
     await t.rollback();
-    console.error('[reset-db] seedRolesAndOperations failed:', e?.message || e);
     throw e;
   }
 }
@@ -141,6 +143,104 @@ async function seedAdminUser() {
     throw e;
   }
 }
+
+/** View-пользователь */
+async function seedViewer() {
+  const t = await sequelize.transaction();
+  try {
+    const { hashPassword } = await import('../controllers/passwords.mjs');
+
+    const viewerRole = await Role.findOne({ where: { name: 'Viewer' }, transaction: t });
+    if (!viewerRole) throw new Error('Viewer role not found');
+
+    const passwordHash = await hashPassword('p@ss54321');
+
+    const [adminUser, created] = await User.findOrCreate({
+      where: { userName: 'viewerUser' },
+      defaults: {
+        userName: 'viewerUser',
+        firstName: 'Viewer',
+        lastName: 'User',
+        password: passwordHash,
+        roleId: viewerRole.id,
+        patronymic: null,
+        comment: null,
+      },
+      transaction: t,
+    });
+
+    if (!created) {
+      adminUser.firstName = 'Viewer';
+      adminUser.lastName = 'User';
+      adminUser.password = passwordHash;
+      adminUser.roleId = viewerRole.id;
+      await adminUser.save({ transaction: t });
+    }
+
+    await t.commit();
+    console.log('[reset-db] seeded viewer: viewerUser / p@ss54321');
+  } catch (e) {
+    await t.rollback();
+    console.error('[reset-db] seedViewerUser failed:', e?.message || e);
+    throw e;
+  }
+}
+
+/** Country */
+/* async function seedCountry() {
+  const t = await sequelize.transaction();
+  try {
+
+    await Country.create(
+      { name: 'Россия', isRestricted: false  },
+      {
+        transaction: t,
+      });
+
+    await t.commit();
+    console.log('[reset-db] seedCountry: Россия');
+  } catch (e) {
+    console.log('[reset-db] ', e);
+    await t.rollback();
+    throw e;
+  }
+} */
+
+async function seedCountry() {
+  const t = await sequelize.transaction();
+  try {
+    // имя таблицы как строка (на случай кастомных схем/кавычек)
+    const tbl = typeof Country.getTableName === 'function'
+      ? Country.getTableName().toString()
+      : Country.tableName;
+
+    // Вставить страну с фиксированным id=143 (обновить, если уже есть)
+    await sequelize.query(
+      `INSERT INTO "${tbl}" ("id","name","isRestricted", "createdAt", "updatedAt")
+       VALUES (143, 'Россия', false, '2025-02-02 23:01:57.196-05', '2025-02-02 23:01:57.196-05')
+       ON CONFLICT ("id") DO UPDATE SET "name"=EXCLUDED."name";`,
+      { transaction: t }
+    );
+
+    // Синхронизировать последовательность, чтобы она не пыталась вставить 1/2/...
+    await sequelize.query(
+      `SELECT setval(
+         pg_get_serial_sequence('"${tbl}"', 'id'),
+         GREATEST((SELECT MAX("id") FROM "${tbl}"), 143),
+         true
+       );`,
+      { transaction: t }
+    );
+
+    await t.commit();
+    console.log('[reset-db] seedCountry: Россия (id=143)');
+  } catch (e) {
+    await t.rollback();
+    console.error('[reset-db] seedCountry failed:', e?.message || e);
+    throw e;
+  }
+}
+
 
 // Ручной запуск: node -r dotenv/config server/scripts/reset-test-db.mjs
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -153,7 +153,7 @@ export class BaseLayoutComponent {
     },
     {
       params: {
-        codes: ['VIEW_FULL_ROLES_LIST'], //TODO: create operation
+        codes: ['VIEW_FULL_ROLES_LIST'], //TODO: create operations for audit
         mode: 'all',
       },
       dataCy: 'nav-audit',

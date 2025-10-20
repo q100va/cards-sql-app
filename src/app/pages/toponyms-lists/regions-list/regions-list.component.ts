@@ -1,10 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
-import { ToponymProps } from '../../../interfaces/dialog-props';
+import {
+  ToponymProps,
+  ToponymType,
+  QueryParams,
+} from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';
-import { ToponymType } from '../../../interfaces/types';
-import { DefaultAddressParams } from '../../../interfaces/default-address-params';
-import { Validators } from '@angular/forms';
+import { toponymDraftSchema } from '@shared/schemas/toponym.schema';
+import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
   selector: 'app-regions-list',
@@ -16,40 +19,43 @@ export class RegionsListComponent {
   private route = inject(ActivatedRoute);
   type: ToponymType = 'region';
   props: ToponymProps = {
-    title: 'Регионы',
+    title: 'TOPONYM.TABLE_TITLE_REGIONS',
     displayedColumns: ['name', 'shortName', 'country', 'actions'],
     isShowCountry: true,
     isShowRegion: true,
     isShowDistrict: false,
     isShowLocality: false,
-    defaultCountryId: 143,
-    defaultRegionId: null,
-    defaultDistrictId: null,
-    defaultLocalityId: null,
-    queryParams: null,
-    filename: 'шаблон-регионы.xlsx',
     searchPlaceHolder: 'Тульская',
+    queryParams: {
+      countryId: 143,
+      regionId: null,
+      districtId: null,
+      localityId: null,
+      addressFilterString: 'Россия',
+    },
+    filename: 'template-regions.xlsx',
+
     dialogProps: {
-      creationTitle: 'Новый регион',
-      viewTitle: 'Регион',
+      creationTitle: 'TOPONYM.CREATION_TITLE_REGION',
+      viewTitle: 'TOPONYM.VIEW_TITLE_REGION',
       controls: [
         {
           controlName: 'name',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.name)],
           type: 'inputText',
-          label: 'Название',
+          label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Читинская область',
           formType: 'formControl',
         },
         {
           controlName: 'shortName',
-          value: null,
+          value: '',
           disabled: true,
-          validators: [Validators.required],
+          validators: [zodValidator(toponymDraftSchema.shape.shortName)],
           type: 'inputText',
-          label: 'Краткое название',
+          label: 'TOPONYM.LABEL_SHORT_NAME',
           placeholder: 'Читинская обл.',
           formType: 'formControl',
         },
@@ -58,11 +64,10 @@ export class RegionsListComponent {
       addressFilterControls: [
         {
           addressFilterProp: 'countries',
-          toponymProp: 'country.id',
+          toponymProp: 'countryId',
         },
       ],
       addressFilterParams: {
-
         isShowCountry: true,
         isShowRegion: false,
         isShowDistrict: false,
@@ -75,7 +80,7 @@ export class RegionsListComponent {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      this.props.queryParams = params as DefaultAddressParams;
+      if(Object.keys(params).length != 0 ) this.props.queryParams = params as QueryParams;
     });
   }
 }

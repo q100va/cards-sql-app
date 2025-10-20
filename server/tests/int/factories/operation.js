@@ -15,11 +15,11 @@ export async function createOperation(overrides = {}) {
     disabled: overrides.disabled ?? false,
   };
   if (!op.roleId || !op.name) {
-    throw new Error('createOperation: roleId и name обязательны');
+    throw new Error('createOperation: roleId и name required');
   }
 
   const row = await RolePermission.create(op, { returning: true });
-  // plain JS объект:
+  // plain JS object:
   return row.get({ plain: true });
 }
 

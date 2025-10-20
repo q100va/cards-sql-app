@@ -27,7 +27,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationService } from 'primeng/api';
 import { MatMenuModule } from '@angular/material/menu';
 import { BaseListComponent } from '../../shared/base-list/base-list.component';
-import { AddressFilter } from '../../interfaces/address-filter';
+import { AddressFilter } from '../../interfaces/toponym';
 import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { Validators } from '@angular/forms';
 import { DialogData } from '../../interfaces/dialog-props';

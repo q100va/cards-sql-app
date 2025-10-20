@@ -32,14 +32,18 @@
     "COUNTRIES": "Страны",
     "REGIONS": "Регионы",
     "DISTRICTS": "Районы",
-    "LOCALITIES": "Насю пункты",
+    "LOCALITIES": "Нас. пункты",
     "AUDIT": "Аудит"
   },
-  "LANG": { "SWITCH": "Язык", "EN": "English", "RU": "Русский" },
+  "LANG": {
+    "SWITCH": "Язык",
+    "EN": "English",
+    "RU": "Русский"
+  },
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Предупреждение",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Вы уверены, что хотите выйти без сохранения?",
-    "DELETE_ROLE_MESSAGE": "Удалить роль «{{name}}»?<br>Данные невозможно будет восстановить.",
+    "DELETE_ITEM_MESSAGE": "Удалить «{{name}}»?<br>Данные невозможно будет восстановить.",
     "ACCEPT": "Да",
     "REJECT": "Нет"
   },
@@ -59,8 +63,8 @@
     "CARD_TITLE": "Новая роль",
     "CARD_CLOSE": "Закрыть",
     "CARD_SAVE_AND_EXIT": "Сохранить и выйти",
-    "CARD_LABEL_NAME": "Имя",
-    "CARD_LABEL_DESCRIPTION": "Описание",
+    "CARD_LABEL_NAME": "Имя*",
+    "CARD_LABEL_DESCRIPTION": "Описание*",
 
     "TABLE_TITLE": "Роли",
     "TABLE_ADD_ROLE": "Добавить роль",
@@ -70,6 +74,87 @@
     "TABLE_OPERATION": "Операция",
     "TABLE_NAME_PLACEHOLDER": "2–50 символов",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 символов"
+  },
+  "ADDRESS_FILTER": {
+    "LABEL_COUNTRY": "Страна",
+    "LABEL_REGION": "Регион",
+    "LABEL_DISTRICT": "Район/округ",
+    "LABEL_LOCALITY": "Населенный пункт"
+  },
+  "DETAILS_DIALOG": {
+    "CARD_CLOSE": "Закрыть",
+    "CARD_SAVE": "Сохранить",
+    "CARD_EDIT": "Редактировать",
+    "CARD_VIEW": "К просмотру",
+    "CARD_SAVE_AND_EXIT": "Сохранить и выйти"
+  },
+  "TOPONYM": {
+    "CREATED": "Топоним «{{name}}» создан",
+    "UPDATED": "Топоним «{{name}}» обновлен",
+    "DELETED": "Топоним удален",
+    "BULK_CREATED": "Добавлен список топонимов в кол-ве {{count}} шт",
+    "ALREADY_EXISTS": "Топоним с таким названием уже существует. Если вы уверены, что это не ошибка, обратитесь к администратору.",
+    "HAS_DEPENDENCIES": "Топоним нельзя удалить: связанных сущностей — {{count}}",
+
+    "CREATION_TITLE_COUNTRY": "Новая страна",
+    "VIEW_TITLE_COUNTRY": "Страна",
+    "CREATION_TITLE_REGION": "Новый регион",
+    "VIEW_TITLE_REGION": "Регион",
+    "CREATION_TITLE_DISTRICT": "Новый р-н/округ",
+    "VIEW_TITLE_DISTRICT": "Район/округ",
+    "CREATION_TITLE_LOCALITY": "Новый нас. пункт",
+    "VIEW_TITLE_LOCALITY": "Населенный пункт",
+
+    "LABEL_NAME": "Название*",
+    "LABEL_SHORT_NAME": "Краткое название*",
+    "LABEL_POST_NAME": "Почтовое название*",
+    "LABEL_SHORT_POST_NAME": "Краткое почтовое название*",
+    "FEDERAL_CITY": "Федеральный город",
+    "REGION_CAPITAL": "Столица региона",
+    "DISTRICT_CAPITAL": "Столица округа",
+
+    "TABLE_TITLE_COUNTRIES": "Страны",
+    "TABLE_TITLE_REGIONS": "Регионы",
+    "TABLE_TITLE_DISTRICTS": "Районы и округа",
+    "TABLE_TITLE_LOCALITIES": "Населенные пункты",
+    "ADD_TOPONYM": "Добавить топоним",
+    "DOWNLOAD_TEMPLATE": "Скачать шаблон",
+    "TABLE_SEARCH_INPUT": "Поиск (введите любое значение, допустимое в таблице)",
+    "TABLE_EMPTY": "Пока не создано ни одного топонима",
+    "SEARCH_LABEL": "Поиск (введите любое значение, допустимое в таблице)",
+    "SEARCH_PLACEHOLDER": "{{placeholder}}",
+    "APPLIED_FILTERS": "Примененные фильтры: {{value}}",
+    "EXACT_MATCH_HINT": "искомые значения должны присутствовать одновременно",
+    "COLUMNS": {
+      "NAME": "Название",
+      "SHORT_NAME": "Краткое название",
+      "POST_NAME": "Почтовое название",
+      "SHORT_POST_NAME": "Краткое почтовое название",
+      "DISTRICT": "Район/округ",
+      "REGION": "Регион",
+      "COUNTRY": "Страна",
+      "ACTIONS": "Действия"
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Открыть перечень",
+      "OPEN_CARD": "открыть карточку",
+      "OPEN_USERS": "открыть список пользователей",
+      "OPEN_VOLUNTEERS": "открыть список волонтеров",
+      "OPEN_SENIORS": "открыть список поздравляемых",
+      "OPEN_HOMES": "открыть список интернатов",
+      "OPEN_REGIONS": "открыть список регионов",
+      "OPEN_DISTRICTS": "открыть список р-нов/округов",
+      "OPEN_LOCALITIES": "открыть список нас. пунктов",
+      "DELETE_TOPONYM": "удалить",
+      "DELETE_REASON_CREATED_BY_MISTAKE": "ошибочно создан",
+      "DELETE_REASON_ABOLISHED_BY_LAW": "законодательно упразднен"
+    },
+    "EMPTY": {
+      "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу \"{{query}}\""
+    }
+  },
+  "FILE": {
+    "UPLOAD_LIST": "Загрузить списком"
   },
   "ERRORS": {
     "VALIDATION": "Ошибка валидации",
@@ -104,6 +189,29 @@
       "LIST_FAILED": "Произошла ошибка при получении списка ролей",
       "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления роли",
       "NOT_DELETED": "Произошла ошибка при удалении роли"
+    },
+    "TOPONYM": {
+      "NOT_FOUND": "Топоним не найден",
+      "NAME_NOT_CHECKED": "Произошла ошибка при проверке названия топонима",
+      "NOT_CREATED": "Произошла ошибка. Топоним не создан.",
+      "NOT_UPDATED": "Произошла ошибка. Топоним не обновлен.",
+      "NAME_LIST_FAILED": "Произошла ошибка при получении списка названий топонимов",
+      "LIST_FAILED": "Произошла ошибка при получении списка топонимов",
+      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления топонима",
+      "NOT_DELETED": "Произошла ошибка при удалении топонима",
+      "BULK_INPUT_DUPLICATES": "В списке есть повторяющиеся названия: {{duplicates}}",
+      "FROM_BULK_ALREADY_EXISTS": "Эти названия: {{conflicts}} уже используются. Если вы уверены, что это не ошибка, обратитесь к администратору.",
+      "BULK_NOT_CREATED": "Топонимы не были созданы из-за ошибки",
+      "BULK_PARENT_NOT_FOUND": "Tопоним(ы): {{parents}} не найден(ы). Проверьте правильность написания.",
+      "INVALID_TYPE": "Неверный или отсутствующий тип топонима: {{name}}"
+    },
+    "FILE":{
+      "EMPTY": "Файл не содержит данных",
+      "INVALID_STRUCTURE": "В файле отсутствуют обязательные колонки",
+      "INVALID_FORMAT_XLSX": "Неверный формат файла. Загрузите Excel-файл (.xlsx)",
+      "VALIDATION": "Ошибка валидации: ряд {{row}}, колонка '{{column}}', ошибка '{{error}}'",
+      "NOT_UPLOADED": "Невозможно загрузить выбранный файл",
+      "NOT_CHOSEN": "Файл не выбран"
     }
   },
   "FORM_VALIDATION": {
@@ -114,6 +222,9 @@
       "NAME_MAX": "Имя не должно быть длиннее 50 символов",
       "DESCRIPTION_MIN": "Описание должно содержать минимум 5 символов",
       "DESCRIPTION_MAX": "Описание не должно быть длиннее 500 символов"
+    },
+    "TOPONYM": {
+      "NAME_MAX": "Имя не должно быть длиннее 200 символов"
     }
   },
   "INTERNAL_VALIDATION": {
@@ -127,7 +238,8 @@
     "ROLES": "Роли",
     "HOMES": "Интернаты",
     "PARTNERS": "Представители\nинтернатов",
-    "SENIORS": "Жители\nинтернатов"
+    "SENIORS": "Жители\nинтернатов",
+    "VOLUNTEERS": "Поздравляющие"
   },
   "OPS": {
     "ALL_OPS": {
@@ -160,8 +272,11 @@
     "VIEW_FULL_LIST": {
       "NAME": "доступ к доп. данным списка"
     },
-    "BULK_UPDATE": {
-      "NAME": "обновить списком"
+    "BULK_UPLOAD": {
+      "NAME": "загрузить списком"
+    },
+    "DOWNLOAD_TEMPLATE": {
+      "NAME": "скачать шаблон"
     }
   }
 }

@@ -151,7 +151,7 @@ export class AuthService {
   }
 
   has(op: OperationCode) {
-    console.log(this.permissions$());
+   // console.log(this.permissions$());
     return !!this.permissions$().get(op)?.access;
   }
 

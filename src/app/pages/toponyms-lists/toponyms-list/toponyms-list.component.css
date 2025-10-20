@@ -95,3 +95,15 @@ p-progress-spinner {
   --p-progressspinner-color-3: #45d233;
   --p-progressspinner-color-4: #66bb6a;
 }
+
+/* spinner overlay */
+.overlay {
+  z-index: 100;
+  position: fixed;
+  width: 70%;
+  height: 80vh;
+  padding-top: 20%;
+  background-color: #dddfd081;
+  border-radius: 12px;
+}
+

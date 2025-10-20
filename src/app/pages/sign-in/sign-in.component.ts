@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import {
   FormGroup,
   FormControl,
@@ -7,6 +7,9 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
@@ -14,7 +17,6 @@ import { MatButtonModule } from '@angular/material/button';
 
 import { AuthService } from '../../services/auth.service';
 import { MessageWrapperService } from '../../services/message.service';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-sign-in',
@@ -32,13 +34,20 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 export class SignInComponent {
   private signInService = inject(AuthService);
   private router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly translateService = inject(TranslateService);
   isLoad = false;
 
   form = new FormGroup({
-    userName: new FormControl<string>('', Validators.compose([Validators.required])),
-    password: new FormControl<string>('', Validators.compose([Validators.required])),
+    userName: new FormControl<string>(
+      '',
+      Validators.compose([Validators.required])
+    ),
+    password: new FormControl<string>(
+      '',
+      Validators.compose([Validators.required])
+    ),
   });
   errorMessage?: string;
 
@@ -51,36 +60,38 @@ export class SignInComponent {
     const userName = this.form.controls.userName.value ?? '';
     const password = this.form.controls.password.value ?? '';
 
-    this.signInService.logIn(userName, password).subscribe({
-      next: () => {
-        this.form.reset();
-        this.isLoad = false;
-        this.router.navigate(['/']);
-      },
-      error: (err) => {
-        this.isLoad = false;
-        let key = 'ERRORS.UNAUTHORIZED';
-        let params: any = {};
-        if (err?.error?.code) {
-          key = err.error.code;
-        } else if (err?.status === 401) {
-          key = 'ERRORS.INVALID_AUTHORIZATION'; // единое сообщение
-        } else if (err?.status === 423) {
-          key = 'ERRORS.ACCOUNT_LOCKED'; // без деталей “почему”
-        } else if (err?.status === 429) {
-          key = 'ERRORS.TOO_MANY_ATTEMPTS';
-        }
-        if (err?.status === 429) {
-          params.retryAfterSec =
-            err?.error?.data?.retryAfterSec ??
-            Number(err?.headers?.get?.('Retry-After')) ??
-            60;
-        }
+    this.signInService
+      .logIn(userName, password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.form.reset();
+          this.isLoad = false;
+          this.router.navigate(['/']);
+        },
+        error: (err) => {
+          this.isLoad = false;
+          let key = 'ERRORS.UNAUTHORIZED';
+          let params: any = {};
+          if (err?.error?.code) {
+            key = err.error.code;
+          } else if (err?.status === 401) {
+            key = 'ERRORS.INVALID_AUTHORIZATION'; // единое сообщение
+          } else if (err?.status === 423) {
+            key = 'ERRORS.ACCOUNT_LOCKED'; // без деталей “почему”
+          } else if (err?.status === 429) {
+            key = 'ERRORS.TOO_MANY_ATTEMPTS';
+          }
+          if (err?.status === 429) {
+            params.retryAfterSec =
+              err?.error?.data?.retryAfterSec ??
+              Number(err?.headers?.get?.('Retry-After')) ??
+              60;
+          }
 
-        this.errorMessage = this.translateService.instant(key, params);
-        this.msgWrapper.handle(err, { source: 'SignIn', stage: 'logIn' });
-      },
-
-    });
+          this.errorMessage = this.translateService.instant(key, params);
+          this.msgWrapper.handle(err, { source: 'SignIn', stage: 'logIn' });
+        },
+      });
   }
 }

@@ -133,7 +133,7 @@ Cypress.Commands.add(
         body: { data: [] },
       }).as('rolesList');
 
-      cy.intercept('GET', '**/api/addresses/get-countries-list', {
+      cy.intercept('GET', '**/api/toponyms/get-countries-list', {
         statusCode: 200,
         body: { data: [] },
       }).as('countriesList');

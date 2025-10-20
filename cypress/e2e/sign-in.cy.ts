@@ -29,7 +29,7 @@ describe('Sign In page (stub/live aware)', () => {
           },
         },
       }).as('usersList');
-      cy.intercept('GET', `${apiUrl}/api/addresses/get-countries-list`, {
+      cy.intercept('GET', `${apiUrl}/api/toponyms/get-countries-list`, {
         statusCode: 200,
         body: {
           data: [],

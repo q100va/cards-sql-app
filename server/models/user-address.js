@@ -1,21 +1,27 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 
-import sequelize from '../database.js';
-
-const UserAddress = sequelize.define('user-address', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true
+export default function UserAddressModel(sequelize) {
+  class UserAddress extends Model { }
+  UserAddress.init({
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true
+    },
+    isRestricted:
+    {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    }
   },
-  isRestricted:
-  {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
-});
+    {
+      sequelize,
+      modelName: 'user-address',
+      tableName: 'user-addresses',
+      timestamps: true, // createdAt
+      updatedAt: true,
+    });
 
-//Associations
-
-export default UserAddress;
+  return UserAddress;
+}

@@ -1,4 +1,4 @@
-<input style="display: none" type="file" (change)="addFile($event)"  #hiddenfileinput>
-<button mat-icon-button title="Загрузить списком" (click)="hiddenfileinput.click()">
+<input style="display: none" type="file" accept=".xlsx,.xls" (change)="addFile($event)" #hiddenfileinput>
+<button mat-icon-button [title]="'FILE.UPLOAD_LIST' | translate" (click)="hiddenfileinput.click()">
   <mat-icon fontSet="material-icons-outlined">file_upload</mat-icon>
 </button>

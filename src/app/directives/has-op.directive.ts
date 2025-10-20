@@ -16,7 +16,7 @@ interface HasOpContext {
   can: boolean;
   disabled: boolean;
 }
-interface Params {
+export interface Params {
   codes: OperationCode[];
   mode: 'any' | 'all';
 }

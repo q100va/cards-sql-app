@@ -223,7 +223,7 @@ export class RolesListComponent implements OnInit {
     const safeRoleName = this.sanitizeText(role.name);
     this.confirmationService.confirm({
       message: this.translateService.instant(
-        'PRIME_CONFIRM.DELETE_ROLE_MESSAGE',
+        'PRIME_CONFIRM.DELETE_ITEM_MESSAGE',
         { name: safeRoleName }
       ),
       header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),

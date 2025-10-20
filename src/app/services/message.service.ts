@@ -8,6 +8,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { MonoTypeOperatorFunction, of, tap } from 'rxjs';
 import { ApiResponse } from '../interfaces/api-response';
 import { ValidationError } from '../utils/validate-response';
+import { CustomError } from '../shared/upload-file/custom-error';
 
 type Severity = 'info' | 'warn' | 'error' | 'success';
 
@@ -96,14 +97,16 @@ export class MessageWrapperService {
         ? 'warn'
         : 'error'
       : severityHint;
-
+    const params = parsed.data;
+    console.log('params', params);
     if (severity === 'warn') this.logService.warn(parsed.devMessage, mergedCtx);
     else this.logService.error(parsed.devMessage, mergedCtx);
 
     // Тост: короткое понятное сообщение
     const msg = parsed.code
-      ? this.translateService.instant(parsed.code)
+      ? this.translateService.instant(parsed.code, params)
       : this.fallbackUserMessage(parsed.status);
+    console.log('msg', msg);
     this.showToast(severity, msg, mergedCtx.correlationId);
   }
 
@@ -132,6 +135,7 @@ export class MessageWrapperService {
     devMessage: string;
     correlationId?: string | null;
     route?: string;
+    data?: any;
   } {
     if (err instanceof ValidationError) {
       return {
@@ -139,6 +143,17 @@ export class MessageWrapperService {
         code: err.code,
         status: err.status,
         devMessage: err.message ?? err.code,
+      };
+    }
+
+    if (err instanceof CustomError) {
+      const data = err.data ?? undefined;
+      return {
+        isHttp: false,
+        code: err.code,
+        status: err.status,
+        devMessage: err.message ?? err.code,
+        data
       };
     }
     // HTTP-ошибка
@@ -152,6 +167,7 @@ export class MessageWrapperService {
       const correlationId =
         body?.correlationId ?? err.headers?.get?.('X-Request-Id') ?? null;
       const route = err.url ?? undefined;
+      const data = body?.data ?? undefined;
       const dev = `HTTP ${status} ${route ?? ''}${code ? ` — ${code}` : ''}`;
 
       return {
@@ -161,6 +177,7 @@ export class MessageWrapperService {
         correlationId,
         route,
         devMessage: dev,
+        data,
       };
     }
 

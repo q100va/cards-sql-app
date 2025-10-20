@@ -34,10 +34,12 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
 //import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
-import { DefaultAddressParams } from '../../interfaces/default-address-params';
-import { AddressFilter } from '../../interfaces/address-filter';
+import {
+  DefaultAddressParams,
+  AddressFilter,
+  typedKeys,
+} from '../../interfaces/toponym';
 import { GeneralFilter } from '../../interfaces/filter';
-import { typedKeys } from '../../interfaces/types';
 
 import { HasOpDirective } from '../../directives/has-op.directive';
 
@@ -64,7 +66,7 @@ import { HasOpDirective } from '../../directives/has-op.directive';
     MatCheckboxModule,
     BlurOnClickDirective,
     //  UserColumnsComponent
-    HasOpDirective
+    HasOpDirective,
   ],
   providers: [],
   templateUrl: './base-list.component.html',
@@ -226,11 +228,18 @@ export class BaseListComponent {
   constructor() {
     this.route.queryParams.subscribe((params) => {
       //console.log('this.route.queryParams.subscribe((params)', params)
-        this.defaultAddressParams.localityId = params['localityId'] ? +params['localityId'] : this.defaultAddressParams.localityId;
-        this.defaultAddressParams.districtId = params['districtId'] ? +params['districtId'] : this.defaultAddressParams.districtId;
-        this.defaultAddressParams.regionId = params['regionId'] ? +params['regionId'] : this.defaultAddressParams.regionId;
-        this.defaultAddressParams.countryId = params['countryId'] ? +params['countryId'] : this.defaultAddressParams.countryId;
-
+      this.defaultAddressParams.localityId = params['localityId']
+        ? +params['localityId']
+        : this.defaultAddressParams.localityId;
+      this.defaultAddressParams.districtId = params['districtId']
+        ? +params['districtId']
+        : this.defaultAddressParams.districtId;
+      this.defaultAddressParams.regionId = params['regionId']
+        ? +params['regionId']
+        : this.defaultAddressParams.regionId;
+      this.defaultAddressParams.countryId = params['countryId']
+        ? +params['countryId']
+        : this.defaultAddressParams.countryId;
     });
     //console.log('this.defaultAddressParams in user-list');
     //console.log(this.defaultAddressParams);

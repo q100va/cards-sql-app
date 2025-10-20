@@ -1,3 +1,5 @@
+import CustomError from "../shared/customError.js";
+
 const namesOfAddressTypes = {
   districts: [
     {
@@ -117,7 +119,6 @@ const namesOfAddressTypes = {
       shortName: "аул",
       re: /аул/i
     },
-
     {
       name: "станица",
       shortName: "ст-ца",
@@ -143,14 +144,97 @@ const namesOfAddressTypes = {
       shortName: "ст.",
       re: /станция/i
     },
-
-
   ]
 };
 
+export function correctCountryName(rowName) {
+  const name = rowName?.replace('ё', 'е').trim();
+  return {
+    name,
+  }
+}
+
+export function correctRegionName(rowName, rowShortName) {
+  const name = rowName?.replace('ё', 'е').trim();
+  const shortName = rowShortName?.replace('ё', 'е').trim();
+  return {
+    name,
+    shortName,
+  }
+}
+
+export function correctDistrictName(rowName, rowPostName = null, rowPostNameType = null) {
+  rowPostName = rowPostName?.replace('ё', 'е').trim();
+  rowPostNameType = rowPostNameType?.replace('ё', 'е').trim().toLowerCase();
+  rowName = rowName.replace('ё', 'е').trim();
+  const addressTypes = namesOfAddressTypes.districts;
+  let name, shortName, postName, shortPostName;
+  for (let type of addressTypes) {
+    if (rowName.toLowerCase().includes(type.name)) {
+      name = rowName.replace(type.re, "").trim() + " " + type.name;
+      shortName = rowName.replace(type.re, type.shortName);
+      break;
+    }
+  }
+  if (!name || !shortName) {
+    throw new CustomError('ERRORS.TOPONYM.INVALID_TYPE', 422, { name: rowName });
+  }
+  let postData;
+
+  if (rowPostName && rowPostNameType) {
+    try {
+      if (rowPostNameType == "район") {
+        postData = correctDistrictName(rowName);
+      } else {
+        postData = correctLocalityName(rowPostName, rowPostNameType);
+      }
+      postName = postData.name;
+      shortPostName = postData.shortName;
+    } catch (e) {
+      throw e;
+    }
+  }
+  return {
+    name: name,
+    shortName: shortName,
+    postName: postName,
+    shortPostName: shortPostName,
+  }
+}
+
+export function correctLocalityName(rowName, type, district = null) {
+  type = type.replace('ё', 'е').trim().toLowerCase();
+  if (type == 'поселок городского типа' || type == 'пгт (рабочий поселок)') {
+    type = 'пгт';
+  }
+  rowName = rowName.replace('ё', 'е').trim();
+  const addressType = namesOfAddressTypes.localities.find(item => item.name == type);
+
+  if (!addressType) throw new CustomError('ERRORS.TOPONYM.INVALID_TYPE', 422, { name: `${rowName} ${type}` });
+  let districtData;
+  if (district) {
+    try {
+      districtData = correctDistrictName(district).name;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  let name = rowName + " " + addressType.name;
+  let shortName = addressType.shortName + " " + rowName;
+
+  return {
+    name: name,
+    shortName: shortName,
+    districtFullName: districtData
+  }
+
+};
+
+/**************************************************************/
+
 /*
-Поселок ж/д разъезда	7
-/*
+п. ж/д рзд. - поселок ж/д разъезда
 г. — город;
 пгт — посёлок городского типа;
 рп — рабочий посёлок;
@@ -179,85 +263,3 @@ const namesOfAddressTypes = {
 рзд — разъезд;
 клх — колхоз (коллективное хозяйство);
 свх — совхоз (советское хозяйство);*/
-
-export function correctDistrictName(rowName, rowPostName = null, rowPostNameType = null) {
-  rowPostName = rowPostName?.replace('ё', 'е').trim();
-  rowPostNameType = rowPostNameType?.replace('ё', 'е').trim().toLowerCase();
-  rowName = rowName.replace('ё', 'е').trim();
-  const addressTypes = namesOfAddressTypes.districts;
-  let name, shortName, postName, shortPostName;
-  for (let type of addressTypes) {
-    if (rowName.toLowerCase().includes(type.name)) {
-      name = rowName.replace(type.re, "").trim() + " " + type.name;
-      shortName = rowName.replace(type.re, type.shortName);
-      break;
-    }
-  }
-/*   console.log("name");
-  console.log(name);
-  console.log("shortName");
-  console.log(shortName); */
-  if (!name || !shortName) {
-    throw new Error(`Отсутствующий или неверный тип региона в названии "${rowName}"! Ввод прекращен.`);
-  }
-  let postData;
-
-  if (rowPostName && rowPostNameType) {
-    try {
-      if (rowPostNameType == "район") {
-        postData = correctDistrictName(rowName);
-      } else {
-        postData = correctLocalityName(rowPostName, rowPostNameType);
-      }
-      postName = postData.name;
-      shortPostName = postData.shortName;
-    } catch (e) {
-      throw e;
-    }
-  }
-  return {
-    name: name,
-    shortName: shortName,
-    postName: postName,
-    shortPostName: shortPostName,
-  }
-}
-
-export function correctLocalityName(rowName, type, district = null) {
-  //district = district;
-/*   console.log("rowName, type, district");
-  console.log(rowName, type, district); */
-  type = type.replace('ё', 'е').trim().toLowerCase();
-  if(type == 'поселок городского типа') {
-    type = 'пгт';
-  }
-  if(type == 'пгт (рабочий поселок)') {
-    type = 'пгт';
-  }
-  rowName = rowName.replace('ё', 'е').trim();
-  const addressType = namesOfAddressTypes.localities.find(item => item.name == type);
-  if (!addressType) throw new Error(`Отсутствующий или неверный тип населенного пункта в названии "${rowName} ${type}"! Ввод прекращен.`);
-  let districtData;
-  if (district) {
-    try {
-      districtData = correctDistrictName(district).name;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  let name = rowName + " " + addressType.name;
-  let shortName = addressType.shortName + " " + rowName;
-
-/*   console.log("name");
-  console.log(name);
-  console.log("shortName");
-  console.log(shortName); */
-
-  return {
-    name: name,
-    shortName: shortName,
-    districtFullName: districtData
-  }
-
-};

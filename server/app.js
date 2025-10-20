@@ -13,7 +13,8 @@ import { withRequestContext } from './middlewares/request-context.js';
 import { handleError, notFound } from './middlewares/error-handler.js';
 
 import SessionApi from './routes/session-api.js';
-import AddressesApi from './routes/addresses-api.js';
+import ToponymsApi from './routes/toponyms-api.js';
+import FilesApi from './routes/files-api.js';
 import UsersApi from './routes/users-api.js';
 import RolesApi from './routes/roles-api.js';
 import AuditApi from './routes/audit-api.js';
@@ -68,7 +69,8 @@ app.head('/healthz', (_req, res) => res.sendStatus(200));
 
 // API
 app.use('/api/session', SessionApi);
-app.use('/api/addresses', AddressesApi);
+app.use('/api/toponyms', ToponymsApi);
+app.use('/api/files', FilesApi);
 app.use('/api/users', UsersApi);
 app.use('/api/roles', RolesApi);
 app.use('/api/audit', AuditApi);

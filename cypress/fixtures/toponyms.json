@@ -1,0 +1,42 @@
+{
+  "regions": {
+    "request": { "type": "region" },
+    "list": {
+      "data": {
+        "toponyms": [
+          {
+            "id": 101,
+            "name": "Тверская",
+            "shortName": "Твер.",
+            "defaultAddressParams": {
+              "countryId": 143,
+              "regionId": 101,
+              "districtId": null,
+              "localityId": null
+            }
+          },
+          {
+            "id": 102,
+            "name": "Тульская",
+            "shortName": "Тул.",
+            "defaultAddressParams": {
+              "countryId": 143,
+              "regionId": 102,
+              "districtId": null,
+              "localityId": null
+            }
+          }
+        ],
+        "length": 2
+      }
+    }
+  },
+  "countriesList": { "data": [{ "id": 143, "name": "Россия" }] },
+  "regionsByCountry143": {
+    "data": [
+      { "id": 101, "name": "Тверская" },
+      { "id": 102, "name": "Тульская" }
+    ]
+  },
+  "emptyList": { "data": { "toponyms": [], "length": 0 } }
+}

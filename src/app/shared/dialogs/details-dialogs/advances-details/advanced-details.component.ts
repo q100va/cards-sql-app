@@ -6,7 +6,7 @@ import { AdvancedModel } from '../../../../interfaces/advanced-model';
 import {
   AddressKey,
   typedKeys,
-} from '../../../../interfaces/types';
+} from '../../../../interfaces/toponym';
 
 @Component({
   selector: 'app-advanced-details',
@@ -152,7 +152,7 @@ export class AdvancedDetailsComponent<
     mode: 'view' | 'edit' | 'create',
     firstInitialization = false
   ) {
-    super.setInitialValues(mode, firstInitialization);
+    super.setInitialValues(mode);//, firstInitialization
 
     const orderedContacts = this.object!['orderedContacts'];
 

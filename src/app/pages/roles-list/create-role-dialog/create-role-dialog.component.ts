@@ -18,7 +18,6 @@ import {
 import {
   FormControl,
   FormsModule,
-  Validators,
   ReactiveFormsModule,
 } from '@angular/forms';
 

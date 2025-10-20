@@ -19,7 +19,7 @@ export function handleError(err, req, res, _next) {
   const status = err.status || err.statusCode || 500;
   const cid = req.correlationId || req.id || null;
   const code = err.code || statusToDefaultCode(status);
-
+  const data = err.data || null;
   const logPayload = {
     err,                         // pino красиво сериализует stack
     code,
@@ -37,19 +37,19 @@ export function handleError(err, req, res, _next) {
 
   const body = {
     code,
-    data: null,
+    data,
     correlationId: cid,
   };
 
-/*   // Если хочешь в dev показывать message для удобства (UI его игнорирует)
-  if (process.env.NODE_ENV !== 'production' && (err.customMessage || err.userMessage)) {
-    body.message = err.customMessage || err.userMessage;
-  } */
+  /*   // Если хочешь в dev показывать message для удобства (UI его игнорирует)
+    if (process.env.NODE_ENV !== 'production' && (err.customMessage || err.userMessage)) {
+      body.message = err.customMessage || err.userMessage;
+    } */
 
-/*   // Детали валидации по желанию
-  if (code === 'ERRORS.VALIDATION' && err.fields) {
-    body.fields = err.fields; // { email: 'INVALID', roleId: 'REQUIRED' }
-  } */
+  /*   // Детали валидации по желанию
+    if (code === 'ERRORS.VALIDATION' && err.fields) {
+      body.fields = err.fields; // { email: 'INVALID', roleId: 'REQUIRED' }
+    } */
 
   res.status(status).json(body);
 }

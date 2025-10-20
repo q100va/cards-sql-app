@@ -1,13 +1,9 @@
 import { Router } from "express";
-import Country from "../models/country.js";
-import Region from "../models/region.js";
-import District from "../models/district.js";
-import Locality from "../models/locality.js";
+import {Country, Region, District, Locality, UserAddress} from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 
 import User from "../models/user.js";
 import UserContact from "../models/user-contact.js";
-import UserAddress from "../models/user-address.js";
 import Sequelize from 'sequelize';
 import Role from "../models/role.js";
 import SearchUser from "../models/search-user.js";
@@ -968,7 +964,7 @@ router.get("/get-user-by-id/:id", requireAuth, async (req, res) => {
 router.get("/check-user-before-delete/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.params.id;
-    //TODO: find does this user has clients and orders
+    //TODO: find does this user has volunteers and orders
 
     res.status(200).send({ msg: "Пользователь может быть удален.", data: true });
   } catch (e) {
@@ -1163,7 +1159,7 @@ function transformUserData(rawUserData) {
 }
 
 
-
+//TODO: если в адресе заблокированный элемент адреса, то невозможно восстановить
 
 export default router;
 

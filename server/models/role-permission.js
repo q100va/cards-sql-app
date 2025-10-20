@@ -1,5 +1,4 @@
 import { DataTypes, Model } from 'sequelize';
-import sequelize from '../database.js';
 
 export default function RolePermissionModel(sequelize) {
   class RolePermission extends Model { }

@@ -27,11 +27,8 @@ import 'moment/locale/ru';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { RoleService } from '../../services/role.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
-import { AddressFilterParams } from '../../interfaces/address-filter-params';
-import { DefaultAddressParams } from '../../interfaces/default-address-params';
-import { AddressFilter } from '../../interfaces/address-filter';
+import { AddressFilterParams, DefaultAddressParams, AddressFilter, typedKeys } from '../../interfaces/toponym';
 import { GeneralFilter } from '../../interfaces/filter';
-import { typedKeys } from '../../interfaces/types';
 import { MessageWrapperService } from '../../services/message.service';
 
 @Component({
