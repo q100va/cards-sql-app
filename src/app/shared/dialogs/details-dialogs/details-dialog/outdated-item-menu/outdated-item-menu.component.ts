@@ -24,6 +24,7 @@ export class OutdatedItemMenuComponent {
 
   readonly restore = output<void>();
   readonly delete = output<void>();
+  readonly params = input<{isRecoverable: boolean}>();
 
   handleRestore() {
     this.confirmationService.confirm({

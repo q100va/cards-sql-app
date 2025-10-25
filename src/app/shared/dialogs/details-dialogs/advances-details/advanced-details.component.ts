@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormControl, FormArray } from '@angular/forms';
+import { FormControl, FormArray, AbstractControl, FormGroup } from '@angular/forms';
 import { Contacts } from '../../../../interfaces/user';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 import { AdvancedModel } from '../../../../interfaces/advanced-model';
@@ -18,13 +18,41 @@ providers: [],
 export class AdvancedDetailsComponent<
   T extends AdvancedModel
 > extends BaseDetailsComponent<T> {
+
+logInvalid(ctrl: AbstractControl, path: string = ''): void {
+  const here = path || '(root)';
+  if (ctrl.invalid && (ctrl.touched || ctrl.dirty || ctrl.updateOn === 'submit')) {
+    console.groupCollapsed('❌ Invalid:', here, '=>', ctrl.errors || {});
+    console.log('errors:', ctrl.errors);
+    console.log('value:', ctrl.value);
+    console.groupEnd();
+  }
+    if ((ctrl as any).controls) {
+    const controls = (ctrl as FormGroup).controls ?? (ctrl as FormArray).controls;
+    for (const key of Object.keys(controls)) {
+      const child = (controls as any)[key];
+      const nextPath = Array.isArray(controls) ? `${here}[${key}]` : (here === '(root)' ? key : `${here}.${key}`);
+      this.logInvalid(child, nextPath);
+    }
+  }
+}
+
+
+
   override checkIsSaveDisabled() {
+
     let condition: boolean = false;
     if (this.data().componentType == 'user') {
       condition =
         !this.mainForm.valid ||
         (!this.changesSignal() && this.data().operation == 'view-edit');
     }
+
+    this.logInvalid(this.mainForm);
+
+    console.log('this.mainForm.valid ',this.mainForm.valid);
+    console.log('this.changesSignal() ',this.changesSignal());
+     console.log('checkIsSaveDisabled ',condition);
     this.IsSaveDisabledSignal.set(condition);
     this.emittedIsSaveDisabled.emit(condition);
   }
@@ -44,7 +72,7 @@ export class AdvancedDetailsComponent<
       const rawControlValue: string[] = this.getFormArray(type)
         .getRawValue()
         .filter(Boolean);
-  console.log('orderedContacts[contact]', values);
+  console.log('orderedContacts[contact]', type, values);
       console.log('rawControlValue', rawControlValue);
       if (!values) {
         console.log(

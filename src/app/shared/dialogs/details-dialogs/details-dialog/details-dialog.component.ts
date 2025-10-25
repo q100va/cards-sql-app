@@ -18,7 +18,7 @@ import {
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { ProgressSpinner } from 'primeng/progressspinner';
+//import { ProgressSpinner } from 'primeng/progressspinner';
 
 import {
   DETAILS_COMPONENT_REGISTRY,
@@ -40,7 +40,7 @@ import { HasOpDirective } from '../../../../directives/has-op.directive';
     MatDialogModule,
     MatButtonModule,
     TranslateModule,
-    ProgressSpinner,
+    //ProgressSpinner,
     HasOpDirective,
   ],
   templateUrl: './details-dialog.component.html',

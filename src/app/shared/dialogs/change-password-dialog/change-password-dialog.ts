@@ -24,7 +24,7 @@ import { MatButtonModule } from '@angular/material/button';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule
+    MatButtonModule,
   ],
   providers: [],
   selector: 'app-change-password-dialog',
@@ -45,7 +45,8 @@ export class ChangePasswordDialogComponent {
       ]),
       confirmPassword: new FormControl('', [Validators.required]),
     },
-    {       validators: (group: AbstractControl): ValidationErrors | null => {
+    {
+      validators: (group: AbstractControl): ValidationErrors | null => {
         const password = group.get('password')?.value;
         const confirmPassword = group.get('confirmPassword')?.value;
         return password === confirmPassword ? null : { passwordMismatch: true };
@@ -63,9 +64,11 @@ export class ChangePasswordDialogComponent {
   }
 
   get passwordMismatch(): boolean {
-    return this.form.hasError('passwordMismatch') &&
-           this.form.get('confirmPassword')!.touched &&
-           !this.form.get('confirmPassword')!.hasError('required');
+    return (
+      this.form.hasError('passwordMismatch') &&
+      this.form.get('confirmPassword')!.touched &&
+      !this.form.get('confirmPassword')!.hasError('required')
+    );
   }
 
   onNoClick(): void {
@@ -77,7 +80,14 @@ export class ChangePasswordDialogComponent {
         .changePassword(this.data.userId, this.form.get('password')!.value!)
         .subscribe({
           next: () => this.dialogRef.close({ success: true }),
-          error: (err) => this.msgWrapper.handle(err),
+          error: (err) => {
+            //this.emitShowSpinner(false);
+            this.msgWrapper.handle(err, {
+              source: 'ChangePasswordDialogComponent',
+              stage: 'onSubmit',
+              userId: this.data.userId,
+            });
+          },
         });
     }
   }

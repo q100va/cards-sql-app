@@ -68,15 +68,15 @@ export class AuthService {
   }
 
   private setPermissions(list: Permission[]) {
-    console.log('setPermissions');
+    //console.log('setPermissions');
     const map = new Map<OperationCode, Permission>();
     for (const p of list) map.set(p.operation, p);
     this.permissions$.set(map);
-      console.log(this.permissions$());
+      //console.log(this.permissions$());
   }
 
   private loadPermissions$() {
-    console.log('loadPermissions$');
+    //console.log('loadPermissions$');
     return this.http
       .get<RawApiResponse>(`${environment.apiUrl}/api/auth/permissions`, {
         withCredentials: true,

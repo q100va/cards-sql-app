@@ -32,7 +32,9 @@ export const routes: Routes = [
     canMatch: [waitAuthReady],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'users' }, // дефолт
-      { path: 'users', component: UsersListComponent },
+      { path: 'users',
+        canMatch: [requireAnyOp('VIEW_FULL_USERS_LIST', 'VIEW_LIMITED_USERS_LIST')],
+        component: UsersListComponent },
       {
         path: 'roles',
         canMatch: [requireOp('ALL_OPS_ROLES')],

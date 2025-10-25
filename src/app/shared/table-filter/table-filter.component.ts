@@ -28,7 +28,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { RoleService } from '../../services/role.service';
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
 import { AddressFilterParams, DefaultAddressParams, AddressFilter, typedKeys } from '../../interfaces/toponym';
-import { GeneralFilter } from '../../interfaces/filter';
+import { GeneralFilter } from '../../interfaces/base-list';
 import { MessageWrapperService } from '../../services/message.service';
 
 @Component({

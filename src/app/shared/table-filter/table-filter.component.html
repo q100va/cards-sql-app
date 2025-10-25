@@ -42,7 +42,7 @@
           <mat-label>Выберите значение(я)</mat-label>
           <mat-select formControlName="roles" multiple (selectionChange)="emitSelectedFilters()">
             @for (role of rolesList; track $index) {
-            <mat-option [value]="role.id">{{role.name}}</mat-option>
+            <mat-option [value]="role">{{role.name}}</mat-option>
             }
           </mat-select>
         </mat-form-field>

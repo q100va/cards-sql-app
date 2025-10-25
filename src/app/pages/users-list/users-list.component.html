@@ -1,6 +1,6 @@
 <div>
-  <app-base-list [implicitlyDisplayedColumns]="implicitlyDisplayedColumns" (selectedColumns)="changeColumnsView($event)"
-    (allFilterParametersChange)="filterParameters.set($event)" (onAddUserWasClicked)="onAddUserClick()">
+  <app-base-list [params]="params" (selectedColumns)="changeColumnsView($event)"
+    (allFilterParametersChange)="filterParameters.set($event)" (addWasClicked)="onAddUserClick()">
 
 
     <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">

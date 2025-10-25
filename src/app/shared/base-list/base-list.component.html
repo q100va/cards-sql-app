@@ -5,9 +5,8 @@
     <div class="nav-button-left"> <button mat-icon-button (click)="sidenav1.toggle()" [disableRipple]="true">
         <mat-icon>keyboard_double_arrow_right</mat-icon>
       </button></div>
-    <h4 class="nav-header">Настройте отображение колонок</h4>
-<!--     <ng-content selector="app-table-settings"></ng-content> -->
-   <app-table-settings [columnsList]="implicitlyDisplayedColumns()" (selectedColumns)="changeColumnsView($event)"
+    <h4 class="nav-header">{{'NAV.COLUMNS_HEADER' | translate}}</h4>
+    <app-table-settings [columnsList]="params().columns" (selectedColumns)="changeColumnsView($event)"
       (settingsBadgeValue)="changeSettingsBadge($event)"></app-table-settings>
   </mat-sidenav>
 
@@ -16,11 +15,12 @@
     <div class="nav-button-right"> <button mat-icon-button (click)="sidenav2.toggle()" [disableRipple]="true">
         <mat-icon>keyboard_double_arrow_left</mat-icon>
       </button></div>
-    <h4 class="nav-header">Настройте фильтр</h4>
+    <h4 class="nav-header">{{'NAV.FILTER_HEADER' | translate}}</h4>
     <app-table-filter (filterBadgeValue)="changeFilterBadge($event)" (filterValue)="filterValue.set($event)"
       (addressStringValue)="addressStringValue.set($event)" (addressFilterValue)="addressFilterValue.set($event)"
       (strongContactFilter)="strongContactFilter.set($event)" (strongAddressFilter)="strongAddressFilter.set($event)"
-      [(notActualOption)]="notOnlyActual" [defaultAddressParams] = "defaultAddressParams" (goToFirstPage)="goToFirstPage()"></app-table-filter>
+      [(notActualOption)]="notOnlyActual" [defaultAddressParams]="defaultAddressParams"
+      (goToFirstPage)="goToFirstPage()"></app-table-filter>
   </mat-sidenav>
 
   <mat-sidenav-content>
@@ -30,30 +30,31 @@
           <mat-grid-tile colspan="8" rowspan="1">
           </mat-grid-tile>
           <mat-grid-tile colspan="8" rowspan="1">
-            <mat-card-title>Пользователи</mat-card-title>
+            <mat-card-title>{{params().tableParams.title | translate}}</mat-card-title>
           </mat-grid-tile>
           <mat-card-actions>
             <mat-grid-tile colspan="3" rowspan="1">
             </mat-grid-tile>
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
-                <button mat-icon-button data-cy="btn-create-item" title="Добавить пользователя" (click)="onAddUserClick()" appBlurOnClick *hasOp="{codes:['ADD_NEW_USER'], mode:'any'}">
+                <button mat-icon-button data-cy="btn-create-item" [title]="params().tableParams.addTitle | translate"
+                  (click)="onAddItemClick()" appBlurOnClick *hasOp="{codes:['ADD_NEW_USER'], mode:'any'}">
                   <mat-icon>person_add_alt</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right with-info-badge">
-                <button mat-icon-button title="Настроить фильтр"
+                <button mat-icon-button [title]="'BASE_LIST.SET_FILTER' | translate"
                   (click)="sidenav2.toggle()"><!-- (click)="onFilterClick()" -->
-                  <mat-icon [matBadge]="filterBadgeValue ? filterBadgeValue : null"
-                    matBadgeOverlap="false" aria-hidden="false">filter_alt</mat-icon>
+                  <mat-icon [matBadge]="filterBadgeValue ? filterBadgeValue : null" matBadgeOverlap="false"
+                    aria-hidden="false">filter_alt</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
-                <button mat-icon-button title="Сбросить фильтр" (click)="onClearFilterClick()"
+                <button mat-icon-button [title]="'BASE_LIST.RESET_FILTER' | translate" (click)="onClearFilterClick()"
                   [disabled]="!filterBadgeValue">
                   <mat-icon>filter_alt_off</mat-icon>
                 </button>
@@ -61,16 +62,16 @@
             </mat-grid-tile>
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
-                <button mat-icon-button title="Экспортировать список">
+                <button mat-icon-button [title]="'BASE_LIST.DOWNLOAD_TABLE' | translate">
                   <mat-icon>file_upload</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right with-info-badge">
-                <button mat-icon-button (click)="sidenav1.toggle()" title="Настроить отображение колонок">
-                  <mat-icon [matBadge]="settingsBadgeValue ? settingsBadgeValue : null"
-                    matBadgeOverlap="false" aria-hidden="false">settings</mat-icon>
+                <button mat-icon-button (click)="sidenav1.toggle()" [title]="'BASE_LIST.SET_COLUMNS' | translate">
+                  <mat-icon [matBadge]="settingsBadgeValue ? settingsBadgeValue : null" matBadgeOverlap="false"
+                    aria-hidden="false">settings</mat-icon>
                 </button>
               </div>
             </mat-grid-tile> </mat-card-actions>
@@ -84,7 +85,7 @@
             <div class="bottom-left">
               <section>
                 <mat-button-toggle-group>
-                  @for (viewOption of viewOptions; track viewOption.id) {
+                  @for (viewOption of params().viewOptions; track viewOption.id) {
                   <mat-button-toggle #option [checked]="viewOption.initiallySelected" [value]="viewOption.id"
                     (change)="onChangeViewSelection(option.value)">{{viewOption.name}}</mat-button-toggle>
                   }
@@ -95,10 +96,10 @@
           <mat-grid-tile colspan="3" rowspan="1">
             <div class="bottom-left">
               <mat-form-field>
-                <mat-label>Поиск (введите любое значение, допустимое в таблице)</mat-label>
+                <mat-label>{{ 'BASE_LIST.SEARCH_LABEL' | translate}}</mat-label>
                 <mat-icon matPrefix>search</mat-icon>
-                <input matInput  [(ngModel)]="inputValue" (keydown.enter)="searchUser($event)"
-                  placeholder="Например, Петрова или малика петрова"><!--  (keyup)="applyFilter($event)" -->
+                <input matInput [(ngModel)]="inputValue" (keydown.enter)="onSearchEnter($event)"
+                  [placeholder]="params().tableParams.searchPlaceholder | translate"><!--  (keyup)="applyFilter($event)" -->
                 @if (inputValue) {
                 <button matSuffix mat-icon-button (click)="onClearSearchClick()">
                   <mat-icon>close</mat-icon>
@@ -111,19 +112,18 @@
         <mat-grid-list cols="48" gutterSize="16px" rowHeight="26px">
           <mat-grid-tile colspan="24" rowspan="1">
             <div class="bottom-left small-text">
-              Примененные фильтры: {{filterString()}}
+              {{'BASE_LIST.APPLIED_FILTERS' | translate :{ value: filterString() } }}
             </div>
           </mat-grid-tile>
 
           <mat-grid-tile colspan="11" rowspan="1">
             <div class="bottom-right-left-align">
-              <mat-checkbox [(ngModel)]="exactMatch">искомые значения должны присутствовать одновременно</mat-checkbox>
+              <mat-checkbox [(ngModel)]="exactMatch">{{'BASE_LIST.EXACT_MATCH_HINT' | translate }}</mat-checkbox>
             </div>
           </mat-grid-tile>
           <mat-grid-tile colspan="13" rowspan="1">
             <div class="bottom-right-left-align">
-              <mat-checkbox [(ngModel)]="notOnlyActual">включать неактуальные данные: прежние адреса, телефоны и
-                т.п.</mat-checkbox>
+              <mat-checkbox [(ngModel)]="notOnlyActual">{{'BASE_LIST.INCLUDE_OUTDATED' | translate }}</mat-checkbox>
             </div>
           </mat-grid-tile>
         </mat-grid-list>

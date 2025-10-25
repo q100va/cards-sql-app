@@ -33,14 +33,18 @@ import { Validators } from '@angular/forms';
 import { DialogData } from '../../interfaces/dialog-props';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { GeneralFilter } from '../../interfaces/filter';
+import {
+  ContactParamsForList,
+  GeneralFilter,
+} from '../../interfaces/base-list';
 import { MessageWrapperService } from '../../services/message.service';
 import {
-  ColumnDefinition,
-  CONTACT_TYPES_FOR_LIST,
-  ContactTypeForList,
+  CONTACT_PARAMS_FOR_LIST,
   IMPLICITLY_DISPLAYED_COLUMNS,
-  userDialogConfig
+  viewOptions,
+  componentType,
+  userDialogConfig,
+  tableParams,
 } from './users-list.config';
 import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 
@@ -70,11 +74,17 @@ export class UsersListComponent {
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly dialog = inject(MatDialog);
 
-  implicitlyDisplayedColumns: ColumnDefinition[] = IMPLICITLY_DISPLAYED_COLUMNS;
-  displayedColumns = this.implicitlyDisplayedColumns.map(
+  params = {
+    columns: IMPLICITLY_DISPLAYED_COLUMNS,
+    viewOptions,
+    componentType,
+    tableParams
+  };
+
+  displayedColumns = IMPLICITLY_DISPLAYED_COLUMNS.map(
     (item) => item.columnName
   );
-  contactTypes: ContactTypeForList[] = CONTACT_TYPES_FOR_LIST;
+  contactTypes: ContactParamsForList[] = CONTACT_PARAMS_FOR_LIST;
   dialogProps = userDialogConfig;
   dialogConfig = {
     disableClose: true,
@@ -86,10 +96,9 @@ export class UsersListComponent {
 
   users!: User[];
   length = signal<number>(0);
-  currentPage = 1;
+  currentPage = 0;
   pageSize = 5;
   pageSizeOptions = [5, 10, 25, 50, 100];
-
 
   avoidDoubleRequest = false;
   filterParameters = signal<{
@@ -180,7 +189,7 @@ export class UsersListComponent {
   onChangedPage(pageData: PageEvent) {
     /*  ////console.log('pageData');
   ////console.log(pageData); */
-    this.currentPage = pageData.pageIndex + 1;
+    this.currentPage = pageData.pageIndex;
     this.pageSize = pageData.pageSize;
     if (!this.avoidDoubleRequest) {
       //////console.log('pageData');
@@ -191,7 +200,7 @@ export class UsersListComponent {
   }
 
   goToFirstPage() {
-    if (this.currentPage != 1) this.avoidDoubleRequest = true;
+    if (this.currentPage != 0) this.avoidDoubleRequest = true;
     this.paginator.firstPage();
   }
 
@@ -225,18 +234,18 @@ export class UsersListComponent {
       ////console.log('The dialog was closed', result);
 
       if (result.name) {
-        this.msgWrapper.success(`Аккаунт пользователя ${result.name} создан.`);
+        // TODO: ??? this.resetTable(op == 'view-edit' ? obj!.id : -1);
+        //this.msgWrapper.success(`Аккаунт пользователя ${result.name} создан.`);
+
+        this.getUsers();
       }
-      this.getUsers();
     });
   }
 
   onOpenUserCardClick(id: number) {
-    let user;
-
     this.userService.getUser(id).subscribe({
       next: (res) => {
-        user = res.data;
+        const user = res.data;
         this.dialogProps.addressFilterParams.readonly = true;
         this.dialogProps.addressFilterParams.class = 'view-mode';
         this.dialogProps.object = user;
@@ -272,15 +281,26 @@ export class UsersListComponent {
           data: dialogData,
         });
         dialogRefCreate.afterClosed().subscribe((result) => {
-          this.getUsers();
           if (result.name) {
-            this.msgWrapper.success(`Аккаунт пользователя '${result.name}' обновлен.`);
-           }
+            this.getUsers();
+            //this.msgWrapper.success(`Аккаунт пользователя '${result.name}' обновлен.`);
+          }
         });
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'UsersListComponent',
+          stage: 'onOpenUserCardClick',
+          userId: id,
+        });
+      },
     });
   }
+
+  onShowUsersOrdersClick(id: number) {}
+
+  onShowUsersSubscribersClick(id: number) {}
 
   onBlockUserClick(id: number) {
     //////console.log(id);
@@ -295,14 +315,12 @@ export class UsersListComponent {
       //////console.log('The dialog was closed');
       if (result.success) {
         this.getUsers();
-        this.msgWrapper.success(`Пользователь ${blockingUser} был заблокирова.`);
+        /*         this.msgWrapper.success(
+          `Пользователь ${blockingUser} был заблокирова.`
+        ); */
       }
     });
   }
-
-  onShowUsersOrdersClick(id: number) {}
-
-  onShowUsersSubscribersClick(id: number) {}
 
   onUnblockUserClick(id: number) {
     const unblockingUser = this.users.find((item) => item.id == id)!.userName;
@@ -312,14 +330,14 @@ export class UsersListComponent {
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
-/*       rejectButtonProps: {
+      rejectButtonProps: {
         label: 'Нет',
       },
       acceptButtonProps: {
         label: 'Да',
         severity: 'secondary',
         outlined: true,
-      }, */
+      },
       accept: () => {
         this.unblockUser(id, unblockingUser);
       },
@@ -330,10 +348,19 @@ export class UsersListComponent {
   unblockUser(id: number, unblockingUser: string) {
     this.userService.unblockUser(id).subscribe({
       next: (res) => {
-        this.msgWrapper.success(`Аккаунт пользователя ${unblockingUser} был разбокирован.`);
+        /*        this.msgWrapper.success(
+          `Аккаунт пользователя ${unblockingUser} был разбокирован.`
+        ); */
         this.getUsers();
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'UsersListComponent',
+          stage: 'unblockUser',
+          userId: id,
+        });
+      },
     });
   }
 
@@ -346,7 +373,7 @@ export class UsersListComponent {
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
-/*       rejectButtonProps: {
+      /*       rejectButtonProps: {
         label: 'Нет',
       },
       acceptButtonProps: {
@@ -364,23 +391,35 @@ export class UsersListComponent {
   checkPossibilityToDeleteUser(id: number, deletingUser: string) {
     this.userService.checkPossibilityToDeleteUser(id).subscribe({
       next: (res) => {
-        if (res.data) {
-          this.deleteUser(id, deletingUser);
-        } else {
-          this.msgWrapper.warn(`Пользователя ${deletingUser} невозможно удалить!\nОн является автором данных в приложении.\nРекомендуется применить блокировку вместо удаления.`);
-        }
+        if (res.data == 0) this.deleteUser(id, deletingUser);
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'UsersListComponent',
+          stage: 'checkPossibilityToDeleteUser',
+          userId: id,
+        });
+      },
     });
   }
 
   deleteUser(id: number, deletingUser: string) {
     this.userService.deleteUser(id).subscribe({
       next: (res) => {
-        this.msgWrapper.success(`Аккаунт пользователя ${deletingUser} был удален.`);
+        /*      this.msgWrapper.success(
+          `Аккаунт пользователя ${deletingUser} был удален.`
+        ); */
         this.getUsers();
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'UsersListComponent',
+          stage: 'deleteUser',
+          userId: id,
+        });
+      },
     });
   }
 
@@ -400,10 +439,17 @@ export class UsersListComponent {
           // Assign the data to the data source for the table to render
           this.dataSource = new MatTableDataSource(this.users);
           this.dataSource.sort = this.sort;
-          //console.log('this.users');
-          //console.log(this.users);
+          console.log('this.users');
+          console.log(this.users);
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) => {
+          //this.emitShowSpinner(false);
+          this.msgWrapper.handle(err, {
+            source: 'UsersListComponent',
+            stage: 'getUsers',
+            filter: this.allFilterParameters(),
+          });
+        },
       });
   }
 
@@ -451,7 +497,7 @@ export class UsersListComponent {
       default:
         result = value;
     }
-    // ////console.log('editContact', type, value, result);
+    //  console.log('editContact', type, value, result);
     return result;
   }
 }

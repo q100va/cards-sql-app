@@ -260,6 +260,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
       if (!this.changesSignal()) {
         // let specific component add extra dirty rules (address filter, etc.)
         this.changesSignal.set(this.additionalValidationHooks());
+        console.log('this.changesSignal()', this.changesSignal());
       }
 
       this.emittedChanges.emit(this.changesSignal());
@@ -299,13 +300,12 @@ export class BaseDetailsComponent<T extends BaseModel> {
   protected setInitialValues(mode: 'view' | 'edit' | 'create') {
     for (const controlName of this.controlsNames) {
       if (isContactType(controlName)) continue;
+      if(controlName === 'password') this.mainForm.controls[controlName].setValue('password123');
       if (hasKey(this.object!, controlName)) {
         const v = this.object![controlName];
         this.mainForm.controls[controlName].setValue(
           mode === 'view' && v === null
             ? '\u00A0'
-            : controlName === 'password'
-            ? 'password123'
             : v
         );
       }

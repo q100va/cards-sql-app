@@ -2,18 +2,38 @@ import { Validators } from '@angular/forms';
 import { DialogData } from '../../interfaces/dialog-props';
 import { User } from '../../interfaces/user';
 import * as Validator from '../../utils/custom.validator';
+import {
+  ColumnDefinition,
+  ContactParamsForList,
+  ListComponentType,
+  TableParams,
+  ViewOption,
+} from 'src/app/interfaces/base-list';
 
-export interface ColumnDefinition {
-  id: number;
-  columnName: string;
-  columnFullName: string;
-  isUnchangeable: boolean;
-}
+export const viewOptions: ViewOption[] = [
+  {
+    id: 'all',
+    name: 'Все пользователи',
+    initiallySelected: false,
+  },
+  {
+    id: 'only-active',
+    name: 'Только активные',
+    initiallySelected: true,
+  },
+  {
+    id: 'only-blocked',
+    name: 'Только заблокированные',
+    initiallySelected: false,
+  },
+];
 
-export interface ContactTypeForList {
-  type: string;
-  label: string;
-  svg: string;
+export const componentType: ListComponentType = 'user';
+
+export const tableParams: TableParams = {
+  title: 'USER.TABLE_TITLE',
+  addTitle: 'USER.ADD_USER',
+  searchPlaceholder: 'USER.SEARCH_PLACEHOLDER',
 }
 
 export const IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
@@ -73,7 +93,7 @@ export const IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
   },
 ];
 
-export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
+export const CONTACT_PARAMS_FOR_LIST: ContactParamsForList[] = [
   {
     type: 'email',
     label: 'Email',
@@ -154,7 +174,6 @@ export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
     </svg>`,
   },
 ];
-
 
 export const userDialogConfig: DialogData<User> = {
   creationTitle: 'Новый пользователь',
@@ -279,10 +298,7 @@ export const userDialogConfig: DialogData<User> = {
       label: 'Номер телефона',
       postfix: '*',
       placeholder: 'начните с "+", далее в любом формате',
-      validators: [
-        Validators.required,
-        Validator.phoneNumberFormatValidator(),
-      ],
+      validators: [Validators.required, Validator.phoneNumberFormatValidator()],
       errorName: 'phoneNumberFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -296,10 +312,7 @@ export const userDialogConfig: DialogData<User> = {
       label: 'Телеграм ID',
       postfix: '*',
       placeholder: '#1234567890',
-      validators: [
-        Validators.required,
-        Validator.telegramIdFormatValidator(),
-      ],
+      validators: [Validators.required, Validator.telegramIdFormatValidator()],
       errorName: 'telegramIdFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -313,10 +326,7 @@ export const userDialogConfig: DialogData<User> = {
       label: 'Телеграм номер телефона',
       postfix: '*',
       placeholder: 'начните с "+", далее в любом формате',
-      validators: [
-        Validators.required,
-        Validator.phoneNumberFormatValidator(),
-      ],
+      validators: [Validators.required, Validator.phoneNumberFormatValidator()],
       errorName: 'phoneNumberFormat',
       category: 'contacts',
       formType: 'formArray',

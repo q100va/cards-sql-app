@@ -19,7 +19,9 @@ export class ValidationError extends Error {
  */
 export function validateResponse<TSchema extends ZodType<any, any>>(
   schema: TSchema
-): (source$: Observable<RawApiResponse>) => Observable<ApiResponse<z.infer<TSchema>>> {
+): (
+  source$: Observable<RawApiResponse>
+) => Observable<ApiResponse<z.infer<TSchema>>> {
   return (source$) =>
     source$.pipe(
       map((response) => {
@@ -40,9 +42,13 @@ export function validateResponse<TSchema extends ZodType<any, any>>(
 /**
  * RxJS operator that validates `response.data` using a simple type guard.
  */
-export function validateNoSchemaResponse<T>(validatorName: keyof typeof validators) {
+export function validateNoSchemaResponse<T>(
+  validatorName: keyof typeof validators
+) {
   return (source: Observable<RawApiResponse>): Observable<ApiResponse<T>> =>
-    source.pipe(map((response) => validateResponseOperator<T>(response, validatorName)));
+    source.pipe(
+      map((response) => validateResponseOperator<T>(response, validatorName))
+    );
 }
 
 /**
@@ -52,6 +58,7 @@ function validateResponseOperator<T>(
   response: RawApiResponse,
   validatorName: keyof typeof validators
 ): ApiResponse<T> {
+  console.log('response.data:', response.data);
   const validator = validators[validatorName];
   if (!validator) {
     throw new ValidationError('ERRORS.NO_VALIDATOR');

@@ -33,7 +33,8 @@
           </mat-form-field>
           }
           @else {
-          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()" (click)="onChangePasswordClick()">
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
+            (click)="onChangePasswordClick()">
             <mat-icon>edit</mat-icon>
             Изменить пароль</button>
           }
@@ -143,7 +144,7 @@
 
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu (restore)="onRestoreOutdatedData('names', item)"
+            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('names', item)"
               (delete)="onDeleteOutdatedData('names', item.id)">
             </app-outdated-item-menu>
             }
@@ -168,7 +169,7 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu (restore)="onRestoreOutdatedData('userNames', item)"
+            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('userNames', item)"
               (delete)="onDeleteOutdatedData('userNames', item.id)">
             </app-outdated-item-menu>
             }
@@ -193,7 +194,8 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu (restore)="onRestoreOutdatedData('addresses', address)"
+            <app-outdated-item-menu [params]="{isRecoverable: address.isRecoverable}"
+              (restore)="onRestoreOutdatedData('addresses', address)"
               (delete)="onDeleteOutdatedData('addresses', address.id)">
             </app-outdated-item-menu>
             }
@@ -223,7 +225,7 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu (restore)="onRestoreOutdatedData('contacts', contact, type)"
+            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('contacts', contact, type)"
               (delete)="onDeleteOutdatedData('contacts', contact.id)">
             </app-outdated-item-menu>
             }

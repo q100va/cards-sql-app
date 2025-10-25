@@ -50,9 +50,16 @@ export class CauseOfBlockingDialogComponent {
       .blockUser(this.data.userId, this.causeOfBlocking.value!)
       .subscribe({
         next: (res) => {
-          this.dialogRef.close({ success: res.data });
+          this.dialogRef.close({ success: res.data === null });
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) => {
+          //this.emitShowSpinner(false);
+          this.msgWrapper.handle(err, {
+            source: 'CauseOfBlockingDialogComponent',
+            stage: 'blockUser',
+            userId: this.data.userId,
+          });
+        },
       });
   }
 

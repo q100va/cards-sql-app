@@ -38,6 +38,7 @@ import {
   RestoringData,
   RestoringDataType,
   User,
+  OutdatedContacts,
 } from '../../interfaces/user';
 import { UserService } from '../../services/user.service';
 import * as Validator from '../../utils/custom.validator';
@@ -46,7 +47,6 @@ import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/a
 import { typedKeys } from '../../interfaces/toponym';
 import { ChangePasswordDialogComponent } from '../../shared/dialogs/change-password-dialog/change-password-dialog';
 import { MatDialog } from '@angular/material/dialog';
-
 @Component({
   selector: 'app-user-details',
   imports: [
@@ -74,7 +74,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   get existedUser(): User | null {
     return this.data().object;
   }
-  newOutdatedData = {} as OutdatedData;
+  newOutdatedData = {contacts:{}, addresses:[], names: [], userNames:[]} as OutdatedData;
 
   private roleService = inject(RoleService);
   private userService = inject(UserService);
@@ -110,7 +110,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     userNames: null,
     contacts: null,
   };
-//TODO: добавить валидацию для имени пользователя. Убрать из компонентов месседжи и конфирмейшн
+  //TODO: добавить валидацию для имени пользователя. Убрать из компонентов месседжи и конфирмейшн
   override ngOnInit(): void {
     super.ngOnInit();
     if (this.existedUser) {
@@ -127,7 +127,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     });
   }
 
-  countOutdatedContactsAmount(contacts: Contacts): number {
+  countOutdatedContactsAmount(contacts: OutdatedContacts): number {
     return Object.values(contacts).reduce(
       (sum, arr) => sum + (arr?.length ?? 0),
       0
@@ -220,9 +220,9 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       data: { userId: this.existedUser!.id },
     });
     dialogRef.afterClosed().subscribe((result) => {
-      if (result?.success) {
+      /*       if (result?.success) {
         this.msgWrapper.success(`Пароль успешно изменен.`);
-      }
+      } */
     });
   }
   //TODO: maybe move to advanced
@@ -341,11 +341,11 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     if (type == 'contacts') {
       //this.newOutdatedData[type];
       for (const key of typedKeys(this.newOutdatedData.contacts)) {
-        const index = this.newOutdatedData.contacts[key].findIndex(
+        const index = this.newOutdatedData.contacts[key]!.findIndex(
           (c) => c.id === id
         );
         if (index != -1) {
-          this.newOutdatedData.contacts[key].splice(index, 1);
+          this.newOutdatedData.contacts[key]!.splice(index, 1);
           break;
         }
       }
@@ -365,7 +365,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       id: this.object?.id ?? null,
 
       firstName: this.mainForm.controls['firstName'].value!.trim(),
-      patronymic: this.mainForm.controls['patronymic'].value?.trim(),
+      patronymic: this.mainForm.controls['patronymic'].value?.trim() ?? null,
       lastName: this.mainForm.controls['lastName'].value!.trim(),
 
       draftAddress: {
@@ -397,15 +397,23 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       );
     }
 
+    console.log('userDraft', userDraft);
     this.userService.checkUserName(userDraft.userName, userDraft.id).subscribe({
       next: (res) => {
-        if (res.data) {
-          this.msgWrapper.warn(`Username ${userDraft.userName} уже занято. Выберите другое.`);
-        } else {
+        if (!res.data) {
           this.checkDuplicates(action, userDraft);
+        } else {
+          //this.emitShowSpinner(false);
         }
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'CreateUserDialog',
+          stage: 'checkUserName',
+          name: userDraft.userName,
+        });
+      },
     });
   }
 
@@ -477,80 +485,124 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     }
   }
 
-  checkUserData(action: 'justSave' | 'saveAndExit', user: UserDraft) {
-    this.userService.checkUserData(user).subscribe({
+  checkUserData(action: 'justSave' | 'saveAndExit', userDraft: UserDraft) {
+    this.userService.checkUserData(userDraft).subscribe({
       next: (res) => {
-        if (
-          res.data.duplicatesName.length > 0 ||
-          res.data.duplicatesContact.length > 0
-        ) {
-          let infoMessage = '';
+        const { duplicatesName = [], duplicatesContact = [] } = res.data ?? {};
 
-          if (res.data.duplicatesName.length == 1) {
-            infoMessage =
-              infoMessage +
-              `Введенные имя и фамилия совпадают с данными пользователя ${res.data.duplicatesName[0]}.<br />`;
-          }
-          if (res.data.duplicatesName.length > 1) {
-            infoMessage =
-              infoMessage +
-              `Введенные имя и фамилия совпадают с данными пользователей:<br />`;
-            for (let user of res.data.duplicatesName) {
-              infoMessage = infoMessage + ' - ' + user + '<br />';
-            }
-          }
-          if (res.data.duplicatesContact.length > 0) {
-            for (let contact of res.data.duplicatesContact) {
-              if (contact.users.length == 1) {
-                infoMessage =
-                  infoMessage +
-                  `Введенный ${contact.type} ${contact.content} совпадает с данными пользователя ${contact.users[0]}.<br />`;
-              }
-              if (contact.users.length > 1) {
-                infoMessage =
-                  infoMessage +
-                  `Введенный ${contact.type} ${contact.content} совпадает с данными пользователей:<br />`;
-                for (let user of contact.users) {
-                  infoMessage = infoMessage + ' - ' + user + '<br />';
-                }
-              }
-            }
-          }
+        const hasNameDup = duplicatesName.length > 0;
+        const hasContactDup = duplicatesContact.length > 0;
+
+        if (hasNameDup || hasContactDup) {
+          const infoMessage = this.buildDuplicateInfoMessage(
+            duplicatesName,
+            duplicatesContact
+          );
+
           this.confirmationService.confirm({
+            header: this.translateService.instant(
+              'PRIME_CONFIRM.WARNING_HEADER'
+            ),
             message:
-              infoMessage +
-              'Вы уверены, что хотите сохранить введенные данные?',
-            header: 'Обнаружены дубли',
+              this.br(
+                this.translateService.instant(
+                  'PRIME_CONFIRM.SAVE_WITH_DUPLICATES'
+                )
+              ) + infoMessage,
             closable: true,
             closeOnEscape: true,
             icon: 'pi pi-exclamation-triangle',
-  /*           rejectButtonProps: {
-              label: 'Нет',
+            rejectButtonProps: {
+              label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
             },
             acceptButtonProps: {
-              label: 'Да',
+              label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
               severity: 'secondary',
               outlined: true,
-            }, */
+            },
             accept: () => {
-              if (this.data().operation == 'view-edit') {
-                this.checkNotActualDataDuplicates(action, user);
+              if (this.data().operation === 'view-edit') {
+                this.checkNotActualDataDuplicates(action, userDraft);
               } else {
-                this.saveUser(action, user);
+                this.saveUser(action, userDraft);
               }
             },
             reject: () => {},
           });
         } else {
-          if (this.data().operation == 'view-edit') {
-            this.compareRestoringData(action, user);
+          if (this.data().operation === 'view-edit') {
+            this.compareRestoringData(action, userDraft);
           } else {
-            this.saveUser(action, user);
+            this.saveUser(action, userDraft);
           }
         }
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'CreateUserDialog',
+          stage: 'checkUserData',
+          name: userDraft.userName,
+        });
+      },
     });
+  }
+
+  /** Build HTML message for duplicates using i18n codes */
+  private buildDuplicateInfoMessage(
+    nameUsers: string[],
+    contactDups: Array<{ type: string; content: string; users: string[] }>
+  ): string {
+    let html = '';
+
+    // Names
+    if (nameUsers.length === 1) {
+      html += this.br(
+        this.translateService.instant('PRIME_CONFIRM.NAMES_DUPLICATE', {
+          user: nameUsers[0],
+        })
+      );
+    } else if (nameUsers.length > 1) {
+      // Join with bullets into {{users}}
+      const usersList = nameUsers.map((u) => `- ${u}`).join('\n');
+      html += this.br(
+        this.translateService.instant('PRIME_CONFIRM.NAMES_DUPLICATES', {
+          users: usersList,
+        })
+      );
+    }
+
+    // Contacts
+    for (const dup of contactDups) {
+      const { type, content, users } = dup;
+      if (!users?.length) continue;
+
+      if (users.length === 1) {
+        html += this.br(
+          this.translateService.instant('PRIME_CONFIRM.CONTACT_DUPLICATE', {
+            type,
+            content,
+            user: users[0],
+          })
+        );
+      } else {
+        const usersList = users.map((u) => `- ${u}`).join('\n');
+        html += this.br(
+          this.translateService.instant('PRIME_CONFIRM.CONTACT_DUPLICATES', {
+            type,
+            content,
+            users: usersList,
+          })
+        );
+      }
+    }
+
+    return html;
+  }
+
+  /** Convert \n to <br/> and append a <br/> at the end */
+  private br(text: string): string {
+    return text.replace(/\n/g, '<br />') + '<br />';
   }
 
   //TODO:  MAYBE move this logic to advanced-details.component.ts
@@ -699,7 +751,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       contacts: null,
     }; */
     // const outdatedAddresses = this.existedUser!['outdatedData'].addresses;
-/*
+    /*
    console.log(
       'this.newOutdatedData.addresses',
       this.newOutdatedData.addresses
@@ -750,7 +802,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       }`.trim();
       const confirmed = await this.confirmDataCorrectness('names', fullName);
       if (confirmed) {
-/*         console.log(
+        /*         console.log(
           'this.deleteFromOutdatedData("names", outdatedNames[0].id,)'
         ); */
         restoringData.names ??= [];
@@ -771,7 +823,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       const userName = user.userName;
       const confirmed = await this.confirmDataCorrectness('userName', userName);
       if (confirmed) {
- /*       console.log(
+        /*       console.log(
           'this.deleteFromOutdatedData("userName", outdatedUserNames[0].id,)'
         ); */
         restoringData.userNames ??= [];
@@ -880,7 +932,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
- /*        rejectButtonProps: {
+        /*        rejectButtonProps: {
           label: 'Нет',
         },
         acceptButtonProps: {
@@ -1019,10 +1071,10 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           //newValue
         );
         if (confirmed) {
-          outdatingData.address = oldAddress.id;
+          outdatingData.address = oldAddress.id!;
         } else {
           deletingData['addresses'] ??= [];
-          deletingData['addresses'].push(oldAddress.id);
+          deletingData['addresses'].push(oldAddress.id!);
         }
       }
     }
@@ -1049,7 +1101,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             const indexInRestoringContactsArray = restoringData.contacts[
               type
             ].findIndex((item) => item.content === contact);
-  /*          console.log(
+            /*          console.log(
               'indexInRestoringContactsArray',
               indexInRestoringContactsArray
             ); */
@@ -1126,6 +1178,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       newFieldId: number | null,
       oldFieldId: number | null
     ): boolean {
+      console.log('newFieldId', newFieldId);
+      console.log('oldFieldId', oldFieldId);
       if (!newFieldId && !oldFieldId) return true;
       if (newFieldId && oldFieldId) return newFieldId === oldFieldId;
       return false;
@@ -1151,7 +1205,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
         closable: true,
         closeOnEscape: true,
         icon: 'pi pi-exclamation-triangle',
-/*         rejectButtonProps: {
+        /*         rejectButtonProps: {
           label: 'Нет',
         },
         acceptButtonProps: {
@@ -1165,27 +1219,35 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     });
   }
 
-  saveUser(action: 'justSave' | 'saveAndExit', user: UserDraft) {
-    this.userService.saveUser(user).subscribe({
+  saveUser(action: 'justSave' | 'saveAndExit', userDraft: UserDraft) {
+    this.userService.saveUser(userDraft).subscribe({
       next: (res) => {
         //this.dialogRefCreate.close({ userName: res.userName });
         if (action == 'saveAndExit') {
           //this.dialogRef.close({ name: res.data });
-          this.closeDialogDataSignal.set(res.data.userName);
-          this.emittedCloseDialogData.emit(res.data.userName);
+          this.closeDialogDataSignal.set(res.data);
+          this.emittedCloseDialogData.emit(res.data);
         } else {
           ////console.log('this.existedUser', this.existedUser);
-
-          //TODO: вернуть новые данные юзера и обновить значения полей, исходя из этого
-          this.data().object = res.data;
+          //TODO: вернуть новые данные юзера и обновить значения полей ???
+          /*           this.data().object = res.data;
           //this.existedUser= this.data().object;
           //console.log('this.existedUser', this.existedUser);
           this.changeToViewMode(null);
           this.setInitialValues('view');
-          this.msgWrapper.success(`Аккаунт пользователя ${res.data.userName} создан.`);
+          this.msgWrapper.success(
+            `Аккаунт пользователя ${res.data} создан.`
+          ); */
         }
       },
-      error: (err) => this.msgWrapper.handle(err),
+      error: (err) => {
+        //this.emitShowSpinner(false);
+        this.msgWrapper.handle(err, {
+          source: 'CreateUserDialog',
+          stage: 'saveUser',
+          name: userDraft.userName,
+        });
+      },
     });
   }
 
@@ -1222,10 +1284,23 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
               this.controlsNames.splice(index);
             }
             this.data().object = res.data;
-            this.data().defaultAddressParams = res.data.defaultAddressParams;
-            this.newOutdatedData = structuredClone(
-              this.existedUser!.outdatedData
-            ) as OutdatedData;
+            (this.data().defaultAddressParams = {
+              localityId: res.data.address.locality
+                ? res.data.address.locality.id
+                : null,
+              districtId: res.data.address.district
+                ? res.data.address.district.id
+                : null,
+              regionId: res.data.address.region
+                ? res.data.address.region.id
+                : null,
+              countryId: res.data.address.country
+                ? res.data.address.country.id
+                : null,
+            }),
+              (this.newOutdatedData = structuredClone(
+                this.existedUser!.outdatedData
+              ) as OutdatedData);
 
             this.addressFilterComponent.onChangeMode(
               'view',
@@ -1255,10 +1330,19 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
             //TODO: test it
             this.changeToViewMode(null);
             this.setInitialValues('view');
-            this.msgWrapper.success(`Аккаунт пользователя ${res.data.userName} обновлен.`);
+            /*          this.msgWrapper.success(
+              `Аккаунт пользователя ${res.data.userName} обновлен.`
+            ); */
           }
         },
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) => {
+          //this.emitShowSpinner(false);
+          this.msgWrapper.handle(err, {
+            source: 'EditUserDialog',
+            stage: 'saveUpdatedUser',
+            userId: this.existedUser!.id,
+          });
+        },
       });
   }
 
