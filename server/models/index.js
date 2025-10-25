@@ -25,6 +25,7 @@ const UserAddress = UserAddressModel(sequelize);
 User.hasMany(UserContact, { as: 'contacts' }, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
+  hooks: true
 });
 UserContact.belongsTo(User);
 
@@ -49,6 +50,7 @@ Locality.belongsTo(District);
 User.hasMany(UserAddress, { as: 'addresses' }, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
+  hooks: true
 });
 UserAddress.belongsTo(User);
 UserAddress.belongsTo(Country);
@@ -75,12 +77,14 @@ Locality.hasMany(UserAddress, {
 User.hasMany(SearchUser, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
+  hooks: true
 });
 SearchUser.belongsTo(User);
 
 User.hasMany(OutdatedName, { as: 'outdatedNames' }, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
+  hooks: true
 });
 
 OutdatedName.belongsTo(User);
@@ -97,5 +101,5 @@ Role.hasMany(RolePermission, {
 });
 RolePermission.belongsTo(Role);
 
-export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, RolePermission, OutdatedName, RefreshToken};
+export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, RolePermission, OutdatedName, RefreshToken };
 

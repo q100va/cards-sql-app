@@ -88,7 +88,7 @@ User.prototype.registerFailedLogin = async function (now = new Date(), cfg = SEC
   return { events, state: nextState };
 };
 
-// ❷ Сброс после успешного входа
+// reset after successful login
 User.prototype.resetAfterSuccess = async function ({ transaction } = {}) {
   const { nextState, touched } = applySuccessfulLoginReset(this.toJSON());
   if (touched) {
@@ -101,3 +101,22 @@ User.prototype.resetAfterSuccess = async function ({ transaction } = {}) {
 
 
 export default User;
+
+
+//TODO: Индексы:
+
+/* user_contacts (user_id, is_restricted, type)
+
+user_addresses (user_id, is_restricted)
+
+outdated_names (user_id)
+
+search_users (user_id, is_restricted) UNIQUE — удобно для upsert
+
+CREATE INDEX IF NOT EXISTS idx_user_contacts_userid
+  ON public.user_contacts("userId");
+
+CREATE INDEX IF NOT EXISTS idx_user_addresses_userid
+  ON public.user_addresses("userId");
+
+  */

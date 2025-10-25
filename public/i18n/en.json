@@ -43,9 +43,14 @@
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Warning",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
-    "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?<br>Data cannot be restored.",
+    "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?\nData cannot be restored.",
     "ACCEPT": "Yes",
-    "REJECT": "No"
+    "REJECT": "No",
+    "SAVE_WITH_DUPLICATES": "Duplicates detected. Are you sure you want to save the entered data?",
+    "NAMES_DUPLICATE": "The entered first and last name match the data of user {{user}}.",
+    "NAMES_DUPLICATES": "The entered first and last name match the data of the following users:\n{{users}}",
+    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of user {{user}}.",
+    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following users:\n{{users}}"
   },
   "TOAST": {
     "INFO": "Information",
@@ -124,6 +129,7 @@
     "SEARCH_PLACEHOLDER": "{{placeholder}}",
     "APPLIED_FILTERS": "Applied filters: {{value}}",
     "EXACT_MATCH_HINT": "search terms must be present simultaneously",
+    "NO_DATA_FOR_QUERY": "No data found for \"{{query}}\"",
     "COLUMNS": {
       "NAME": "Name",
       "SHORT_NAME": "Short name",
@@ -147,13 +153,56 @@
       "DELETE_TOPONYM": "delete",
       "DELETE_REASON_CREATED_BY_MISTAKE": "created by mistake",
       "DELETE_REASON_ABOLISHED_BY_LAW": "abolished by law"
-    },
-    "EMPTY": {
-      "NO_DATA_FOR_QUERY": "No data found for \"{{query}}\""
     }
   },
   "FILE": {
     "UPLOAD_LIST": "Import list"
+  },
+  "USER": {
+    "CREATED": "User \"{{userName}}\" created",
+    "UPDATED": "User \"{{userName}}\" updated",
+    "DELETED": "User deleted",
+    "ALREADY_EXISTS": "User with this userName already exists",
+    "HAS_DEPENDENCIES": "The user cannot be deleted: {{count}} related items(s)",
+    "HAS_DATA_DUPLICATES": "The user data has duplicates",
+    "PASSWORD_CHANGED": "Password has been changed.",
+    "BLOCKED": "User blocked",
+    "UNBLOCKED": "User unblocked",
+    "TABLE_TITLE": "Users",
+    "ADD_USER": "Add user",
+    "SEARCH_PLACEHOLDER": "Olga Kotova",
+
+    "COLUMNS": {
+      "NAME": "Name",
+      "SHORT_NAME": "Short name",
+      "POST_NAME": "Postal name",
+      "SHORT_POST_NAME": "Short postal name",
+      "DISTRICT": "District",
+      "REGION": "Region",
+      "COUNTRY": "Country",
+      "ACTIONS": "Actions"
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Open menu",
+      "OPEN_CARD": "open card",
+      "OPEN_USERS": "open users list",
+      "OPEN_VOLUNTEERS": "open volunteers list",
+      "OPEN_SENIORS": "open seniors list",
+      "OPEN_HOMES": "open institutions list",
+      "OPEN_REGIONS": "open regions list",
+      "OPEN_DISTRICTS": "open districts list",
+      "OPEN_LOCALITIES": "open localities list",
+      "DELETE_TOPONYM": "delete",
+      "DELETE_REASON_CREATED_BY_MISTAKE": "created by mistake",
+      "DELETE_REASON_ABOLISHED_BY_LAW": "abolished by law"
+    }
+  },
+  "BASE_LIST": {
+    "DOWNLOAD_TABLE": "Download table",
+    "SEARCH_LABEL": "Search (enter any value present in the table)",
+     "APPLIED_FILTERS": "Applied filters: {{value}}",
+    "EXACT_MATCH_HINT": "search terms must be present simultaneously",
+    "NO_DATA_FOR_QUERY": "No data found for \"{{query}}\""
   },
 
   "ERRORS": {
@@ -212,6 +261,23 @@
       "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'",
       "NOT_UPLOADED": "Failed to upload the file",
       "NOT_CHOSEN": "The file isn't chosen"
+    },
+    "USER": {
+      "NOT_FOUND": "User not found",
+      "NAME_NOT_CHECKED": "Failed to check the user name",
+      "DUPLICATES_NOT_CHECKED": "Failed to check the user data",
+      "ROLE_REQUIRED": "User has no assigned role. Account not created.",
+      "NOT_CREATED": "Failed to create the user",
+      "NOT_UPDATED": "Failed to update the user",
+      "ADDRESS_NOT_RESTORED": "Failed to restore the address. User not updated.",
+      "LIST_FAILED": "Failed to get the list of users",
+      "NOT_CHECKED": "Failed to check the user dependencies",
+      "NOT_DELETED": "Failed to delete the user",
+      "CURRENT_PASSWORD_REQUIRED": "Current password is required to change your password.",
+      "CURRENT_PASSWORD_INVALID": "The current password you entered is incorrect.",
+      "PASSWORD_NOT_CHANGED": "The password could not be changed. Please try again.",
+      "NOT_BLOCKED": "Failed to block the user",
+      "NOT_UNBLOCKED": "Failed to unblock the user"
     }
   },
   "FORM_VALIDATION": {
@@ -225,6 +291,9 @@
     },
     "TOPONYM": {
       "NAME_MAX": "Name must not be longer than 200 characters"
+    },
+    "CONTACT": {
+      "MIN_CONTACT": "At least one contact is required"
     }
   },
   "INTERNAL_VALIDATION": {
