@@ -1,221 +1,202 @@
-import { Component } from '@angular/core';
-import { FormControl, FormArray, AbstractControl, FormGroup } from '@angular/forms';
-import { Contacts } from '../../../../interfaces/user';
-import { BaseDetailsComponent } from '../base-details/base-details.component';
-import { AdvancedModel } from '../../../../interfaces/advanced-model';
+// src/app/shared/dialogs/details-dialogs/advances-details/advanced-details.component.ts
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import {
-  AddressKey,
-  typedKeys,
-} from '../../../../interfaces/toponym';
+  FormControl,
+  FormArray,
+  AbstractControl,
+  FormGroup,
+} from '@angular/forms';
+import { ContactUrlPipe } from '../../../../utils/contact-url.pipe';
+import { BaseDetailsComponent } from '../base-details/base-details.component';
+import { Contacts } from '../../../../interfaces/user';
+import { AdvancedModel } from '../../../../interfaces/advanced-model';
+import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
 @Component({
   selector: 'app-advanced-details',
+  standalone: true,
   imports: [],
-providers: [],
+  providers: [],
   templateUrl: './advanced-details.component.html',
   styleUrl: './advanced-details.component.css',
 })
 export class AdvancedDetailsComponent<
   T extends AdvancedModel
 > extends BaseDetailsComponent<T> {
+  private readonly contactUrl = inject(ContactUrlPipe);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-logInvalid(ctrl: AbstractControl, path: string = ''): void {
-  const here = path || '(root)';
-  if (ctrl.invalid && (ctrl.touched || ctrl.dirty || ctrl.updateOn === 'submit')) {
-    console.groupCollapsed('❌ Invalid:', here, '=>', ctrl.errors || {});
-    console.log('errors:', ctrl.errors);
-    console.log('value:', ctrl.value);
-    console.groupEnd();
-  }
+  //TODO: delete ////////////////////////////////
+  /*   logInvalid(ctrl: AbstractControl, path: string = ''): void {
+    const here = path || '(root)';
+    if (
+      ctrl.invalid &&
+      (ctrl.touched || ctrl.dirty || ctrl.updateOn === 'submit')
+    ) {
+      console.groupCollapsed('❌ Invalid:', here, '=>', ctrl.errors || {});
+      console.log('errors:', ctrl.errors);
+      console.log('value:', ctrl.value);
+
+    }
     if ((ctrl as any).controls) {
-    const controls = (ctrl as FormGroup).controls ?? (ctrl as FormArray).controls;
-    for (const key of Object.keys(controls)) {
-      const child = (controls as any)[key];
-      const nextPath = Array.isArray(controls) ? `${here}[${key}]` : (here === '(root)' ? key : `${here}.${key}`);
-      this.logInvalid(child, nextPath);
-    }
-  }
-}
-
-
-
-  override checkIsSaveDisabled() {
-
-    let condition: boolean = false;
-    if (this.data().componentType == 'user') {
-      condition =
-        !this.mainForm.valid ||
-        (!this.changesSignal() && this.data().operation == 'view-edit');
-    }
-
-    this.logInvalid(this.mainForm);
-
-    console.log('this.mainForm.valid ',this.mainForm.valid);
-    console.log('this.changesSignal() ',this.changesSignal());
-     console.log('checkIsSaveDisabled ',condition);
-    this.IsSaveDisabledSignal.set(condition);
-    this.emittedIsSaveDisabled.emit(condition);
-  }
-
-  protected override additionalValidationHooks(): boolean {
-    let changes = this.contactsChangeValidation();
-    if (!changes) {
-      changes = this.addressChangeValidation();
-    }
-    return changes;
-  }
-
-  contactsChangeValidation() {
-    const orderedContacts: Contacts = this.object!['orderedContacts'];
-    for (let type of this.contactTypes) {
-      const values = orderedContacts[type];
-      const rawControlValue: string[] = this.getFormArray(type)
-        .getRawValue()
-        .filter(Boolean);
-  console.log('orderedContacts[contact]', type, values);
-      console.log('rawControlValue', rawControlValue);
-      if (!values) {
-        console.log(
-          'this.mainForm.get(contact)?.value.length',
-          this.mainForm.get(type)?.value.length
-        );
-       console.log(
-          'this.mainForm.get(contact)?.value',
-          this.mainForm.get(type)?.value
-        );
-        if (rawControlValue.length > 0) {
-          return true;
-        }
-      } else if (values.length != rawControlValue.length) {
-         console.log(
-          'contactsChangeValidation - values.length != this.mainForm.get(contact)?.value.length',
-          values.length != this.mainForm.get(type)?.value.length
-        );
-        return true;
-      } else {
-        for (const contact of rawControlValue) {
-          const indexInOldContactsArray = orderedContacts[type]?.findIndex(
-            (item) => item.content == contact
-          );
-          console.log('indexInOldContactsArray', indexInOldContactsArray);
-          if (!orderedContacts[type] || indexInOldContactsArray == -1) {
-            return true;
-          }
-        }
-
-        if (Array.isArray(orderedContacts[type])) {
-          for (const contact of orderedContacts[type]) {
-            const indexInNewContactsArray = rawControlValue.findIndex(
-              (item) => item == contact.content
-            );
-            if (indexInNewContactsArray == -1) {
-              return true;
-            }
-          }
-        }
+      const controls =
+        (ctrl as FormGroup).controls ?? (ctrl as FormArray).controls;
+      for (const key of Object.keys(controls)) {
+        const child = (controls as any)[key];
+        const nextPath = Array.isArray(controls)
+          ? `${here}[${key}]`
+          : here === '(root)'
+          ? key
+          : `${here}.${key}`;
+        this.logInvalid(child, nextPath);
       }
     }
+  } */ /*     console.groupEnd();
+    console.log('form.errors =', this.mainForm.errors);
+    console.log('form.status =', this.mainForm.status);        // INVALID | PENDING | VALID
+console.log('form.pending =', this.mainForm.pending);      // true/false*/
+  /////////////////////////////////////////////////
 
+  // Enable/disable Save button
+  override checkIsSaveDisabled(): void {
+    const isUser = this.data().componentType === 'user';
+    // this.logInvalid(this.mainForm); //TODO: delete
+    const disabled =
+      (isUser && !this.mainForm.valid) ||
+      (!this.changesSignal() &&
+        !this.deletingSignal() &&
+        this.data().operation === 'view-edit');
+  //  console.log('disabled', disabled);
+
+    this.IsSaveDisabledSignal.set(disabled);
+    this.emittedIsSaveDisabled.emit(disabled);
+  }
+
+  // Optional extra validation gates (true => changes detected)
+  protected override additionalValidationHooks(): boolean {
+    /*     console.log(
+      'this.contactsChangeValidation()',
+      this.contactsChangeValidation()
+    );
+    console.log(
+      'this.addressChangeValidation()',
+      this.addressChangeValidation()
+    ); */
+
+    return this.contactsChangeValidation() || this.addressChangeValidation();
+  }
+
+  // Compare contacts between form and original orderedContacts
+  private contactsChangeValidation(): boolean {
+    const ordered: Contacts = this.object!['orderedContacts'];
+
+    for (const type of this.contactTypes) {
+      const original = ordered?.[type] ?? [];
+      const current: string[] = this.getFormArray(type)
+        .getRawValue()
+        .filter(Boolean);
+
+      // console.log('original', original);
+      //  console.log('current', current);
+
+      // lengths differ -> changed
+      if (original.length !== current.length) return true;
+
+      // content differs -> changed
+      const originalSet = new Set(original.map((c) => c.content));
+      const currentSet = new Set(current);
+
+      if (originalSet.size !== currentSet.size) return true;
+
+      for (const v of currentSet) {
+        if (!originalSet.has(v)) return true;
+      }
+    }
     return false;
   }
 
-  addressChangeValidation() {
+  // Compare address selection against original address (country/region/district/locality)
+  private addressChangeValidation(): boolean {
     const address = this.object!['address'];
     const filter = this.addressFilter();
-    const keyMap: {
-      country: AddressKey;
-      region: AddressKey;
-      district: AddressKey;
-      locality: AddressKey;
-    } = {
+
+    const keyMap: Record<
+      'country' | 'region' | 'district' | 'locality',
+      AddressKey
+    > = {
       country: 'countries',
       region: 'regions',
       district: 'districts',
       locality: 'localities',
     };
+
     for (const key of typedKeys(keyMap)) {
-      const original = address[key];
-      const filtered = filter[keyMap[key]];
-      const originalId = original?.id ?? null;
-      const filteredId = Array.isArray(filtered) ? filtered[0] ?? null : null;
-      if (originalId != filteredId) {
-       console.log('originalId != filteredId', originalId, filteredId);
-        return true;
-      }
+      const originalId = address[key]?.id ?? null;
+      const selectedIds = filter[keyMap[key]];
+      const selectedId = Array.isArray(selectedIds)
+        ? selectedIds[0] ?? null
+        : null;
+
+      if (originalId !== selectedId) return true;
     }
     return false;
   }
 
-  editContact(value: string, type: string) {
-    let result = '';
-    //TODO: move this logic to a service
-    switch (type) {
-      case 'vKontakte':
-        result = 'https://vk.com/' + value;
-        break;
-      case 'instagram':
-        result = 'https://www.instagram.com/' + value;
-        break;
-      case 'facebook':
-        result = 'https://www.facebook.com/' + value;
-        break;
-      /*       case 'phoneNumber':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      case 'telegramPhoneNumber':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      case 'whatsApp':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break; */
-      default:
-        result = value;
-    }
-    //  //console.log('editContact', type, value, result);
-    return result;
-  }
+  // Seed form with initial values; transform contacts for view-mode
+  override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
+    super.setInitialValues(mode);
+    console.log('setInitialValues');
 
-  override setInitialValues(
-    //   controlsToSetValues: string[],
-    mode: 'view' | 'edit' | 'create',
-    firstInitialization = false
-  ) {
-    super.setInitialValues(mode);//, firstInitialization
+    const ordered = this.object!['orderedContacts'];
+    const toView = (val: string, type: string) =>
+      mode === 'view' ? this.contactUrl.transform(val, type) : val;
 
-    const orderedContacts = this.object!['orderedContacts'];
+    for (const type of this.contactTypes) {
+      const formArray = this.getFormArray(type);
+      const values = ordered?.[type] ?? [];
+      const validators =
+        this.data().controls.find((c) => c.controlName === type)?.validators ||
+        [];
 
-    for (let contact of this.contactTypes) {
-      const formArray = this.mainForm.get(contact) as FormArray;
-      const values = orderedContacts[contact];
+      let diff = values.length - formArray.length;
+/*       console.log('values.length', type, values.length);
+      console.log('formArray.length', type, formArray.length);
+      console.log('diff', type, diff); */
 
-      const transform = (val: string) =>
-        mode === 'view' ? this.editContact(val, contact) : val;
+      while (diff > 0) {
+        formArray.push(
+          new FormControl(
+            {
+              value: null,
+              disabled: mode === 'view',
+            },
+            validators
+          )
+        );
+        diff--;
+      }
 
-      if (values?.length) {
-        if (firstInitialization) {
-          values.forEach((v, i) => {
-            const value = transform(v.content);
+      while (diff < 0 && formArray.length > 1) {
+        formArray.removeAt(formArray.length - 1);
+        diff++;
+      }
 
-            if (i === 0) {
-              formArray.at(0)?.setValue(value);
-            } else {
-              const validators =
-                this.data().controls.find((c) => c.controlName === contact)
-                  ?.validators || [];
-
-              formArray.push(
-                new FormControl({ value, disabled: true }, validators)
-              );
-            }
-          });
-        } else {
-          values.forEach((v, i) => {
-            formArray.at(i)?.setValue(transform(v.content));
-          });
+      if (values.length) {
+        for (let i = 0; i < values.length; i++) {
+          formArray.at(i)?.setValue(toView(values[i].content, type));
         }
       } else {
-        const emptyValue = mode === 'view' ? '\u00A0' : null;
-        formArray.at(0)?.setValue(emptyValue);
+        // show non-breaking space in view mode, null in edit/create
+        formArray.at(0)?.setValue(mode === 'view' ? '\u00A0' : null);
+        /*         formArray.push(
+          new FormControl(
+            {
+              value: mode === 'view' ? '\u00A0' : null,
+              disabled: mode === 'view',
+            },
+            validators
+          )
+        ); */
       }
     }
   }

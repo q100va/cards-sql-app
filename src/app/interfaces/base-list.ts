@@ -1,3 +1,4 @@
+import { AddressFilter } from './toponym';
 import { ContactType } from './user';
 
 export interface GeneralFilter {
@@ -7,6 +8,17 @@ export interface GeneralFilter {
   dateRestrictionRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
 }
+
+export type FilterDraft = {
+  viewOption: string;
+  searchValue: string;
+  includeOutdated: boolean;
+  exactMatch: boolean;
+  filter: GeneralFilter;
+  addressFilter: AddressFilter;
+  strongAddressFilter: boolean;
+  strongContactFilter: boolean;
+};
 
 export interface ColumnDefinition {
   id: number;
@@ -25,16 +37,17 @@ export interface TableParams {
   title: string;
   addTitle: string;
   searchPlaceholder: string;
+  addIcon: string;
 }
 
-export type ListComponentType =
-  | 'user'
-  | 'partner'
-  | 'volunteer'
-  | 'home'
-  | 'senior';
+export type FilterComponentSource =
+  | 'toponymCard'
+  | 'toponymList'
+  | 'userCard'
+  | 'userList'
+  | 'partnerList';
 
- export interface ContactParamsForList {
+export interface ContactParamsForList {
   type: string;
   label: string;
   svg: string;
@@ -45,7 +58,6 @@ export type ContactTypeForList =
   | 'phoneNumber'
   | 'whatsApp'
   | 'telegram'
-  | 'telegramPhoneNumber'
   | 'vKontakte'
   | 'instagram'
   | 'facebook'

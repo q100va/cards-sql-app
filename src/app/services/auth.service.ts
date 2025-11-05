@@ -138,9 +138,9 @@ export class AuthService {
         map(() => void 0),
         catchError(() => {
           this.resetAuthState();
-          // всё равно разрешаем загрузиться (гостевой режим)
-          this.authReady$.next(true);
-          this.permsReady$.next(true);
+          //this.authReady$.next(true);
+          //this.permsReady$.next(true);
+          this.router.navigate(['/session/sign-in']);
           return of(void 0);
         })
       );

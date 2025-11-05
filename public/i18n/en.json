@@ -1,6 +1,6 @@
 {
   "APP": {
-    "TITLE": "Send a Greeting Card",
+    "TITLE": "Greeting Card",
     "AUTHOR": "OksanaFinch",
     "FOUNDATION": "Enjoyable Aging Charity Foundation"
   },
@@ -41,22 +41,35 @@
     "RU": "Русский"
   },
   "PRIME_CONFIRM": {
-    "WARNING_HEADER": "Warning",
-    "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
-    "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?\nData cannot be restored.",
+    "WARNING_HEADER": "Confirmation",
     "ACCEPT": "Yes",
     "REJECT": "No",
+    "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
+    "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?<br />Data cannot be restored.",
+    "UNBLOCK_ITEM_MESSAGE": "Unblock «{{name}}»?",
+
     "SAVE_WITH_DUPLICATES": "Duplicates detected. Are you sure you want to save the entered data?",
     "NAMES_DUPLICATE": "The entered first and last name match the data of user {{user}}.",
-    "NAMES_DUPLICATES": "The entered first and last name match the data of the following users:\n{{users}}",
+    "NAMES_DUPLICATES": "The entered first and last name match the data of the following users:<br />{{users}}",
     "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of user {{user}}.",
-    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following users:\n{{users}}"
+    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following users:<br />{{users}}",
+    "OUTDATED_DUPLICATES": "The data you entered:<br /> {{type}} '{{value}}'<br />match outdated records.<br />Are you sure this information is correct?",
+    "SAVE_OR_DELETE_OLD_DATA": "You changed the {{type}}.<br />Save the previous value '{{oldValue}}' as outdated?<br />Otherwise, it will be deleted as incorrect and cannot be restored.",
+    "RESTORE_OUTDATED_DATA": "Restore this data as current?",
+    "DELETE_OUTDATED_DATA": "Delete this data as incorrect?<br />After saving the changes, this action cannot be undone.",
+    "DATA_TYPES": {
+      "ADDRESS": "address",
+      "NAMES": "full name",
+      "USER_NAME": "username",
+      "CONTACTS": "contact(s)"
+    }
   },
   "TOAST": {
     "INFO": "Information",
     "WARN": "Warning",
     "ERROR": "Error",
-    "SUCCESS": "Success"
+    "SUCCESS": "Success",
+    "DELETE_DUPLICATES": "You entered duplicate values:\n{{duplicates}}.\n\nPlease remove the duplicates."
   },
   "ROLE": {
     "CREATED": "Role \"{{name}}\" created",
@@ -158,6 +171,10 @@
   "FILE": {
     "UPLOAD_LIST": "Import list"
   },
+  "OUTDATED_DATA_MENU": {
+    "RESTORE_DATA": "restore as current",
+    "DELETE_DATA": "delete as incorrect"
+  },
   "USER": {
     "CREATED": "User \"{{userName}}\" created",
     "UPDATED": "User \"{{userName}}\" updated",
@@ -171,40 +188,148 @@
     "TABLE_TITLE": "Users",
     "ADD_USER": "Add user",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
+    "BLOCKED_FROM": "blocked from ",
+    "ACTIVE": "active",
 
+    "VIEW_OPTIONS": {
+      "ALL_USERS": "all users",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only blocked"
+    },
     "COLUMNS": {
-      "NAME": "Name",
-      "SHORT_NAME": "Short name",
-      "POST_NAME": "Postal name",
-      "SHORT_POST_NAME": "Short postal name",
-      "DISTRICT": "District",
-      "REGION": "Region",
-      "COUNTRY": "Country",
+      "USER_NAME": "Username",
+      "ROLE_NAME": "Role",
+      "FULL_NAME": "Full name",
+      "CONTACTS": "Contacts",
+      "ADDRESS": "Address",
+      "START_DATE": "Join\ndate",
+      "COMMENT": "Comment",
+      "STATUS": "Status",
       "ACTIONS": "Actions"
     },
+
+    "CONTACTS": {
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_LABEL": "Telegram",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Other contact"
+    },
     "MENU": {
-      "OPEN_LIST_TITLE": "Open menu",
+      "OPEN_LIST_TITLE": "Open list",
       "OPEN_CARD": "open card",
-      "OPEN_USERS": "open users list",
-      "OPEN_VOLUNTEERS": "open volunteers list",
-      "OPEN_SENIORS": "open seniors list",
-      "OPEN_HOMES": "open institutions list",
-      "OPEN_REGIONS": "open regions list",
-      "OPEN_DISTRICTS": "open districts list",
-      "OPEN_LOCALITIES": "open localities list",
-      "DELETE_TOPONYM": "delete",
-      "DELETE_REASON_CREATED_BY_MISTAKE": "created by mistake",
-      "DELETE_REASON_ABOLISHED_BY_LAW": "abolished by law"
-    }
+      "OPEN_ORDERS": "open orders",
+      "OPEN_SUBSCRIBERS": "open subscribers",
+      "OPEN_VOLUNTEERS": "open volunteers",
+      "BLOCK_USER": "block user",
+      "UNBLOCK_USER": "unblock user",
+      "DELETE_USER": "delete user"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New user",
+      "VIEW_TITLE": "User",
+
+      "MAIN_DATA_LABEL": "Main info",
+      "CONTACTS_LABEL": "Contact details",
+      "OUTDATED_DATA_LABEL": "Outdated data",
+
+      "CHANGE_PASSWORD_BUTTON": "Change password",
+      "CAUSE_OF_BLOCK_LABEL": "Reason",
+      "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
+      "DELETE_BUTTON_TITLE": "Delete",
+      "EXTRA_CONTACT_BUTTON": "Additional contact",
+      "OUTDATED_NAMES_TITLE": "Outdated full names:",
+      "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
+      "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
+      "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
+
+      "USER_NAME_LABEL": "Username*",
+      "ROLE_LABEL": "Role*",
+      "PASSWORD_LABEL": "Password*",
+      "FIRST_NAME_LABEL": "First name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last name*",
+      "COMMENT_LABEL": "Comment",
+      "BLOCKED_LABEL": "Blocked",
+      "EMAIL_LABEL": "Email*",
+      "PHONE_NUMBER_LABEL": "Phone number*",
+      "TELEGRAM_ID_LABEL": "Telegram ID*",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number*",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "USER_NAME_PLACEHOLDER": "a.petrova",
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above",
+
+      "CHANGE_PASSWORD_TITLE": "Change Password",
+      "NEW_PASSWORD_LABEL": "New Password",
+      "CONFIRM_PASSWORD_LABEL": "Confirm Password",
+      "SAVE_BUTTON": "Save"
+    },
+    "BLOCKING_TITLE": "Provide a reason for blocking",
+    "FULL_CAUSE_OF_BLOCK_LABEL": "Reason for blocking",
+    "BLOCK_BUTTON": "Block",
+    "CANCEL_BUTTON": "Cancel"
   },
   "BASE_LIST": {
     "DOWNLOAD_TABLE": "Download table",
     "SEARCH_LABEL": "Search (enter any value present in the table)",
-     "APPLIED_FILTERS": "Applied filters: {{value}}",
+    "APPLIED_FILTERS": "Applied filters: {{value}}",
     "EXACT_MATCH_HINT": "search terms must be present simultaneously",
-    "NO_DATA_FOR_QUERY": "No data found for \"{{query}}\""
+    "INCLUDE_OUTDATED": "include outdated data: previous addresses, phone numbers, etc.",
+    "NO_DATA_FOR_QUERY": "No data found",
+    "SET_FILTER": "Configure filter",
+    "RESET_FILTER": "Reset filter",
+    "SET_COLUMNS": "Configure column visibility",
+    "START_LABEL": "start",
+    "BLOCK_LABEL": "block",
+    "OUTDATED_DATA": "outdated data:"
   },
-
+  "NAV": {
+    "COLUMNS_HEADER": "Configure column visibility",
+    "FILTER_HEADER": "Configure filter",
+    "FILTER": {
+      "ADDR_LABEL": "address",
+      "STRONG_FILTER": "all selected values must be present simultaneously",
+      "ROLE_LABEL": "role",
+      "CHOOSE_VALUE_LABEL": "Select value(s)",
+      "START_DATE_LABEL": "start date",
+      "CHOOSE_RANGE_LABEL": "Enter a range",
+      "DATE_PLACEHOLDER": "mm/dd/yyyy",
+      "BLOCK_DATE_LABEL": "block date",
+      "BLOCK_COMMENT": "The result will make sense only if ‘All’ or ‘Blocked only’ is selected",
+      "CONTACT_TYPE_LABEL": "contact type",
+      "COMMENT_LABEL": "comment",
+      "WITH_COMMENT_OPT": "with comment",
+      "WITHOUT_COMMENT_OPT": "without comment",
+      "EMAIL_OPT": "Email",
+      "PHONE_NUMBER_OPT": "Phone number",
+      "TELEGRAM_ID_OPT": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_OPT": "Telegram phone number",
+      "TELEGRAM_NICKNAME_OPT": "Telegram nickname",
+      "WHATSAPP_OPT": "WhatsApp",
+      "VKONTAKTE_OPT": "VKontakte",
+      "INSTAGRAM_OPT": "Instagram",
+      "FACEBOOK_OPT": "Facebook",
+      "OTHER_CONTACT_OPT": "Other contact"
+    }
+  },
   "ERRORS": {
     "VALIDATION": "Validation error",
     "FORBIDDEN": "Not enough permissions",
@@ -282,7 +407,12 @@
   },
   "FORM_VALIDATION": {
     "INVALID_FORM": "Invalid form",
-    "REQUIRED": "This field cannot be empty!",
+    "INVALID_FORMAT": "Invalid data format",
+    "REQUIRED": "This field cannot be empty",
+    "TOO_LONG_500": "Maximum 500 characters",
+    "TOO_LONG_50": "Maximum 50 characters",
+    "TOO_LONG_20": "Maximum 20 characters",
+    "TOO_SHORT_5": "Minimum 5 characters",
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",
@@ -293,7 +423,14 @@
       "NAME_MAX": "Name must not be longer than 200 characters"
     },
     "CONTACT": {
-      "MIN_CONTACT": "At least one contact is required"
+      "MIN_CONTACT": "At least one contact is required",
+      "INVALID_CONTACT": "Invalid data"
+    },
+    "USER": {
+      "MIN_PASSWORD": "Minimum 8 characters",
+      "LETTER_PASSWORD": "At least 1 Latin letter",
+      "DIGIT_PASSWORD": "At least 1 digit",
+      "MISMATCH_PASSWORDS": "Passwords mismatch"
     }
   },
   "INTERNAL_VALIDATION": {
@@ -345,6 +482,7 @@
     },
     "DOWNLOAD_TEMPLATE": {
       "NAME": "Download template"
-    }
+    },
+    "DOWNLOAD_TABLE": { "NAME": "Download table" }
   }
 }

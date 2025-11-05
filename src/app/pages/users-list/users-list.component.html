@@ -1,17 +1,16 @@
 <div>
-  <app-base-list [params]="params" (selectedColumns)="changeColumnsView($event)"
-    (allFilterParametersChange)="filterParameters.set($event)" (addWasClicked)="onAddUserClick()">
-
+  <app-base-list [params]="params" [showSpinner]="loading()" (defaultAddressFilterValue)="setDefaultAddrFilter($event)" (selectedColumns)="changeColumnsView($event)"
+    (allFilterParametersChange)="onAllFilterParametersChange($event)" (addWasClicked)="onAddUserClick()">
 
     <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
-
+      <!-- User Name Column -->
       <ng-container matColumnDef="userName">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Имя пользователя </th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'USER.COLUMNS.USER_NAME' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           <div>{{row.userName}}</div>
           <br>
-          @if(allFilterParameters().notOnlyActual && hasOutdatedUserNames(row)) {
-          <div class="outdated-data">прежние значения:</div>
+          @if(allFilterParameters().includeOutdated && hasOutdatedUserNames(row)) {
+          <div class="outdated-data">{{'BASE_LIST.OUTDATED_DATA' | translate}}</div>
           @for (item of row.outdatedData.userNames; track item.id) {
           <span class="outdated-data">
             {{item.userName}}
@@ -21,26 +20,28 @@
         </td>
       </ng-container>
 
+      <!-- Role Column -->
       <ng-container matColumnDef="role">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Роль </th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'USER.COLUMNS.ROLE_NAME' | translate}}</th>
         <td mat-cell *matCellDef="let row"> {{row.roleName}} </td>
       </ng-container>
 
+      <!-- Full Name Column -->
       <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef> ФИО </th>
+        <th mat-header-cell *matHeaderCellDef>{{'USER.COLUMNS.FULL_NAME' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           <div> <span>{{row.firstName}}</span><br />
             @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
             <span>{{row.lastName}}</span>
           </div>
           <br>
-          @if(allFilterParameters().notOnlyActual && hasOutdatedNames(row)) {
-          <div class="outdated-data">прежние значения:</div>
+          @if(allFilterParameters().includeOutdated && hasOutdatedNames(row)) {
+          <div class="outdated-data">{{'BASE_LIST.OUTDATED_DATA' | translate}}</div>
           @for (item of row.outdatedData.names; track item.id) {
           @if(item.firstName) {
           <div class="outdated-data">
             <span>{{item.firstName}}</span><br />
-            @if (item.patronymic) {<span>{{row.patronymic}}</span><br />}
+            @if (item.patronymic) {<span>{{item.patronymic}}</span><br />}
             <span>{{item.lastName}}</span>
           </div>
           }
@@ -49,37 +50,38 @@
         </td>
       </ng-container>
 
+      <!-- Contact Column -->
       <ng-container matColumnDef="contacts">
-        <th mat-header-cell *matHeaderCellDef> Контакты </th>
+        <th mat-header-cell *matHeaderCellDef>{{'USER.COLUMNS.CONTACTS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           @for (item of contactTypes; track $index) {
           @if (row.orderedContacts[item.type]) {
           <div class="outer">
-            <div class="inner-left" [title]="item.label">
+            <div class="inner-left" [title]="item.label | translate">
               <mat-icon [svgIcon]="item.type"></mat-icon>
             </div>
             <div class="inner-right">
               @for (contact of row.orderedContacts[item.type]; track $index) {
-              {{editContact(contact.content, item.type)}}<br />
+              {{ contact.content | contactUrl:item.type }}<br />
               }
             </div>
           </div>
           }
           }
-          @if(allFilterParameters().notOnlyActual && hasOutdatedContacts(row)) {
-          <div class="outdated-data">прежние значения:</div>
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedContacts(row)) {
+          <div class="outdated-data">{{'BASE_LIST.OUTDATED_DATA' | translate}}</div>
+
           @for (item of contactTypes; track $index) {
-
           @if (row.outdatedData.contacts[item.type]) {
-
           <div class="outdated-data">
             <div class="outer">
-              <div class="inner-left" [title]="item.label">
+              <div class="inner-left" [title]="item.label | translate">
                 <mat-icon [svgIcon]="item.type"></mat-icon>
               </div>
               <div class="inner-right">
                 @for (contact of row.outdatedData.contacts[item.type]; track $index) {
-                {{editContact(contact.content, item.type)}}<br />
+                {{ contact.content | contactUrl:item.type }}<br />
                 }
               </div>
             </div>
@@ -90,8 +92,9 @@
         </td>
       </ng-container>
 
+      <!-- Address Column -->
       <ng-container matColumnDef="address">
-        <th mat-header-cell *matHeaderCellDef> Адрес </th>
+        <th mat-header-cell *matHeaderCellDef>{{'USER.COLUMNS.ADDRESS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           @if (row.address.country) {
           {{row.address.country.name}}<br />
@@ -106,8 +109,8 @@
           {{row.address.locality.shortName}}<br />
           }
 
-          @if(allFilterParameters().notOnlyActual && hasOutdatedAddresses(row)) {
-          <div class="outdated-data">прежние значения:</div>
+          @if(allFilterParameters().includeOutdated && hasOutdatedAddresses(row)) {
+          <div class="outdated-data">{{'BASE_LIST.OUTDATED_DATA' | translate}}</div>
           @for (address of row.outdatedData.addresses; track $index) {
           <div class="outdated-data">
 
@@ -130,36 +133,41 @@
         </td>
       </ng-container>
 
+      <!-- Date Of Start Column -->
       <ng-container matColumnDef="dateOfStart">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Дата<br />присоединения</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'USER.COLUMNS.START_DATE' | translate}}</th>
         <td mat-cell *matCellDef="let row">
-          {{transformDate(row.dateOfStart)}}
+          {{dateUtils.transformDate(row.dateOfStart)}}
       </ng-container>
 
+      <!-- Comment Column -->
       <ng-container matColumnDef="comment">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Комментарий </th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'USER.COLUMNS.COMMENT' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           {{row.comment}}
         </td>
       </ng-container>
 
+      <!-- Status Column -->
       <ng-container matColumnDef="isRestricted">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Статус </th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'USER.COLUMNS.STATUS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           @if (row.isRestricted) {
-          {{'заблокирован с ' + transformDate(row.dateOfRestriction)}}<br />
+          {{('USER.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
           {{row.causeOfRestriction}}
           } @else {
-          {{'активен'}}
+          {{'USER.ACTIVE' | translate}}
           }
         </td>
       </ng-container>
 
+      <!-- Actions Column -->
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef> Действия </th>
+        <th mat-header-cell *matHeaderCellDef>{{'USER.COLUMNS.ACTIONS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           <div class="center">
-            <button mat-icon-button [matMenuTriggerFor]="menu" title="Открыть перечень" appBlurOnClick>
+            <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'USER.MENU.OPEN_LIST_TITLE'  | translate"
+              appBlurOnClick>
               <mat-icon>
                 keyboard_double_arrow_down
               </mat-icon>
@@ -167,27 +175,31 @@
             <mat-menu #menu="matMenu" xPosition="before">
               <button mat-menu-item (click)="onOpenUserCardClick(row.id)">
                 <mat-icon fontSet="material-icons-outlined">open_in_new</mat-icon>
-                <span>открыть карточку</span>
+                <span>{{'USER.MENU.OPEN_CARD' | translate}}</span>
               </button>
               <button mat-menu-item (click)="onShowUsersOrdersClick(row.id)">
                 <mat-icon fontSet="material-icons-outlined" fontSet="material-icons-outlined">list_alt</mat-icon>
-                <span>показать заявки</span>
+                <span>{{'USER.MENU.OPEN_ORDERS' | translate}}</span>
               </button>
               <button mat-menu-item (click)="onShowUsersSubscribersClick(row.id)">
+                <mat-icon>hub</mat-icon>
+                <span>{{'USER.MENU.OPEN_SUBSCRIBERS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowUsersVolunteersClick(row.id)">
                 <mat-icon>groups</mat-icon>
-                <span>показать подписчиков</span>
+                <span>{{'USER.MENU.OPEN_VOLUNTEERS' | translate}}</span>
               </button>
-              <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockUserClick(row.id)">
+              <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockUserClick(row.id, row.userName)">
                 <mat-icon fontSet="material-icons-outlined">lock</mat-icon>
-                <span>заблокировать</span>
+                <span>{{'USER.MENU.BLOCK_USER' | translate}}</span>
               </button>
-              <button mat-menu-item [disabled]="!row.isRestricted" (click)="onUnblockUserClick(row.id)">
+              <button mat-menu-item [disabled]="!row.isRestricted" (click)="onUnblockUserClick(row.id, row.userName)">
                 <mat-icon fontSet="material-icons-outlined">lock_open</mat-icon>
-                <span>разблокировать</span>
+                <span>{{'USER.MENU.UNBLOCK_USER' | translate}}</span>
               </button>
-              <button mat-menu-item (click)="onDeleteUserClick(row.id)">
+              <button mat-menu-item (click)="onDeleteUserClick(row.id, row.userName)">
                 <mat-icon fontSet="material-icons-outlined">delete_outlined</mat-icon>
-                <span>удалить</span>
+                <span>{{'USER.MENU.DELETE_USER' | translate}}</span>
               </button>
             </mat-menu>
           </div>
@@ -197,15 +209,13 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns;"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
-
       <!-- Row shown when there is no matching data. -->
       <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" colspan="4">Не найдены данные, соответствующие запросу"</td>
-        <!-- TODO:change inputValue to signal -->
+        <td class="mat-cell" colspan="4">>{{'BASE_LIST.NO_DATA_FOR_QUERY' | translate}}</td>
       </tr>
     </table>
 
-    <mat-paginator [pageSizeOptions]="pageSizeOptions" [length]="length()" [pageSize]="pageSize"
+    <mat-paginator [pageSizeOptions]="pageSizeOptions" [length]="length()" [pageSize]="pageSize()"
       (page)="onChangedPage($event)"></mat-paginator>
 
   </app-base-list>

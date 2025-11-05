@@ -39,7 +39,6 @@ export interface Control {
     | 'radio'
     | 'toggle';
   label: string;
-  postfix?: string;
   placeholder?: string;
   errorName?: string;
   category?: string;

@@ -9,9 +9,13 @@ import type {
   RestoringData,
   OutdatingData,
   DeletingData,
-  ChangedData,
+  ChangingData,
   Address,
-  OutdatedContacts
+  OutdatedContacts,
+  OutdatedAddress,
+  OutdatedFullName,
+  OutdatedUserName,
+  DraftContacts
 } from '@shared/schemas/user.schema';
 
 export type {
@@ -24,9 +28,13 @@ export type {
   RestoringData,
   OutdatingData,
   DeletingData,
-  ChangedData,
+  ChangingData,
   Address,
-  OutdatedContacts
+  OutdatedContacts,
+  OutdatedAddress,
+  OutdatedFullName,
+  OutdatedUserName,
+  DraftContacts
 };
 
 export interface User extends AdvancedModel {
@@ -67,10 +75,9 @@ export function isContactType(value: string): value is ContactType {
   return value in contactTypeMap;
 }
 
-export type CommonUserFields = keyof NonNullable<ChangedData['main']>;
+export type CommonUserFields = keyof NonNullable<ChangingData['main']>;
 export type RestoringDataType = keyof RestoringData;
 export type DeletingOutdatedDataType = keyof DeletingData;
-
 
 /* export interface OutdatingData {
   address: number | null;
@@ -90,7 +97,7 @@ export interface DeletingData {
   contacts: number[] | null;
 }
 
-export interface ChangedData {
+export interface ChangingData {
   main: {
     firstName?: string;
     patronymic?: string | null;
@@ -121,8 +128,6 @@ export interface ChangedData {
     otherContact?: string[];
   } | null;
 } */
-
-
 
 /* export interface RestoringData {
   addresses: number[] | null;

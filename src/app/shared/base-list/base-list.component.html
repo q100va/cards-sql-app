@@ -1,6 +1,5 @@
-<!-- TODO: Add variables for titles, and buttons. -->
-
 <mat-sidenav-container class="nav-container">
+  <!-- Columns Setting -->
   <mat-sidenav class="sidenav-container" #sidenav1 mode="over" position="end">
     <div class="nav-button-left"> <button mat-icon-button (click)="sidenav1.toggle()" [disableRipple]="true">
         <mat-icon>keyboard_double_arrow_right</mat-icon>
@@ -10,7 +9,7 @@
       (settingsBadgeValue)="changeSettingsBadge($event)"></app-table-settings>
   </mat-sidenav>
 
-
+  <!-- Filters - open navbar-->
   <mat-sidenav class="sidenav-container" #sidenav2 mode="over" position="start">
     <div class="nav-button-right"> <button mat-icon-button (click)="sidenav2.toggle()" [disableRipple]="true">
         <mat-icon>keyboard_double_arrow_left</mat-icon>
@@ -19,12 +18,18 @@
     <app-table-filter (filterBadgeValue)="changeFilterBadge($event)" (filterValue)="filterValue.set($event)"
       (addressStringValue)="addressStringValue.set($event)" (addressFilterValue)="addressFilterValue.set($event)"
       (strongContactFilter)="strongContactFilter.set($event)" (strongAddressFilter)="strongAddressFilter.set($event)"
-      [(notActualOption)]="notOnlyActual" [defaultAddressParams]="defaultAddressParams"
-      (goToFirstPage)="goToFirstPage()"></app-table-filter>
+      [(includeOutdatedOption)]="includeOutdated" [defaultAddressParams]="defaultAddressParams"
+      [source]="params().componentType"></app-table-filter>
   </mat-sidenav>
 
   <mat-sidenav-content>
     <mat-card class="list-card" appearance="outlined">
+      @if(showSpinner()){
+      <div class="overlay">
+        <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+          [style]="{ width: '150px', height: '150px' }" />
+      </div>
+      }
       <mat-card-header>
         <mat-grid-list cols="24" rowHeight="42px">
           <mat-grid-tile colspan="8" rowspan="1">
@@ -32,26 +37,30 @@
           <mat-grid-tile colspan="8" rowspan="1">
             <mat-card-title>{{params().tableParams.title | translate}}</mat-card-title>
           </mat-grid-tile>
+
+          <!-- Menu -->
           <mat-card-actions>
             <mat-grid-tile colspan="3" rowspan="1">
             </mat-grid-tile>
+            <!-- Add Item -->
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
                 <button mat-icon-button data-cy="btn-create-item" [title]="params().tableParams.addTitle | translate"
-                  (click)="onAddItemClick()" appBlurOnClick *hasOp="{codes:['ADD_NEW_USER'], mode:'any'}">
-                  <mat-icon>person_add_alt</mat-icon>
+                  (click)="onAddItemClick()" appBlurOnClick *hasOp="permissions.create">
+                  <mat-icon>{{params().tableParams.addIcon}}</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
+            <!-- Set Filter -->
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right with-info-badge">
-                <button mat-icon-button [title]="'BASE_LIST.SET_FILTER' | translate"
-                  (click)="sidenav2.toggle()"><!-- (click)="onFilterClick()" -->
+                <button mat-icon-button [title]="'BASE_LIST.SET_FILTER' | translate" (click)="sidenav2.toggle()">
                   <mat-icon [matBadge]="filterBadgeValue ? filterBadgeValue : null" matBadgeOverlap="false"
                     aria-hidden="false">filter_alt</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
+            <!-- Reset Filter -->
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
                 <button mat-icon-button [title]="'BASE_LIST.RESET_FILTER' | translate" (click)="onClearFilterClick()"
@@ -60,13 +69,16 @@
                 </button>
               </div>
             </mat-grid-tile>
+            <!-- Download Table -->
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
-                <button mat-icon-button [title]="'BASE_LIST.DOWNLOAD_TABLE' | translate">
+                <button mat-icon-button [title]="'BASE_LIST.DOWNLOAD_TABLE' | translate"
+                  *hasOp="permissions.downloadTable">
                   <mat-icon>file_upload</mat-icon>
                 </button>
               </div>
             </mat-grid-tile>
+            <!-- Set Columns - open navbar -->
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right with-info-badge">
                 <button mat-icon-button (click)="sidenav1.toggle()" [title]="'BASE_LIST.SET_COLUMNS' | translate">
@@ -74,32 +86,34 @@
                     aria-hidden="false">settings</mat-icon>
                 </button>
               </div>
-            </mat-grid-tile> </mat-card-actions>
-
+            </mat-grid-tile>
+          </mat-card-actions>
         </mat-grid-list>
       </mat-card-header>
 
       <mat-card-content>
         <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+          <!-- Status setting -->
           <mat-grid-tile colspan="3" rowspan="1">
             <div class="bottom-left">
               <section>
                 <mat-button-toggle-group>
                   @for (viewOption of params().viewOptions; track viewOption.id) {
                   <mat-button-toggle #option [checked]="viewOption.initiallySelected" [value]="viewOption.id"
-                    (change)="onChangeViewSelection(option.value)">{{viewOption.name}}</mat-button-toggle>
+                    (change)="onChangeViewSelection(option.value)">{{viewOption.name | translate}}</mat-button-toggle>
                   }
                 </mat-button-toggle-group>
               </section>
             </div>
           </mat-grid-tile>
+          <!-- Search -->
           <mat-grid-tile colspan="3" rowspan="1">
             <div class="bottom-left">
               <mat-form-field>
                 <mat-label>{{ 'BASE_LIST.SEARCH_LABEL' | translate}}</mat-label>
                 <mat-icon matPrefix>search</mat-icon>
                 <input matInput [(ngModel)]="inputValue" (keydown.enter)="onSearchEnter($event)"
-                  [placeholder]="params().tableParams.searchPlaceholder | translate"><!--  (keyup)="applyFilter($event)" -->
+                  [placeholder]="params().tableParams.searchPlaceholder | translate">
                 @if (inputValue) {
                 <button matSuffix mat-icon-button (click)="onClearSearchClick()">
                   <mat-icon>close</mat-icon>
@@ -109,31 +123,35 @@
             </div>
           </mat-grid-tile>
         </mat-grid-list>
+
         <mat-grid-list cols="48" gutterSize="16px" rowHeight="26px">
+          <!-- Applied Filters -->
           <mat-grid-tile colspan="24" rowspan="1">
             <div class="bottom-left small-text">
               {{'BASE_LIST.APPLIED_FILTERS' | translate :{ value: filterString() } }}
             </div>
           </mat-grid-tile>
-
+          <!-- Exact Match For Search Values -->
           <mat-grid-tile colspan="11" rowspan="1">
             <div class="bottom-right-left-align">
-              <mat-checkbox [(ngModel)]="exactMatch">{{'BASE_LIST.EXACT_MATCH_HINT' | translate }}</mat-checkbox>
+              <mat-checkbox [disabled]="!searchValue()" [(ngModel)]="exactMatch">{{'BASE_LIST.EXACT_MATCH_HINT' |
+                translate }}</mat-checkbox>
             </div>
           </mat-grid-tile>
+          <!-- Optional possibility to include outdated data -->
           <mat-grid-tile colspan="13" rowspan="1">
             <div class="bottom-right-left-align">
-              <mat-checkbox [(ngModel)]="notOnlyActual">{{'BASE_LIST.INCLUDE_OUTDATED' | translate }}</mat-checkbox>
+              <mat-checkbox [(ngModel)]="includeOutdated">{{'BASE_LIST.INCLUDE_OUTDATED' | translate }}</mat-checkbox>
             </div>
           </mat-grid-tile>
         </mat-grid-list>
 
+        <!-- Table -->
         <div class="mat-elevation-z8">
           <ng-content></ng-content>
         </div>
 
       </mat-card-content>
-
     </mat-card>
   </mat-sidenav-content>
 </mat-sidenav-container>

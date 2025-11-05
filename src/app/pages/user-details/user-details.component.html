@@ -1,59 +1,57 @@
-<form [formGroup]="mainForm" [class]="data().operation == 'view-edit' && !isEditModeSignal() ? 'view-mode' : 'none'"
-  (change)="onChangeValidation()">
+<form [formGroup]="mainForm" [class]="data().operation == 'view-edit' && !isEditModeSignal() ? 'view-mode' : 'none'">
   <mat-tab-group animationDuration="0ms">
-    <mat-tab label="Основные сведения">
+
+    <!-- Main Data -->
+    <mat-tab [label]="'USER.CARD.MAIN_DATA_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
         @for (control of data().controls; track $index) {
-
         @if (control.category=='mainData') {
         @if(control.type=='inputText') {
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
           <mat-form-field>
-            <mat-label>{{control.label}}</mat-label>
-            <input type="text" matInput [formControlName]="control.controlName" [placeholder]="control.placeholder!" />
-            @if (mainForm.controls[control.controlName].hasError('required')) {
-            <mat-error class="error">Поле не может быть пустым</mat-error>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="text" matInput [formControlName]="control.controlName"
+              [placeholder]="control.placeholder | translate" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
             }
           </mat-form-field>
         </mat-grid-tile>
         }
+        <!-- password -->
         @if(control.type=='inputPassword') {
-
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
           @if(data().operation == 'create') {
           <mat-form-field>
-            <mat-label>{{control.label}}</mat-label>
+            <mat-label>{{control.label | translate}}</mat-label>
             <input type="password" matInput [formControlName]="control.controlName" />
-            @if (mainForm.controls[control.controlName].hasError('required')) {
-            <mat-error class="error">Поле не может быть пустым</mat-error>
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
             }
-            @if (mainForm.controls[control.controlName].hasError('pattern')) {
-            <mat-error class="error">Пароль должен содержать минимум 8 символов, включая латинские буквы и
-              цифры!</mat-error>}
           </mat-form-field>
           }
           @else {
           <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
             (click)="onChangePasswordClick()">
             <mat-icon>edit</mat-icon>
-            Изменить пароль</button>
+            {{'USER.CARD.CHANGE_PASSWORD_BUTTON' | translate}}</button>
           }
-
         </mat-grid-tile>
-
         }
-
-
+        <!-- role -->
         @if(control.type=='select') {
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
           <mat-form-field>
-            <mat-label>{{control.label}}</mat-label>
+            <mat-label>{{control.label | translate}}</mat-label>
             <mat-select [formControlName]="control.controlName">
               @for (role of roles; track $index) {
               <mat-option [value]="role.id">{{ role.name }}</mat-option>}
             </mat-select>
-            @if (mainForm.controls[control.controlName].hasError('required')) {
-            <mat-error class="error">Поле не может быть пустым</mat-error>
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
             }
           </mat-form-field>
         </mat-grid-tile>
@@ -61,30 +59,34 @@
         }
         }
 
+        <!-- Address -->
         <mat-grid-tile colspan="6" rowspan="2">
           <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
-            (addressFilter)="onChangeAddress($event)"></app-address-filter>
+            (addressFilter)="onChangeAddress($event)" (showSpinner)="emitShowSpinner($event)"></app-address-filter>
         </mat-grid-tile>
 
+        <!-- Blocking -->
         <mat-grid-tile colspan="6" rowspan="1">
           <mat-slide-toggle formControlName="isRestricted"
-            (change)="onRestrictedToggleClick()">Заблокирован</mat-slide-toggle>
+            (change)="onRestrictedToggleClick()">{{'USER.CARD.BLOCKED_LABEL' | translate}}</mat-slide-toggle>
         </mat-grid-tile>
-
         @if (mainForm.controls['isRestricted'].value) {
         <mat-grid-tile colspan="6" rowspan="1">
           <mat-form-field>
-            <mat-label>Причина</mat-label>
-            <input type="text" matInput formControlName="causeOfRestriction" placeholder="прекращение волонтерства" />
-            @if (mainForm.controls['causeOfRestriction'].hasError('required')) {
-            <mat-error class="error">Поле не может быть пустым</mat-error>
+            <mat-label>{{'USER.CARD.CAUSE_OF_BLOCK_LABEL' | translate}}</mat-label>
+            <input type="text" matInput formControlName="causeOfRestriction"
+              [placeholder]="'USER.CARD.CAUSE_OF_BLOCK_PLACEHOLDER' | translate" />
+            @if (mainForm.controls['causeOfRestriction'].hasError('zodError')) {
+            <mat-error class="error">{{mainForm.controls['causeOfRestriction'].errors!['zodError'] |
+              translate}}</mat-error>
             }
           </mat-form-field>
         </mat-grid-tile> }
       </mat-grid-list>
     </mat-tab>
 
-    <mat-tab label="Контактные данные">
+    <!-- Contacts -->
+    <mat-tab [label]="'USER.CARD.CONTACTS_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
         @for (control of data().controls; track $index) {
         @if (control.category=='contacts') {
@@ -92,21 +94,18 @@
           @for (item of getFormArray(control.controlName).controls; track $index; let j = $index) {
           <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
             <mat-form-field>
-              <mat-label>{{control.label}}</mat-label>
-              <input type="text" matInput [formControlName]="j" [placeholder]="control.placeholder!" />
+              <mat-label>{{control.label | translate}}</mat-label>
+              <input type="text" matInput [formControlName]="j" [placeholder]="control.placeholder | translate" />
               @if (j>0 && (data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create')) {
-              <button matSuffix mat-icon-button title="Удалить поле"
+              <button matSuffix mat-icon-button [title]="'USER.CARD.DELETE_BUTTON_TITLE' | translate"
                 (click)="deleteContactControl(j, control.controlName) ">
                 <mat-icon>delete_outlined</mat-icon>
               </button>
               }
-
-
-              @if (getFormArray(control.controlName).controls[j].hasError('required')) {
-              <mat-error class="error">Поле не может быть пустым</mat-error>
+              @if(getFormArray(control.controlName).controls[j].hasError('zodError')){
+              <mat-error class="error">{{getFormArray(control.controlName).controls[j].errors!['zodError'] |
+                translate}}</mat-error>
               }
-              @if (getFormArray(control.controlName).controls[j].hasError('pattern')) {
-              <mat-error class="error">Неверный формат</mat-error>}
             </mat-form-field>
           </mat-grid-tile>
           }
@@ -114,34 +113,33 @@
         }
         }
 
+        <!-- Extra Contacts Button-->
         <mat-grid-tile colspan="3" rowspan="1">
+          @if (data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create') {
           <button mat-button [matMenuTriggerFor]="menu" [disabled]="mainForm.hasError('mainContacts')"
-            (click)="modifyContactTypesList()">Дополнительный
-            контакт</button>
+            (click)="modifyContactTypesList()">{{'USER.CARD.EXTRA_CONTACT_BUTTON' | translate}}</button>
           <mat-menu #menu="matMenu">
             @for (item of availableContactTypes; track $index) {
             <button mat-menu-item (click)="onTypeClick($index, null)">{{item}}</button>
             }
           </mat-menu>
+          }
         </mat-grid-tile>
       </mat-grid-list>
     </mat-tab>
 
+    <!-- Outdated Data -->
     @if (data().operation == 'view-edit') {
-
-    <mat-tab label="Неактуальные данные">
+    <mat-tab [label]="'USER.CARD.OUTDATED_DATA_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="0px" rowHeight="56px">
-
         <!-- Outdated Names -->
         @if (hasOutdatedNames()) {
         <!--   style="background-color: rgb(224, 241, 227);" -->
-        <mat-grid-tile colspan='2' [rowspan]="newOutdatedData.names.length">
-          <div class="outdated-data title">Прежние ФИО:</div>
+        <mat-grid-tile colspan='2' [rowspan]="outdatedDataDraft.names.length">
+          <div class="outdated-data title">{{'USER.CARD.OUTDATED_NAMES_TITLE' | translate}}</div>
         </mat-grid-tile>
-        <!--     <div class="tile-inner"> -->
-        @for (item of newOutdatedData.names; track item.id) {
+        @for (item of outdatedDataDraft.names; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
-
           <div class="outdated-row">
             @if (isEditModeSignal()) {
             <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('names', item)"
@@ -154,43 +152,32 @@
           </div>
         </mat-grid-tile>
         }
-        <!--   </div> -->
         }
-
         <!-- Outdated UserNames -->
         @if (hasOutdatedUserNames()) {
-        <mat-grid-tile colspan="2" [rowspan]="newOutdatedData.userNames.length">
-          <div class="outdated-data title">Прежние имена пользователя:</div>
+        <mat-grid-tile colspan="2" [rowspan]="outdatedDataDraft.userNames.length">
+          <div class="outdated-data title">{{'USER.CARD.OUTDATED_USER_NAMES_TITLE' | translate}}</div>
         </mat-grid-tile>
-
-
-        @for (item of newOutdatedData.userNames; track item.id) {
-
+        @for (item of outdatedDataDraft.userNames; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('userNames', item)"
+            <app-outdated-item-menu [params]="{isRecoverable: true}"
+              (restore)="onRestoreOutdatedData('userNames', item)"
               (delete)="onDeleteOutdatedData('userNames', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">{{ item.userName }}</div>
-
-
           </div>
         </mat-grid-tile>
         }
-
-
         }
-
         <!-- Outdated Addresses -->
-
-        <!-- -->
         @if (hasOutdatedAddresses()) {
-        <mat-grid-tile colspan="2" [rowspan]="newOutdatedData.addresses.length">
-          <div class="outdated-data title">Прежние адреса:</div>
+        <mat-grid-tile colspan="2" [rowspan]="outdatedDataDraft.addresses.length">
+          <div class="outdated-data title">{{'USER.CARD.OUTDATED_ADDRESSES_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (address of newOutdatedData.addresses; track address.id) {
+        @for (address of outdatedDataDraft.addresses; track address.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
@@ -211,40 +198,33 @@
         </mat-grid-tile>
         }
         }
-
         <!-- Outdated Contacts -->
         @if (hasOutdatedContacts()) {
-        <mat-grid-tile colspan="2" [rowspan]="countOutdatedContactsAmount(newOutdatedData.contacts)">
-          <div class="outdated-data title">Прежние контакты:</div>
+        <mat-grid-tile colspan="2" [rowspan]="countOutdatedContactsAmount(outdatedDataDraft.contacts)">
+          <div class="outdated-data title">{{'USER.CARD.OUTDATED_CONTACTS_TITLE' | translate}}</div>
         </mat-grid-tile>
         @for (type of contactTypes; track type) {
-        @if (newOutdatedData.contacts[type]) {
-
-
-        @for (contact of newOutdatedData.contacts[type]; track contact.id) {
+        @if (outdatedDataDraft.contacts[type]) {
+        @for (contact of outdatedDataDraft.contacts[type]; track contact.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('contacts', contact, type)"
+            <app-outdated-item-menu [params]="{isRecoverable: true}"
+              (restore)="onRestoreOutdatedData('contacts', contact, type)"
               (delete)="onDeleteOutdatedData('contacts', contact.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">
-              {{ type + ': ' + editContact(contact.content, type) }}
+              {{ type + ': ' + contact.content | contactUrl:type }}
             </div>
           </div>
-
         </mat-grid-tile>
         }
         }
         }
         }
-
       </mat-grid-list>
     </mat-tab>
-
     }
-
-
   </mat-tab-group>
 </form>

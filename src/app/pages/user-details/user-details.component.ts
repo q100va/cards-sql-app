@@ -1,16 +1,10 @@
-import {
-  Component,
-  ElementRef,
-  inject,
-  ViewChild,
-  ViewContainerRef,
-} from '@angular/core';
+// src/app/pages/user-details/user-details.component.ts
+import { Component, inject, DestroyRef } from '@angular/core';
 import {
   FormArray,
   FormControl,
   FormsModule,
   ReactiveFormsModule,
-  Validators,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -21,13 +15,25 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
+import { MatDialog } from '@angular/material/dialog';
+import { TranslateModule } from '@ngx-translate/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+import { RoleService } from '../../services/role.service';
+import { UserService } from '../../services/user.service';
+import { UserDiffService } from '../../services/user-diff.service';
+
+import {
+  buildDuplicateInfoMessage,
+} from '../../utils/user-diff';
+
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
-import { RoleService } from '../../services/role.service';
+import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advances-details/advanced-details.component';
+import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog';
+
 import {
-  ChangedData,
+  ChangingData,
   Contact,
   Contacts,
   ContactType,
@@ -39,14 +45,31 @@ import {
   RestoringDataType,
   User,
   OutdatedContacts,
+  UserDraft,
+  OutdatedAddress,
+  OutdatedFullName,
+  OutdatedUserName,
 } from '../../interfaces/user';
-import { UserService } from '../../services/user.service';
-import * as Validator from '../../utils/custom.validator';
-import { UserDraft } from '../../interfaces/user';
-import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advances-details/advanced-details.component';
 import { typedKeys } from '../../interfaces/toponym';
-import { ChangePasswordDialogComponent } from '../../shared/dialogs/change-password-dialog/change-password-dialog';
-import { MatDialog } from '@angular/material/dialog';
+
+import {
+  causeOfRestrictionControlSchema,
+  emailControlSchema,
+  facebookControlSchema,
+  instagramControlSchema,
+  phoneNumberControlSchema,
+  telegramIdControlSchema,
+  telegramNicknameControlSchema,
+  vKontakteControlSchema,
+} from '@shared/schemas/user.schema';
+import { zodValidator } from '../../utils/zod-validator';
+import { sanitizeText } from '../../utils/sanitize-text';
+import { ContactUrlPipe } from 'src/app/utils/contact-url.pipe';
+import { debounceTime, finalize, of } from 'rxjs';
+import { DefaultAddressParams } from '@shared/dist/toponym.schema';
+
+import * as Validator from '../../utils/custom.validator';
+
 @Component({
   selector: 'app-user-details',
   imports: [
@@ -61,26 +84,32 @@ import { MatDialog } from '@angular/material/dialog';
     MatIconModule,
     MatMenuModule,
     MatButtonModule,
-    ConfirmDialogModule,
-    ToastModule,
     AddressFilterComponent,
     OutdatedItemMenuComponent,
+    TranslateModule,
+    ContactUrlPipe,
   ],
-  providers: [],
   templateUrl: './user-details.component.html',
   styleUrl: './user-details.component.css',
 })
 export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
-  get existedUser(): User | null {
-    return this.data().object;
-  }
-  newOutdatedData = {contacts:{}, addresses:[], names: [], userNames:[]} as OutdatedData;
-
-  private roleService = inject(RoleService);
-  private userService = inject(UserService);
+  // DI
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly roleService = inject(RoleService);
+  private readonly userService = inject(UserService);
+  private readonly userDiffService = inject(UserDiffService);
   readonly dialog = inject(MatDialog);
 
+  // View helpers
+  sanitizeText = sanitizeText;
+
+  // Data
+  get existingUser(): User | null {
+    return this.data().object;
+  }
   roles!: { id: number; name: string }[];
+  action!: 'justSave' | 'saveAndExit';
+
   possibleContactTypes: {
     name: Exclude<ContactType, 'telegram' | 'otherContact'>;
     availableForExtra: boolean;
@@ -110,23 +139,49 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     userNames: null,
     contacts: null,
   };
-  //TODO: добавить валидацию для имени пользователя. Убрать из компонентов месседжи и конфирмейшн
+  outdatedDataDraft: OutdatedData = {
+    contacts: {},
+    addresses: [],
+    names: [],
+    userNames: [],
+  };
+
+  userDraft!: UserDraft;
+
   override ngOnInit(): void {
     super.ngOnInit();
-    if (this.existedUser) {
-      this.newOutdatedData = structuredClone(
-        this.existedUser.outdatedData
+
+    this.mainForm.valueChanges
+      .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onChangeValidation());
+
+    if (this.existingUser) {
+      this.outdatedDataDraft = structuredClone(
+        this.existingUser.outdatedData
       ) as OutdatedData;
     }
+
     this.mainForm.setValidators([Validator.mainContactsValidator]);
-    this.roleService.getRolesNamesList().subscribe({
-      next: (res) => {
-        this.roles = res.data;
-      },
-      error: (err) => this.msgWrapper.handle(err),
-    });
+
+    // Load roles (with auto-unsubscribe)
+    this.roleService
+      .getRolesNamesList()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => (this.roles = res.data),
+        error: (err) => this.msgWrapper.handle(err),
+      });
+
+    const formArray = this.getFormArray('instagram');
   }
 
+  // bridge spinner to parent
+  emitShowSpinner(value: boolean) {
+    this.showSpinner.set(value);
+    this.emittedShowSpinner.emit(value);
+  }
+
+  // --- UI bits
   countOutdatedContactsAmount(contacts: OutdatedContacts): number {
     return Object.values(contacts).reduce(
       (sum, arr) => sum + (arr?.length ?? 0),
@@ -135,42 +190,38 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
   }
 
   onRestrictedToggleClick() {
-    //TODO: change controls???
-
     if (this.mainForm.controls['isRestricted'].value) {
       this.mainForm.addControl(
         'causeOfRestriction',
-        new FormControl(null, Validators.required)
+        new FormControl(null, [zodValidator(causeOfRestrictionControlSchema)])
       );
       this.controlsNames.push('causeOfRestriction');
     } else if (
-      (this.isEditModeSignal() && !this.existedUser!['isRestricted']) ||
-      this.data().operation == 'create'
+      (this.isEditModeSignal() && !this.existingUser!['isRestricted']) ||
+      this.data().operation === 'create'
     ) {
-      //TODO: remove control after save
       this.mainForm.removeControl('causeOfRestriction');
-      const index = this.controlsNames.findIndex(
-        (item) => item == 'causeOfRestriction'
+      const idx = this.controlsNames.findIndex(
+        (n) => n === 'causeOfRestriction'
       );
-      this.controlsNames.splice(index);
+      if (idx !== -1) this.controlsNames.splice(idx, 1);
     }
     this.onChangeValidation();
   }
 
   modifyContactTypesList() {
-    for (let contact of this.possibleContactTypes) {
-      ////console.log(this.mainForm.controls[contact.name].value);
+    for (const contact of this.possibleContactTypes) {
       if (
         this.mainForm.controls[contact.name].value.findIndex(
-          (item: string | null) => item == null
-        ) == -1
+          (v: string | null) => v == null
+        ) === -1
       ) {
         contact.availableForExtra = true;
       }
     }
     this.availableContactTypes = this.possibleContactTypes
-      .filter((item) => item.availableForExtra == true)
-      .map((item) => item.name);
+      .filter((x) => x.availableForExtra)
+      .map((x) => x.name);
   }
 
   onTypeClick(index: number, defaultValue: string | null): void;
@@ -185,16 +236,19 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
     const type =
       typeof arg === 'number' ? this.availableContactTypes[arg] : arg;
 
-    const validators = {
-      email: [Validator.emailFormatValidator()],
-      phoneNumber: [Validator.phoneNumberFormatValidator()],
-      telegramId: [Validator.telegramIdFormatValidator()],
-      telegramPhoneNumber: [Validator.phoneNumberFormatValidator()],
-      telegramNickname: [Validator.telegramNicknameFormatValidator()],
-      whatsApp: [Validator.phoneNumberFormatValidator()],
-      vKontakte: [Validator.vKontakteFormatValidator()],
-      instagram: [Validator.instagramFormatValidator()],
-      facebook: [Validator.facebookFormatValidator()],
+    const validators: Record<
+      Exclude<ContactType, 'telegram' | 'otherContact'>,
+      any[]
+    > = {
+      email: [zodValidator(emailControlSchema)],
+      phoneNumber: [zodValidator(phoneNumberControlSchema)],
+      telegramId: [zodValidator(telegramIdControlSchema)],
+      telegramPhoneNumber: [zodValidator(phoneNumberControlSchema)],
+      telegramNickname: [zodValidator(telegramNicknameControlSchema)],
+      whatsApp: [zodValidator(phoneNumberControlSchema)],
+      vKontakte: [zodValidator(vKontakteControlSchema)],
+      instagram: [zodValidator(instagramControlSchema)],
+      facebook: [zodValidator(facebookControlSchema)],
     };
 
     this.getFormArray(type).push(
@@ -204,61 +258,42 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
 
   deleteContactControl(index: number, controlName: string) {
     const formArray = this.getFormArray(controlName);
-    if (formArray.length > 1) {
-      formArray.removeAt(index);
-    }
+    if (formArray.length > 1) formArray.removeAt(index);
     this.onChangeValidation();
   }
 
   onChangePasswordClick() {
-    const dialogRef = this.dialog.open(ChangePasswordDialogComponent, {
-      disableClose: true,
-      minWidth: '400px',
-      height: 'auto',
-      autoFocus: 'dialog',
-      restoreFocus: true,
-      data: { userId: this.existedUser!.id },
-    });
-    dialogRef.afterClosed().subscribe((result) => {
-      /*       if (result?.success) {
-        this.msgWrapper.success(`Пароль успешно изменен.`);
-      } */
-    });
+    this.dialog
+      .open(ChangePasswordDialogComponent, {
+        disableClose: true,
+        minWidth: '400px',
+        height: 'auto',
+        autoFocus: 'dialog',
+        restoreFocus: true,
+        data: { userId: this.existingUser!.id },
+      })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {});
   }
-  //TODO: maybe move to advanced
 
+  // --- Outdated data actions
   onRestoreOutdatedData(
     type: RestoringDataType,
-    data:
-      | Contact
-      | {
-          country: { id: number; name: string };
-          region: { id: number; shortName: string } | null;
-          district: { id: number; shortName: string } | null;
-          locality: { id: number; shortName: string } | null;
-          id: number;
-        }
-      | {
-          firstName: string | null;
-          patronymic: string | null;
-          lastName: string | null;
-          id: number;
-        }
-      | {
-          userName: string | null;
-          id: number;
-        },
+    data: Contact | OutdatedAddress | OutdatedFullName | OutdatedUserName,
     contactType?: Exclude<ContactType, 'telegram'>
   ) {
+    //восстанавливаемое значение присваиваем соответветствующему form.control,
+    //если он пустой, или добавляем новый form.control с этим значением
     if (type === 'contacts' && 'content' in data) {
       this.restoringDataDraft.contacts ??= {};
       this.restoringDataDraft.contacts[contactType!] ??= [];
       this.restoringDataDraft.contacts[contactType!]!.push(data);
 
-      if (contactType != 'otherContact') {
-        const formArray = this.mainForm.get(contactType!) as FormArray;
-        if (formArray.length == 1 && formArray.at(0).value == null) {
-          formArray.at(0)?.setValue(data.content);
+      if (contactType !== 'otherContact') {
+        const fa = this.mainForm.get(contactType!) as FormArray;
+        if (fa.length === 1 && fa.at(0).value == null) {
+          fa.at(0)?.setValue(data.content);
         } else {
           this.onTypeClick(contactType!, data.content);
         }
@@ -270,26 +305,25 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       type === 'names' ||
       type === 'addresses'
     ) {
-      if (
-        this.restoringDataDraft[type] &&
-        this.restoringDataDraft[type].length > 0
-      ) {
-        if (this.existedUser!.outdatedData[type]) {
-          const restoredValue = this.existedUser!.outdatedData[type].find(
-            (item) => item.id === this.restoringDataDraft[type]![0]
-          );
-          if (restoredValue)
-            (this.newOutdatedData[type] as any[]).push(restoredValue);
-          this.restoringDataDraft[type] = [];
-        }
+      //для этих типов восстановить можно только одно значение,
+      //поэтому проверяем, были ли уже восстановленные значения,
+      //если были, то удаляем их их restoringDataDraft и помещаем в outdatingDataDraft
+      if ((this.restoringDataDraft[type] ?? []).length > 0) {
+        //  if (this.existingUser!.outdatedData[type]) {
+        const restoredValue = this.existingUser!.outdatedData[type]!.find(
+          (item) => item.id === this.restoringDataDraft[type]![0]
+        );
+        if (restoredValue)
+          (this.outdatedDataDraft[type] as any[]).push(restoredValue);
+        this.restoringDataDraft[type] = [];
       }
+      //  }
       this.restoringDataDraft[type] = [data.id];
 
       switch (type) {
         case 'userNames':
-          if ('userName' in data) {
+          if ('userName' in data)
             this.mainForm.controls['userName'].setValue(data.userName);
-          }
           break;
         case 'names':
           if ('firstName' in data) {
@@ -302,7 +336,6 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           break;
         case 'addresses':
           if ('country' in data) {
-            //console.log('data', data);
             this.addressFilterComponent.onChangeMode('edit', {
               localityId: data.locality?.id ?? null,
               districtId: data.district?.id ?? null,
@@ -313,837 +346,329 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
           break;
       }
     }
-
-    this.deleteFromNewOutdatedData(type, data.id);
-    //console.log(`this.newOutdatedData[${type}]`, this.newOutdatedData[type]);
+    //восстанавливаемые значения удаляем из outdatingDataDraft
+    this.deleteFromOutdatedDataDraft(type, data.id);
     this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
 
-  //TODO: меняем только внешний вид, все изменения формируем только после нажатия сохранить - добавить сверку оутдейтед и его измененной копии!!!
-  // TODO:надо сделать копию оутдейтед, чтобы отображать в неактуальных и повторно не спрашивать, если восстановление совершено вручную
-
-  //TODO: пользователь может восстановить данные, потом изменить их, потом опять, как это все контролировать - меняем только внешний вид, все изменения формируем только после нажатия сохранить
-
   onDeleteOutdatedData(type: DeletingOutdatedDataType, id: number) {
-    //console.log(`this.newOutdatedData`, this.newOutdatedData);
-
     this.deletingDataDraft[type] ??= [];
-    this.deletingDataDraft[type].push(id);
-    this.deleteFromNewOutdatedData(type, id);
-
-    //console.log(`Deleting ${type} with id ${id}`);
-    //console.log(`this.newOutdatedData`, this.newOutdatedData);
+    this.deletingDataDraft[type]!.push(id);
+    this.deleteFromOutdatedDataDraft(type, id);
+    this.deletingSignal.set(true);
+    this.checkIsSaveDisabled();
   }
 
-  deleteFromNewOutdatedData(type: DeletingOutdatedDataType, id: number) {
-    //console.log(`this.newOutdatedData1`, this.newOutdatedData);
-    if (type == 'contacts') {
-      //this.newOutdatedData[type];
-      for (const key of typedKeys(this.newOutdatedData.contacts)) {
-        const index = this.newOutdatedData.contacts[key]!.findIndex(
+  deleteFromOutdatedDataDraft(type: DeletingOutdatedDataType, id: number) {
+    if (type === 'contacts') {
+      for (const key of typedKeys(this.outdatedDataDraft.contacts)) {
+        const idx = this.outdatedDataDraft.contacts[key]!.findIndex(
           (c) => c.id === id
         );
-        if (index != -1) {
-          this.newOutdatedData.contacts[key]!.splice(index, 1);
+        if (idx !== -1) {
+          this.outdatedDataDraft.contacts[key]!.splice(idx, 1);
           break;
         }
       }
     } else {
-      const index = this.newOutdatedData[type].findIndex((c) => c.id === id);
-      if (index != -1) {
-        //console.log(`Deleting ${type} with id ${id}`);
-        this.newOutdatedData[type].splice(index, 1);
-      }
+      const idx = this.outdatedDataDraft[type].findIndex((c) => c.id === id);
+      if (idx !== -1) this.outdatedDataDraft[type].splice(idx, 1);
     }
-    //console.log(`this.newOutdatedData2`, this.newOutdatedData);
   }
 
+  // --- Save flows
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
-    const userDraft: UserDraft = {
-      userName: this.mainForm.controls['userName'].value!.trim(),
-      id: this.object?.id ?? null,
+    this.emitShowSpinner(true);
+    this.action = action;
+    this.userDraft = this.userDiffService.buildDraft(
+      this.mainForm,
+      this.addressFilter(),
+      this.contactTypes,
+      this.existingUser
+    );
 
-      firstName: this.mainForm.controls['firstName'].value!.trim(),
-      patronymic: this.mainForm.controls['patronymic'].value?.trim() ?? null,
-      lastName: this.mainForm.controls['lastName'].value!.trim(),
-
-      draftAddress: {
-        countryId: this.addressFilter().countries?.[0] ?? null,
-        regionId: this.addressFilter().regions?.[0] ?? null,
-        districtId: this.addressFilter().districts?.[0] ?? null,
-        localityId: this.addressFilter().localities?.[0] ?? null,
-      },
-
-      draftContacts: {} as Record<Exclude<ContactType, 'telegram'>, string[]>,
-
-      password: this.mainForm.controls['password'].value,
-      roleId: this.mainForm.controls['roleId'].value,
-      comment: this.mainForm.controls['comment'].value,
-      isRestricted: this.mainForm.controls['isRestricted'].value,
-      causeOfRestriction: this.mainForm.controls['isRestricted'].value
-        ? this.mainForm.controls['causeOfRestriction'].value
-        : null,
-      dateOfRestriction: this.mainForm.controls['isRestricted'].value
-        ? this.existedUser?.isRestricted
-          ? this.existedUser.dateOfRestriction ?? new Date()
-          : new Date()
-        : null,
-    };
-    for (const contact of this.contactTypes) {
-      const raw = this.getFormArray(contact).getRawValue().filter(Boolean);
-      userDraft.draftContacts[contact] = raw.map((item) =>
-        this.completeContact(item, contact)
-      );
-    }
-
-    console.log('userDraft', userDraft);
-    this.userService.checkUserName(userDraft.userName, userDraft.id).subscribe({
-      next: (res) => {
-        if (!res.data) {
-          this.checkDuplicates(action, userDraft);
-        } else {
-          //this.emitShowSpinner(false);
-        }
-      },
-      error: (err) => {
-        //this.emitShowSpinner(false);
-        this.msgWrapper.handle(err, {
-          source: 'CreateUserDialog',
-          stage: 'checkUserName',
-          name: userDraft.userName,
-        });
-      },
-    });
+    this.userService
+      .checkUserName(this.userDraft.userName, this.userDraft.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (!res.data) this.checkDuplicates();
+          else this.emitShowSpinner(false);
+        },
+        error: (err) => {
+          this.emitShowSpinner(false);
+          this.msgWrapper.handle(err, {
+            source: 'CreateUserDialog',
+            stage: 'checkUserName',
+            name: this.userDraft.userName,
+          });
+          return of(null);
+        },
+      });
   }
 
-  completeContact(value: string, type: string) {
-    let result = '';
-    switch (type) {
-      /*       case 'vKontakte':
-        result = 'https://vk.com/' + value.trim();
-        break;
-      case 'instagram':
-        result = 'https://www.instagram.com/' + value.trim();
-        break;
-      case 'facebook':
-        result = 'https://www.facebook.com/' + value.trim();
-        break; */
-      case 'phoneNumber':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      case 'telegramPhoneNumber':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      case 'whatsApp':
-        result = value.trim().replace(/[^0-9+]/g, '');
-        break;
-      default:
-        result = value.trim();
-    }
-    return result;
-  }
-
-  checkDuplicates(action: 'justSave' | 'saveAndExit', user: UserDraft) {
-    let contactDuplicates = {} as Record<
+  checkDuplicates() {
+    const contactDuplicates = {} as Record<
       Exclude<ContactType, 'telegram'>,
       string[]
     >;
 
-    for (let key of typedKeys(user.draftContacts)) {
-      let tempArray = user.draftContacts[key].sort();
-      let duplicates = new Set();
-      for (let i = 0; i < tempArray.length - 1; i++) {
-        if (tempArray[i + 1] == tempArray[i]) {
-          duplicates.add(tempArray[i]);
-        }
-      }
-
-      if (duplicates.size > 0) {
-        contactDuplicates[key] = Array.from(duplicates) as Exclude<
-          ContactType,
-          'telegram'
-        >[];
-      } else {
-        ////console.log('There are not duplicates!');
-      }
+    for (const key of typedKeys(this.userDraft.draftContacts)) {
+      const temp = this.userDraft.draftContacts[key].sort();
+      const dups = new Set<string>();
+      for (let i = 0; i < temp.length - 1; i++)
+        if (temp[i + 1] === temp[i]) dups.add(temp[i]);
+      if (dups.size) contactDuplicates[key] = Array.from(dups);
     }
 
-    if (Object.keys(contactDuplicates).length != 0) {
-      let warnMessage = 'Вы указали одинаковые значения для: \n';
-      for (let key of typedKeys(contactDuplicates)) {
-        warnMessage = warnMessage + ` ${key} -`;
-        for (let value of contactDuplicates[key]) {
-          warnMessage = warnMessage + ` ${value}`;
-        }
-        warnMessage = warnMessage + '\n';
+    if (Object.keys(contactDuplicates).length) {
+      let list = '';
+      for (const key of typedKeys(contactDuplicates)) {
+        list += ` ${key} - ${contactDuplicates[key].join(' ')}`;
       }
-      warnMessage = warnMessage + '\n Удалите, пожалуйста, дубли!';
-      this.msgWrapper.warn(warnMessage);
+      this.msgWrapper.warn('TOAST.DELETE_DUPLICATES', undefined, {
+        duplicates: list,
+      });
+      this.emitShowSpinner(false);
     } else {
-      this.checkUserData(action, user);
+      this.checkUserData();
     }
   }
 
-  checkUserData(action: 'justSave' | 'saveAndExit', userDraft: UserDraft) {
-    this.userService.checkUserData(userDraft).subscribe({
-      next: (res) => {
-        const { duplicatesName = [], duplicatesContact = [] } = res.data ?? {};
+  checkUserData() {
+    this.userService
+      .checkUserData(this.userDraft)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: async (res) => {
+          const { duplicatesName = [], duplicatesContact = [] } =
+            res.data ?? {};
+          const hasNameDup = duplicatesName.length > 0;
+          const hasContactDup = duplicatesContact.length > 0;
 
-        const hasNameDup = duplicatesName.length > 0;
-        const hasContactDup = duplicatesContact.length > 0;
-
-        if (hasNameDup || hasContactDup) {
-          const infoMessage = this.buildDuplicateInfoMessage(
-            duplicatesName,
-            duplicatesContact
-          );
-
-          this.confirmationService.confirm({
-            header: this.translateService.instant(
-              'PRIME_CONFIRM.WARNING_HEADER'
-            ),
-            message:
-              this.br(
+          if (hasNameDup || hasContactDup) {
+            const info = buildDuplicateInfoMessage(
+              (k, p) => this.translateService.instant(k, p),
+              duplicatesName,
+              duplicatesContact
+            );
+            this.confirmationService.confirm({
+              header: this.translateService.instant(
+                'PRIME_CONFIRM.WARNING_HEADER'
+              ),
+              message:
                 this.translateService.instant(
                   'PRIME_CONFIRM.SAVE_WITH_DUPLICATES'
-                )
-              ) + infoMessage,
-            closable: true,
-            closeOnEscape: true,
-            icon: 'pi pi-exclamation-triangle',
-            rejectButtonProps: {
-              label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
-            },
-            acceptButtonProps: {
-              label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
-              severity: 'secondary',
-              outlined: true,
-            },
-            accept: () => {
-              if (this.data().operation === 'view-edit') {
-                this.checkNotActualDataDuplicates(action, userDraft);
-              } else {
-                this.saveUser(action, userDraft);
-              }
-            },
-            reject: () => {},
-          });
-        } else {
-          if (this.data().operation === 'view-edit') {
-            this.compareRestoringData(action, userDraft);
+                ) + info,
+              closable: true,
+              closeOnEscape: true,
+              icon: 'pi pi-exclamation-triangle',
+              rejectButtonProps: {
+                label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+              },
+              acceptButtonProps: {
+                label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+                severity: 'secondary',
+                outlined: true,
+              },
+              accept: async () => {
+                await this.savingFlow();
+              },
+              reject: () => this.emitShowSpinner(false),
+            });
           } else {
-            this.saveUser(action, userDraft);
+            await this.savingFlow();
           }
-        }
-      },
-      error: (err) => {
-        //this.emitShowSpinner(false);
-        this.msgWrapper.handle(err, {
-          source: 'CreateUserDialog',
-          stage: 'checkUserData',
-          name: userDraft.userName,
-        });
-      },
-    });
+        },
+        error: (err) => {
+          this.emitShowSpinner(false);
+          this.msgWrapper.handle(err, {
+            source: 'CreateUserDialog',
+            stage: 'checkUserName',
+            name: this.userDraft.userName,
+          });
+          return of(null);
+        },
+      });
   }
 
-  /** Build HTML message for duplicates using i18n codes */
-  private buildDuplicateInfoMessage(
-    nameUsers: string[],
-    contactDups: Array<{ type: string; content: string; users: string[] }>
-  ): string {
-    let html = '';
+  async savingFlow() {
+    if (this.data().operation === 'create') {
+      this.saveUser();
+    }
+    await this.correctRestoringData();
+    if (await this.checkOutdatedDataDuplicates()) {
+      const updatingUserData = await this.checkAllChanges();
+      this.saveUpdatedUser(updatingUserData);
+    } else {
+      this.emitShowSpinner(false);
+    }
+  }
+
+  // --- Compare draft vs restoring/outdated
+  //проверяем не изменил ли пользователь восстановленные данные
+  //если изменил,
+  // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
+  async correctRestoringData() {
+    // Addresses
+    if (this.restoringDataDraft.addresses?.length) {
+      const addresses = await this.userDiffService.corrAddress(
+        this.restoringDataDraft.addresses,
+        this.outdatedDataDraft.addresses,
+        this.userDraft.draftAddress,
+        this.existingUser!.outdatedData.addresses
+      );
+      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
+      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
+    }
 
     // Names
-    if (nameUsers.length === 1) {
-      html += this.br(
-        this.translateService.instant('PRIME_CONFIRM.NAMES_DUPLICATE', {
-          user: nameUsers[0],
-        })
+    if (this.restoringDataDraft.names?.length) {
+      const names = await this.userDiffService.corrNames(
+        this.restoringDataDraft.names,
+        this.outdatedDataDraft.names,
+        {
+          firstName: this.userDraft.firstName,
+          patronymic: this.userDraft.patronymic,
+          lastName: this.userDraft.lastName,
+        },
+        this.existingUser!.outdatedData.names
       );
-    } else if (nameUsers.length > 1) {
-      // Join with bullets into {{users}}
-      const usersList = nameUsers.map((u) => `- ${u}`).join('\n');
-      html += this.br(
-        this.translateService.instant('PRIME_CONFIRM.NAMES_DUPLICATES', {
-          users: usersList,
-        })
+      this.restoringDataDraft.names = structuredClone(names.restoring);
+      this.outdatedDataDraft.names = structuredClone(names.outdating);
+    }
+
+    // UserNames
+    if (this.restoringDataDraft.userNames?.length) {
+      const userNames = await this.userDiffService.corrUserNames(
+        this.restoringDataDraft.userNames,
+        this.outdatedDataDraft.userNames,
+        this.userDraft.userName,
+        this.existingUser!.outdatedData.userNames
       );
+      this.restoringDataDraft.userNames = structuredClone(userNames.restoring);
+      this.outdatedDataDraft.userNames = structuredClone(userNames.outdating);
     }
 
     // Contacts
-    for (const dup of contactDups) {
-      const { type, content, users } = dup;
-      if (!users?.length) continue;
-
-      if (users.length === 1) {
-        html += this.br(
-          this.translateService.instant('PRIME_CONFIRM.CONTACT_DUPLICATE', {
-            type,
-            content,
-            user: users[0],
-          })
-        );
-      } else {
-        const usersList = users.map((u) => `- ${u}`).join('\n');
-        html += this.br(
-          this.translateService.instant('PRIME_CONFIRM.CONTACT_DUPLICATES', {
-            type,
-            content,
-            users: usersList,
-          })
-        );
-      }
-    }
-
-    return html;
-  }
-
-  /** Convert \n to <br/> and append a <br/> at the end */
-  private br(text: string): string {
-    return text.replace(/\n/g, '<br />') + '<br />';
-  }
-
-  //TODO:  MAYBE move this logic to advanced-details.component.ts
-
-  compareRestoringData(action: 'justSave' | 'saveAndExit', user: UserDraft) {
-    // Compare addresses
-    if (
-      this.restoringDataDraft.addresses &&
-      this.restoringDataDraft.addresses?.length > 0
-    ) {
-      const addressesToRemove: number[] = [];
-      const currentAddress = user.draftAddress;
-
-      // Compare each restored address with current user address
-      for (const restoredAddressId of this.restoringDataDraft.addresses) {
-        const restoredAddress = this.existedUser!.outdatedData.addresses.find(
-          (addr) => addr.id === restoredAddressId
-        );
-        if (restoredAddress && currentAddress) {
-          //console.log('currentAddress', currentAddress);
-          //console.log('restoredAddress', restoredAddress);
-          // Compare all address fields
-          if (
-            restoredAddress.country?.id != currentAddress.countryId ||
-            restoredAddress.region?.id != currentAddress.regionId ||
-            restoredAddress.district?.id != currentAddress.districtId ||
-            restoredAddress.locality?.id != currentAddress.localityId
-          ) {
-            //console.log('this.newOutdatedData.addresses.push');
-            this.newOutdatedData.addresses.push(restoredAddress);
-            addressesToRemove.push(restoredAddress.id);
-            break;
-          }
-        }
-      }
-
-      if (addressesToRemove.length > 0) {
-        this.restoringDataDraft.addresses =
-          this.restoringDataDraft.addresses.filter(
-            (id) => !addressesToRemove.includes(id)
-          ) || null;
-      }
-    }
-
-    // Compare names
-    if (
-      this.restoringDataDraft.names &&
-      this.restoringDataDraft.names?.length > 0
-    ) {
-      const namesToRemove: number[] = [];
-      for (const nameId of this.restoringDataDraft.names) {
-        const outdatedName = this.existedUser!.outdatedData.names.find(
-          (n) => n.id === nameId
-        );
-        if (
-          outdatedName &&
-          (outdatedName.firstName != user.firstName ||
-            outdatedName.patronymic != user.patronymic ||
-            outdatedName.lastName != user.lastName)
-        ) {
-          this.newOutdatedData.names.push(outdatedName);
-          namesToRemove.push(nameId);
-        }
-      }
-      if (namesToRemove.length > 0) {
-        this.restoringDataDraft.names =
-          this.restoringDataDraft.names.filter(
-            (id) => !namesToRemove.includes(id)
-          ) || null;
-      }
-    }
-
-    // Compare userNames
-    if (
-      this.restoringDataDraft.userNames &&
-      this.restoringDataDraft.userNames?.length > 0
-    ) {
-      const userNamesToRemove: number[] = [];
-      for (const nameId of this.restoringDataDraft.userNames) {
-        const outdatedUserName = this.existedUser!.outdatedData.userNames.find(
-          (n) => n.id === nameId
-        );
-        if (outdatedUserName && outdatedUserName.userName != user.userName) {
-          this.newOutdatedData.userNames.push(outdatedUserName);
-          userNamesToRemove.push(nameId);
-        }
-      }
-      if (userNamesToRemove.length > 0) {
-        this.restoringDataDraft.names =
-          this.restoringDataDraft.userNames.filter(
-            (id) => !userNamesToRemove.includes(id)
-          ) || null;
-      }
-    }
-
-    // Compare contacts
     if (this.restoringDataDraft.contacts) {
-      for (const [type, contacts] of Object.entries(
-        this.restoringDataDraft.contacts
-      )) {
-        if (!contacts || contacts.length === 0) continue;
-        const userContacts =
-          user.draftContacts[type as keyof typeof user.draftContacts];
-        if (!userContacts || userContacts.length === 0) {
-          // If user has no contacts of this type, move all restored contacts to outdated
-          this.newOutdatedData.contacts[type as keyof Contacts] = [
-            ...(this.newOutdatedData.contacts[type as keyof Contacts] || []),
-            ...contacts,
-          ];
-          delete this.restoringDataDraft.contacts[
-            type as keyof typeof user.draftContacts
-          ];
-          continue;
-        }
-        const contactsToRemove: Contact[] = [];
-        for (const contact of contacts) {
-          if (!userContacts.includes(contact.content)) {
-            this.newOutdatedData.contacts[type as keyof Contacts] = [
-              ...(this.newOutdatedData.contacts[type as keyof Contacts] || []),
-              contact,
-            ];
-            contactsToRemove.push(contact);
-          }
-        }
-        if (contactsToRemove.length > 0) {
-          this.restoringDataDraft.contacts[
-            type as keyof typeof user.draftContacts
-          ] = this.restoringDataDraft.contacts[
-            type as keyof typeof user.draftContacts
-          ]!.filter((c) => !contactsToRemove.find((rc) => rc.id === c.id));
-        }
-      }
-    }
-    this.checkNotActualDataDuplicates(action, user);
-  }
-
-  async checkNotActualDataDuplicates(
-    action: 'justSave' | 'saveAndExit',
-    user: UserDraft
-  ) {
-    let restoringData = this.restoringDataDraft;
-    /*     let restoringData: RestoringData = {
-      addresses: null,
-      names: null,
-      userNames: null,
-      contacts: null,
-    }; */
-    // const outdatedAddresses = this.existedUser!['outdatedData'].addresses;
-    /*
-   console.log(
-      'this.newOutdatedData.addresses',
-      this.newOutdatedData.addresses
-    ); */
-    const outdatedAddresses = this.newOutdatedData.addresses;
-    if (outdatedAddresses.length > 0 && user.draftAddress?.countryId) {
-      //console.log(outdatedAddresses.length, user.draftAddress?.countryId);
-      for (const address of outdatedAddresses) {
-        const isMatch =
-          address.country?.id == user.draftAddress.countryId &&
-          address.region?.id == user.draftAddress.regionId &&
-          address.district?.id == user.draftAddress.districtId &&
-          address.locality?.id == user.draftAddress.localityId;
-
-        if (isMatch) {
-          //console.log('address', address);
-          const fullAddress = `${address.country?.name + ' ' || ''}
-          ${address.region?.shortName || ''}
-          ${address.district?.shortName || ''}
-          ${address.locality?.shortName || ''}`.trim();
-          const confirmed = await this.confirmDataCorrectness(
-            'address',
-            fullAddress
-          );
-          if (confirmed) {
-            //console.log('this.deleteFromOutdatedData("address", address.id)');
-            restoringData.addresses ??= [];
-            restoringData.addresses.push(address.id);
-          } else {
-            // Прервать всё, если пользователь сказал "Нет"
-            return;
-          }
-        }
-      }
-    }
-
-    const outdatedNames = this.newOutdatedData.names.filter((item) => {
-      return (
-        this.normalize(item.firstName) === this.normalize(user.firstName) &&
-        this.normalize(item.patronymic) === this.normalize(user.patronymic) &&
-        this.normalize(item.lastName) === this.normalize(user.lastName)
+      const contacts = await this.userDiffService.corrContacts(
+        this.restoringDataDraft.contacts,
+        this.outdatedDataDraft.contacts,
+        this.userDraft.draftContacts
       );
-    });
-    //  //console.log('outdatedNames', outdatedNames);
-    if (outdatedNames.length > 0) {
-      const fullName = `${user.firstName} ${user.patronymic || ''} ${
-        user.lastName
-      }`.trim();
-      const confirmed = await this.confirmDataCorrectness('names', fullName);
-      if (confirmed) {
-        /*         console.log(
-          'this.deleteFromOutdatedData("names", outdatedNames[0].id,)'
-        ); */
-        restoringData.names ??= [];
-        restoringData.names.push(outdatedNames[0].id);
-      } else {
-        // Прервать всё, если пользователь сказал "Нет"
-        return;
-      }
+      this.restoringDataDraft.contacts = structuredClone(contacts.restoring);
+      this.outdatedDataDraft.contacts = structuredClone(contacts.outdating);
     }
-
-    const outdatedUserNames = this.newOutdatedData.userNames.filter((item) => {
-      return item.userName === user.userName;
-    });
-    //console.log('outdatedNames', outdatedNames);
-
-    //console.log('user', user);
-    if (outdatedUserNames.length > 0) {
-      const userName = user.userName;
-      const confirmed = await this.confirmDataCorrectness('userName', userName);
-      if (confirmed) {
-        /*       console.log(
-          'this.deleteFromOutdatedData("userName", outdatedUserNames[0].id,)'
-        ); */
-        restoringData.userNames ??= [];
-        restoringData.userNames.push(outdatedUserNames[0].id);
-      } else {
-        // Прервать всё, если пользователь сказал "Нет"
-        return;
-      }
-    }
-
-    const outdatedContacts = this.newOutdatedData.contacts;
-
-    //console.log('outdatedContacts', outdatedContacts);
-    //console.log('user.orderedContacts', user.draftContacts);
-
-    if (outdatedContacts && Object.keys(outdatedContacts).length != 0) {
-      const currentContacts = user.draftContacts;
-      const duplicates: { id: number; content: string }[] = [];
-
-      for (const type of this.contactTypes) {
-        for (const value of currentContacts[type]) {
-          if (!value) continue;
-          if (Array.isArray(outdatedContacts[type])) {
-            for (const outdated of outdatedContacts[type]) {
-              if (outdated.content === value) {
-                duplicates.push({ id: outdated.id, content: value });
-              }
-            }
-          }
-        }
-        if (duplicates.length > 0) {
-          //console.log('duplicates', duplicates);
-          const contentString =
-            type + ' ' + duplicates.map((c) => c.content).join(', ');
-          const confirmed = await this.confirmDataCorrectness(
-            'contacts',
-            contentString
-          );
-          if (confirmed) {
-            //console.log('this.deleteFromOutdatedData("contacts", contacts.id)');
-            restoringData.contacts ??= {};
-            restoringData.contacts[type] ??= [];
-            restoringData.contacts[type] = [
-              ...restoringData.contacts[type],
-              ...duplicates,
-            ];
-          } else {
-            // Прервать всё, если пользователь сказал "Нет"
-            return;
-          }
-        }
-      }
-    }
-    //console.log('restoringData', restoringData);
-    this.checkAllChanges(action, user, restoringData);
   }
 
-  // TODO: 🔄 Актуализация данных
-  //Лисик, завтра допишем API для обновления юзера, сделаем смену пароля и отображение неактуальных значений.
-  //Если останется время, то пройдемся по TODO
+  //если введенные данные совпадают с outdatingDataDraft данными,
+  //то добавляем их с согласия пользователя в restoringDataDraft
+  async checkOutdatedDataDuplicates() {
+    const address = await this.userDiffService.checkAddress(
+      this.outdatedDataDraft.addresses,
+      this.userDraft.draftAddress
+    );
+    if (!address.restoringId) return false;
+    if (address.restoringId > 0) {
+      this.restoringDataDraft.addresses ??= [];
+      this.restoringDataDraft.addresses.push(address.restoringId);
+    }
 
-  // 🟡 1.
+    const names = await this.userDiffService.checkNames(
+      this.outdatedDataDraft.names,
+      this.userDraft
+    );
+    if (!names.restoringId) return false;
+    if (names.restoringId > 0) {
+      this.restoringDataDraft.names ??= [];
+      this.restoringDataDraft.names.push(names.restoringId);
+    }
 
-  // - API - сохранить изменения- DONE
+    const userName = await this.userDiffService.checkUserNames(
+      this.outdatedDataDraft.userNames,
+      this.userDraft.userName
+    );
+    if (!userName.restoringId) return false;
+    if (userName.restoringId > 0) {
+      this.restoringDataDraft.userNames ??= [];
+      this.restoringDataDraft.userNames.push(userName.restoringId);
+    }
 
-  // 🟡 2. Унификация значений null / '', форматов - DONE?
-  //  - Привести отсутствующие значения к одному виду
-  // - привести адреса (и не только) к одному формату
-  //доработать интерфейсы
+    const contacts = await this.userDiffService.checkContacts(
+      this.contactTypes,
+      this.outdatedDataDraft.contacts,
+      this.userDraft.draftContacts
+    );
+    if (!contacts.restoring) return false;
+    if (Object.keys(contacts.restoring).length) {
+      this.restoringDataDraft.contacts ??= {};
+      for (const key of typedKeys(contacts.restoring)) {
+        const vals = contacts.restoring[key] ?? [];
+        (this.restoringDataDraft.contacts[key] ??= []).push(...vals);
+      }
+    }
 
-  // 🟢 3. Вынести общие функции в адванс компонент - DONE?
-  //  - Проверка дубликатов
-  //  - Отображение диалогов
-  //  - Работа с outdatedData (добавление, удаление)
-
-  // 👁 Отображение неактуальных данных +API - запрос этих данных в лист - DONE
-
-  // 🔵 4. В таблице (по запросу) - DONE
-  //  - Кнопка или фильтр: «Показать неактуальные» - это уже есть
-  //  - Выделение неактуальных данных (цвет/иконка) - это уже есть
-
-  // 🟣 5. В карточке (всегда)
-  //  - Показывать список неактуальных значений - DONE
-
-  // 🔴    Изменение пароля администратором - DONE
-
-  //7. упростить код, вынести данные в отд. файлы, упорядочить интерфейсы и типы
-
-  normalize = (value: string | null | undefined) => (value ?? '').trim();
-
-  confirmDataCorrectness(
-    type: 'address' | 'names' | 'userName' | 'contacts',
-    value: string | string[]
-  ): Promise<boolean> {
-    const types = {
-      address: 'адрес',
-      names: 'ФИО',
-      userName: 'имя пользователя',
-      contacts: 'контакт(ы)',
-    };
-
-    return new Promise((resolve) => {
-      this.confirmationService.confirm({
-        message: `В введенных вами данных:<br><b> ${types[type]} '${value}'</b><br>есть совпадения с неактуальными.<br><br>Вы уверены, что указали актуальную информацию?`,
-        header: 'Совпадения с неактуальными данными',
-        closable: true,
-        closeOnEscape: true,
-        icon: 'pi pi-exclamation-triangle',
-        /*        rejectButtonProps: {
-          label: 'Нет',
-        },
-        acceptButtonProps: {
-          label: 'Да',
-          severity: 'secondary',
-          outlined: true,
-        }, */
-        accept: () => resolve(true),
-        reject: () => resolve(false),
-      });
-    });
+    return true;
   }
 
-  async checkAllChanges(
-    action: 'justSave' | 'saveAndExit',
-    user: UserDraft,
-    restoringData: RestoringData
-  ) {
-    let changes: ChangedData = { main: null, contacts: null, address: null };
-
-    let outdatingData: OutdatingData = {
+  //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
+  async checkAllChanges() {
+    const changes: ChangingData = { main: null, contacts: null, address: null };
+    const outdatingData: OutdatingData = {
       address: null,
       names: null,
       userName: null,
       contacts: null,
     };
+    const deletingData: DeletingData = structuredClone(this.deletingDataDraft);
+    const restoringData: RestoringData = structuredClone(
+      this.restoringDataDraft
+    );
 
-    // let deletingData: DeletingData = { address: null, contacts: null };
-    let deletingData = this.deletingDataDraft;
-    const isNamesChanged =
-      this.normalize(this.existedUser!['firstName']) !=
-        this.normalize(user.firstName) ||
-      this.normalize(this.existedUser!['patronymic']) !=
-        this.normalize(user.patronymic) ||
-      this.normalize(this.existedUser!['lastName']) !=
-        this.normalize(user.lastName);
+    const names = await this.userDiffService.diffNames(
+      this.existingUser!,
+      this.userDraft
+    );
+    if (names.changes) changes.main = names.changes;
+    if (names.outdating) outdatingData.names = names.outdating;
 
-    if (/* !restoringData.names && */ isNamesChanged) {
+    const userName = await this.userDiffService.diffUserName(
+      this.existingUser!,
+      this.userDraft
+    );
+    if (userName.changes)
       changes.main = {
-        firstName: user.firstName,
-        patronymic: user.patronymic,
-        lastName: user.lastName,
+        ...(changes.main ?? {}),
+        ...{ userName: userName.changes },
       };
-      const oldValue = `${this.existedUser!['firstName']} ${
-        this.existedUser!['patronymic'] || ''
-      } ${this.existedUser!['lastName']}`.trim();
-      const confirmed = await this.confirmDataSaving(
-        'names',
-        oldValue
-        //newValue
-      );
-      if (confirmed) {
-        outdatingData['names'] = {
-          firstName: this.existedUser!['firstName'],
-          patronymic: this.existedUser!['patronymic'] || null,
-          lastName: this.existedUser!['lastName'],
-        };
-      } else {
-      }
-    }
-    const oldValue = this.existedUser!['userName'];
-    if (/* !restoringData.userName && */ user.userName != oldValue) {
-      if (changes.main) {
-        changes.main['userName'] = user.userName;
-      } else {
-        changes.main = { userName: user.userName };
-      }
-      const confirmed = await this.confirmDataSaving(
-        'userName',
-        oldValue
-        //newValue
-      );
-      if (confirmed) {
-        outdatingData['userName'] = this.existedUser!['userName'];
-      } else {
-      }
-    }
+    if (userName.outdating) outdatingData.userName = userName.outdating;
 
-    //TODO: привести к единообразию форматы адресов
-    const oldAddress = this.existedUser!['address'];
+    const address = await this.userDiffService.diffAddress(
+      this.existingUser!,
+      this.userDraft,
+      (restoringData.addresses ?? []).length > 0
+        ? restoringData.addresses![0]
+        : null
+    );
+    if (address.changes) changes.address = address.changes;
+    if (address.outdatingId) outdatingData.address = address.outdatingId;
+    if (address.deletingId)
+      (deletingData.addresses ?? []).push(address.deletingId);
 
-    const newAddress = user.draftAddress!;
+    const contacts = await this.userDiffService.diffContacts(
+      this.existingUser!,
+      this.userDraft,
+      this.contactTypes,
+      restoringData.contacts
+    );
+    if (contacts.changes) changes.contacts = contacts.changes;
+    if (contacts.outdatingIds) outdatingData.contacts = contacts.outdatingIds;
+    if (contacts.deletingIds)
+      (deletingData.contacts ?? []).push(...contacts.deletingIds);
 
-    //console.log('oldAddress', 'newAddress', oldAddress, newAddress);
-
-    const isAddressChanged =
-      !isFieldEqual(
-        newAddress.countryId,
-        oldAddress.country ? oldAddress.country.id : oldAddress.country
-      ) ||
-      !isFieldEqual(
-        newAddress.regionId,
-        oldAddress.region ? oldAddress.region.id : oldAddress.region
-      ) ||
-      !isFieldEqual(
-        newAddress.districtId,
-        oldAddress.district ? oldAddress.district.id : oldAddress.district
-      ) ||
-      !isFieldEqual(
-        newAddress.localityId,
-        oldAddress.locality ? oldAddress.locality.id : oldAddress.locality
-      );
-    if (isAddressChanged) {
-      if (!restoringData.addresses) {
-        changes['address'] = user.draftAddress;
-        // //console.log('changes', changes);
-        ////console.log('oldAddress.country', oldAddress.country);
-      } else {
-        for (const restoredAddressId of restoringData.addresses) {
-          const restoredAddress = this.existedUser!.outdatedData.addresses.find(
-            (addr) => addr.id === restoredAddressId
-          );
-          if (restoredAddress) {
-            // Compare all address fields
-            if (
-              restoredAddress.country?.id != user.draftAddress.countryId ||
-              restoredAddress.region?.id != user.draftAddress.regionId ||
-              restoredAddress.district?.id != user.draftAddress.districtId ||
-              restoredAddress.locality?.id != user.draftAddress.localityId
-            ) {
-              changes['address'] = user.draftAddress;
-            }
-          }
-        }
-      }
-
-      if (oldAddress.country) {
-        // //console.log('oldAddress.country', oldAddress.country);
-        const oldValue = `${oldAddress.country?.name + ' ' || ''}
-        ${oldAddress.region?.shortName || ''}
-        ${oldAddress.district?.shortName || ''}
-        ${oldAddress.locality?.shortName || ''}`.trim();
-        const confirmed = await this.confirmDataSaving(
-          'address',
-          oldValue
-          //newValue
-        );
-        if (confirmed) {
-          outdatingData.address = oldAddress.id!;
-        } else {
-          deletingData['addresses'] ??= [];
-          deletingData['addresses'].push(oldAddress.id!);
-        }
-      }
-    }
-
-    const oldContacts = this.object!['orderedContacts'];
-    /*     changes['contacts'] = {} as Record<
-      Exclude<ContactType, 'telegram'>,
-      string[]
-    >; */
-    const newContacts = user.draftContacts;
-
-    //console.log('oldContacts', 'newContacts', oldContacts, newContacts);
-    for (const type of this.contactTypes) {
-      //changes['contacts'][type] = [];
-      for (const contact of newContacts[type]) {
-        //console.log('contact', contact);
-        //console.log('oldContacts[type]', oldContacts[type]);
-        const indexInOldContactsArray = oldContacts[type]?.findIndex(
-          (item) => item.content == contact
-        );
-        //console.log('indexInOldContactsArray', indexInOldContactsArray);
-        if (!oldContacts[type] || indexInOldContactsArray == -1) {
-          if (restoringData.contacts && restoringData.contacts[type]) {
-            const indexInRestoringContactsArray = restoringData.contacts[
-              type
-            ].findIndex((item) => item.content === contact);
-            /*          console.log(
-              'indexInRestoringContactsArray',
-              indexInRestoringContactsArray
-            ); */
-            if (indexInRestoringContactsArray == -1) {
-              changes['contacts'] ??= {};
-              changes['contacts'][type] ??= [];
-              changes['contacts'][type].push(contact);
-            }
-          } else {
-            changes['contacts'] ??= {};
-            changes['contacts'][type] ??= [];
-            changes['contacts'][type].push(contact);
-          }
-        }
-      }
-
-      if (oldContacts[type]) {
-        for (const contact of oldContacts[type]) {
-          const indexInNewContactsArray = newContacts[type].findIndex(
-            (item) => item === contact.content
-          );
-          if (indexInNewContactsArray == -1) {
-            const oldValue = type + ' ' + contact.content;
-
-            const confirmed = await this.confirmDataSaving(
-              'contacts',
-              oldValue
-              //newValue
-            );
-            if (confirmed) {
-              outdatingData['contacts'] ??= [];
-              outdatingData['contacts'].push(contact.id);
-            } else {
-              deletingData['contacts'] ??= [];
-              deletingData['contacts'].push(contact.id);
-            }
-          }
-        }
-      }
-    }
-    type MainKeys = keyof NonNullable<ChangedData['main']>;
-
+    type MainKeys = keyof NonNullable<ChangingData['main']>;
     const mainProps: MainKeys[] = [
       'roleId',
       'comment',
@@ -1151,213 +676,150 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<User> {
       'causeOfRestriction',
       'dateOfRestriction',
     ];
-
     for (const prop of mainProps) {
       const key = prop as keyof User & keyof UserDraft;
-      if (this.existedUser![key] != user[key]) {
-        changes.main = changes.main || {};
+      if (this.existingUser![key] != this.userDraft[key]) {
         changes.main = {
-          ...changes.main,
-          [key]: user[key],
-        };
+          ...(changes.main || {}),
+          [key]: this.userDraft[key],
+        } as NonNullable<ChangingData['main']>;
       }
     }
-
-    //console.log('outdatingData', outdatingData);
-    //console.log('deletingData', deletingData);
-    //console.log('restoringData', restoringData);
-    //console.log('changes', changes);
-
-    this.saveUpdatedUser(action, {
+    console.log('{ changes, restoringData, outdatingData, deletingData }', {
       changes,
       restoringData,
       outdatingData,
       deletingData,
     });
-    function isFieldEqual(
-      newFieldId: number | null,
-      oldFieldId: number | null
-    ): boolean {
-      console.log('newFieldId', newFieldId);
-      console.log('oldFieldId', oldFieldId);
-      if (!newFieldId && !oldFieldId) return true;
-      if (newFieldId && oldFieldId) return newFieldId === oldFieldId;
-      return false;
-    }
+    return { changes, restoringData, outdatingData, deletingData };
   }
 
-  confirmDataSaving(
-    type: 'address' | 'names' | 'userName' | 'contacts',
-    oldValue: string
-    //newValue: string
-  ): Promise<boolean> {
-    const types = {
-      address: 'адрес',
-      names: 'ФИО',
-      userName: 'имя пользователя',
-      contacts: 'контакт(ы)',
-    };
-
-    return new Promise((resolve) => {
-      this.confirmationService.confirm({
-        message: `Вы изменили ${types[type]}.<br>Сохранить прежнее значение <b>"${oldValue}"</b> как неактуальное?<br>В противном случае оно будет удалено как ошибочное без возможности восстановления.`,
-        header: 'Сохранить в неактуальные?',
-        closable: true,
-        closeOnEscape: true,
-        icon: 'pi pi-exclamation-triangle',
-        /*         rejectButtonProps: {
-          label: 'Нет',
-        },
-        acceptButtonProps: {
-          label: 'Да',
-          severity: 'secondary',
-          outlined: true,
-        }, */
-        accept: () => resolve(true),
-        reject: () => resolve(false),
-      });
-    });
-  }
-
-  saveUser(action: 'justSave' | 'saveAndExit', userDraft: UserDraft) {
-    this.userService.saveUser(userDraft).subscribe({
-      next: (res) => {
-        //this.dialogRefCreate.close({ userName: res.userName });
-        if (action == 'saveAndExit') {
-          //this.dialogRef.close({ name: res.data });
-          this.closeDialogDataSignal.set(res.data);
-          this.emittedCloseDialogData.emit(res.data);
-        } else {
-          ////console.log('this.existedUser', this.existedUser);
-          //TODO: вернуть новые данные юзера и обновить значения полей ???
-          /*           this.data().object = res.data;
-          //this.existedUser= this.data().object;
-          //console.log('this.existedUser', this.existedUser);
-          this.changeToViewMode(null);
-          this.setInitialValues('view');
-          this.msgWrapper.success(
-            `Аккаунт пользователя ${res.data} создан.`
-          ); */
-        }
-      },
-      error: (err) => {
-        //this.emitShowSpinner(false);
-        this.msgWrapper.handle(err, {
-          source: 'CreateUserDialog',
-          stage: 'saveUser',
-          name: userDraft.userName,
-        });
-      },
-    });
-  }
-
-  saveUpdatedUser(
-    action: 'justSave' | 'saveAndExit',
-    upgradedUserData: {
-      changes: ChangedData;
-      restoringData: RestoringData;
-      outdatingData: OutdatingData;
-      deletingData: DeletingData;
-    }
-  ) {
+  saveUser() {
     this.userService
-      .saveUpdatedUser(this.existedUser!.id, upgradedUserData)
+      .saveUser(this.userDraft)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.emitShowSpinner(false))
+      )
       .subscribe({
         next: (res) => {
-          //this.dialogRefCreate.close({ userName: res.userName });
-          if (action == 'saveAndExit') {
-            //this.dialogRef.close({ name: res.data });
-            this.closeDialogDataSignal.set(res.data.userName);
-            this.emittedCloseDialogData.emit(res.data.userName);
+          if (this.action === 'saveAndExit') {
+            this.closeDialogDataSignal.set(res.data);
+            this.emittedCloseDialogData.emit(res.data);
           } else {
-            ////console.log('this.existedUser', this.existedUser);
-
-            //TODO: вернуть новые данные юзера и обновить значения полей, исходя из этого
-            if (
-              !this.mainForm.controls['isRestricted'].value &&
-              this.mainForm.get('causeOfRestriction')
-            ) {
-              this.mainForm.removeControl('causeOfRestriction');
-              const index = this.controlsNames.findIndex(
-                (item) => item == 'causeOfRestriction'
-              );
-              this.controlsNames.splice(index);
-            }
-            this.data().object = res.data;
-            (this.data().defaultAddressParams = {
-              localityId: res.data.address.locality
-                ? res.data.address.locality.id
-                : null,
-              districtId: res.data.address.district
-                ? res.data.address.district.id
-                : null,
-              regionId: res.data.address.region
-                ? res.data.address.region.id
-                : null,
-              countryId: res.data.address.country
-                ? res.data.address.country.id
-                : null,
-            }),
-              (this.newOutdatedData = structuredClone(
-                this.existedUser!.outdatedData
-              ) as OutdatedData);
-
-            this.addressFilterComponent.onChangeMode(
-              'view',
-              this.data().defaultAddressParams!
-            );
-            this.restoringDataDraft = {
-              addresses: null,
-              names: null,
-              userNames: null,
-              contacts: null,
-            };
-            this.deletingDataDraft = {
-              addresses: null,
-              names: null,
-              userNames: null,
-              contacts: null,
-            };
-            /*         { localityId: this.existedUser!.address.locality ? this.existedUser!.address.locality.id : null,
-              districtId: this.existedUser!.address.district ? this.existedUser!.address.district.id : null,
-              regionId: this.existedUser!.address.region ? this.existedUser!.address.region.id : null,
-              countryId: this.existedUser!.address.country ? this.existedUser!.address.country.id : null,
-            });*/
-
-            //console.log('  this.newOutdatedData', this.newOutdatedData);
-            //this.existedUser= this.data().object;
-            //console.log('this.existedUser', this.existedUser);
-            //TODO: test it
-            this.changeToViewMode(null);
-            this.setInitialValues('view');
-            /*          this.msgWrapper.success(
-              `Аккаунт пользователя ${res.data.userName} обновлен.`
-            ); */
+            // keep dialog open, could re-load user data if needed
           }
         },
-        error: (err) => {
-          //this.emitShowSpinner(false);
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'CreateUserDialog',
+            stage: 'saveUser',
+            name: this.userDraft.userName,
+          }),
+      });
+  }
+  // View-mode: set outdated data
+  protected override changeToViewMode(
+    addressParams: DefaultAddressParams | null
+  ) {
+    super.changeToViewMode(addressParams);
+    this.outdatedDataDraft = structuredClone(
+      this.existingUser!.outdatedData
+    ) as OutdatedData;
+  }
+
+  saveUpdatedUser(upgradedUserData: {
+    changes: ChangingData;
+    restoringData: RestoringData;
+    outdatingData: OutdatingData;
+    deletingData: DeletingData;
+  }) {
+    this.userService
+      .saveUpdatedUser(this.existingUser!.id, upgradedUserData)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.emitShowSpinner(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (this.action === 'saveAndExit') {
+            this.closeDialogDataSignal.set(res.data.userName);
+            this.emittedCloseDialogData.emit(res.data.userName);
+            return;
+          }
+
+          // inline update to view state
+          if (
+            !this.mainForm.controls['isRestricted'].value &&
+            this.mainForm.get('causeOfRestriction')
+          ) {
+            this.mainForm.removeControl('causeOfRestriction');
+            const idx = this.controlsNames.findIndex(
+              (n) => n === 'causeOfRestriction'
+            );
+            if (idx !== -1) this.controlsNames.splice(idx, 1);
+          }
+
+          this.data().object = res.data;
+          this.data().defaultAddressParams = {
+            localityId: res.data.address.locality
+              ? res.data.address.locality.id
+              : null,
+            districtId: res.data.address.district
+              ? res.data.address.district.id
+              : null,
+            regionId: res.data.address.region
+              ? res.data.address.region.id
+              : null,
+            countryId: res.data.address.country
+              ? res.data.address.country.id
+              : null,
+          };
+
+          this.outdatedDataDraft = structuredClone(
+            this.existingUser!.outdatedData
+          ) as OutdatedData;
+
+          this.addressFilterComponent.onChangeMode(
+            'view',
+            this.data().defaultAddressParams!
+          );
+          this.restoringDataDraft = {
+            addresses: null,
+            names: null,
+            userNames: null,
+            contacts: null,
+          };
+          this.deletingDataDraft = {
+            addresses: null,
+            names: null,
+            userNames: null,
+            contacts: null,
+          };
+
+          this.changeToViewMode(null);
+          this.setInitialValues('view');
+        },
+        error: (err) =>
           this.msgWrapper.handle(err, {
             source: 'EditUserDialog',
             stage: 'saveUpdatedUser',
-            userId: this.existedUser!.id,
-          });
-        },
+            userId: this.existingUser!.id,
+          }),
       });
   }
 
+  // badges (for template)
   hasOutdatedUserNames(): boolean {
-    return this.newOutdatedData.userNames.length > 0;
+    return this.outdatedDataDraft.userNames.length > 0;
   }
   hasOutdatedNames(): boolean {
-    return this.newOutdatedData.names.length > 0;
+    return this.outdatedDataDraft.names.length > 0;
   }
-
   hasOutdatedContacts(): boolean {
-    return Object.keys(this.newOutdatedData.contacts).length > 0;
+    return Object.keys(this.outdatedDataDraft.contacts).length > 0;
   }
-
   hasOutdatedAddresses(): boolean {
-    return this.newOutdatedData.addresses.length > 0;
+    return this.outdatedDataDraft.addresses.length > 0;
   }
 }

@@ -11,8 +11,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
 
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -35,8 +33,6 @@ import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-
     MatTabsModule,
     MatIconModule,
     MatMenuModule,
-    ConfirmDialogModule,
-    ToastModule,
     AddressFilterComponent,
     TranslateModule,
   ],

@@ -1,107 +1,81 @@
-import { Component, input, model, output, signal } from '@angular/core';
+//src\app\shared\table-settings\table-settings.component.ts
+import { Component, input, output } from '@angular/core';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ColumnDefinition } from '../../interfaces/base-list';
+import { TranslateModule } from '@ngx-translate/core';
+
+type Row = ColumnDefinition;
 
 @Component({
   selector: 'app-table-settings',
-  imports: [MatTableModule, MatCheckboxModule],
+  imports: [MatTableModule, MatCheckboxModule, TranslateModule],
   templateUrl: './table-settings.component.html',
   styleUrl: './table-settings.component.css',
 })
 export class TableSettingsComponent {
-  displayedColumns: string[] = ['select', 'columnName'];
-  columnsList = input.required<
-    {
-      id: number;
-      columnName: string;
-      columnFullName: string;
-      isUnchangeable: boolean;
-    }[]
-  >();
+  columnsList = input.required<Row[]>();
   selectedColumns = output<string[]>();
   settingsBadgeValue = output<number>();
-  dataSource!: MatTableDataSource<{
-    id: number;
-    columnName: string;
-    columnFullName: string;
-    isUnchangeable: boolean;
-  }>;
-  selection!: SelectionModel<{
-    id: number;
-    columnName: string;
-    columnFullName: string;
-    isUnchangeable: boolean;
-  }>;
 
-  ngOnInit() {
-    this.dataSource = new MatTableDataSource<{
-      id: number;
-      columnName: string;
-      columnFullName: string;
-      isUnchangeable: boolean;
-    }>(this.columnsList());
-    this.selection = new SelectionModel<{
-      id: number;
-      columnName: string;
-      columnFullName: string;
-      isUnchangeable: boolean;
-    }>(true, []);
-    this.toggleAllRows();
+  readonly displayedColumns = ['select', 'columnName'] as const;
+
+  dataSource!: MatTableDataSource<Row>;
+  selection = new SelectionModel<Row>(true, []);
+
+  ngOnInit(): void {
+    const data = this.columnsList();
+    this.dataSource = new MatTableDataSource<Row>(data);
+    this.selection = new SelectionModel<Row>(true, []);
+
+    // Select all at start
+    this.selection.select(...data);
+
+    // Emit initial state
+    this.emitSelectedColumns();
   }
 
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
-    //  //console.log(this.selection.selected);
-    return numSelected === numRows;
+  /** Selected count equals total count */
+  isAllSelected(): boolean {
+    return this.selection.selected.length === this.dataSource.data.length;
   }
 
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  toggleAllRows(...rest: any[]) {
-    if(rest.length > 0) {
-      //console.log(rest[0]);
-    }
-
+  /** Toggle all; always keep unchangeable rows selected */
+  toggleAllRows(): void {
     if (this.isAllSelected()) {
       this.selection.clear();
-      let unchangeableColumns = this.columnsList().filter(item => item.isUnchangeable);
-      for (let column of unchangeableColumns) {
-        this.selection.select(column);
-      }
-
-
-      this.emitSelectedColumns();
-      //this.selectedColumns.emit(this.selection.selected);
-      return;
+      this.selectUnchangeable();
+    } else {
+      this.selection.select(...this.dataSource.data);
     }
-    this.selection.select(...this.dataSource.data);
-    // //console.log(this.selection);
     this.emitSelectedColumns();
-    // this.selectedColumns.emit(this.selection.selected);
   }
 
-  onChange(row: {
-    id: number;
-    columnName: string;
-    columnFullName: string;
-    isUnchangeable: boolean;
-  }) {
-    if (!row.isUnchangeable) {
-      this.selection.toggle(row);
-      this.emitSelectedColumns();
+  /** Toggle single row if it’s allowed */
+  onChange(row: Row): void {
+    if (row.isUnchangeable) return;
+    this.selection.toggle(row);
+    this.emitSelectedColumns();
+  }
+
+  private selectUnchangeable(): void {
+    for (const row of this.dataSource.data) {
+      if (row.isUnchangeable) this.selection.select(row);
     }
-
-    // this.selectedColumns.emit(this.selection.selected);
   }
 
-  emitSelectedColumns() {
-    let listOfSelectedColumns = this.selection.selected
-      .sort((prev, next) => prev.id - next.id)
-      .map((item) => item.columnName);
-   // //console.log(listOfSelectedColumns);
-    this.selectedColumns.emit(listOfSelectedColumns);
-    this.settingsBadgeValue.emit(listOfSelectedColumns.length - this.columnsList().length);
+  /** Emit selected column names in original order + badge count (kept as-is) */
+  private emitSelectedColumns(): void {
+    const selected = [...this.selection.selected]
+      .sort((a, b) => a.id - b.id)
+      .map((r) => r.columnName);
+
+    this.selectedColumns.emit(selected);
+
+    // Preserve existing business rule: selectedCount - totalCount
+    this.settingsBadgeValue.emit(
+      selected.length - this.columnsList().length
+    );
   }
 }

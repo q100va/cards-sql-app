@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 import { z } from 'zod';
 import {
   Country, Region, District, Locality,
@@ -326,7 +326,8 @@ router.post(
         // CHANGES
         // main
         if (changes?.main) {
-          const payload = ctrl.pruneNulls(changes.main);
+          console.log('changes?.main', changes?.main);
+          const payload = changes.main;
           if (Object.keys(payload).length > 0) {
             await User.update(
               payload,
@@ -560,6 +561,8 @@ router.post(
 
       // ---- base where (User) ----
       const whereUser = {};
+      const whereAddress = {};
+      const whereContact = {};
 
       // view option (if you still use it)
       switch (view?.option) {
@@ -572,10 +575,9 @@ router.post(
       if (filters?.general?.roles?.length) {
         whereUser.roleId = { [Op.in]: filters.general.roles };
       }
-      //TODO: 'без комментария' -> code
-      if (filters?.general?.comment?.length === 1) {
-        const v = filters.general.comment[0];
-        whereUser.comment = (v === 'без комментария') ? null : { [Op.not]: null };
+
+      if (filters?.general?.comment !== undefined) {
+        whereUser.comment = !filters.general.comment ? null : { [Op.not]: null };
       }
 
       if (filters?.general?.dateBeginningRange) {
@@ -585,22 +587,40 @@ router.post(
         whereUser.dateOfRestriction = ctrl.betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
 
+      // contact types filter (weak/strong)
+      const contactTypes = filters?.general?.contactTypes ?? [];
+      const contRequired = contactTypes.length > 0;
+      if (contRequired) {
+        const sub = ctrl.buildContactUserIdSubquery(contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
+        if (!includeOutdated) whereContact.isRestricted = false;
+        if (sub) whereContact.userId = { [Op.in]: sub };
+      }
+
+      // address filter (weak/strong)
+      const addresses = filters?.address || {};
+      const addrRequired = (addresses.countries?.length ?? 0) > 0;
+      if (addrRequired) {
+        const sub = await ctrl.buildAddressUserIdSubquery(addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
+        if (!includeOutdated) whereAddress.isRestricted = false;
+        if (sub) whereAddress.userId = { [Op.in]: sub };
+      }
+
       // ---- includes (contacts / addresses / outdated names / search) ----
       const includes = [
         { model: Role, attributes: ['name'] },
         {
           model: UserContact,
           as: 'contacts',
-          required: false,
+          required: contRequired,
           attributes: ['id', 'type', 'content', 'isRestricted'],
-          where: includeOutdated ? undefined : { isRestricted: false }
+          where: whereContact
         },
         {
           model: UserAddress,
           as: 'addresses',
-          required: false,
+          required: addrRequired,
           attributes: ['id', 'isRestricted', 'isRecoverable'],
-          where: includeOutdated ? undefined : { isRestricted: false },
+          where: whereAddress,
           include: [
             { model: Country, attributes: ['id', 'name'] },
             { model: Region, attributes: ['id', 'shortName'] },
@@ -615,20 +635,6 @@ router.post(
           separate: true,
         }
       ];
-
-      // contact types filter (weak/strong)
-      const contactTypes = filters?.general?.contactTypes ?? [];
-      if (contactTypes.length) {
-        const sub = ctrl.buildContactUserIdSubquery(contactTypes, !includeOutdated ? true : false, !!filters?.mode?.strictContact);
-        if (sub) whereUser.id = { ...(whereUser.id || {}), [Op.in]: sub };
-      }
-
-      // address filter (weak/strong)
-      const addr = filters?.address || {};
-      if (addr.countries?.length || addr.regions?.length || addr.districts?.length || addr.localities?.length) {
-        const sub = ctrl.buildAddressUserIdSubquery(addr, !includeOutdated ? true : false, !!filters?.mode?.strictAddress);
-        if (sub) whereUser.id = { ...(whereUser.id || {}), [Op.in]: sub };
-      }
 
       // search by SearchUser.content (words; exact → AND; else OR)
       if (search?.value?.trim()) {
@@ -651,10 +657,10 @@ router.post(
         distinct: true,
       });
 
-      /*       console.log('whereUser', whereUser);
-            console.log('order', order);
-            console.log('includes', includes);
-            console.log('whereUser', whereUser); */
+      console.log('whereUser', whereUser);
+      /*    console.log('order', order);
+     console.log('includes', includes);
+     console.log('whereUser', whereUser); */
 
       // ---- page ----
       const users = await User.findAll({

@@ -1,3 +1,4 @@
+//src\app\pages\toponyms-lists\toponyms-list\toponyms-list.component.ts
 import {
   Component,
   DestroyRef,
@@ -46,9 +47,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
 
 import { BlurOnClickDirective } from '../../../directives/blur-on-click.directive';
 import { HasOpDirective } from '../../../directives/has-op.directive';
@@ -92,9 +91,7 @@ import { sanitizeText } from '../../../utils/sanitize-text';
     FormsModule,
     ReactiveFormsModule,
     MatMenuModule,
-    ConfirmDialogModule,
     ProgressSpinner,
-    ToastModule,
     AddressFilterComponent,
     UploadFileComponent,
     BlurOnClickDirective,
@@ -137,7 +134,7 @@ export class ToponymsListComponent {
 //TODO: не меняется число строк на странице при изменении pageSize
   // --- paging/sorting
   pageIndex = signal(0); // 0-based for MatPaginator
-  pageSize = 10;
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50, 100];
 
   sortBy = signal<
@@ -194,7 +191,7 @@ export class ToponymsListComponent {
     type: this.type(),
     filter: this.filterValue(),
     page: this.pageIndex(),
-    pageSize: this.pageSize,
+    pageSize: this.pageSize(),
     _tick: this.reloadTick(),
   }));
 
@@ -300,10 +297,10 @@ export class ToponymsListComponent {
 
   /** MatPaginator change handler: updates page index/size. */
   onChangedPage(e: PageEvent) {
-    if (e.pageSize !== this.pageSize) {
+    if (e.pageSize !== this.pageSize()) {
       // when page size changes, return to first page
-      this.pageSize = e.pageSize;
       this.pageIndex.set(0);
+      this.pageSize.set(e.pageSize);
     } else {
       this.pageIndex.set(e.pageIndex);
     }
@@ -487,7 +484,7 @@ export class ToponymsListComponent {
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
-        if (data.name) {
+        if (data?.refresh) {
           this.resetTable(op == 'view-edit' ? obj!.id : -1);
         }
       });

@@ -1,6 +1,10 @@
 import { Op, literal } from 'sequelize';
+import {
+  Region, District, Locality
+} from "../models/index.js";
 
 /** Pure: build search string from the hydrated user record */
+//TODO: add date in two formats: dd.mm.yyyy and mm/dd/yyyy
 export function createSearchString(u) {
   let s = [
     u.userName,
@@ -197,7 +201,7 @@ export function buildSearchContentWhere(value, exact) {
 }
 
 /** Build contact filter via subquery for strong/weak mode */
-export function buildContactUserIdSubquery(types, onlyActual, strong) {
+export function buildContactUserIdSubquery(types, includeOutdated, strong) {
   if (!types.length) return undefined;
   let list = '';
   for (let item of types) {
@@ -208,50 +212,104 @@ export function buildContactUserIdSubquery(types, onlyActual, strong) {
     // any of the types
     return literal(
       `(SELECT DISTINCT "userId" FROM "user-contacts"
-        WHERE ${onlyActual ? `"isRestricted" = false AND` : ''} type IN (${list}))`
+        WHERE ${!includeOutdated ? `"isRestricted" = false AND` : ''} type IN (${list}))`
     );
   }
   // strong: must have ALL distinct selected types
   return literal(
     `(SELECT DISTINCT "userId" FROM "user-contacts"
-      WHERE ${onlyActual ? `"isRestricted" = false AND` : ''} type IN (${list})
+      WHERE ${!includeOutdated ? `"isRestricted" = false AND` : ''} type IN (${list})
       GROUP BY "userId"
       HAVING COUNT(DISTINCT type) = ${types.length})`
   );
 }
 
-/** Build address filter via subquery (weak/strong) */
-export function buildAddressUserIdSubquery(addr, onlyActual, strong) {
+export async function buildAddressUserIdSubquery(addresses, includeOutdated, strictAddressMode) {
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  const getParentId = async (ToponymModel, id, parentKey) => {
+    const row = await ToponymModel.findOne({
+      where: { id },
+      attributes: [parentKey],
+      raw: true,
+    });
+    return row?.[parentKey] ?? null;
+  };
+
+  const dropParent = (parentType, parentId) => {
+    if (!parentId) return;
+    const arr = addresses[parentType] ?? [];
+    addresses[parentType] = arr.filter((i) => i !== parentId);
+  };
+
+  const idsToSqlList = (ids) =>
+    ids && ids.length ? `(${ids.map((id) => `'${id}'`).join(', ')})` : '';
+
+  const buildIdsList = async (
+    type,
+    ToponymModel,
+    parentKey,
+    parentType,
+  ) => {
+    const selected = addresses[type] ?? [];
+    if (!selected.length) return '';
+
+    for (const id of selected) {
+      const p1 = parentKey ? await getParentId(ToponymModel, id, parentKey) : null;
+      if (parentType) dropParent(parentType, p1);
+      if (type === 'localities') {
+        const p2 = p1 ? await getParentId(District, p1, 'regionId') : null;
+        dropParent('regions', p2);
+        const p3 = p2 ? await getParentId(Region, p2, 'countryId') : null;
+        dropParent('countries', p3);
+      } else if (type === 'districts') {
+        const p2 = p1 ? await getParentId(Region, p1, 'countryId') : null;
+        dropParent('countries', p2);
+      } else if (type === 'regions') {
+        dropParent('countries', p1);
+      }
+    }
+
+    return idsToSqlList(selected);
+  };
+
+  // ── Build lists ──────────────────────────────────────────────────────────────
+  const listOfLocalitiesIds = await buildIdsList('localities', Locality, 'districtId', 'districts');
+  const listOfDistrictsIds = await buildIdsList('districts', District, 'regionId', 'regions');
+  const listOfRegionsIds = await buildIdsList('regions', Region, 'countryId', 'countries');
+
+  const countriesAmount = addresses.countries.length;
+  const regionsAmount = addresses.regions?.length ?? 0;
+  const districtsAmount = addresses.districts?.length ?? 0;
+  const localitiesAmount = addresses.localities?.length ?? 0;
+
+  const listOfCountriesIds = idsToSqlList(addresses.countries);
+
+  // ── OR-where ───────────────────────────────────────────────
   const parts = [];
-  if (addr.countries?.length) parts.push(`"countryId" IN (${addr.countries.map(id => +id).join(',')})`);
-  if (addr.regions?.length) parts.push(`"regionId" IN (${addr.regions.map(id => +id).join(',')})`);
-  if (addr.districts?.length) parts.push(`"districtId" IN (${addr.districts.map(id => +id).join(',')})`);
-  if (addr.localities?.length) parts.push(`"localityId" IN (${addr.localities.map(id => +id).join(',')})`);
+  if (listOfCountriesIds) parts.push(`"countryId" IN ${listOfCountriesIds}`);
+  if (listOfRegionsIds) parts.push(`"regionId" IN ${listOfRegionsIds}`);
+  if (listOfDistrictsIds) parts.push(`"districtId" IN ${listOfDistrictsIds}`);
+  if (listOfLocalitiesIds) parts.push(`"localityId" IN ${listOfLocalitiesIds}`);
 
-  if (!parts.length) return undefined;
-  const whereCombo = parts.join(' OR ');
-  const restrict = onlyActual ? `"isRestricted" = false AND` : '';
+  const whereString = parts.join(' OR ');
+  const sub = (!strictAddressMode) ? literal(
+    `(SELECT DISTINCT "userId" FROM "user-addresses"
+            WHERE ${!includeOutdated ? '"isRestricted" = false AND' : ''} (${whereString}))`
+  ) : literal(
+    `(SELECT DISTINCT "userId" FROM "user-addresses"
+            WHERE ${!includeOutdated ? '"isRestricted" = false AND' : ''} (${whereString})
+            GROUP BY "userId"
+            HAVING
+            ${countriesAmount ? `COUNT(DISTINCT "countryId")=${countriesAmount}` : ''}
+            ${countriesAmount && (regionsAmount || districtsAmount || localitiesAmount) ? ' AND ' : ''}
+              ${regionsAmount ? `COUNT(DISTINCT "regionId")=${regionsAmount}` : ''}
+              ${regionsAmount && (districtsAmount || localitiesAmount) ? ' AND ' : ''}
+              ${districtsAmount ? `COUNT(DISTINCT "districtId")=${districtsAmount}` : ''}
+              ${districtsAmount && localitiesAmount ? ' AND ' : ''}
+              ${localitiesAmount ? `COUNT(DISTINCT "localityId")=${localitiesAmount}` : ''}
+          )`);
+  console.log('sub', sub);
+  return sub;
 
-  if (!strong) {
-    // any of the location levels
-    return literal(
-      `(SELECT DISTINCT "userId" FROM "user-addresses"
-        WHERE ${restrict} (${whereCombo}))`
-    );
-  }
-
-  // strong mode: require presence across each selected level (counts per column)
-  const counts = [];
-  if (addr.countries?.length) counts.push(`COUNT(DISTINCT "countryId") = ${addr.countries.length}`);
-  if (addr.regions?.length) counts.push(`COUNT(DISTINCT "regionId") = ${addr.regions.length}`);
-  if (addr.districts?.length) counts.push(`COUNT(DISTINCT "districtId") = ${addr.districts.length}`);
-  if (addr.localities?.length) counts.push(`COUNT(DISTINCT "localityId") = ${addr.localities.length}`);
-  const having = counts.join(' AND ') || '1=1';
-
-  return literal(
-    `(SELECT "userId" FROM "user-addresses"
-      WHERE ${restrict} (${whereCombo})
-      GROUP BY "userId"
-      HAVING ${having})`
-  );
 }

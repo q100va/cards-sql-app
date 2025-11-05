@@ -4,12 +4,17 @@ import { Directive, ElementRef, HostListener } from '@angular/core';
   selector: '[appBlurOnClick]'
 })
 export class BlurOnClickDirective {
+  constructor(private el: ElementRef<HTMLElement>) {}
 
-  constructor(private el: ElementRef) {}
-
-  @HostListener('click')
-  onClick(): void {
+  @HostListener('pointerup', ['$event'])
+  onPointerUp() {
     this.el.nativeElement.blur();
   }
 
+  @HostListener('click', ['$event'])
+  onClick(ev: MouseEvent) {
+    if (ev.detail > 0) {
+      this.el.nativeElement.blur();
+    }
+  }
 }

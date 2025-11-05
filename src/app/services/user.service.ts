@@ -8,7 +8,7 @@ import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 import {
-  ChangedData,
+  ChangingData,
   DeletingData,
   OutdatingData,
   RestoringData,
@@ -31,6 +31,7 @@ import {
   userSchema,
   usersSchema,
 } from '@shared/schemas/user.schema';
+import { TranslateService } from '@ngx-translate/core';
 
 function toIsoRange(dates: Date[] | undefined): [string, string] | undefined {
   if (!dates || dates.length !== 2) return undefined;
@@ -46,7 +47,7 @@ function omitEmpty<T extends Record<string, any>>(obj?: T): T | undefined {
     const isEmptyArr = Array.isArray(v) && v.length === 0;
     const isEmptyStr = typeof v === 'string' && v.trim() === '';
     //const isFalsyButAllowed = v === false || v === 0;
-    if (v == null || isEmptyArr || isEmptyStr) continue;
+    if (v == null || isEmptyArr || isEmptyStr) continue; // || v == undefined
     out[k] = v;
   }
   return Object.keys(out).length ? out : undefined;
@@ -60,7 +61,10 @@ export class UserService {
   private readonly BASE_URL = `${environment.apiUrl}/api/users`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(private msgWrapper: MessageWrapperService) {}
+  constructor(
+    private msgWrapper: MessageWrapperService,
+    private translateService: TranslateService
+  ) {}
 
   checkUserName(
     userName: string,
@@ -129,7 +133,7 @@ export class UserService {
   saveUpdatedUser(
     id: number,
     updatedUserData: {
-      changes: ChangedData;
+      changes: ChangingData;
       restoringData: RestoringData;
       outdatingData: OutdatingData;
       deletingData: DeletingData;
@@ -149,10 +153,22 @@ export class UserService {
       );
   }
 
+  formCommentFilterValue(commentFilter: string[]): boolean | undefined {
+    console.log("this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')", this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT'));
+
+    if (commentFilter.length === 1) {
+     return (
+        commentFilter[0] ==
+        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
+      );
+    }
+    return undefined;
+  }
+
   getListOfUsers(
     allFilterParameters: {
       viewOption: string;
-      notOnlyActual: boolean;
+      includeOutdated: boolean;
       searchValue: string;
       exactMatch: boolean;
       sortParameters: {
@@ -185,12 +201,12 @@ export class UserService {
       }),
       view: omitEmpty({
         option: p.viewOption,
-        includeOutdated: p.notOnlyActual,
+        includeOutdated: p.includeOutdated,
       }),
       filters: omitEmpty({
         general: omitEmpty({
           roles: p.filter.roles.map((r) => r.id),
-          comment: p.filter.comment,
+          comment: this.formCommentFilterValue(p.filter.comment),
           dateBeginningRange: toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: toIsoRange(p.filter.dateRestrictionRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
@@ -207,6 +223,7 @@ export class UserService {
         }),
       }),
     };
+    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-users`, dto)
       .pipe(validateResponse(usersSchema), catchError(this.handleError));
