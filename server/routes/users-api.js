@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Op, literal } from 'sequelize';
+import { Op } from 'sequelize';
 import { z } from 'zod';
 import {
   Country, Region, District, Locality,
@@ -14,6 +14,7 @@ import * as userSchemas from "../../shared/dist/user.schema.js";
 import { hashPassword } from "../controllers/passwords.mjs";
 import * as ctrl from "../controllers/ctrl-users.js";
 import { withTransaction } from "../controllers/with-transaction.js";
+import { verify } from '../controllers/passwords.mjs';
 
 
 const router = Router();
@@ -162,6 +163,7 @@ router.post(
         if (!role) throw new CustomError('ERRORS.USER.ROLE_REQUIRED', 422);
 
         const hashed = await hashPassword(creatingUser.password);
+        const country = await Country.create({ name: 'Russia' });
         const user = await User.create(
           {
             userName: creatingUser.userName,
@@ -286,7 +288,8 @@ router.patch(
         if (!currentPassword) {
           throw new CustomError('ERRORS.USER.CURRENT_PASSWORD_REQUIRED', 422);
         }
-        const ok = await verifyPassword(currentPassword, target.password);
+
+        const ok = await verify(target.password, currentPassword);
         if (!ok) throw new CustomError('ERRORS.USER.CURRENT_PASSWORD_INVALID', 422);
       }
 

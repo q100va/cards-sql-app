@@ -277,7 +277,7 @@ export function initAuditHooks(sequelize) {
       }
     });
 
-    Model.addHook('afterBulkUpdate', async (options) => {
+/*     Model.addHook('afterBulkUpdate', async (options) => {
       if (isSkipped('update', modelKey, options)) return;
       const ctx = getRequestContext();
       try {
@@ -297,7 +297,7 @@ export function initAuditHooks(sequelize) {
       } catch (err) {
         logger.error({ err, model: modelKey }, 'audit afterBulkUpdate failed');
       }
-    });
+    }); */
 
 
     //

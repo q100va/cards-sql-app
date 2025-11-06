@@ -3,44 +3,104 @@ import {
   Region, District, Locality
 } from "../models/index.js";
 
-/** Pure: build search string from the hydrated user record */
-//TODO: add date in two formats: dd.mm.yyyy and mm/dd/yyyy
+
+// --- helpers ---------------------------------------------
+
+/** dd.MM.yyyy (from parts) */
+function fmtDMYparts(y, m, d) {
+  const dd = String(d).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${dd}.${mm}.${y}`;
+}
+
+/** MM/dd/yyyy (from parts) */
+function fmtMDYparts(y, m, d) {
+  const dd = String(d).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${mm}/${dd}/${y}`;
+}
+
+/** Returns ISO (YYYY-MM-DD), dd.MM.yyyy, MM/dd/yyyy — TZ-safe */
+function dateVariants(d) {
+  if (!d) return [];
+
+  // Case 1: plain ISO date string -> parse manually (no TZ)
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const [y, m, day] = d.split('-').map(Number);
+    const iso = `${String(y)}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return [iso, fmtDMYparts(y, m, day), fmtMDYparts(y, m, day)];
+  }
+
+  // Case 2: Date / other string -> use UTC components to avoid local shift
+  const dt = d instanceof Date ? d : new Date(d);
+  if (isNaN(+dt)) return [];
+
+  const y = dt.getUTCFullYear();
+  const m = dt.getUTCMonth() + 1;
+  const day = dt.getUTCDate();
+
+  const iso = `${String(y)}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return [iso, fmtDMYparts(y, m, day), fmtMDYparts(y, m, day)];
+}
+
+
+/** Safe string token (skips empty/null/undefined) */
+function t(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v).trim();
+  return s ? s : '';
+}
+
+// --- main -------------------------------------------------
+
+/**
+ * Builds a flat searchable string for a user.
+ * Includes: identity, role, status, dates (ISO + dd.MM.yyyy + MM/dd/yyyy),
+ * contacts (only non-restricted), first non-restricted address.
+ */
 export function createSearchString(u) {
-  let s = [
-    u.userName,
-    u?.role?.name,
-    u.firstName,
-    u.patronymic || '',
-    u.lastName,
-    u.comment || '',
-    u.isRestricted ? 'заблокирован с blocked from' : 'активен active',
-    u.dateOfRestriction ? safeDate(u.dateOfRestriction) : '',
-    u.causeOfRestriction || '',
-    safeDate(u.dateOfStart),
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const tokens = [];
 
-  // Contacts (not restricted)
-  for (const c of (u.contacts ?? [])) {
-    if (!c.isRestricted && c.content) s += ` ${c.content}`;
+  // basic fields
+  tokens.push(
+    t(u?.userName),
+    t(u?.role?.name),
+    t(u?.firstName),
+    t(u?.patronymic),
+    t(u?.lastName),
+    t(u?.comment)
+  );
+
+  // status (both ru/en keywords as before)
+  tokens.push(u?.isRestricted ? 'заблокирован blocked from' : 'активен active');
+
+  // restriction date
+  tokens.push(...dateVariants(u?.dateOfRestriction));
+
+  // cause of restriction
+  tokens.push(t(u?.causeOfRestriction));
+
+  // start date
+  tokens.push(...dateVariants(u?.dateOfStart));
+
+  // contacts (only not restricted)
+  for (const c of (u?.contacts ?? [])) {
+    if (!c?.isRestricted && c?.content) tokens.push(t(c.content));
   }
 
-  // First non-restricted address
-  const addr = (u.addresses ?? []).find((a) => !a.isRestricted);
+  // first non-restricted address
+  const addr = (u?.addresses ?? []).find((a) => !a?.isRestricted);
   if (addr) {
-    s += [
-      addr.country?.name || '',
-      addr.region?.name || '',
-      addr.district?.name || '',
-      addr.locality?.name || '',
-    ]
-      .filter(Boolean)
-      .map((x) => ` ${x}`)
-      .join('');
+    tokens.push(
+      t(addr.country?.name),
+      t(addr.region?.name ?? addr.region?.shortName),
+      t(addr.district?.name ?? addr.district?.shortName),
+      t(addr.locality?.name ?? addr.locality?.shortName)
+    );
   }
 
-  return s.trim();
+  // collapse consecutive spaces and trim
+  return tokens.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /** Pure: build search string from the hydrated user record for outdated data*/
@@ -72,14 +132,6 @@ export function createOutdatedSearchString(u) {
     .join(' ');
   s += outdatedNames;
   return s.trim();
-}
-
-//TODO: Add date in format dd.mm.yyyy
-/** ISOString */
-function safeDate(d) {
-  if (!d) return '';
-  const dt = d instanceof Date ? d : new Date(d);
-  return isNaN(+dt) ? '' : dt.toISOString().slice(0, 10);
 }
 
 /** Non nullable data*/
