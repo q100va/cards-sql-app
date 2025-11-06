@@ -121,7 +121,7 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     const { accessToken, refreshToken } = await mintTokenPair(user, { ua, ip: req.ip });
     setRefreshCookie(res, refreshToken);
 
-    console.log('roleId', user.role.id)
+    console.log('roleId', user.roleId)
 
     return res.status(200).json({
       data: {

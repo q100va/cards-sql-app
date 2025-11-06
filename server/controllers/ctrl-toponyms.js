@@ -507,3 +507,32 @@ export const MAP_POPULATE = {
     },
   },
 };
+
+/** After a toponym is blocked, freeze all restricted addresses that reference it */
+export async function markAddressesUnrecoverable(
+  type,
+  toponymId,
+  t
+) {
+  const byType = {
+    country:  'countryId',
+    region:   'regionId',
+    district: 'districtId',
+    locality: 'localityId',
+  };
+
+  const fk = byType[type];
+  if (!fk) return;
+
+  await UserAddress.update(
+    { isRecoverable: false },
+    {
+      transaction: t,
+      where: {
+        isRestricted: true,
+        [fk]: toponymId,
+      },
+      individualHooks: true, // if you audit address updates
+    }
+  );
+}

@@ -41,17 +41,35 @@
     "RU": "Русский"
   },
   "PRIME_CONFIRM": {
-    "WARNING_HEADER": "Предупреждение",
-    "LEAVE_WITHOUT_SAVE_MESSAGE": "Вы уверены, что хотите выйти без сохранения?",
-    "DELETE_ITEM_MESSAGE": "Удалить «{{name}}»?<br>Данные невозможно будет восстановить.",
+    "WARNING_HEADER": "Требуется подтверждение",
     "ACCEPT": "Да",
-    "REJECT": "Нет"
+    "REJECT": "Нет",
+    "LEAVE_WITHOUT_SAVE_MESSAGE": "Вы уверены, что хотите выйти без сохранения?",
+    "DELETE_ITEM_MESSAGE": "Удалить «{{name}}»?<br />Данные невозможно будет восстановить.",
+    "UNBLOCK_ITEM_MESSAGE": "Разблокировать «{{name}}»?",
+
+    "SAVE_WITH_DUPLICATES": "Обнаружены дубли. Вы уверены, что хотите сохранить введенные данные?",
+    "NAMES_DUPLICATE": "Введенные имя и фамилия совпадают с данными пользователя {{user}}",
+    "NAMES_DUPLICATES": "Введенные имя и фамилия совпадают с данными пользователей:<br />{{users}}",
+    "CONTACT_DUPLICATE": "Введенный {{type}} {{content}} совпадает с данными пользователя {{user}}",
+    "CONTACT_DUPLICATES": "Введенный {{type}} {{content}} совпадает с данными пользователей:<br />{{users}}",
+    "OUTDATED_DUPLICATES": "В введенных вами данных:<br /> {{type}} '{{value}}'<br />есть совпадения с неактуальными.<br />Вы уверены, что указали верную информацию?",
+    "SAVE_OR_DELETE_OLD_DATA": "Вы изменили {{type}}.<br />Сохранить прежнее значение '{{oldValue}}' как неактуальное?<br />В противном случае оно будет удалено как ошибочное без возможности восстановления.",
+    "RESTORE_OUTDATED_DATA": "Восстановить эти данные как актуальные?",
+    "DELETE_OUTDATED_DATA": "Удалить эти данные как ошибочные?<br />После сохранения изменений это действие нельзя будет отменить.",
+    "DATA_TYPES": {
+      "ADDRESS": "адрес",
+      "NAMES": "ФИО",
+      "USER_NAME": "имя пользователя",
+      "CONTACTS": "контакт(ы)"
+    }
   },
   "TOAST": {
     "INFO": "Информация",
     "WARN": "Предупреждение",
     "ERROR": "Ошибка",
-    "SUCCESS": "Выполнено"
+    "SUCCESS": "Выполнено",
+    "DELETE_DUPLICATES": "Вы указали одинаковые значения: \n{{duplicates}}. \n\n Удалите, пожалуйста, дубли."
   },
   "ROLE": {
     "CREATED": "Роль «{{name}}» создана",
@@ -119,12 +137,12 @@
     "TABLE_TITLE_LOCALITIES": "Населенные пункты",
     "ADD_TOPONYM": "Добавить топоним",
     "DOWNLOAD_TEMPLATE": "Скачать шаблон",
-    "TABLE_SEARCH_INPUT": "Поиск (введите любое значение, допустимое в таблице)",
     "TABLE_EMPTY": "Пока не создано ни одного топонима",
     "SEARCH_LABEL": "Поиск (введите любое значение, допустимое в таблице)",
     "SEARCH_PLACEHOLDER": "{{placeholder}}",
     "APPLIED_FILTERS": "Примененные фильтры: {{value}}",
     "EXACT_MATCH_HINT": "искомые значения должны присутствовать одновременно",
+    "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу \"{{query}}\"",
     "COLUMNS": {
       "NAME": "Название",
       "SHORT_NAME": "Краткое название",
@@ -148,13 +166,172 @@
       "DELETE_TOPONYM": "удалить",
       "DELETE_REASON_CREATED_BY_MISTAKE": "ошибочно создан",
       "DELETE_REASON_ABOLISHED_BY_LAW": "законодательно упразднен"
-    },
-    "EMPTY": {
-      "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу \"{{query}}\""
     }
   },
   "FILE": {
     "UPLOAD_LIST": "Загрузить списком"
+  },
+  "OUTDATED_DATA_MENU": {
+    "RESTORE_DATA": "восстановить как актуальное",
+    "DELETE_DATA": "удалить как ошибочное"
+  },
+  "USER": {
+    "CREATED": "Пользователь «{{userName}}» создан",
+    "UPDATED": "Пользователь «{{userName}}» обновлен",
+    "DELETED": "Пользователь удален",
+    "ALREADY_EXISTS": "Пользователь с таким userName уже существует",
+    "HAS_DEPENDENCIES": "Пользователя нельзя удалить: связанных сущностей — {{count}}",
+    "HAS_DATA_DUPLICATES": "Задублированы данные пользователя",
+    "PASSWORD_CHANGED": "Пароль изменён.",
+    "BLOCKED": "Пользователь заблокирован",
+    "UNBLOCKED": "Пользователь разблокирован",
+    "TABLE_TITLE": "Пользователи",
+    "ADD_USER": "Добавить пользователя",
+    "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
+    "BLOCKED_FROM": "заблокирован с ",
+    "ACTIVE": "активен",
+
+    "VIEW_OPTIONS": {
+      "ALL_USERS": "Все пользователи",
+      "ONLY_ACTIVE": "Только активные",
+      "ONLY_BLOCKED": "Только заблокированные"
+    },
+
+    "COLUMNS": {
+      "USER_NAME": "Имя пользователя",
+      "ROLE_NAME": "Роль",
+      "FULL_NAME": "ФИО",
+      "CONTACTS": "Контакты",
+      "ADDRESS": "Адрес",
+      "START_DATE": "Дата\nприсоединения",
+      "COMMENT": "Комментарий",
+      "STATUS": "Статус",
+      "ACTIONS": "Действия"
+    },
+
+    "CONTACTS": {
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_LABEL": "Телеграм",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Другой контакт"
+    },
+
+    "MENU": {
+      "OPEN_LIST_TITLE": "Открыть перечень",
+      "OPEN_CARD": "открыть карточку",
+      "OPEN_ORDERS": "открыть список заявок",
+      "OPEN_SUBSCRIBERS": "открыть список подписчиков",
+      "OPEN_VOLUNTEERS": "открыть список волонтеров",
+      "BLOCK_USER": "заблокировать",
+      "UNBLOCK_USER": "разблокировать",
+      "DELETE_USER": "удалить"
+    },
+    "CARD": {
+      "CREATION_TITLE": "Новый пользователь",
+      "VIEW_TITLE": "Пользователь",
+
+      "MAIN_DATA_LABEL": "Основные сведения",
+      "CONTACTS_LABEL": "Контактные данные",
+      "OUTDATED_DATA_LABEL": "Неактуальные данные",
+
+      "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
+      "CAUSE_OF_BLOCK_LABEL": "Причина",
+      "CAUSE_OF_BLOCK_PLACEHOLDER": "прекращение волонтерства",
+      "DELETE_BUTTON_TITLE": "Удалить",
+      "EXTRA_CONTACT_BUTTON": "Дополнительный контакт",
+      "OUTDATED_NAMES_TITLE": "Прежние ФИО:",
+      "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
+      "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
+      "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
+
+      "USER_NAME_LABEL": "Имя пользователя*",
+      "ROLE_LABEL": "Роль*",
+      "PASSWORD_LABEL": "Пароль*",
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия*",
+      "COMMENT_LABEL": "Комментарий",
+      "BLOCKED_LABEL": "Заблокирован",
+      "EMAIL_LABEL": "Email*",
+      "PHONE_NUMBER_LABEL": "Номер телефона*",
+      "TELEGRAM_ID_LABEL": "Телеграм ID*",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона*",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "USER_NAME_PLACEHOLDER": "a.petrova",
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше",
+
+      "CHANGE_PASSWORD_TITLE": "Изменить пароль",
+      "NEW_PASSWORD_LABEL": "Новый пароль",
+      "CONFIRM_PASSWORD_LABEL": "Подтвердите пароль",
+      "SAVE_BUTTON": "Сохранить"
+    },
+
+    "BLOCKING_TITLE": "Укажите причину блокировки",
+    "FULL_CAUSE_OF_BLOCK_LABEL": "Причина блокировки",
+    "BLOCK_BUTTON": "Заблокировать",
+    "CANCEL_BUTTON": "Отмена"
+  },
+  "BASE_LIST": {
+    "DOWNLOAD_TABLE": "Скачать таблицу",
+    "SEARCH_LABEL": "Поиск (введите любое значение, допустимое в таблице)",
+    "APPLIED_FILTERS": "Примененные фильтры: {{value}}",
+    "EXACT_MATCH_HINT": "искомые значения должны присутствовать одновременно",
+    "INCLUDE_OUTDATED": "включать неактуальные данные: прежние адреса, телефоны и т.п.",
+    "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу",
+    "SET_FILTER": "Настроить фильтр",
+    "RESET_FILTER": "Сбросить фильтр",
+    "SET_COLUMNS": "Настроить отображение колонок",
+    "START_LABEL": "нач.",
+    "BLOCK_LABEL": "блок.",
+    "OUTDATED_DATA": "прежние значения:"
+  },
+  "NAV": {
+    "COLUMNS_HEADER": "Настройте отображение колонок",
+    "FILTER_HEADER": "Настройте фильтр",
+    "FILTER": {
+      "ADDR_LABEL": "адрес",
+      "STRONG_FILTER": "все выбранные значения должны присутствовать одновременно",
+      "ROLE_LABEL": "роль",
+      "CHOOSE_VALUE_LABEL": "Выберите значение(я)",
+      "START_DATE_LABEL": "дата присоединения",
+      "CHOOSE_RANGE_LABEL": "Введите диапазон",
+      "DATE_PLACEHOLDER": "дд.мм.гггг",
+      "BLOCK_DATE_LABEL": "дата блокировки",
+      "BLOCK_COMMENT": "результат поиска будет иметь смысл, если выбраны/n 'Все' или 'Только заблокированные'",
+      "CONTACT_TYPE_LABEL": "тип контакта",
+      "COMMENT_LABEL": "комментарий",
+      "WITH_COMMENT_OPT": "с комментарием",
+      "WITHOUT_COMMENT_OPT": "без комментария",
+      "EMAIL_OPT": "Email",
+      "PHONE_NUMBER_OPT": "Номер телефона",
+      "TELEGRAM_ID_OPT": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_OPT": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_OPT": "Телеграм nickname",
+      "WHATSAPP_OPT": "WhatsApp",
+      "VKONTAKTE_OPT": "Вконтакте",
+      "INSTAGRAM_OPT": "Instagram",
+      "FACEBOOK_OPT": "Facebook",
+      "OTHER_CONTACT_OPT": "Другой контакт"
+    }
   },
   "ERRORS": {
     "VALIDATION": "Ошибка валидации",
@@ -205,18 +382,41 @@
       "BULK_PARENT_NOT_FOUND": "Tопоним(ы): {{parents}} не найден(ы). Проверьте правильность написания.",
       "INVALID_TYPE": "Неверный или отсутствующий тип топонима: {{name}}"
     },
-    "FILE":{
+    "FILE": {
       "EMPTY": "Файл не содержит данных",
       "INVALID_STRUCTURE": "В файле отсутствуют обязательные колонки",
       "INVALID_FORMAT_XLSX": "Неверный формат файла. Загрузите Excel-файл (.xlsx)",
       "VALIDATION": "Ошибка валидации: ряд {{row}}, колонка '{{column}}', ошибка '{{error}}'",
       "NOT_UPLOADED": "Невозможно загрузить выбранный файл",
       "NOT_CHOSEN": "Файл не выбран"
+    },
+    "USER": {
+      "NOT_FOUND": "Пользователь не найден",
+      "NAME_NOT_CHECKED": "Произошла ошибка при проверке имени пользователя",
+      "DUPLICATES_NOT_CHECKED": "Произошла ошибка при проверке данных пользователя",
+      "NOT_CREATED": "Произошла ошибка. Пользователь не создан.",
+      "ROLE_REQUIRED": "Пользователю не назначена роль. Аккаунт не создан",
+      "NOT_UPDATED": "Произошла ошибка. Пользователь не обновлен.",
+      "ADDRESS_NOT_RESTORED": "Невозможно восстановить адрес. Пользователь не обновлен.",
+      "LIST_FAILED": "Произошла ошибка при получении списка пользователей",
+      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления пользователя",
+      "NOT_DELETED": "Произошла ошибка при удалении пользователя",
+      "CURRENT_PASSWORD_REQUIRED": "Для смены пароля требуется текущий пароль.",
+      "CURRENT_PASSWORD_INVALID": "Введён неверный текущий пароль.",
+      "PASSWORD_NOT_CHANGED": "Не удалось изменить пароль. Повторите попытку.",
+      "NOT_BLOCKED": "Произошла ошибка. Пользователь не заблокирован.",
+      "NOT_UNBLOCKED": "Произошла ошибка. Пользователь не разблокирован."
     }
   },
   "FORM_VALIDATION": {
     "INVALID_FORM": "Форма невалидна",
-    "REQUIRED": "Поле не может быть пустым!",
+    "INVALID_FORMAT": "Неверный формат",
+    "REQUIRED": "Поле не может быть пустым",
+    "TOO_LONG_500": "Максимум 500 символов",
+    "TOO_LONG_50": "Максимум 50 символов",
+    "TOO_LONG_20": "Максимум 20 символов",
+    "TOO_SHORT_7": "Минимум 5 символов",
+
     "ROLE": {
       "NAME_MIN": "Имя должно содержать минимум 2 символа",
       "NAME_MAX": "Имя не должно быть длиннее 50 символов",
@@ -225,6 +425,16 @@
     },
     "TOPONYM": {
       "NAME_MAX": "Имя не должно быть длиннее 200 символов"
+    },
+    "CONTACT": {
+      "MIN_CONTACT": "Требуется хотя бы один контакт",
+      "INVALID_CONTACT": "Неверный формат"
+    },
+    "USER": {
+      "MIN_PASSWORD": "Минимум 8 символов",
+      "LETTER_PASSWORD": "Только латиница (мин. 1)",
+      "DIGIT_PASSWORD": "Минимум 1 цифра",
+      "MISMATCH_PASSWORDS": "Пароли не совпадают"
     }
   },
   "INTERNAL_VALIDATION": {
@@ -277,6 +487,7 @@
     },
     "DOWNLOAD_TEMPLATE": {
       "NAME": "скачать шаблон"
-    }
+    },
+    "DOWNLOAD_TABLE": { "NAME": "скачать список" }
   }
 }

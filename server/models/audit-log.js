@@ -7,7 +7,7 @@ export default function AuditLogModel(sequelize) {
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
     action: { type: DataTypes.ENUM('create', 'update', 'delete', 'auth'), allowNull: false },
     model: { type: DataTypes.STRING(64), allowNull: false },
-    entityId: { type: DataTypes.STRING(64), allowNull: false },
+    entityId: { type: DataTypes.STRING(64), allowNull: true },
     diff: { type: DataTypes.JSONB, allowNull: true }, // { changed: { field: [before, after] } }
     actorUserId: { type: DataTypes.INTEGER, allowNull: true },
     correlationId: { type: DataTypes.STRING(128), allowNull: true },

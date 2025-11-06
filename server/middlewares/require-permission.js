@@ -15,6 +15,7 @@ export function requireAny(...opCodes) {
   const codes = [...new Set(opCodes)];
   return async (req, _res, next) => {
     try {
+      //console.log('requireAny: req', req);
       const roleId = req.user?.roleId;
       if (!roleId) return next(unauth());
 
@@ -35,8 +36,10 @@ export function requireAll(...opCodes) {
   const codes = [...new Set(opCodes)];
   return async (req, _res, next) => {
     try {
+     // console.log('requireAny: req', req);
+     // console.log('requireAll: user', req.user);
       const roleId = req.user?.roleId;
-      console.log('roleId', roleId);
+     // console.log('requireAll: roleId', roleId);
       if (!roleId) return next(unauth());
 
       const rows = await RolePermission.findAll({

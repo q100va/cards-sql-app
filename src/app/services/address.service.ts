@@ -5,6 +5,7 @@ import {
 } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import {
   Toponym,
@@ -12,7 +13,6 @@ import {
   AddressFilter,
   ToponymType,
 } from '../interfaces/toponym';
-import { catchError } from 'rxjs/operators';
 
 import {
   validateNoSchemaResponse,

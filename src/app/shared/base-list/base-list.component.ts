@@ -1,123 +1,128 @@
+// src/app/shared/base-list/base-list.component.ts
 import {
   Component,
-  Injector,
-  OnInit,
   ViewChild,
   computed,
-  effect,
   inject,
   input,
   output,
   signal,
+  DestroyRef,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-//import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatSidenavModule } from '@angular/material/sidenav';
-//import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
 
-//import { CreateUserDialogComponent } from '../../shared/dialogs/create-user-dialog/create-user-dialog.component';
+import { ProgressSpinner } from 'primeng/progressspinner';
+
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { DateUtilsService } from '../../services/date-utils.service';
+
 import { TableSettingsComponent } from '../table-settings/table-settings.component';
 import { TableFilterComponent } from '../table-filter/table-filter.component';
-import { DatePipe } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
-import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
-//import { UserColumnsComponent } from '../../shared/user-columns/user-columns.component';
+
 import {
   DefaultAddressParams,
   AddressFilter,
   typedKeys,
 } from '../../interfaces/toponym';
-import { GeneralFilter } from '../../interfaces/filter';
-
+import {
+  ColumnDefinition,
+  FilterComponentSource,
+  GeneralFilter,
+  TableParams,
+  ViewOption,
+} from '../../interfaces/base-list';
+import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
 import { HasOpDirective } from '../../directives/has-op.directive';
+
+import {
+  PERMISSIONS_COMPONENT_REGISTRY,
+  PermissionSet,
+} from './base-list-component-registry';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-base-list',
   imports: [
+    FormsModule,
+    ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    //MatListModule,
     MatGridListModule,
     MatIconModule,
-    ToastModule,
     MatSidenavModule,
-    FormsModule,
     MatBadgeModule,
     MatButtonToggleModule,
-    ReactiveFormsModule,
-    //MatMenuModule,
+    MatCheckboxModule,
+    ProgressSpinner,
     TableSettingsComponent,
     TableFilterComponent,
-    ConfirmDialogModule,
-    MatCheckboxModule,
     BlurOnClickDirective,
-    //  UserColumnsComponent
     HasOpDirective,
+    TranslateModule,
   ],
-  providers: [],
   templateUrl: './base-list.component.html',
   styleUrl: './base-list.component.css',
 })
 export class BaseListComponent {
-  private route = inject(ActivatedRoute);
-  private injector = inject(Injector);
+  // DI
+  private readonly route = inject(ActivatedRoute);
+  private readonly translate = inject(TranslateService);
+  private readonly dateUtils = inject(DateUtilsService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly dialog = inject(MatDialog);
 
   @ViewChild(TableFilterComponent) tableFilterComponent!: TableFilterComponent;
 
-  implicitlyDisplayedColumns = input.required<
-    {
-      id: number;
-      columnName: string;
-      columnFullName: string;
-      isUnchangeable: boolean;
-    }[]
-  >();
+  // Inputs
+  params = input.required<{
+    columns: ColumnDefinition[];
+    viewOptions: ViewOption[];
+    componentType: FilterComponentSource;
+    tableParams: TableParams;
+  }>();
+  showSpinner = input(true);
 
-  componentType = 'user';
-
+  // Outputs
   selectedColumns = output<string[]>();
-  onAddUserWasClicked = output<void>();
+  addWasClicked = output<void>();
+  allFilterParametersChange = output<{
+    viewOption: string;
+    searchValue: string;
+    includeOutdated: boolean;
+    exactMatch: boolean;
+    filter: GeneralFilter;
+    addressFilter: AddressFilter;
+    strongAddressFilter: boolean;
+    strongContactFilter: boolean;
+  }>();
+  defaultAddressFilterValue = output<AddressFilter>();
 
-  settingsBadgeValue: number = 0;
-  filterBadgeValue: number = 0;
-
-  viewOptions = [
-    {
-      id: 'all',
-      name: 'Все пользователи',
-      initiallySelected: false,
-    },
-    {
-      id: 'only-active',
-      name: 'Только активные',
-      initiallySelected: true,
-    },
-    {
-      id: 'only-blocked',
-      name: 'Только заблокированные',
-      initiallySelected: false,
-    },
-  ];
-
+  // UI state
+  settingsBadgeValue = 0;
+  filterBadgeValue = 0;
   avoidDoubleRequest = false;
 
+  // Permissions
+  permissions!: PermissionSet;
+
+  // Filters state (signals)
   selectedViewOptionId = signal<string>('only-active');
-  notOnlyActual = signal<boolean>(false);
+  includeOutdated = signal<boolean>(false);
   exactMatch = signal<boolean>(false);
   searchValue = signal<string>('');
   inputValue = '';
@@ -141,181 +146,154 @@ export class BaseListComponent {
   strongAddressFilter = signal<boolean>(false);
   strongContactFilter = signal<boolean>(false);
 
-  allFilterParameters = computed(() => {
-    //console.log('allFilterParameters');
-    // //console.log(this.strongContactFilter());
-    //console.log('this.addressFilterValue()');
-    //console.log(this.addressFilterValue());
-    return {
-      viewOption: this.selectedViewOptionId(),
-      searchValue: this.searchValue(),
-      notOnlyActual: this.notOnlyActual(),
-      exactMatch: this.exactMatch(),
-      filter: this.filterValue(),
-      addressFilter: this.addressFilterValue(),
-      strongAddressFilter: this.strongAddressFilter(),
-      strongContactFilter: this.strongContactFilter(),
-    };
-  });
+  // Derived DTO for API
+  allFilterParameters = computed(() => ({
+    viewOption: this.selectedViewOptionId(),
+    searchValue: this.searchValue(),
+    includeOutdated: this.includeOutdated(),
+    exactMatch: this.exactMatch(),
+    filter: this.filterValue(),
+    addressFilter: this.addressFilterValue(),
+    strongAddressFilter: this.strongAddressFilter(),
+    strongContactFilter: this.strongContactFilter(),
+  }));
 
-  allFilterParametersChange = output<{
-    viewOption: string;
-    searchValue: string;
-    notOnlyActual: boolean;
-    exactMatch: boolean;
-    filter: GeneralFilter;
-    addressFilter: AddressFilter;
-    strongAddressFilter: boolean;
-    strongContactFilter: boolean;
-  }>();
-
+  // Human-readable summary for UI
   filterString = computed(() => {
-    // //console.log('filterString computed');
-    let filterString = '';
-    let viewOption = this.viewOptions.find(
-      // (item) => item.id == this.selectedViewOptionId()
-      (item) => item.id == this.allFilterParameters().viewOption
-    )?.name;
-    filterString = filterString + viewOption + ', ';
-    filterString =
-      filterString +
-      (this.allFilterParameters().searchValue
-        ? this.allFilterParameters().searchValue + ', '
-        : '');
-    let filterData: GeneralFilter = this.allFilterParameters().filter;
+    const ap = this.allFilterParameters();
 
-    for (let key of typedKeys(filterData)) {
-      const value = filterData[key];
-      if (value.length > 0) {
-        if (key === 'dateBeginningRange' || key === 'dateRestrictionRange') {
-          const label = key === 'dateBeginningRange' ? 'нач.' : 'блок.';
-          filterString +=
-            label +
-            ': ' +
-            this.transformDate((value as Date[])[0]) +
-            '-' +
-            this.transformDate((value as Date[])[1]) +
-            ', ';
+    const pieces: string[] = [];
+
+    // View option label
+    const vo = this.params().viewOptions.find(
+      (v) => v.id === ap.viewOption
+    )?.name;
+    if (vo) pieces.push(this.translate.instant(vo));
+
+    if (ap.searchValue) pieces.push(ap.searchValue);
+
+    // GeneralFilter
+    const gf = ap.filter;
+    for (const key of typedKeys(gf)) {
+      const value = gf[key];
+      if (!value || value.length === 0) continue;
+
+      if (key === 'dateBeginningRange' || key === 'dateRestrictionRange') {
+        const label =
+          key === 'dateBeginningRange'
+            ? this.translate.instant('BASE_LIST.START_LABEL')
+            : this.translate.instant('BASE_LIST.BLOCK_LABEL');
+        const [from, to] = value as Date[];
+        pieces.push(
+          `${label}: ${this.dateUtils.transformDate(
+            from
+          )}-${this.dateUtils.transformDate(to)}`
+        );
+        continue;
+      }
+
+      for (const item of value) {
+        if (key === 'contactTypes') {
+          const lab = (item as { type: string; label: string }).label;
+          pieces.push(this.translate.instant(lab));
+        } else if (key === 'roles') {
+          pieces.push((item as { id: number; name: string }).name);
         } else {
-          for (let item of value) {
-            if (key === 'contactTypes') {
-              filterString += (item as { label: string }).label + ', ';
-            } else {
-              filterString += item + ', ';
-            }
-          }
+          pieces.push(String(item));
         }
       }
     }
 
-    filterString = filterString.slice(0, -2);
+    // Address as a single string
+    if (this.addressStringValue()) pieces.push(this.addressStringValue());
 
-    let result = this.addressStringValue()
-      ? filterString + ', ' + this.addressStringValue()
-      : filterString;
-    //this.getUsers();
-    this.allFilterParametersChange.emit(this.allFilterParameters());
-    return result;
+    // Emit snapshot for parent listeners
+    this.allFilterParametersChange.emit(ap);
+
+    return pieces.join(', ');
   });
 
-  defaultAddressParams: DefaultAddressParams = {
-    localityId: null,
-    districtId: null,
-    regionId: null,
-    countryId: null,
-  };
+  defaultAddressParams!: DefaultAddressParams;
 
   constructor() {
-    this.route.queryParams.subscribe((params) => {
-      //console.log('this.route.queryParams.subscribe((params)', params)
-      this.defaultAddressParams.localityId = params['localityId']
-        ? +params['localityId']
-        : this.defaultAddressParams.localityId;
-      this.defaultAddressParams.districtId = params['districtId']
-        ? +params['districtId']
-        : this.defaultAddressParams.districtId;
-      this.defaultAddressParams.regionId = params['regionId']
-        ? +params['regionId']
-        : this.defaultAddressParams.regionId;
-      this.defaultAddressParams.countryId = params['countryId']
-        ? +params['countryId']
-        : this.defaultAddressParams.countryId;
-    });
-    //console.log('this.defaultAddressParams in user-list');
-    //console.log(this.defaultAddressParams);
-
-    /*     effect(() => {
-      this.allFilterParametersChange.emit(this.allFilterParameters());
-    }); */
+    // Init address defaults from query params
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((qp) => {
+        this.defaultAddressParams = {
+          localityId: qp['localityId'] ? +qp['localityId'] : null,
+          districtId: qp['districtId'] ? +qp['districtId'] : null,
+          regionId: qp['regionId'] ? +qp['regionId'] : null,
+          countryId: qp['countryId'] ? +qp['countryId'] : null,
+        };
+        this.filterBadgeValue = qp['countryId'] ? 1 : 0;
+        // this.showSpinner = (qp['countryId'] ? true : false);
+        this.addressFilterValue.set({
+          countries: this.defaultAddressParams.countryId
+            ? [this.defaultAddressParams.countryId]
+            : [],
+          regions: this.defaultAddressParams.regionId
+            ? [this.defaultAddressParams.regionId]
+            : [],
+          districts: this.defaultAddressParams.districtId
+            ? [this.defaultAddressParams.districtId]
+            : [],
+          localities: this.defaultAddressParams.localityId
+            ? [this.defaultAddressParams.localityId]
+            : [],
+        });
+        this.addressStringValue.set(qp['addressFilterString'] || '');
+      });
   }
 
-  ngOnInit() {
-    ////console.log(navigation);
+  ngOnInit(): void {
+    // Pick permission set for the component type
+    this.defaultAddressFilterValue.emit(this.addressFilterValue());
+    const type = this.params().componentType;
+    const found = PERMISSIONS_COMPONENT_REGISTRY[type];
+    if (found) this.permissions = found;
   }
 
-  changeColumnsView(selectedColumns: string[]) {
-    this.selectedColumns.emit([...selectedColumns]);
+  // Columns selection passthrough
+  changeColumnsView(selected: string[]): void {
+    this.selectedColumns.emit([...selected]);
   }
 
-  onAddUserClick() {
-    this.onAddUserWasClicked.emit();
+  onAddItemClick(): void {
+    this.addWasClicked.emit();
   }
 
-  changeSettingsBadge(settingsBadgeValue: number) {
-    this.settingsBadgeValue = settingsBadgeValue;
+  // Badges
+  changeSettingsBadge(v: number): void {
+    this.settingsBadgeValue = v;
   }
-  changeFilterBadge(filterBadgeValue: number) {
-    this.filterBadgeValue = filterBadgeValue;
-    // //console.log(this.filterBadgeValue);
+  changeFilterBadge(v: number): void {
+    this.filterBadgeValue = v;
   }
 
-  onChangeViewSelection(option: string) {
-    /*     chip.select();
-    //console.log(chip.value); */
+  // View option
+  onChangeViewSelection(option: string): void {
     this.avoidDoubleRequest = true;
-    this.goToFirstPage();
     this.selectedViewOptionId.set(option);
-    // this.avoidDoubleRequest = false;
-    // this.getUsers();
   }
 
-  searchUser(event: Event) {
-    let searchString = (event.target as HTMLInputElement).value;
-    searchString = searchString.trim().toLowerCase().replaceAll('ё', 'е');
+  // Search
+  onSearchEnter(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value ?? '';
+    const normalized = raw.trim().toLowerCase().replaceAll('ё', 'е');
     this.avoidDoubleRequest = true;
-    this.goToFirstPage();
-    this.searchValue.set(searchString);
-    // this.avoidDoubleRequest = false;
-    //this.getUsers();
+    this.searchValue.set(normalized);
   }
 
-  onClearSearchClick() {
+  onClearSearchClick(): void {
     this.avoidDoubleRequest = true;
-    this.goToFirstPage();
     this.searchValue.set('');
     this.inputValue = '';
-    //this.avoidDoubleRequest = false;
-    //this.getUsers();
   }
 
-  onClearFilterClick() {
-    /*     //console.log('pageData');
-          //console.log(pageData);
- */
+  // Filter reset
+  onClearFilterClick(): void {
     this.avoidDoubleRequest = true;
-    this.goToFirstPage();
     this.tableFilterComponent.clearForm();
-    // this.avoidDoubleRequest = false;
-    //this.getUsers();
-  }
-
-  goToFirstPage() {}
-
-  getUsers() {
-    //this.usersListComponent.getUsers(this.allFilterParameters());
-  }
-
-  transformDate(date: Date): string | null {
-    return new DatePipe('ru').transform(date, 'dd.MM.yyyy');
   }
 }

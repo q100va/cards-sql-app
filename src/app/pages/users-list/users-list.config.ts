@@ -1,96 +1,129 @@
-import { Validators } from '@angular/forms';
+//src\app\pages\users-list\users-list.config.ts
 import { DialogData } from '../../interfaces/dialog-props';
 import { User } from '../../interfaces/user';
-import * as Validator from '../../utils/custom.validator';
+import {
+  ColumnDefinition,
+  ContactParamsForList,
+  TableParams,
+  ViewOption,
+} from 'src/app/interfaces/base-list';
+import {
+  userDraftSchema,
+  emailControlSchema,
+  facebookControlSchema,
+  instagramControlSchema,
+  otherContactControlSchema,
+  phoneNumberControlSchema,
+  telegramIdControlSchema,
+  telegramNicknameControlSchema,
+  vKontakteControlSchema,
+  whatsAppControlSchema,
+} from '@shared/schemas/user.schema';
+import { zodValidator } from 'src/app/utils/zod-validator';
+import { FilterComponentSource } from '../../interfaces/base-list';
 
-export interface ColumnDefinition {
-  id: number;
-  columnName: string;
-  columnFullName: string;
-  isUnchangeable: boolean;
-}
+export const viewOptions: ViewOption[] = [
+  {
+    id: 'all',
+    name: 'USER.VIEW_OPTIONS.ALL_USERS',
+    initiallySelected: false,
+  },
+  {
+    id: 'only-active',
+    name: 'USER.VIEW_OPTIONS.ONLY_ACTIVE',
+    initiallySelected: true,
+  },
+  {
+    id: 'only-blocked',
+    name: 'USER.VIEW_OPTIONS.ONLY_BLOCKED',
+    initiallySelected: false,
+  },
+];
 
-export interface ContactTypeForList {
-  type: string;
-  label: string;
-  svg: string;
-}
+export const componentType: FilterComponentSource = 'userList';
+
+export const tableParams: TableParams = {
+  title: 'USER.TABLE_TITLE',
+  addTitle: 'USER.ADD_USER',
+  searchPlaceholder: 'USER.SEARCH_PLACEHOLDER',
+  addIcon: 'person_add_alt',
+};
 
 export const IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
   {
     id: 1,
     columnName: 'userName',
-    columnFullName: 'Имя пользователя',
+    columnFullName: 'USER.COLUMNS.USER_NAME',
     isUnchangeable: true,
   },
   {
     id: 2,
     columnName: 'role',
-    columnFullName: 'Роль',
+    columnFullName: 'USER.COLUMNS.ROLE_NAME',
     isUnchangeable: false,
   },
   {
     id: 3,
     columnName: 'name',
-    columnFullName: 'ФИО',
+    columnFullName: 'USER.COLUMNS.FULL_NAME',
     isUnchangeable: false,
   },
   {
     id: 4,
     columnName: 'contacts',
-    columnFullName: 'Контакты',
+    columnFullName: 'USER.COLUMNS.CONTACTS',
     isUnchangeable: false,
   },
   {
     id: 5,
     columnName: 'address',
-    columnFullName: 'Адрес',
+    columnFullName: 'USER.COLUMNS.ADDRESS',
     isUnchangeable: false,
   },
   {
     id: 6,
     columnName: 'dateOfStart',
-    columnFullName: 'Дата присоединения',
+    columnFullName: 'USER.COLUMNS.START_DATE',
     isUnchangeable: false,
   },
   {
     id: 7,
     columnName: 'comment',
-    columnFullName: 'Комментарий',
+    columnFullName: 'USER.COLUMNS.COMMENT',
     isUnchangeable: false,
   },
   {
     id: 8,
     columnName: 'isRestricted',
-    columnFullName: 'Статус',
+    columnFullName: 'USER.COLUMNS.STATUS',
     isUnchangeable: false,
   },
   {
     id: 9,
     columnName: 'actions',
-    columnFullName: 'Действия',
+    columnFullName: 'USER.COLUMNS.ACTIONS',
     isUnchangeable: false,
   },
 ];
 
-export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
+export const CONTACT_PARAMS_FOR_LIST: ContactParamsForList[] = [
   {
     type: 'email',
-    label: 'Email',
+    label: 'USER.CONTACTS.EMAIL_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368">
       <path d="M174.31-182q-37.73 0-64.02-26.3T84-272.35v-415.62q0-37.75 26.29-63.89T174.31-778h611.38q37.73 0 64.02 26.3T876-687.65v415.62q0 37.75-26.29 63.89T785.69-182H174.31ZM480-426.69 162-609.31v337q0 5.39 3.46 8.85t8.85 3.46h611.38q5.39 0 8.85-3.46t3.46-8.85v-337L480-426.69Zm0-90.31 319.85-183h-639.7L480-517Zm-326-92.31V-700v427.69q6 5.39 10.46 8.85 4.46 3.46 9.85 3.46H154v-349.31Z"/>
     </svg>`,
   },
   {
     type: 'phoneNumber',
-    label: 'Номер телефона',
+    label: 'USER.CONTACTS.PHONE_NUMBER_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368">
       <path d="M774.47-133q-123.93-9-236.55-61.08-112.61-52.08-203.19-142.34-90.57-90.27-141.65-202.7Q142-651.54 132-775.47q-2-23.31 11.29-37.92Q156.57-828 180-828h142.46q18.54 0 31.93 10.89 13.38 10.88 19.53 28.42L398.85-675q2.38 11.38-1.5 24.15-3.89 12.77-10.66 18.77l-101.38 99.93q21.3 38.84 46.96 73.77 25.65 34.92 58.01 68.06 30.95 29.94 65.03 55.67t71.08 45.04l110.76-104.54q7.39-7.77 13.85-9.2 6.46-1.42 15.62.58l120.07 27.62q18.15 5 29.73 18.46 11.58 13.46 11.58 32V-181q0 23.43-15.11 36.71Q797.78-131 774.47-133ZM249.92-606.92l67.39-64.31q1.92-1.54 2.5-4.23.58-2.69-.19-5l-16.55-63.39q-.77-3.07-2.69-4.61-1.92-1.54-5-1.54H220q-2.31 0-3.85 1.54-1.53 1.54-1.53 3.85 3.07 40 12.92 71.8 9.84 31.81 22.38 65.89Zm354 355.69q33.87 14.78 70.01 22.47 36.15 7.68 70.68 13.53 2.31 2 3.85-.54t1.54-4.85v-78.15q0-3.08-1.54-5t-4.61-2.69l-65-15.08q-2.31-.77-4.04-.19-1.73.58-3.66 2.5l-67.23 68Zm-354-355.69Zm354 355.69Z"/>
     </svg>`,
   },
   {
     type: 'whatsApp',
-    label: 'WhatsApp',
+    label: 'USER.CONTACTS.TELEGRAM_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0,0,255.98438,255.98438">
       <g fill="#5f6368" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal">
         <g transform="scale(10.66667,10.66667)">
@@ -101,7 +134,7 @@ export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
   },
   {
     type: 'telegram',
-    label: 'Телеграм',
+    label: 'USER.CONTACTS.WHATSAPP_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0,0,255.98438,255.98438">
       <g fill="#5f6368" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal">
         <g transform="scale(10.66667,10.66667)">
@@ -112,7 +145,7 @@ export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
   },
   {
     type: 'vKontakte',
-    label: 'Вконтакте',
+    label: 'USER.CONTACTS.VKONTAKTE_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0,0,255.98438,255.98438">
       <g fill="#5f6368" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal">
         <g transform="scale(10.66667,10.66667)">
@@ -123,7 +156,7 @@ export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
   },
   {
     type: 'instagram',
-    label: 'Instagram',
+    label: 'USER.CONTACTS.INSTAGRAM_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="1.8934080000000002" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-letter-i">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
@@ -132,7 +165,7 @@ export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
   },
   {
     type: 'facebook',
-    label: 'Facebook',
+    label: 'USER.CONTACTS.FACEBOOK_LABEL',
     svg: `<svg height="68px" width="68px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-5.74 -5.74 68.86 68.86" xml:space="preserve" fill="#5f6368" stroke="#5f6368" stroke-width="1.8934080000000002">
       <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
       <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -148,26 +181,24 @@ export const CONTACT_TYPES_FOR_LIST: ContactTypeForList[] = [
   },
   {
     type: 'otherContact',
-    label: 'Другой контакт',
+    label: 'USER.CONTACTS.OTHER_CONTACT_LABEL',
     svg: `<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5f6368">
       <path d="M480.39-96q-79.52 0-149.45-30Q261-156 208.5-208.5T126-330.96q-30-69.96-30-149.5t30-149.04q30-69.5 82.5-122T330.96-834q69.96-30 149.5-30t149.04 30q69.5 30 122 82.5t82.5 122Q864-560 864-480v60q0 54.85-38.5 93.42Q787-288 732-288q-34 0-62.5-17t-48.66-45Q593-321 556.5-304.5T480-288q-79.68 0-135.84-56.23-56.16-56.22-56.16-136Q288-560 344.23-616q56.22-56 136-56Q560-672 616-615.84q56 56.16 56 135.84v60q0 25.16 17.5 42.58Q707-360 732-360t42.5-17.42Q792-394.84 792-420v-60q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91h192v72H480.39ZM480-360q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z"/>
     </svg>`,
   },
 ];
 
-
 export const userDialogConfig: DialogData<User> = {
-  creationTitle: 'Новый пользователь',
-  viewTitle: 'Пользователь',
+  creationTitle: 'USER.CARD.CREATION_TITLE',
+  viewTitle: 'USER.CARD.VIEW_TITLE',
   controls: [
     {
       controlName: 'userName',
       value: null,
-      validators: [Validators.required],
+      validators: [zodValidator(userDraftSchema.shape.userName)],
       type: 'inputText',
-      label: 'Имя пользователя',
-      postfix: '*',
-      placeholder: 'a.petrova',
+      label: 'USER.CARD.USER_NAME_LABEL',
+      placeholder: 'USER.CARD.USER_NAME_PLACEHOLDER',
       category: 'mainData',
       formType: 'formControl',
       colspan: 2,
@@ -176,10 +207,9 @@ export const userDialogConfig: DialogData<User> = {
     {
       controlName: 'roleId',
       value: null,
-      validators: [Validators.required],
+      validators: [zodValidator(userDraftSchema.shape.roleId)],
       type: 'select',
-      label: 'Роль',
-      postfix: '*',
+      label: 'USER.CARD.ROLE_LABEL',
       category: 'mainData',
       formType: 'formControl',
       colspan: 2,
@@ -188,14 +218,9 @@ export const userDialogConfig: DialogData<User> = {
     {
       controlName: 'password',
       value: null,
-      validators: [
-        Validators.required,
-        Validators.pattern('^(?=.*\\d)(?=.*[A-Za-z]).{8,}$'),
-      ],
+      validators: [zodValidator(userDraftSchema.shape.password)],
       type: 'inputPassword',
-      label: 'Пароль',
-      postfix: '*',
-      // Removed unused placeholder comment
+      label: 'USER.CARD.PASSWORD_LABEL',
       category: 'mainData',
       formType: 'formControl',
       colspan: 2,
@@ -204,10 +229,10 @@ export const userDialogConfig: DialogData<User> = {
     {
       controlName: 'firstName',
       value: null,
-      validators: [Validators.required],
+      validators: [zodValidator(userDraftSchema.shape.firstName)],
       type: 'inputText',
-      label: 'Имя',
-      postfix: '*',
+      label: 'USER.CARD.FIRST_NAME_LABEL',
+      placeholder: '',
       category: 'mainData',
       formType: 'formControl',
       colspan: 2,
@@ -216,9 +241,10 @@ export const userDialogConfig: DialogData<User> = {
     {
       controlName: 'patronymic',
       value: null,
-      validators: [],
+      validators: [zodValidator(userDraftSchema.shape.patronymic)],
       type: 'inputText',
-      label: 'Отчество',
+      label: 'USER.CARD.PATRONYMIC_LABEL',
+      placeholder: '',
       category: 'mainData',
       formType: 'formControl',
       colspan: 2,
@@ -227,10 +253,10 @@ export const userDialogConfig: DialogData<User> = {
     {
       controlName: 'lastName',
       value: null,
-      validators: [Validators.required],
+      validators: [zodValidator(userDraftSchema.shape.lastName)],
       type: 'inputText',
-      label: 'Фамилия',
-      postfix: '*',
+      label: 'USER.CARD.LAST_NAME_LABEL',
+      placeholder: '',
       category: 'mainData',
       formType: 'formControl',
       colspan: 2,
@@ -239,9 +265,10 @@ export const userDialogConfig: DialogData<User> = {
     {
       controlName: 'comment',
       value: null,
-      validators: [],
+      validators: [zodValidator(userDraftSchema.shape.comment)],
       type: 'inputText',
-      label: 'Комментарий',
+      label: 'USER.CARD.COMMENT_LABEL',
+      placeholder: '',
       category: 'mainData',
       formType: 'formControl',
       colspan: 6,
@@ -252,7 +279,7 @@ export const userDialogConfig: DialogData<User> = {
       value: false,
       validators: [],
       type: 'toggle',
-      label: 'Заблокирован',
+      label: 'USER.CARD.BLOCKED_LABEL',
       category: 'extraData',
       formType: 'formControl',
       colspan: 6,
@@ -262,10 +289,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'email',
       value: null,
       type: 'inputText',
-      label: 'Email',
-      postfix: '*',
-      placeholder: 'agatha85@yandex.ru',
-      validators: [Validators.required, Validator.emailFormatValidator()],
+      label: 'USER.CARD.EMAIL_LABEL',
+      placeholder: 'USER.CARD.EMAIL_PLACEHOLDER',
+      validators: [zodValidator(emailControlSchema)],
       errorName: 'emailFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -276,13 +302,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'phoneNumber',
       value: null,
       type: 'inputText',
-      label: 'Номер телефона',
-      postfix: '*',
-      placeholder: 'начните с "+", далее в любом формате',
-      validators: [
-        Validators.required,
-        Validator.phoneNumberFormatValidator(),
-      ],
+      label: 'USER.CARD.PHONE_NUMBER_LABEL',
+      placeholder: 'USER.CARD.PHONE_NUMBER_PLACEHOLDER',
+      validators: [zodValidator(phoneNumberControlSchema)],
       errorName: 'phoneNumberFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -293,13 +315,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'telegramId',
       value: null,
       type: 'inputText',
-      label: 'Телеграм ID',
-      postfix: '*',
-      placeholder: '#1234567890',
-      validators: [
-        Validators.required,
-        Validator.telegramIdFormatValidator(),
-      ],
+      label: 'USER.CARD.TELEGRAM_ID_LABEL',
+      placeholder: 'USER.CARD.TELEGRAM_ID_PLACEHOLDER',
+      validators: [zodValidator(telegramIdControlSchema)],
       errorName: 'telegramIdFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -310,13 +328,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'telegramPhoneNumber',
       value: null,
       type: 'inputText',
-      label: 'Телеграм номер телефона',
-      postfix: '*',
-      placeholder: 'начните с "+", далее в любом формате',
-      validators: [
-        Validators.required,
-        Validator.phoneNumberFormatValidator(),
-      ],
+      label: 'USER.CARD.TELEGRAM_PHONE_NUMBER_LABEL',
+      placeholder: 'USER.CARD.TELEGRAM_PHONE_NUMBER_PLACEHOLDER',
+      validators: [zodValidator(phoneNumberControlSchema)],
       errorName: 'phoneNumberFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -327,9 +341,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'telegramNickname',
       value: null,
       type: 'inputText',
-      label: 'Телеграм nickname',
-      placeholder: '@daisy',
-      validators: [Validator.telegramNicknameFormatValidator()],
+      label: 'USER.CARD.TELEGRAM_NICKNAME_LABEL',
+      placeholder: 'USER.CARD.TELEGRAM_NICKNAME_PLACEHOLDER',
+      validators: [zodValidator(telegramNicknameControlSchema)],
       errorName: 'telegramNicknameFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -340,9 +354,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'whatsApp',
       value: null,
       type: 'inputText',
-      label: 'WhatsApp',
-      placeholder: 'начните с "+", далее в любом формате',
-      validators: [Validator.phoneNumberFormatValidator()],
+      label: 'USER.CARD.WHATSAPP_LABEL',
+      placeholder: 'USER.CARD.WHATSAPP_PLACEHOLDER',
+      validators: [zodValidator(whatsAppControlSchema)],
       errorName: 'phoneNumberFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -353,9 +367,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'vKontakte',
       value: null,
       type: 'inputText',
-      label: 'Вконтакте',
-      placeholder: 'id719993384 или daisy',
-      validators: [Validator.vKontakteFormatValidator()],
+      label: 'USER.CARD.VKONTAKTE_LABEL',
+      placeholder: 'USER.CARD.VKONTAKTE_PLACEHOLDER',
+      validators: [zodValidator(vKontakteControlSchema)],
       errorName: 'vKontakteFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -366,9 +380,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'instagram',
       value: null,
       type: 'inputText',
-      label: 'Instagram',
-      placeholder: 'daisy',
-      validators: [Validator.instagramFormatValidator()],
+      label: 'USER.CARD.INSTAGRAM_LABEL',
+      placeholder: 'USER.CARD.INSTAGRAM_PLACEHOLDER',
+      validators: [zodValidator(instagramControlSchema)],
       errorName: 'instaFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -379,9 +393,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'facebook',
       value: null,
       type: 'inputText',
-      label: 'Facebook',
-      placeholder: 'daisy',
-      validators: [Validator.facebookFormatValidator()],
+      label: 'USER.CARD.FACEBOOK_LABEL',
+      placeholder: 'USER.CARD.FACEBOOK_PLACEHOLDER',
+      validators: [zodValidator(facebookControlSchema)],
       errorName: 'facebookFormat',
       category: 'contacts',
       formType: 'formArray',
@@ -392,8 +406,9 @@ export const userDialogConfig: DialogData<User> = {
       controlName: 'otherContact',
       value: null,
       type: 'inputText',
-      label: 'Другой контакт',
-      placeholder: 'все, что не подошло выше',
+      label: 'USER.CARD.OTHER_CONTACT_LABEL',
+      placeholder: 'USER.CARD.OTHER_CONTACT_PLACEHOLDER',
+      validators: [zodValidator(otherContactControlSchema)],
       category: 'contacts',
       formType: 'formArray',
       colspan: 3,

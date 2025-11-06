@@ -3,15 +3,10 @@ import { jest } from '@jest/globals';
 import { Op } from 'sequelize';
 
 // Mock models used inside controller
-const mkModel = () => ({
-  count: jest.fn(),
-  findAll: jest.fn(),
-  findOne: jest.fn(),
-});
-const Country = mkModel();
-const Region = mkModel();
-const District = mkModel();
-const Locality = mkModel();
+const Country = { findOne: jest.fn() };
+const Region = { findOne: jest.fn() };
+const District = { findOne: jest.fn() };
+const Locality = { findOne: jest.fn() };
 
 jest.unstable_mockModule('../../models/index.js', () => ({
   Country, Region, District, Locality,
@@ -22,11 +17,7 @@ const ctrl = await import('../../controllers/ctrl-toponyms.js');
 
 describe('ctrl-toponyms (unit)', () => {
   beforeEach(() => {
-    for (const M of [Country, Region, District, Locality]) {
-      for (const k of Object.keys(M)) {
-        if (typeof M[k] === 'function') M[k].mockReset?.();
-      }
-    }
+    jest.resetAllMocks();
   });
 
   // ---------------- findDuplicate ------------------------------------------
@@ -55,19 +46,19 @@ describe('ctrl-toponyms (unit)', () => {
 
   });
 
-test('findDuplicate → throws CustomError(422) if missing required parent', async () => {
-  try {
-    await ctrl.findDuplicate({ type: 'region', name: 'X' });
-    throw new Error('Expected findDuplicate to throw');
-  } catch (err) {
-    // Check error semantic fields rather than message
-    expect(err.code).toBe('ERRORS.VALIDATION');
-    const status = err.statusCode ?? err.status;
-    expect(status).toBe(422);
-    // Optional: message is rewritten by the catch block → assert prefix if нужно
-    expect(err.message).toMatch(/^Error in findDuplicate \(X, region\):/);
-  }
-});
+  test('findDuplicate → throws CustomError(422) if missing required parent', async () => {
+    try {
+      await ctrl.findDuplicate({ type: 'region', name: 'X' });
+      throw new Error('Expected findDuplicate to throw');
+    } catch (err) {
+      // Check error semantic fields rather than message
+      expect(err.code).toBe('ERRORS.VALIDATION');
+      const status = err.statusCode ?? err.status;
+      expect(status).toBe(422);
+      // Optional: message is rewritten by the catch block → assert prefix if нужно
+      expect(err.message).toMatch(/^Error in findDuplicate \(X, region\):/);
+    }
+  });
 
   // ---------------- addDefaultAddressParams / addParentsNames ---------------
   test('addDefaultAddressParams(locality) → plucks and strips nested ids', () => {

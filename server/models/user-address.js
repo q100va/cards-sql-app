@@ -13,6 +13,12 @@ export default function UserAddressModel(sequelize) {
     {
       type: DataTypes.BOOLEAN,
       defaultValue: false
+    },
+    isRecoverable:
+    {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
     }
   },
     {

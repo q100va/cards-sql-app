@@ -74,7 +74,7 @@ export const OPERATIONS = [
   },
     {
     operation: 'DOWNLOAD_TEMPLATE_FOR_TOPONYM',
-    object: 'seniors',
+    object: 'toponyms',
     accessToAllOps: false,
     operationName: 'OPS.DOWNLOAD_TEMPLATE.NAME',
     description: 'Bulk update toponym list via XLSX upload',
@@ -82,7 +82,7 @@ export const OPERATIONS = [
   },
   {
     operation: 'UPLOAD_LIST_OF_TOPONYMS',
-    object: 'seniors',
+    object: 'toponyms',
     accessToAllOps: false,
     operationName: 'OPS.BULK_UPLOAD.NAME',
     description: 'Bulk update toponym list via XLSX upload',
@@ -170,6 +170,14 @@ export const OPERATIONS = [
     accessToAllOps: false,
     operationName: 'OPS.UNBLOCK.NAME',
     description: 'Unblock a user',
+    objectName: 'OBJECT.USERS',
+  },
+  {
+    operation: 'DOWNLOAD_USERS_TABLE',
+    object: 'users',
+    accessToAllOps: false,
+    operationName: 'OPS.DOWNLOAD_TABLE.NAME',
+    description: 'Download list of users',
     objectName: 'OBJECT.USERS',
   },
   {

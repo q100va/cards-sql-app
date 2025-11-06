@@ -6,7 +6,7 @@ export function zodValidator<T>(schema: ZodType<T>): ValidatorFn {
     const value = control.value;
     const result = schema.safeParse(value);
     if (!result.success) {
-      console.log(result.error.issues);
+     // console.log(result.error.issues);
 
       const code = result.error.issues[0]?.message ?? 'ERRORS.VALIDATION';
       return { zodError: code };

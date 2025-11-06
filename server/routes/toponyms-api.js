@@ -6,7 +6,13 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import CustomError from "../shared/customError.js";
 import * as toponymSchemas from "../../shared/dist/toponym.schema.js";
-import { findDuplicate, postProcessor, getToponymById, MAP, MAPS, MAP_POPULATE } from "../controllers/ctrl-toponyms.js";
+import {
+  findDuplicate,
+  postProcessor,
+  getToponymById,
+  MAP, MAPS, MAP_POPULATE,
+  markAddressesUnrecoverable
+} from "../controllers/ctrl-toponyms.js";
 import sequelize from "../database.js";
 
 const router = Router();
@@ -32,7 +38,7 @@ router.get(
   async (req, res, next) => {
     try {
       const query = req.query;
-       console.log('HttpParams ', req.query);
+      console.log('HttpParams ', req.query);
       const duplicateCount = await findDuplicate(query);
       //console.log("duplicate", duplicateCount);
       const response = {
@@ -102,7 +108,8 @@ router.post("/update-toponym",
       const [updatedCount] = await cfg.Model.update(payload, {
         where: {
           id: data.id
-        }
+        },
+        individualHooks: true
       });
       //console.log("updated", updated);
       if (updatedCount === 0) {
@@ -204,6 +211,7 @@ router.get(
         cfg.Model.count({
           where,
           include,
+          distinct: true,
         }),
         cfg.Model.findAll({
           where,
@@ -282,22 +290,26 @@ router.delete("/delete-toponym",
       const q = req.query;
       const cfg = MAP[q.type];
       const where = { id: q.id };
-      if (q.destroy) {
-        const destroyedCount = await cfg.Model.destroy({ where });
-        if (destroyedCount === 0) {
-          throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
+      await withTransaction(async (t) => {
+        if (q.destroy) {
+          const destroyedCount = await cfg.Model.destroy({ where, individualHooks: true });
+          if (destroyedCount === 0) {
+            throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
+          }
+        } else {
+          const [updatedCount] = await cfg.Model.update(
+            {
+              isRestricted: true,
+            },
+            { where, individualHooks: true }
+          );
+          if (updatedCount === 0) {
+            throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
+          }
+          //TODO: test
+          await markAddressesUnrecoverable(q.type, q.id, t);
         }
-      } else {
-        const [updatedCount] = await cfg.Model.update(
-          {
-            isRestricted: true,
-          },
-          { where }
-        );
-        if (updatedCount === 0) {
-          throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
-        }
-      }
+      });
       res.status(200).send({ code: 'TOPONYM.DELETED', data: null });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.TOPONYM.NOT_DELETED';

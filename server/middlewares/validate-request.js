@@ -4,6 +4,7 @@ import { z } from 'zod';
 export function validateRequest(schema, part = 'body'/* , opts = {} */) {
   return (req, _res, next) => {
     try {
+      console.log('part', req[part]);
       const parsed = schema.safeParse(req[part]);
 
       if (!parsed.success) {

@@ -9,11 +9,6 @@ th {
   max-width: 400px;
 }
 
-/* td , th {
-  white-space: normal;
-  max-width: fit-content;
-} */
-
 .mat-footer-row,
 .mat-header-row,
 .mat-row {
@@ -22,7 +17,6 @@ th {
 }
 
 .mat-mdc-header-row {
-  /* background: #66bb6a8a; */
   background: #dddfd0;
 }
 

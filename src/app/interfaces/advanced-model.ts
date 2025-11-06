@@ -1,15 +1,12 @@
 import { BaseModel } from './base-model';
-import { Contacts, OutdatedData } from './user';
+import type {
+  Contacts,
+  OutdatedData,
+  Address,
+} from '@shared/schemas/user.schema';
 
 export interface AdvancedModel extends BaseModel {
-  address: {
-    country: { id: number; name: string } | null;
-    region: { id: number; shortName: string } | null;
-    district: { id: number; shortName: string } | null;
-    locality: { id: number; shortName: string } | null;
-    // isRestricted: boolean;
-    id: number;
-  };
+  address: Address;
   comment: string | null;
   orderedContacts: Contacts;
   outdatedData: OutdatedData;

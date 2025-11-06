@@ -1,17 +1,17 @@
 <div class="fieldset-div">
-  <mat-checkbox [(ngModel)]="notActualOption">включать неактуальные данные: прежние адреса, телефоны и
-    т.п.</mat-checkbox>
+  <mat-checkbox [(ngModel)]="includeOutdatedOption">{{'BASE_LIST.INCLUDE_OUTDATED' | translate }}</mat-checkbox>
 
   <form [formGroup]="form">
+    <!-- Address -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
           @if (addressFilter().countries && addressFilter().countries!.length > 0) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">адрес</span>
+            <span class="font-bold">{{'NAV.FILTER.ADDR_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">адрес</span>
+          <span class="font-bold">{{'NAV.FILTER.ADDR_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
@@ -19,139 +19,140 @@
         <app-address-filter [params]="params" [defaultAddressParams]="defaultAddressParams()"
           (addressFilter)="onAddressFilterChange($event)" (addressString)="onAddressStringChange($event)"
           (addressFilterBadgeValue)="onAddressFilterBadgeValueChange($event)"></app-address-filter>
-
-        <mat-checkbox formControlName="strongAddressFilter" (change)="emitSelectedFilters()">все выбранные значения
-          должны одновременно встречаться у одного пользователя</mat-checkbox>
-
+        <mat-checkbox formControlName="strongAddressFilter" (change)="emitSelectedFilters()">
+          {{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
       </p>
     </p-fieldset>
+    <!-- Role -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls['roles'].value?.length > 0) {
+          @if (form.controls.roles.value.length > 0) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">роль</span>
+            <span class="font-bold">{{'NAV.FILTER.ROLE_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">роль</span>
+          <span class="font-bold">{{'NAV.FILTER.ROLE_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>Выберите значение(я)</mat-label>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
           <mat-select formControlName="roles" multiple (selectionChange)="emitSelectedFilters()">
             @for (role of rolesList; track $index) {
-            <mat-option [value]="role.id">{{role.name}}</mat-option>
+            <mat-option [value]="role">{{role.name}}</mat-option>
             }
           </mat-select>
         </mat-form-field>
       </p>
     </p-fieldset>
+    <!-- StartDate -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls['startBeginningDate'].value || form.controls['endBeginningDate'].value) {
+          @if (form.controls.startBeginningDate.value || form.controls.endBeginningDate.value) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">дата присоединения</span>
+            <span class="font-bold">{{'NAV.FILTER.START_DATE_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">дата присоединения</span>
+          <span class="font-bold">{{'NAV.FILTER.START_DATE_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>Введите диапазон</mat-label>
+          <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
           <mat-date-range-input [rangePicker]="picker1">
-            <input formControlName="startBeginningDate" matStartDate placeholder="дд.мм.гггг"
-              (dateChange)="emitSelectedFilters()">
-            <input formControlName="endBeginningDate" matEndDate placeholder="дд.мм.гггг"
-              (dateChange)="emitSelectedFilters()">
+            <input formControlName="startBeginningDate" matStartDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
+            <input formControlName="endBeginningDate" matEndDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
           <mat-date-range-picker #picker1></mat-date-range-picker>
         </mat-form-field>
       </p>
     </p-fieldset>
-
+    <!-- BlockDate -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls['startRestrictionDate'].value || form.controls['endRestrictionDate'].value) {
+          @if (form.controls.startRestrictionDate.value || form.controls.endRestrictionDate.value) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">дата блокировки</span>
+            <span class="font-bold">{{'NAV.FILTER.BLOCK_DATE_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">дата блокировки</span>
+          <span class="font-bold">{{'NAV.FILTER.BLOCK_DATE_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>Введите диапазон</mat-label>
+          <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
           <mat-date-range-input [rangePicker]="picker2">
-            <input formControlName="startRestrictionDate" matStartDate placeholder="дд.мм.гггг"
-              (dateChange)="emitSelectedFilters()">
-            <input formControlName="endRestrictionDate" matEndDate placeholder="дд.мм.гггг"
-              (dateChange)="emitSelectedFilters()">
+            <input formControlName="startRestrictionDate" matStartDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
+            <input formControlName="endRestrictionDate" matEndDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
           <mat-date-range-picker #picker2></mat-date-range-picker>
         </mat-form-field>
-        <span class="comment">результат поиска будет иметь смысл, если выбраны <br /> "Все пользователи" или "Только
-          заблокированные"</span>
+        <span class="comment">{{'NAV.FILTER.BLOCK_COMMENT' | translate}}</span>
       </p>
     </p-fieldset>
+    <!-- ContactType -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls['contactTypes'].value?.length > 0) {
+          @if (form.controls.contactTypes.value.length > 0) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">тип контакта</span>
+            <span class="font-bold">{{'NAV.FILTER.CONTACT_TYPE_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">тип контакта</span>
+          <span class="font-bold">{{'NAV.FILTER.CONTACT_TYPE_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>Выберите значение(я)</mat-label>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
           <mat-select formControlName="contactTypes" multiple (selectionChange)="emitSelectedFilters()">
             @for (contact of contactTypesList; track $index) {
-            <mat-option [value]="contact">{{contact.label}}</mat-option>
+            <mat-option [value]="contact">{{contact.label | translate}}</mat-option>
             }
           </mat-select>
         </mat-form-field>
-
-        <mat-checkbox formControlName="strongContactFilter" (change)="emitSelectedFilters()">все выбранные значения
-          должны одновременно встречаться у одного пользователя</mat-checkbox>
-
+        <mat-checkbox formControlName="strongContactFilter"
+          (change)="emitSelectedFilters()">{{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
       </p>
-
     </p-fieldset>
+    <!-- Comment -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls['comment'].value?.length > 0) {
+          @if (form.controls.comment.value.length > 0) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">комментарий</span>
+            <span class="font-bold">{{'NAV.FILTER.COMMENT_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">комментарий</span>
+          <span class="font-bold">{{'NAV.FILTER.COMMENT_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>Выберите значение(я)</mat-label>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
           <mat-select formControlName="comment" multiple (selectionChange)="emitSelectedFilters()">
-            <mat-option [value]="'с комментарием'">с комментарием</mat-option>
-            <mat-option [value]="'без комментария'">без комментария</mat-option>
+            <mat-option [value]="'NAV.FILTER.WITH_COMMENT_OPT' | translate">{{'NAV.FILTER.WITH_COMMENT_OPT' |
+              translate}}</mat-option>
+            <mat-option [value]="'NAV.FILTER.WITHOUT_COMMENT_OPT' | translate">{{'NAV.FILTER.WITHOUT_COMMENT_OPT' |
+              translate}}</mat-option>
           </mat-select>
         </mat-form-field>
       </p>
     </p-fieldset>
+
   </form>
 </div>

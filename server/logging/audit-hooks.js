@@ -2,6 +2,13 @@
 import logger from './logger.js';
 import { getRequestContext } from '../middlewares/request-context.js';
 
+//TODO: Tests
+/*   test('audit masks password but detects change', () => {
+    const before = { password: 'hash1', updatedAt: 'x' };
+    const after = { password: 'hash2', updatedAt: 'y' };
+    const diff = buildChanged(before, after);
+    expect(diff.password).toEqual(['<redacted>', '<redacted>']);
+  }); */
 //
 // Config
 //
@@ -12,17 +19,36 @@ const EXCLUDE_MODELS = new Set([
   'refresh_tokens',
   'refresh_token',
 ]); // models/tables to skip
-const EXCLUDE_FIELDS = new Set(['createdAt', 'updatedAt', 'password', 'salt']); // fields not stored in diff
-
+const EXCLUDE_FIELDS = new Set(['createdAt', 'updatedAt', 'salt']); // fields not stored in diff
+const SENSITIVE_FIELDS = new Set(['password']);
 //
 // Helpers
 //
 const toPlain = (inst) => (inst?.get ? inst.get({ plain: true }) : inst || {});
 
-function sanitize(obj) {
+/* function sanitize(obj) {
   // Shallow copy and remove sensitive/boring fields
   const out = { ...(obj || {}) };
+  for (const k of Object.keys(out)) {
+    if (SENSITIVE_FIELDS.has(String(k))) {
+      out[k] = '***'; // '***''<redacted>'
+    }
+  }
   for (const k of EXCLUDE_FIELDS) delete out[k];
+  return out;
+} */
+
+function stripBoring(obj = {}) {
+  const out = { ...obj };
+  for (const k of EXCLUDE_FIELDS) delete out[k];
+  return out;
+}
+
+function maskSensitive(obj = {}) {
+  const out = { ...obj };
+  for (const k of Object.keys(out)) {
+    if (SENSITIVE_FIELDS.has(String(k))) out[k] = '***';
+  }
   return out;
 }
 
@@ -33,15 +59,23 @@ function equal(v1, v2) {
 }
 
 function buildChanged(before, after) {
-  // Build a { field: [old, new] } map, excluding unchanged fields
-  const a = sanitize(before);
-  const b = sanitize(after);
+  const a = stripBoring(before);
+  const b = stripBoring(after);
+
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   const changed = {};
+
   for (const k of keys) {
     const v1 = k in a ? a[k] : null;
     const v2 = k in b ? b[k] : null;
-    if (!equal(v1, v2)) changed[k] = [v1, v2];
+
+    if (!equal(v1, v2)) {
+      if (SENSITIVE_FIELDS.has(String(k))) {
+        changed[k] = ['***', '***'];
+      } else {
+        changed[k] = [v1, v2];
+      }
+    }
   }
   return changed;
 }
@@ -127,7 +161,7 @@ export function initAuditHooks(sequelize) {
             action: 'create',
             model: modelKey,
             entityId: String(after.id ?? after.uuid ?? ''),
-            diff: { after: sanitize(after) },
+            diff: { after: maskSensitive(stripBoring(after)) },
             actorUserId: ctx.userId ?? null,
             correlationId: ctx.correlationId ?? null,
             ip: ctx.ip ?? null,
@@ -230,7 +264,7 @@ export function initAuditHooks(sequelize) {
             action: 'delete',
             model: modelKey,
             entityId: String(before.id ?? instance.get('id') ?? ''),
-            diff: { before: sanitize(before) },
+            diff: { before: maskSensitive(stripBoring(before)) },
             actorUserId: ctx.userId ?? null,
             correlationId: ctx.correlationId ?? null,
             ip: ctx.ip ?? null,
@@ -242,6 +276,29 @@ export function initAuditHooks(sequelize) {
         logger.error({ err, model: modelKey }, 'audit afterDestroy failed');
       }
     });
+
+/*     Model.addHook('afterBulkUpdate', async (options) => {
+      if (isSkipped('update', modelKey, options)) return;
+      const ctx = getRequestContext();
+      try {
+        const fields = (options.fields || []).map(f =>
+          SENSITIVE_FIELDS.has(String(f)) ? `${f}:***` : f
+        );
+        await AuditLog.create({
+          action: 'update',
+          model: modelKey,
+          entityId: null, // unknown per-row ids in bulk mode
+          diff: { where: options.where, fields },
+          actorUserId: ctx.userId ?? null,
+          correlationId: ctx.correlationId ?? null,
+          ip: ctx.ip ?? null,
+          userAgent: ctx.userAgent ?? null,
+        }, { transaction: options?.transaction });
+      } catch (err) {
+        logger.error({ err, model: modelKey }, 'audit afterBulkUpdate failed');
+      }
+    }); */
+
 
     //
     // Fallbacks for bulk operations when individualHooks are not enabled.

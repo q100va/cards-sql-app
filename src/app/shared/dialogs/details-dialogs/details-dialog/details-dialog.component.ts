@@ -57,7 +57,7 @@ export class DetailsDialogComponent<T extends BaseModel>
 
   // UI state signals (mirrored from child)
   readonly isEditMode = signal<boolean>(false);
-  readonly changes = signal<boolean>(false);
+  readonly changes = signal<boolean>(false); //TODO: delete?
   readonly isSaveDisabled = signal<boolean>(true);
   readonly showSpinner = signal<boolean>(true);
 
@@ -101,14 +101,14 @@ export class DetailsDialogComponent<T extends BaseModel>
     // Bridge child signals → dialog signals
     runInInjectionContext(this.injector, () => {
       effect(() => this.showSpinner.set(this.instance.showSpinner()));
-      effect(() => this.changes.set(this.instance.changesSignal()));
+      effect(() => this.changes.set(this.instance.changesSignal()));//TODO: delete?
       effect(() => this.isEditMode.set(this.instance.isEditModeSignal()));
       effect(() =>
         this.isSaveDisabled.set(this.instance.IsSaveDisabledSignal())
       );
       effect(() => {
         const closing = this.instance.closeDialogDataSignal();
-        if (closing) this.closeDialog(closing);
+        if (closing !== null) this.closeDialog(closing);
       });
     });
   }
@@ -133,6 +133,6 @@ export class DetailsDialogComponent<T extends BaseModel>
 
   // Close dialog; map true → null name per current semantics
   private closeDialog(data: string | boolean) {
-    this.dialogRef.close({ name: data === true ? null : data });
+    this.dialogRef.close({ refresh: !!data });
   }
 }

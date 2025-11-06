@@ -3,12 +3,15 @@
 </button>
 
 <mat-menu #menu="matMenu" xPosition="before">
+@if(params()?.isRecoverable){
   <button mat-menu-item (click)="handleRestore()">
     <mat-icon>restore</mat-icon>
-    <span>восстановить как актуальное</span>
+    <span>{{'OUTDATED_DATA_MENU.RESTORE_DATA' | translate}}</span>
   </button>
+}
+
   <button mat-menu-item (click)="handleDelete()">
     <mat-icon>delete_outlined</mat-icon>
-    <span>удалить как ошибочное</span>
+    <span>{{'OUTDATED_DATA_MENU.DELETE_DATA' | translate}}</span>
   </button>
 </mat-menu>

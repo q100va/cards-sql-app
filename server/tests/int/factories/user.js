@@ -1,4 +1,5 @@
 import { User } from '../../../models';
+import { hashPassword } from "../../../controllers/passwords.mjs";
 
 export async function createUser(attrs = {}) {
   const defaults = {
@@ -11,6 +12,19 @@ export async function createUser(attrs = {}) {
   };
   const data = { ...defaults, ...attrs };
   const user = await User.create(data);
+  return user.get({ plain: true });
+}
+
+export async function createUserHashed(attrs = {}) {
+  const user = await User.create({
+    userName: `user_${Date.now()}`,
+    roleId: null,
+    isBlocked: false,
+    firstName: 'John',
+    lastName: 'Fox',
+    password: await hashPassword(attrs.password ?? 'password2025'),
+    ...attrs,
+  });
   return user.get({ plain: true });
 }
 

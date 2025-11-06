@@ -1,47 +1,58 @@
-import { BaseModel } from './base-model';
 import { AdvancedModel } from './advanced-model';
+import type {
+  Duplicates,
+  UserDraft,
+  Contact,
+  Contacts,
+  OutdatedData,
+  ChangePassword,
+  RestoringData,
+  OutdatingData,
+  DeletingData,
+  ChangingData,
+  Address,
+  OutdatedContacts,
+  OutdatedAddress,
+  OutdatedFullName,
+  OutdatedUserName,
+  DraftContacts
+} from '@shared/schemas/user.schema';
+
+export type {
+  Duplicates,
+  UserDraft,
+  Contact,
+  Contacts,
+  OutdatedData,
+  ChangePassword,
+  RestoringData,
+  OutdatingData,
+  DeletingData,
+  ChangingData,
+  Address,
+  OutdatedContacts,
+  OutdatedAddress,
+  OutdatedFullName,
+  OutdatedUserName,
+  DraftContacts
+};
 
 export interface User extends AdvancedModel {
   id: number;
   userName: string;
-  password: string;
+  //password: string;
   firstName: string;
   patronymic: string | null;
   lastName: string;
   roleId: number;
   roleName: string;
-  address: {
-    country: { id: number; name: string } | null;
-    region: { id: number; shortName: string } | null;
-    district: { id: number; shortName: string } | null;
-    locality: { id: number; shortName: string } | null;
-    // isRestricted: boolean;
-    id: number;
-  };
+  address: Address;
   comment: string | null;
   isRestricted: boolean;
   causeOfRestriction: string | null;
   dateOfRestriction: Date | null;
   orderedContacts: Contacts;
   outdatedData: OutdatedData;
-}
-
-export interface Contact {
-  id: number;
-  content: string;
-}
-export interface Contacts {
-  email: Contact[];
-  phoneNumber: Contact[];
-  whatsApp: Contact[];
-  telegram: Contact[];
-  telegramNickname: Contact[];
-  telegramId: Contact[];
-  telegramPhoneNumber: Contact[];
-  vKontakte: Contact[];
-  instagram: Contact[];
-  facebook: Contact[];
-  otherContact: Contact[];
 }
 
 const contactTypeMap = {
@@ -64,29 +75,11 @@ export function isContactType(value: string): value is ContactType {
   return value in contactTypeMap;
 }
 
-export interface OutdatedData {
-  contacts: Contacts;
-  addresses: {
-    country: { id: number; name: string };
-    region: { id: number; shortName: string } | null;
-    district: { id: number; shortName: string } | null;
-    locality: { id: number; shortName: string } | null;
-    id: number;
-  }[];
-  names: {
-    firstName: string | null;
-    patronymic: string | null;
-    lastName: string | null;
-    id: number;
-  }[];
-  userNames: {
-    userName: string | null;
-    id: number;
-  }[];
-}
+export type CommonUserFields = keyof NonNullable<ChangingData['main']>;
+export type RestoringDataType = keyof RestoringData;
+export type DeletingOutdatedDataType = keyof DeletingData;
 
-
-export interface OutdatingData {
+/* export interface OutdatingData {
   address: number | null;
   names: {
     firstName: string;
@@ -97,11 +90,6 @@ export interface OutdatingData {
   contacts: number[] | null;
 }
 
-/* export interface DeletingData {
-  address: number | null;
-  contacts: number[] | null;
-} */
-
 export interface DeletingData {
   userNames: number[] | null;
   names: number[] | null;
@@ -109,8 +97,7 @@ export interface DeletingData {
   contacts: number[] | null;
 }
 
-
-export interface ChangedData {
+export interface ChangingData {
   main: {
     firstName?: string;
     patronymic?: string | null;
@@ -128,7 +115,7 @@ export interface ChangedData {
     districtId: number | null;
     localityId: number | null;
   } | null;
-   contacts: {
+  contacts: {
     email?: string[];
     phoneNumber?: string[];
     whatsApp?: string[];
@@ -139,12 +126,10 @@ export interface ChangedData {
     instagram?: string[];
     facebook?: string[];
     otherContact?: string[];
-  }  | null;
-}
+  } | null;
+} */
 
-export type CommonUserFields = keyof NonNullable<ChangedData['main']>;
-
-export interface RestoringData {
+/* export interface RestoringData {
   addresses: number[] | null;
   names: number[] | null;
   userNames: number[] | null;
@@ -160,12 +145,9 @@ export interface RestoringData {
     facebook?: Contact[];
     otherContact?: Contact[];
   } | null;
-}
+}*/
 
-export type RestoringDataType = keyof RestoringData;
-export type DeletingOutdatedDataType = keyof DeletingData;
-
-export interface UserDraft {
+/* export interface UserDraft {
   id: number | null;
   userName: string;
   password: string;
@@ -197,4 +179,43 @@ export interface UserDraft {
     facebook: string[];
     otherContact: string[];
   }
+} */
+
+/* export interface OutdatedData {
+  contacts: Contacts;
+  addresses: {
+    country: { id: number; name: string };
+    region: { id: number; shortName: string } | null;
+    district: { id: number; shortName: string } | null;
+    locality: { id: number; shortName: string } | null;
+    id: number;
+  }[];
+  names: {
+    firstName: string | null;
+    patronymic: string | null;
+    lastName: string | null;
+    id: number;
+  }[];
+  userNames: {
+    userName: string | null;
+    id: number;
+  }[];
 }
+ */
+/* export interface Contact {
+  id: number;
+  content: string;
+}
+export interface Contacts {
+  email: Contact[];
+  phoneNumber: Contact[];
+  whatsApp: Contact[];
+  telegram: Contact[];
+  telegramNickname: Contact[];
+  telegramId: Contact[];
+  telegramPhoneNumber: Contact[];
+  vKontakte: Contact[];
+  instagram: Contact[];
+  facebook: Contact[];
+  otherContact: Contact[];
+} */
