@@ -12,11 +12,10 @@ import {
   DeletingData,
   OutdatingData,
   RestoringData,
-  User,
-  UserDraft,
+  Partner,
+  PartnerDraft,
   Duplicates,
-  ChangePassword,
-} from '../interfaces/user';
+} from '../interfaces/partner';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
 import {
@@ -28,18 +27,18 @@ import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
   duplicatesSchema,
-  userSchema,
-  usersSchema,
-} from '@shared/schemas/user.schema';
+  partnerSchema,
+  partnersSchema,
+} from '@shared/schemas/partner.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
 @Injectable({
   providedIn: 'root',
 })
-export class UserService {
+export class PartnerService {
   private http = inject(HttpClient);
-  private readonly BASE_URL = `${environment.apiUrl}/api/users`;
+  private readonly BASE_URL = `${environment.apiUrl}/api/partners`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
   constructor(
@@ -47,96 +46,54 @@ export class UserService {
     private translateService: TranslateService
   ) {}
 
-  checkUserName(
-    userName: string,
-    id: number | null
-  ): Observable<ApiResponse<boolean>> {
-    let params = new HttpParams().set('userName', userName);
-    if (id != null) params = params.set('id', String(id));
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-user-name`, {
-        params,
-      })
-      .pipe(
-        validateResponse(z.boolean()),
-        this.msgWrapper.messageTap('warn', {
-          source: 'CreateUserDialog',
-          stage: 'checkUserName',
-          name: userName,
-        }),
-        catchError(this.handleError)
-      );
-  }
-
-  checkUserData(user: UserDraft): Observable<ApiResponse<Duplicates>> {
+  checkPartnerData(partner: PartnerDraft): Observable<ApiResponse<Duplicates>> {
     let body = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      contacts: user.draftContacts,
+      id: partner.id,
+      firstName: partner.firstName,
+      lastName: partner.lastName,
+      contacts: partner.draftContacts,
     };
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/check-user-data/`, body)
+      .post<RawApiResponse>(`${this.BASE_URL}/check-partner-data/`, body)
       .pipe(validateResponse(duplicatesSchema), catchError(this.handleError));
   }
 
-  saveUser(userDraft: UserDraft): Observable<ApiResponse<string>> {
+  savePartner(partnerDraft: PartnerDraft): Observable<ApiResponse<string>> {
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/create-user`, userDraft)
+      .post<RawApiResponse>(`${this.BASE_URL}/create-partner`, partnerDraft)
       .pipe(
         validateResponse(z.string()),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
-          userName: res.data,
+          partnerName: res.data,
         })),
         catchError(this.handleError)
       );
   }
 
-  changePassword(
-    userId: number,
-    newPassword: string,
-    currentPassword?: string
-  ): Observable<ApiResponse<null>> {
-    let body: ChangePassword = {
-      userId,
-      newPassword,
-    };
-    if (currentPassword) body.currentPassword = currentPassword;
-    return this.http
-      .patch<RawApiResponse>(`${this.BASE_URL}/change-password/`, body)
-      .pipe(
-        validateNoSchemaResponse<null>('isNull'),
-        this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
-      );
-  }
-
-  saveUpdatedUser(
+  saveUpdatedPartner(
     id: number,
-    updatedUserData: {
+    updatedPartnerData: {
       changes: ChangingData;
       restoringData: RestoringData;
       outdatingData: OutdatingData;
       deletingData: DeletingData;
     }
-  ): Observable<ApiResponse<User>> {
+  ): Observable<ApiResponse<Partner>> {
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/update-user`, {
+      .post<RawApiResponse>(`${this.BASE_URL}/update-partner`, {
         id,
-        ...updatedUserData,
+        ...updatedPartnerData,
       })
       .pipe(
-        validateResponse(userSchema),
+        validateResponse(partnerSchema),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
-          userName: res.data.userName,
+          partnerName: res.data.partnerName,
         })),
         catchError(this.handleError)
       );
   }
 
   formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    console.log("this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')", this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT'));
-
     if (commentFilter.length === 1) {
      return (
         commentFilter[0] ==
@@ -146,7 +103,7 @@ export class UserService {
     return undefined;
   }
 
-  getListOfUsers(
+  getListOfPartners(
     allFilterParameters: {
       viewOption: string;
       includeOutdated: boolean;
@@ -163,7 +120,7 @@ export class UserService {
     },
     pageSize: number,
     currentPage: number
-  ): Observable<ApiResponse<{ users: User[]; length: number }>> {
+  ): Observable<ApiResponse<{ partners: Partner[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
       page: { size: pageSize, number: currentPage },
@@ -186,7 +143,7 @@ export class UserService {
       }),
       filters: ctrl.omitEmpty({
         general: ctrl.omitEmpty({
-          roles: p.filter.roles!.map((r) => r.id),
+          affirmations: p.filter.affirmations,
           comment: this.formCommentFilterValue(p.filter.comment),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
@@ -206,27 +163,27 @@ export class UserService {
     };
     console.log('dto', dto);
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/get-users`, dto)
-      .pipe(validateResponse(usersSchema), catchError(this.handleError));
+      .post<RawApiResponse>(`${this.BASE_URL}/get-partners`, dto)
+      .pipe(validateResponse(partnersSchema), catchError(this.handleError));
   }
 
-  getUser(id: number): Observable<ApiResponse<User>> {
+  getPartner(id: number): Observable<ApiResponse<Partner>> {
     return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/get-user-by-id/${id}`)
-      .pipe(validateResponse(userSchema), catchError(this.handleError));
+      .get<RawApiResponse>(`${this.BASE_URL}/get-partner-by-id/${id}`)
+      .pipe(validateResponse(partnerSchema), catchError(this.handleError));
   }
 
-  checkPossibilityToDeleteUser(id: number): Observable<ApiResponse<number>> {
+  checkPossibilityToDeletePartner(id: number): Observable<ApiResponse<number>> {
     return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-user-before-delete/${id}`)
+      .get<RawApiResponse>(`${this.BASE_URL}/check-partner-before-delete/${id}`)
       .pipe(
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap(
           'warn',
           (res) => ({
-            source: 'UsersList',
-            stage: 'checkPossibilityToDeleteUser',
-            userId: id,
+            source: 'PartnersList',
+            stage: 'checkPossibilityToDeletePartner',
+            partnerId: id,
             amountOfDependencies: res.data,
           }),
           (res) => ({ count: res.data })
@@ -235,9 +192,9 @@ export class UserService {
       );
   }
 
-  deleteUser(id: number): Observable<ApiResponse<null>> {
+  deletePartner(id: number): Observable<ApiResponse<null>> {
     return this.http
-      .delete<RawApiResponse>(`${this.BASE_URL}/delete-user/${id}`)
+      .delete<RawApiResponse>(`${this.BASE_URL}/delete-partner/${id}`)
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
@@ -245,12 +202,31 @@ export class UserService {
       );
   }
 
-  blockUser(
+    checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/check-partner-before-block/${id}`)
+      .pipe(
+        validateNoSchemaResponse<number>('isNumber'),
+        this.msgWrapper.messageTap(
+          'warn',
+          (res) => ({
+            source: 'PartnersList',
+            stage: 'checkPossibilityToDeletePartner',
+            partnerId: id,
+            amountOfDependencies: res.data,
+          }),
+          (res) => ({ count: res.data })
+        ),
+        catchError(this.handleError)
+      );
+  }
+
+  blockPartner(
     id: number,
     causeOfRestriction: string
   ): Observable<ApiResponse<null>> {
     return this.http
-      .patch<RawApiResponse>(`${this.BASE_URL}/block-user/`, {
+      .patch<RawApiResponse>(`${this.BASE_URL}/block-partner/`, {
         id,
         causeOfRestriction,
       })
@@ -261,9 +237,9 @@ export class UserService {
       );
   }
 
-  unblockUser(id: number): Observable<ApiResponse<null>> {
+  unblockPartner(id: number): Observable<ApiResponse<null>> {
     return this.http
-      .patch<RawApiResponse>(`${this.BASE_URL}/unblock-user/`, { id })
+      .patch<RawApiResponse>(`${this.BASE_URL}/unblock-partner/`, { id })
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),

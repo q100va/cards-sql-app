@@ -2,11 +2,12 @@ import { AddressFilter } from './toponym';
 import { ContactType } from './user';
 
 export interface GeneralFilter {
-  roles: { id: number; name: string }[];
+  roles?: { id: number; name: string }[];
   comment: string[];
   dateBeginningRange: Date[];
   dateRestrictionRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
+  affirmations?: string[];
 }
 
 export type FilterDraft = {

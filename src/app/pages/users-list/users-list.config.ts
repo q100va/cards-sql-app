@@ -416,7 +416,7 @@ export const userDialogConfig: DialogData<User> = {
     },
   ],
 
-  checkingName: 'userName',
+ // checkingName: 'userName',
   object: null,
   componentType: 'user',
   addressFilterParams: {

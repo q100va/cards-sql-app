@@ -353,6 +353,7 @@
     "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
     "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
     "USER_WITHOUT_ROLE": "User without role",
+    "ADDRESS_NOT_RESTORED": "Failed to restore the address. Object not updated.",
 
     "ROLE": {
       "NOT_FOUND": "Role not found",
@@ -394,7 +395,7 @@
       "ROLE_REQUIRED": "User has no assigned role. Account not created.",
       "NOT_CREATED": "Failed to create the user",
       "NOT_UPDATED": "Failed to update the user",
-      "ADDRESS_NOT_RESTORED": "Failed to restore the address. User not updated.",
+
       "LIST_FAILED": "Failed to get the list of users",
       "NOT_CHECKED": "Failed to check the user dependencies",
       "NOT_DELETED": "Failed to delete the user",
@@ -410,6 +411,7 @@
     "INVALID_FORMAT": "Invalid data format",
     "REQUIRED": "This field cannot be empty",
     "TOO_LONG_500": "Maximum 500 characters",
+    "TOO_LONG_150": "Maximum 150 characters",
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",

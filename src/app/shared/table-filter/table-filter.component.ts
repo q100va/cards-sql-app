@@ -298,7 +298,7 @@ export class TableFilterComponent implements OnInit {
     // Count active filters
     if (filter.dateBeginningRange.length) count++;
     if (filter.dateRestrictionRange.length) count++;
-    if (filter.roles.length) count++;
+    if ((filter.roles ?? []).length) count++;
     if (filter.comment.length) count++;
     if (filter.contactTypes.length) count++;
 

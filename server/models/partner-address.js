@@ -1,8 +1,8 @@
 import { DataTypes, Model } from 'sequelize';
 
-export default function UserAddressModel(sequelize) {
-  class UserAddress extends Model { }
-  UserAddress.init({
+export default function PartnerAddressModel(sequelize) {
+  class PartnerAddress extends Model { }
+  PartnerAddress.init({
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -24,11 +24,11 @@ export default function UserAddressModel(sequelize) {
   },
     {
       sequelize,
-      modelName: 'user-address',
-      tableName: 'user-addresses',
+      modelName: 'partner-address',
+      tableName: 'partner-addresses',
       timestamps: true, // createdAt
       updatedAt: true,
     });
 
-  return UserAddress;
+  return PartnerAddress;
 }

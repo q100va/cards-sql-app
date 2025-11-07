@@ -8,7 +8,7 @@ import { createRole } from './factories/role.js';
 import { createUser as factoryCreateUser } from './factories/user.js';
 import { createUserHashed } from './factories/user.js';
 import { seedOperationsForRole } from './factories/role.js';
-import { Role, RolePermission, User, UserContact, UserAddress, SearchUser, RefreshToken } from '../../models/index.js';
+import { Role, RolePermission, User, UserContact, UserAddress, UserSearch, RefreshToken } from '../../models/index.js';
 
 // маленький хелпер для SELECT-ов (возвращает массив строк)
 async function select(text, bind = []) {
@@ -36,7 +36,7 @@ describe('Users API (integration, minimal)', () => {
   beforeEach(async () => {
     // чистим хвосты пользователей (каскады и индексы)
     await RefreshToken.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await SearchUser.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
+    await UserSearch.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
     await UserContact.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
     await UserAddress.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
     await User.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
@@ -92,7 +92,7 @@ describe('Users API (integration, minimal)', () => {
       // user с контактами
       const u = await factoryCreateUser({ userName: 'john', firstName: 'John', lastName: 'Smith', roleId: 1 });
       await UserContact.create({ userId: u.id, type: 'email', content: 'a@b.com' });
-      await SearchUser.create({ userId: u.id, content: 'john John Smith a@b.com' });
+      await UserSearch.create({ userId: u.id, content: 'john John Smith a@b.com' });
 
       const { body, status } = await global.api
         .post('/api/users/check-user-data')
@@ -125,7 +125,7 @@ describe('Users API (integration, minimal)', () => {
 
   // ---------- POST /create-user ----------
   describe('POST /api/users/create-user', () => {
-    it('creates user, contacts, optional address, builds SearchUser and returns code USER.CREATED', async () => {
+    it('creates user, contacts, optional address, builds UserSearch and returns code USER.CREATED', async () => {
       const payload = {
         id: null,
         userName: 'kate5',
@@ -170,7 +170,7 @@ describe('Users API (integration, minimal)', () => {
       const [userRow] = await select(`SELECT id, "userName" FROM users WHERE "userName" = $1`, [payload.userName]);
       expect(userRow).toBeTruthy();
 
-      const search = await SearchUser.findOne({ where: { userId: userRow.id, isRestricted: false } });
+      const search = await UserSearch.findOne({ where: { userId: userRow.id, isRestricted: false } });
       expect(search?.content).toMatch(/kate5/i);
     });
   });
@@ -288,8 +288,8 @@ describe('Users API (integration, minimal)', () => {
     it('returns list with length and transformed items', async () => {
       const u1 = await factoryCreateUser({ userName: 'anna', firstName: 'Anna', lastName: 'Bell', roleId: 1 });
       const u2 = await factoryCreateUser({ userName: 'boris', firstName: 'Boris', lastName: 'Cook', roleId: 1 });
-      await SearchUser.create({ userId: u1.id, content: 'anna Anna Bell' });
-      await SearchUser.create({ userId: u2.id, content: 'boris Boris Cook' });
+      await UserSearch.create({ userId: u1.id, content: 'anna Anna Bell' });
+      await UserSearch.create({ userId: u2.id, content: 'boris Boris Cook' });
       const { body, status } = await global.api
         .post('/api/users/get-users')
         .set({ ...langRu, ...auth })

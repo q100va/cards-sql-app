@@ -2,9 +2,9 @@ import { DataTypes, Model } from 'sequelize';
 import CustomError from "../shared/customError.js";
 import {regularExpression} from './helper-contact-re.js';
 
-export default function UserContactModel(sequelize) {
-  class UserContact extends Model { }
-  UserContact.init({
+export default function PartnerContactModel(sequelize) {
+  class PartnerContact extends Model { }
+  PartnerContact.init({
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -38,11 +38,13 @@ export default function UserContactModel(sequelize) {
   },
     {
       sequelize,
-      modelName: 'user-contact',
-      tableName: 'user-contacts',
+      modelName: 'partner-contact',
+      tableName: 'partner-contacts',
       timestamps: true, // createdAt
       updatedAt: true,
     });
-  return UserContact;
+  return PartnerContact;
 
 }
+
+

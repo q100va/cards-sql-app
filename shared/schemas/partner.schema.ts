@@ -1,4 +1,14 @@
 import { z } from 'zod';
+import {
+  emailSchema,
+  facebookSchema,
+  instagramSchema,
+  otherContactSchema,
+  phoneNumberSchema,
+  telegramIdSchema,
+  telegramNicknameSchema,
+  vKontakteSchema,
+} from './user.schema.js';
 
 /* ===================== Helpers ===================== */
 
@@ -8,20 +18,6 @@ const toTrim = (v: unknown) =>
 
 const emptyToNull = (v: unknown) =>
   v == null || String(v).trim() === '' ? null : String(v).trim();
-
-// Lowercase+trim
-const toLowerTrim = (v: unknown) =>
-  typeof v === 'string'
-    ? v.toLowerCase().trim()
-    : v == null
-    ? ''
-    : String(v).toLowerCase().trim();
-
-const keepE164Chars = (v: unknown) =>
-  typeof v === 'string' ? v.replace(/[^0-9+]/g, '') : v == null ? '' : v;
-
-const keepE164CharsNullable = (v: unknown) =>
-  typeof v === 'string' ? v.replace(/[^0-9+]/g, '') : v;
 
 /* ===================== Reusable atoms ===================== */
 
@@ -33,13 +29,9 @@ const nonEmptyTrimMax = (max: number, msgMax: string) =>
     toTrim,
     z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax })
   );
-
 const positiveInt = z.number().int().positive();
 const nullableInt = positiveInt.nullable();
 
-const stringArray = z.array(nonEmptyTrim); // [] ok
-
-// null | '' | Date | ISO → Date|null
 const nullableIsoDate = z.preprocess((v: unknown) => {
   if (v == null || v === '') return null;
   if (v instanceof Date) return v;
@@ -49,220 +41,6 @@ const nullableIsoDate = z.preprocess((v: unknown) => {
 
 const intOptArray = z.array(positiveInt).min(1).optional();
 
-/* ===================== Some Schemas for form validation ===================== */
-
-export const causeOfRestrictionControlSchema = z.preprocess(
-  toTrim,
-  z
-    .string()
-    .min(1, 'FORM_VALIDATION.REQUIRED')
-    .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
-    .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-);
-
-export const emailControlSchema = z
-  .preprocess(
-    toLowerTrim,
-    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' })
-  )
-  .superRefine((v, ctx) => {
-    if (v.length > 254)
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-    const [local] = v.split('@');
-    if (local && local.length > 64)
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-  });
-
-export const phoneNumberControlSchema = z
-  .preprocess(keepE164Chars, z.string().min(1, 'FORM_VALIDATION.REQUIRED'))
-  .superRefine((val, ctx) => {
-    if (!val.startsWith('+')) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-      return;
-    }
-    if (val.startsWith('+7')) {
-      if (!/^\+7\d{10}$/.test(val)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-        });
-      }
-      return;
-    }
-    if (!/^\+[1-9]\d{7,14}$/.test(val)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-    }
-  });
-export const telegramIdControlSchema = z.preprocess(
-  toTrim,
-  z
-    .string()
-    .min(1, 'FORM_VALIDATION.REQUIRED')
-    .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-);
-
-export const whatsAppControlSchema = z
-  .preprocess(keepE164CharsNullable, z.string().nullable())
-  .superRefine((val, ctx) => {
-    if (val && !val.startsWith('+')) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-      return;
-    }
-    if (val && val.startsWith('+7')) {
-      if (!/^\+7\d{10}$/.test(val)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-        });
-      }
-      return;
-    }
-    if (val && !/^\+[1-9]\d{7,14}$/.test(val)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-    }
-  });
-
-export const telegramNicknameControlSchema = z.preprocess(
-  emptyToNull,
-  z
-    .string()
-    .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
-);
-
-export const vKontakteControlSchema = z.preprocess(
-  emptyToNull,
-  z
-    .string()
-    .regex(
-      /^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
-    )
-    .nullable()
-);
-
-export const instagramControlSchema = z.preprocess(
-  emptyToNull,
-  z
-    .string()
-    .regex(
-      /^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
-    )
-    .nullable()
-);
-
-export const facebookControlSchema = z.preprocess(
-  emptyToNull,
-  z
-    .string()
-    .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
-);
-
-export const otherContactControlSchema = z.preprocess(
-  emptyToNull,
-  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
-);
-
-/* ===================== Contacts for array ===================== */
-
-export const emailSchema = z
-  .preprocess(toLowerTrim, z.email())
-  .superRefine((v, ctx) => {
-    if (v.length > 254)
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-    const [local] = v.split('@');
-    if (local && local.length > 64)
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-  });
-
-export const phoneNumberSchema = z
-  .preprocess(keepE164Chars, z.string())
-  .superRefine((val, ctx) => {
-    if (!val.startsWith('+')) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-      return;
-    }
-    if (val.startsWith('+7')) {
-      if (!/^\+7\d{10}$/.test(val)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-        });
-      }
-      return;
-    }
-    if (!/^\+[1-9]\d{7,14}$/.test(val)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
-      });
-    }
-  });
-
-export const telegramNicknameSchema = z.preprocess(
-  toTrim,
-  z
-    .string()
-    .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-);
-
-export const telegramIdSchema = z.preprocess(
-  toTrim,
-  z.string().regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-);
-
-export const vKontakteSchema = z.preprocess(
-  toTrim,
-  z
-    .string()
-    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/)
-);
-
-export const instagramSchema = z.preprocess(
-  toTrim,
-  z
-    .string()
-    .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/)
-);
-
-export const facebookSchema = z.preprocess(
-  toTrim,
-  z.string().regex(/^[A-Za-z0-9_.]{5,}$/)
-);
-
-export const otherContactSchema = z.preprocess(
-  toTrim,
-  z.string().min(1).max(256)
-);
 /* ===================== Address (draft + view) ===================== */
 
 export const draftAddressSchema = z
@@ -310,24 +88,30 @@ export const contactType = z.enum([
 // Draft
 export const draftContactsSchema = z
   .object({
-    email: z.array(emailSchema).nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
-    phoneNumber: z
-      .array(phoneNumberSchema)
-      .nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
+    email: z.array(emailSchema),
+    phoneNumber: z.array(phoneNumberSchema),
     whatsApp: z.array(phoneNumberSchema),
     telegramNickname: z.array(telegramNicknameSchema),
-    telegramId: z
-      .array(telegramIdSchema)
-      .nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
-    telegramPhoneNumber: z
-      .array(phoneNumberSchema)
-      .nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
+    telegramId: z.array(telegramIdSchema),
+    telegramPhoneNumber: z.array(phoneNumberSchema),
     vKontakte: z.array(vKontakteSchema),
     instagram: z.array(instagramSchema),
     facebook: z.array(facebookSchema),
     otherContact: z.array(otherContactSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((o, ctx) => {
+    const hasAny = Object.values(o).some(
+      (arr) => Array.isArray(arr) && arr.length > 0
+    );
+    if (!hasAny) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [],
+        message: 'FORM_VALIDATION.MIN_ONE_CONTACT',
+      });
+    }
+  });
 
 // View: { id, content }[]
 export const contactSchema = z
@@ -338,13 +122,13 @@ const nonEmptyContacts = z.array(contactSchema).nonempty();
 // Ordered contacts object
 export const contactsSchema = z
   .object({
-    email: nonEmptyContacts,
-    phoneNumber: nonEmptyContacts,
+    email: nonEmptyContacts.optional(),
+    phoneNumber: nonEmptyContacts.optional(),
     whatsApp: nonEmptyContacts.optional(),
-    telegram: nonEmptyContacts,
+    telegram: nonEmptyContacts.optional(),
     telegramNickname: nonEmptyContacts.optional(),
-    telegramId: nonEmptyContacts,
-    telegramPhoneNumber: nonEmptyContacts,
+    telegramId: nonEmptyContacts.optional(),
+    telegramPhoneNumber: nonEmptyContacts.optional(),
     vKontakte: nonEmptyContacts.optional(),
     instagram: nonEmptyContacts.optional(),
     facebook: nonEmptyContacts.optional(),
@@ -352,7 +136,7 @@ export const contactsSchema = z
   })
   .strict();
 
-// Optional variant
+/* // Optional variant
 export const optionalContactsSchema = z
   .object({
     email: z.array(contactSchema).optional(),
@@ -367,57 +151,39 @@ export const optionalContactsSchema = z
     facebook: z.array(contactSchema).optional(),
     otherContact: z.array(contactSchema).optional(),
   })
+  .strict(); */
+
+/* ===================== DTOs ===================== */
+export const checkPartnerDataSchema = z
+  .object({
+    id: z.coerce.number().int().optional(),
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    lastName: z
+      .preprocess(
+        toTrim,
+        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
+      )
+      .nullable(),
+    contacts: draftContactsSchema,
+  })
   .strict();
 
-/* ===================== Small DTOs ===================== */
-
-export const userIdSchema = z
+export const partnerIdSchema = z
   .object({ id: z.coerce.number().int().positive() })
   .strict();
 
-export const userBlockingSchema = z
+export const partnerBlockingSchema = z
   .object({
     id: z.coerce.number().int().positive(),
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
   })
   .strict();
 
-export const checkUserNameSchema = z
-  .object({
-    userName: z.preprocess(toTrim, z.string().min(1).max(20)),
-    id: z.coerce.number().int().positive().optional(),
-  })
-  .strict();
+/* ===================== Partner Draft ===================== */
 
-export const checkUserDataSchema = z
-  .object({
-    id: z.coerce.number().int().optional(),
-    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    contacts: draftContactsSchema,
-  })
-  .strict();
-
-/* ===================== User Draft ===================== */
-
-export const userDraftSchema = z
+export const partnerDraftSchema = z
   .object({
     id: nullableInt,
-    userName: z.preprocess(
-      toTrim,
-      z
-        .string()
-        .min(5, { message: 'FORM_VALIDATION.TOO_SHORT_5' })
-        .max(20, { message: 'FORM_VALIDATION.TOO_LONG_20' })
-    ),
-    password: z.preprocess(
-      toTrim,
-      z
-        .string()
-        .min(8, 'FORM_VALIDATION.USER.MIN_PASSWORD')
-        .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
-        .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD')
-    ),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     patronymic: z
       .preprocess(
@@ -425,8 +191,22 @@ export const userDraftSchema = z
         z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
       )
       .nullable(),
-    lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    roleId: z.number({ message: 'FORM_VALIDATION.REQUIRED' }).int().positive(),
+    lastName: z
+      .preprocess(
+        toTrim,
+        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
+      )
+      .nullable(),
+    affiliation: z.enum([
+      'PARTNER.AFF.VOLUNTEER_COORDINATOR',
+      'PARTNER.AFF.HOME_REPRESENTATIVE',
+      'PARTNER.AFF.FOUNDATION_STAFF',
+    ]),
+    position: z
+      .string()
+      .trim()
+      .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
+      .nullable(),
 
     draftAddress: draftAddressSchema,
     comment: z.preprocess(
@@ -484,24 +264,7 @@ export const userDraftSchema = z
     }
   });
 
-/* ===================== Password change ===================== */
-
-export const changePasswordSchema = z
-  .object({
-    userId: positiveInt,
-    newPassword: z.preprocess(
-      toTrim,
-      z
-        .string()
-        .min(8, 'FORM_VALIDATION.USER.MIN_PASSWORD')
-        .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
-        .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD')
-    ),
-    currentPassword: z.string().trim().min(8).optional(),
-  })
-  .strict();
-
-/* ===================== UpdateUserData ===================== */
+/* ===================== UpdatePartnerData ===================== */
 
 // ChangingData.main — PATCH-like
 export const changingMainSchema = z
@@ -513,18 +276,26 @@ export const changingMainSchema = z
       .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
       .nullable()
       .optional(),
-    lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
-
-    userName: z
-      .preprocess(
-        toTrim,
-        z
-          .string()
-          .min(5, { message: 'FORM_VALIDATION.TOO_SHORT_5' })
-          .max(20, { message: 'FORM_VALIDATION.TOO_LONG_20' })
-      )
+    lastName: z
+      .string()
+      .trim()
+      .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
+      .nullable()
       .optional(),
-    roleId: positiveInt.optional(),
+
+    affiliation: z.enum([
+      'PARTNER.AFF.VOLUNTEER_COORDINATOR',
+      'PARTNER.AFF.HOME_REPRESENTATIVE',
+      'PARTNER.AFF.FOUNDATION_STAFF',
+    ]),
+
+    position: z
+      .string()
+      .trim()
+      .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
+      .nullable()
+      .optional(),
+
     comment: z
       .preprocess(
         emptyToNull,
@@ -629,11 +400,10 @@ export const outdatingDataSchema = z
       .object({
         firstName: nonEmptyTrim,
         patronymic: z.preprocess(toTrim, z.string().min(1)).nullable(),
-        lastName: nonEmptyTrim,
+        lastName: z.preprocess(toTrim, z.string().min(1)).nullable(),
       })
       .strict()
       .nullable(),
-    userName: z.preprocess(toTrim, z.string().min(1)).nullable(),
     contacts: z.array(positiveInt).nullable(),
   })
   .strict();
@@ -641,7 +411,6 @@ export const outdatingDataSchema = z
 /* ========= DeletingData ========= */
 export const deletingDataSchema = z
   .object({
-    userNames: z.array(positiveInt).nullable(),
     names: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
@@ -653,13 +422,12 @@ export const restoringDataSchema = z
   .object({
     addresses: z.array(positiveInt).nullable(),
     names: z.array(positiveInt).nullable(),
-    userNames: z.array(positiveInt).nullable(),
-    contacts: optionalContactsSchema.nullable(),
+    contacts: contactsSchema.nullable(),
   })
   .strict();
 
-/* ========= UpdateUserData wrapper ========= */
-export const updateUserDataSchema = z
+/* ========= UpdatePartnerData wrapper ========= */
+export const updatePartnerDataSchema = z
   .object({
     id: positiveInt,
     changes: changingDataSchema,
@@ -669,11 +437,11 @@ export const updateUserDataSchema = z
   })
   .strict();
 
-/* ========= Users query DTO ========= */
+/* ========= Partner query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
 
-export const usersQueryDTOSchema = z
+export const partnersQueryDTOSchema = z
   .object({
     page: z.object({
       size: z.number().int().min(1),
@@ -695,7 +463,16 @@ export const usersQueryDTOSchema = z
       .object({
         general: z
           .object({
-            roles: z.array(positiveInt).min(1).optional(),
+            affiliations: z
+              .array(
+                z.enum([
+                  'PARTNER.AFF.VOLUNTEER_COORDINATOR',
+                  'PARTNER.AFF.HOME_REPRESENTATIVE',
+                  'PARTNER.AFF.FOUNDATION_STAFF',
+                ])
+              )
+              .min(1)
+              .optional(),
             comment: z.boolean().optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
@@ -723,6 +500,7 @@ export const usersQueryDTOSchema = z
           })
           .partial()
           .optional(),
+        //houses
       })
       .partial()
       .optional(),
@@ -740,9 +518,9 @@ const outdatedNameItemSchema = z
   })
   .strict();
 
-const outdatedUserNameItemSchema = z
+const outdatedPartnerNameItemSchema = z
   .object({
-    userName: nonEmpty,
+    partnerName: nonEmpty,
     id: positiveInt,
   })
   .strict();
@@ -760,19 +538,19 @@ const outdatedAddressItemSchema = z
 
 export const outdatedDataSchema = z
   .object({
-    contacts: optionalContactsSchema,
+    contacts: contactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    userNames: z.array(outdatedUserNameItemSchema),
+    partnerNames: z.array(outdatedPartnerNameItemSchema),
   })
   .strict();
 
-/* ===================== User (view) & users list ===================== */
+/* ===================== Partner (view) & partners list ===================== */
 
-export const userSchema = z
+export const partnerSchema = z
   .object({
     id: positiveInt,
-    userName: nonEmpty,
+    partnerName: nonEmpty,
     firstName: nonEmpty,
     patronymic: nonEmpty.nullable(),
     lastName: nonEmpty,
@@ -789,9 +567,9 @@ export const userSchema = z
   })
   .strict();
 
-export const usersSchema = z
+export const partnersSchema = z
   .object({
-    users: z.array(userSchema),
+    partners: z.array(partnerSchema),
     length: z.coerce.number().int().min(0),
   })
   .strict();
@@ -804,7 +582,7 @@ export const duplicatesSchema = z
         .object({
           type: z.string(),
           content: z.string(),
-          users: z.array(z.string()),
+          partners: z.array(z.string()),
         })
         .strict()
     ),
@@ -813,9 +591,8 @@ export const duplicatesSchema = z
 
 /* ===================== Types ===================== */
 export type Duplicates = z.infer<typeof duplicatesSchema>;
-export type UserDraft = z.infer<typeof userDraftSchema>;
+export type PartnerDraft = z.infer<typeof partnerDraftSchema>;
 export type DraftContacts = z.infer<typeof draftContactsSchema>;
-export type ChangePassword = z.infer<typeof changePasswordSchema>;
 
 export type Contact = z.infer<typeof contactSchema>;
 export type Contacts = z.infer<typeof contactsSchema>;
@@ -823,12 +600,11 @@ export type Contacts = z.infer<typeof contactsSchema>;
 export type Address = z.infer<typeof addressSchema>;
 export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
 export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
-export type OutdatedUserName = z.infer<typeof outdatedUserNameItemSchema>;
-export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;
+export type OutdatedPartnerName = z.infer<typeof outdatedPartnerNameItemSchema>;
+export type OutdatedContacts = z.infer<typeof contactsSchema>;
 export type OutdatedData = z.infer<typeof outdatedDataSchema>;
 
 export type ChangingData = z.infer<typeof changingDataSchema>;
 export type RestoringData = z.infer<typeof restoringDataSchema>;
 export type OutdatingData = z.infer<typeof outdatingDataSchema>;
 export type DeletingData = z.infer<typeof deletingDataSchema>;
-// export type UsersQueryDTO = z.infer<typeof usersQueryDTOSchema>;
