@@ -19,7 +19,7 @@ if (!ACCESS_SECRET || !REFRESH_SECRET) {
 const isProd = process.env.NODE_ENV === 'production';
 
 // cookie с refresh токеном
-export const setRefreshCookie = (res, token) => {
+/* export const setRefreshCookie = (res, token) => {
   res.cookie('rt', token, {
     httpOnly: true,
     secure: isProd,
@@ -28,6 +28,17 @@ export const setRefreshCookie = (res, token) => {
     maxAge: REFRESH_TTL_SEC * 1000,
   });
 };
+ */
+export const setRefreshCookie = (res, token) => {
+  res.cookie('rt', token, {
+    httpOnly: true,
+    secure: isProd,                 // в проде true (HTTPS обязателен)
+    sameSite: isProd ? 'none' : 'lax', // прод: cross-site → 'none'
+    path: '/api/session',           // норм: кука уходит только на эндпоинты сессий
+    maxAge: REFRESH_TTL_SEC * 1000,
+  });
+};
+
 
 export const clearRefreshCookie = (res) => {
   res.clearCookie('rt', {

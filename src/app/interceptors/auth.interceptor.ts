@@ -15,7 +15,7 @@ export class AuthInterceptor implements HttpInterceptor {
   private refreshInProgress = false;
   private refresh$ = new ReplaySubject<boolean>(1);
 
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+/*   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // 1) Auth-роуты не трогаем (ни bearer, ни ретраи)
     if (this.isAuthRoute(req.url) || !this.isApiCall(req.url)) {
       return next.handle(req);
@@ -36,6 +36,30 @@ export class AuthInterceptor implements HttpInterceptor {
       })
     );
   }
+ */
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  const isApi = this.isApiCall(req.url);
+
+  // 🔹 Всегда отправляем куки на API (включая /api/session/*)
+  const reqWithCreds = isApi ? req.clone({ withCredentials: true }) : req;
+
+  // 1) Auth-роуты не трогаем (ни bearer, ни ретраи)
+  if (this.isAuthRoute(reqWithCreds.url) || !isApi) {
+    return next.handle(reqWithCreds);
+  }
+
+  // 2) Подкладываем bearer, если есть
+  const token = this.signIn.getToken();
+  const authedReq = token ? this.withAuth(reqWithCreds, token) : reqWithCreds;
+
+  return next.handle(authedReq).pipe(
+    catchError((err: unknown) => {
+      if (!this.isAuthError(err)) return throwError(() => err);
+      if (this.isAuthRoute(reqWithCreds.url)) return throwError(() => err);
+      return this.handleAuthError(authedReq, next);
+    })
+  );
+}
 
   // ==== helpers ====
 

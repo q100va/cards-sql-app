@@ -25,6 +25,7 @@ import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
 import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, RolePermission, OutdatedName, RefreshToken } from './models/index.js';
+import { corsMiddleware } from './cors.js';
 
 const app = express();
 
@@ -42,7 +43,7 @@ app.use(express.static(join(__dirname, '../public')));
 
 // CORS
 
-const allowed = new Set([
+/* const allowed = new Set([
   'http://localhost:56379',
   'http://127.0.0.1:56379',
 ]);
@@ -59,13 +60,17 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-lang');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
-});
+}); */
+
+app.set('trust proxy', 1);
+app.use(corsMiddleware);
 
 // request context
 app.use(withRequestContext);
 
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 app.head('/healthz', (_req, res) => res.sendStatus(200));
+
 
 // API
 app.use('/api/session', SessionApi);
@@ -76,6 +81,13 @@ app.use('/api/roles', RolesApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/client-logs', ClientLogsApi);
 app.use('/api/auth', AuthApi);
+
+const noCache = (_req, res, next) => {
+  res.set({'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'});
+  next();
+};
+app.use(['/api/auth/permissions','/api/sessions/me'], noCache);
+
 
 // 404 + errors
 app.use(notFound);
