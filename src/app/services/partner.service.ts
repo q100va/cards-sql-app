@@ -103,7 +103,7 @@ export class PartnerService {
     return undefined;
   }
 
-  getListOfPartners(
+  getList(
     allFilterParameters: {
       viewOption: string;
       includeOutdated: boolean;
@@ -120,7 +120,7 @@ export class PartnerService {
     },
     pageSize: number,
     currentPage: number
-  ): Observable<ApiResponse<{ partners: Partner[]; length: number }>> {
+  ): Observable<ApiResponse<{ list: Partner[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
       page: { size: pageSize, number: currentPage },
@@ -167,7 +167,7 @@ export class PartnerService {
       .pipe(validateResponse(partnersSchema), catchError(this.handleError));
   }
 
-  getPartner(id: number): Observable<ApiResponse<Partner>> {
+  getById(id: number): Observable<ApiResponse<Partner>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-partner-by-id/${id}`)
       .pipe(validateResponse(partnerSchema), catchError(this.handleError));

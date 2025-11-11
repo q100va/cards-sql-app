@@ -146,7 +146,7 @@ export class UserService {
     return undefined;
   }
 
-  getListOfUsers(
+  getList(
     allFilterParameters: {
       viewOption: string;
       includeOutdated: boolean;
@@ -163,7 +163,7 @@ export class UserService {
     },
     pageSize: number,
     currentPage: number
-  ): Observable<ApiResponse<{ users: User[]; length: number }>> {
+  ): Observable<ApiResponse<{ list: User[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
       page: { size: pageSize, number: currentPage },
@@ -210,7 +210,7 @@ export class UserService {
       .pipe(validateResponse(usersSchema), catchError(this.handleError));
   }
 
-  getUser(id: number): Observable<ApiResponse<User>> {
+  getById(id: number): Observable<ApiResponse<User>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-user-by-id/${id}`)
       .pipe(validateResponse(userSchema), catchError(this.handleError));

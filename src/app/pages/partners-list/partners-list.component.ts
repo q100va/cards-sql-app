@@ -1,8 +1,5 @@
-// src/app/pages/users-list/users-list.component.ts
-
 import { Component } from '@angular/core';
 import {
-  userDraftSchema,
   emailControlSchema,
   facebookControlSchema,
   instagramControlSchema,
@@ -14,9 +11,9 @@ import {
   whatsAppControlSchema,
 } from '@shared/schemas/user.schema';
 
-import { TranslateModule } from '@ngx-translate/core';
+import { partnerDraftSchema } from '@shared/schemas/partner.schema';
 
-import { User } from '../../interfaces/user';
+import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -28,143 +25,103 @@ import {
 import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
+import { Partner } from '../../interfaces/partner';
 
 @Component({
-  selector: 'app-users-list',
-  standalone: true,
-  imports: [TranslateModule, TableComponent],
-  templateUrl: './users-list.component.html',
-  styleUrl: './users-list.component.css',
+  selector: 'app-partners-list',
+  imports: [TableComponent, TranslateModule],
+  templateUrl: './partners-list.component.html',
+  styleUrl: './partners-list.component.css',
 })
-export class UsersListComponent {
+export class PartnersListComponent {
   viewOptions: ViewOption[] = [
     {
       id: 'all',
-      name: 'USER.VIEW_OPTIONS.ALL',
+      name: 'PARTNER.VIEW_OPTIONS.ALL',
       initiallySelected: false,
     },
     {
       id: 'only-active',
-      name: 'USER.VIEW_OPTIONS.ONLY_ACTIVE',
+      name: 'PARTNER.VIEW_OPTIONS.ONLY_ACTIVE',
       initiallySelected: true,
     },
     {
       id: 'only-blocked',
-      name: 'USER.VIEW_OPTIONS.ONLY_BLOCKED',
+      name: 'PARTNER.VIEW_OPTIONS.ONLY_BLOCKED',
       initiallySelected: false,
     },
   ];
 
-  componentType: FilterComponentSource = 'userList';
+  componentType: FilterComponentSource = 'partnerList';
 
   tableParams: TableParams = {
-    title: 'USER.TABLE_TITLE',
-    addTitle: 'USER.ADD_USER',
-    searchPlaceholder: 'USER.SEARCH_PLACEHOLDER',
+    title: 'PARTNER.TABLE_TITLE',
+    addTitle: 'PARTNER.ADD_PARTNER',
+    searchPlaceholder: 'PARTNER.SEARCH_PLACEHOLDER',
     addIcon: 'person_add_alt',
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
     {
       id: 1,
-      columnName: 'userName',
-      columnFullName: 'TABLE.COLUMNS.USER_NAME',
-      isUnchangeable: true,
-    },
-    {
-      id: 2,
-      columnName: 'role',
-      columnFullName: 'TABLE.COLUMNS.ROLE_NAME',
-      isUnchangeable: false,
-    },
-    {
-      id: 3,
       columnName: 'name',
       columnFullName: 'TABLE.COLUMNS.FULL_NAME',
       isUnchangeable: false,
     },
     {
-      id: 4,
+      id: 2,
+      columnName: 'homes',
+      columnFullName: 'TABLE.COLUMNS.HOMES',
+      isUnchangeable: false,
+    },
+    {
+      id: 3,
       columnName: 'contacts',
       columnFullName: 'TABLE.COLUMNS.CONTACTS',
       isUnchangeable: false,
     },
     {
-      id: 5,
+      id: 4,
       columnName: 'address',
       columnFullName: 'TABLE.COLUMNS.ADDRESS',
       isUnchangeable: false,
     },
     {
-      id: 6,
+      id: 5,
       columnName: 'dateOfStart',
       columnFullName: 'TABLE.COLUMNS.START_DATE',
       isUnchangeable: false,
     },
     {
-      id: 7,
+      id: 6,
       columnName: 'comment',
       columnFullName: 'TABLE.COLUMNS.COMMENT',
       isUnchangeable: false,
     },
     {
-      id: 8,
+      id: 7,
       columnName: 'isRestricted',
       columnFullName: 'TABLE.COLUMNS.STATUS',
       isUnchangeable: false,
     },
     {
-      id: 9,
+      id: 8,
       columnName: 'actions',
       columnFullName: 'TABLE.COLUMNS.ACTIONS',
       isUnchangeable: false,
     },
   ];
 
-  userDialogConfig: DialogData<User> = {
-    creationTitle: 'USER.CARD.CREATION_TITLE',
-    viewTitle: 'USER.CARD.VIEW_TITLE',
+  partnerDialogConfig: DialogData<Partner> = {
+    creationTitle: 'PARTNER.CARD.CREATION_TITLE',
+    viewTitle: 'PARTNER.CARD.VIEW_TITLE',
     controls: [
-      {
-        controlName: 'userName',
-        value: null,
-        validators: [zodValidator(userDraftSchema.shape.userName)],
-        type: 'inputText',
-        label: 'USER.CARD.USER_NAME_LABEL',
-        placeholder: 'USER.CARD.USER_NAME_PLACEHOLDER',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
-      },
-      {
-        controlName: 'roleId',
-        value: null,
-        validators: [zodValidator(userDraftSchema.shape.roleId)],
-        type: 'select',
-        label: 'USER.CARD.ROLE_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
-      },
-      {
-        controlName: 'password',
-        value: null,
-        validators: [zodValidator(userDraftSchema.shape.password)],
-        type: 'inputPassword',
-        label: 'USER.CARD.PASSWORD_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
-      },
       {
         controlName: 'firstName',
         value: null,
-        validators: [zodValidator(userDraftSchema.shape.firstName)],
+        validators: [zodValidator(partnerDraftSchema.shape.firstName)],
         type: 'inputText',
-        label: 'USER.CARD.FIRST_NAME_LABEL',
+        label: 'PARTNER.CARD.FIRST_NAME_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -174,9 +131,9 @@ export class UsersListComponent {
       {
         controlName: 'patronymic',
         value: null,
-        validators: [zodValidator(userDraftSchema.shape.patronymic)],
+        validators: [zodValidator(partnerDraftSchema.shape.patronymic)],
         type: 'inputText',
-        label: 'USER.CARD.PATRONYMIC_LABEL',
+        label: 'PARTNER.CARD.PATRONYMIC_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -186,9 +143,9 @@ export class UsersListComponent {
       {
         controlName: 'lastName',
         value: null,
-        validators: [zodValidator(userDraftSchema.shape.lastName)],
+        validators: [zodValidator(partnerDraftSchema.shape.lastName)],
         type: 'inputText',
-        label: 'USER.CARD.LAST_NAME_LABEL',
+        label: 'PARTNER.CARD.LAST_NAME_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -198,9 +155,9 @@ export class UsersListComponent {
       {
         controlName: 'comment',
         value: null,
-        validators: [zodValidator(userDraftSchema.shape.comment)],
+        validators: [zodValidator(partnerDraftSchema.shape.comment)],
         type: 'inputText',
-        label: 'USER.CARD.COMMENT_LABEL',
+        label: 'PARTNER.CARD.COMMENT_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -212,7 +169,7 @@ export class UsersListComponent {
         value: false,
         validators: [],
         type: 'toggle',
-        label: 'USER.CARD.BLOCKED_LABEL',
+        label: 'PARTNER.CARD.BLOCKED_LABEL',
         category: 'extraData',
         formType: 'formControl',
         colspan: 6,
@@ -222,8 +179,8 @@ export class UsersListComponent {
         controlName: 'email',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.EMAIL_LABEL',
-        placeholder: 'USER.CARD.EMAIL_PLACEHOLDER',
+        label: 'PARTNER.CARD.EMAIL_LABEL',
+        placeholder: 'PARTNER.CARD.EMAIL_PLACEHOLDER',
         validators: [zodValidator(emailControlSchema)],
         errorName: 'emailFormat',
         category: 'contacts',
@@ -235,8 +192,8 @@ export class UsersListComponent {
         controlName: 'phoneNumber',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.PHONE_NUMBER_LABEL',
-        placeholder: 'USER.CARD.PHONE_NUMBER_PLACEHOLDER',
+        label: 'PARTNER.CARD.PHONE_NUMBER_LABEL',
+        placeholder: 'PARTNER.CARD.PHONE_NUMBER_PLACEHOLDER',
         validators: [zodValidator(phoneNumberControlSchema)],
         errorName: 'phoneNumberFormat',
         category: 'contacts',
@@ -248,8 +205,8 @@ export class UsersListComponent {
         controlName: 'telegramId',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.TELEGRAM_ID_LABEL',
-        placeholder: 'USER.CARD.TELEGRAM_ID_PLACEHOLDER',
+        label: 'PARTNER.CARD.TELEGRAM_ID_LABEL',
+        placeholder: 'PARTNER.CARD.TELEGRAM_ID_PLACEHOLDER',
         validators: [zodValidator(telegramIdControlSchema)],
         errorName: 'telegramIdFormat',
         category: 'contacts',
@@ -261,8 +218,8 @@ export class UsersListComponent {
         controlName: 'telegramPhoneNumber',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.TELEGRAM_PHONE_NUMBER_LABEL',
-        placeholder: 'USER.CARD.TELEGRAM_PHONE_NUMBER_PLACEHOLDER',
+        label: 'PARTNER.CARD.TELEGRAM_PHONE_NUMBER_LABEL',
+        placeholder: 'PARTNER.CARD.TELEGRAM_PHONE_NUMBER_PLACEHOLDER',
         validators: [zodValidator(phoneNumberControlSchema)],
         errorName: 'phoneNumberFormat',
         category: 'contacts',
@@ -274,8 +231,8 @@ export class UsersListComponent {
         controlName: 'telegramNickname',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.TELEGRAM_NICKNAME_LABEL',
-        placeholder: 'USER.CARD.TELEGRAM_NICKNAME_PLACEHOLDER',
+        label: 'PARTNER.CARD.TELEGRAM_NICKNAME_LABEL',
+        placeholder: 'PARTNER.CARD.TELEGRAM_NICKNAME_PLACEHOLDER',
         validators: [zodValidator(telegramNicknameControlSchema)],
         errorName: 'telegramNicknameFormat',
         category: 'contacts',
@@ -287,8 +244,8 @@ export class UsersListComponent {
         controlName: 'whatsApp',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.WHATSAPP_LABEL',
-        placeholder: 'USER.CARD.WHATSAPP_PLACEHOLDER',
+        label: 'PARTNER.CARD.WHATSAPP_LABEL',
+        placeholder: 'PARTNER.CARD.WHATSAPP_PLACEHOLDER',
         validators: [zodValidator(whatsAppControlSchema)],
         errorName: 'phoneNumberFormat',
         category: 'contacts',
@@ -300,8 +257,8 @@ export class UsersListComponent {
         controlName: 'vKontakte',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.VKONTAKTE_LABEL',
-        placeholder: 'USER.CARD.VKONTAKTE_PLACEHOLDER',
+        label: 'PARTNER.CARD.VKONTAKTE_LABEL',
+        placeholder: 'PARTNER.CARD.VKONTAKTE_PLACEHOLDER',
         validators: [zodValidator(vKontakteControlSchema)],
         errorName: 'vKontakteFormat',
         category: 'contacts',
@@ -313,8 +270,8 @@ export class UsersListComponent {
         controlName: 'instagram',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.INSTAGRAM_LABEL',
-        placeholder: 'USER.CARD.INSTAGRAM_PLACEHOLDER',
+        label: 'PARTNER.CARD.INSTAGRAM_LABEL',
+        placeholder: 'PARTNER.CARD.INSTAGRAM_PLACEHOLDER',
         validators: [zodValidator(instagramControlSchema)],
         errorName: 'instaFormat',
         category: 'contacts',
@@ -326,8 +283,8 @@ export class UsersListComponent {
         controlName: 'facebook',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.FACEBOOK_LABEL',
-        placeholder: 'USER.CARD.FACEBOOK_PLACEHOLDER',
+        label: 'PARTNER.CARD.FACEBOOK_LABEL',
+        placeholder: 'PARTNER.CARD.FACEBOOK_PLACEHOLDER',
         validators: [zodValidator(facebookControlSchema)],
         errorName: 'facebookFormat',
         category: 'contacts',
@@ -339,8 +296,8 @@ export class UsersListComponent {
         controlName: 'otherContact',
         value: null,
         type: 'inputText',
-        label: 'USER.CARD.OTHER_CONTACT_LABEL',
-        placeholder: 'USER.CARD.OTHER_CONTACT_PLACEHOLDER',
+        label: 'PARTNER.CARD.OTHER_CONTACT_LABEL',
+        placeholder: 'PARTNER.CARD.OTHER_CONTACT_PLACEHOLDER',
         validators: [zodValidator(otherContactControlSchema)],
         category: 'contacts',
         formType: 'formArray',
@@ -349,11 +306,10 @@ export class UsersListComponent {
       },
     ],
 
-    // checkingName: 'userName',
     object: null,
-    componentType: 'user',
+    componentType: 'partner',
     addressFilterParams: {
-      source: 'userCard',
+      source: 'partnerCard',
       multiple: false,
       cols: '2',
       gutterSize: '16px',
@@ -372,5 +328,4 @@ export class UsersListComponent {
     componentType: this.componentType,
     tableParams: this.tableParams,
   };
-
 }

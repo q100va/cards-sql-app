@@ -1,10 +1,12 @@
 import { Params } from '../../../../directives/has-op.directive';
 import { ToponymDetailsComponent } from '../../../../pages/toponym-details/toponym-details.component';
 import { UserDetailsComponent } from '../../../../pages/user-details/user-details.component';
+import { PartnerDetailsComponent } from '../../../../pages/partner-details/partner-details.component';
 
 export const DETAILS_COMPONENT_REGISTRY = {
   user: UserDetailsComponent,
   toponym: ToponymDetailsComponent,
+  partner: PartnerDetailsComponent,
   // ...
 } as const;
 
@@ -35,6 +37,16 @@ export const PERMISSIONS_COMPONENT_REGISTRY = {
     },
     createOrEdit: {
       codes: ['ADD_NEW_TOPONYM', 'EDIT_TOPONYM'],
+      mode: 'any',
+    },
+  },
+    partner: {
+    edit: {
+      codes: ['EDIT_PARTNER'],
+      mode: 'all',
+    },
+    createOrEdit: {
+      codes: ['ADD_NEW_PARTNER', 'EDIT_PARTNER'],
       mode: 'any',
     },
   },

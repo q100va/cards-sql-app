@@ -364,7 +364,7 @@ router.post(
       // console.log('partners', partners);
 
       const items = partners.map(p => transformOwnerData('partner',p.toJSON()));
-      res.status(200).send({ data: { partners: items, length: total } });
+      res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
       next(error);

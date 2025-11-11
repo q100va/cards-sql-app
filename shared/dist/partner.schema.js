@@ -1,62 +1,11 @@
 import { z } from 'zod';
-import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './user.schema.js';
-/* ===================== Helpers ===================== */
-// Trim string (null/undefined → '')
-const toTrim = (v) => typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
-const emptyToNull = (v) => v == null || String(v).trim() === '' ? null : String(v).trim();
-/* ===================== Reusable atoms ===================== */
-const nonEmpty = z.string().min(1, 'FORM_VALIDATION.REQUIRED');
-const nonEmptyTrim = z.preprocess(toTrim, nonEmpty);
-const nonEmptyTrimMax = (max, msgMax) => z.preprocess(toTrim, z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax }));
-const positiveInt = z.number().int().positive();
-const nullableInt = positiveInt.nullable();
-const nullableIsoDate = z.preprocess((v) => {
-    if (v == null || v === '')
-        return null;
-    if (v instanceof Date)
-        return v;
-    const d = new Date(String(v));
-    return Number.isNaN(+d) ? v : d;
-}, z.date().nullable());
-const intOptArray = z.array(positiveInt).min(1).optional();
-/* ===================== Address (draft + view) ===================== */
-export const draftAddressSchema = z
-    .object({
-    countryId: nullableInt,
-    regionId: nullableInt,
-    districtId: nullableInt,
-    localityId: nullableInt,
-})
-    .strict();
-const addressRefFullSchema = z
-    .object({ id: positiveInt, name: nonEmpty })
-    .strict();
-const addressRefShortSchema = z
-    .object({ id: positiveInt, shortName: nonEmpty })
-    .strict();
-export const addressSchema = z
-    .object({
-    country: addressRefFullSchema.nullable(),
-    region: addressRefShortSchema.nullable(),
-    district: addressRefShortSchema.nullable(),
-    locality: addressRefShortSchema.nullable(),
-    id: positiveInt.optional(),
-})
-    .strict();
+import { toTrim, emptyToNull, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
+import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './common.schema.js';
+import { draftAddressSchema, addressSchema, } from './common.schema.js';
+import { contactType, optionalContactsSchema, } from './common.schema.js';
+import { changingAddressSchema, changingContactsSchema, } from './common.schema.js';
+import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
 /* ===================== Contacts (draft / ordered / optional) ===================== */
-export const contactType = z.enum([
-    'email',
-    'phoneNumber',
-    'whatsApp',
-    'telegram',
-    'telegramNickname',
-    'telegramId',
-    'telegramPhoneNumber',
-    'vKontakte',
-    'instagram',
-    'facebook',
-    'otherContact',
-]);
 // Draft
 export const draftContactsSchema = z
     .object({
@@ -82,43 +31,6 @@ export const draftContactsSchema = z
         });
     }
 });
-// View: { id, content }[]
-export const contactSchema = z
-    .object({ id: positiveInt, content: nonEmpty })
-    .strict();
-const nonEmptyContacts = z.array(contactSchema).nonempty();
-// Ordered contacts object
-export const contactsSchema = z
-    .object({
-    email: nonEmptyContacts.optional(),
-    phoneNumber: nonEmptyContacts.optional(),
-    whatsApp: nonEmptyContacts.optional(),
-    telegram: nonEmptyContacts.optional(),
-    telegramNickname: nonEmptyContacts.optional(),
-    telegramId: nonEmptyContacts.optional(),
-    telegramPhoneNumber: nonEmptyContacts.optional(),
-    vKontakte: nonEmptyContacts.optional(),
-    instagram: nonEmptyContacts.optional(),
-    facebook: nonEmptyContacts.optional(),
-    otherContact: nonEmptyContacts.optional(),
-})
-    .strict();
-/* // Optional variant
-export const optionalContactsSchema = z
-  .object({
-    email: z.array(contactSchema).optional(),
-    phoneNumber: z.array(contactSchema).optional(),
-    whatsApp: z.array(contactSchema).optional(),
-    telegram: z.array(contactSchema).optional(),
-    telegramNickname: z.array(contactSchema).optional(),
-    telegramId: z.array(contactSchema).optional(),
-    telegramPhoneNumber: z.array(contactSchema).optional(),
-    vKontakte: z.array(contactSchema).optional(),
-    instagram: z.array(contactSchema).optional(),
-    facebook: z.array(contactSchema).optional(),
-    otherContact: z.array(contactSchema).optional(),
-  })
-  .strict(); */
 /* ===================== DTOs ===================== */
 export const checkPartnerDataSchema = z
     .object({
@@ -252,30 +164,6 @@ export const changingMainSchema = z
     dateOfRestriction: nullableIsoDate.optional(),
 })
     .strict();
-// ChangingData.address
-export const changingAddressSchema = z
-    .object({
-    countryId: nullableInt,
-    regionId: nullableInt,
-    districtId: nullableInt,
-    localityId: nullableInt,
-})
-    .strict();
-// ChangingData.contacts
-export const changingContactsSchema = z
-    .object({
-    email: z.array(emailSchema).optional(),
-    phoneNumber: z.array(phoneNumberSchema).optional(),
-    whatsApp: z.array(phoneNumberSchema).optional(),
-    telegramNickname: z.array(telegramNicknameSchema).optional(),
-    telegramId: z.array(telegramIdSchema).optional(),
-    telegramPhoneNumber: z.array(phoneNumberSchema).optional(),
-    vKontakte: z.array(vKontakteSchema).optional(),
-    instagram: z.array(instagramSchema).optional(),
-    facebook: z.array(facebookSchema).optional(),
-    otherContact: z.array(otherContactSchema).optional(),
-})
-    .strict();
 export const changingDataSchema = z
     .object({
     main: changingMainSchema.nullable(),
@@ -333,6 +221,7 @@ export const outdatingDataSchema = z
         .strict()
         .nullable(),
     contacts: z.array(positiveInt).nullable(),
+    homes: z.array(positiveInt).nullable(),
 })
     .strict();
 /* ========= DeletingData ========= */
@@ -341,6 +230,7 @@ export const deletingDataSchema = z
     names: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
+    homes: z.array(positiveInt).nullable(),
 })
     .strict();
 /* ========= RestoringData ========= */
@@ -348,7 +238,8 @@ export const restoringDataSchema = z
     .object({
     addresses: z.array(positiveInt).nullable(),
     names: z.array(positiveInt).nullable(),
-    contacts: contactsSchema.nullable(),
+    contacts: optionalContactsSchema.nullable(),
+    homes: z.array(positiveInt).nullable(),
 })
     .strict();
 /* ========= UpdatePartnerData wrapper ========= */
@@ -427,36 +318,18 @@ export const partnersQueryDTOSchema = z
 })
     .strict();
 /* ===================== OutdatedData (view) ===================== */
-const outdatedNameItemSchema = z
+const outdatedHomesItemSchema = z
     .object({
-    firstName: nonEmpty,
-    patronymic: z.string().nullable(),
-    lastName: nonEmpty,
+    name: nonEmpty,
     id: positiveInt,
-})
-    .strict();
-const outdatedPartnerNameItemSchema = z
-    .object({
-    partnerName: nonEmpty,
-    id: positiveInt,
-})
-    .strict();
-const outdatedAddressItemSchema = z
-    .object({
-    country: addressRefFullSchema,
-    region: addressRefShortSchema.nullable(),
-    district: addressRefShortSchema.nullable(),
-    locality: addressRefShortSchema.nullable(),
-    id: positiveInt,
-    isRecoverable: z.boolean(),
 })
     .strict();
 export const outdatedDataSchema = z
     .object({
-    contacts: contactsSchema,
+    contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    partnerNames: z.array(outdatedPartnerNameItemSchema),
+    homes: z.array(outdatedHomesItemSchema), //TODO:
 })
     .strict();
 /* ===================== Partner (view) & partners list ===================== */
@@ -466,22 +339,23 @@ export const partnerSchema = z
     partnerName: nonEmpty,
     firstName: nonEmpty,
     patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty,
-    roleId: positiveInt,
-    roleName: nonEmpty,
+    lastName: nonEmpty.nullable(),
+    affiliation: nonEmpty,
+    position: nonEmpty.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
     causeOfRestriction: nonEmpty.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: addressSchema,
     comment: nonEmpty.nullable(),
-    orderedContacts: contactsSchema,
+    orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
+    homes: z.array(outdatedHomesItemSchema).nullable(),
 })
     .strict();
 export const partnersSchema = z
     .object({
-    partners: z.array(partnerSchema),
+    list: z.array(partnerSchema),
     length: z.coerce.number().int().min(0),
 })
     .strict();

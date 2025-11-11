@@ -550,10 +550,12 @@ router.post(
         // subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-      // console.log('users', users);
+     console.log('users', users);
 
       const items = users.map(u => transformOwnerData('user', u.toJSON()));
-      res.status(200).send({ data: { users: items, length: total } });
+
+      console.log('items', items);
+      res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.USER.LIST_FAILED';
       next(error);

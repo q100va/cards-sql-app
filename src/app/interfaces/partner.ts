@@ -1,38 +1,39 @@
-import { AdvancedModel } from './advanced-model';
+import { Address, AdvancedModel, OptionalContacts } from './advanced-model';
 import type {
-  Duplicates,
+  PartnerDuplicates,
   PartnerDraft,
-  Contact,
-  Contacts,
-  OutdatedData,
-  ChangePassword,
-  RestoringData,
-  OutdatingData,
-  DeletingData,
-  ChangingData,
-  Address,
-  OutdatedContacts,
-  OutdatedAddress,
-  OutdatedFullName,
-  OutdatedPartnerName,
-  DraftContacts
+  PartnerDraftContacts,
+  PartnerOutdatedData,
+  PartnerChangingData,
+  PartnerOutdatingData,
+  OutdatedHome
 } from '@shared/schemas/partner.schema';
 
 export type {
-  Duplicates,
+  PartnerDuplicates,
   PartnerDraft,
-  Contact,
-  Contacts,
-  OutdatedData,
-  ChangePassword,
-  RestoringData,
-  OutdatingData,
-  DeletingData,
-  ChangingData,
-  Address,
-  OutdatedContacts,
-  OutdatedAddress,
-  OutdatedFullName,
-  OutdatedPartnerName,
-  DraftContacts
+  PartnerDraftContacts,
+  PartnerOutdatedData,
+  PartnerChangingData,
+  PartnerOutdatingData,
+  OutdatedHome
 };
+
+export interface Partner extends AdvancedModel {
+  id: number;
+  affiliation: string;
+  position: string | null;
+  firstName: string;
+  patronymic: string | null;
+  lastName: string | null;
+  address: Address;
+  comment: string | null;
+  isRestricted: boolean;
+  causeOfRestriction: string | null;
+  dateOfRestriction: Date | null;
+  orderedContacts: OptionalContacts;
+  outdatedData: PartnerOutdatedData;
+  homes: OutdatedHome[] | null;
+}
+
+

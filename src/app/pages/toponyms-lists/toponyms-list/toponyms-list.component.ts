@@ -131,7 +131,6 @@ export class ToponymsListComponent {
   dataSource = new MatTableDataSource<Toponym>([]);
   length = signal(0);
   showSpinner = signal(false);
-//TODO: не меняется число строк на странице при изменении pageSize
   // --- paging/sorting
   pageIndex = signal(0); // 0-based for MatPaginator
   pageSize = signal(10);

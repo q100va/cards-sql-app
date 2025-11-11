@@ -1,40 +1,27 @@
-import { AdvancedModel } from './advanced-model';
+import { Address, AdvancedModel } from './advanced-model';
 import type {
-  Duplicates,
+  UserDuplicates,
   UserDraft,
-  Contact,
-  Contacts,
-  OutdatedData,
+  UserContacts,
+  UserOutdatedData,
   ChangePassword,
-  RestoringData,
-  OutdatingData,
-  DeletingData,
-  ChangingData,
-  Address,
-  OutdatedContacts,
-  OutdatedAddress,
-  OutdatedFullName,
+  UserOutdatingData,
+  UserChangingData,
   OutdatedUserName,
-  DraftContacts
+  UserDraftContacts
 } from '@shared/schemas/user.schema';
 
+
 export type {
-  Duplicates,
+  UserDuplicates,
   UserDraft,
-  Contact,
-  Contacts,
-  OutdatedData,
+  UserContacts,
+  UserOutdatedData,
   ChangePassword,
-  RestoringData,
-  OutdatingData,
-  DeletingData,
-  ChangingData,
-  Address,
-  OutdatedContacts,
-  OutdatedAddress,
-  OutdatedFullName,
+  UserOutdatingData,
+  UserChangingData,
   OutdatedUserName,
-  DraftContacts
+  UserDraftContacts
 };
 
 export interface User extends AdvancedModel {
@@ -51,33 +38,13 @@ export interface User extends AdvancedModel {
   isRestricted: boolean;
   causeOfRestriction: string | null;
   dateOfRestriction: Date | null;
-  orderedContacts: Contacts;
-  outdatedData: OutdatedData;
+  orderedContacts: UserContacts;
+  outdatedData: UserOutdatedData;
 }
 
-const contactTypeMap = {
-  email: true,
-  phoneNumber: true,
-  whatsApp: true,
-  telegram: true,
-  telegramNickname: true,
-  telegramId: true,
-  telegramPhoneNumber: true,
-  vKontakte: true,
-  instagram: true,
-  facebook: true,
-  otherContact: true,
-} as const;
-
-export type ContactType = keyof typeof contactTypeMap;
-
-export function isContactType(value: string): value is ContactType {
-  return value in contactTypeMap;
-}
-
-export type CommonUserFields = keyof NonNullable<ChangingData['main']>;
-export type RestoringDataType = keyof RestoringData;
-export type DeletingOutdatedDataType = keyof DeletingData;
+//export type CommonUserFields = keyof NonNullable<UserChangingData['main']>;
+//export type UserRestoringDataType = keyof UserRestoringData;
+//export type UserDeletingDataType = keyof UserDeletingData;
 
 /* export interface OutdatingData {
   address: number | null;

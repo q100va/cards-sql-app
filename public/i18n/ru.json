@@ -175,6 +175,58 @@
     "RESTORE_DATA": "восстановить как актуальное",
     "DELETE_DATA": "удалить как ошибочное"
   },
+  "TABLE": {
+    "COLUMNS": {
+      "USER_NAME": "Имя пользователя",
+      "ROLE_NAME": "Роль",
+      "AFFILIATION": "Принадлежность/\nдолжность",
+      "FULL_NAME": "ФИО",
+      "CONTACTS": "Контакты",
+      "ADDRESS": "Адрес",
+      "START_DATE": "Дата\nприсоединения",
+      "COMMENT": "Комментарий",
+      "STATUS": "Статус",
+      "ACTIONS": "Действия",
+      "HOMES": "Координируемые дома"
+    },
+    "NOTES": {
+      "CLOSE": "закрыт",
+      "DEACTIVATED": "не поздравляем",
+      "OUTDATED_DATA": "прежние значения:",
+      "BLOCKED_FROM": "заблокирован с ",
+      "ACTIVE": "активен"
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Открыть перечень",
+      "OPEN_CARD": "открыть карточку",
+      "OPEN_ORDERS": "открыть список заявок",
+      "OPEN_SUBSCRIBERS": "открыть список подписчиков",
+      "OPEN_VOLUNTEERS": "открыть список волонтеров",
+      "OPEN_HOMES": "открыть список интернатов",
+      "BLOCK_OWNER": "заблокировать",
+      "UNBLOCK_OWNER": "разблокировать",
+      "DELETE_OWNER": "удалить"
+    },
+    "DIALOGS": {
+      "CAUSE_OF_BLOCK_LABEL": "Причина блокировки(дезактивации)"
+    },
+    "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу",
+    "CARD": {
+      "MAIN_DATA_LABEL": "Основные сведения",
+      "CONTACTS_LABEL": "Контактные данные",
+      "OUTDATED_DATA_LABEL": "Неактуальные данные",
+      "COORDINATED_HOMES_LABEL": "Координируемые интернаты",
+      "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
+      "CAUSE_OF_BLOCK_PLACEHOLDER": "прекращение волонтерства",
+      "DELETE_BUTTON_TITLE": "Удалить",
+      "EXTRA_CONTACT_BUTTON": "Дополнительный контакт",
+      "OUTDATED_NAMES_TITLE": "Прежние ФИО:",
+      "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
+      "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
+      "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
+      "OUTDATED_HOMES_TITLE": "Прежние координируемые интернаты:"
+    }
+  },
   "USER": {
     "CREATED": "Пользователь «{{userName}}» создан",
     "UPDATED": "Пользователь «{{userName}}» обновлен",
@@ -188,25 +240,11 @@
     "TABLE_TITLE": "Пользователи",
     "ADD_USER": "Добавить пользователя",
     "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
-    "BLOCKED_FROM": "заблокирован с ",
-    "ACTIVE": "активен",
 
     "VIEW_OPTIONS": {
-      "ALL_USERS": "Все пользователи",
+      "ALL": "Все пользователи",
       "ONLY_ACTIVE": "Только активные",
       "ONLY_BLOCKED": "Только заблокированные"
-    },
-
-    "COLUMNS": {
-      "USER_NAME": "Имя пользователя",
-      "ROLE_NAME": "Роль",
-      "FULL_NAME": "ФИО",
-      "CONTACTS": "Контакты",
-      "ADDRESS": "Адрес",
-      "START_DATE": "Дата\nприсоединения",
-      "COMMENT": "Комментарий",
-      "STATUS": "Статус",
-      "ACTIONS": "Действия"
     },
 
     "CONTACTS": {
@@ -219,34 +257,9 @@
       "FACEBOOK_LABEL": "Facebook",
       "OTHER_CONTACT_LABEL": "Другой контакт"
     },
-
-    "MENU": {
-      "OPEN_LIST_TITLE": "Открыть перечень",
-      "OPEN_CARD": "открыть карточку",
-      "OPEN_ORDERS": "открыть список заявок",
-      "OPEN_SUBSCRIBERS": "открыть список подписчиков",
-      "OPEN_VOLUNTEERS": "открыть список волонтеров",
-      "BLOCK_USER": "заблокировать",
-      "UNBLOCK_USER": "разблокировать",
-      "DELETE_USER": "удалить"
-    },
     "CARD": {
       "CREATION_TITLE": "Новый пользователь",
       "VIEW_TITLE": "Пользователь",
-
-      "MAIN_DATA_LABEL": "Основные сведения",
-      "CONTACTS_LABEL": "Контактные данные",
-      "OUTDATED_DATA_LABEL": "Неактуальные данные",
-
-      "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
-      "CAUSE_OF_BLOCK_LABEL": "Причина",
-      "CAUSE_OF_BLOCK_PLACEHOLDER": "прекращение волонтерства",
-      "DELETE_BUTTON_TITLE": "Удалить",
-      "EXTRA_CONTACT_BUTTON": "Дополнительный контакт",
-      "OUTDATED_NAMES_TITLE": "Прежние ФИО:",
-      "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
-      "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
-      "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
 
       "USER_NAME_LABEL": "Имя пользователя*",
       "ROLE_LABEL": "Роль*",
@@ -290,19 +303,61 @@
     "BLOCK_BUTTON": "Заблокировать",
     "CANCEL_BUTTON": "Отмена"
   },
+  "PARTNER": {
+    "TABLE_TITLE": "Координаторы",
+    "ADD_PARTNER": "Добавить координатора",
+    "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
+
+    "VIEW_OPTIONS": {
+      "ALL": "Все координаторы",
+      "ONLY_ACTIVE": "Только активные",
+      "ONLY_BLOCKED": "Только прекратившие"
+    },
+    "CARD": {
+      "CREATION_TITLE": "Новый координатор",
+      "VIEW_TITLE": "Координатор",
+
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия",
+      "COMMENT_LABEL": "Комментарий",
+      "BLOCKED_LABEL": "Заблокирован",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_ID_LABEL": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "USER_NAME_PLACEHOLDER": "a.petrova",
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше"
+    }
+  },
+
   "BASE_LIST": {
     "DOWNLOAD_TABLE": "Скачать таблицу",
     "SEARCH_LABEL": "Поиск (введите любое значение, допустимое в таблице)",
     "APPLIED_FILTERS": "Примененные фильтры: {{value}}",
     "EXACT_MATCH_HINT": "искомые значения должны присутствовать одновременно",
     "INCLUDE_OUTDATED": "включать неактуальные данные: прежние адреса, телефоны и т.п.",
-    "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу",
     "SET_FILTER": "Настроить фильтр",
     "RESET_FILTER": "Сбросить фильтр",
     "SET_COLUMNS": "Настроить отображение колонок",
     "START_LABEL": "нач.",
-    "BLOCK_LABEL": "блок.",
-    "OUTDATED_DATA": "прежние значения:"
+    "BLOCK_LABEL": "блок."
   },
   "NAV": {
     "COLUMNS_HEADER": "Настройте отображение колонок",
@@ -356,7 +411,7 @@
     "ACCOUNT_LOCKED_UNTIL": "Временная блокировка. Повторите попытку после {{until}}.",
     "UNAUTHORIZED_CATCH": "Ошибка авторизации. Попробуйте ещё раз.",
     "USER_WITHOUT_ROLE": "Пользователю не назначена роль",
-  "ADDRESS_NOT_RESTORED": "Невозможно восстановить адрес. Объект не обновлен.",
+    "ADDRESS_NOT_RESTORED": "Невозможно восстановить адрес. Объект не обновлен.",
     "ROLE": {
       "NOT_FOUND": "Роль не найдена",
       "NAME_NOT_CHECKED": "Произошла ошибка при проверке названия роли",
@@ -397,7 +452,7 @@
       "NOT_CREATED": "Произошла ошибка. Пользователь не создан.",
       "ROLE_REQUIRED": "Пользователю не назначена роль. Аккаунт не создан",
       "NOT_UPDATED": "Произошла ошибка. Пользователь не обновлен.",
-          "LIST_FAILED": "Произошла ошибка при получении списка пользователей",
+      "LIST_FAILED": "Произошла ошибка при получении списка пользователей",
       "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления пользователя",
       "NOT_DELETED": "Произошла ошибка при удалении пользователя",
       "CURRENT_PASSWORD_REQUIRED": "Для смены пароля требуется текущий пароль.",

@@ -23,7 +23,7 @@ import {
   AddressFilterParams,
 } from '../../../../interfaces/toponym';
 import { Control, DialogData } from '../../../../interfaces/dialog-props';
-import { ContactType, isContactType } from '../../../../interfaces/user';
+import { ContactType, isContactType } from '../../../../interfaces/advanced-model';
 import { BaseModel } from '../../../../interfaces/base-model';
 import { MessageWrapperService } from '../../../../services/message.service';
 import { AddressService } from '../../../../services/address.service';
@@ -94,8 +94,11 @@ export class BaseDetailsComponent<T extends BaseModel> {
     'otherContact',
   ];
 
+  kind!: "user" | "toponym" | "partner";
+
   ngOnInit() {
     this.params = this.data().addressFilterParams;
+    this.kind = this.data().componentType;
 
     // build form from config
     this.createFormGroup(this.data().controls, this.data().controlsDisable!);
