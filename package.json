@@ -35,7 +35,7 @@
     "__wait-and-run-live": "wait-on -t 120000 http-get://localhost:56379 http-get://localhost:8080/healthz && npm run cypress:run:live"
   },
   "engines": {
-    "node": ">=18"
+    "node": "22.x"
   },
   "private": true,
   "dependencies": {
