@@ -24,12 +24,8 @@ import AuthApi from './routes/auth-api.js';
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
-<<<<<<< HEAD
-import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, UserSearch, RolePermission, UserOutdatedName, RefreshToken, Partner } from './models/index.js';
-=======
 import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, RolePermission, OutdatedName, RefreshToken } from './models/index.js';
 import { corsMiddleware } from './cors.js';
->>>>>>> c02a0aa00e1d05a96316af868c67cf567dea0361
 
 const app = express();
 
