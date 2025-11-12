@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 import 'dotenv/config';
 
 const isTest = process.env.NODE_ENV === 'test';
-const isProd = true;//process.env.NODE_ENV === 'production';//
+const isProd = process.env.NODE_ENV === 'production';//true;//
 
 const user = process.env.DB_USERNAME ?? '';
 const pass = process.env.DB_PASSWORD ?? '';

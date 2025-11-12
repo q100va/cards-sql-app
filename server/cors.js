@@ -15,7 +15,7 @@ const DEFAULTS = [
 // Примеры для прода (замени на свой домен фронта)
 const EXAMPLES = [
   // точный домен (прод)
-  'https://YOUR-APP.vercel.app',
+  'https://cards-sql-app.vercel.app',
   // превью-домены Vercel (разные поддомены) — временно, только на время тестов
   '*.vercel.app',
 ];
