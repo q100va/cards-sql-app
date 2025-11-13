@@ -49,6 +49,9 @@ import { BaseListComponent } from '../../shared/base-list/base-list.component';
 import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
 import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
 
+import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
+import { HasOpDirective } from '../../directives/has-op.directive';
+
 import {
   CONTACT_PARAMS_FOR_LIST,
   IMPLICITLY_DISPLAYED_COLUMNS,
@@ -76,6 +79,8 @@ import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
     BaseListComponent,
     TranslateModule,
     ContactUrlPipe,
+    BlurOnClickDirective,
+    HasOpDirective,
   ],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
@@ -271,9 +276,9 @@ export class UsersListComponent {
 
   // ========== child → parent bridge ==========
   onAllFilterParametersChange = (p: FilterDraft) => {
-  this.goToFirstPage();
-  this.filterParameters.set({ ...p });
-};
+    this.goToFirstPage();
+    this.filterParameters.set({ ...p });
+  };
 
   // ========== sort / page ==========
   sortData(sort: Sort) {
