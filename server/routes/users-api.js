@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import { z } from 'zod';
 import {
   Country, Region, District, Locality,
-  Role, UserAddress, User, UserContact, SearchUser, OutdatedName,
+  Role, UserAddress, User, UserContact, UserSearch, OutdatedName,
   RefreshToken
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
@@ -254,7 +254,7 @@ router.post(
         });
 
         const searchString = ctrl.createSearchString(freshUser);
-        await SearchUser.create({ userId: user.id, content: searchString }, { transaction: t });
+        await UserSearch.create({ userId: user.id, content: searchString }, { transaction: t });
 
         return user.userName;
       });
@@ -488,6 +488,52 @@ router.post(
           });
         }
 
+/*         const freshes = await User.findAll({
+          attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
+          include: [
+            { model: Role, attributes: ['name'] },
+            { model: UserContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
+            {
+              model: UserAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
+              include: [
+                { model: Country, attributes: ['id', 'name'] },
+                { model: Region, attributes: ['id', 'shortName', 'name'] },
+                { model: District, attributes: ['id', 'shortName', 'name'] },
+                { model: Locality, attributes: ['id', 'shortName', 'name'] },
+              ]
+            },
+            { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
+          ],
+          transaction: t,
+        });
+
+        freshes.forEach(async (fresh) => {
+          const search = ctrl.createSearchString(fresh);
+
+          const [row1, created1] = await UserSearch.findOrCreate({
+            where: { userId: fresh.id, isRestricted: false },
+            defaults: { content: search },
+            transaction: t
+          });
+          if (!created1)
+            await row1.update(
+              { content: search },
+              { individualHooks: true, transaction: t }
+            );
+
+          const outdatedSearch = ctrl.createOutdatedSearchString(fresh);
+          if (outdatedSearch) {
+
+            const [row, created] = await UserSearch.findOrCreate({
+              where: { userId: fresh.id, isRestricted: true },
+              defaults: { content: outdatedSearch },
+              transaction: t
+            });
+            if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
+          }
+        });
+ */
+
         // UPDATED USER
         const fresh = await User.findOne({
           where: { id },
@@ -508,22 +554,17 @@ router.post(
           ],
           transaction: t,
         });
-
         // SEARCH
         const search = ctrl.createSearchString(fresh);
-        await SearchUser.update(
+        await UserSearch.update(
           { content: search },
           { where: { userId: id, isRestricted: false }, individualHooks: true, transaction: t }
         );
 
         const outdatedSearch = ctrl.createOutdatedSearchString(fresh);
         if (outdatedSearch) {
-          /*           await SearchUser.upsert(
-                      { userId: id, isRestricted: true, content: outdatedSearch },
-                      { transaction: t }
-                    ); */
 
-          const [row, created] = await SearchUser.findOrCreate({
+          const [row, created] = await UserSearch.findOrCreate({
             where: { userId: id, isRestricted: true },
             defaults: { content: outdatedSearch },
             transaction: t
@@ -638,11 +679,11 @@ router.post(
         }
       ];
 
-      // search by SearchUser.content (words; exact → AND; else OR)
+      // search by UserSearch.content (words; exact → AND; else OR)
       if (search?.value?.trim()) {
         const contentWhere = ctrl.buildSearchContentWhere(search.value, search.exact);
         includes.push({
-          model: SearchUser,
+          model: UserSearch,
           required: true,
           attributes: [],
           where: {

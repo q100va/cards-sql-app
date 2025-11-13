@@ -24,7 +24,7 @@ import AuthApi from './routes/auth-api.js';
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
-import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, RolePermission, OutdatedName, RefreshToken } from './models/index.js';
+import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, UserSearch, RolePermission, OutdatedName, RefreshToken } from './models/index.js';
 import { corsMiddleware } from './cors.js';
 
 const app = express();
@@ -113,7 +113,7 @@ export async function initInfrastructure() {
   await User.sync(syncOpts);
   await UserContact.sync(syncOpts);
   await UserAddress.sync(syncOpts);
-  await SearchUser.sync(syncOpts);
+  await UserSearch.sync(syncOpts);
   await OutdatedName.sync(syncOpts);
   await AuditLog.sync(syncOpts);
   await RefreshToken.sync(syncOpts);

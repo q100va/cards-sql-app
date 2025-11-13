@@ -8,7 +8,7 @@ import CountryModel from './country.js';
 import UserAddressModel from './user-address.js';
 import UserContact from './user-contact.js';
 import User from './user.js';
-import SearchUser from './search-user.js';
+import UserSearch from './search-user.js';
 import OutdatedName from './outdated-name.js';
 import RefreshToken from './refresh-token.js';
 import RolePermissionModel from './role-permission.js';
@@ -74,12 +74,12 @@ Locality.hasMany(UserAddress, {
   onUpdate: 'CASCADE',
 });
 
-User.hasMany(SearchUser, {
+User.hasMany(UserSearch, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
   hooks: true
 });
-SearchUser.belongsTo(User);
+UserSearch.belongsTo(User);
 
 User.hasMany(OutdatedName, { as: 'outdatedNames' }, {
   onDelete: 'CASCADE',
@@ -101,5 +101,5 @@ Role.hasMany(RolePermission, {
 });
 RolePermission.belongsTo(Role);
 
-export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, SearchUser, RolePermission, OutdatedName, RefreshToken };
+export { AuditLog, Role, Locality, District, Region, Country, UserAddress, UserContact, User, UserSearch, RolePermission, OutdatedName, RefreshToken };
 

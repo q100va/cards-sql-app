@@ -244,7 +244,7 @@ export function betweenDatesInclusive([fromISO, toISO]) {
   return { [Op.gte]: from, [Op.lt]: endExclusive };
 }
 
-/** Clause for SearchUser by words + exact flag */
+/** Clause for UserSearch by words + exact flag */
 export function buildSearchContentWhere(value, exact) {
   const words = value.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return undefined;

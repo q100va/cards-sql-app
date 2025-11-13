@@ -2,7 +2,7 @@ import { DataTypes } from 'sequelize';
 
 import sequelize from '../database.js';
 
-const SearchUser = sequelize.define('search-user', {
+const UserSearch = sequelize.define('user-search', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -20,4 +20,4 @@ const SearchUser = sequelize.define('search-user', {
   }
 });
 
-export default SearchUser;
+export default UserSearch;
