@@ -5,6 +5,7 @@ import { BaseLayoutComponent } from './shared/base-layout/base-layout.component'
 import { authGuard } from './guards/auth.guard';
 import { RolesListComponent } from './pages/roles-list/roles-list.component';
 import { UsersListComponent } from './pages/users-list/users-list.component';
+import { InProgressComponent } from './pages/in-progress/in-progress.component';
 import { CountriesListComponent } from './pages/toponyms-lists/countries-list/countries-list.component';
 import { RegionsListComponent } from './pages/toponyms-lists/regions-list/regions-list.component';
 import { DistrictsListComponent } from './pages/toponyms-lists/districts-list/districts-list.component';
@@ -32,9 +33,13 @@ export const routes: Routes = [
     canMatch: [waitAuthReady],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'users' }, // дефолт
-      { path: 'users',
-        canMatch: [requireAnyOp('VIEW_FULL_USERS_LIST', 'VIEW_LIMITED_USERS_LIST')],
-        component: UsersListComponent },
+      {
+        path: 'users',
+        canMatch: [
+          requireAnyOp('VIEW_FULL_USERS_LIST', 'VIEW_LIMITED_USERS_LIST'),
+        ],
+        component: UsersListComponent,
+      },
       {
         path: 'roles',
         canMatch: [requireOp('ALL_OPS_ROLES')],
@@ -42,32 +47,44 @@ export const routes: Routes = [
       },
       {
         path: 'countries',
-        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        canMatch: [
+          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
+        ],
         component: CountriesListComponent,
       },
       {
         path: 'regions',
-        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        canMatch: [
+          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
+        ],
         component: RegionsListComponent,
       },
       {
         path: 'districts',
-        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        canMatch: [
+          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
+        ],
         component: DistrictsListComponent,
       },
       {
         path: 'localities',
-        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
+        canMatch: [
+          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
+        ],
         component: LocalitiesListComponent,
       },
       {
         path: 'audit',
-        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')],//TODO: create operations for audit
+        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')], //TODO: create operations for audit
         component: AuditTableComponent,
+      },
+      {
+        path: '404',
+        component: InProgressComponent,
       },
     ],
   },
 
   // Фоллбек
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: '404' },
 ];

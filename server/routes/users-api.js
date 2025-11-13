@@ -163,7 +163,6 @@ router.post(
         if (!role) throw new CustomError('ERRORS.USER.ROLE_REQUIRED', 422);
 
         const hashed = await hashPassword(creatingUser.password);
-        const country = await Country.create({ name: 'Russia' });
         const user = await User.create(
           {
             userName: creatingUser.userName,

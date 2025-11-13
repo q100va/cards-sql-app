@@ -69,7 +69,7 @@ export class BaseLayoutComponent {
   readonly userName = computed(() => this.user()?.userName ?? '');
 
   menu: Menu = [
-    {
+/*     {
       params: {
         codes: [],
         mode: 'any',
@@ -78,7 +78,7 @@ export class BaseLayoutComponent {
       icon: 'settings',
       text: 'MENU.PROFILE',
       link: '/users/user/profile',
-    },
+    }, */
     {
       params: {
         codes: ['ALL_OPS_ROLES'],
