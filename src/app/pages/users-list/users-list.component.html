@@ -189,15 +189,15 @@
                 <mat-icon>groups</mat-icon>
                 <span>{{'USER.MENU.OPEN_VOLUNTEERS' | translate}}</span>
               </button>
-              <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockUserClick(row.id, row.userName)">
+              <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockUserClick(row.id, row.userName)" *hasOp="{codes:['BLOCK_USER'], mode:'all'}">
                 <mat-icon fontSet="material-icons-outlined">lock</mat-icon>
                 <span>{{'USER.MENU.BLOCK_USER' | translate}}</span>
               </button>
-              <button mat-menu-item [disabled]="!row.isRestricted" (click)="onUnblockUserClick(row.id, row.userName)">
+              <button mat-menu-item [disabled]="!row.isRestricted" (click)="onUnblockUserClick(row.id, row.userName)" *hasOp="{codes:['UNBLOCK_USER'], mode:'all'}">
                 <mat-icon fontSet="material-icons-outlined">lock_open</mat-icon>
                 <span>{{'USER.MENU.UNBLOCK_USER' | translate}}</span>
               </button>
-              <button mat-menu-item (click)="onDeleteUserClick(row.id, row.userName)">
+              <button mat-menu-item (click)="onDeleteUserClick(row.id, row.userName)" *hasOp="{codes:['DELETE_USER'], mode:'all'}">
                 <mat-icon fontSet="material-icons-outlined">delete_outlined</mat-icon>
                 <span>{{'USER.MENU.DELETE_USER' | translate}}</span>
               </button>
