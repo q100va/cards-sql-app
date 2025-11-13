@@ -7,25 +7,32 @@ import { DiffConfirmService } from './diff-confirm.service';
 import {
   User,
   UserDraft,
+  OutdatedUserName,
+  UserChangingData,
+  UserOutdatingData,
+  UserContacts,
+  UserDraftContacts,
+} from '../interfaces/user';
+
+import {
   ContactType,
-  ChangingData,
-  RestoringData,
-  OutdatingData,
-  DeletingData,
-  Contacts,
+  UserRestoringData,
+  UserDeletingData,
   OutdatedContacts,
   OutdatedAddress,
   OutdatedFullName,
-  OutdatedUserName,
-  DraftContacts,
   Contact,
-} from '../interfaces/user';
+  NonTelegram,
+} from '../interfaces/advanced-model';
+
 import { AddressFilter } from '../interfaces/toponym';
 import { normalize, completeContact, isFieldEqual } from '../utils/user-diff';
 
 // utils pure; no DI inside
 
-type NonTelegram = Exclude<ContactType, 'telegram'>;
+
+
+
 type Names = {
   firstName: string;
   patronymic: string | null;
@@ -346,7 +353,7 @@ export class UserDiffService {
             restoring ??= {};
             restoring[type] = [...(restoring[type] || []), ...duplicates];
           } else {
-            return {restoring: null}
+            return { restoring: null };
           }
         }
       }

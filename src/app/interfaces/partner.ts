@@ -1,7 +1,7 @@
 import { Address, AdvancedModel, OptionalContacts } from './advanced-model';
 import type {
   PartnerDuplicates,
-  PartnerDraft,
+ // PartnerDraft,
   PartnerDraftContacts,
   PartnerOutdatedData,
   PartnerChangingData,
@@ -11,7 +11,7 @@ import type {
 
 export type {
   PartnerDuplicates,
-  PartnerDraft,
+  //PartnerDraft,
   PartnerDraftContacts,
   PartnerOutdatedData,
   PartnerChangingData,

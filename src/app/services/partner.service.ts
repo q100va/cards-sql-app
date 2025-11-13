@@ -46,12 +46,12 @@ export class PartnerService {
     private translateService: TranslateService
   ) {}
 
-  checkPartnerData(partner: PartnerDraft): Observable<ApiResponse<Duplicates>> {
+  checkOwnerData(ownerDraft: PartnerDraft): Observable<ApiResponse<Duplicates>> {
     let body = {
-      id: partner.id,
-      firstName: partner.firstName,
-      lastName: partner.lastName,
-      contacts: partner.draftContacts,
+      id: ownerDraft.id,
+      firstName: ownerDraft.firstName,
+      lastName: ownerDraft.lastName,
+      contacts: ownerDraft.draftContacts,
     };
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/check-partner-data/`, body)

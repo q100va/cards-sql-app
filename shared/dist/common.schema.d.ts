@@ -240,6 +240,7 @@ export declare const outdatedCommonSchema: z.ZodObject<{
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
 export type Address = z.infer<typeof addressSchema>;
+export type DraftAddress = z.infer<typeof draftAddressSchema>;
 export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
 export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;

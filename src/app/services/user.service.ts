@@ -68,12 +68,12 @@ export class UserService {
       );
   }
 
-  checkUserData(user: UserDraft): Observable<ApiResponse<Duplicates>> {
+  checkOwnerData(ownerDraft: UserDraft): Observable<ApiResponse<Duplicates>> {
     let body = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      contacts: user.draftContacts,
+      id: ownerDraft.id,
+      firstName: ownerDraft.firstName,
+      lastName: ownerDraft.lastName,
+      contacts: ownerDraft.draftContacts,
     };
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/check-user-data/`, body)

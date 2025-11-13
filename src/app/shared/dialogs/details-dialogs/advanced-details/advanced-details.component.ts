@@ -40,6 +40,7 @@ import {
   DeleteKeyIn,
   OutdatedKeyIn,
   OutdatedItemFor,
+  Kind,
 } from '../../../../interfaces/advanced-model';
 import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
@@ -58,12 +59,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { RoleService } from '../../../../services/role.service';
 import { UserService } from '../../../../services/user.service';
+import { PartnerService } from '../../../../services/partner.service';
 import { UserDiffService } from '../../../../services/user-diff.service';
+import { OwnerService } from '../../../../services/owner.service';
 
 import { buildDuplicateInfoMessage } from '../../../../utils/user-diff';
 
-import { OutdatedUserName } from '../../../../interfaces/user';
-import { OutdatedHome } from '../../../../interfaces/partner';
+import { OutdatedUserName, UserDuplicates } from '../../../../interfaces/user';
+import {
+  OutdatedHome,
+  PartnerDuplicates,
+} from '../../../../interfaces/partner';
 
 import {
   causeOfRestrictionControlSchema,
@@ -77,12 +83,20 @@ import {
 } from '@shared/schemas/user.schema';
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
-import { debounceTime, finalize, of } from 'rxjs';
+import { debounceTime, finalize, Observable, of } from 'rxjs';
 import { DefaultAddressParams } from '@shared/dist/toponym.schema';
 
 import * as Validator from '../../../../utils/custom.validator';
 
 type NumArrayFor<T, K extends keyof T> = Extract<NonNullable<T[K]>, number[]>;
+
+type ApiResponse<T> = { data: T };
+interface OwnerDetailsService<T> {
+  checkOwnerData(
+    ownerDraft: OwnerDraft
+  ): Observable<ApiResponse<UserDuplicates | PartnerDuplicates>>;
+  getById(id: number): Observable<ApiResponse<T>>;
+}
 
 @Component({
   selector: 'app-advanced-details',
@@ -117,7 +131,9 @@ export class AdvancedDetailsComponent<
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
   private readonly userService = inject(UserService);
+  private readonly partnerService = inject(PartnerService);
   private readonly userDiffService = inject(UserDiffService);
+  private readonly ownerService = inject(OwnerService);
   readonly dialog = inject(MatDialog);
 
   // View helpers
@@ -602,31 +618,36 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
     this.emitShowSpinner(true);
     this.action = action;
-    this.ownerDraft = this.userDiffService.buildDraft(
+    this.ownerDraft = this.ownerService.buildDraft(
+      this.kind as Kind,
       this.mainForm,
       this.addressFilter(),
       this.contactTypes,
       this.existingOwner
     );
-
-    this.userService
-      .checkUserName(this.ownerDraft.userName, this.ownerDraft.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          if (!res.data) this.checkDuplicates();
-          else this.emitShowSpinner(false);
-        },
-        error: (err) => {
-          this.emitShowSpinner(false);
-          this.msgWrapper.handle(err, {
-            source: 'CreateUserDialog',
-            stage: 'checkUserName',
-            name: this.ownerDraft.userName,
-          });
-          return of(null);
-        },
-      });
+    if ('userName' in this.ownerDraft) {
+      this.userService
+        .checkUserName(this.ownerDraft.userName ?? '', this.ownerDraft.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            if (!res.data) this.checkDuplicates();
+            else this.emitShowSpinner(false);
+          },
+          error: (err) => {
+            this.emitShowSpinner(false);
+            this.msgWrapper.handle(err, {
+              source: 'CreateUserDialog',
+              stage: 'checkUserName',
+              kind: 'user',
+              object: this.ownerDraft,
+            });
+            return of(null);
+          },
+        });
+    } else {
+      this.checkDuplicates();
+    }
   }
 
   checkDuplicates() {
@@ -653,13 +674,25 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       });
       this.emitShowSpinner(false);
     } else {
-      this.checkUserData();
+      this.checkOwnerData();
     }
   }
 
-  checkUserData() {
-    this.userService
-      .checkUserData(this.ownerDraft)
+  getService(kind: Kind): OwnerDetailsService<Owner> {
+    const svc = (
+      {
+        user: this.userService,
+        partner: this.partnerService,
+      } as const
+    )[kind];
+    if (!svc) throw new Error(`Unknown kind: ${kind}`);
+    return svc as OwnerDetailsService<Owner>;
+  }
+
+  checkOwnerData() {
+    const service = this.getService(this.kind as Kind);
+    service
+      .checkOwnerData(this.ownerDraft)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: async (res) => {
@@ -707,7 +740,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.msgWrapper.handle(err, {
             source: 'CreateUserDialog',
             stage: 'checkUserName',
-            name: this.ownerDraft.userName,
+            kind: this.kind,
+            object: this.ownerDraft,
           });
           return of(null);
         },
