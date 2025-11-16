@@ -33,7 +33,8 @@
     "REGIONS": "Regions",
     "DISTRICTS": "Districts",
     "LOCALITIES": "Localities",
-    "AUDIT": "Audit"
+    "AUDIT": "Audit",
+    "PARTNERS": "Coordinators"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -49,10 +50,10 @@
     "UNBLOCK_ITEM_MESSAGE": "Unblock «{{name}}»?",
 
     "SAVE_WITH_DUPLICATES": "Duplicates detected. Are you sure you want to save the entered data?",
-    "NAMES_DUPLICATE": "The entered first and last name match the data of user {{user}}.",
-    "NAMES_DUPLICATES": "The entered first and last name match the data of the following users:<br />{{users}}",
-    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of user {{user}}.",
-    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following users:<br />{{users}}",
+    "NAMES_DUPLICATE": "The entered first and last name match the data of owner {{owner}}.",
+    "NAMES_DUPLICATES": "The entered first and last name match the data of the following owners:<br />{{owners}}",
+    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of owner {{owner}}.",
+    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following owners:<br />{{owners}}",
     "OUTDATED_DUPLICATES": "The data you entered:<br /> {{type}} '{{value}}'<br />match outdated records.<br />Are you sure this information is correct?",
     "SAVE_OR_DELETE_OLD_DATA": "You changed the {{type}}.<br />Save the previous value '{{oldValue}}' as outdated?<br />Otherwise, it will be deleted as incorrect and cannot be restored.",
     "RESTORE_OUTDATED_DATA": "Restore this data as current?",
@@ -212,15 +213,13 @@
     },
     "NO_DATA_FOR_QUERY": "No data found",
     "CARD": {
-      "CREATION_TITLE": "New user",
-      "VIEW_TITLE": "User",
 
       "MAIN_DATA_LABEL": "Main info",
       "CONTACTS_LABEL": "Contact details",
       "OUTDATED_DATA_LABEL": "Outdated data",
       "COORDINATED_HOMES_LABEL": "Coordinated homes",
-
       "CHANGE_PASSWORD_BUTTON": "Change password",
+      "BLOCKED_LABEL": "Blocked",
       "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
       "DELETE_BUTTON_TITLE": "Delete",
       "EXTRA_CONTACT_BUTTON": "Additional contact",
@@ -273,7 +272,7 @@
       "PATRONYMIC_LABEL": "Patronymic",
       "LAST_NAME_LABEL": "Last name*",
       "COMMENT_LABEL": "Comment",
-      "BLOCKED_LABEL": "Blocked",
+
       "EMAIL_LABEL": "Email*",
       "PHONE_NUMBER_LABEL": "Phone number*",
       "TELEGRAM_ID_LABEL": "Telegram ID*",

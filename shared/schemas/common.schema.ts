@@ -199,14 +199,14 @@ export const optionalContactsSchema = z
 
 /* ===================== UpdateData ===================== */
 // ChangingData.address
-export const changingAddressSchema = z
+/* export const changingAddressSchema = z
   .object({
     countryId: nullableInt,
     regionId: nullableInt,
     districtId: nullableInt,
     localityId: nullableInt,
   })
-  .strict();
+  .strict(); */
 
 // ChangingData.contacts
 export const changingContactsSchema = z
@@ -253,6 +253,23 @@ export const outdatedAddressItemSchema = z
   })
   .strict();
 
+  /* ===================== DTO ===================== */
+
+  export const duplicatesSchema = z
+  .object({
+    duplicatesName: z.array(z.string()),
+    duplicatesContact: z.array(
+      z
+        .object({
+          type: z.string(),
+          content: z.string(),
+          owners: z.array(z.string()),
+        })
+        .strict()
+    ),
+  })
+  .strict();
+
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
 export type Address = z.infer<typeof addressSchema>;
@@ -261,3 +278,4 @@ export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
 export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;
 export type BaseOutdatedData = z.infer<typeof outdatedCommonSchema>;
+export type Duplicates = z.infer<typeof duplicatesSchema>;

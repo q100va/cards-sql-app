@@ -188,7 +188,7 @@ export declare const restoringDataSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const updatePartnerDataSchema: z.ZodObject<{
     id: z.ZodNumber;
-    changes: z.ZodObject<{
+    changingData: z.ZodObject<{
         main: z.ZodNullable<z.ZodObject<{
             firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
             patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -754,15 +754,6 @@ export declare const partnersSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
-export declare const duplicatesSchema: z.ZodObject<{
-    duplicatesName: z.ZodArray<z.ZodString>;
-    duplicatesContact: z.ZodArray<z.ZodObject<{
-        type: z.ZodString;
-        content: z.ZodString;
-        partners: z.ZodArray<z.ZodString>;
-    }, z.core.$strict>>;
-}, z.core.$strict>;
-export type PartnerDuplicates = z.infer<typeof duplicatesSchema>;
 export type PartnerDraft = z.infer<typeof partnerDraftSchema>;
 export type PartnerDraftContacts = z.infer<typeof draftContactsSchema>;
 export type PartnerOutdatedData = z.infer<typeof outdatedDataSchema>;

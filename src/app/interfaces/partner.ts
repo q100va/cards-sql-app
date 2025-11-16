@@ -1,6 +1,6 @@
 import { Address, AdvancedModel, OptionalContacts } from './advanced-model';
 import type {
-  PartnerDuplicates,
+  //PartnerDuplicates,
  // PartnerDraft,
   PartnerDraftContacts,
   PartnerOutdatedData,
@@ -10,7 +10,7 @@ import type {
 } from '@shared/schemas/partner.schema';
 
 export type {
-  PartnerDuplicates,
+  //PartnerDuplicates,
   //PartnerDraft,
   PartnerDraftContacts,
   PartnerOutdatedData,

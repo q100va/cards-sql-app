@@ -14,7 +14,7 @@ import * as userSchemas from "../../shared/dist/user.schema.js";
 import { hashPassword } from "../controllers/passwords.mjs";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { verify } from '../controllers/passwords.mjs';
-import { collectFlatContacts, findDuplicateContacts } from "../controllers/ctrl-create-owner-contacts-address.js";
+import { collectFlatContacts, findDuplicateContacts, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
@@ -339,7 +339,7 @@ router.post(
   requireOperation('EDIT_USER'),
   validateRequest(userSchemas.updateUserDataSchema, 'body'),
   async (req, res, next) => {
-    const { id, changes, restoringData, outdatingData, deletingData } = req.body;
+    const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
 
     try {
       const result = await withTransaction(async (t) => {
@@ -347,9 +347,9 @@ router.post(
         if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
         // CHANGES
         // main
-        if (changes?.main) {
-          console.log('changes?.main', changes?.main);
-          const payload = changes.main;
+        if (changingData?.main) {
+          console.log('changingData?.main', changingData?.main);
+          const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
             await User.update(
               payload,
@@ -365,7 +365,7 @@ router.post(
         await applyOwnerUpdates(
           'user',
           id,
-          { changes, restoringData, outdatingData, deletingData },
+          { changingData, restoringData, outdatingData, deletingData },
           t
         );
 

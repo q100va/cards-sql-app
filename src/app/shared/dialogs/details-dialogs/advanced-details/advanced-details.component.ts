@@ -17,30 +17,41 @@ import {
 import { ContactUrlPipe } from '../../../../utils/contact-url.pipe';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 import {
-  AdvancedModel,
-  Owner,
+  //AdvancedModel,
+  //Owner,
   Contact,
   ContactType,
   OutdatedContacts,
   OutdatedAddress,
   OutdatedFullName,
-  //OwnerRestoringData,
-  //OwnerDeletingData,
+  OwnerRestoringData,
+  OwnerDeletingData,
   //OwnerOutdatedData,
-  OwnerDraft,
+  //OwnerDraft,
   OwnerContacts,
-  OwnerChangingData,
-  OwnerOutdatingData,
-  BaseRestoringData,
-  BaseDeletingData,
-  RestoreKeyFor,
-  BaseOutdatedData,
-  DeleteKeyFor,
-  OutdatedKeyFor,
-  DeleteKeyIn,
-  OutdatedKeyIn,
-  OutdatedItemFor,
-  Kind,
+  //OwnerChangingData,
+  //OwnerOutdatingData,
+  //BaseRestoringData,
+  //BaseDeletingData,
+  //BaseOutdatedData,
+  Duplicates,
+  UserRestoringData,
+  NonTelegram,
+  UserDraft,
+  // BaseChangingData,
+  //BaseOutdatingData,
+  UserChangingData,
+  PartnerChangingData,
+  PartnerRestoringData,
+  PartnerOutdatingData,
+  UserOutdatingData,
+  UserDeletingData,
+  PartnerDeletingData,
+  UserOutdatedData,
+  PartnerOutdatedData,
+  PartnerDraft,
+  User,
+  Partner,
 } from '../../../../interfaces/advanced-model';
 import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
@@ -65,11 +76,8 @@ import { OwnerService } from '../../../../services/owner.service';
 
 import { buildDuplicateInfoMessage } from '../../../../utils/user-diff';
 
-import { OutdatedUserName, UserDuplicates } from '../../../../interfaces/user';
-import {
-  OutdatedHome,
-  PartnerDuplicates,
-} from '../../../../interfaces/partner';
+import { OutdatedUserName } from '../../../../interfaces/user';
+import { OutdatedHome } from '../../../../interfaces/partner';
 
 import {
   causeOfRestrictionControlSchema,
@@ -87,15 +95,83 @@ import { debounceTime, finalize, Observable, of } from 'rxjs';
 import { DefaultAddressParams } from '@shared/dist/toponym.schema';
 
 import * as Validator from '../../../../utils/custom.validator';
+import { keyof } from 'zod';
 
 type NumArrayFor<T, K extends keyof T> = Extract<NonNullable<T[K]>, number[]>;
 
+type Kind = 'user' | 'partner';
+
+export type OwnerByKind<K extends Kind> = K extends 'user'
+  ? User
+  : K extends 'partner'
+  ? Partner
+  : never;
+
+export type OwnerDraftByKind<K extends Kind> = K extends 'user'
+  ? UserDraft
+  : K extends 'partner'
+  ? PartnerDraft
+  : never;
+
+type ChangingByKind<K extends Kind> = K extends 'user'
+  ? UserChangingData
+  : K extends 'partner'
+  ? PartnerChangingData
+  : never;
+
+type RestoringByKind<K extends Kind> = K extends 'user'
+  ? UserRestoringData
+  : K extends 'partner'
+  ? PartnerRestoringData
+  : never;
+
+type OutdatingByKind<K extends Kind> = K extends 'user'
+  ? UserOutdatingData
+  : K extends 'partner'
+  ? PartnerOutdatingData
+  : never;
+
+type DeletingByKind<K extends Kind> = K extends 'user'
+  ? UserDeletingData
+  : K extends 'partner'
+  ? PartnerDeletingData
+  : never;
+
+type OutdatedByKind<K extends Kind> = K extends 'user'
+  ? UserOutdatedData
+  : K extends 'partner'
+  ? PartnerOutdatedData
+  : never;
+
 type ApiResponse<T> = { data: T };
-interface OwnerDetailsService<T> {
-  checkOwnerData(
-    ownerDraft: OwnerDraft
-  ): Observable<ApiResponse<UserDuplicates | PartnerDuplicates>>;
-  getById(id: number): Observable<ApiResponse<T>>;
+
+export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
+  changingData: TChanging;
+  restoringData: TRestoring;
+  outdatingData: TOutdating;
+  deletingData: TDeleting;
+};
+
+export interface OwnerDetailsService<
+  TOwner,
+  TOwnerDraft,
+  TChanging,
+  TRestoring,
+  TOutdating,
+  TDeleting
+> {
+  checkOwnerData(ownerDraft: TOwnerDraft): Observable<ApiResponse<Duplicates>>;
+  getById(id: number): Observable<ApiResponse<TOwner>>;
+  saveOwner(ownerDraft: TOwnerDraft): Observable<ApiResponse<string>>;
+  saveUpdatedOwner(
+    id: number,
+    updatedOwnerData: UpdatedOwnerData<
+      TChanging,
+      TRestoring,
+      TOutdating,
+      TDeleting
+    >
+  ): Observable<ApiResponse<TOwner>>;
 }
 
 @Component({
@@ -120,20 +196,72 @@ interface OwnerDetailsService<T> {
   styleUrl: './advanced-details.component.css',
 })
 export class AdvancedDetailsComponent<
-  T extends AdvancedModel,
-  RD extends BaseRestoringData = BaseRestoringData,
-  DD extends BaseDeletingData = BaseDeletingData,
-  OD extends BaseOutdatedData = BaseOutdatedData
-> extends BaseDetailsComponent<T> {
+  K extends Kind
+> extends BaseDetailsComponent<OwnerByKind<K>> {
   private readonly contactUrl = inject(ContactUrlPipe);
   private readonly cdr = inject(ChangeDetectorRef);
   // DI
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
-  private readonly userService = inject(UserService);
-  private readonly partnerService = inject(PartnerService);
-  private readonly userDiffService = inject(UserDiffService);
+  // private readonly userService = inject(UserService);
+  //private readonly partnerService = inject(PartnerService);
+  readonly userDiffService = inject(UserDiffService);
   private readonly ownerService = inject(OwnerService);
+
+  override kind!: K;
+
+  protected service!: OwnerDetailsService<
+    OwnerByKind<K>,
+    OwnerDraftByKind<K>,
+    ChangingByKind<K>,
+    RestoringByKind<K>,
+    OutdatingByKind<K>,
+    DeletingByKind<K>
+  >;
+
+  protected readonly userService = inject(UserService) as OwnerDetailsService<
+    User,
+    UserDraft,
+    UserChangingData,
+    UserRestoringData,
+    UserOutdatingData,
+    UserDeletingData
+  >;
+
+  protected readonly partnerService = inject(
+    PartnerService
+  ) as OwnerDetailsService<
+    Partner,
+    PartnerDraft,
+    PartnerChangingData,
+    PartnerRestoringData,
+    PartnerOutdatingData,
+    PartnerDeletingData
+  >;
+
+  protected getService(): OwnerDetailsService<
+    OwnerByKind<K>,
+    OwnerDraftByKind<K>,
+    ChangingByKind<K>,
+    RestoringByKind<K>,
+    OutdatingByKind<K>,
+    DeletingByKind<K>
+  > {
+    const kind = this.kind;
+
+    const svc = kind === 'user' ? this.userService : this.partnerService;
+
+    // Приводим — но уже ОДНОЗНАЧНО, потому что K фиксирован в наследнике
+    return svc as OwnerDetailsService<
+      OwnerByKind<K>,
+      OwnerDraftByKind<K>,
+      ChangingByKind<K>,
+      RestoringByKind<K>,
+      OutdatingByKind<K>,
+      DeletingByKind<K>
+    >;
+  }
+
   readonly dialog = inject(MatDialog);
 
   // View helpers
@@ -141,31 +269,16 @@ export class AdvancedDetailsComponent<
 
   // Data
   roles!: { id: number; name: string }[];
-  existingOwner!: Owner | null;
+  existingOwner!: OwnerByKind<K> | null;
 
-  restoringDataDraft!: RD /* = {
-    addresses: null,
-    names: null,
-    userNames: null,
-    contacts: null,
-    homes: null,
-  } */;
-  deletingDataDraft!: DD /* = {
-    addresses: null,
-    names: null,
-    userNames: null,
-    contacts: null,
-    homes: null,
-  } */;
-  outdatedDataDraft!: OD /*  = {
-    contacts: {},
-    addresses: [],
-    names: [],
-    userNames: [],
-    homes: [],
-  } */;
+  restoringDataDraft!: RestoringByKind<K>;
+  deletingDataDraft!: DeletingByKind<K>;
+  outdatedDataDraft!: OutdatedByKind<K>;
+  changingData!: ChangingByKind<K>;
+  outdatingData!: OutdatingByKind<K>;
+  mainProps!: (keyof NonNullable<ChangingByKind<K>['main']>)[];
 
-  ownerDraft!: OwnerDraft;
+  ownerDraft!: OwnerDraftByKind<K>;
 
   affiliations = [
     'PARTNER.AFF.VOLUNTEER_COORDINATOR',
@@ -192,10 +305,15 @@ export class AdvancedDetailsComponent<
     [];
 
   getOwner() {}
+  hasOutdatedNames = signal<boolean>(false);
+  hasOutdatedContacts = signal<boolean>(false);
+  hasOutdatedAddresses = signal<boolean>(false);
+  hasOutdatedUserNames = signal<boolean>(false);
 
   override ngOnInit(): void {
     super.ngOnInit();
     //this.existingOwner = this.getOwner();
+    this.kind = this.data().componentType as K;
 
     this.mainForm.valueChanges
       .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
@@ -209,8 +327,19 @@ export class AdvancedDetailsComponent<
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => (this.roles = res.data),
-        error: (err) => this.msgWrapper.handle(err),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OwnerDialog',
+            stage: 'getRolesNamesList',
+            kind: this.kind,
+          }),
       });
+
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+    this.hasOutdatedContacts.set(
+      Object.keys(this.outdatedDataDraft.contacts).length > 0
+    );
+    this.hasOutdatedAddresses.set(this.outdatedDataDraft.addresses.length > 0);
   }
 
   // bridge spinner to parent
@@ -333,7 +462,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Enable/disable Save button
   override checkIsSaveDisabled(): void {
-    const isUser = this.data().componentType === 'user';
+    const isUser = this.kind === 'user';
     // this.logInvalid(this.mainForm); //TODO: delete
     const disabled =
       (isUser && !this.mainForm.valid) ||
@@ -477,7 +606,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // --- Outdated data actions
   onRestoreOutdatedData(
-    type: RestoreKeyFor<RD>,
+    type: keyof RestoringByKind<K>,
     data:
       | Contact
       | OutdatedAddress
@@ -508,19 +637,21 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     //для этих типов восстановить можно только одно значение,
     //поэтому проверяем, были ли уже восстановленные значения,
     //если были, то удаляем их их restoringDataDraft и помещаем в outdatingDataDraft
+    type NameOrAddr = 'names' | 'addresses';
+    const nameOrAddr = type as NameOrAddr;
 
     if (type === 'names' || type === 'addresses') {
-      if ((this.restoringDataDraft[type] ?? []).length > 0) {
-        const restoredValue = this.existingOwner!.outdatedData[type].find(
+      if ((this.restoringDataDraft[nameOrAddr] ?? []).length > 0) {
+        const restoredValue = this.existingOwner!.outdatedData[nameOrAddr].find(
           (item: OutdatedAddress | OutdatedFullName) =>
-            item.id === this.restoringDataDraft[type]![0]
+            item.id === this.restoringDataDraft[nameOrAddr]![0]
         );
         if (restoredValue)
-          (this.outdatedDataDraft[type] as any[]).push(restoredValue);
-        this.restoringDataDraft[type] = [];
+          (this.outdatedDataDraft[nameOrAddr] as any[]).push(restoredValue);
+        this.restoringDataDraft[nameOrAddr] = [];
       }
       //  }
-      this.restoringDataDraft[type] = [data.id];
+      this.restoringDataDraft[nameOrAddr] = [data.id];
 
       switch (type) {
         case 'names':
@@ -547,57 +678,29 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     if ('homes' in this.existingOwner! && type === 'homes') {
     }
     //восстанавливаемые значения удаляем из outdatingDataDraft
-    this.deleteFromOutdatedDataDraft(type as OutdatedKeyIn<OD>, data.id);
+    this.deleteFromOutdatedDataDraft(type as keyof OutdatedByKind<K>, data.id);
     this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
-  onDeleteOutdatedData<K extends DeleteKeyIn<DD>>(type: K, id: number) {
-    // гарантируем инициализацию массива под ключом
-    this.deletingDataDraft[type] ??= [] as unknown as NumArrayFor<DD, K>;
-    // теперь можно пушить
-    (this.deletingDataDraft[type] as unknown as number[]).push(id);
-
-    // удаляем из outdated-драфта по id (ключи согласованы)
-    this.deleteFromOutdatedDataDraft(type as OutdatedKeyIn<OD>, id);
-
-    this.deletingSignal.set(true);
-    this.checkIsSaveDisabled();
-  }
-  /*    onDeleteOutdatedData<K extends DeleteKeyIn<DD>>(type: K, id: number) {
-    this.deletingDataDraft[type] ??= [];
-    this.deletingDataDraft[type]!.push(id);
-    this.deleteFromOutdatedDataDraft(type as keyof OD, id);
-    this.deletingSignal.set(true);
-    this.checkIsSaveDisabled();
-  } */
-
-  /*   onDeleteOutdatedData<K extends DeleteKeyFor<DD>>(type: K, id: number) {
-    this.deletingDataDraft[type] ??= [] as unknown as NumArrayFor<DD, K>;
-    (this.deletingDataDraft[type] as unknown as number[]).push(id);
-
-    this.deleteFromOutdatedDataDraft(type as OutdatedKeyFor<OD>, id);
-    this.deletingSignal.set(true);
-    this.checkIsSaveDisabled();
-  } */
-  /*
-  deleteFromOutdatedDataDraft<K extends OutdatedKeyFor<OD>>(type: K, id: number) {
-  const arr = this.outdatedDataDraft[type] as unknown as OutdatedItemFor<OD, K>[];
-  const next = (arr ?? []).filter((x) => (x as any).id !== id);
-  (this.outdatedDataDraft[type] as unknown as OutdatedItemFor<OD, K>[]) = next;
-} */
-
-  deleteFromOutdatedDataDraft<K extends OutdatedKeyIn<OD>>(
-    type: K,
+  onDeleteOutdatedData(
+    type: keyof DeletingByKind<K> | 'userNames' | 'homes',
     id: number
   ) {
-    const arr = (this.outdatedDataDraft[type] ??
-      []) as unknown as OutdatedItemFor<OD, K>[];
-    const next = arr.filter((x) => (x as any).id !== id);
-    (this.outdatedDataDraft[type] as unknown as OutdatedItemFor<OD, K>[]) =
-      next;
+    if (!(type in this.deletingDataDraft)) return;
+
+    const current = (this.deletingDataDraft as any)[type] as number[] | null;
+    const next = [...(current ?? []), id];
+    (this.deletingDataDraft as any)[type] = next;
+
+    if (type in this.outdatedDataDraft) {
+      this.deleteFromOutdatedDataDraft(type as keyof OutdatedByKind<K>, id);
+    }
+
+    this.deletingSignal.set(true);
+    this.checkIsSaveDisabled();
   }
 
-  /*   deleteFromOutdatedDataDraft(type: keyof OD, id: number) {
+  deleteFromOutdatedDataDraft(type: keyof OutdatedByKind<K>, id: number) {
     if (type === 'contacts') {
       for (const key of typedKeys(this.outdatedDataDraft.contacts)) {
         const idx = this.outdatedDataDraft.contacts[key]!.findIndex(
@@ -608,43 +711,25 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           break;
         }
       }
-    } else {
+    } else if (Array.isArray(this.outdatedDataDraft[type])) {
       const idx = this.outdatedDataDraft[type].findIndex((c) => c.id === id);
       if (idx !== -1) this.outdatedDataDraft[type].splice(idx, 1);
     }
-  } */
+  }
 
   // --- Save flows
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
     this.emitShowSpinner(true);
     this.action = action;
     this.ownerDraft = this.ownerService.buildDraft(
-      this.kind as Kind,
+      this.kind,
       this.mainForm,
       this.addressFilter(),
       this.contactTypes,
       this.existingOwner
     );
     if ('userName' in this.ownerDraft) {
-      this.userService
-        .checkUserName(this.ownerDraft.userName ?? '', this.ownerDraft.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (res) => {
-            if (!res.data) this.checkDuplicates();
-            else this.emitShowSpinner(false);
-          },
-          error: (err) => {
-            this.emitShowSpinner(false);
-            this.msgWrapper.handle(err, {
-              source: 'CreateUserDialog',
-              stage: 'checkUserName',
-              kind: 'user',
-              object: this.ownerDraft,
-            });
-            return of(null);
-          },
-        });
+      this.checkUserName();
     } else {
       this.checkDuplicates();
     }
@@ -678,7 +763,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
-  getService(kind: Kind): OwnerDetailsService<Owner> {
+  /*   getService(kind: Kind): OwnerDetailsService<T, ChangingByKind<K>, RestoringByKind<K>, OutdatingByKind<K>, DeletingByKind<K>> {
     const svc = (
       {
         user: this.userService,
@@ -686,11 +771,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       } as const
     )[kind];
     if (!svc) throw new Error(`Unknown kind: ${kind}`);
-    return svc as OwnerDetailsService<Owner>;
-  }
+    return svc;
+  } */
 
   checkOwnerData() {
-    const service = this.getService(this.kind as Kind);
+    const service = this.getService();
     service
       .checkOwnerData(this.ownerDraft)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -738,10 +823,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         error: (err) => {
           this.emitShowSpinner(false);
           this.msgWrapper.handle(err, {
-            source: 'CreateUserDialog',
-            stage: 'checkUserName',
+            source: 'CreateOwnerDialog',
+            stage: 'checkOwnerData',
             kind: this.kind,
-            object: this.ownerDraft,
+            owner: this.ownerDraft,
           });
           return of(null);
         },
@@ -750,14 +835,15 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   async savingFlow() {
     if (this.data().operation === 'create') {
-      this.saveUser();
-    }
-    await this.correctRestoringData();
-    if (await this.checkOutdatedDataDuplicates()) {
-      const updatingUserData = await this.checkAllChanges();
-      this.saveUpdatedUser(updatingUserData);
+      this.saveOwner();
     } else {
-      this.emitShowSpinner(false);
+      await this.correctRestoringData();
+      if (await this.checkOutdatedDataDuplicates()) {
+        const updatingOwnerData = await this.checkAllChanges();
+        this.saveUpdatedOwner(updatingOwnerData);
+      } else {
+        this.emitShowSpinner(false);
+      }
     }
   }
 
@@ -768,7 +854,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   async correctRestoringData() {
     // Addresses
     if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.userDiffService.corrAddress(
+      const addresses = await this.ownerService.corrAddress(
         this.restoringDataDraft.addresses,
         this.outdatedDataDraft.addresses,
         this.ownerDraft.draftAddress,
@@ -780,7 +866,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
     // Names
     if (this.restoringDataDraft.names?.length) {
-      const names = await this.userDiffService.corrNames(
+      const names = await this.ownerService.corrNames(
         this.restoringDataDraft.names,
         this.outdatedDataDraft.names,
         {
@@ -794,21 +880,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.outdatedDataDraft.names = structuredClone(names.outdating);
     }
 
-    // UserNames
-    if (this.restoringDataDraft.userNames?.length) {
-      const userNames = await this.userDiffService.corrUserNames(
-        this.restoringDataDraft.userNames,
-        this.outdatedDataDraft.userNames,
-        this.ownerDraft.userName,
-        this.existingOwner!.outdatedData.userNames
-      );
-      this.restoringDataDraft.userNames = structuredClone(userNames.restoring);
-      this.outdatedDataDraft.userNames = structuredClone(userNames.outdating);
-    }
-
     // Contacts
     if (this.restoringDataDraft.contacts) {
-      const contacts = await this.userDiffService.corrContacts(
+      const contacts = await this.ownerService.corrContacts(
         this.restoringDataDraft.contacts,
         this.outdatedDataDraft.contacts,
         this.ownerDraft.draftContacts
@@ -821,7 +895,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
   async checkOutdatedDataDuplicates() {
-    const address = await this.userDiffService.checkAddress(
+    const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
     );
@@ -831,7 +905,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft.addresses.push(address.restoringId);
     }
 
-    const names = await this.userDiffService.checkNames(
+    const names = await this.ownerService.checkNames(
       this.outdatedDataDraft.names,
       this.ownerDraft
     );
@@ -841,17 +915,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft.names.push(names.restoringId);
     }
 
-    const userName = await this.userDiffService.checkUserNames(
-      this.outdatedDataDraft.userNames,
-      this.ownerDraft.userName
-    );
-    if (!userName.restoringId) return false;
-    if (userName.restoringId > 0) {
-      this.restoringDataDraft.userNames ??= [];
-      this.restoringDataDraft.userNames.push(userName.restoringId);
-    }
-
-    const contacts = await this.userDiffService.checkContacts(
+    const contacts = await this.ownerService.checkContacts(
       this.contactTypes,
       this.outdatedDataDraft.contacts,
       this.ownerDraft.draftContacts
@@ -861,7 +925,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft.contacts ??= {};
       for (const key of typedKeys(contacts.restoring)) {
         const vals = contacts.restoring[key] ?? [];
-        (this.restoringDataDraft.contacts[key] ??= []).push(...vals);
+        (this.restoringDataDraft.contacts[key as NonTelegram] ??= []).push(
+          ...vals
+        );
       }
     }
 
@@ -870,94 +936,78 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
   async checkAllChanges() {
-    const changes: OwnerChangingData = {
-      main: null,
-      contacts: null,
-      address: null,
-    };
-    const outdatingData: OwnerOutdatingData = {
-      address: null,
-      names: null,
-      userName: null,
-      contacts: null,
-    };
-    const deletingData: OwnerDeletingData = structuredClone(
+    const deletingData: DeletingByKind<K> = structuredClone(
       this.deletingDataDraft
     );
-    const restoringData: OwnerRestoringData = structuredClone(
+    const restoringData: RestoringByKind<K> = structuredClone(
       this.restoringDataDraft
     );
 
-    const names = await this.userDiffService.diffNames(
+    const names = await this.ownerService.diffNames(
       this.existingOwner!,
       this.ownerDraft
     );
-    if (names.changes) changes.main = names.changes;
-    if (names.outdating) outdatingData.names = names.outdating;
+    if (names.changes) this.changingData.main = names.changes;
+    if (names.outdating) this.outdatingData.names = names.outdating;
 
-    const userName = await this.userDiffService.diffUserName(
-      this.existingOwner!,
-      this.ownerDraft
-    );
-    if (userName.changes)
-      changes.main = {
-        ...(changes.main ?? {}),
-        ...{ userName: userName.changes },
-      };
-    if (userName.outdating) outdatingData.userName = userName.outdating;
-
-    const address = await this.userDiffService.diffAddress(
+    const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
       (restoringData.addresses ?? []).length > 0
         ? restoringData.addresses![0]
         : null
     );
-    if (address.changes) changes.address = address.changes;
-    if (address.outdatingId) outdatingData.address = address.outdatingId;
+    if (address.changes) this.changingData.address = address.changes;
+    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
     if (address.deletingId)
       (deletingData.addresses ?? []).push(address.deletingId);
 
-    const contacts = await this.userDiffService.diffContacts(
+    const contacts = await this.ownerService.diffContacts(
       this.existingOwner!,
       this.ownerDraft,
       this.contactTypes,
       restoringData.contacts
     );
-    if (contacts.changes) changes.contacts = contacts.changes;
-    if (contacts.outdatingIds) outdatingData.contacts = contacts.outdatingIds;
+    if (contacts.changes) this.changingData.contacts = contacts.changes;
+    if (contacts.outdatingIds)
+      this.outdatingData.contacts = contacts.outdatingIds;
     if (contacts.deletingIds)
       (deletingData.contacts ?? []).push(...contacts.deletingIds);
 
-    type MainKeys = keyof NonNullable<OwnerChangingData['main']>;
-    const mainProps: MainKeys[] = [
-      'roleId',
-      'comment',
-      'isRestricted',
-      'causeOfRestriction',
-      'dateOfRestriction',
-    ];
-    for (const prop of mainProps) {
-      const key = prop as keyof Owner & keyof ownerDraft;
-      if (this.existingOwner![key] != this.ownerDraft[key]) {
-        changes.main = {
-          ...(changes.main || {}),
-          [key]: this.ownerDraft[key],
-        } as NonNullable<OwnerChangingData['main']>;
+    for (const key of this.mainProps) {
+      const existing = this.existingOwner as Record<string, unknown>;
+      const draft = this.ownerDraft as Record<string, unknown>;
+
+      if (existing[key as string] !== draft[key as string]) {
+        const currentMain =
+          (this.changingData.main as NonNullable<
+            ChangingByKind<K>['main']
+          > | null) ?? ({} as NonNullable<ChangingByKind<K>['main']>);
+
+        this.changingData.main = {
+          ...currentMain,
+          [key]: draft[key as string],
+        } as NonNullable<ChangingByKind<K>['main']>;
       }
     }
     console.log('{ changes, restoringData, outdatingData, deletingData }', {
-      changes,
+      changingData: this.changingData,
       restoringData,
-      outdatingData,
+      outdatingData: this.outdatingData,
       deletingData,
     });
-    return { changes, restoringData, outdatingData, deletingData };
+    return {
+      changingData: this.changingData,
+      restoringData,
+      outdatingData: this.outdatingData,
+      deletingData,
+    };
   }
 
-  saveUser() {
-    this.userService
-      .saveUser(this.ownerDraft)
+  saveOwner() {
+    const service = this.getService();
+    service
+      .saveOwner(this.ownerDraft)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.emitShowSpinner(false))
@@ -973,9 +1023,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
-            source: 'CreateUserDialog',
-            stage: 'saveUser',
-            name: this.ownerDraft.userName,
+            source: 'CreateOwnerDialog',
+            stage: 'saveOwner',
+            kind: this.kind,
+            owner: this.ownerDraft,
           }),
       });
   }
@@ -986,17 +1037,18 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     super.changeToViewMode(addressParams);
     this.outdatedDataDraft = structuredClone(
       this.existingOwner!.outdatedData
-    ) as OwnerOutdatedData;
+    ) as OutdatedByKind<K>;
   }
 
-  saveUpdatedUser(upgradedUserData: {
-    changes: OwnerChangingData;
-    restoringData: OwnerRestoringData;
-    outdatingData: OwnerOutdatingData;
-    deletingData: OwnerDeletingData;
+  saveUpdatedOwner(upgradedOwnerData: {
+    changingData: ChangingByKind<K>;
+    restoringData: RestoringByKind<K>;
+    outdatingData: OutdatingByKind<K>;
+    deletingData: DeletingByKind<K>;
   }) {
-    this.userService
-      .saveUpdatedUser(this.existingOwner!.id, upgradedUserData)
+    const service = this.getService();
+    service
+      .saveUpdatedOwner(this.existingOwner!.id, upgradedOwnerData)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.emitShowSpinner(false))
@@ -1004,8 +1056,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       .subscribe({
         next: (res) => {
           if (this.action === 'saveAndExit') {
-            this.closeDialogDataSignal.set(res.data.userName);
-            this.emittedCloseDialogData.emit(res.data.userName);
+            this.closeDialogDataSignal.set(res.data.lastName);
+            this.emittedCloseDialogData.emit(res.data.lastName);
             return;
           }
 
@@ -1039,7 +1091,17 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
           this.outdatedDataDraft = structuredClone(
             this.existingOwner!.outdatedData
-          ) as OwnerOutdatedData;
+          ) as OutdatedByKind<K>;
+
+          this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+          this.hasOutdatedContacts.set(
+            Object.keys(this.outdatedDataDraft.contacts).length > 0
+          );
+          console.log('this.hasOutdatedContacts', this.hasOutdatedContacts());
+          this.hasOutdatedAddresses.set(
+            this.outdatedDataDraft.addresses.length > 0
+          );
+          this.setHasOutdatedUserNames();
 
           this.addressFilterComponent.onChangeMode(
             'view',
@@ -1050,31 +1112,29 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             names: null,
             userNames: null,
             contacts: null,
-          };
+          } as RestoringByKind<K>;
           this.deletingDataDraft = {
             addresses: null,
             names: null,
             userNames: null,
             contacts: null,
-          };
+          } as DeletingByKind<K>;
 
           this.changeToViewMode(null);
           this.setInitialValues('view');
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
-            source: 'EditUserDialog',
-            stage: 'saveUpdatedUser',
-            userId: this.existingOwner!.id,
+            source: 'EditOwnerDialog',
+            stage: 'saveUpdatedOwner',
+            kind: this.kind,
+            ownerId: this.existingOwner!.id,
           }),
       });
   }
 
   // badges (for template)
-  hasOutdatedUserNames(): boolean {
-    return this.outdatedDataDraft.userNames.length > 0;
-  }
-  hasOutdatedNames(): boolean {
+  /*   hasOutdatedNames(): boolean {
     return this.outdatedDataDraft.names.length > 0;
   }
   hasOutdatedContacts(): boolean {
@@ -1082,5 +1142,25 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
   hasOutdatedAddresses(): boolean {
     return this.outdatedDataDraft.addresses.length > 0;
+  }
+
+  hasOutdatedUserNames(): boolean {
+    return false;
+  } */
+  hasRole(): boolean {
+    return false;
+  }
+  hasAffiliation(): boolean {
+    return false;
+  }
+  setHasOutdatedUserNames() {}
+  checkUserName() {}
+  onChangePasswordClick() {}
+  getRowSpanForUserNames() {
+    return 0;
+  }
+  onRestoreOutdatedUserName(data: OutdatedUserName) {}
+  get outdatedUserNames(): OutdatedUserName[] {
+    return [];
   }
 }

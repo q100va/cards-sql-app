@@ -1,16 +1,16 @@
 import { BaseModel } from './base-model';
 import {
-  User,
+  // User,
   UserContacts,
   OutdatedUserName,
-  UserChangingData,
-  UserOutdatingData,
+  //UserChangingData,
+  // UserOutdatingData,
 } from './user';
 import {
   OutdatedHome,
-  Partner,
-  PartnerChangingData,
-  PartnerOutdatingData,
+  // Partner,
+  //PartnerChangingData,
+  // PartnerOutdatingData,
 } from './partner';
 
 import type {
@@ -21,7 +21,8 @@ import type {
   OutdatedFullName,
   OptionalContacts,
   BaseOutdatedData,
-  DraftAddress
+  DraftAddress,
+  Duplicates,
 } from '@shared/schemas/common.schema';
 import { Client } from './client';
 
@@ -33,6 +34,7 @@ export type {
   Contact,
   OptionalContacts,
   BaseOutdatedData,
+  Duplicates,
 };
 
 export interface AdvancedModel extends BaseModel {
@@ -42,22 +44,18 @@ export interface AdvancedModel extends BaseModel {
   outdatedData: UserOutdatedData | PartnerOutdatedData;
 }
 
-export type Kind = 'user' | 'partner';// | 'client'
-export type Owner = User | Partner;// | Client
-export type OwnerDraft = UserDraft | PartnerDraft;// | ClientDraft
+export type Kind = 'user' | 'partner'; // | 'client'
+//export type Owner = User | Partner; // | Client
+export type OwnerDraft = UserDraft | PartnerDraft; // | ClientDraft
 export type OwnerContacts = UserContacts | OptionalContacts;
-export type OwnerOutdatedData = UserOutdatedData | PartnerOutdatedData;
-export type OwnerChangingData = UserChangingData | PartnerChangingData;
-export type OwnerOutdatingData = UserOutdatingData | PartnerOutdatingData;
+//export type OwnerOutdatedData = UserOutdatedData | PartnerOutdatedData;
 
 type RestoreCommonKey = 'addresses' | 'names' | 'contacts';
 
 export type BaseRestoringData = {
   addresses: number[] | null;
   names: number[] | null;
-  contacts: Partial<
-    Record<ContactType, Contact[]>
-  > | null;
+  contacts: Partial<Record<ContactType, Contact[]>> | null;
 };
 export type UserRestoringData = BaseRestoringData & {
   userNames: number[] | null;
@@ -83,28 +81,55 @@ export type PartnerOutdatedData = BaseOutdatedData & {
   homes: OutdatedHome[];
 };
 
+export type BaseChangingMain = {
+  firstName?: string;
+  patronymic?: string | null;
+  lastName?: string | null;
+  comment?: string | null;
+
+  isRestricted?: boolean;
+  causeOfRestriction?: string | null;
+  dateOfRestriction?: Date | null;
+};
+export type BaseChangingData<M extends BaseChangingMain = BaseChangingMain> = {
+  main: M | null;
+  address: DraftAddress | null;
+  contacts: Partial<Record<ContactType, string[]>> | null;
+};
+export type UserChangingMain = BaseChangingMain & {
+  userName?: string;
+  roleId?: number;
+};
+export type UserChangingData = BaseChangingData<UserChangingMain>;
+export type PartnerChangingMain = BaseChangingMain & {
+  affiliation?: string; // можешь заменить на union из трёх ключей enum’а
+  position?: string | null;
+};
+export type PartnerChangingData = BaseChangingData<PartnerChangingMain>;
+
+export type BaseOutdatingNames = {
+  firstName: string;
+  patronymic: string | null;
+  lastName: string | null;
+};
+export type BaseOutdatingData = {
+  address: number | null;
+  names: BaseOutdatingNames | null;
+  contacts: number[] | null;
+};
+export type UserOutdatingData = BaseOutdatingData & {
+  userName: string | null;
+};
+export type PartnerOutdatingData = BaseOutdatingData & {
+  homes: number[] | null;
+};
+
+export type OwnerChangingData = UserChangingData | PartnerChangingData;
+export type OwnerOutdatingData = UserOutdatingData | PartnerOutdatingData;
+export type OwnerDeletingData = UserDeletingData | PartnerDeletingData;
+export type OwnerRestoringData = UserRestoringData | PartnerRestoringData;
+
 type ItemOf<T> = T extends (infer U)[] ? U : never;
-
-// Для ключа K получить ТИП массива чисел из DD/RD
-// ключи восстановления зависят от RD: если есть userNames — добавляем его
-export type RestoreKeyFor<RD> =
-  | RestoreCommonKey
-  | (RD extends { userNames: number[] | null } ? 'userNames' : never)
-  | (RD extends { homes: number[] | null } ? 'homes' : never);
-
-export type DeleteKeyFor<DD> =
-  | RestoreCommonKey
-  | (DD extends { userNames: number[] | null } ? 'userNames' : never)
-  | (DD extends { homes: number[] | null } ? 'homes' : never);
- export type DeleteKeyIn<DD> = Extract<DeleteKeyFor<DD>, keyof DD>;
-
-export type OutdatedKeyFor<OD> =
-  | RestoreCommonKey
-  | (OD extends { userNames: OutdatedUserName[] } ? 'userNames' : never)
-  | (OD extends { homes: OutdatedHome[] } ? 'homes' : never);
-
-export  type OutdatedKeyIn<OD> = Extract<OutdatedKeyFor<OD>, keyof OD>;
-export type OutdatedItemFor<OD, K extends keyof OD> = ItemOf<OD[K]>;
 
 const contactTypeMap = {
   email: true,
@@ -127,7 +152,7 @@ export function isContactType(value: string): value is ContactType {
 
 export type DraftCommon = {
   id: number | null;
-  firstName: string | null;
+  firstName: string;
   patronymic: string | null;
   lastName: string | null;
   comment: string | null;
@@ -139,16 +164,45 @@ export type DraftCommon = {
 };
 
 export type UserDraft = DraftCommon & {
-  userName: string | null;
-  password: string | null;
-  roleId: number | null;
+  userName: string;
+  password: string;
+  roleId: number;
 };
 
 export type PartnerDraft = DraftCommon & {
-  affiliation: string | null;
+  affiliation: string;
   position: string | null;
 };
 
 export type ClientDraft = DraftCommon & {
   displayName: string | null;
+};
+
+export type Owner = {
+  id: number;
+  firstName: string;
+  patronymic: string | null;
+  lastName: string | null;
+  comment: string | null;
+  isRestricted: boolean;
+  causeOfRestriction: string | null;
+  dateOfRestriction: Date | null;
+  address: Address;
+  orderedContacts: OptionalContacts;
+  outdatedData: BaseOutdatedData;
+};
+
+export type User = Owner & {
+  userName: string;
+  lastName: string;
+  roleId: number;
+  roleName: string;
+  orderedContacts: UserContacts;
+  outdatedData: UserOutdatedData;
+};
+export type Partner = Owner & {
+  affiliation: string;
+  position: string | null;
+  outdatedData: PartnerOutdatedData;
+  homes: OutdatedHome[] | null;
 };

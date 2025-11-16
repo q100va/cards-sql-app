@@ -9,9 +9,11 @@ export default function UserOutdatedNameModel(sequelize) {
       allowNull: false,
       primaryKey: true
     },
+    userName: {
+      type: DataTypes.STRING
+    },
     firstName: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: DataTypes.STRING
     },
     patronymic: {
       type: DataTypes.STRING

@@ -3,7 +3,9 @@ import { toTrim, emptyToNull, toLowerTrim, keepE164Chars, keepE164CharsNullable,
 import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './common.schema.js';
 import { draftAddressSchema, addressSchema, } from './common.schema.js';
 import { contactType, nonEmptyContacts, optionalContactsSchema, } from './common.schema.js';
-import { changingAddressSchema, changingContactsSchema, } from './common.schema.js';
+import { 
+//  changingAddressSchema,
+changingContactsSchema, } from './common.schema.js';
 import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
 /* ===================== Some Schemas for form validation ===================== */
 export const causeOfRestrictionControlSchema = z.preprocess(toTrim, z
@@ -191,9 +193,7 @@ export const userDraftSchema = z
         .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
         .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD')),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    patronymic: z
-        .preprocess(toTrim, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }))
-        .nullable(),
+    patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     roleId: z.number({ message: 'FORM_VALIDATION.REQUIRED' }).int().positive(),
     draftAddress: draftAddressSchema,
@@ -262,10 +262,10 @@ export const changingMainSchema = z
     .object({
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
     patronymic: z
+        .preprocess(emptyToNull, z
         .string()
-        .trim()
         .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-        .nullable()
+        .nullable())
         .optional(),
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
     userName: z
@@ -294,7 +294,7 @@ export const changingMainSchema = z
 export const changingDataSchema = z
     .object({
     main: changingMainSchema.nullable(),
-    address: changingAddressSchema.nullable(),
+    address: draftAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
 })
     .strict()
@@ -373,7 +373,7 @@ export const restoringDataSchema = z
 export const updateUserDataSchema = z
     .object({
     id: positiveInt,
-    changes: changingDataSchema,
+    changingData: changingDataSchema,
     restoringData: restoringDataSchema,
     outdatingData: outdatingDataSchema,
     deletingData: deletingDataSchema,
@@ -475,18 +475,6 @@ export const usersSchema = z
     .object({
     list: z.array(userSchema),
     length: z.coerce.number().int().min(0),
-})
-    .strict();
-export const duplicatesSchema = z
-    .object({
-    duplicatesName: z.array(z.string()),
-    duplicatesContact: z.array(z
-        .object({
-        type: z.string(),
-        content: z.string(),
-        users: z.array(z.string()),
-    })
-        .strict()),
 })
     .strict();
 //export type UserDeletingData = z.infer<typeof deletingDataSchema>;

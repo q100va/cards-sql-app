@@ -36,19 +36,19 @@ const CONFIG = {
  *
  * @param {'user'|'partner'} ownerKind
  * @param {number} id
- * @param {object} payload         // { changes?, restoringData?, outdatingData?, deletingData? }
+ * @param {object} payload         // { changingData?, restoringData?, outdatingData?, deletingData? }
  * @param {object} models
  * @param {object} t
  */
 export async function applyOwnerUpdates(ownerKind, id, payload, t) {
   const C = CONFIG[ownerKind];
   if (!C) throw new Error(`Unsupported ownerKind: ${ownerKind}`);
-  const { changes, restoringData, outdatingData, deletingData } = payload ?? {};
+  const { changingData, restoringData, outdatingData, deletingData } = payload ?? {};
 
   // ---------- CHANGES ----------
   // address
-  if (changes?.address) {
-    const a = changes.address;
+  if (changingData?.address) {
+    const a = changingData.address;
     const hasAny = !!(a.countryId || a.regionId || a.districtId || a.localityId);
     if (hasAny) {
       await C.AddressModel.create(
@@ -65,8 +65,8 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
   }
 
   // contacts: bulkCreate {type: string[]}
-  if (changes?.contacts) {
-    const contactRows = Object.entries(changes.contacts)
+  if (changingData?.contacts) {
+    const contactRows = Object.entries(changingData.contacts)
       .flatMap(([type, list]) =>
         (list ?? [])
           .map((v) => (v ?? '').trim())

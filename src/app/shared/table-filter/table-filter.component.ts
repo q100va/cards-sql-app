@@ -45,7 +45,7 @@ import {
 } from '../../interfaces/base-list';
 
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
-import { ContactType } from '../../interfaces/user';
+import { ContactType } from '../../interfaces/advanced-model';
 
 type FilterForm = FormGroup<{
   roles: FormControl<

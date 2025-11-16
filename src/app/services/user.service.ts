@@ -7,18 +7,24 @@ import {
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+import { User, ChangePassword } from '../interfaces/user';
+
 import {
-  ChangingData,
-  DeletingData,
-  OutdatingData,
-  RestoringData,
-  User,
-  UserDraft,
   Duplicates,
-  ChangePassword,
-} from '../interfaces/user';
+  UserDraft,
+  UserDeletingData,
+  UserRestoringData,
+  UserChangingData,
+  UserOutdatingData,
+} from '../interfaces/advanced-model';
+
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
+
+import {
+  OwnerDetailsService,
+  UpdatedOwnerData,
+} from '../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -26,18 +32,30 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import {
-  duplicatesSchema,
-  userSchema,
-  usersSchema,
-} from '@shared/schemas/user.schema';
+import { userSchema, usersSchema } from '@shared/schemas/user.schema';
+import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
+
+export interface UserDetailsService
+  extends OwnerDetailsService<
+    User,
+    UserDraft,
+    UserChangingData,
+    UserRestoringData,
+    UserOutdatingData,
+    UserDeletingData
+  > {
+  checkUserName(
+    userName: string,
+    id: number | null
+  ): Observable<ApiResponse<boolean>>;
+}
 
 @Injectable({
   providedIn: 'root',
 })
-export class UserService {
+export class UserService implements UserDetailsService {
   private http = inject(HttpClient);
   private readonly BASE_URL = `${environment.apiUrl}/api/users`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
@@ -80,9 +98,9 @@ export class UserService {
       .pipe(validateResponse(duplicatesSchema), catchError(this.handleError));
   }
 
-  saveUser(userDraft: UserDraft): Observable<ApiResponse<string>> {
+  saveOwner(ownerDraft: UserDraft): Observable<ApiResponse<string>> {
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/create-user`, userDraft)
+      .post<RawApiResponse>(`${this.BASE_URL}/create-user`, ownerDraft)
       .pipe(
         validateResponse(z.string()),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
@@ -111,19 +129,19 @@ export class UserService {
       );
   }
 
-  saveUpdatedUser(
+  saveUpdatedOwner(
     id: number,
-    updatedUserData: {
-      changes: ChangingData;
-      restoringData: RestoringData;
-      outdatingData: OutdatingData;
-      deletingData: DeletingData;
-    }
+    updatedOwnerData: UpdatedOwnerData<
+      UserChangingData,
+      UserRestoringData,
+      UserOutdatingData,
+      UserDeletingData
+    >
   ): Observable<ApiResponse<User>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-user`, {
         id,
-        ...updatedUserData,
+        ...updatedOwnerData,
       })
       .pipe(
         validateResponse(userSchema),
@@ -135,10 +153,13 @@ export class UserService {
   }
 
   formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    console.log("this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')", this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT'));
+    console.log(
+      "this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')",
+      this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')
+    );
 
     if (commentFilter.length === 1) {
-     return (
+      return (
         commentFilter[0] ==
         this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
       );

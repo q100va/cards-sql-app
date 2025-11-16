@@ -3,7 +3,9 @@ import { toTrim, emptyToNull, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveI
 import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './common.schema.js';
 import { draftAddressSchema, addressSchema, } from './common.schema.js';
 import { contactType, optionalContactsSchema, } from './common.schema.js';
-import { changingAddressSchema, changingContactsSchema, } from './common.schema.js';
+import { 
+//changingAddressSchema,
+changingContactsSchema, } from './common.schema.js';
 import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
 /* ===================== Contacts (draft / ordered / optional) ===================== */
 // Draft
@@ -167,7 +169,7 @@ export const changingMainSchema = z
 export const changingDataSchema = z
     .object({
     main: changingMainSchema.nullable(),
-    address: changingAddressSchema.nullable(),
+    address: draftAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
 })
     .strict()
@@ -246,7 +248,7 @@ export const restoringDataSchema = z
 export const updatePartnerDataSchema = z
     .object({
     id: positiveInt,
-    changes: changingDataSchema,
+    changingData: changingDataSchema,
     restoringData: restoringDataSchema,
     outdatingData: outdatingDataSchema,
     deletingData: deletingDataSchema,
@@ -357,17 +359,5 @@ export const partnersSchema = z
     .object({
     list: z.array(partnerSchema),
     length: z.coerce.number().int().min(0),
-})
-    .strict();
-export const duplicatesSchema = z
-    .object({
-    duplicatesName: z.array(z.string()),
-    duplicatesContact: z.array(z
-        .object({
-        type: z.string(),
-        content: z.string(),
-        partners: z.array(z.string()),
-    })
-        .strict()),
 })
     .strict();

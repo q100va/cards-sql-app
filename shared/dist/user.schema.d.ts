@@ -100,7 +100,7 @@ export declare const userDraftSchema: z.ZodObject<{
     userName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     password: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     firstName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
-    patronymic: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    patronymic: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     lastName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     roleId: z.ZodNumber;
     draftAddress: z.ZodObject<{
@@ -133,7 +133,7 @@ export declare const changePasswordSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const changingMainSchema: z.ZodObject<{
     firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-    patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    patronymic: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
     lastName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     userName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     roleId: z.ZodOptional<z.ZodNumber>;
@@ -145,7 +145,7 @@ export declare const changingMainSchema: z.ZodObject<{
 export declare const changingDataSchema: z.ZodObject<{
     main: z.ZodNullable<z.ZodObject<{
         firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-        patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        patronymic: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
         lastName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         userName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         roleId: z.ZodOptional<z.ZodNumber>;
@@ -242,10 +242,10 @@ export declare const restoringDataSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const updateUserDataSchema: z.ZodObject<{
     id: z.ZodNumber;
-    changes: z.ZodObject<{
+    changingData: z.ZodObject<{
         main: z.ZodNullable<z.ZodObject<{
             firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-            patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            patronymic: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
             lastName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
             userName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
             roleId: z.ZodOptional<z.ZodNumber>;
@@ -371,7 +371,6 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
-                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -379,6 +378,7 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 instagram: "instagram";
                 facebook: "facebook";
                 otherContact: "otherContact";
+                telegram: "telegram";
             }>>>>;
         }, z.core.$strip>>>;
         address: z.ZodOptional<z.ZodOptional<z.ZodObject<{
@@ -792,15 +792,6 @@ export declare const usersSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
-export declare const duplicatesSchema: z.ZodObject<{
-    duplicatesName: z.ZodArray<z.ZodString>;
-    duplicatesContact: z.ZodArray<z.ZodObject<{
-        type: z.ZodString;
-        content: z.ZodString;
-        users: z.ZodArray<z.ZodString>;
-    }, z.core.$strict>>;
-}, z.core.$strict>;
-export type UserDuplicates = z.infer<typeof duplicatesSchema>;
 export type UserDraft = z.infer<typeof userDraftSchema>;
 export type UserDraftContacts = z.infer<typeof draftContactsSchema>;
 export type ChangePassword = z.infer<typeof changePasswordSchema>;

@@ -44,7 +44,7 @@ import { Partner } from 'src/app/interfaces/partner';
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
   styleUrl: './partner-details.component.css',
 })
-export class PartnerDetailsComponent extends AdvancedDetailsComponent<Partner>{
+export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>{
 
   override ngOnInit(): void {
     this.existingOwner = this.data().object;

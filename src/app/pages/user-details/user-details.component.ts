@@ -1,5 +1,5 @@
 // src/app/pages/user-details/user-details.component.ts
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -31,7 +31,12 @@ import {
   UserRestoringData,
   UserOutdatedData,
   UserDeletingData,
+  UserDraft,
+  UserChangingData,
+  UserOutdatingData,
 } from '../../interfaces/advanced-model';
+import { UserDetailsService, UserService } from 'src/app/services/user.service';
+import { of } from 'rxjs';
 @Component({
   selector: 'app-user-details',
   imports: [
@@ -55,17 +60,25 @@ import {
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
   styleUrl: './user-details.component.css',
 })
-export class UserDetailsComponent extends AdvancedDetailsComponent<
-  User,
-  UserRestoringData,
-  UserDeletingData,
-  UserOutdatedData
-> {
+export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
+
+  override userService = inject(UserService) as UserDetailsService;
   override ngOnInit(): void {
     this.existingOwner = this.data().object;
+    console.log('this.existingOwner', this.existingOwner);
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(this.existingOwner.outdatedData);
+      console.log(this.outdatedDataDraft);
     }
+
+    /* else {
+      this.outdatedDataDraft = {
+        contacts: {},
+        addresses: [],
+        names: [],
+        userNames: [],
+      };
+    } */
     this.restoringDataDraft = {
       addresses: null,
       names: null,
@@ -80,17 +93,38 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<
       contacts: null,
       //homes: null,
     };
-    this.outdatedDataDraft = {
+    /*     this.outdatedDataDraft = {
       contacts: {},
       addresses: [],
       names: [],
       userNames: [],
       // homes: [],
+    }; */
+    this.changingData = {
+      main: null,
+      contacts: null,
+      address: null,
     };
+    this.outdatingData = {
+      address: null,
+      names: null,
+      userName: null,
+      contacts: null,
+    };
+
+    this.mainProps = [
+      'roleId',
+      'comment',
+      'isRestricted',
+      'causeOfRestriction',
+      'dateOfRestriction',
+    ];
+    this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
+
     super.ngOnInit();
   }
 
-  onChangePasswordClick() {
+  override onChangePasswordClick() {
     this.dialog
       .open(ChangePasswordDialogComponent, {
         disableClose: true,
@@ -105,29 +139,112 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<
       .subscribe(() => {});
   }
 
-  override onRestoreOutdatedData(
-    type: keyof UserRestoringData,
-    data: Contact | OutdatedAddress | OutdatedFullName | OutdatedUserName,
-    contactType?: Exclude<ContactType, 'telegram'>
-  ) {
-    if (
-      type === 'userNames' &&
-      'userNames' in this.existingOwner!.outdatedData &&
-      'userName' in data
-    ) {
-      if ((this.restoringDataDraft[type] ?? []).length > 0) {
-        const restoredValue = this.existingOwner!.outdatedData[type].find(
-          (item: OutdatedUserName) =>
-            item.id === this.restoringDataDraft[type]![0]
-        );
-        if (restoredValue)
-          (this.outdatedDataDraft[type] as any[]).push(restoredValue);
-        this.restoringDataDraft[type] = [];
-      }
-      this.restoringDataDraft[type] = [data.id];
-      if ('userName' in data)
-        this.mainForm.controls['userName'].setValue(data.userName);
+  override checkUserName() {
+    const userDraft = this.ownerDraft;
+    this.userService
+      .checkUserName(userDraft.userName ?? '', this.ownerDraft.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (!res.data) this.checkDuplicates();
+          else this.emitShowSpinner(false);
+        },
+        error: (err) => {
+          this.emitShowSpinner(false);
+          this.msgWrapper.handle(err, {
+            source: 'CreateUserDialog',
+            stage: 'checkUserName',
+            kind: 'user',
+            object: this.ownerDraft,
+          });
+          return of(null);
+        },
+      });
+  }
+
+  override onRestoreOutdatedUserName(data: OutdatedUserName) {
+    if ((this.restoringDataDraft['userNames'] ?? []).length > 0) {
+      const restoredValue = this.existingOwner!.outdatedData['userNames'].find(
+        (item: OutdatedUserName) =>
+          item.id === this.restoringDataDraft['userNames']![0]
+      );
+      if (restoredValue)
+        this.outdatedDataDraft['userNames'].push(restoredValue);
+      this.restoringDataDraft['userNames'] = [];
     }
-    super.onRestoreOutdatedData(type, data, contactType);
+    this.restoringDataDraft['userNames'] = [data.id];
+    if ('userName' in data)
+      this.mainForm.controls['userName'].setValue(data.userName);
+  }
+
+  // --- Compare draft vs restoring/outdated
+  //проверяем не изменил ли пользователь восстановленные данные
+  //если изменил,
+  // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
+
+  override async correctRestoringData() {
+    super.correctRestoringData();
+
+    // UserNames
+    const { restoring, outdating } = this.userDiffService.corrUserNames(
+      this.restoringDataDraft.userNames ?? [],
+      this.outdatedDataDraft.userNames ?? [],
+      this.ownerDraft.userName,
+      this.existingOwner!.outdatedData.userNames ?? []
+    );
+
+    this.restoringDataDraft.userNames = structuredClone(restoring);
+    this.outdatedDataDraft.userNames = structuredClone(outdating);
+  }
+
+  //если введенные данные совпадают с outdatingDataDraft данными,
+  //то добавляем их с согласия пользователя в restoringDataDraft
+  override async checkOutdatedDataDuplicates() {
+    const userName = await this.userDiffService.checkUserNames(
+      this.outdatedDataDraft.userNames,
+      this.ownerDraft.userName
+    );
+    if (!userName.restoringId) return false;
+    if (userName.restoringId > 0) {
+      this.restoringDataDraft.userNames ??= [];
+      this.restoringDataDraft.userNames.push(userName.restoringId);
+    }
+
+    return await super.checkOutdatedDataDuplicates();
+  }
+
+  override async checkAllChanges() {
+    const userName = await this.userDiffService.diffUserName(
+      this.existingOwner! as User,
+      this.ownerDraft as UserDraft
+    );
+    if (userName.changes)
+      this.changingData.main = {
+        ...(this.changingData.main ?? {}),
+        ...{ userName: userName.changes },
+      };
+    if (userName.outdating) this.outdatingData.userName = userName.outdating;
+    return await super.checkAllChanges();
+  }
+
+  /*   override hasOutdatedUserNames(): boolean {
+    return this.outdatedDataDraft.userNames.length > 0;
+  } */
+
+  override getRowSpanForUserNames(): number {
+    return this.outdatedDataDraft.userNames.length;
+  }
+
+  override get outdatedUserNames(): OutdatedUserName[] {
+    const data: any = this.outdatedDataDraft;
+    const list = data?.userNames;
+    return Array.isArray(list) ? list : [];
+  }
+
+  override hasRole(): boolean {
+    return true;
+  }
+  override setHasOutdatedUserNames() {
+     this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
   }
 }

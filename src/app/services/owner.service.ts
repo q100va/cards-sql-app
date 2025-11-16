@@ -3,19 +3,10 @@ import { FormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { DiffConfirmService } from './diff-confirm.service';
 
-import {
-  User,
-  OutdatedUserName,
-  UserChangingData,
-  UserOutdatingData,
-  UserContacts,
-  UserDraftContacts,
-} from '../interfaces/user';
+//import { User } from '../interfaces/user';
 
 import {
-  ContactType,
   UserRestoringData,
-  UserDeletingData,
   OutdatedContacts,
   OutdatedAddress,
   OutdatedFullName,
@@ -26,11 +17,18 @@ import {
   ClientDraft,
   UserDraft,
   DraftCommon,
+  OwnerDraft,
+  PartnerRestoringData,
+  Owner,
+  OwnerChangingData,
+  User,
+  Partner
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
 import { normalize, completeContact, isFieldEqual } from '../utils/user-diff';
-import { Partner } from '../interfaces/partner';
+//import { Partner } from '../interfaces/partner';
+import { OwnerByKind, OwnerDraftByKind } from '../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 //import { Client } from '../interfaces/client';
 
 // --- Kind & Draft types ------------------------------------------------------
@@ -45,6 +43,12 @@ type OwnerDraftMap = {
   partner: PartnerDraft;
   client: ClientDraft;
 };
+type Names = {
+  firstName: string;
+  patronymic: string | null;
+  lastName: string | null;
+};
+type RestoringData = UserRestoringData | PartnerRestoringData;
 
 // --- Helpers -----------------------------------------------------------------
 const get = (form: FormGroup, name: string) => form.get(name)?.value ?? null;
@@ -82,8 +86,8 @@ export class OwnerService {
     form: FormGroup,
     address: AddressFilter,
     contactTypes: NonTelegram[],
-    existing: OwnerMap[K] | null
-  ): OwnerDraftMap[K] {
+    existing:OwnerByKind<K>| null
+  ): OwnerDraftByKind<K> {
     const isRestricted = !!get(form, 'isRestricted');
 
     const base: DraftCommon = {
@@ -124,6 +128,390 @@ export class OwnerService {
     // per-kind extras
     const extras = (BUILD_EXTRAS as any)[kind](form);
 
-    return { ...base, ...extras } as OwnerDraftMap[K];
+    return { ...base, ...extras } as OwnerDraftByKind<K>;
+  }
+
+  /** Check if user changed restored values and correct them*/
+  // Address
+  async corrAddress(
+    restoringAddresses: number[],
+    outdatingAddresses: OutdatedAddress[],
+    draftAddr: OwnerDraft['draftAddress'],
+    outdatedAddresses: OutdatedAddress[]
+  ): Promise<{
+    restoring: number[];
+    outdating: OutdatedAddress[];
+  }> {
+    console.log('corrAddress');
+    let toRemove: number = 0;
+    for (const restoringId of restoringAddresses) {
+      const restoring = outdatedAddresses.find((a) => a.id === restoringId);
+      if (
+        restoring &&
+        (!isFieldEqual(draftAddr.countryId, restoring.country?.id ?? null) ||
+          !isFieldEqual(draftAddr.regionId, restoring.region?.id ?? null) ||
+          !isFieldEqual(draftAddr.districtId, restoring.district?.id ?? null) ||
+          !isFieldEqual(draftAddr.localityId, restoring.locality?.id ?? null))
+      ) {
+        toRemove = restoringId;
+        outdatingAddresses.push(restoring);
+        break;
+      }
+    }
+    if (toRemove) {
+      restoringAddresses = restoringAddresses.filter((id) => id !== toRemove);
+    }
+    return { restoring: restoringAddresses, outdating: outdatingAddresses };
+  }
+
+  // Names
+  async corrNames(
+    restoringNames: number[],
+    outdatingNames: OutdatedFullName[],
+    draftNames: Names,
+    outdatedNames: OutdatedFullName[]
+  ): Promise<{
+    restoring: number[];
+    outdating: OutdatedFullName[];
+  }> {
+    let toRemove: number = 0;
+    for (const restoringId of restoringNames) {
+      const restoring = outdatedNames.find((x) => x.id === restoringId);
+      if (
+        restoring &&
+        (restoring.firstName !== draftNames.firstName ||
+          restoring.patronymic !== draftNames.patronymic ||
+          restoring.lastName !== draftNames.lastName)
+      ) {
+        toRemove = restoringId;
+        outdatingNames.push(restoring);
+        break;
+      }
+    }
+    if (toRemove) {
+      restoringNames = restoringNames.filter((id) => id !== toRemove);
+    }
+    return { restoring: restoringNames, outdating: outdatingNames };
+  }
+  // Contacts
+  async corrContacts(
+    restoringContacts: RestoringData['contacts'],
+    outdatingContacts: OutdatedContacts,
+    draftContacts: Record<NonTelegram, string[]>
+  ): Promise<{
+    restoring: RestoringData['contacts'];
+    outdating: OutdatedContacts;
+  }> {
+    for (const [type, contacts] of Object.entries(restoringContacts!)) {
+      if (!contacts?.length) continue;
+      const ownerContacts = draftContacts[type as NonTelegram];
+      if (!ownerContacts?.length) {
+        outdatingContacts[type as keyof OutdatedContacts] = [
+          ...(outdatingContacts[type as keyof OutdatedContacts] || []),
+          ...contacts,
+        ];
+        delete restoringContacts![type as NonTelegram];
+        continue;
+      }
+      const toRemove: Contact[] = [];
+      for (const c of contacts) {
+        if (!ownerContacts.includes(c.content)) {
+          outdatingContacts ??= {};
+          outdatingContacts[type as NonTelegram] = [
+            ...(outdatingContacts[type as NonTelegram] || []),
+            c,
+          ];
+          toRemove.push(c);
+        }
+      }
+      if (toRemove.length) {
+        restoringContacts![type as NonTelegram] = restoringContacts![
+          type as NonTelegram
+        ]!.filter((c) => !toRemove.find((rc) => rc.id === c.id));
+      }
+    }
+    return { restoring: restoringContacts, outdating: outdatingContacts };
+  }
+
+  /** Check if new values have duplicates in outdated data */
+  // Address duplicates
+  async checkAddress(
+    outdatedAddresses: OutdatedAddress[],
+    draftAddress: OwnerDraft['draftAddress']
+  ): Promise<{
+    restoringId: number | null;
+  }> {
+    console.log('checkAddress');
+    let restoringId: number | null = -1;
+    if (outdatedAddresses.length > 0 && draftAddress?.countryId) {
+      for (const outAddr of outdatedAddresses) {
+        console.log('outAddr', outAddr);
+        console.log('draftAddress', draftAddress);
+        const isMatch =
+          isFieldEqual(draftAddress.countryId, outAddr.country?.id ?? null) &&
+          isFieldEqual(draftAddress.regionId, outAddr.region?.id ?? null) &&
+          isFieldEqual(draftAddress.districtId, outAddr.district?.id ?? null) &&
+          isFieldEqual(draftAddress.localityId, outAddr.locality?.id ?? null);
+        if (isMatch) {
+          const fullAddress = `${outAddr.country?.name + ' ' || ''}${
+            outAddr.region?.shortName || ''
+          } ${outAddr.district?.shortName || ''} ${
+            outAddr.locality?.shortName || ''
+          }`.trim();
+          const isConfirmed =
+            await this.diffConfirmService.confirmDataCorrectness(
+              'address',
+              fullAddress
+            );
+          if (isConfirmed) {
+            restoringId = outAddr.id;
+            break;
+          } else {
+            restoringId = null;
+          }
+        }
+      }
+    }
+    return { restoringId };
+  }
+
+  // Names duplicates
+  async checkNames(
+    outdatedNames: OutdatedFullName[],
+    draft: OwnerDraft
+  ): Promise<{
+    restoringId: number | null;
+  }> {
+    let restoringId: number | null = -1;
+    const dups = outdatedNames.filter(
+      (n) =>
+        normalize(n.firstName) === normalize(draft.firstName) &&
+        normalize(n.patronymic) === normalize(draft.patronymic) &&
+        normalize(n.lastName) === normalize(draft.lastName)
+    );
+    if (dups.length > 0) {
+      const fullName = `${draft.firstName} ${draft.patronymic || ''} ${
+        draft.lastName
+      }`.trim();
+      const isConfirmed = await this.diffConfirmService.confirmDataCorrectness(
+        'names',
+        fullName
+      );
+      if (isConfirmed) {
+        restoringId = dups[0].id;
+      } else {
+        restoringId = null;
+      }
+    }
+    return { restoringId };
+  }
+
+  // Contacts duplicates
+  async checkContacts(
+    contactTypes: NonTelegram[],
+    outdatedContacts: OutdatedContacts,
+    draftContacts: OwnerDraft['draftContacts']
+  ): Promise<{
+    restoring: RestoringData['contacts'] | null;
+  }> {
+    let restoring: RestoringData['contacts'] | null = {};
+
+    if (Object.keys(outdatedContacts).length) {
+      for (const type of contactTypes) {
+        const duplicates: { id: number; content: string }[] = [];
+        for (const v of draftContacts[type]) {
+          if (!v) continue;
+          if (Array.isArray(outdatedContacts[type])) {
+            for (const old of outdatedContacts[type]) {
+              if (old.content === v)
+                duplicates.push({ id: old.id, content: old.content });
+            }
+          }
+        }
+        if (duplicates.length > 0) {
+          const contentString = `${type} ${duplicates
+            .map((c) => c.content)
+            .join(', ')}`;
+          const isConfirmed =
+            await this.diffConfirmService.confirmDataCorrectness(
+              'contacts',
+              contentString
+            );
+          if (isConfirmed) {
+            restoring ??= {};
+            restoring[type] = [...(restoring[type] || []), ...duplicates];
+          } else {
+            return { restoring: null };
+          }
+        }
+      }
+    }
+    return { restoring };
+  }
+  /** Compare names; return changes + what should be outdated (previous value) */
+  async diffNames(
+    existing: Owner,
+    draft: OwnerDraft
+  ): Promise<{
+    changed: boolean;
+    changes: Partial<
+      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+    > | null;
+    outdating: Names | null;
+  }> {
+    console.log('diffNames');
+    const changes: Partial<
+      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+    > | null = {};
+    const outdating: Partial<
+      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+    > | null = {};
+
+    const changed =
+      normalize(existing.firstName) !== normalize(draft.firstName) ||
+      normalize(existing.patronymic) !== normalize(draft.patronymic) ||
+      normalize(existing.lastName) !== normalize(draft.lastName);
+
+    if (changed) {
+      changes.firstName = draft.firstName;
+      changes.patronymic = draft.patronymic ?? null;
+      changes.lastName = draft.lastName;
+
+      const oldName = `
+      ${existing.firstName ?? ''}
+      ${existing.patronymic ?? ''}
+      ${existing.lastName ?? ''}`.trim();
+      const moveToOutdated =
+        await this.diffConfirmService.confirmOutdateOrDelete('names', oldName);
+      if (moveToOutdated) {
+        outdating.firstName = existing.firstName;
+        outdating.patronymic = existing.patronymic ?? null;
+        outdating.lastName = existing.lastName;
+      }
+    }
+    return {
+      changed: !!changed,
+      changes: Object.keys(changes).length ? (changes as Partial<
+      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+    >) : null,
+      outdating: Object.keys(outdating).length ? (outdating as Names) : null,
+    };
+  }
+  /** Compare address; return changes + id to move into outdated (if any) */
+  async diffAddress(
+    existing: Owner,
+    draft: OwnerDraft,
+    restoringId: number | null
+  ): Promise<{
+    changed: boolean;
+    changes: OwnerDraft['draftAddress'] | null;
+    outdatingId: number | null;
+    deletingId: number | null;
+  }> {
+    const oldA = existing.address;
+    const newA = draft.draftAddress;
+    let changes: OwnerDraft['draftAddress'] | null = null;
+
+    const changed =
+      !isFieldEqual(newA.countryId, oldA.country?.id ?? null) ||
+      !isFieldEqual(newA.regionId, oldA.region?.id ?? null) ||
+      !isFieldEqual(newA.districtId, oldA.district?.id ?? null) ||
+      !isFieldEqual(newA.localityId, oldA.locality?.id ?? null);
+    let moveToOutdated = false;
+    if (changed) {
+      if (!restoringId) {
+        changes = newA;
+      } else {
+        const restoringAddr = existing.outdatedData.addresses.find(
+          (a) => a.id === restoringId
+        );
+        if (
+          restoringAddr &&
+          (!isFieldEqual(newA.countryId, restoringAddr.country?.id ?? null) ||
+            !isFieldEqual(newA.regionId, restoringAddr.region?.id ?? null) ||
+            !isFieldEqual(
+              newA.districtId,
+              restoringAddr.district?.id ?? null
+            ) ||
+            !isFieldEqual(newA.localityId, restoringAddr.locality?.id ?? null))
+        ) {
+          changes = newA;
+        }
+      }
+      if (oldA.id) {
+        const oldValue = `${oldA.country?.name + ' ' || ''}${
+          oldA.region?.shortName || ''
+        } ${oldA.district?.shortName || ''} ${
+          oldA.locality?.shortName || ''
+        }`.trim();
+        moveToOutdated = await this.diffConfirmService.confirmOutdateOrDelete(
+          'address',
+          oldValue
+        );
+      }
+    }
+    console.log('oldA.id', oldA.id);
+    return {
+      changed,
+      changes,
+      outdatingId: moveToOutdated && oldA.id ? oldA.id : null,
+      deletingId: !moveToOutdated && oldA.id ? oldA.id : null,
+    };
+  }
+
+  /** Compare contacts; return {added, removed} without side effects */
+  async diffContacts(
+    existing: Owner,
+    draft: OwnerDraft,
+    contactTypes: NonTelegram[],
+    restoringContacts: OutdatedContacts | null
+  ): Promise<{
+    changes: OwnerChangingData['contacts'];
+    outdatingIds: number[] | null;
+    deletingIds: number[] | null;
+  }> {
+    let changes: OwnerChangingData['contacts'] = null;
+    let outdatingIds = null;
+    let deletingIds = null;
+
+    for (const type of contactTypes) {
+      const oldVals = existing.orderedContacts?.[type] ?? [];
+      const newVals = draft.draftContacts?.[type] ?? [];
+      const restoringVals = restoringContacts?.[type] ?? [];
+      for (const v of newVals) {
+        const presentIdx = oldVals.findIndex((oc) => oc.content === v) ?? -1;
+        if (presentIdx === -1) {
+          const restoringIdx =
+            restoringVals.findIndex((rc) => rc.content === v) ?? -1;
+          if (restoringIdx === -1) {
+            changes ??= {};
+            changes[type] ??= [];
+            changes[type].push(v);
+          }
+        }
+      }
+      for (const c of oldVals) {
+        const newIdx = newVals.findIndex((nc) => nc === c.content);
+        if (newIdx === -1) {
+          const moveToOutdated =
+            await this.diffConfirmService.confirmOutdateOrDelete(
+              'contact',
+              `${type} ${c.content}`
+            );
+          if (moveToOutdated) {
+            outdatingIds ??= [];
+            outdatingIds.push(c.id);
+          } else {
+            deletingIds ??= [];
+            deletingIds.push(c.id);
+          }
+        }
+      }
+    }
+    return {
+      changes,
+      outdatingIds,
+      deletingIds,
+    };
   }
 }

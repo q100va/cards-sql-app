@@ -36,7 +36,7 @@ import {
   optionalContactsSchema,
 } from './common.schema.js';
 import {
-  changingAddressSchema,
+  //  changingAddressSchema,
   changingContactsSchema,
 } from './common.schema.js';
 import {
@@ -286,12 +286,11 @@ export const userDraftSchema = z
         .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD')
     ),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    patronymic: z
-      .preprocess(
-        toTrim,
-        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-      )
-      .nullable(),
+    patronymic: z.preprocess(
+      emptyToNull,
+      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()
+    ),
+
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     roleId: z.number({ message: 'FORM_VALIDATION.REQUIRED' }).int().positive(),
 
@@ -375,10 +374,13 @@ export const changingMainSchema = z
   .object({
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
     patronymic: z
-      .string()
-      .trim()
-      .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-      .nullable()
+      .preprocess(
+        emptyToNull,
+        z
+          .string()
+          .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
+          .nullable()
+      )
       .optional(),
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
 
@@ -419,7 +421,7 @@ export const changingMainSchema = z
 export const changingDataSchema = z
   .object({
     main: changingMainSchema.nullable(),
-    address: changingAddressSchema.nullable(),
+    address: draftAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
   })
   .strict()
@@ -503,7 +505,7 @@ export const restoringDataSchema = z
 export const updateUserDataSchema = z
   .object({
     id: positiveInt,
-    changes: changingDataSchema,
+    changingData: changingDataSchema,
     restoringData: restoringDataSchema,
     outdatingData: outdatingDataSchema,
     deletingData: deletingDataSchema,
@@ -572,14 +574,12 @@ export const usersQueryDTOSchema = z
 
 /* ===================== OutdatedData (view) ===================== */
 
-
 const outdatedUserNameItemSchema = z
   .object({
     userName: nonEmpty,
     id: positiveInt,
   })
   .strict();
-
 
 export const outdatedDataSchema = z
   .object({
@@ -619,23 +619,8 @@ export const usersSchema = z
   })
   .strict();
 
-export const duplicatesSchema = z
-  .object({
-    duplicatesName: z.array(z.string()),
-    duplicatesContact: z.array(
-      z
-        .object({
-          type: z.string(),
-          content: z.string(),
-          users: z.array(z.string()),
-        })
-        .strict()
-    ),
-  })
-  .strict();
-
 /* ===================== Types ===================== */
-export type UserDuplicates = z.infer<typeof duplicatesSchema>;
+//export type UserDuplicates = z.infer<typeof duplicatesSchema>;
 export type UserDraft = z.infer<typeof userDraftSchema>;
 export type UserDraftContacts = z.infer<typeof draftContactsSchema>;
 export type ChangePassword = z.infer<typeof changePasswordSchema>;

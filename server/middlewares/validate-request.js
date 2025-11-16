@@ -5,6 +5,7 @@ export function validateRequest(schema, part = 'body'/* , opts = {} */) {
   return (req, _res, next) => {
     try {
       console.log('part', req[part]);
+      console.log(JSON.stringify(req.body.changingData?.contacts, null, 2));
       const parsed = schema.safeParse(req[part]);
 
       if (!parsed.success) {
@@ -16,6 +17,7 @@ export function validateRequest(schema, part = 'body'/* , opts = {} */) {
         err.details = details;
         return next(err);
       }
+       console.log('parsed.data', parsed.data);
 
       req[part] = parsed.data;
       next();

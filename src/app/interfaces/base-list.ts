@@ -1,5 +1,5 @@
 import { AddressFilter } from './toponym';
-import { ContactType } from './user';
+import { ContactType } from './advanced-model';
 
 export interface GeneralFilter {
   roles?: { id: number; name: string }[];

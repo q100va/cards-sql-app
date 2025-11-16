@@ -119,12 +119,6 @@ export declare const optionalContactsSchema: z.ZodObject<{
         content: z.ZodString;
     }, z.core.$strict>>>;
 }, z.core.$strict>;
-export declare const changingAddressSchema: z.ZodObject<{
-    countryId: z.ZodNullable<z.ZodNumber>;
-    regionId: z.ZodNullable<z.ZodNumber>;
-    districtId: z.ZodNullable<z.ZodNumber>;
-    localityId: z.ZodNullable<z.ZodNumber>;
-}, z.core.$strict>;
 export declare const changingContactsSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>>;
     phoneNumber: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>>;
@@ -237,6 +231,14 @@ export declare const outdatedCommonSchema: z.ZodObject<{
         id: z.ZodNumber;
     }, z.core.$strict>>;
 }, z.core.$strict>;
+export declare const duplicatesSchema: z.ZodObject<{
+    duplicatesName: z.ZodArray<z.ZodString>;
+    duplicatesContact: z.ZodArray<z.ZodObject<{
+        type: z.ZodString;
+        content: z.ZodString;
+        owners: z.ZodArray<z.ZodString>;
+    }, z.core.$strict>>;
+}, z.core.$strict>;
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
 export type Address = z.infer<typeof addressSchema>;
@@ -245,3 +247,4 @@ export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
 export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;
 export type BaseOutdatedData = z.infer<typeof outdatedCommonSchema>;
+export type Duplicates = z.infer<typeof duplicatesSchema>;

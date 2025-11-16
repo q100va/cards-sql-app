@@ -7,15 +7,15 @@ import {
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+import { Partner } from '../interfaces/partner';
 import {
-  ChangingData,
-  DeletingData,
-  OutdatingData,
-  RestoringData,
-  Partner,
-  PartnerDraft,
   Duplicates,
-} from '../interfaces/partner';
+  PartnerDraft,
+  PartnerChangingData,
+  PartnerDeletingData,
+  PartnerOutdatingData,
+  PartnerRestoringData,
+} from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
 import {
@@ -25,18 +25,29 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import {
-  duplicatesSchema,
-  partnerSchema,
-  partnersSchema,
-} from '@shared/schemas/partner.schema';
+import { partnerSchema, partnersSchema } from '@shared/schemas/partner.schema';
+import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
+import {
+  OwnerDetailsService,
+  UpdatedOwnerData,
+} from '../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 
 @Injectable({
   providedIn: 'root',
 })
-export class PartnerService {
+export class PartnerService
+  implements
+    OwnerDetailsService<
+      Partner,
+      PartnerDraft,
+      PartnerChangingData,
+      PartnerRestoringData,
+      PartnerOutdatingData,
+      PartnerDeletingData
+    >
+{
   private http = inject(HttpClient);
   private readonly BASE_URL = `${environment.apiUrl}/api/partners`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
@@ -46,7 +57,9 @@ export class PartnerService {
     private translateService: TranslateService
   ) {}
 
-  checkOwnerData(ownerDraft: PartnerDraft): Observable<ApiResponse<Duplicates>> {
+  checkOwnerData(
+    ownerDraft: PartnerDraft
+  ): Observable<ApiResponse<Duplicates>> {
     let body = {
       id: ownerDraft.id,
       firstName: ownerDraft.firstName,
@@ -58,9 +71,9 @@ export class PartnerService {
       .pipe(validateResponse(duplicatesSchema), catchError(this.handleError));
   }
 
-  savePartner(partnerDraft: PartnerDraft): Observable<ApiResponse<string>> {
+  saveOwner(ownerDraft: PartnerDraft): Observable<ApiResponse<string>> {
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/create-partner`, partnerDraft)
+      .post<RawApiResponse>(`${this.BASE_URL}/create-partner`, ownerDraft)
       .pipe(
         validateResponse(z.string()),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
@@ -70,19 +83,19 @@ export class PartnerService {
       );
   }
 
-  saveUpdatedPartner(
+  saveUpdatedOwner(
     id: number,
-    updatedPartnerData: {
-      changes: ChangingData;
-      restoringData: RestoringData;
-      outdatingData: OutdatingData;
-      deletingData: DeletingData;
-    }
+    updatedOwnerData: UpdatedOwnerData<
+      PartnerChangingData,
+      PartnerRestoringData,
+      PartnerOutdatingData,
+      PartnerDeletingData
+    >
   ): Observable<ApiResponse<Partner>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-partner`, {
         id,
-        ...updatedPartnerData,
+        ...updatedOwnerData,
       })
       .pipe(
         validateResponse(partnerSchema),
@@ -95,7 +108,7 @@ export class PartnerService {
 
   formCommentFilterValue(commentFilter: string[]): boolean | undefined {
     if (commentFilter.length === 1) {
-     return (
+      return (
         commentFilter[0] ==
         this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
       );
@@ -202,7 +215,7 @@ export class PartnerService {
       );
   }
 
-    checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>> {
+  checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/check-partner-before-block/${id}`)
       .pipe(

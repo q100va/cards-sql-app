@@ -36,7 +36,7 @@ import {
   optionalContactsSchema,
 } from './common.schema.js';
 import {
-  changingAddressSchema,
+  //changingAddressSchema,
   changingContactsSchema,
 } from './common.schema.js';
 import {
@@ -244,7 +244,7 @@ export const changingMainSchema = z
 export const changingDataSchema = z
   .object({
     main: changingMainSchema.nullable(),
-    address: changingAddressSchema.nullable(),
+    address: draftAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
   })
   .strict()
@@ -328,7 +328,7 @@ export const restoringDataSchema = z
 export const updatePartnerDataSchema = z
   .object({
     id: positiveInt,
-    changes: changingDataSchema,
+    changingData: changingDataSchema,
     restoringData: restoringDataSchema,
     outdatingData: outdatingDataSchema,
     deletingData: deletingDataSchema,
@@ -453,23 +453,8 @@ export const partnersSchema = z
   })
   .strict();
 
-export const duplicatesSchema = z
-  .object({
-    duplicatesName: z.array(z.string()),
-    duplicatesContact: z.array(
-      z
-        .object({
-          type: z.string(),
-          content: z.string(),
-          partners: z.array(z.string()),
-        })
-        .strict()
-    ),
-  })
-  .strict();
-
 /* ===================== Types ===================== */
-export type PartnerDuplicates = z.infer<typeof duplicatesSchema>;
+//export type PartnerDuplicates = z.infer<typeof duplicatesSchema>;
 export type PartnerDraft = z.infer<typeof partnerDraftSchema>;
 export type PartnerDraftContacts = z.infer<typeof draftContactsSchema>;
 

@@ -143,14 +143,14 @@ export const optionalContactsSchema = z
     .strict();
 /* ===================== UpdateData ===================== */
 // ChangingData.address
-export const changingAddressSchema = z
-    .object({
+/* export const changingAddressSchema = z
+  .object({
     countryId: nullableInt,
     regionId: nullableInt,
     districtId: nullableInt,
     localityId: nullableInt,
-})
-    .strict();
+  })
+  .strict(); */
 // ChangingData.contacts
 export const changingContactsSchema = z
     .object({
@@ -190,5 +190,18 @@ export const outdatedCommonSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema)
+})
+    .strict();
+/* ===================== DTO ===================== */
+export const duplicatesSchema = z
+    .object({
+    duplicatesName: z.array(z.string()),
+    duplicatesContact: z.array(z
+        .object({
+        type: z.string(),
+        content: z.string(),
+        owners: z.array(z.string()),
+    })
+        .strict()),
 })
     .strict();

@@ -27,32 +27,32 @@ type TFn = (key: string, params?: Record<string, unknown>) => string;
 /** Build HTML (string) for duplicates using provided translator */
 export function buildDuplicateInfoMessage(
   translate: TFn,
-  nameUsers: string[],
-  contactDups: Array<{ type: string; content: string; users: string[] }>
+  nameOwners: string[],
+  contactDups: Array<{ type: string; content: string; owners: string[] }>
 ): string {
   let html = '';
 
-  if (nameUsers.length === 1) {
-    html += translate('PRIME_CONFIRM.NAMES_DUPLICATE', { user: nameUsers[0] });
-  } else if (nameUsers.length > 1) {
-    const usersList = nameUsers.map((u) => `- ${u}`).join('\n');
-    html += translate('PRIME_CONFIRM.NAMES_DUPLICATES', { users: usersList });
+  if (nameOwners.length === 1) {
+    html += translate('PRIME_CONFIRM.NAMES_DUPLICATE', { owner: nameOwners[0] });
+  } else if (nameOwners.length > 1) {
+    const ownersList = nameOwners.map((o) => `- ${o}`).join('\n');
+    html += translate('PRIME_CONFIRM.NAMES_DUPLICATES', { owners: ownersList });
   }
 
-  for (const { type, content, users } of contactDups) {
-    if (!users?.length) continue;
-    if (users.length === 1) {
+  for (const { type, content, owners } of contactDups) {
+    if (!owners?.length) continue;
+    if (owners.length === 1) {
       html += translate('PRIME_CONFIRM.CONTACT_DUPLICATE', {
         type,
         content,
-        user: users[0],
+        owner: owners[0],
       });
     } else {
-      const usersList = users.map((u) => `- ${u}`).join('\n');
+      const ownersList = owners.map((o) => `- ${o}`).join('\n');
       html += translate('PRIME_CONFIRM.CONTACT_DUPLICATES', {
         type,
         content,
-        users: usersList,
+        owners: ownersList,
       });
     }
   }

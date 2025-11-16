@@ -16,6 +16,7 @@ import SessionApi from './routes/session-api.js';
 import ToponymsApi from './routes/toponyms-api.js';
 import FilesApi from './routes/files-api.js';
 import UsersApi from './routes/users-api.js';
+import PartnersApi from './routes/partner-api.js';
 import RolesApi from './routes/roles-api.js';
 import AuditApi from './routes/audit-api.js';
 import ClientLogsApi from './routes/client-logs.js';
@@ -24,7 +25,7 @@ import AuthApi from './routes/auth-api.js';
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
-import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, SearchUser, RolePermission, OutdatedName, RefreshToken } from './models/index.js';
+import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, UserSearch, RolePermission, UserOutdatedName, RefreshToken, Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch } from './models/index.js';
 import { corsMiddleware } from './cors.js';
 
 const app = express();
@@ -77,16 +78,17 @@ app.use('/api/session', SessionApi);
 app.use('/api/toponyms', ToponymsApi);
 app.use('/api/files', FilesApi);
 app.use('/api/users', UsersApi);
+app.use('/api/partners', PartnersApi);
 app.use('/api/roles', RolesApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/client-logs', ClientLogsApi);
 app.use('/api/auth', AuthApi);
 
 const noCache = (_req, res, next) => {
-  res.set({'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'});
+  res.set({ 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
   next();
 };
-app.use(['/api/auth/permissions','/api/sessions/me'], noCache);
+app.use(['/api/auth/permissions', '/api/sessions/me'], noCache);
 
 
 // 404 + errors
@@ -111,11 +113,15 @@ export async function initInfrastructure() {
   await Role.sync(syncOpts);
   await RolePermission.sync(syncOpts);
   await User.sync(syncOpts);
-  await Partner.sync(syncOpts);
   await UserContact.sync(syncOpts);
   await UserAddress.sync(syncOpts);
   await UserSearch.sync(syncOpts);
   await UserOutdatedName.sync(syncOpts);
+  await Partner.sync(syncOpts);
+  await PartnerContact.sync(syncOpts);
+  await PartnerAddress.sync(syncOpts);
+  await PartnerSearch.sync(syncOpts);
+  await PartnerOutdatedName.sync(syncOpts);
   await AuditLog.sync(syncOpts);
   await RefreshToken.sync(syncOpts);
 

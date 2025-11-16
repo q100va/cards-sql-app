@@ -4,7 +4,6 @@ import { z } from 'zod';
 import {
   Country, Region, District, Locality,
   Role, PartnerAddress, Partner, PartnerContact, PartnerSearch, PartnerOutdatedName,
-  Partner, PartnerContact
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -259,10 +258,10 @@ router.post(
         default:              /* 'all' or undefined */        break;
       }
 
-      // general filters
-      if (filters?.general?.roles?.length) {
+      // general filtersTODO:
+/*       if (filters?.general?.roles?.length) {
         wherePartner.roleId = { [Op.in]: filters.general.roles };
-      }
+      } */
 
       if (filters?.general?.comment !== undefined) {
         wherePartner.comment = !filters.general.comment ? null : { [Op.not]: null };
@@ -295,7 +294,7 @@ router.post(
 
       // ---- includes (contacts / addresses / outdated names / search) ----
       const includes = [
-        { model: Role, attributes: ['name'] },
+      //  { model: Role, attributes: ['name'] },//TODO:
         {
           model: PartnerContact,
           as: 'contacts',

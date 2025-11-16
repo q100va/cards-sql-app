@@ -24,7 +24,7 @@ export default function UserContactModel(sequelize) {
       validate: {
         notEmpty: true,
         isFormatCorrect(value) {
-          const RegularExpression = regularExpression(this.type);
+          const RegularExpression = regularExpression(this.type, value);
           if (RegularExpression && !RegularExpression.test(value)) {
             throw new CustomError(`Invalid contact ${value}!`, 422);
           }

@@ -1,4 +1,4 @@
-export function regularExpression(type) {
+export function regularExpression(type, value) {
   let RegularExpression;
   switch (type) {
     case "email":
@@ -19,7 +19,7 @@ export function regularExpression(type) {
       }
       break;
     case "telegramId":
-      RegularExpression = /^(\#+([0-9]){8,10})$/;
+      RegularExpression = /^(\#+([0-9]){7,10})$/;
       break;
     case "telegramNickname":
       RegularExpression = /^@[A-Za-z0-9_]{5,32}$/;
