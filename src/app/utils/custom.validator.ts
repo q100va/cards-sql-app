@@ -5,6 +5,7 @@ import {
   ValidationErrors,
   ValidatorFn,
 } from '@angular/forms';
+import { ContactType } from '../interfaces/advanced-model';
 
 export function emailFormatValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -103,16 +104,18 @@ export function facebookFormatValidator(): ValidatorFn {
   };
 }
 
-export const mainContactsValidator: ValidatorFn = (
+export const mainUserContactsValidator: ValidatorFn = (
   control: AbstractControl
 ): ValidationErrors | null => {
   const formArrayEmail = control.get('email') as FormArray;
   const formArrayPhoneNumber = control.get('phoneNumber') as FormArray;
   const formArrayTelegramId = control.get('telegramId') as FormArray;
-  const formArrayTelegramPhoneNumber = control.get('telegramPhoneNumber') as FormArray;
+  const formArrayTelegramPhoneNumber = control.get(
+    'telegramPhoneNumber'
+  ) as FormArray;
 
   ////console.log('mainContactsValidator', formArray.get('email'));
-/*   const emailError =
+  /*   const emailError =
     control.get('email')?.hasError('required') ||
     control.get('email')?.hasError('pattern');
   const phoneNumberError =
@@ -125,11 +128,18 @@ export const mainContactsValidator: ValidatorFn = (
     control.get('telegramPhoneNumber')?.hasError('required') ||
     control.get('telegramPhoneNumber')?.hasError('pattern'); */
 
-
-    const emailError = formArrayEmail.controls.some((control) => control.errors !== null);
-    const phoneNumberError = formArrayPhoneNumber.controls.some((control) => control.errors !== null);
-    const telegramIdError = formArrayTelegramId.controls.some((control) => control.errors !== null);
-    const telegramPhoneNumberError = formArrayTelegramPhoneNumber.controls.some((control) => control.errors !== null);
+  const emailError = formArrayEmail.controls.some(
+    (control) => control.errors !== null
+  );
+  const phoneNumberError = formArrayPhoneNumber.controls.some(
+    (control) => control.errors !== null
+  );
+  const telegramIdError = formArrayTelegramId.controls.some(
+    (control) => control.errors !== null
+  );
+  const telegramPhoneNumberError = formArrayTelegramPhoneNumber.controls.some(
+    (control) => control.errors !== null
+  );
 
   return emailError ||
     phoneNumberError ||
@@ -137,6 +147,32 @@ export const mainContactsValidator: ValidatorFn = (
     telegramPhoneNumberError
     ? { mainContacts: true }
     : null;
+};
+
+export const mainPartnerContactsValidator: ValidatorFn = (
+  control: AbstractControl
+): ValidationErrors | null => {
+  const possibleContactTypes: Exclude<ContactType, 'telegram'>[] = [
+    'email',
+    'phoneNumber',
+    'telegramId',
+    'telegramPhoneNumber',
+    'telegramNickname',
+    'whatsApp',
+    'vKontakte',
+    'instagram',
+    'facebook',
+    'otherContact',
+  ];
+  for (const type of possibleContactTypes) {
+    const formArray = control.get(type) as FormArray;
+    const noContact = formArray.controls.some(
+      (control) => control.value == null || control.value.trim == ''
+    );
+   // console.log("noContact", noContact)
+    if(!noContact) return null;
+  }
+  return { mainContacts: true };
 };
 
 /* export function noOnlySpacesValidator(control: AbstractControl): ValidationErrors | null {

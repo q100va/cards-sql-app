@@ -3,7 +3,7 @@ import { ConfirmationService } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
 import { sanitizeText } from '../utils/sanitize-text';
 
-export type ConfirmKind = 'address' | 'names' | 'userName' | 'contact';
+export type ConfirmKind = 'address' | 'names' | 'userName' | 'contact' | 'home';
 
 @Injectable({ providedIn: 'root' })
 export class DiffConfirmService {
@@ -11,12 +11,13 @@ export class DiffConfirmService {
   private readonly t = inject(TranslateService);
 
   /** Ask: move previous value to 'outdated' (Accept) or delete it (Reject). */
-  confirmOutdateOrDelete(kind: ConfirmKind, value: string): Promise<boolean> {
+  async confirmOutdateOrDelete(kind: ConfirmKind, value: string): Promise<boolean> {
     const kindLabel = {
       address: this.t.instant('PRIME_CONFIRM.DATA_TYPES.ADDRESS'),
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contact: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
+      home: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
     }[kind];
 
     const header = this.t.instant('PRIME_CONFIRM.WARNING_HEADER');
@@ -49,7 +50,7 @@ export class DiffConfirmService {
   /** Ask:  is correct new data when it matches outdated records.
    * (Accept) - restore it or (Reject) - cancel saving. */
   confirmDataCorrectness(
-    type: 'address' | 'names' | 'userName' | 'contacts',
+    type: 'address' | 'names' | 'userName' | 'contacts' | 'homes',
     value: string
   ): Promise<boolean> {
     const types = {
@@ -57,6 +58,7 @@ export class DiffConfirmService {
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contacts: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
+      homes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
     };
 
     return new Promise((resolve) => {

@@ -160,7 +160,7 @@ export class AddressFilterComponent {
       this.params().class = 'none';
       this.params().readonly = false;
 
-      if (this.params().source != 'userCard') {
+      if (this.params().source != 'userCard' && this.params().source != 'partnerCard') {
         // enable all controls if not userCard
         this.enableChain(['country', 'region', 'district', 'locality']);
         console.log('onChangeMode ', this.form.controls['country'].value);

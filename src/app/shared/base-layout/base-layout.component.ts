@@ -101,6 +101,16 @@ export class BaseLayoutComponent {
     },
     {
       params: {
+        codes: ['VIEW_LIMITED_PARTNERS_LIST', 'VIEW_FULL_PARTNERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-partners',
+      icon: 'handshake',
+      text: 'MENU.PARTNERS',
+      link: '/partners',
+    },
+    {
+      params: {
         codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
         mode: 'any',
       },

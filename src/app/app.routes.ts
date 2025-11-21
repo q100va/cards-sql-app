@@ -5,7 +5,7 @@ import { BaseLayoutComponent } from './shared/base-layout/base-layout.component'
 import { authGuard } from './guards/auth.guard';
 import { RolesListComponent } from './pages/roles-list/roles-list.component';
 import { UsersListComponent } from './pages/users-list/users-list.component';
-import { InProgressComponent } from './pages/in-progress/in-progress.component';
+import { PartnersListComponent } from './pages/partners-list/partners-list.component';
 import { CountriesListComponent } from './pages/toponyms-lists/countries-list/countries-list.component';
 import { RegionsListComponent } from './pages/toponyms-lists/regions-list/regions-list.component';
 import { DistrictsListComponent } from './pages/toponyms-lists/districts-list/districts-list.component';
@@ -39,6 +39,13 @@ export const routes: Routes = [
           requireAnyOp('VIEW_FULL_USERS_LIST', 'VIEW_LIMITED_USERS_LIST'),
         ],
         component: UsersListComponent,
+      },
+      {
+        path: 'partners',
+        canMatch: [
+          requireAnyOp('VIEW_FULL_PARTNERS_LIST', 'VIEW_LIMITED_PARTNERS_LIST'),
+        ],
+        component: PartnersListComponent,
       },
       {
         path: 'roles',
@@ -78,13 +85,9 @@ export const routes: Routes = [
         canMatch: [requireOp('VIEW_FULL_ROLES_LIST')], //TODO: create operations for audit
         component: AuditTableComponent,
       },
-      {
-        path: '404',
-        component: InProgressComponent,
-      },
     ],
   },
 
   // Фоллбек
-  { path: '**', redirectTo: '404' },
+  { path: '**', redirectTo: '' },
 ];

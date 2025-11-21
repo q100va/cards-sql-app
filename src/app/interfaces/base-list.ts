@@ -1,12 +1,13 @@
 import { AddressFilter } from './toponym';
-import { ContactType } from './user';
+import { ContactType } from './advanced-model';
 
 export interface GeneralFilter {
-  roles: { id: number; name: string }[];
+  roles?: { id: number; name: string }[];
   comment: string[];
   dateBeginningRange: Date[];
   dateRestrictionRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
+  affiliations?: string[];
 }
 
 export type FilterDraft = {
@@ -45,7 +46,8 @@ export type FilterComponentSource =
   | 'toponymList'
   | 'userCard'
   | 'userList'
-  | 'partnerList';
+  | 'partnerList'
+  | 'partnerCard';
 
 export interface ContactParamsForList {
   type: string;

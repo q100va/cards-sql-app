@@ -21,4 +21,3 @@ const sequelize = new Sequelize(connectionString, {
 });
 
 export default sequelize;
-

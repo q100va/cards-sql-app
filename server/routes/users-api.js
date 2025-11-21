@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import { z } from 'zod';
 import {
   Country, Region, District, Locality,
-  Role, UserAddress, User, UserContact, UserSearch, OutdatedName,
+  Role, UserAddress, User, UserContact, UserSearch, UserOutdatedName,
   RefreshToken
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
@@ -12,9 +12,13 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
 import * as userSchemas from "../../shared/dist/user.schema.js";
 import { hashPassword } from "../controllers/passwords.mjs";
-import * as ctrl from "../controllers/ctrl-users.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { verify } from '../controllers/passwords.mjs';
+import { collectFlatContacts, findDuplicateContacts, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
+import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
+import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
+import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
+import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 
 
 const router = Router();
@@ -74,67 +78,75 @@ router.post(
       });
       const duplicatesName = nameRows.map(r => r.userName);
 
+      const flat = collectFlatContacts(user.contacts);
+      const duplicatesContact = await findDuplicateContacts({
+        ownerKind: 'user',
+        models: { User, UserContact },
+        excludeSelf: user.id ? { id: { [Op.ne]: user.id } } : {},
+        flatContacts: flat,
+      });
 
-      const flatContacts = [];
-      for (const [type, list] of Object.entries(user.contacts ?? {})) {
-        for (const v of list ?? []) {
-          const content = (v ?? '').trim();
-          if (content) flatContacts.push({ type, content });
-        }
-      }
+      /*
+            const flatContacts = [];
+            for (const [type, list] of Object.entries(user.contacts ?? {})) {
+              for (const v of list ?? []) {
+                const content = (v ?? '').trim();
+                if (content) flatContacts.push({ type, content });
+              }
+            }
 
-      // Early shortcut if no contacts provided
-      let duplicatesContact = [];
-      if (flatContacts.length > 0) {
+            // Early shortcut if no contacts provided
+            let duplicatesContact = [];
+            if (flatContacts.length > 0) {
 
-        const byType = new Map();
-        for (const { type, content } of flatContacts) {
-          if (!content) continue;
-          if (!byType.has(type)) byType.set(type, new Set());
-          byType.get(type).add(content);
-        }
+              const byType = new Map();
+              for (const { type, content } of flatContacts) {
+                if (!content) continue;
+                if (!byType.has(type)) byType.set(type, new Set());
+                byType.get(type).add(content);
+              }
 
-        // build OR with IN per type
-        const orList = Array.from(byType.entries()).map(([type, contents]) => ({
-          '$contacts.type$': type,
-          '$contacts.content$': { [Op.in]: Array.from(contents) },
-        }));
+              // build OR with IN per type
+              const orList = Array.from(byType.entries()).map(([type, contents]) => ({
+                '$contacts.type$': type,
+                '$contacts.content$': { [Op.in]: Array.from(contents) },
+              }));
 
-        const contactRows = await User.findAll({
-          where: { ...excludeSelf, [Op.or]: orList },
-          include: [{
-            model: UserContact,
-            as: 'contacts',
-            attributes: ['type', 'content'],
-            required: true,
-          }],
-          attributes: ['userName'],
-          raw: true,
-        });
+              const contactRows = await User.findAll({
+                where: { ...excludeSelf, [Op.or]: orList },
+                include: [{
+                  model: UserContact,
+                  as: 'contacts',
+                  attributes: ['type', 'content'],
+                  required: true,
+                }],
+                attributes: ['userName'],
+                raw: true,
+              });
 
-        const byPair = new Map();
-        for (const row of contactRows) {
-          const type = row['contacts.type'] ?? '';
-          const content = row['contacts.content'] ?? '';
-          const userName = row['userName'] ?? '';
+              const byPair = new Map();
+              for (const row of contactRows) {
+                const type = row['contacts.type'] ?? '';
+                const content = row['contacts.content'] ?? '';
+                const userName = row['userName'] ?? '';
 
-          if (!type || !content || !userName) continue;
+                if (!type || !content || !userName) continue;
 
-          const key = `${type}::${content}`;
-          if (!byPair.has(key)) {
-            byPair.set(key, { type, content, users: new Set() });
-          }
-          byPair.get(key).users.add(userName);
-        }
+                const key = `${type}::${content}`;
+                if (!byPair.has(key)) {
+                  byPair.set(key, { type, content, users: new Set() });
+                }
+                byPair.get(key).users.add(userName);
+              }
 
-        duplicatesContact = Array.from(byPair.values())
-          .map(({ type, content, users }) => ({
-            type,
-            content,
-            users: Array.from(users).sort(),
-          }))
-          .sort((a, b) => a.type.localeCompare(b.type) || a.content.localeCompare(b.content));
-      }
+              duplicatesContact = Array.from(byPair.values())
+                .map(({ type, content, users }) => ({
+                  type,
+                  content,
+                  users: Array.from(users).sort(),
+                }))
+                .sort((a, b) => a.type.localeCompare(b.type) || a.content.localeCompare(b.content));
+            } */
 
       let response = { data: { duplicatesName, duplicatesContact } };
       if (duplicatesName.length > 0 || duplicatesContact.length > 0) response.code = 'USER.HAS_DATA_DUPLICATES';
@@ -179,42 +191,50 @@ router.post(
           { transaction: t }
         );
 
-        const contactRows = Object.entries(creatingUser.draftContacts ?? {}).flatMap(
-          ([type, list]) =>
-            (list ?? [])
-              .map((content) => (content ?? ''))
-              .filter(Boolean)
-              .map((content) => ({
-                userId: user.id,
-                type,
-                content,
-              }))
+        await saveOwnerContactsAndAddress(
+          'user',
+          user,
+          creatingUser, // { draftContacts, draftAddress }
+          { UserContact, UserAddress },
+          t
         );
 
-        if (contactRows.length) {
-          await UserContact.bulkCreate(
-            contactRows, {
-            validate: true, individualHooks: true, transaction: t
-          }
-          );
-        }
+        /*        const contactRows = Object.entries(creatingUser.draftContacts ?? {}).flatMap(
+                 ([type, list]) =>
+                   (list ?? [])
+                     .map((content) => (content ?? ''))
+                     .filter(Boolean)
+                     .map((content) => ({
+                       userId: user.id,
+                       type,
+                       content,
+                     }))
+               );
 
-        const a = creatingUser.draftAddress ?? {};
-        const hasAnyAddress =
-          !!a.countryId || !!a.regionId || !!a.districtId || !!a.localityId;
+               if (contactRows.length) {
+                 await UserContact.bulkCreate(
+                   contactRows, {
+                   validate: true, individualHooks: true, transaction: t
+                 }
+                 );
+               }
 
-        if (hasAnyAddress) {
-          await UserAddress.create(
-            {
-              userId: user.id,
-              countryId: a.countryId ?? null,
-              regionId: a.regionId ?? null,
-              districtId: a.districtId ?? null,
-              localityId: a.localityId ?? null,
-            },
-            { transaction: t }
-          );
-        }
+               const a = creatingUser.draftAddress ?? {};
+               const hasAnyAddress =
+                 !!a.countryId || !!a.regionId || !!a.districtId || !!a.localityId;
+
+               if (hasAnyAddress) {
+                 await UserAddress.create(
+                   {
+                     userId: user.id,
+                     countryId: a.countryId ?? null,
+                     regionId: a.regionId ?? null,
+                     districtId: a.districtId ?? null,
+                     localityId: a.localityId ?? null,
+                   },
+                   { transaction: t }
+                 );
+               } */
 
         const freshUser = await User.findOne({
           where: { id: user.id },
@@ -253,7 +273,7 @@ router.post(
           transaction: t,
         });
 
-        const searchString = ctrl.createSearchString(freshUser);
+        const searchString = createSearchStringFor('user', freshUser);
         await UserSearch.create({ userId: user.id, content: searchString }, { transaction: t });
 
         return user.userName;
@@ -318,8 +338,8 @@ router.post(
   requireAuth,
   requireOperation('EDIT_USER'),
   validateRequest(userSchemas.updateUserDataSchema, 'body'),
-  async (req, res) => {
-    const { id, changes, restoringData, outdatingData, deletingData } = req.body;
+  async (req, res, next) => {
+    const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
 
     try {
       const result = await withTransaction(async (t) => {
@@ -327,9 +347,9 @@ router.post(
         if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
         // CHANGES
         // main
-        if (changes?.main) {
-          console.log('changes?.main', changes?.main);
-          const payload = changes.main;
+        if (changingData?.main) {
+          console.log('changingData?.main', changingData?.main);
+          const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
             await User.update(
               payload,
@@ -341,152 +361,13 @@ router.post(
           }
         }
 
-        // address
-        if (changes?.address) {
-          const a = changes.address;
-          const hasAny = a.countryId || a.regionId || a.districtId || a.localityId;
-          if (hasAny) {
-            await UserAddress.create(
-              {
-                userId: id,
-                countryId: a.countryId ?? null,
-                regionId: a.regionId ?? null,
-                districtId: a.districtId ?? null,
-                localityId: a.localityId ?? null,
-              },
-              { transaction: t }
-            );
-          }
-        }
-
-        // contacts
-        if (changes?.contacts) {
-          const contactRows = Object.entries(changes.contacts)
-            .flatMap(([type, list]) =>
-              (list ?? [])
-                .map(v => (v ?? '').trim())
-                .filter(Boolean)
-                .map(content => ({ userId: id, type, content }))
-            );
-          if (contactRows.length) {
-            await UserContact.bulkCreate(contactRows, { individualHooks: true, transaction: t });
-          }
-        }
-
-        // RESTORING
-        if (restoringData?.addresses?.length) {
-          const nonRecoverableAddr = await UserAddress.count(
-            {
-              where: {
-                id: { [Op.in]: restoringData.addresses },
-                isRecoverable: false
-              }
-            },
-          );
-          if (nonRecoverableAddr !== 0) throw CustomError('ERROR.USER.ADDRESS_NOT_RESTORED', 500);
-          await UserAddress.update(
-            { isRestricted: false },
-            {
-              where: { id: { [Op.in]: restoringData.addresses } },
-              individualHooks: true, transaction: t
-            }
-          );
-        }
-
-        if (restoringData?.names?.length) {
-          await OutdatedName.destroy({
-            where: { id: { [Op.in]: restoringData.names } },
-            transaction: t,
-            individualHooks: true,
-          });
-        }
-
-        if (restoringData?.userNames?.length) {
-          await OutdatedName.destroy({
-            where: { id: { [Op.in]: restoringData.userNames } },
-            transaction: t,
-            individualHooks: true,
-          });
-        }
-
-        if (restoringData?.contacts) {
-          const ids = Object.values(restoringData.contacts)
-            .flatMap(arr => arr ?? [])
-            .map(c => c.id);
-          if (ids.length) {
-            await UserContact.update(
-              { isRestricted: false },
-              { where: { id: { [Op.in]: ids } }, individualHooks: true, transaction: t }
-            );
-          }
-        }
-
-        // OUTDATING
-        if (outdatingData?.names) {
-          await OutdatedName.create(
-            {
-              userId: id,
-              firstName: outdatingData.names.firstName,
-              patronymic: outdatingData.names.patronymic,
-              lastName: outdatingData.names.lastName,
-            },
-            { transaction: t }
-          );
-        }
-
-        if (outdatingData?.userName) {
-          await OutdatedName.create(
-            { userId: id, userName: outdatingData.userName },
-            { transaction: t }
-          );
-        }
-
-        if (outdatingData?.address) {
-          await UserAddress.update(
-            { isRestricted: true },
-            { where: { id: outdatingData.address }, individualHooks: true, transaction: t }
-          );
-        }
-
-        if (outdatingData?.contacts?.length) {
-          await UserContact.update(
-            { isRestricted: true },
-            { where: { id: { [Op.in]: outdatingData.contacts } }, individualHooks: true, transaction: t }
-          );
-        }
-
-        // DELETING
-        if (deletingData?.addresses?.length) {
-          await UserAddress.destroy({
-            where: { id: { [Op.in]: deletingData.addresses } },
-            transaction: t,
-            individualHooks: true,
-          });
-        }
-
-        if (deletingData?.contacts?.length) {
-          await UserContact.destroy({
-            where: { id: { [Op.in]: deletingData.contacts } },
-            transaction: t,
-            individualHooks: true,
-          });
-        }
-
-        if (deletingData?.names?.length) {
-          await OutdatedName.destroy({
-            where: { id: { [Op.in]: deletingData.names } },
-            transaction: t,
-            individualHooks: true,
-          });
-        }
-
-        if (deletingData?.userNames?.length) {
-          await OutdatedName.destroy({
-            where: { id: { [Op.in]: deletingData.userNames } },
-            transaction: t,
-            individualHooks: true,
-          });
-        }
+        //addresses, contacts, outdated
+        await applyOwnerUpdates(
+          'user',
+          id,
+          { changingData, restoringData, outdatingData, deletingData },
+          t
+        );
 
 /*         const freshes = await User.findAll({
           attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
@@ -550,20 +431,18 @@ router.post(
                 { model: Locality, attributes: ['id', 'shortName', 'name'] },
               ]
             },
-            { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
+            { model: UserOutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
           ],
           transaction: t,
         });
         // SEARCH
-        const search = ctrl.createSearchString(fresh);
+        const search = createSearchStringFor('user', fresh);
         await UserSearch.update(
           { content: search },
           { where: { userId: id, isRestricted: false }, individualHooks: true, transaction: t }
         );
-
-        const outdatedSearch = ctrl.createOutdatedSearchString(fresh);
+        const outdatedSearch = createOutdatedSearchStringFor('user', fresh);
         if (outdatedSearch) {
-
           const [row, created] = await UserSearch.findOrCreate({
             where: { userId: id, isRestricted: true },
             defaults: { content: outdatedSearch },
@@ -571,7 +450,7 @@ router.post(
           });
           if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
         }
-        return ctrl.transformUserData(fresh.toJSON());
+        return transformOwnerData('user', fresh.toJSON());
       });
 
       res.status(200).send({ code: 'USER.UPDATED', data: result });
@@ -600,7 +479,7 @@ router.post(
       } = req.body; // already validated by Zod
 
       const includeOutdated = !!view?.includeOutdated; // false => only actual
-      const order = ctrl.buildOrder(sort);
+      const order = buildOrderFor('user', sort);
 
       // ---- base where (User) ----
       const whereUser = {};
@@ -624,17 +503,17 @@ router.post(
       }
 
       if (filters?.general?.dateBeginningRange) {
-        whereUser.dateOfStart = ctrl.betweenDatesInclusive(filters.general.dateBeginningRange);
+        whereUser.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
       }
       if (filters?.general?.dateRestrictionRange) {
-        whereUser.dateOfRestriction = ctrl.betweenDatesInclusive(filters.general.dateRestrictionRange);
+        whereUser.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
       const contRequired = contactTypes.length > 0;
       if (contRequired) {
-        const sub = ctrl.buildContactUserIdSubquery(contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
+        const sub = buildContactOwnerIdSubquery('user', contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
         if (!includeOutdated) whereContact.isRestricted = false;
         if (sub) whereContact.userId = { [Op.in]: sub };
       }
@@ -643,7 +522,7 @@ router.post(
       const addresses = filters?.address || {};
       const addrRequired = (addresses.countries?.length ?? 0) > 0;
       if (addrRequired) {
-        const sub = await ctrl.buildAddressUserIdSubquery(addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
+        const sub = await buildAddressOwnerIdSubquery('user', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
         if (!includeOutdated) whereAddress.isRestricted = false;
         if (sub) whereAddress.userId = { [Op.in]: sub };
       }
@@ -672,7 +551,7 @@ router.post(
           ]
         },
         {
-          model: OutdatedName,
+          model: UserOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'],
           separate: true,
@@ -681,7 +560,7 @@ router.post(
 
       // search by UserSearch.content (words; exact → AND; else OR)
       if (search?.value?.trim()) {
-        const contentWhere = ctrl.buildSearchContentWhere(search.value, search.exact);
+        const contentWhere = buildSearchContentWhere(search.value, search.exact);
         includes.push({
           model: UserSearch,
           required: true,
@@ -701,8 +580,8 @@ router.post(
       });
 
       console.log('whereUser', whereUser);
-      /*    console.log('order', order);
-     console.log('includes', includes);
+       console.log('ORDER USER', order);
+      /*  console.log('includes', includes);
      console.log('whereUser', whereUser); */
 
       // ---- page ----
@@ -716,10 +595,12 @@ router.post(
         // subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-      // console.log('users', users);
+   //  console.log('users', users);
 
-      const items = users.map(u => ctrl.transformUserData(u.toJSON()));
-      res.status(200).send({ data: { users: items, length: total } });
+      const items = users.map(u => transformOwnerData('user', u.toJSON()));
+
+      console.log('items', items);
+      res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.USER.LIST_FAILED';
       next(error);
@@ -770,13 +651,13 @@ router.get("/get-user-by-id/:id",
             attributes: ['name'],
           },
           {
-            model: OutdatedName, as: 'outdatedNames',
+            model: UserOutdatedName, as: 'outdatedNames',
             attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName']
           },
         ],
       });
       if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
-      const data = ctrl.transformUserData(user.toJSON());
+      const data = transformOwnerData('user', user.toJSON());
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.USER.NOT_FOUND';

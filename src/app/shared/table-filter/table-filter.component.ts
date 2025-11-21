@@ -28,7 +28,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldsetModule } from 'primeng/fieldset';
 import { BadgeModule } from 'primeng/badge';
 import { OverlayBadgeModule } from 'primeng/overlaybadge';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { RoleService } from '../../services/role.service';
 import { MessageWrapperService } from '../../services/message.service';
@@ -45,7 +45,7 @@ import {
 } from '../../interfaces/base-list';
 
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
-import { ContactType } from '../../interfaces/user';
+import { ContactType } from '../../interfaces/advanced-model';
 
 type FilterForm = FormGroup<{
   roles: FormControl<
@@ -54,6 +54,7 @@ type FilterForm = FormGroup<{
       name: string;
     }[]
   >;
+  affiliations: FormControl<string[]>;
   comment: FormControl<string[]>;
   contactTypes: FormControl<{ type: ContactType; label: string }[]>;
   startBeginningDate: FormControl<any>;
@@ -88,6 +89,7 @@ export class TableFilterComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
   private readonly msgWrapper = inject(MessageWrapperService);
+   readonly translate = inject(TranslateService);
 
   @ViewChild(AddressFilterComponent)
   addressFilterComponent!: AddressFilterComponent;
@@ -120,6 +122,11 @@ export class TableFilterComponent implements OnInit {
   // Data
   rolesList: { id: number; name: string }[] = [];
   params!: AddressFilterParams;
+  affiliations = [
+    'PARTNER.AFF.VOLUNTEER_COORDINATOR',
+    'PARTNER.AFF.HOME_REPRESENTATIVE',
+    'PARTNER.AFF.FOUNDATION_STAFF',
+  ];
 
   // Reactive toggles
   private strongAddressFilterControl = effect(
@@ -157,6 +164,7 @@ export class TableFilterComponent implements OnInit {
         name: string;
       }[]
     >([], { nonNullable: true }),
+    affiliations: new FormControl<string[]>([], { nonNullable: true }),
     comment: new FormControl<string[]>([], { nonNullable: true }),
     contactTypes: new FormControl<{ type: ContactType; label: string }[]>([], {
       nonNullable: true,
@@ -281,6 +289,7 @@ export class TableFilterComponent implements OnInit {
 
     const filter: GeneralFilter = {
       roles: this.form.controls.roles.value ?? [],
+      affiliations: this.form.controls.affiliations.value ?? [],
       comment: this.form.controls.comment.value ?? [],
       contactTypes: this.form.controls.contactTypes.value ?? [],
       dateBeginningRange: this.getRange(
@@ -298,7 +307,8 @@ export class TableFilterComponent implements OnInit {
     // Count active filters
     if (filter.dateBeginningRange.length) count++;
     if (filter.dateRestrictionRange.length) count++;
-    if (filter.roles.length) count++;
+    if ((filter.roles ?? []).length) count++;
+    if ((filter.affiliations ?? []).length) count++;
     if (filter.comment.length) count++;
     if (filter.contactTypes.length) count++;
 
@@ -318,6 +328,7 @@ export class TableFilterComponent implements OnInit {
   clearForm() {
     this.form.reset({
       roles: [],
+      affiliations: [],
       comment: [],
       contactTypes: [],
       startBeginningDate: null,
@@ -340,6 +351,7 @@ export class TableFilterComponent implements OnInit {
     this.filterBadgeValue.emit(0);
     this.filterValue.emit({
       roles: [],
+      affiliations: [],
       comment: [],
       contactTypes: [],
       dateBeginningRange: [],

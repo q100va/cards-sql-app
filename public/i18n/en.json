@@ -33,7 +33,8 @@
     "REGIONS": "Regions",
     "DISTRICTS": "Districts",
     "LOCALITIES": "Localities",
-    "AUDIT": "Audit"
+    "AUDIT": "Audit",
+    "PARTNERS": "Coordinators"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -49,10 +50,10 @@
     "UNBLOCK_ITEM_MESSAGE": "Unblock «{{name}}»?",
 
     "SAVE_WITH_DUPLICATES": "Duplicates detected. Are you sure you want to save the entered data?",
-    "NAMES_DUPLICATE": "The entered first and last name match the data of user {{user}}.",
-    "NAMES_DUPLICATES": "The entered first and last name match the data of the following users:<br />{{users}}",
-    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of user {{user}}.",
-    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following users:<br />{{users}}",
+    "NAMES_DUPLICATE": "The entered first and last name match the data of owner {{owner}}.",
+    "NAMES_DUPLICATES": "The entered first and last name match the data of the following owners:<br />{{owners}}",
+    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of owner {{owner}}.",
+    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following owners:<br />{{owners}}",
     "OUTDATED_DUPLICATES": "The data you entered:<br /> {{type}} '{{value}}'<br />match outdated records.<br />Are you sure this information is correct?",
     "SAVE_OR_DELETE_OLD_DATA": "You changed the {{type}}.<br />Save the previous value '{{oldValue}}' as outdated?<br />Otherwise, it will be deleted as incorrect and cannot be restored.",
     "RESTORE_OUTDATED_DATA": "Restore this data as current?",
@@ -61,7 +62,8 @@
       "ADDRESS": "address",
       "NAMES": "full name",
       "USER_NAME": "username",
-      "CONTACTS": "contact(s)"
+      "CONTACTS": "contact(s)",
+      "HOMES": "nursing home(s)"
     }
   },
   "TOAST": {
@@ -69,7 +71,7 @@
     "WARN": "Warning",
     "ERROR": "Error",
     "SUCCESS": "Success",
-    "DELETE_DUPLICATES": "You entered duplicate values:\n{{duplicates}}.\n\nPlease remove the duplicates."
+    "DELETE_DUPLICATES": "You entered duplicate values:<br />{{duplicates}}.<br />Please remove the duplicates."
   },
   "ROLE": {
     "CREATED": "Role \"{{name}}\" created",
@@ -175,6 +177,59 @@
     "RESTORE_DATA": "restore as current",
     "DELETE_DATA": "delete as incorrect"
   },
+  "TABLE": {
+    "COLUMNS": {
+      "USER_NAME": "Username",
+      "ROLE_NAME": "Role",
+      "AFFILIATION": "Affiliation",
+      "FULL_NAME": "Full name",
+      "CONTACTS": "Contacts",
+      "ADDRESS": "Address",
+      "START_DATE": "Join date",
+      "COMMENT": "Comment",
+      "STATUS": "Status",
+      "ACTIONS": "Actions",
+      "HOMES": "Coordinated homes"
+    },
+    "NOTES": {
+      "CLOSE": "close",
+      "DEACTIVATED": "not participate",
+      "OUTDATED_DATA": "outdated data:",
+      "BLOCKED_FROM": "blocked from ",
+      "ACTIVE": "active"
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Open list",
+      "OPEN_CARD": "open card",
+      "OPEN_ORDERS": "open orders",
+      "OPEN_SUBSCRIBERS": "open subscribers",
+      "OPEN_VOLUNTEERS": "open volunteers",
+      "OPEN_HOMES": "open nursing homes list",
+      "BLOCK_OWNER": "block",
+      "UNBLOCK_OWNER": "unblock",
+      "DELETE_OWNER": "delete"
+    },
+    "DIALOGS": {
+      "CAUSE_OF_BLOCK_LABEL": "Reason of blocking (deactivation)"
+    },
+    "NO_DATA_FOR_QUERY": "No data found",
+    "CARD": {
+      "MAIN_DATA_LABEL": "Main info",
+      "CONTACTS_LABEL": "Contact details",
+      "OUTDATED_DATA_LABEL": "Outdated data",
+      "COORDINATED_HOMES_LABEL": "Coordinated homes",
+      "CHANGE_PASSWORD_BUTTON": "Change password",
+      "BLOCKED_LABEL": "Blocked",
+      "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
+      "DELETE_BUTTON_TITLE": "Delete",
+      "EXTRA_CONTACT_BUTTON": "Additional contact",
+      "OUTDATED_NAMES_TITLE": "Outdated full names:",
+      "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
+      "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
+      "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
+      "OUTDATED_HOMES_TITLE": "Former coordinated homes:"
+    }
+  },
   "USER": {
     "CREATED": "User \"{{userName}}\" created",
     "UPDATED": "User \"{{userName}}\" updated",
@@ -188,24 +243,11 @@
     "TABLE_TITLE": "Users",
     "ADD_USER": "Add user",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
-    "BLOCKED_FROM": "blocked from ",
-    "ACTIVE": "active",
 
     "VIEW_OPTIONS": {
-      "ALL_USERS": "all users",
+      "ALL": "all users",
       "ONLY_ACTIVE": "only active",
       "ONLY_BLOCKED": "only blocked"
-    },
-    "COLUMNS": {
-      "USER_NAME": "Username",
-      "ROLE_NAME": "Role",
-      "FULL_NAME": "Full name",
-      "CONTACTS": "Contacts",
-      "ADDRESS": "Address",
-      "START_DATE": "Join\ndate",
-      "COMMENT": "Comment",
-      "STATUS": "Status",
-      "ACTIONS": "Actions"
     },
 
     "CONTACTS": {
@@ -218,33 +260,10 @@
       "FACEBOOK_LABEL": "Facebook",
       "OTHER_CONTACT_LABEL": "Other contact"
     },
-    "MENU": {
-      "OPEN_LIST_TITLE": "Open list",
-      "OPEN_CARD": "open card",
-      "OPEN_ORDERS": "open orders",
-      "OPEN_SUBSCRIBERS": "open subscribers",
-      "OPEN_VOLUNTEERS": "open volunteers",
-      "BLOCK_USER": "block user",
-      "UNBLOCK_USER": "unblock user",
-      "DELETE_USER": "delete user"
-    },
+
     "CARD": {
       "CREATION_TITLE": "New user",
       "VIEW_TITLE": "User",
-
-      "MAIN_DATA_LABEL": "Main info",
-      "CONTACTS_LABEL": "Contact details",
-      "OUTDATED_DATA_LABEL": "Outdated data",
-
-      "CHANGE_PASSWORD_BUTTON": "Change password",
-      "CAUSE_OF_BLOCK_LABEL": "Reason",
-      "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
-      "DELETE_BUTTON_TITLE": "Delete",
-      "EXTRA_CONTACT_BUTTON": "Additional contact",
-      "OUTDATED_NAMES_TITLE": "Outdated full names:",
-      "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
-      "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
-      "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
 
       "USER_NAME_LABEL": "Username*",
       "ROLE_LABEL": "Role*",
@@ -253,7 +272,7 @@
       "PATRONYMIC_LABEL": "Patronymic",
       "LAST_NAME_LABEL": "Last name*",
       "COMMENT_LABEL": "Comment",
-      "BLOCKED_LABEL": "Blocked",
+
       "EMAIL_LABEL": "Email*",
       "PHONE_NUMBER_LABEL": "Phone number*",
       "TELEGRAM_ID_LABEL": "Telegram ID*",
@@ -287,19 +306,66 @@
     "BLOCK_BUTTON": "Block",
     "CANCEL_BUTTON": "Cancel"
   },
+  "PARTNER": {
+    "TABLE_TITLE": "Partners",
+    "ADD_PARTNER": "Add partner",
+    "SEARCH_PLACEHOLDER": "Olga Kotova",
+    "VIEW_OPTIONS": {
+      "ALL": "all partners",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only former"
+    },
+    "AFF": {
+      "VOLUNTEER_COORDINATOR": "Coordinator",
+      "HOME_REPRESENTATIVE": "Home representative",
+      "FOUNDATION_STAFF": "Foundation staff"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New partner",
+      "VIEW_TITLE": "Partner",
+
+      "FIRST_NAME_LABEL": "First name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last name",
+      "AFFILIATION_LABEL": "Affiliation*",
+      "POSITION_LABEL": "Position",
+      "COMMENT_LABEL": "Comment",
+      "BLOCKED_LABEL": "Blocked",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_ID_LABEL": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "USER_NAME_PLACEHOLDER": "a.petrova",
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
   "BASE_LIST": {
     "DOWNLOAD_TABLE": "Download table",
     "SEARCH_LABEL": "Search (enter any value present in the table)",
     "APPLIED_FILTERS": "Applied filters: {{value}}",
     "EXACT_MATCH_HINT": "search terms must be present simultaneously",
     "INCLUDE_OUTDATED": "include outdated data: previous addresses, phone numbers, etc.",
-    "NO_DATA_FOR_QUERY": "No data found",
     "SET_FILTER": "Configure filter",
     "RESET_FILTER": "Reset filter",
     "SET_COLUMNS": "Configure column visibility",
     "START_LABEL": "start",
-    "BLOCK_LABEL": "block",
-    "OUTDATED_DATA": "outdated data:"
+    "BLOCK_LABEL": "block"
   },
   "NAV": {
     "COLUMNS_HEADER": "Configure column visibility",
@@ -308,7 +374,8 @@
       "ADDR_LABEL": "address",
       "STRONG_FILTER": "all selected values must be present simultaneously",
       "ROLE_LABEL": "role",
-      "CHOOSE_VALUE_LABEL": "Select value(s)",
+      "AFFILIATION_LABEL": "affiliation*",
+      "CHOOSE_VALUE_LABEL": "select value(s)",
       "START_DATE_LABEL": "start date",
       "CHOOSE_RANGE_LABEL": "Enter a range",
       "DATE_PLACEHOLDER": "mm/dd/yyyy",
@@ -353,6 +420,7 @@
     "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
     "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
     "USER_WITHOUT_ROLE": "User without role",
+    "ADDRESS_NOT_RESTORED": "Failed to restore the address. Object not updated.",
 
     "ROLE": {
       "NOT_FOUND": "Role not found",
@@ -394,7 +462,7 @@
       "ROLE_REQUIRED": "User has no assigned role. Account not created.",
       "NOT_CREATED": "Failed to create the user",
       "NOT_UPDATED": "Failed to update the user",
-      "ADDRESS_NOT_RESTORED": "Failed to restore the address. User not updated.",
+
       "LIST_FAILED": "Failed to get the list of users",
       "NOT_CHECKED": "Failed to check the user dependencies",
       "NOT_DELETED": "Failed to delete the user",
@@ -410,6 +478,7 @@
     "INVALID_FORMAT": "Invalid data format",
     "REQUIRED": "This field cannot be empty",
     "TOO_LONG_500": "Maximum 500 characters",
+    "TOO_LONG_150": "Maximum 150 characters",
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",

@@ -7,18 +7,22 @@ import {
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+import { User, ChangePassword } from '../interfaces/user';
+
 import {
-  ChangingData,
-  DeletingData,
-  OutdatingData,
-  RestoringData,
-  User,
-  UserDraft,
   Duplicates,
-  ChangePassword,
-} from '../interfaces/user';
+  UserDraft,
+  UserDeletingData,
+  UserRestoringData,
+  UserChangingData,
+  UserOutdatingData,
+  OwnerMainService,
+  UpdatedOwnerData,
+} from '../interfaces/advanced-model';
+
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
+
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -26,37 +30,31 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import {
-  duplicatesSchema,
-  userSchema,
-  usersSchema,
-} from '@shared/schemas/user.schema';
+import { userSchema, usersSchema } from '@shared/schemas/user.schema';
+import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
+import * as ctrl from '../utils/common-ctrls';
 
-function toIsoRange(dates: Date[] | undefined): [string, string] | undefined {
-  if (!dates || dates.length !== 2) return undefined;
-  const [from, to] = dates;
-  if (!from || !to) return undefined;
-  return [from.toISOString(), to.toISOString()];
-}
-
-function omitEmpty<T extends Record<string, any>>(obj?: T): T | undefined {
-  if (!obj) return undefined;
-  const out: any = {};
-  for (const [k, v] of Object.entries(obj)) {
-    const isEmptyArr = Array.isArray(v) && v.length === 0;
-    const isEmptyStr = typeof v === 'string' && v.trim() === '';
-    //const isFalsyButAllowed = v === false || v === 0;
-    if (v == null || isEmptyArr || isEmptyStr) continue; // || v == undefined
-    out[k] = v;
-  }
-  return Object.keys(out).length ? out : undefined;
+export interface UserMainService
+  extends OwnerMainService<
+    User,
+    UserDraft,
+    UserChangingData,
+    UserRestoringData,
+    UserOutdatingData,
+    UserDeletingData,
+    { list: User[]; length: number }
+  > {
+  checkUserName(
+    userName: string,
+    id: number | null
+  ): Observable<ApiResponse<boolean>>;
 }
 
 @Injectable({
   providedIn: 'root',
 })
-export class UserService {
+export class UserService implements UserMainService {
   private http = inject(HttpClient);
   private readonly BASE_URL = `${environment.apiUrl}/api/users`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
@@ -65,6 +63,10 @@ export class UserService {
     private msgWrapper: MessageWrapperService,
     private translateService: TranslateService
   ) {}
+
+  getOwnerName(owner: User) {
+    return owner.userName;
+  }
 
   checkUserName(
     userName: string,
@@ -87,21 +89,21 @@ export class UserService {
       );
   }
 
-  checkUserData(user: UserDraft): Observable<ApiResponse<Duplicates>> {
+  checkOwnerData(ownerDraft: UserDraft): Observable<ApiResponse<Duplicates>> {
     let body = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      contacts: user.draftContacts,
+      id: ownerDraft.id,
+      firstName: ownerDraft.firstName,
+      lastName: ownerDraft.lastName,
+      contacts: ownerDraft.draftContacts,
     };
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/check-user-data/`, body)
       .pipe(validateResponse(duplicatesSchema), catchError(this.handleError));
   }
 
-  saveUser(userDraft: UserDraft): Observable<ApiResponse<string>> {
+  saveOwner(ownerDraft: UserDraft): Observable<ApiResponse<string>> {
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/create-user`, userDraft)
+      .post<RawApiResponse>(`${this.BASE_URL}/create-user`, ownerDraft)
       .pipe(
         validateResponse(z.string()),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
@@ -130,19 +132,19 @@ export class UserService {
       );
   }
 
-  saveUpdatedUser(
+  saveUpdatedOwner(
     id: number,
-    updatedUserData: {
-      changes: ChangingData;
-      restoringData: RestoringData;
-      outdatingData: OutdatingData;
-      deletingData: DeletingData;
-    }
+    updatedOwnerData: UpdatedOwnerData<
+      UserChangingData,
+      UserRestoringData,
+      UserOutdatingData,
+      UserDeletingData
+    >
   ): Observable<ApiResponse<User>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-user`, {
         id,
-        ...updatedUserData,
+        ...updatedOwnerData,
       })
       .pipe(
         validateResponse(userSchema),
@@ -154,10 +156,13 @@ export class UserService {
   }
 
   formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    console.log("this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')", this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT'));
+    console.log(
+      "this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')",
+      this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')
+    );
 
     if (commentFilter.length === 1) {
-     return (
+      return (
         commentFilter[0] ==
         this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
       );
@@ -165,7 +170,7 @@ export class UserService {
     return undefined;
   }
 
-  getListOfUsers(
+  getList(
     allFilterParameters: {
       viewOption: string;
       includeOutdated: boolean;
@@ -182,7 +187,7 @@ export class UserService {
     },
     pageSize: number,
     currentPage: number
-  ): Observable<ApiResponse<{ users: User[]; length: number }>> {
+  ): Observable<ApiResponse<{ list: User[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
       page: { size: pageSize, number: currentPage },
@@ -195,29 +200,29 @@ export class UserService {
               },
             ]
           : undefined,
-      search: omitEmpty({
+      search: ctrl.omitEmpty({
         value: p.searchValue,
         exact: p.exactMatch || undefined,
       }),
-      view: omitEmpty({
+      view: ctrl.omitEmpty({
         option: p.viewOption,
         includeOutdated: p.includeOutdated,
       }),
-      filters: omitEmpty({
-        general: omitEmpty({
-          roles: p.filter.roles.map((r) => r.id),
+      filters: ctrl.omitEmpty({
+        general: ctrl.omitEmpty({
+          roles: p.filter.roles!.map((r) => r.id),
           comment: this.formCommentFilterValue(p.filter.comment),
-          dateBeginningRange: toIsoRange(p.filter.dateBeginningRange),
-          dateRestrictionRange: toIsoRange(p.filter.dateRestrictionRange),
+          dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
+          dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
         }),
-        address: omitEmpty({
+        address: ctrl.omitEmpty({
           countries: p.addressFilter.countries,
           regions: p.addressFilter.regions,
           districts: p.addressFilter.districts,
           localities: p.addressFilter.localities,
         }),
-        mode: omitEmpty({
+        mode: ctrl.omitEmpty({
           strictAddress: p.strongAddressFilter,
           strictContact: p.strongContactFilter,
         }),
@@ -229,13 +234,13 @@ export class UserService {
       .pipe(validateResponse(usersSchema), catchError(this.handleError));
   }
 
-  getUser(id: number): Observable<ApiResponse<User>> {
+  getById(id: number): Observable<ApiResponse<User>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-user-by-id/${id}`)
       .pipe(validateResponse(userSchema), catchError(this.handleError));
   }
 
-  checkPossibilityToDeleteUser(id: number): Observable<ApiResponse<number>> {
+  checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/check-user-before-delete/${id}`)
       .pipe(
@@ -254,7 +259,7 @@ export class UserService {
       );
   }
 
-  deleteUser(id: number): Observable<ApiResponse<null>> {
+  deleteOwner(id: number): Observable<ApiResponse<null>> {
     return this.http
       .delete<RawApiResponse>(`${this.BASE_URL}/delete-user/${id}`)
       .pipe(
@@ -264,7 +269,7 @@ export class UserService {
       );
   }
 
-  blockUser(
+  blockOwner(
     id: number,
     causeOfRestriction: string
   ): Observable<ApiResponse<null>> {
@@ -280,7 +285,7 @@ export class UserService {
       );
   }
 
-  unblockUser(id: number): Observable<ApiResponse<null>> {
+  unblockOwner(id: number): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/unblock-user/`, { id })
       .pipe(

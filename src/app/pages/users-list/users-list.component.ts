@@ -1,500 +1,377 @@
 // src/app/pages/users-list/users-list.component.ts
-import {
-  Component,
-  DestroyRef,
-  Injector,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-  runInInjectionContext,
-  afterNextRender,
-} from '@angular/core';
 
+import { Component } from '@angular/core';
 import {
-  filter as rxFilter,
-  distinctUntilChanged,
-  switchMap,
-  tap,
-  catchError,
-  finalize,
-  of,
-} from 'rxjs';
-import {
-  MatPaginator,
-  MatPaginatorModule,
-  PageEvent,
-} from '@angular/material/paginator';
-import { DomSanitizer } from '@angular/platform-browser';
-import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconRegistry, MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDialog } from '@angular/material/dialog';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+  userDraftSchema,
+  emailControlSchema,
+  facebookControlSchema,
+  instagramControlSchema,
+  otherContactControlSchema,
+  phoneNumberControlSchema,
+  telegramIdControlSchema,
+  telegramNicknameControlSchema,
+  vKontakteControlSchema,
+  whatsAppControlSchema,
+} from '@shared/schemas/user.schema';
 
-import { UserService } from '../../services/user.service';
-import { MessageWrapperService } from '../../services/message.service';
-import { DateUtilsService } from '../../services/date-utils.service';
+import { TranslateModule } from '@ngx-translate/core';
 
-import { sanitizeText } from '../../utils/sanitize-text';
 import { User } from '../../interfaces/user';
 import { DialogData } from '../../interfaces/dialog-props';
-import { ContactParamsForList, FilterDraft } from '../../interfaces/base-list';
-
-import { BaseListComponent } from '../../shared/base-list/base-list.component';
-import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
-import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
-
-import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
-import { HasOpDirective } from '../../directives/has-op.directive';
-
 import {
-  CONTACT_PARAMS_FOR_LIST,
-  IMPLICITLY_DISPLAYED_COLUMNS,
-  viewOptions,
-  componentType,
-  userDialogConfig,
-  tableParams,
-} from './users-list.config';
+  ColumnDefinition,
+  FilterComponentSource,
+  TableParams,
+  ViewOption,
+} from '../../interfaces/base-list';
 
-import { ContactUrlPipe } from '../../utils/contact-url.pipe';
-import { AddressFilter } from 'src/app/interfaces/toponym';
-import { zodValidator } from 'src/app/utils/zod-validator';
-import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
+import { zodValidator } from '../../utils/zod-validator';
+
+import { TableComponent } from '../../shared/table/table.component';
+import * as Validator from '../../utils/custom.validator';
+import { Kind } from 'src/app/interfaces/advanced-model';
 
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
-    MatIconModule,
-    MatMenuModule,
-    MatButtonModule,
-    BaseListComponent,
-    TranslateModule,
-    ContactUrlPipe,
-    BlurOnClickDirective,
-    HasOpDirective,
-  ],
+  imports: [TranslateModule, TableComponent],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
 })
 export class UsersListComponent {
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  kind: Kind = 'user';
+  viewOptions: ViewOption[] = [
+    {
+      id: 'all',
+      name: 'USER.VIEW_OPTIONS.ALL',
+      initiallySelected: false,
+    },
+    {
+      id: 'only-active',
+      name: 'USER.VIEW_OPTIONS.ONLY_ACTIVE',
+      initiallySelected: true,
+    },
+    {
+      id: 'only-blocked',
+      name: 'USER.VIEW_OPTIONS.ONLY_BLOCKED',
+      initiallySelected: false,
+    },
+  ];
 
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly userService = inject(UserService);
-  private readonly confirmationService = inject(ConfirmationService);
-  private readonly translate = inject(TranslateService);
-  private readonly msg = inject(MessageWrapperService);
-  readonly dialog = inject(MatDialog);
-  readonly dateUtils = inject(DateUtilsService);
+  componentType: FilterComponentSource = 'userList';
 
-  dataSource!: MatTableDataSource<User>;
-  users!: User[];
+  tableParams: TableParams = {
+    title: 'USER.TABLE_TITLE',
+    addTitle: 'USER.ADD_USER',
+    searchPlaceholder: 'USER.SEARCH_PLACEHOLDER',
+    addIcon: 'person_add_alt',
+  };
 
-  sanitizeText = sanitizeText;
+  IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
+    {
+      id: 1,
+      columnName: 'userName',
+      columnFullName: 'TABLE.COLUMNS.USER_NAME',
+      isUnchangeable: true,
+    },
+    {
+      id: 2,
+      columnName: 'role',
+      columnFullName: 'TABLE.COLUMNS.ROLE_NAME',
+      isUnchangeable: false,
+    },
+    {
+      id: 3,
+      columnName: 'name',
+      columnFullName: 'TABLE.COLUMNS.FULL_NAME',
+      isUnchangeable: false,
+    },
+    {
+      id: 4,
+      columnName: 'contacts',
+      columnFullName: 'TABLE.COLUMNS.CONTACTS',
+      isUnchangeable: false,
+    },
+    {
+      id: 5,
+      columnName: 'address',
+      columnFullName: 'TABLE.COLUMNS.ADDRESS',
+      isUnchangeable: false,
+    },
+    {
+      id: 6,
+      columnName: 'dateOfStart',
+      columnFullName: 'TABLE.COLUMNS.START_DATE',
+      isUnchangeable: false,
+    },
+    {
+      id: 7,
+      columnName: 'comment',
+      columnFullName: 'TABLE.COLUMNS.COMMENT',
+      isUnchangeable: false,
+    },
+    {
+      id: 8,
+      columnName: 'isRestricted',
+      columnFullName: 'TABLE.COLUMNS.STATUS',
+      isUnchangeable: false,
+    },
+    {
+      id: 9,
+      columnName: 'actions',
+      columnFullName: 'TABLE.COLUMNS.ACTIONS',
+      isUnchangeable: false,
+    },
+  ];
+
+  userDialogConfig: DialogData<User> = {
+    creationTitle: 'USER.CARD.CREATION_TITLE',
+    viewTitle: 'USER.CARD.VIEW_TITLE',
+    controls: [
+      {
+        controlName: 'userName',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.userName)],
+        type: 'inputText',
+        label: 'USER.CARD.USER_NAME_LABEL',
+        placeholder: 'USER.CARD.USER_NAME_PLACEHOLDER',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'roleId',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.roleId)],
+        type: 'select',
+        label: 'USER.CARD.ROLE_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'password',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.password)],
+        type: 'inputPassword',
+        label: 'USER.CARD.PASSWORD_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'firstName',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.firstName)],
+        type: 'inputText',
+        label: 'USER.CARD.FIRST_NAME_LABEL',
+        placeholder: '',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'patronymic',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.patronymic)],
+        type: 'inputText',
+        label: 'USER.CARD.PATRONYMIC_LABEL',
+        placeholder: '',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'lastName',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.lastName)],
+        type: 'inputText',
+        label: 'USER.CARD.LAST_NAME_LABEL',
+        placeholder: '',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'comment',
+        value: null,
+        validators: [zodValidator(userDraftSchema.shape.comment)],
+        type: 'inputText',
+        label: 'USER.CARD.COMMENT_LABEL',
+        placeholder: '',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 6,
+        rowspan: 1,
+      },
+      {
+        controlName: 'isRestricted',
+        value: false,
+        validators: [],
+        type: 'toggle',
+        label: 'USER.CARD.BLOCKED_LABEL',
+        category: 'extraData',
+        formType: 'formControl',
+        colspan: 6,
+        rowspan: 1,
+      },
+      {
+        controlName: 'email',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.EMAIL_LABEL',
+        placeholder: 'USER.CARD.EMAIL_PLACEHOLDER',
+        validators: [zodValidator(emailControlSchema)],
+        errorName: 'emailFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'phoneNumber',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.PHONE_NUMBER_LABEL',
+        placeholder: 'USER.CARD.PHONE_NUMBER_PLACEHOLDER',
+        validators: [zodValidator(phoneNumberControlSchema)],
+        errorName: 'phoneNumberFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'telegramId',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.TELEGRAM_ID_LABEL',
+        placeholder: 'USER.CARD.TELEGRAM_ID_PLACEHOLDER',
+        validators: [zodValidator(telegramIdControlSchema)],
+        errorName: 'telegramIdFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'telegramPhoneNumber',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.TELEGRAM_PHONE_NUMBER_LABEL',
+        placeholder: 'USER.CARD.TELEGRAM_PHONE_NUMBER_PLACEHOLDER',
+        validators: [zodValidator(phoneNumberControlSchema)],
+        errorName: 'phoneNumberFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'telegramNickname',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.TELEGRAM_NICKNAME_LABEL',
+        placeholder: 'USER.CARD.TELEGRAM_NICKNAME_PLACEHOLDER',
+        validators: [zodValidator(telegramNicknameControlSchema)],
+        errorName: 'telegramNicknameFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'whatsApp',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.WHATSAPP_LABEL',
+        placeholder: 'USER.CARD.WHATSAPP_PLACEHOLDER',
+        validators: [zodValidator(whatsAppControlSchema)],
+        errorName: 'phoneNumberFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'vKontakte',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.VKONTAKTE_LABEL',
+        placeholder: 'USER.CARD.VKONTAKTE_PLACEHOLDER',
+        validators: [zodValidator(vKontakteControlSchema)],
+        errorName: 'vKontakteFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'instagram',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.INSTAGRAM_LABEL',
+        placeholder: 'USER.CARD.INSTAGRAM_PLACEHOLDER',
+        validators: [zodValidator(instagramControlSchema)],
+        errorName: 'instaFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'facebook',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.FACEBOOK_LABEL',
+        placeholder: 'USER.CARD.FACEBOOK_PLACEHOLDER',
+        validators: [zodValidator(facebookControlSchema)],
+        errorName: 'facebookFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'otherContact',
+        value: null,
+        type: 'inputText',
+        label: 'USER.CARD.OTHER_CONTACT_LABEL',
+        placeholder: 'USER.CARD.OTHER_CONTACT_PLACEHOLDER',
+        validators: [zodValidator(otherContactControlSchema)],
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+    ],
+    mainContactsValidator: [Validator.mainUserContactsValidator],
+    object: null,
+    componentType: 'user',
+    addressFilterParams: {
+      source: 'userCard',
+      multiple: false,
+      cols: '2',
+      gutterSize: '16px',
+      rowHeight: '76px',
+      isShowCountry: true,
+      isShowRegion: true,
+      isShowDistrict: true,
+      isShowLocality: true,
+      class: 'none',
+    },
+  };
 
   params = {
-    columns: IMPLICITLY_DISPLAYED_COLUMNS,
-    viewOptions,
-    componentType,
-    tableParams,
+    columns: this.IMPLICITLY_DISPLAYED_COLUMNS,
+    viewOptions: this.viewOptions,
+    componentType: this.componentType,
+    tableParams: this.tableParams,
   };
-  loading = signal(true);
-  private reloadTick = signal(0);
-  private forceReload() {
-    this.reloadTick.update((n) => n + 1);
-  }
-
-  displayedColumns = IMPLICITLY_DISPLAYED_COLUMNS.map((c) => c.columnName);
-  contactTypes: ContactParamsForList[] = CONTACT_PARAMS_FOR_LIST;
-  dialogProps = userDialogConfig;
-
-  dialogConfig = {
-    disableClose: true,
-    minWidth: '800px',
-    height: '80%',
-    autoFocus: 'dialog',
-    restoreFocus: true,
-  } as const;
-
-  // pagination
-  length = signal(0);
-  pageIndex = signal(0);
-  pageSize = signal(5);
-  pageSizeOptions = [5, 10, 25, 50, 100];
-
-  // filters/sort
-  filterParameters = signal<FilterDraft>({
-    viewOption: 'only-active',
-    searchValue: '',
-    includeOutdated: false,
-    exactMatch: false,
-    filter: {
-      roles: [],
-      comment: [],
-      contactTypes: [],
-      dateBeginningRange: [],
-      dateRestrictionRange: [],
-    },
-    addressFilter: {
-      countries: [],
-      regions: [],
-      districts: [],
-      localities: [],
-    },
-    strongAddressFilter: false,
-    strongContactFilter: false,
-  });
-
-  /*
-  If the BaseList provides an address filter → setDefaultAddrFilter first stores it in the signal,
-  then opens the addrGate. The first request will be sent with the predefined filter already applied.
-  If there’s no predefined filter → the afterNextRender in the constructor will open the addrGate at the end of the current tick,
-  and the first request will be sent immediately.
-  */
-
-  addrGate = signal<boolean>(false);
-
-  sortParameters = signal<{ active: string; direction: 'asc' | 'desc' | '' }>({
-    active: '',
-    direction: '',
-  });
-
-  allFilterParameters = computed(() => ({
-    ...this.filterParameters(),
-    sortParameters: { ...this.sortParameters() }, // keep copy to avoid accidental mutations
-  }));
-
-  private stableSerialize = (v: unknown): string => {
-    const normalize = (x: any): any => {
-      if (x instanceof Date) return x.toISOString();
-      if (Array.isArray(x)) return x.map(normalize);
-      if (x && typeof x === 'object') {
-        return Object.keys(x)
-          .sort()
-          .reduce((acc, k) => {
-            acc[k] = normalize(x[k]);
-            return acc;
-          }, {} as Record<string, unknown>);
-      }
-      return x;
-    };
-    return JSON.stringify(normalize(v));
-  };
-
-  private query = computed(() => {
-    if (!this.addrGate()) return null;
-    return {
-      filter: this.allFilterParameters(),
-      sort: this.sortParameters(),
-      page: this.pageIndex(),
-      pageSize: this.pageSize(),
-      _tick: this.reloadTick(),
-    };
-  });
-
-  constructor(private injector: Injector) {
-    const iconRegistry = inject(MatIconRegistry);
-    const sanitizer = inject(DomSanitizer);
-    for (const item of this.contactTypes) {
-      iconRegistry.addSvgIconLiteral(
-        item.type,
-        sanitizer.bypassSecurityTrustHtml(item.svg)
-      );
-    }
-
-    afterNextRender(() => {
-      if (!this.addrGate()) this.addrGate.set(true);
-    });
-
-    // React on any filter/sort param change
-    runInInjectionContext(this.injector, () => {
-      toObservable(this.query)
-        .pipe(
-          rxFilter((q): q is NonNullable<typeof q> => !!q),
-          distinctUntilChanged(
-            (a, b) => this.stableSerialize(a) === this.stableSerialize(b)
-          ),
-          tap(() => this.loading.set(true)),
-          switchMap((q) =>
-            this.userService.getListOfUsers(q.filter, q.pageSize, q.page).pipe(
-              tap((res) => {
-                this.users = res.data.users;
-                this.length.set(res.data.length);
-                this.dataSource = new MatTableDataSource(this.users);
-                this.dataSource.sort = this.sort;
-              }),
-              catchError((err) => {
-                this.msg.handle(err, {
-                  source: 'UsersListComponent',
-                  stage: 'getUsers',
-                  filter: q.filter,
-                });
-                return of(null);
-              }),
-              finalize(() => this.loading.set(false))
-            )
-          ),
-          takeUntilDestroyed(this.destroyRef)
-        )
-        .subscribe();
-    });
-  }
-
-  ngOnInit(): void {}
-
-  setDefaultAddrFilter(d: AddressFilter) {
-    this.filterParameters.update((fp) => ({
-      ...fp,
-      addressFilter: d,
-    }));
-    this.addrGate.set(true);
-  }
-
-  // Safer template helpers (used in HTML)
-  hasOutdatedUserNames = (row: User): boolean =>
-    !!row?.outdatedData?.userNames && row.outdatedData.userNames.length > 0;
-
-  hasOutdatedNames = (row: User): boolean =>
-    !!row?.outdatedData?.names && row.outdatedData.names.length > 0;
-
-  hasOutdatedContacts = (row: User): boolean =>
-    !!row?.outdatedData?.contacts &&
-    Object.keys(row.outdatedData.contacts).length > 0;
-
-  hasOutdatedAddresses = (row: User): boolean =>
-    !!row?.outdatedData?.addresses && row.outdatedData.addresses.length > 0;
-
-  // ========== child → parent bridge ==========
-  onAllFilterParametersChange = (p: FilterDraft) => {
-    this.goToFirstPage();
-    this.filterParameters.set({ ...p });
-  };
-
-  // ========== sort / page ==========
-  sortData(sort: Sort) {
-    this.sortParameters.set(sort);
-  }
-
-  /** MatPaginator change handler: updates page index/size. */
-  onChangedPage(e: PageEvent) {
-    if (e.pageSize !== this.pageSize()) {
-      // when page size changes, return to first page
-      this.pageSize.set(e.pageSize);
-      this.pageIndex.set(0);
-    } else {
-      this.pageIndex.set(e.pageIndex);
-    }
-  }
-
-  private goToFirstPage() {
-    if (this.paginator && this.pageIndex() !== 0) this.paginator.firstPage();
-  }
-
-  // ========== columns ==========
-  changeColumnsView(selectedColumns: string[]) {
-    this.displayedColumns = [...selectedColumns];
-  }
-
-  // ========== dialogs / CRUD ==========
-  onAddUserClick() {
-    this.dialogProps.object = null;
-    this.dialogProps.addressFilterParams.readonly = false;
-    this.dialogProps.addressFilterParams.class = 'none';
-
-    const dialogData: DialogData<User> = {
-      ...this.dialogProps,
-      operation: 'create',
-      controlsDisable: false,
-      defaultAddressParams: {
-        localityId: null,
-        districtId: null,
-        regionId: null,
-        countryId: null,
-      },
-    };
-
-    this.dialog
-      .open(DetailsDialogComponent, { ...this.dialogConfig, data: dialogData })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        if (res?.refresh) this.forceReload();
-      });
-  }
-
-  onOpenUserCardClick(id: number) {
-    this.userService
-      .getUser(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          const user = res.data;
-          this.dialogProps.addressFilterParams.readonly = true;
-          this.dialogProps.addressFilterParams.class = 'view-mode';
-          this.dialogProps.object = user;
-
-          if (user.isRestricted) {
-            this.dialogProps.controls.push({
-              controlName: 'causeOfRestriction',
-              value: null,
-              validators: [zodValidator(causeOfRestrictionControlSchema)],
-              type: 'inputText',
-              label: 'USER.CARD.CAUSE_OF_BLOCK_LABEL',
-              category: 'extraData',
-              formType: 'formControl',
-            });
-          }
-
-          const dialogData: DialogData<User> = {
-            ...this.dialogProps,
-            operation: 'view-edit',
-            controlsDisable: true,
-            defaultAddressParams: {
-              localityId: user.address.locality?.id ?? null,
-              districtId: user.address.district?.id ?? null,
-              regionId: user.address.region?.id ?? null,
-              countryId: user.address.country?.id ?? null,
-            },
-          };
-
-          this.dialog
-            .open(DetailsDialogComponent, {
-              ...this.dialogConfig,
-              data: dialogData,
-            })
-            .afterClosed()
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((res) => {
-              if (res?.refresh) this.forceReload();
-            });
-        },
-        error: (err) =>
-          this.msg.handle(err, {
-            source: 'UsersListComponent',
-            stage: 'onOpenUserCardClick',
-            userId: id,
-          }),
-      });
-  }
-  //TODO:
-  onShowUsersOrdersClick(id: number) {}
-  onShowUsersSubscribersClick(id: number) {}
-  onShowUsersVolunteersClick(id: number) {}
-
-  onBlockUserClick(userId: number, userName: string) {
-    this.dialog
-      .open(CauseOfBlockingDialogComponent, {
-        data: { userName, userId },
-        disableClose: true,
-        minWidth: '400px',
-        height: '40%',
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        if (res?.refresh) this.forceReload();
-      });
-  }
-
-  onUnblockUserClick(id: number, userName: string) {
-    const safeUserName = this.sanitizeText(userName);
-    this.confirmationService.confirm({
-      message: this.translate.instant('PRIME_CONFIRM.UNBLOCK_ITEM_MESSAGE', {
-        name: safeUserName,
-      }),
-      header: this.translate.instant('PRIME_CONFIRM.WARNING_HEADER'),
-      closable: true,
-      closeOnEscape: true,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.REJECT'),
-      },
-      acceptButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.ACCEPT'),
-        severity: 'secondary',
-        outlined: true,
-      },
-      accept: () => this.unblockUser(id),
-    });
-  }
-
-  private unblockUser(id: number) {
-    this.userService
-      .unblockUser(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.forceReload(),
-        error: (err) =>
-          this.msg.handle(err, {
-            source: 'UsersListComponent',
-            stage: 'unblockUser',
-            userId: id,
-          }),
-      });
-  }
-
-  onDeleteUserClick(id: number, userName: string) {
-    const safeUserName = this.sanitizeText(userName);
-    const deletingUser = this.users.find((u) => u.id === id)!.userName;
-    this.confirmationService.confirm({
-      message: this.translate.instant('PRIME_CONFIRM.DELETE_ITEM_MESSAGE', {
-        name: safeUserName,
-      }),
-      header: this.translate.instant('PRIME_CONFIRM.WARNING_HEADER'),
-      closable: true,
-      closeOnEscape: true,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.REJECT'),
-      },
-      acceptButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.ACCEPT'),
-        severity: 'secondary',
-        outlined: true,
-      },
-      accept: () => this.checkPossibilityToDeleteUser(id, deletingUser),
-    });
-  }
-
-  private checkPossibilityToDeleteUser(id: number, _userName: string) {
-    this.userService
-      .checkPossibilityToDeleteUser(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          if (res.data === 0) this.deleteUser(id);
-        },
-        error: (err) =>
-          this.msg.handle(err, {
-            source: 'UsersListComponent',
-            stage: 'checkPossibilityToDeleteUser',
-            userId: id,
-          }),
-      });
-  }
-
-  private deleteUser(id: number) {
-    this.userService
-      .deleteUser(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.forceReload(),
-        error: (err) =>
-          this.msg.handle(err, {
-            source: 'UsersListComponent',
-            stage: 'deleteUser',
-            userId: id,
-          }),
-      });
-  }
 }

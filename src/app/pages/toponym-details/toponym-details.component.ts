@@ -83,7 +83,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
 
   // pre-save: check uniqueness, then save
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
-    const name = this.mainForm.controls[this.data().checkingName].value!.trim();
+    const name = this.mainForm.controls[this.data().checkingName!].value!.trim();
     const type = this.data().toponymType!;
 
     this.emitShowSpinner(true);
@@ -122,7 +122,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
   }
 
   private saveToponym(action: 'justSave' | 'saveAndExit') {
-    const name = this.mainForm.controls[this.data().checkingName].value!.trim();
+    const name = this.mainForm.controls[this.data().checkingName!].value!.trim();
     const type = this.data().toponymType!;
 
     this.addressService
