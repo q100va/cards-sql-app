@@ -22,11 +22,14 @@ import {
   OutdatedFullName,
   Contact,
   NonTelegram,
-  UserDraft
+  UserDraft,
+  PartnerDraft,
+  Partner,
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
 import { normalize, completeContact, isFieldEqual } from '../utils/user-diff';
+import { OutdatedHome } from '../interfaces/partner';
 
 // utils pure; no DI inside
 
@@ -71,9 +74,43 @@ export class UserDiffService {
       nextRestoring = nextRestoring.filter((id) => id !== toRemoveId);
     }
 
-    return { restoring: nextRestoring.length ? nextRestoring : null , outdating: nextOutdating };
+    return {
+      restoring: nextRestoring.length ? nextRestoring : null,
+      outdating: nextOutdating,
+    };
   }
 
+  corrHomes(
+    restoringIds: number[],
+    outdating: OutdatedHome[],
+    draftHomes: PartnerDraft['draftHomes'],
+    outdatedAll: OutdatedHome[]
+  ): {
+    restoring: number[] | null;
+    outdating: OutdatedHome[];
+  } {
+    // clone inputs to avoid external mutation
+    let nextRestoring = [...restoringIds];
+    let nextOutdating = [...outdating];
+
+    const toRemove: number[] = [];
+    for (const id of restoringIds) {
+      const restoring = outdatedAll.find((h) => h.id === id);
+      if (restoring && !draftHomes.includes(id)) {
+        nextOutdating = [...nextOutdating, restoring];
+        toRemove.push(id);
+      }
+    }
+    if (toRemove.length) {
+      nextRestoring = nextRestoring.filter(
+        (nextId) => !toRemove.find((id) => id === nextId)
+      );
+    }
+    return {
+      restoring: nextRestoring.length ? nextRestoring : null,
+      outdating: nextOutdating,
+    };
+  }
 
   // UserNames duplicates
   async checkUserNames(
@@ -98,6 +135,37 @@ export class UserDiffService {
     return { restoringId };
   }
 
+  // Homes duplicates
+  async checkHomes(
+    outdated: OutdatedHome[],
+    draftHomes: PartnerDraft['draftHomes']
+  ): Promise<{
+    restoring: number[] | null;
+  }> {
+    let restoring: number[] | null = [];
+    const duplicates: { id: number; name: string }[] = [];
+    for (const v of draftHomes ?? []) {
+      if (!v) continue;
+      if (Array.isArray(outdated)) {
+        for (const old of outdated) {
+          if (old.id === v) duplicates.push({ id: old.id, name: old.name });
+        }
+      }
+    }
+    if (duplicates.length > 0) {
+      const contentString = `${duplicates.map((h) => h.name).join(', ')}`;
+      const isConfirmed = await this.diffConfirmService.confirmDataCorrectness(
+        'homes',
+        contentString
+      );
+      if (isConfirmed) {
+        restoring = [...restoring, ...duplicates.map((d) => d.id)];
+      } else {
+        return { restoring: null };
+      }
+    }
+    return { restoring };
+  }
 
   /** Compare names; return changes + what should be outdated (previous value) */
   async diffUserName(
@@ -124,5 +192,41 @@ export class UserDiffService {
     };
   }
 
+  async diffHomes(
+    current: Partner['homes'],
+    draftIds: PartnerDraft['draftHomes']
+  ): Promise<{
+    changed: boolean;
+    changes: number[] | null;
+    outdating: number[] | null;
+  }> {
+    const outdating: number[] | null = [];
+    const changes: number[] | null = [];
+    const currentIds = current?.map((h) => h.id) ?? [];
+    if (current.length) {
+      current.forEach(async (h) => {
+        if (!draftIds.includes(h.id)) {
+          const moveToOutdated =
+            await this.diffConfirmService.confirmOutdateOrDelete(
+              'home',
+              h.name
+            );
+          if (moveToOutdated) outdating.push(h.id);
+        }
+      });
+    }
+    if (draftIds.length) {
+      draftIds.forEach(async (id) => {
+        if (!currentIds.includes(id)) {
+          changes.push(id);
+        }
+      });
+    }
 
+    return {
+      changed: !!changes.length || !!outdating.length,
+      changes: changes.length ? changes : null,
+      outdating: outdating.length ? outdating : null,
+    };
+  }
 }

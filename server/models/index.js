@@ -35,19 +35,22 @@ const PartnerContact = PartnerContactModel(sequelize);
 const PartnerSearch = PartnerSearchModel(sequelize);
 const PartnerOutdatedName = PartnerOutdatedNameModel(sequelize);
 
-User.hasMany(UserContact, { as: 'contacts' }, {
+User.hasMany(UserContact, {
+  as: 'contacts',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
 UserContact.belongsTo(User);
 
-Partner.hasMany(PartnerContact, { as: 'contacts' }, {
+Partner.hasMany(PartnerContact, {
+  as: 'contacts',
+  foreignKey: 'partnerId',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
-PartnerContact.belongsTo(Partner);
+PartnerContact.belongsTo(Partner, {
+  foreignKey: 'partnerId',
+});
 
 Country.hasMany(Region, {
   onDelete: 'RESTRICT',
@@ -67,17 +70,17 @@ District.hasMany(Locality, {
 });
 Locality.belongsTo(District);
 
-User.hasMany(UserAddress, { as: 'addresses' }, {
+User.hasMany(UserAddress, {
+  as: 'addresses',
   foreignKey: 'userId',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
-Partner.hasMany(PartnerAddress, { as: 'addresses' }, {
+Partner.hasMany(PartnerAddress, {
+  as: 'addresses',
   foreignKey: 'partnerId',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
 UserAddress.belongsTo(User);
 UserAddress.belongsTo(Country);
@@ -85,7 +88,9 @@ UserAddress.belongsTo(Region);
 UserAddress.belongsTo(District);
 UserAddress.belongsTo(Locality);
 
-PartnerAddress.belongsTo(Partner);
+PartnerAddress.belongsTo(Partner, {
+  foreignKey: 'partnerId',
+});
 PartnerAddress.belongsTo(Country);
 PartnerAddress.belongsTo(Region);
 PartnerAddress.belongsTo(District);
@@ -127,33 +132,37 @@ Locality.hasMany(PartnerAddress, {
 
 User.hasMany(UserSearch, {
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
 UserSearch.belongsTo(User);
 
-User.hasMany(UserOutdatedName, { as: 'outdatedNames' }, {
+User.hasMany(UserOutdatedName, {
+  as: 'outdatedNames',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
 
 UserOutdatedName.belongsTo(User);
 
 Partner.hasMany(PartnerSearch, {
+  foreignKey: 'partnerId',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+  onUpdate: 'CASCADE'
 });
-PartnerSearch.belongsTo(Partner);
-
-Partner.hasMany(PartnerOutdatedName, { as: 'outdatedNames' }, {
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-  hooks: true
+PartnerSearch.belongsTo(Partner, {
+  foreignKey: 'partnerId',
 });
 
-PartnerOutdatedName.belongsTo(Partner);
+Partner.hasMany(PartnerOutdatedName, {
+  as: 'outdatedNames',
+  foreignKey: 'partnerId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+PartnerOutdatedName.belongsTo(Partner, {
+  foreignKey: 'partnerId',
+});
 
 User.belongsTo(Role);
 Role.hasMany(User, {

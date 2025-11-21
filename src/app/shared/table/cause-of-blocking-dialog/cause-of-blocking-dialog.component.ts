@@ -18,8 +18,10 @@ import { UserService } from '../../../services/user.service';
 import { MessageWrapperService } from '../../../services/message.service';
 import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
 import { zodValidator } from '../../../utils/zod-validator';
+import { Kind, OwnerMainService } from 'src/app/interfaces/advanced-model';
+import { PartnerService } from 'src/app/services/partner.service';
 
-type DialogData = { userId: number; userName: string };
+type DialogData = { id: number, kind: Kind, service: UserService | PartnerService};
 
 @Component({
   selector: 'app-cause-of-blocking-dialog',
@@ -59,16 +61,17 @@ export class CauseOfBlockingDialogComponent {
     const cause = this.causeOfBlocking.value.trim();
     if (!cause) return;
 
-    this.userService
-      .blockUser(this.data.userId, cause)
+    this.data.service
+      .blockOwner(this.data.id, cause)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => this.dialogRef.close({ refresh: res.data === null }),
         error: (err) =>
           this.msgWrapper.handle(err, {
             source: 'CauseOfBlockingDialogComponent',
-            stage: 'blockUser',
-            userId: this.data.userId,
+            stage: 'blockOwner',
+            ownerId: this.data.id,
+            kind: this.data.kind,
           }),
       });
   }

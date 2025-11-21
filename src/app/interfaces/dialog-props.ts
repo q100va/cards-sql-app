@@ -13,6 +13,10 @@ export interface DialogData<T extends BaseModel> {
   creationTitle: string;
   viewTitle: string;
   controls: Control[];
+  mainContactsValidator?: ((
+    control: AbstractControl<any, any>
+  ) => ValidationErrors | null)[];
+
   checkingName?: string;
   addressFilterControls?: AddressFilterControl<AddressKey>[];
   addressFilterParams: AddressFilterParams;

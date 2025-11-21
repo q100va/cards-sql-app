@@ -52,7 +52,7 @@
               }}
               @if(hasAffiliation()){
               @for (aff of affiliations; track $index) {
-              <mat-option [value]="aff">{{ aff | translate}}</mat-option>
+              <mat-option [value]="translate.instant(aff)">{{ aff | translate}}</mat-option>
               }}
             </mat-select>
             @if(mainForm.controls[control.controlName].hasError('zodError')){
@@ -134,28 +134,19 @@
       </mat-grid-list>
     </mat-tab>
 
-    <!-- Homes -->
-    <!--     @if(kind =='partner'){
-    <mat-tab [label]="'TABLE.CARD.HOMES_LABEL' | translate">
+    <!-- Homes --TODO:-->
+    @if(data().operation == 'view-edit' && hasHomes()){
+    <mat-tab [label]="'TABLE.CARD.COORDINATED_HOMES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
-        @if(isEditModeSignal() && data().object!.homes){
-        @for (item of data().object.homes; track item.id) {
+        @for (item of coordinatedHomes; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
-          <div>
-            @if (isEditModeSignal()) {
-                      <app-outdated-item-menu [params]="{isRecoverable: true}"
-              (restore)="onRestoreOutdatedData('userNames', item)"
-              (delete)="onDeleteOutdatedData('userNames', item.id)">
-            </app-outdated-item-menu>
-            }
-            <div class="outdated-data">{{ item.name }}</div>
-          </div>
+            <div>{{ item.name }}</div>
         </mat-grid-tile>
-        }}
+        }
 
       </mat-grid-list>
     </mat-tab>
-    } -->
+    }
 
 
 
@@ -255,15 +246,15 @@
         }
 
         <!-- Outdated Homes -->
-        <!--         @if (hasOutdatedUserNames()) {
-        <mat-grid-tile colspan="2" [rowspan]="outdatedDataDraft.homes.length">
+        @if (hasOutdatedHomes()) {
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForHomes()">
           <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_HOMES_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (item of outdatedDataDraft.homes; track item.id) {
+        @for (item of outdatedHomes; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('homes', item)"
+            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedHome(item)"
               (delete)="onDeleteOutdatedData('homes', item.id)">
             </app-outdated-item-menu>
             }
@@ -271,7 +262,7 @@
           </div>
         </mat-grid-tile>
         }
-        } -->
+        }
       </mat-grid-list>
     </mat-tab>
     }

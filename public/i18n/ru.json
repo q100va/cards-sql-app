@@ -62,7 +62,8 @@
       "ADDRESS": "адрес",
       "NAMES": "ФИО",
       "USER_NAME": "имя пользователя",
-      "CONTACTS": "контакт(ы)"
+      "CONTACTS": "контакт(ы)",
+      "HOMES": "интернат(ы)"
     }
   },
   "TOAST": {
@@ -70,7 +71,7 @@
     "WARN": "Предупреждение",
     "ERROR": "Ошибка",
     "SUCCESS": "Выполнено",
-    "DELETE_DUPLICATES": "Вы указали одинаковые значения: \n{{duplicates}}. \n\n Удалите, пожалуйста, дубли."
+    "DELETE_DUPLICATES": "Вы указали одинаковые значения:<br />{{duplicates}}.<br />Удалите, пожалуйста, дубли."
   },
   "ROLE": {
     "CREATED": "Роль «{{name}}» создана",
@@ -180,11 +181,11 @@
     "COLUMNS": {
       "USER_NAME": "Имя пользователя",
       "ROLE_NAME": "Роль",
-      "AFFILIATION": "Принадлежность/\nдолжность",
+      "AFFILIATION": "Позиция",
       "FULL_NAME": "ФИО",
       "CONTACTS": "Контакты",
       "ADDRESS": "Адрес",
-      "START_DATE": "Дата\nприсоединения",
+      "START_DATE": "Дата присоединения",
       "COMMENT": "Комментарий",
       "STATUS": "Статус",
       "ACTIONS": "Действия",
@@ -315,6 +316,11 @@
       "ONLY_ACTIVE": "Только активные",
       "ONLY_BLOCKED": "Только прекратившие"
     },
+    "AFF": {
+      "VOLUNTEER_COORDINATOR": "Координатор",
+      "HOME_REPRESENTATIVE": "Представитель интерната",
+      "FOUNDATION_STAFF": "Сотрудник фонда"
+    },
     "CARD": {
       "CREATION_TITLE": "Новый координатор",
       "VIEW_TITLE": "Координатор",
@@ -322,6 +328,8 @@
       "FIRST_NAME_LABEL": "Имя*",
       "PATRONYMIC_LABEL": "Отчество",
       "LAST_NAME_LABEL": "Фамилия",
+      "AFFILIATION_LABEL": "Позиция*",
+      "POSITION_LABEL": "Должность",
       "COMMENT_LABEL": "Комментарий",
       "BLOCKED_LABEL": "Заблокирован",
       "EMAIL_LABEL": "Email",
@@ -368,7 +376,8 @@
       "ADDR_LABEL": "адрес",
       "STRONG_FILTER": "все выбранные значения должны присутствовать одновременно",
       "ROLE_LABEL": "роль",
-      "CHOOSE_VALUE_LABEL": "Выберите значение(я)",
+      "AFFILIATION_LABEL":"позиция",
+      "CHOOSE_VALUE_LABEL": "выберите значение(я)",
       "START_DATE_LABEL": "дата присоединения",
       "CHOOSE_RANGE_LABEL": "Введите диапазон",
       "DATE_PLACEHOLDER": "дд.мм.гггг",

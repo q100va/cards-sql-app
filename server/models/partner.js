@@ -27,10 +27,7 @@ export default function PartnerModel(sequelize) {
         allowNull: true,
       },
       affiliation: {
-        type: DataTypes.ENUM(
-          'PARTNER.AFF.VOLUNTEER_COORDINATOR',
-          'PARTNER.AFF.HOME_REPRESENTATIVE',
-          'PARTNER.AFF.FOUNDATION_STAFF'),
+        type: DataTypes.STRING,
         allowNull: false,
       },
       position: {

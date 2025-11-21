@@ -28,6 +28,8 @@ import {
 import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
+import * as Validator from '../../utils/custom.validator';
+import { Kind } from 'src/app/interfaces/advanced-model';
 
 @Component({
   selector: 'app-users-list',
@@ -37,6 +39,7 @@ import { TableComponent } from '../../shared/table/table.component';
   styleUrl: './users-list.component.css',
 })
 export class UsersListComponent {
+  kind: Kind = 'user';
   viewOptions: ViewOption[] = [
     {
       id: 'all',
@@ -348,8 +351,7 @@ export class UsersListComponent {
         rowspan: 1,
       },
     ],
-
-    // checkingName: 'userName',
+    mainContactsValidator: [Validator.mainUserContactsValidator],
     object: null,
     componentType: 'user',
     addressFilterParams: {
@@ -372,5 +374,4 @@ export class UsersListComponent {
     componentType: this.componentType,
     tableParams: this.tableParams,
   };
-
 }

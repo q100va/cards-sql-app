@@ -52,6 +52,16 @@ import {
   PartnerDraft,
   User,
   Partner,
+  Kind,
+  OwnerByKind,
+  OwnerMainService,
+  OwnerDraftByKind,
+  ChangingByKind,
+  RestoringByKind,
+  OutdatingByKind,
+  DeletingByKind,
+  ListDto,
+  OutdatedByKind,
 } from '../../../../interfaces/advanced-model';
 import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
@@ -65,7 +75,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { RoleService } from '../../../../services/role.service';
@@ -93,86 +103,6 @@ import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
 import { debounceTime, finalize, Observable, of } from 'rxjs';
 import { DefaultAddressParams } from '@shared/dist/toponym.schema';
-
-import * as Validator from '../../../../utils/custom.validator';
-import { keyof } from 'zod';
-
-type NumArrayFor<T, K extends keyof T> = Extract<NonNullable<T[K]>, number[]>;
-
-type Kind = 'user' | 'partner';
-
-export type OwnerByKind<K extends Kind> = K extends 'user'
-  ? User
-  : K extends 'partner'
-  ? Partner
-  : never;
-
-export type OwnerDraftByKind<K extends Kind> = K extends 'user'
-  ? UserDraft
-  : K extends 'partner'
-  ? PartnerDraft
-  : never;
-
-type ChangingByKind<K extends Kind> = K extends 'user'
-  ? UserChangingData
-  : K extends 'partner'
-  ? PartnerChangingData
-  : never;
-
-type RestoringByKind<K extends Kind> = K extends 'user'
-  ? UserRestoringData
-  : K extends 'partner'
-  ? PartnerRestoringData
-  : never;
-
-type OutdatingByKind<K extends Kind> = K extends 'user'
-  ? UserOutdatingData
-  : K extends 'partner'
-  ? PartnerOutdatingData
-  : never;
-
-type DeletingByKind<K extends Kind> = K extends 'user'
-  ? UserDeletingData
-  : K extends 'partner'
-  ? PartnerDeletingData
-  : never;
-
-type OutdatedByKind<K extends Kind> = K extends 'user'
-  ? UserOutdatedData
-  : K extends 'partner'
-  ? PartnerOutdatedData
-  : never;
-
-type ApiResponse<T> = { data: T };
-
-export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
-  changingData: TChanging;
-  restoringData: TRestoring;
-  outdatingData: TOutdating;
-  deletingData: TDeleting;
-};
-
-export interface OwnerDetailsService<
-  TOwner,
-  TOwnerDraft,
-  TChanging,
-  TRestoring,
-  TOutdating,
-  TDeleting
-> {
-  checkOwnerData(ownerDraft: TOwnerDraft): Observable<ApiResponse<Duplicates>>;
-  getById(id: number): Observable<ApiResponse<TOwner>>;
-  saveOwner(ownerDraft: TOwnerDraft): Observable<ApiResponse<string>>;
-  saveUpdatedOwner(
-    id: number,
-    updatedOwnerData: UpdatedOwnerData<
-      TChanging,
-      TRestoring,
-      TOutdating,
-      TDeleting
-    >
-  ): Observable<ApiResponse<TOwner>>;
-}
 
 @Component({
   selector: 'app-advanced-details',
@@ -207,58 +137,59 @@ export class AdvancedDetailsComponent<
   //private readonly partnerService = inject(PartnerService);
   readonly userDiffService = inject(UserDiffService);
   private readonly ownerService = inject(OwnerService);
-
+  readonly translate = inject(TranslateService);
   override kind!: K;
 
-  protected service!: OwnerDetailsService<
+  protected service!: OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
     ChangingByKind<K>,
     RestoringByKind<K>,
     OutdatingByKind<K>,
-    DeletingByKind<K>
+    DeletingByKind<K>,
+    ListDto<K>
   >;
 
-  protected readonly userService = inject(UserService) as OwnerDetailsService<
+  protected readonly userService = inject(UserService) as OwnerMainService<
     User,
     UserDraft,
     UserChangingData,
     UserRestoringData,
     UserOutdatingData,
-    UserDeletingData
+    UserDeletingData,
+    { list: User[]; length: number }
   >;
 
   protected readonly partnerService = inject(
     PartnerService
-  ) as OwnerDetailsService<
+  ) as OwnerMainService<
     Partner,
     PartnerDraft,
     PartnerChangingData,
     PartnerRestoringData,
     PartnerOutdatingData,
-    PartnerDeletingData
+    PartnerDeletingData,
+    { list: Partner[]; length: number }
   >;
 
-  protected getService(): OwnerDetailsService<
+  protected getService(): OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
     ChangingByKind<K>,
     RestoringByKind<K>,
     OutdatingByKind<K>,
-    DeletingByKind<K>
+    DeletingByKind<K>,
+    ListDto<K>
   > {
-    const kind = this.kind;
-
-    const svc = kind === 'user' ? this.userService : this.partnerService;
-
-    // Приводим — но уже ОДНОЗНАЧНО, потому что K фиксирован в наследнике
-    return svc as OwnerDetailsService<
+    const svc = this.kind === 'user' ? this.userService : this.partnerService;
+    return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
       ChangingByKind<K>,
       RestoringByKind<K>,
       OutdatingByKind<K>,
-      DeletingByKind<K>
+      DeletingByKind<K>,
+      ListDto<K>
     >;
   }
 
@@ -304,22 +235,35 @@ export class AdvancedDetailsComponent<
   availableContactTypes: Exclude<ContactType, 'telegram' | 'otherContact'>[] =
     [];
 
-  getOwner() {}
+  // getOwner() {}
   hasOutdatedNames = signal<boolean>(false);
   hasOutdatedContacts = signal<boolean>(false);
   hasOutdatedAddresses = signal<boolean>(false);
   hasOutdatedUserNames = signal<boolean>(false);
+  hasOutdatedHomes = signal<boolean>(false);
 
   override ngOnInit(): void {
     super.ngOnInit();
     //this.existingOwner = this.getOwner();
-    this.kind = this.data().componentType as K;
 
+    this.kind = this.data().componentType as K;
+    this.existingOwner = this.data().object;
+    console.log('this.existingOwner', this.existingOwner);
+    if (this.existingOwner) {
+      this.outdatedDataDraft = structuredClone(
+        this.existingOwner!.outdatedData
+      ) as OutdatedByKind<K>;
+    } else {
+      this.setEmptyOutdatedDataDraft();
+    }
+    this.setRestoringDataDraft();
+    this.setDeletingDataDraft();
+    this.setChangingData();
+    this.setOutdatingData();
+    this.mainForm.setValidators(this.data().mainContactsValidator!);
     this.mainForm.valueChanges
       .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onChangeValidation());
-
-    this.mainForm.setValidators([Validator.mainContactsValidator]);
 
     // Load roles (with auto-unsubscribe)
     this.roleService
@@ -462,15 +406,24 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Enable/disable Save button
   override checkIsSaveDisabled(): void {
-    const isUser = this.kind === 'user';
+    const isQualified = this.kind === 'user' || this.kind === 'partner';
     // this.logInvalid(this.mainForm); //TODO: delete
     const disabled =
-      (isUser && !this.mainForm.valid) ||
+      (isQualified && !this.mainForm.valid) ||
       (!this.changesSignal() &&
         !this.deletingSignal() &&
         this.data().operation === 'view-edit');
-    //  console.log('disabled', disabled);
 
+    //  console.log('disabled', disabled);
+    // console.log('FORM status:', this.mainForm.status);
+    // console.log('FORM errors:', this.mainForm.errors);
+
+    /*     const controls = this.mainForm.controls;
+    for (const name of Object.keys(controls)) {
+      const c = controls[name];
+     console.log('CONTROL', name, 'status:', c.status, 'errors:', c.errors);
+    }
+ */
     this.IsSaveDisabledSignal.set(disabled);
     this.emittedIsSaveDisabled.emit(disabled);
   }
@@ -607,12 +560,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   // --- Outdated data actions
   onRestoreOutdatedData(
     type: keyof RestoringByKind<K>,
-    data:
-      | Contact
-      | OutdatedAddress
-      | OutdatedFullName
-      | OutdatedUserName
-      | OutdatedHome,
+    data: Contact | OutdatedAddress | OutdatedFullName,
+    //     | OutdatedUserName
+    //    | OutdatedHome,
     contactType?: Exclude<ContactType, 'telegram'>
   ) {
     //восстанавливаемое значение присваиваем соответветствующему form.control,
@@ -641,7 +591,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     const nameOrAddr = type as NameOrAddr;
 
     if (type === 'names' || type === 'addresses') {
-      if ((this.restoringDataDraft[nameOrAddr] ?? []).length > 0) {
+      if (this.restoringDataDraft[nameOrAddr] !== null) {
         const restoredValue = this.existingOwner!.outdatedData[nameOrAddr].find(
           (item: OutdatedAddress | OutdatedFullName) =>
             item.id === this.restoringDataDraft[nameOrAddr]![0]
@@ -763,7 +713,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
-  /*   getService(kind: Kind): OwnerDetailsService<T, ChangingByKind<K>, RestoringByKind<K>, OutdatingByKind<K>, DeletingByKind<K>> {
+  /*   getService(kind: Kind): OwnerMainService<T, ChangingByKind<K>, RestoringByKind<K>, OutdatingByKind<K>, DeletingByKind<K>> {
     const svc = (
       {
         user: this.userService,
@@ -953,14 +903,14 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
-      (restoringData.addresses ?? []).length > 0
-        ? restoringData.addresses![0]
-        : null
+      restoringData.addresses == null ? null : restoringData.addresses![0]
     );
     if (address.changes) this.changingData.address = address.changes;
     if (address.outdatingId) this.outdatingData.address = address.outdatingId;
-    if (address.deletingId)
-      (deletingData.addresses ?? []).push(address.deletingId);
+    if (address.deletingId) {
+      deletingData.addresses ??= [];
+      deletingData.addresses.push(address.deletingId);
+    }
 
     const contacts = await this.ownerService.diffContacts(
       this.existingOwner!,
@@ -968,12 +918,18 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.contactTypes,
       restoringData.contacts
     );
+    console.log('contacts', contacts);
+
     if (contacts.changes) this.changingData.contacts = contacts.changes;
     if (contacts.outdatingIds)
       this.outdatingData.contacts = contacts.outdatingIds;
-    if (contacts.deletingIds)
-      (deletingData.contacts ?? []).push(...contacts.deletingIds);
+    console.log('deletingData.contacts', deletingData.contacts);
+    if (contacts.deletingIds) {
+      deletingData.contacts ??= [];
+      deletingData.contacts.push(...contacts.deletingIds);
+    }
 
+    console.log('deletingData.contacts', deletingData.contacts);
     for (const key of this.mainProps) {
       const existing = this.existingOwner as Record<string, unknown>;
       const draft = this.ownerDraft as Record<string, unknown>;
@@ -1088,37 +1044,37 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               ? res.data.address.country.id
               : null,
           };
+          this.existingOwner = this.data().object;
+          console.log('this.existingOwner', this.existingOwner);
+          if (this.existingOwner) {
+            this.outdatedDataDraft = structuredClone(
+              this.existingOwner!.outdatedData
+            ) as OutdatedByKind<K>;
+          }
 
-          this.outdatedDataDraft = structuredClone(
-            this.existingOwner!.outdatedData
-          ) as OutdatedByKind<K>;
+          console.log('OOO - this.outdatedDataDraft', this.outdatedDataDraft);
 
+          this.setHasOutdatedUserNames();
+          this.setHasOutdatedHomes();
           this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
           this.hasOutdatedContacts.set(
             Object.keys(this.outdatedDataDraft.contacts).length > 0
           );
-          console.log('this.hasOutdatedContacts', this.hasOutdatedContacts());
           this.hasOutdatedAddresses.set(
             this.outdatedDataDraft.addresses.length > 0
           );
-          this.setHasOutdatedUserNames();
+
+          console.log('this.hasOutdatedContacts', this.hasOutdatedContacts());
 
           this.addressFilterComponent.onChangeMode(
             'view',
             this.data().defaultAddressParams!
           );
-          this.restoringDataDraft = {
-            addresses: null,
-            names: null,
-            userNames: null,
-            contacts: null,
-          } as RestoringByKind<K>;
-          this.deletingDataDraft = {
-            addresses: null,
-            names: null,
-            userNames: null,
-            contacts: null,
-          } as DeletingByKind<K>;
+
+          this.setRestoringDataDraft();
+          this.setDeletingDataDraft();
+          this.setChangingData();
+          this.setOutdatingData();
 
           this.changeToViewMode(null);
           this.setInitialValues('view');
@@ -1134,23 +1090,18 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   // badges (for template)
-  /*   hasOutdatedNames(): boolean {
-    return this.outdatedDataDraft.names.length > 0;
-  }
-  hasOutdatedContacts(): boolean {
-    return Object.keys(this.outdatedDataDraft.contacts).length > 0;
-  }
-  hasOutdatedAddresses(): boolean {
-    return this.outdatedDataDraft.addresses.length > 0;
-  }
-
-  hasOutdatedUserNames(): boolean {
-    return false;
-  } */
+  setEmptyOutdatedDataDraft() {}
+  setRestoringDataDraft() {}
+  setDeletingDataDraft() {}
+  setChangingData() {}
+  setOutdatingData() {}
   hasRole(): boolean {
     return false;
   }
   hasAffiliation(): boolean {
+    return false;
+  }
+  hasHomes(): boolean {
     return false;
   }
   setHasOutdatedUserNames() {}
@@ -1159,8 +1110,20 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   getRowSpanForUserNames() {
     return 0;
   }
-  onRestoreOutdatedUserName(data: OutdatedUserName) {}
   get outdatedUserNames(): OutdatedUserName[] {
     return [];
   }
+  onRestoreOutdatedUserName(data: OutdatedUserName) {}
+
+  setHasOutdatedHomes() {}
+  getRowSpanForHomes() {
+    return 0;
+  }
+  get coordinatedHomes(): OutdatedHome[] {
+    return [];
+  }
+  get outdatedHomes(): OutdatedHome[] {
+    return [];
+  }
+  onRestoreOutdatedHome(data: OutdatedHome) {}
 }

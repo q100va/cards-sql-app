@@ -123,6 +123,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Build reactive form from declarative controls config
   protected createFormGroup(controls: Control[], controlsDisable: boolean) {
+    console.log('controls', controls)
     for (const control of controls) {
       if (control.formType == 'formControl') {
         this.mainForm.addControl(

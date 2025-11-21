@@ -22,14 +22,13 @@ import {
   Owner,
   OwnerChangingData,
   User,
-  Partner
+  Partner,
+  OwnerByKind,
+  OwnerDraftByKind,
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
 import { normalize, completeContact, isFieldEqual } from '../utils/user-diff';
-//import { Partner } from '../interfaces/partner';
-import { OwnerByKind, OwnerDraftByKind } from '../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
-//import { Client } from '../interfaces/client';
 
 // --- Kind & Draft types ------------------------------------------------------
 type OwnerMap = {
@@ -86,7 +85,7 @@ export class OwnerService {
     form: FormGroup,
     address: AddressFilter,
     contactTypes: NonTelegram[],
-    existing:OwnerByKind<K>| null
+    existing: OwnerByKind<K> | null
   ): OwnerDraftByKind<K> {
     const isRestricted = !!get(form, 'isRestricted');
 
@@ -391,9 +390,11 @@ export class OwnerService {
     }
     return {
       changed: !!changed,
-      changes: Object.keys(changes).length ? (changes as Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
-    >) : null,
+      changes: Object.keys(changes).length
+        ? (changes as Partial<
+            Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+          >)
+        : null,
       outdating: Object.keys(outdating).length ? (outdating as Names) : null,
     };
   }
@@ -508,6 +509,12 @@ export class OwnerService {
         }
       }
     }
+    console.log(
+      'changes, outdatingIds, deletingIds',
+      changes,
+      outdatingIds,
+      deletingIds
+    );
     return {
       changes,
       outdatingIds,

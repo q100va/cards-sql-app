@@ -7,14 +7,16 @@ import {
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-import { Partner } from '../interfaces/partner';
 import {
+  Partner,
   Duplicates,
   PartnerDraft,
   PartnerChangingData,
   PartnerDeletingData,
   PartnerOutdatingData,
   PartnerRestoringData,
+  OwnerMainService,
+  UpdatedOwnerData,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -29,25 +31,24 @@ import { partnerSchema, partnersSchema } from '@shared/schemas/partner.schema';
 import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
-import {
-  OwnerDetailsService,
-  UpdatedOwnerData,
-} from '../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
+
+export interface PartnerMainService
+  extends OwnerMainService<
+    Partner,
+    PartnerDraft,
+    PartnerChangingData,
+    PartnerRestoringData,
+    PartnerOutdatingData,
+    PartnerDeletingData,
+    { list: Partner[]; length: number }
+  > {
+  checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>>;
+}
 
 @Injectable({
   providedIn: 'root',
 })
-export class PartnerService
-  implements
-    OwnerDetailsService<
-      Partner,
-      PartnerDraft,
-      PartnerChangingData,
-      PartnerRestoringData,
-      PartnerOutdatingData,
-      PartnerDeletingData
-    >
-{
+export class PartnerService implements PartnerMainService {
   private http = inject(HttpClient);
   private readonly BASE_URL = `${environment.apiUrl}/api/partners`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
@@ -56,6 +57,13 @@ export class PartnerService
     private msgWrapper: MessageWrapperService,
     private translateService: TranslateService
   ) {}
+
+  getOwnerName(owner: Partner){
+  const fn = owner['firstName'] ?? '';
+  const pn = owner['patronymic'] ?? '';
+  const ln = owner['lastName'] ?? '';
+  return [fn, pn, ln].filter(Boolean).join(' ').trim();
+  }
 
   checkOwnerData(
     ownerDraft: PartnerDraft
@@ -77,7 +85,7 @@ export class PartnerService
       .pipe(
         validateResponse(z.string()),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
-          partnerName: res.data,
+          partnerFullName: res.data,
         })),
         catchError(this.handleError)
       );
@@ -100,7 +108,7 @@ export class PartnerService
       .pipe(
         validateResponse(partnerSchema),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
-          partnerName: res.data.partnerName,
+          partnerData: res.data,
         })),
         catchError(this.handleError)
       );
@@ -156,7 +164,7 @@ export class PartnerService
       }),
       filters: ctrl.omitEmpty({
         general: ctrl.omitEmpty({
-          affirmations: p.filter.affirmations,
+          affiliations: p.filter.affiliations,
           comment: this.formCommentFilterValue(p.filter.comment),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
@@ -186,7 +194,7 @@ export class PartnerService
       .pipe(validateResponse(partnerSchema), catchError(this.handleError));
   }
 
-  checkPossibilityToDeletePartner(id: number): Observable<ApiResponse<number>> {
+  checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/check-partner-before-delete/${id}`)
       .pipe(
@@ -205,7 +213,7 @@ export class PartnerService
       );
   }
 
-  deletePartner(id: number): Observable<ApiResponse<null>> {
+  deleteOwner(id: number): Observable<ApiResponse<null>> {
     return this.http
       .delete<RawApiResponse>(`${this.BASE_URL}/delete-partner/${id}`)
       .pipe(
@@ -234,7 +242,7 @@ export class PartnerService
       );
   }
 
-  blockPartner(
+  blockOwner(
     id: number,
     causeOfRestriction: string
   ): Observable<ApiResponse<null>> {
@@ -250,7 +258,7 @@ export class PartnerService
       );
   }
 
-  unblockPartner(id: number): Observable<ApiResponse<null>> {
+  unblockOwner(id: number): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/unblock-partner/`, { id })
       .pipe(

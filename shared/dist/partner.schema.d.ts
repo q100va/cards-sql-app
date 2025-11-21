@@ -1,4 +1,13 @@
 import { z } from 'zod';
+export declare const emailControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodEmail>>;
+export declare const phoneNumberControlSchema: z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const telegramIdControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const whatsAppControlSchema: z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const telegramNicknameControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const vKontakteControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const instagramControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const facebookControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const otherContactControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const draftContactsSchema: z.ZodObject<{
     email: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>;
     phoneNumber: z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>;
@@ -38,14 +47,10 @@ export declare const partnerBlockingSchema: z.ZodObject<{
 export declare const partnerDraftSchema: z.ZodObject<{
     id: z.ZodNullable<z.ZodNumber>;
     firstName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
-    patronymic: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-    lastName: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-    affiliation: z.ZodEnum<{
-        "PARTNER.AFF.VOLUNTEER_COORDINATOR": "PARTNER.AFF.VOLUNTEER_COORDINATOR";
-        "PARTNER.AFF.HOME_REPRESENTATIVE": "PARTNER.AFF.HOME_REPRESENTATIVE";
-        "PARTNER.AFF.FOUNDATION_STAFF": "PARTNER.AFF.FOUNDATION_STAFF";
-    }>;
-    position: z.ZodNullable<z.ZodString>;
+    patronymic: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    lastName: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    affiliation: z.ZodString;
+    position: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     draftAddress: z.ZodObject<{
         countryId: z.ZodNullable<z.ZodNumber>;
         regionId: z.ZodNullable<z.ZodNumber>;
@@ -71,14 +76,10 @@ export declare const partnerDraftSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const changingMainSchema: z.ZodObject<{
     firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-    patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    lastName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    affiliation: z.ZodEnum<{
-        "PARTNER.AFF.VOLUNTEER_COORDINATOR": "PARTNER.AFF.VOLUNTEER_COORDINATOR";
-        "PARTNER.AFF.HOME_REPRESENTATIVE": "PARTNER.AFF.HOME_REPRESENTATIVE";
-        "PARTNER.AFF.FOUNDATION_STAFF": "PARTNER.AFF.FOUNDATION_STAFF";
-    }>;
-    position: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    patronymic: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    lastName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    affiliation: z.ZodOptional<z.ZodString>;
+    position: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
     comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
     isRestricted: z.ZodOptional<z.ZodBoolean>;
     causeOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
@@ -87,14 +88,10 @@ export declare const changingMainSchema: z.ZodObject<{
 export declare const changingDataSchema: z.ZodObject<{
     main: z.ZodNullable<z.ZodObject<{
         firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-        patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        lastName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        affiliation: z.ZodEnum<{
-            "PARTNER.AFF.VOLUNTEER_COORDINATOR": "PARTNER.AFF.VOLUNTEER_COORDINATOR";
-            "PARTNER.AFF.HOME_REPRESENTATIVE": "PARTNER.AFF.HOME_REPRESENTATIVE";
-            "PARTNER.AFF.FOUNDATION_STAFF": "PARTNER.AFF.FOUNDATION_STAFF";
-        }>;
-        position: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        patronymic: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+        lastName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+        affiliation: z.ZodOptional<z.ZodString>;
+        position: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
         comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
         isRestricted: z.ZodOptional<z.ZodBoolean>;
         causeOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
@@ -118,6 +115,7 @@ export declare const changingDataSchema: z.ZodObject<{
         facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     }, z.core.$strict>>;
+    homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const outdatingDataSchema: z.ZodObject<{
     address: z.ZodNullable<z.ZodNumber>;
@@ -191,14 +189,10 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
     changingData: z.ZodObject<{
         main: z.ZodNullable<z.ZodObject<{
             firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
-            patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            lastName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            affiliation: z.ZodEnum<{
-                "PARTNER.AFF.VOLUNTEER_COORDINATOR": "PARTNER.AFF.VOLUNTEER_COORDINATOR";
-                "PARTNER.AFF.HOME_REPRESENTATIVE": "PARTNER.AFF.HOME_REPRESENTATIVE";
-                "PARTNER.AFF.FOUNDATION_STAFF": "PARTNER.AFF.FOUNDATION_STAFF";
-            }>;
-            position: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            patronymic: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            lastName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            affiliation: z.ZodOptional<z.ZodString>;
+            position: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
             comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
             isRestricted: z.ZodOptional<z.ZodBoolean>;
             causeOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
@@ -222,6 +216,7 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
             facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         }, z.core.$strict>>;
+        homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     }, z.core.$strict>;
     restoringData: z.ZodObject<{
         addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -313,11 +308,7 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
     }, z.core.$strip>>;
     filters: z.ZodOptional<z.ZodObject<{
         general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
-            affiliations: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
-                "PARTNER.AFF.VOLUNTEER_COORDINATOR": "PARTNER.AFF.VOLUNTEER_COORDINATOR";
-                "PARTNER.AFF.HOME_REPRESENTATIVE": "PARTNER.AFF.HOME_REPRESENTATIVE";
-                "PARTNER.AFF.FOUNDATION_STAFF": "PARTNER.AFF.FOUNDATION_STAFF";
-            }>>>>;
+            affiliations: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
             comment: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
@@ -421,7 +412,7 @@ export declare const outdatedDataSchema: z.ZodObject<{
     names: z.ZodArray<z.ZodObject<{
         firstName: z.ZodString;
         patronymic: z.ZodNullable<z.ZodString>;
-        lastName: z.ZodString;
+        lastName: z.ZodNullable<z.ZodString>;
         id: z.ZodNumber;
     }, z.core.$strict>>;
     homes: z.ZodArray<z.ZodObject<{
@@ -431,7 +422,6 @@ export declare const outdatedDataSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const partnerSchema: z.ZodObject<{
     id: z.ZodNumber;
-    partnerName: z.ZodString;
     firstName: z.ZodString;
     patronymic: z.ZodNullable<z.ZodString>;
     lastName: z.ZodNullable<z.ZodString>;
@@ -577,7 +567,7 @@ export declare const partnerSchema: z.ZodObject<{
         names: z.ZodArray<z.ZodObject<{
             firstName: z.ZodString;
             patronymic: z.ZodNullable<z.ZodString>;
-            lastName: z.ZodString;
+            lastName: z.ZodNullable<z.ZodString>;
             id: z.ZodNumber;
         }, z.core.$strict>>;
         homes: z.ZodArray<z.ZodObject<{
@@ -585,15 +575,14 @@ export declare const partnerSchema: z.ZodObject<{
             id: z.ZodNumber;
         }, z.core.$strict>>;
     }, z.core.$strict>;
-    homes: z.ZodNullable<z.ZodArray<z.ZodObject<{
+    homes: z.ZodArray<z.ZodObject<{
         name: z.ZodString;
         id: z.ZodNumber;
-    }, z.core.$strict>>>;
+    }, z.core.$strict>>;
 }, z.core.$strict>;
 export declare const partnersSchema: z.ZodObject<{
     list: z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
-        partnerName: z.ZodString;
         firstName: z.ZodString;
         patronymic: z.ZodNullable<z.ZodString>;
         lastName: z.ZodNullable<z.ZodString>;
@@ -739,7 +728,7 @@ export declare const partnersSchema: z.ZodObject<{
             names: z.ZodArray<z.ZodObject<{
                 firstName: z.ZodString;
                 patronymic: z.ZodNullable<z.ZodString>;
-                lastName: z.ZodString;
+                lastName: z.ZodNullable<z.ZodString>;
                 id: z.ZodNumber;
             }, z.core.$strict>>;
             homes: z.ZodArray<z.ZodObject<{
@@ -747,10 +736,10 @@ export declare const partnersSchema: z.ZodObject<{
                 id: z.ZodNumber;
             }, z.core.$strict>>;
         }, z.core.$strict>;
-        homes: z.ZodNullable<z.ZodArray<z.ZodObject<{
+        homes: z.ZodArray<z.ZodObject<{
             name: z.ZodString;
             id: z.ZodNumber;
-        }, z.core.$strict>>>;
+        }, z.core.$strict>>;
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;

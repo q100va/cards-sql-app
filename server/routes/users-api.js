@@ -535,8 +535,8 @@ router.post(
       });
 
       console.log('whereUser', whereUser);
-      /*    console.log('order', order);
-     console.log('includes', includes);
+       console.log('ORDER USER', order);
+      /*  console.log('includes', includes);
      console.log('whereUser', whereUser); */
 
       // ---- page ----
@@ -550,7 +550,7 @@ router.post(
         // subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-     console.log('users', users);
+   //  console.log('users', users);
 
       const items = users.map(u => transformOwnerData('user', u.toJSON()));
 

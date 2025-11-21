@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { toTrim, emptyToNull, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
+import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
 import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './common.schema.js';
 import { draftAddressSchema, addressSchema, } from './common.schema.js';
 import { contactType, optionalContactsSchema, } from './common.schema.js';
@@ -7,6 +7,97 @@ import {
 //changingAddressSchema,
 changingContactsSchema, } from './common.schema.js';
 import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
+/* ===================== Some Schemas for form validation ===================== */
+export const emailControlSchema = z
+    .preprocess(emptyToNull, z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable())
+    .superRefine((v, ctx) => {
+    if (v) {
+        if (v.length > 254)
+            ctx.addIssue({
+                code: 'custom',
+                message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+            });
+        const [local] = v.split('@');
+        if (local && local.length > 64)
+            ctx.addIssue({
+                code: 'custom',
+                message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+            });
+    }
+});
+export const phoneNumberControlSchema = z
+    .preprocess(keepE164Chars, z.string().nullable())
+    .superRefine((val, ctx) => {
+    if (val && !val.startsWith('+')) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+        return;
+    }
+    if (val && val.startsWith('+7')) {
+        if (!/^\+7\d{10}$/.test(val)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+            });
+        }
+        return;
+    }
+    if (val && !/^\+[1-9]\d{7,14}$/.test(val)) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+    }
+});
+export const telegramIdControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const whatsAppControlSchema = z
+    .preprocess(keepE164CharsNullable, z.string().nullable())
+    .superRefine((val, ctx) => {
+    if (val && !val.startsWith('+')) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+        return;
+    }
+    if (val && val.startsWith('+7')) {
+        if (!/^\+7\d{10}$/.test(val)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+            });
+        }
+        return;
+    }
+    if (val && !/^\+[1-9]\d{7,14}$/.test(val)) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+    }
+});
+export const telegramNicknameControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const vKontakteControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const instagramControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const facebookControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
 /* ===================== Contacts (draft / ordered / optional) ===================== */
 // Draft
 export const draftContactsSchema = z
@@ -58,22 +149,14 @@ export const partnerDraftSchema = z
     .object({
     id: nullableInt,
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    patronymic: z
-        .preprocess(toTrim, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }))
-        .nullable(),
-    lastName: z
-        .preprocess(toTrim, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }))
-        .nullable(),
-    affiliation: z.enum([
-        'PARTNER.AFF.VOLUNTEER_COORDINATOR',
-        'PARTNER.AFF.HOME_REPRESENTATIVE',
-        'PARTNER.AFF.FOUNDATION_STAFF',
-    ]),
-    position: z
+    patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
+    lastName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
+    affiliation: nonEmpty,
+    position: z.preprocess(emptyToNull, z
         .string()
         .trim()
         .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
-        .nullable(),
+        .nullable()),
     draftAddress: draftAddressSchema,
     comment: z.preprocess(emptyToNull, z
         .string()
@@ -128,27 +211,23 @@ export const changingMainSchema = z
     .object({
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
     patronymic: z
+        .preprocess(emptyToNull, z
         .string()
-        .trim()
         .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-        .nullable()
+        .nullable())
         .optional(),
     lastName: z
+        .preprocess(emptyToNull, z
         .string()
-        .trim()
         .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-        .nullable()
+        .nullable())
         .optional(),
-    affiliation: z.enum([
-        'PARTNER.AFF.VOLUNTEER_COORDINATOR',
-        'PARTNER.AFF.HOME_REPRESENTATIVE',
-        'PARTNER.AFF.FOUNDATION_STAFF',
-    ]),
+    affiliation: z.string().optional(),
     position: z
+        .preprocess(emptyToNull, z
         .string()
-        .trim()
         .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
-        .nullable()
+        .nullable())
         .optional(),
     comment: z
         .preprocess(emptyToNull, z
@@ -171,6 +250,7 @@ export const changingDataSchema = z
     main: changingMainSchema.nullable(),
     address: draftAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
+    homes: z.array(positiveInt).nullable(),
 })
     .strict()
     .superRefine((data, ctx) => {
@@ -278,14 +358,7 @@ export const partnersQueryDTOSchema = z
         .object({
         general: z
             .object({
-            affiliations: z
-                .array(z.enum([
-                'PARTNER.AFF.VOLUNTEER_COORDINATOR',
-                'PARTNER.AFF.HOME_REPRESENTATIVE',
-                'PARTNER.AFF.FOUNDATION_STAFF',
-            ]))
-                .min(1)
-                .optional(),
+            affiliations: z.array(nonEmpty).min(1).optional(),
             comment: z.boolean().optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
@@ -338,7 +411,6 @@ export const outdatedDataSchema = z
 export const partnerSchema = z
     .object({
     id: positiveInt,
-    partnerName: nonEmpty,
     firstName: nonEmpty,
     patronymic: nonEmpty.nullable(),
     lastName: nonEmpty.nullable(),
@@ -352,7 +424,7 @@ export const partnerSchema = z
     comment: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
-    homes: z.array(outdatedHomesItemSchema).nullable(),
+    homes: z.array(outdatedHomesItemSchema),
 })
     .strict();
 export const partnersSchema = z

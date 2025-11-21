@@ -62,7 +62,8 @@
       "ADDRESS": "address",
       "NAMES": "full name",
       "USER_NAME": "username",
-      "CONTACTS": "contact(s)"
+      "CONTACTS": "contact(s)",
+      "HOMES": "nursing home(s)"
     }
   },
   "TOAST": {
@@ -70,7 +71,7 @@
     "WARN": "Warning",
     "ERROR": "Error",
     "SUCCESS": "Success",
-    "DELETE_DUPLICATES": "You entered duplicate values:\n{{duplicates}}.\n\nPlease remove the duplicates."
+    "DELETE_DUPLICATES": "You entered duplicate values:<br />{{duplicates}}.<br />Please remove the duplicates."
   },
   "ROLE": {
     "CREATED": "Role \"{{name}}\" created",
@@ -180,11 +181,11 @@
     "COLUMNS": {
       "USER_NAME": "Username",
       "ROLE_NAME": "Role",
-      "AFFILIATION": "Affiliation/\nposition",
+      "AFFILIATION": "Affiliation",
       "FULL_NAME": "Full name",
       "CONTACTS": "Contacts",
       "ADDRESS": "Address",
-      "START_DATE": "Join\ndate",
+      "START_DATE": "Join date",
       "COMMENT": "Comment",
       "STATUS": "Status",
       "ACTIONS": "Actions",
@@ -213,7 +214,6 @@
     },
     "NO_DATA_FOR_QUERY": "No data found",
     "CARD": {
-
       "MAIN_DATA_LABEL": "Main info",
       "CONTACTS_LABEL": "Contact details",
       "OUTDATED_DATA_LABEL": "Outdated data",
@@ -315,6 +315,11 @@
       "ONLY_ACTIVE": "only active",
       "ONLY_BLOCKED": "only former"
     },
+    "AFF": {
+      "VOLUNTEER_COORDINATOR": "Coordinator",
+      "HOME_REPRESENTATIVE": "Home representative",
+      "FOUNDATION_STAFF": "Foundation staff"
+    },
     "CARD": {
       "CREATION_TITLE": "New partner",
       "VIEW_TITLE": "Partner",
@@ -322,6 +327,8 @@
       "FIRST_NAME_LABEL": "First name*",
       "PATRONYMIC_LABEL": "Patronymic",
       "LAST_NAME_LABEL": "Last name",
+      "AFFILIATION_LABEL": "Affiliation*",
+      "POSITION_LABEL": "Position",
       "COMMENT_LABEL": "Comment",
       "BLOCKED_LABEL": "Blocked",
       "EMAIL_LABEL": "Email",
@@ -367,7 +374,8 @@
       "ADDR_LABEL": "address",
       "STRONG_FILTER": "all selected values must be present simultaneously",
       "ROLE_LABEL": "role",
-      "CHOOSE_VALUE_LABEL": "Select value(s)",
+      "AFFILIATION_LABEL": "affiliation*",
+      "CHOOSE_VALUE_LABEL": "select value(s)",
       "START_DATE_LABEL": "start date",
       "CHOOSE_RANGE_LABEL": "Enter a range",
       "DATE_PLACEHOLDER": "mm/dd/yyyy",

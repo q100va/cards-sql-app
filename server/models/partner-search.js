@@ -17,7 +17,7 @@ export default function PartnerSearchModel(sequelize) {
     {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-    }
+    },
   },
     {
       sequelize,

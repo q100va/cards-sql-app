@@ -230,7 +230,7 @@ export const outdatedNameItemSchema = z
   .object({
     firstName: nonEmpty,
     patronymic: z.string().nullable(),
-    lastName: nonEmpty,
+    lastName: z.string().nullable(),
     id: positiveInt,
   })
   .strict();

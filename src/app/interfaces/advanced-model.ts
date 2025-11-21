@@ -25,6 +25,7 @@ import type {
   Duplicates,
 } from '@shared/schemas/common.schema';
 import { Client } from './client';
+import { Observable } from 'rxjs';
 
 export type {
   Address,
@@ -101,11 +102,14 @@ export type UserChangingMain = BaseChangingMain & {
   roleId?: number;
 };
 export type UserChangingData = BaseChangingData<UserChangingMain>;
+
 export type PartnerChangingMain = BaseChangingMain & {
   affiliation?: string; // можешь заменить на union из трёх ключей enum’а
   position?: string | null;
 };
-export type PartnerChangingData = BaseChangingData<PartnerChangingMain>;
+export type PartnerChangingData = BaseChangingData<PartnerChangingMain> & {
+  homes: number[] | null;
+};
 
 export type BaseOutdatingNames = {
   firstName: string;
@@ -172,6 +176,7 @@ export type UserDraft = DraftCommon & {
 export type PartnerDraft = DraftCommon & {
   affiliation: string;
   position: string | null;
+  draftHomes: number[];
 };
 
 export type ClientDraft = DraftCommon & {
@@ -204,5 +209,95 @@ export type Partner = Owner & {
   affiliation: string;
   position: string | null;
   outdatedData: PartnerOutdatedData;
-  homes: OutdatedHome[] | null;
+  homes: OutdatedHome[];
 };
+
+export type OwnerByKind<K extends Kind> = K extends 'user'
+  ? User
+  : K extends 'partner'
+  ? Partner
+  : never;
+
+export type OwnerDraftByKind<K extends Kind> = K extends 'user'
+  ? UserDraft
+  : K extends 'partner'
+  ? PartnerDraft
+  : never;
+
+export type ChangingByKind<K extends Kind> = K extends 'user'
+  ? UserChangingData
+  : K extends 'partner'
+  ? PartnerChangingData
+  : never;
+
+export type RestoringByKind<K extends Kind> = K extends 'user'
+  ? UserRestoringData
+  : K extends 'partner'
+  ? PartnerRestoringData
+  : never;
+
+export type OutdatingByKind<K extends Kind> = K extends 'user'
+  ? UserOutdatingData
+  : K extends 'partner'
+  ? PartnerOutdatingData
+  : never;
+
+export type DeletingByKind<K extends Kind> = K extends 'user'
+  ? UserDeletingData
+  : K extends 'partner'
+  ? PartnerDeletingData
+  : never;
+
+export type OutdatedByKind<K extends Kind> = K extends 'user'
+  ? UserOutdatedData
+  : K extends 'partner'
+  ? PartnerOutdatedData
+  : never;
+
+export type ListDto<K extends Kind> = K extends 'user'
+  ? { list: User[]; length: number }
+  : K extends 'partner'
+  ? { list: Partner[]; length: number }
+  : never;
+
+export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
+  changingData: TChanging;
+  restoringData: TRestoring;
+  outdatingData: TOutdating;
+  deletingData: TDeleting;
+};
+
+type ApiResponse<T> = { data: T };
+
+export interface OwnerMainService<
+  TOwner,
+  TOwnerDraft,
+  TChanging,
+  TRestoring,
+  TOutdating,
+  TDeleting,
+  TListDto
+> {
+  checkOwnerData(ownerDraft: TOwnerDraft): Observable<ApiResponse<Duplicates>>;
+  getById(id: number): Observable<ApiResponse<TOwner>>;
+  saveOwner(ownerDraft: TOwnerDraft): Observable<ApiResponse<string>>;
+  saveUpdatedOwner(
+    id: number,
+    updatedOwnerData: UpdatedOwnerData<
+      TChanging,
+      TRestoring,
+      TOutdating,
+      TDeleting
+    >
+  ): Observable<ApiResponse<TOwner>>;
+  getList(
+    filter: any,
+    pageSize: number,
+    page: number
+  ): Observable<ApiResponse<TListDto>>;
+  unblockOwner(id: number): Observable<ApiResponse<null>>;
+  checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>>;
+  deleteOwner(id: number): Observable<ApiResponse<null>>;
+    getOwnerName(owner: TOwner): string;
+
+}

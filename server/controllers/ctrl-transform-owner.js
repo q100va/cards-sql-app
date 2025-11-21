@@ -13,8 +13,8 @@ function ref(t, key = 'name') {
 function splitContacts(contacts) {
   const ordered = {};
   const outdated = {};
-
-  for (const c of contacts ?? []) {
+  contacts ??= [];
+  for (const c of contacts) {
     if (!c) continue;
     const row = { id: c.id, content: c.content };
 
@@ -39,12 +39,12 @@ function splitAddresses(addresses) {
 
   const address = a
     ? {
-        country: ref(a.country, 'name'),
-        region: ref(a.region, 'shortName'),
-        district: ref(a.district, 'shortName'),
-        locality: ref(a.locality, 'shortName'),
-        id: a.id,
-      }
+      country: ref(a.country, 'name'),
+      region: ref(a.region, 'shortName'),
+      district: ref(a.district, 'shortName'),
+      locality: ref(a.locality, 'shortName'),
+      id: a.id,
+    }
     : { country: null, region: null, district: null, locality: null };
 
   const outdatedAddresses = all
@@ -137,6 +137,7 @@ export function transformOwnerData(kind, raw) {
 
   // 3) Outdated names (differs for user vs partner)
   const outdatedData = { contacts: outdatedContacts, addresses: outdatedAddresses, names: [] };
+    console.log('outdatedData', outdatedData);
 
   if (kind === 'user') {
     // Pull role name onto root and drop original relation

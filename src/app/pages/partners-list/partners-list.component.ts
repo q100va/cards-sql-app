@@ -9,7 +9,7 @@ import {
   telegramNicknameControlSchema,
   vKontakteControlSchema,
   whatsAppControlSchema,
-} from '@shared/schemas/user.schema';
+} from '@shared/schemas/partner.schema';
 
 import { partnerDraftSchema } from '@shared/schemas/partner.schema';
 
@@ -25,7 +25,8 @@ import {
 import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
-import { Partner } from '../../interfaces/partner';
+import * as Validator from '../../utils/custom.validator';
+import { Kind, Partner } from 'src/app/interfaces/advanced-model';
 
 @Component({
   selector: 'app-partners-list',
@@ -34,6 +35,7 @@ import { Partner } from '../../interfaces/partner';
   styleUrl: './partners-list.component.css',
 })
 export class PartnersListComponent {
+  kind: Kind = 'partner';
   viewOptions: ViewOption[] = [
     {
       id: 'all',
@@ -70,10 +72,11 @@ export class PartnersListComponent {
     },
     {
       id: 2,
-      columnName: 'homes',
-      columnFullName: 'TABLE.COLUMNS.HOMES',
+      columnName: 'affiliation',
+      columnFullName: 'TABLE.COLUMNS.AFFILIATION',
       isUnchangeable: false,
     },
+
     {
       id: 3,
       columnName: 'contacts',
@@ -88,24 +91,31 @@ export class PartnersListComponent {
     },
     {
       id: 5,
+      columnName: 'homes',
+      columnFullName: 'TABLE.COLUMNS.HOMES',
+      isUnchangeable: false,
+    },
+
+    {
+      id: 6,
       columnName: 'dateOfStart',
       columnFullName: 'TABLE.COLUMNS.START_DATE',
       isUnchangeable: false,
     },
     {
-      id: 6,
+      id: 7,
       columnName: 'comment',
       columnFullName: 'TABLE.COLUMNS.COMMENT',
       isUnchangeable: false,
     },
     {
-      id: 7,
+      id: 8,
       columnName: 'isRestricted',
       columnFullName: 'TABLE.COLUMNS.STATUS',
       isUnchangeable: false,
     },
     {
-      id: 8,
+      id: 9,
       columnName: 'actions',
       columnFullName: 'TABLE.COLUMNS.ACTIONS',
       isUnchangeable: false,
@@ -146,6 +156,29 @@ export class PartnersListComponent {
         validators: [zodValidator(partnerDraftSchema.shape.lastName)],
         type: 'inputText',
         label: 'PARTNER.CARD.LAST_NAME_LABEL',
+        placeholder: '',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'affiliation',
+        value: null,
+        validators: [zodValidator(partnerDraftSchema.shape.affiliation)],
+        type: 'select',
+        label: 'PARTNER.CARD.AFFILIATION_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'position',
+        value: null,
+        validators: [zodValidator(partnerDraftSchema.shape.position)],
+        type: 'inputText',
+        label: 'PARTNER.CARD.POSITION_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -305,7 +338,7 @@ export class PartnersListComponent {
         rowspan: 1,
       },
     ],
-
+    mainContactsValidator: [Validator.mainPartnerContactsValidator],
     object: null,
     componentType: 'partner',
     addressFilterParams: {

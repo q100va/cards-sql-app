@@ -63,9 +63,10 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
       );
     }
   }
-
+   console.log('changingData?.contacts', changingData?.contacts);
   // contacts: bulkCreate {type: string[]}
   if (changingData?.contacts) {
+
     const contactRows = Object.entries(changingData.contacts)
       .flatMap(([type, list]) =>
         (list ?? [])

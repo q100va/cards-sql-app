@@ -134,7 +134,7 @@ export declare const changingContactsSchema: z.ZodObject<{
 export declare const outdatedNameItemSchema: z.ZodObject<{
     firstName: z.ZodString;
     patronymic: z.ZodNullable<z.ZodString>;
-    lastName: z.ZodString;
+    lastName: z.ZodNullable<z.ZodString>;
     id: z.ZodNumber;
 }, z.core.$strict>;
 export declare const outdatedAddressItemSchema: z.ZodObject<{
@@ -227,7 +227,7 @@ export declare const outdatedCommonSchema: z.ZodObject<{
     names: z.ZodArray<z.ZodObject<{
         firstName: z.ZodString;
         patronymic: z.ZodNullable<z.ZodString>;
-        lastName: z.ZodString;
+        lastName: z.ZodNullable<z.ZodString>;
         id: z.ZodNumber;
     }, z.core.$strict>>;
 }, z.core.$strict>;

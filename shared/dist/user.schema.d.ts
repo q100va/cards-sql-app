@@ -371,6 +371,7 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
+                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -378,7 +379,6 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 instagram: "instagram";
                 facebook: "facebook";
                 otherContact: "otherContact";
-                telegram: "telegram";
             }>>>>;
         }, z.core.$strip>>>;
         address: z.ZodOptional<z.ZodOptional<z.ZodObject<{
@@ -467,7 +467,7 @@ export declare const outdatedDataSchema: z.ZodObject<{
     names: z.ZodArray<z.ZodObject<{
         firstName: z.ZodString;
         patronymic: z.ZodNullable<z.ZodString>;
-        lastName: z.ZodString;
+        lastName: z.ZodNullable<z.ZodString>;
         id: z.ZodNumber;
     }, z.core.$strict>>;
     userNames: z.ZodArray<z.ZodObject<{
@@ -623,7 +623,7 @@ export declare const userSchema: z.ZodObject<{
         names: z.ZodArray<z.ZodObject<{
             firstName: z.ZodString;
             patronymic: z.ZodNullable<z.ZodString>;
-            lastName: z.ZodString;
+            lastName: z.ZodNullable<z.ZodString>;
             id: z.ZodNumber;
         }, z.core.$strict>>;
         userNames: z.ZodArray<z.ZodObject<{
@@ -781,7 +781,7 @@ export declare const usersSchema: z.ZodObject<{
             names: z.ZodArray<z.ZodObject<{
                 firstName: z.ZodString;
                 patronymic: z.ZodNullable<z.ZodString>;
-                lastName: z.ZodString;
+                lastName: z.ZodNullable<z.ZodString>;
                 id: z.ZodNumber;
             }, z.core.$strict>>;
             userNames: z.ZodArray<z.ZodObject<{

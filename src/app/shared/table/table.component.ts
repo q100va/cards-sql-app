@@ -44,7 +44,10 @@ import { ConfirmationService } from 'primeng/api';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 import { UserService } from '../../services/user.service';
-import { PartnerService } from '../../services/partner.service';
+import {
+  PartnerMainService,
+  PartnerService,
+} from '../../services/partner.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 
@@ -79,21 +82,28 @@ import {
   DetailsComponentType,
   PermissionSet,
 } from './table-component-registry';
-import { Owner } from 'src/app/interfaces/advanced-model';
-
-type Kind = 'user' | 'partner';
-
-type ListDto<T = Owner> = { list: T[]; length: number };
-type ApiResponse<T> = { data: T };
-
-interface OwnerListService<T> {
-  getList(
-    filter: any,
-    pageSize: number,
-    page: number
-  ): Observable<ApiResponse<ListDto<T>>>;
-  getById(id: number): Observable<ApiResponse<T>>;
-}
+import {
+  ChangingByKind,
+  DeletingByKind,
+  Kind,
+  ListDto,
+  OutdatingByKind,
+  OwnerByKind,
+  OwnerDraftByKind,
+  OwnerMainService,
+  PartnerChangingData,
+  PartnerDeletingData,
+  PartnerDraft,
+  PartnerOutdatingData,
+  PartnerRestoringData,
+  RestoringByKind,
+  UserChangingData,
+  UserDeletingData,
+  UserDraft,
+  UserOutdatingData,
+  UserRestoringData,
+} from 'src/app/interfaces/advanced-model';
+//import { Owner } from 'src/app/interfaces/advanced-model';
 
 @Component({
   selector: 'app-table',
@@ -114,18 +124,48 @@ interface OwnerListService<T> {
   templateUrl: './table.component.html',
   styleUrl: './table.component.css',
 })
-export class TableComponent implements OnChanges {
+export class TableComponent<K extends Kind> implements OnChanges {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   private readonly destroyRef = inject(DestroyRef);
-  private readonly userService = inject(UserService);
-  private readonly partnerService = inject(PartnerService);
+  /*   private readonly userService = inject(UserService);
+  private readonly partnerService = inject(PartnerService); */
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
   private readonly msg = inject(MessageWrapperService);
   readonly dialog = inject(MatDialog);
   readonly dateUtils = inject(DateUtilsService);
+  protected service!: OwnerMainService<
+    OwnerByKind<K>,
+    OwnerDraftByKind<K>,
+    ChangingByKind<K>,
+    RestoringByKind<K>,
+    OutdatingByKind<K>,
+    DeletingByKind<K>,
+    ListDto<K>
+  >;
+  protected readonly userService = inject(UserService) as OwnerMainService<
+    User,
+    UserDraft,
+    UserChangingData,
+    UserRestoringData,
+    UserOutdatingData,
+    UserDeletingData,
+    { list: User[]; length: number }
+  >;
+
+  protected readonly partnerService = inject(
+    PartnerService
+  ) as PartnerMainService; /* OwnerMainService<
+    Partner,
+    PartnerDraft,
+    PartnerChangingData,
+    PartnerRestoringData,
+    PartnerOutdatingData,
+    PartnerDeletingData,
+    { list: Partner[]; length: number }
+  >; */
 
   params = input.required<{
     columns: ColumnDefinition[];
@@ -133,16 +173,16 @@ export class TableComponent implements OnChanges {
     componentType: FilterComponentSource;
     tableParams: TableParams;
   }>();
-  ownerDialogConfig = input.required<DialogData<Owner>>();
 
-  kind = input.required<Kind>();
+  kind = input.required<K>();
   private kind$ = new BehaviorSubject<Kind>('user');
+  ownerDialogConfig = input.required<DialogData<OwnerByKind<K>>>();
 
-  owners!: Owner[];
+  owners!: OwnerByKind<K>[];
 
-  dataSource = new MatTableDataSource<Owner>([]);
+  dataSource = new MatTableDataSource<OwnerByKind<K>>([]);
   displayedColumns!: string[];
-  dialogProps!: DialogData<Owner>;
+  dialogProps!: DialogData<OwnerByKind<K>>;
   contactTypes: ContactParamsForList[] = CONTACT_PARAMS_FOR_LIST;
   dialogConfig = {
     disableClose: true,
@@ -237,15 +277,25 @@ export class TableComponent implements OnChanges {
     };
   });
 
-  getService(kind: Kind): OwnerListService<Owner> {
-    const svc = (
-      {
-        user: this.userService,
-        partner: this.partnerService,
-      } as const
-    )[kind];
-    if (!svc) throw new Error(`Unknown kind: ${kind}`);
-    return svc as OwnerListService<Owner>;
+  protected getService(): OwnerMainService<
+    OwnerByKind<K>,
+    OwnerDraftByKind<K>,
+    ChangingByKind<K>,
+    RestoringByKind<K>,
+    OutdatingByKind<K>,
+    DeletingByKind<K>,
+    ListDto<K>
+  > {
+    const svc = this.kind() === 'user' ? this.userService : this.partnerService;
+    return svc as OwnerMainService<
+      OwnerByKind<K>,
+      OwnerDraftByKind<K>,
+      ChangingByKind<K>,
+      RestoringByKind<K>,
+      OutdatingByKind<K>,
+      DeletingByKind<K>,
+      ListDto<K>
+    >;
   }
   constructor(private injector: Injector) {
     const iconRegistry = inject(MatIconRegistry);
@@ -274,13 +324,13 @@ export class TableComponent implements OnChanges {
         .pipe(
           tap(() => this.loading.set(true)),
           switchMap(([kind, q]) =>
-            this.fetchList(kind, q.filter, q.pageSize, q.page).pipe(
+            this.fetchList(kind as K, q.filter, q.pageSize, q.page).pipe(
               tap({
                 next: ({ list, length }) => {
                   console.log('list', list);
-                  this.owners = list;
+                  this.owners = list as OwnerByKind<K>[];
                   this.length.set(length ?? 0);
-                  this.dataSource.data = list;
+                  this.dataSource.data = list as OwnerByKind<K>[];
                   console.log(' this.dataSource.data', this.dataSource.data);
                   this.dataSource.sort = this.sort;
                 },
@@ -307,28 +357,21 @@ export class TableComponent implements OnChanges {
     this.dialogProps = this.ownerDialogConfig();
     this.permissions = PERMISSIONS_COMPONENT_REGISTRY[this.kind()];
   }
-
   ngOnChanges(changes: SimpleChanges) {
     if (changes['kind'] && this.kind) {
       this.kind$.next(this.kind());
     }
   }
-
   private fetchList(
-    kind: Kind,
+    kind: K,
     filter: any,
     pageSize: number,
     page: number
-  ): Observable<ListDto<Owner>> {
-    const service = this.getService(kind);
+  ): Observable<ListDto<K>> {
+    const service = this.getService();
     return service
       .getList(filter, pageSize, page)
-      .pipe(
-        map(
-          (res: ApiResponse<ListDto<Owner>>) =>
-            res?.data ?? { list: [], length: 0 }
-        )
-      );
+      .pipe(map((res) => res?.data ?? { list: [], length: 0 }));
   }
 
   setDefaultAddrFilter(d: AddressFilter) {
@@ -344,22 +387,22 @@ export class TableComponent implements OnChanges {
   hasOutdatedUserNames = (row: User): boolean =>
     !!row?.outdatedData?.userNames && row.outdatedData.userNames.length > 0;
 
-  hasOutdatedNames = (row: Owner): boolean =>
+  hasOutdatedNames = (row: OwnerByKind<K>): boolean =>
     !!row?.outdatedData?.names && row.outdatedData.names.length > 0;
 
-  hasOutdatedContacts = (row: Owner): boolean =>
+  hasOutdatedContacts = (row: OwnerByKind<K>): boolean =>
     !!row?.outdatedData?.contacts &&
     Object.keys(row.outdatedData.contacts).length > 0;
 
-  hasOutdatedAddresses = (row: Owner): boolean =>
+  hasOutdatedAddresses = (row: OwnerByKind<K>): boolean =>
     !!row?.outdatedData?.addresses && row.outdatedData.addresses.length > 0;
 
-  hasOutdatedHomes = (row: Owner): boolean => {
+  hasOutdatedHomes = (row: OwnerByKind<K>): boolean => {
     //!!row?.outdatedData?.homes && row.outdatedData.homes.length > 0;
     return false;
   };
 
-  hasHomes = (row: Owner): boolean => {
+  hasHomes = (row: OwnerByKind<K>): boolean => {
     //!!row?.homes && row.homes.length > 0;
     return false;
   };
@@ -400,7 +443,7 @@ export class TableComponent implements OnChanges {
     this.dialogProps.addressFilterParams.readonly = false;
     this.dialogProps.addressFilterParams.class = 'none';
 
-    const dialogData: DialogData<Owner> = {
+    const dialogData: DialogData<OwnerByKind<K>> = {
       ...this.dialogProps,
       operation: 'create',
       controlsDisable: false,
@@ -422,8 +465,7 @@ export class TableComponent implements OnChanges {
   }
 
   onOpenOwnerCardClick(id: number) {
-    const kind: Kind = this.kind();
-    const service = this.getService(kind);
+    const service = this.getService();
 
     service
       .getById(id)
@@ -454,7 +496,7 @@ export class TableComponent implements OnChanges {
             });
           }
 
-          const dialogData: DialogData<Owner> = {
+          const dialogData: DialogData<OwnerByKind<K>> = {
             ...dialogProps,
             operation: 'view-edit',
             controlsDisable: true,
@@ -494,10 +536,32 @@ export class TableComponent implements OnChanges {
   onShowUsersVolunteersClick(id: number) {}
   onShowPartnerHomesClick(id: number) {}
 
-  onBlockOwnerClick(userId: number, userName: string) {
+  onBlockOwnerClick(id: number) {
+    if (this.kind() !== 'partner') {
+      this.blockOwner(id);
+    } else {
+      this.partnerService
+        .checkPossibilityToBlockPartner(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            if (res.data == 0) this.blockOwner(id);
+          },
+          error: (err) =>
+            this.msg.handle(err, {
+              source: 'TableComponent',
+              stage: 'checkPossibilityToBlockPartner',
+              ownerId: id,
+              kind: this.kind(),
+            }),
+        });
+    }
+  }
+
+  private blockOwner(id: number) {
     this.dialog
       .open(CauseOfBlockingDialogComponent, {
-        data: { userName, userId },
+        data: { id, kind: this.kind(), service: this.getService() },
         disableClose: true,
         minWidth: '400px',
         height: '40%',
@@ -509,8 +573,23 @@ export class TableComponent implements OnChanges {
       });
   }
 
-  onUnblockOwnerClick(id: number, userName: string) {
-    const safeUserName = this.sanitizeText(userName);
+  onUnblockOwnerClick(id: number) {
+    const service = this.getService();
+    service
+      .unblockOwner(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.forceReload(),
+        error: (err) =>
+          this.msg.handle(err, {
+            source: 'TableComponent',
+            stage: 'unblockOwner',
+            ownerId: id,
+            kind: this.kind(),
+          }),
+      });
+
+    /*     const safeUserName = this.sanitizeText(userName);
     this.confirmationService.confirm({
       message: this.translate.instant('PRIME_CONFIRM.UNBLOCK_ITEM_MESSAGE', {
         name: safeUserName,
@@ -528,10 +607,10 @@ export class TableComponent implements OnChanges {
         outlined: true,
       },
       accept: () => this.unblockOwner(id),
-    });
+    }); */
   }
 
-  private unblockOwner(id: number) {
+  /*   private unblockOwner(id: number) {
     this.userService
       .unblockUser(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -545,14 +624,16 @@ export class TableComponent implements OnChanges {
             kind: this.kind(),
           }),
       });
-  }
+  } */
 
-  onDeleteOwnerClick(id: number, userName: string) {
-    const safeUserName = this.sanitizeText(userName);
-    //const deletingUser = this.users.find((u) => u.id === id)!.userName;
+  onDeleteOwnerClick(owner: OwnerByKind<K>) {
+    const service = this.getService();
+    const name = service.getOwnerName(owner);
+    const safeName = this.sanitizeText(name);
+
     this.confirmationService.confirm({
       message: this.translate.instant('PRIME_CONFIRM.DELETE_ITEM_MESSAGE', {
-        name: safeUserName,
+        name: safeName,
       }),
       header: this.translate.instant('PRIME_CONFIRM.WARNING_HEADER'),
       closable: true,
@@ -566,13 +647,14 @@ export class TableComponent implements OnChanges {
         severity: 'secondary',
         outlined: true,
       },
-      accept: () => this.checkPossibilityToDeleteOwner(id, userName),
+      accept: () => this.checkPossibilityToDeleteOwner(owner.id),
     });
   }
 
-  private checkPossibilityToDeleteOwner(id: number, _userName: string) {
-    this.userService
-      .checkPossibilityToDeleteUser(id)
+  private checkPossibilityToDeleteOwner(id: number) {
+    const service = this.getService();
+    service
+      .checkPossibilityToDeleteOwner(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -589,8 +671,9 @@ export class TableComponent implements OnChanges {
   }
 
   private deleteOwner(id: number) {
-    this.userService
-      .deleteUser(id)
+    const service = this.getService();
+    service
+      .deleteOwner(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.forceReload(),

@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import CustomError from "../shared/customError.js";
-import {regularExpression} from './helper-contact-re.js';
+import { regularExpression } from './helper-contact-re.js';
 
 export default function PartnerContactModel(sequelize) {
   class PartnerContact extends Model { }
@@ -24,7 +24,7 @@ export default function PartnerContactModel(sequelize) {
       validate: {
         notEmpty: true,
         isFormatCorrect(value) {
-          const RegularExpression = regularExpression(this.type);
+          const RegularExpression = regularExpression(this.type, value);
           if (RegularExpression && !RegularExpression.test(value)) {
             throw new CustomError(`Invalid contact ${value}!`, 422);
           }
@@ -34,7 +34,8 @@ export default function PartnerContactModel(sequelize) {
     isRestricted: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-    }
+    },
+
   },
     {
       sequelize,

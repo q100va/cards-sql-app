@@ -11,7 +11,7 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
 import * as partnerSchemas from "../../shared/dist/partner.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
-import { collectFlatContacts, findDuplicateContacts } from "../controllers/ctrl-create-owner-contacts-address.js";
+import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
@@ -149,7 +149,7 @@ router.post(
   requireOperation('EDIT_PARTNER'),
   validateRequest(partnerSchemas.updatePartnerDataSchema, 'body'),
   async (req, res, next) => {
-    const { id, changes, restoringData, outdatingData, deletingData } = req.body;
+    const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
 
     try {
       const result = await withTransaction(async (t) => {
@@ -157,9 +157,9 @@ router.post(
         if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
         // CHANGES
         // main
-        if (changes?.main) {
-          console.log('changes?.main', changes?.main);
-          const payload = changes.main;
+        if (changingData?.main) {
+          console.log('changes?.main', changingData?.main);
+          const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
             await Partner.update(
               payload,
@@ -175,7 +175,7 @@ router.post(
         await applyOwnerUpdates(
           'partner',
           id,
-          { changes, restoringData, outdatingData, deletingData },
+          { changingData, restoringData, outdatingData, deletingData },
           t
         );
 
@@ -194,8 +194,8 @@ router.post(
                 { model: Locality, attributes: ['id', 'shortName', 'name'] },
               ]
             },
-            { model: PartnerOutdatedName, as: 'outdatedNames', attributes: ['id', 'partnerName', 'firstName', 'patronymic', 'lastName'] },
-          //TODO: House
+            { model: PartnerOutdatedName, as: 'outdatedNames', attributes: ['id', 'firstName', 'patronymic', 'lastName'] },
+            //TODO: House
           ],
           transaction: t,
         });
@@ -217,7 +217,8 @@ router.post(
         }
         return transformOwnerData('partner', fresh.toJSON());
       });
-
+      console.log('PARTNER');
+      console.dir(result, { depth: null });
       res.status(200).send({ code: 'PARTNER.UPDATED', data: result });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.NOT_UPDATED';
@@ -257,11 +258,12 @@ router.post(
         case 'only-blocked': wherePartner.isRestricted = true; break;
         default:              /* 'all' or undefined */        break;
       }
+      console.log('filters?.general?.affiliations', filters?.general?.affiliations);
 
-      // general filtersTODO:
-/*       if (filters?.general?.roles?.length) {
-        wherePartner.roleId = { [Op.in]: filters.general.roles };
-      } */
+      // general filters
+      if (filters?.general?.affiliations?.length) {
+        wherePartner.affiliation = { [Op.in]: filters.general.affiliations };
+      }
 
       if (filters?.general?.comment !== undefined) {
         wherePartner.comment = !filters.general.comment ? null : { [Op.not]: null };
@@ -294,7 +296,6 @@ router.post(
 
       // ---- includes (contacts / addresses / outdated names / search) ----
       const includes = [
-      //  { model: Role, attributes: ['name'] },//TODO:
         {
           model: PartnerContact,
           as: 'contacts',
@@ -318,7 +319,7 @@ router.post(
         {
           model: PartnerOutdatedName,
           as: 'outdatedNames',
-          attributes: ['id', 'partnerName', 'firstName', 'patronymic', 'lastName'],
+          attributes: ['id', 'firstName', 'patronymic', 'lastName'],
           separate: true,
         }
       ];
@@ -345,14 +346,14 @@ router.post(
       });
 
       console.log('wherePartner', wherePartner);
-      /*    console.log('order', order);
-     console.log('includes', includes);
-     console.log('wherePartner', wherePartner); */
+      console.log('ORDER', order);
+      /*  console.log('includes', includes);
+       console.log('wherePartner', wherePartner); */
 
       // ---- page ----
       const partners = await Partner.findAll({
         where: wherePartner,
-        attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
         order,
         include: includes,
         offset: pageSize * pageNumber,
@@ -362,7 +363,7 @@ router.post(
       });
       // console.log('partners', partners);
 
-      const items = partners.map(p => transformOwnerData('partner',p.toJSON()));
+      const items = partners.map(p => transformOwnerData('partner', p.toJSON()));
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
@@ -418,6 +419,7 @@ router.get("/get-partner-by-id/:id",
       });
       if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
       const data = transformOwnerData('partner', partner.toJSON());
+      console.log('PARTNER', data);
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.NOT_FOUND';
@@ -487,8 +489,8 @@ router.delete(
 router.get(
   "/check-partner-before-block/:id",
   requireAuth,
-  requireOperation('DELETE_PARTNER'),
-  validateRequest(partnerSchemas.partnerIdSchema,'params'),
+  requireOperation('BLOCK_PARTNER'),
+  validateRequest(partnerSchemas.partnerIdSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;

@@ -12,17 +12,21 @@ const OWNER = {
     // спец-ключи сортировки → expression-or-[field]
     orderKeys: {
       role: () =>
-        literal(`(SELECT "name" FROM "roles" WHERE "roles"."id" = "user"."roleId")`)
+        literal(`(SELECT "name" FROM "roles" WHERE "roles"."id" = "user"."roleId")`),
+      name: () =>
+         literal(`"user"."firstName"`)
     },
   },
   partner: {
     idField: 'partnerId',
     contactsTable: 'partner-contacts',
     addressesTable: 'partner-addresses',
-    defaultOrderField: 'lastName', // можно поменять на firstName, как тебе удобнее
+    defaultOrderField: 'firstName',
     orderKeys: {
-      affiliation: () => literal(`"partner"."affiliation"`),
-      position:    () => literal(`"partner"."position"`),
+      affiliation: () => "affiliation",
+      //position:    () => literal(`"partner"."position"`),
+      name: () =>
+        "firstName"
     },
   },
 };
@@ -151,18 +155,18 @@ export async function buildAddressOwnerIdSubquery(kind, addresses, includeOutdat
   // ── Build lists ───────────────────────────────────────────
   const listOfLocalitiesIds = await buildIdsList('localities', Locality, 'districtId', 'districts');
   const listOfDistrictsIds = await buildIdsList('districts', District, 'regionId', 'regions');
-  const listOfRegionsIds   = await buildIdsList('regions',   Region,   'countryId', 'countries');
+  const listOfRegionsIds = await buildIdsList('regions', Region, 'countryId', 'countries');
   const listOfCountriesIds = idsToSqlList(addresses.countries);
 
   const countriesAmount = addresses.countries?.length ?? 0;
-  const regionsAmount   = addresses.regions?.length ?? 0;
+  const regionsAmount = addresses.regions?.length ?? 0;
   const districtsAmount = addresses.districts?.length ?? 0;
-  const localitiesAmount= addresses.localities?.length ?? 0;
+  const localitiesAmount = addresses.localities?.length ?? 0;
 
   const parts = [];
-  if (listOfCountriesIds)  parts.push(`"countryId"  IN ${listOfCountriesIds}`);
-  if (listOfRegionsIds)    parts.push(`"regionId"   IN ${listOfRegionsIds}`);
-  if (listOfDistrictsIds)  parts.push(`"districtId" IN ${listOfDistrictsIds}`);
+  if (listOfCountriesIds) parts.push(`"countryId"  IN ${listOfCountriesIds}`);
+  if (listOfRegionsIds) parts.push(`"regionId"   IN ${listOfRegionsIds}`);
+  if (listOfDistrictsIds) parts.push(`"districtId" IN ${listOfDistrictsIds}`);
   if (listOfLocalitiesIds) parts.push(`"localityId" IN ${listOfLocalitiesIds}`);
 
   const whereString = parts.join(' OR ') || '1=0'; // чтобы не вернуть всех, если пусто
@@ -181,13 +185,13 @@ export async function buildAddressOwnerIdSubquery(kind, addresses, includeOutdat
       WHERE ${restricted} (${whereString})
       GROUP BY "${C.idField}"
       HAVING
-        ${countriesAmount   ? `COUNT(DISTINCT "countryId")  = ${countriesAmount}`   : '1=1'}
+        ${countriesAmount ? `COUNT(DISTINCT "countryId")  = ${countriesAmount}` : '1=1'}
         ${countriesAmount && (regionsAmount || districtsAmount || localitiesAmount) ? ' AND ' : ''}
-        ${regionsAmount     ? `COUNT(DISTINCT "regionId")   = ${regionsAmount}`     : (districtsAmount || localitiesAmount ? '1=1' : '')}
+        ${regionsAmount ? `COUNT(DISTINCT "regionId")   = ${regionsAmount}` : (districtsAmount || localitiesAmount ? '1=1' : '')}
         ${(regionsAmount && (districtsAmount || localitiesAmount)) ? ' AND ' : ''}
-        ${districtsAmount   ? `COUNT(DISTINCT "districtId") = ${districtsAmount}`   : (localitiesAmount ? '1=1' : '')}
+        ${districtsAmount ? `COUNT(DISTINCT "districtId") = ${districtsAmount}` : (localitiesAmount ? '1=1' : '')}
         ${districtsAmount && localitiesAmount ? ' AND ' : ''}
-        ${localitiesAmount  ? `COUNT(DISTINCT "localityId") = ${localitiesAmount}`  : '1=1'}
+        ${localitiesAmount ? `COUNT(DISTINCT "localityId") = ${localitiesAmount}` : '1=1'}
     )`
   );
 }

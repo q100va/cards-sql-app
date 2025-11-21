@@ -7,7 +7,7 @@ export interface GeneralFilter {
   dateBeginningRange: Date[];
   dateRestrictionRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
-  affirmations?: string[];
+  affiliations?: string[];
 }
 
 export type FilterDraft = {
@@ -46,7 +46,8 @@ export type FilterComponentSource =
   | 'toponymList'
   | 'userCard'
   | 'userList'
-  | 'partnerList';
+  | 'partnerList'
+  | 'partnerCard';
 
 export interface ContactParamsForList {
   type: string;

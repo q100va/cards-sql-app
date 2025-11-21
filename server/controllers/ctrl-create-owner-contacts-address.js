@@ -138,6 +138,7 @@ export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draf
       }),
     },
   };
+  console.log('ownerInstance', ownerInstance);
 
   const C = CONFIG[ownerKind];
   if (!C) throw new Error(`Unsupported ownerKind: ${ownerKind}`);

@@ -23,7 +23,9 @@
           {{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
       </p>
     </p-fieldset>
+
     <!-- Role -->
+    @if(source() == 'userList'){
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
@@ -46,7 +48,34 @@
           </mat-select>
         </mat-form-field>
       </p>
-    </p-fieldset>
+    </p-fieldset>}
+
+    <!-- Affiliation -->
+    @if(source() == 'partnerList'){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.affiliations.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.AFFILIATION_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.AFFILIATION_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="affiliations" multiple (selectionChange)="emitSelectedFilters()">
+            @for (aff of affiliations; track $index) {
+            <mat-option [value]="translate.instant(aff)">{{aff | translate}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </p>
+    </p-fieldset>}
+
     <!-- StartDate -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
@@ -153,6 +182,8 @@
         </mat-form-field>
       </p>
     </p-fieldset>
+
+  <!--   TODO: homes -->
 
   </form>
 </div>

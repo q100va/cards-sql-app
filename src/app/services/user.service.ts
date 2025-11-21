@@ -16,15 +16,13 @@ import {
   UserRestoringData,
   UserChangingData,
   UserOutdatingData,
+  OwnerMainService,
+  UpdatedOwnerData,
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
 
-import {
-  OwnerDetailsService,
-  UpdatedOwnerData,
-} from '../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -37,14 +35,15 @@ import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
-export interface UserDetailsService
-  extends OwnerDetailsService<
+export interface UserMainService
+  extends OwnerMainService<
     User,
     UserDraft,
     UserChangingData,
     UserRestoringData,
     UserOutdatingData,
-    UserDeletingData
+    UserDeletingData,
+    { list: User[]; length: number }
   > {
   checkUserName(
     userName: string,
@@ -55,7 +54,7 @@ export interface UserDetailsService
 @Injectable({
   providedIn: 'root',
 })
-export class UserService implements UserDetailsService {
+export class UserService implements UserMainService {
   private http = inject(HttpClient);
   private readonly BASE_URL = `${environment.apiUrl}/api/users`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
@@ -64,6 +63,10 @@ export class UserService implements UserDetailsService {
     private msgWrapper: MessageWrapperService,
     private translateService: TranslateService
   ) {}
+
+  getOwnerName(owner: User) {
+    return owner.userName;
+  }
 
   checkUserName(
     userName: string,
@@ -237,7 +240,7 @@ export class UserService implements UserDetailsService {
       .pipe(validateResponse(userSchema), catchError(this.handleError));
   }
 
-  checkPossibilityToDeleteUser(id: number): Observable<ApiResponse<number>> {
+  checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/check-user-before-delete/${id}`)
       .pipe(
@@ -256,7 +259,7 @@ export class UserService implements UserDetailsService {
       );
   }
 
-  deleteUser(id: number): Observable<ApiResponse<null>> {
+  deleteOwner(id: number): Observable<ApiResponse<null>> {
     return this.http
       .delete<RawApiResponse>(`${this.BASE_URL}/delete-user/${id}`)
       .pipe(
@@ -266,7 +269,7 @@ export class UserService implements UserDetailsService {
       );
   }
 
-  blockUser(
+  blockOwner(
     id: number,
     causeOfRestriction: string
   ): Observable<ApiResponse<null>> {
@@ -282,7 +285,7 @@ export class UserService implements UserDetailsService {
       );
   }
 
-  unblockUser(id: number): Observable<ApiResponse<null>> {
+  unblockOwner(id: number): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/unblock-user/`, { id })
       .pipe(
