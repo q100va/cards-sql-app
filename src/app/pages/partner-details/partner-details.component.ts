@@ -123,7 +123,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     super.correctRestoringData();
 
     // Homes
-    const { restoring, outdating } = this.userDiffService.corrHomes(
+    const { restoring, outdating } = this.ownerDiffService.corrHomes(
       this.restoringDataDraft.homes ?? [],
       this.outdatedDataDraft.homes ?? [],
       this.ownerDraft.draftHomes ?? [],
@@ -135,7 +135,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
   }
 
   override async checkOutdatedDataDuplicates() {
-    const homes = await this.userDiffService.checkHomes(
+    const homes = await this.ownerDiffService.checkHomes(
       this.outdatedDataDraft.homes,
       this.ownerDraft.draftHomes
     );
@@ -150,7 +150,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     return await super.checkOutdatedDataDuplicates();
   }
   override async checkAllChanges() {
-    const homes = await this.userDiffService.diffHomes(
+    const homes = await this.ownerDiffService.diffHomes(
       this.existingOwner!.homes ?? [],
       this.ownerDraft.draftHomes ?? []
     );
@@ -169,8 +169,8 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     return Array.isArray(list) ? list : [];
   }
 
-  override get coordinatedHomes(): OutdatedHome[] {
-    const list = this.data().object!.homes;
+  override get homes(): OutdatedHome[] {
+    const list = this.data().object?.homes;
     return Array.isArray(list) ? list : [];
   }
 

@@ -14,7 +14,7 @@ const OWNER = {
       role: () =>
         literal(`(SELECT "name" FROM "roles" WHERE "roles"."id" = "user"."roleId")`),
       name: () =>
-         literal(`"user"."firstName"`)
+        literal(`"user"."firstName"`)
     },
   },
   partner: {
@@ -24,6 +24,17 @@ const OWNER = {
     defaultOrderField: 'firstName',
     orderKeys: {
       affiliation: () => "affiliation",
+      //position:    () => literal(`"partner"."position"`),
+      name: () =>
+        "firstName"
+    },
+  }, volunteer: {
+    idField: 'volunteerId',
+    contactsTable: 'volunteer-contacts',
+    addressesTable: 'volunteer-addresses',
+    defaultOrderField: 'firstName',
+    orderKeys: {
+     // affiliation: () => "affiliation",
       //position:    () => literal(`"partner"."position"`),
       name: () =>
         "firstName"

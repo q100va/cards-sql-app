@@ -2,11 +2,13 @@ import { Params } from '../../../../directives/has-op.directive';
 import { ToponymDetailsComponent } from '../../../../pages/toponym-details/toponym-details.component';
 import { UserDetailsComponent } from '../../../../pages/user-details/user-details.component';
 import { PartnerDetailsComponent } from '../../../../pages/partner-details/partner-details.component';
+import { VolunteerDetailsComponent } from '../../../../pages/volunteer-details/volunteer-details.component';
 
 export const DETAILS_COMPONENT_REGISTRY = {
   user: UserDetailsComponent,
   toponym: ToponymDetailsComponent,
   partner: PartnerDetailsComponent,
+  volunteer: VolunteerDetailsComponent,
   // ...
 } as const;
 
@@ -40,7 +42,7 @@ export const PERMISSIONS_COMPONENT_REGISTRY = {
       mode: 'any',
     },
   },
-    partner: {
+  partner: {
     edit: {
       codes: ['EDIT_PARTNER'],
       mode: 'all',
@@ -50,5 +52,15 @@ export const PERMISSIONS_COMPONENT_REGISTRY = {
       mode: 'any',
     },
   },
+  volunteer: {
+    edit: {
+      codes: ['EDIT_VOLUNTEER'],
+      mode: 'all',
+    },
+    createOrEdit: {
+      codes: ['ADD_NEW_VOLUNTEER', 'EDIT_VOLUNTEER'],
+      mode: 'any',
+    },
+  },
   // ...
-}satisfies PermissionsComponentRegistry;
+} satisfies PermissionsComponentRegistry;

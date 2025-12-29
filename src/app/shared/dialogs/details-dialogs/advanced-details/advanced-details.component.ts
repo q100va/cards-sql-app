@@ -17,42 +17,32 @@ import {
 import { ContactUrlPipe } from '../../../../utils/contact-url.pipe';
 import { BaseDetailsComponent } from '../base-details/base-details.component';
 import {
-  //AdvancedModel,
-  //Owner,
   Contact,
   ContactType,
   OutdatedContacts,
   OutdatedAddress,
   OutdatedFullName,
-  OwnerRestoringData,
-  OwnerDeletingData,
-  //OwnerOutdatedData,
-  //OwnerDraft,
   OwnerContacts,
-  //OwnerChangingData,
-  //OwnerOutdatingData,
-  //BaseRestoringData,
-  //BaseDeletingData,
-  //BaseOutdatedData,
-  Duplicates,
-  UserRestoringData,
   NonTelegram,
+  Kind,
+  User,
   UserDraft,
-  // BaseChangingData,
-  //BaseOutdatingData,
   UserChangingData,
+  UserOutdatingData,
+  UserDeletingData,
+  UserRestoringData,
+  Partner,
+  PartnerDraft,
   PartnerChangingData,
   PartnerRestoringData,
   PartnerOutdatingData,
-  UserOutdatingData,
-  UserDeletingData,
   PartnerDeletingData,
-  UserOutdatedData,
-  PartnerOutdatedData,
-  PartnerDraft,
-  User,
-  Partner,
-  Kind,
+  Volunteer,
+  VolunteerDraft,
+  VolunteerChangingData,
+  VolunteerRestoringData,
+  VolunteerOutdatingData,
+  VolunteerDeletingData,
   OwnerByKind,
   OwnerMainService,
   OwnerDraftByKind,
@@ -76,18 +66,26 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { RoleService } from '../../../../services/role.service';
 import { UserService } from '../../../../services/user.service';
 import { PartnerService } from '../../../../services/partner.service';
-import { UserDiffService } from '../../../../services/user-diff.service';
+import { VolunteerService } from '../../../../services/volunteer.service';
+import { OwnerDiffService } from '../../../../services/owner-diff.service';
 import { OwnerService } from '../../../../services/owner.service';
 
-import { buildDuplicateInfoMessage } from '../../../../utils/user-diff';
+import { buildDuplicateInfoMessage, normalize } from '../../../../utils/diff';
 
 import { OutdatedUserName } from '../../../../interfaces/user';
 import { OutdatedHome } from '../../../../interfaces/partner';
+import {
+  Institute,
+  OutdatedInstitute,
+  Subscription,
+  Cooperation,
+  InstituteFormGroup,
+} from '../../../../interfaces/volunteer';
 
 import {
   causeOfRestrictionControlSchema,
@@ -103,6 +101,8 @@ import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
 import { debounceTime, finalize, Observable, of } from 'rxjs';
 import { DefaultAddressParams } from '@shared/dist/toponym.schema';
+import { AuthUser } from '@shared/schemas/auth.schema';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-advanced-details',
@@ -128,18 +128,25 @@ import { DefaultAddressParams } from '@shared/dist/toponym.schema';
 export class AdvancedDetailsComponent<
   K extends Kind
 > extends BaseDetailsComponent<OwnerByKind<K>> {
+  get existingOwner(): OwnerByKind<K> | null {
+    return this.data().object;
+  }
+
   private readonly contactUrl = inject(ContactUrlPipe);
   private readonly cdr = inject(ChangeDetectorRef);
   // DI
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
-  // private readonly userService = inject(UserService);
-  //private readonly partnerService = inject(PartnerService);
-  readonly userDiffService = inject(UserDiffService);
+  readonly ownerDiffService = inject(OwnerDiffService);
   private readonly ownerService = inject(OwnerService);
   readonly translate = inject(TranslateService);
-  override kind!: K;
+  readonly auth = inject(AuthService);
 
+  // Текущий пользователь
+  readonly user = toSignal<AuthUser | null>(this.auth.currentUser$, {
+    initialValue: null,
+  });
+  override kind!: K;
   protected service!: OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
@@ -172,6 +179,18 @@ export class AdvancedDetailsComponent<
     { list: Partner[]; length: number }
   >;
 
+  protected readonly volunteerService = inject(
+    VolunteerService
+  ) as OwnerMainService<
+    Volunteer,
+    VolunteerDraft,
+    VolunteerChangingData,
+    VolunteerRestoringData,
+    VolunteerOutdatingData,
+    VolunteerDeletingData,
+    { list: Volunteer[]; length: number }
+  >;
+
   protected getService(): OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
@@ -181,7 +200,12 @@ export class AdvancedDetailsComponent<
     DeletingByKind<K>,
     ListDto<K>
   > {
-    const svc = this.kind === 'user' ? this.userService : this.partnerService;
+    const svc =
+      this.kind === 'user'
+        ? this.userService
+        : this.kind === 'partner'
+        ? this.partnerService
+        : this.volunteerService;
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -200,7 +224,7 @@ export class AdvancedDetailsComponent<
 
   // Data
   roles!: { id: number; name: string }[];
-  existingOwner!: OwnerByKind<K> | null;
+  // existingOwner!: OwnerByKind<K> | null;
 
   restoringDataDraft!: RestoringByKind<K>;
   deletingDataDraft!: DeletingByKind<K>;
@@ -216,6 +240,22 @@ export class AdvancedDetailsComponent<
     'PARTNER.AFF.HOME_REPRESENTATIVE',
     'PARTNER.AFF.FOUNDATION_STAFF',
   ];
+
+  categories = [
+    'VOLUNTEER.CATEGORIES.SCHOOL',
+    'VOLUNTEER.CATEGORIES.KINDERGARTEN',
+    'VOLUNTEER.CATEGORIES.COLLEGE',
+    'VOLUNTEER.CATEGORIES.UNIVERSITY',
+    'VOLUNTEER.CATEGORIES.GOVERNMENT',
+    'VOLUNTEER.CATEGORIES.BUSINESS',
+    'VOLUNTEER.CATEGORIES.CHURCH',
+    'VOLUNTEER.CATEGORIES.CHARITY',
+    'VOLUNTEER.CATEGORIES.CHILDREN',
+    'VOLUNTEER.CATEGORIES.YOUTH',
+    'VOLUNTEER.CATEGORIES.ADULTS',
+    'VOLUNTEER.CATEGORIES.OTHER',
+  ];
+
   action!: 'justSave' | 'saveAndExit';
 
   possibleContactTypes: {
@@ -241,14 +281,16 @@ export class AdvancedDetailsComponent<
   hasOutdatedAddresses = signal<boolean>(false);
   hasOutdatedUserNames = signal<boolean>(false);
   hasOutdatedHomes = signal<boolean>(false);
+  hasOutdatedInstitutes = signal<boolean>(false);
 
   override ngOnInit(): void {
     super.ngOnInit();
     //this.existingOwner = this.getOwner();
 
     this.kind = this.data().componentType as K;
-    this.existingOwner = this.data().object;
-    console.log('this.existingOwner', this.existingOwner);
+    //this.existingOwner = this.data().object;
+    console.log(' this.object', structuredClone(this.object));
+    console.log('this.existingOwner', structuredClone(this.existingOwner));
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(
         this.existingOwner!.outdatedData
@@ -373,6 +415,12 @@ export class AdvancedDetailsComponent<
     this.onChangeValidation();
   }
 
+  deleteInstituteControl(index: number) {
+    const formArray = this.getFormArray('institutes');
+    formArray.removeAt(index);
+    this.onChangeValidation();
+  }
+
   //TODO: delete ////////////////////////////////
   /*   logInvalid(ctrl: AbstractControl, path: string = ''): void {
     const here = path || '(root)';
@@ -406,7 +454,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Enable/disable Save button
   override checkIsSaveDisabled(): void {
-    const isQualified = this.kind === 'user' || this.kind === 'partner';
+    const isQualified =
+      this.kind === 'user' ||
+      this.kind === 'partner' ||
+      this.kind === 'volunteer';
     // this.logInvalid(this.mainForm); //TODO: delete
     const disabled =
       (isQualified && !this.mainForm.valid) ||
@@ -430,20 +481,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Optional extra validation gates (true => changes detected)
   protected override additionalValidationHooks(): boolean {
-    /*     console.log(
-      'this.contactsChangeValidation()',
-      this.contactsChangeValidation()
-    );
-    console.log(
-      'this.addressChangeValidation()',
-      this.addressChangeValidation()
-    ); */
+    //TODO: for partner houses, for volunteer institutes
 
     return this.contactsChangeValidation() || this.addressChangeValidation();
   }
 
   // Compare contacts between form and original orderedContacts
-  private contactsChangeValidation(): boolean {
+  contactsChangeValidation(): boolean {
     const ordered: OwnerContacts = this.object!['orderedContacts'];
 
     for (const type of this.contactTypes) {
@@ -472,7 +516,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   // Compare address selection against original address (country/region/district/locality)
-  private addressChangeValidation(): boolean {
+  addressChangeValidation(): boolean {
     const address = this.object!['address'];
     const filter = this.addressFilter();
 
@@ -633,7 +677,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.onChangeValidation();
   }
   onDeleteOutdatedData(
-    type: keyof DeletingByKind<K> | 'userNames' | 'homes',
+    type: keyof DeletingByKind<K> | 'userNames' | 'homes' | 'institutes',
     id: number
   ) {
     if (!(type in this.deletingDataDraft)) return;
@@ -676,7 +720,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.mainForm,
       this.addressFilter(),
       this.contactTypes,
-      this.existingOwner
+      this.existingOwner,
+      this.user()!.id
     );
     if ('userName' in this.ownerDraft) {
       this.checkUserName();
@@ -962,6 +1007,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   saveOwner() {
     const service = this.getService();
+    console.log('this.ownerDraft', this.ownerDraft);
     service
       .saveOwner(this.ownerDraft)
       .pipe(
@@ -1044,8 +1090,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               ? res.data.address.country.id
               : null,
           };
-          this.existingOwner = this.data().object;
-          console.log('this.existingOwner', this.existingOwner);
+          // this.existingOwner = this.data().object;
+          console.log(
+            'this.existingOwner',
+            structuredClone(this.existingOwner)
+          );
           if (this.existingOwner) {
             this.outdatedDataDraft = structuredClone(
               this.existingOwner!.outdatedData
@@ -1104,9 +1153,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   hasHomes(): boolean {
     return false;
   }
+  hasSubscriptions(): boolean {
+    return false;
+  }
+  hasCooperations(): boolean {
+    return false;
+  }
+  hasInstitutes(): boolean {
+    return false;
+  }
   setHasOutdatedUserNames() {}
   checkUserName() {}
   onChangePasswordClick() {}
+  onAddInstituteClick() {}
   getRowSpanForUserNames() {
     return 0;
   }
@@ -1116,14 +1175,37 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   onRestoreOutdatedUserName(data: OutdatedUserName) {}
 
   setHasOutdatedHomes() {}
+  setHasOutdatedInstitutes() {}
+
   getRowSpanForHomes() {
     return 0;
   }
-  get coordinatedHomes(): OutdatedHome[] {
+  getRowSpanForInstitutes() {
+    return 0;
+  }
+
+  get homes(): OutdatedHome[] {
+    return [];
+  }
+  get institutes(): Institute[] {
+    return [];
+  }
+
+  get institutesArray(): FormArray<InstituteFormGroup> {
+    return new FormArray<InstituteFormGroup>([]);
+  }
+  get subscriptions(): Subscription[] {
+    return [];
+  }
+  get cooperations(): Cooperation[] {
     return [];
   }
   get outdatedHomes(): OutdatedHome[] {
     return [];
   }
+  get outdatedInstitutes(): OutdatedInstitute[] {
+    return [];
+  }
   onRestoreOutdatedHome(data: OutdatedHome) {}
+  onRestoreOutdatedInstitute(data: OutdatedInstitute) {}
 }

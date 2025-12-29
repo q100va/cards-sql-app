@@ -28,6 +28,7 @@
     "PROFILE": "Profile",
     "ROLES": "Roles",
     "USERS": "Users",
+    "VOLUNTEERS": "Volunteers",
     "TOPONYMS": "Toponyms",
     "COUNTRIES": "Countries",
     "REGIONS": "Regions",
@@ -63,7 +64,8 @@
       "NAMES": "full name",
       "USER_NAME": "username",
       "CONTACTS": "contact(s)",
-      "HOMES": "nursing home(s)"
+      "HOMES": "nursing home(s)",
+      "INSTITUTES": "institute(s)"
     }
   },
   "TOAST": {
@@ -189,22 +191,28 @@
       "COMMENT": "Comment",
       "STATUS": "Status",
       "ACTIONS": "Actions",
-      "HOMES": "Coordinated homes"
+      "HOMES": "Coordinated homes",
+      "COOPERATIONS": "Cooperation",
+      "INSTITUTES": "Institutes"
     },
     "NOTES": {
       "CLOSE": "close",
       "DEACTIVATED": "not participate",
       "OUTDATED_DATA": "outdated data:",
       "BLOCKED_FROM": "blocked from ",
-      "ACTIVE": "active"
+      "ACTIVE": "active",
+      "SUBSCRIPTION": "subscription"
     },
     "MENU": {
       "OPEN_LIST_TITLE": "Open list",
       "OPEN_CARD": "open card",
       "OPEN_ORDERS": "open orders",
       "OPEN_SUBSCRIBERS": "open subscribers",
-      "OPEN_VOLUNTEERS": "open volunteers",
+      "OPEN_VOLUNTEERS": "open volunteers list",
+      "OPEN_COOPERATIONS": "open collaborating users",
       "OPEN_HOMES": "open nursing homes list",
+      "OPEN_USERS": "open users list",
+      "OPEN_SENIORS": "open seniors list",
       "BLOCK_OWNER": "block",
       "UNBLOCK_OWNER": "unblock",
       "DELETE_OWNER": "delete"
@@ -218,16 +226,21 @@
       "CONTACTS_LABEL": "Contact details",
       "OUTDATED_DATA_LABEL": "Outdated data",
       "COORDINATED_HOMES_LABEL": "Coordinated homes",
+      "INSTITUTES_LABEL": "Institutes",
       "CHANGE_PASSWORD_BUTTON": "Change password",
       "BLOCKED_LABEL": "Blocked",
+      "CAUSE_OF_BLOCK_LABEL": "Reason of blocking (deactivation)",
       "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
+      "SUBSCRIPTION_LABEL": "My subscriber",
       "DELETE_BUTTON_TITLE": "Delete",
       "EXTRA_CONTACT_BUTTON": "Additional contact",
       "OUTDATED_NAMES_TITLE": "Outdated full names:",
       "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
       "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
       "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
-      "OUTDATED_HOMES_TITLE": "Former coordinated homes:"
+      "OUTDATED_HOMES_TITLE": "Former coordinated homes:",
+      "ADD_INSTITUTE_BUTTON":"Add institute",
+      "COOPERATIONS": "Cooperation with:"
     }
   },
   "USER": {
@@ -342,7 +355,6 @@
       "FACEBOOK_LABEL": "Facebook",
       "OTHER_CONTACT_LABEL": "Other contact",
 
-      "USER_NAME_PLACEHOLDER": "a.petrova",
       "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
       "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
       "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
@@ -353,6 +365,65 @@
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+  "VOLUNTEER": {
+    "TABLE_TITLE": "Volunteers",
+    "ADD_PARTNER": "Add volunteer",
+    "SEARCH_PLACEHOLDER": "Olga Kotova",
+    "VIEW_OPTIONS": {
+      "ALL": "all volunteers",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only blocked"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "New volunteer",
+      "VIEW_TITLE": "Volunteer",
+
+      "FIRST_NAME_LABEL": "First name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last name",
+      "COMMENT_LABEL": "Comment",
+      "BLOCKED_LABEL": "Blocked",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_ID_LABEL": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above",
+      "INSTITUTE_NAME_LABEL": "Institute name*",
+      "INSTITUTE_NAME_PLACEHOLDER": "MS 216 George J. Ryan",
+      "CATEGORY_LABEL": "Category*"
+    },
+    "CATEGORIES": {
+      "KINDERGARTEN": "Preschool",
+      "SCHOOL": "School",
+      "COLLEGE": "Vocational institution",
+      "UNIVERSITY": "University",
+      "GOVERNMENT": "Government organization",
+      "BUSINESS": "Business organization",
+      "CHURCH": "Religious organization",
+      "CHARITY": "Charitable organization",
+      "CHILDREN": "Children volunteers",
+      "YOUTH": "Youth volunteers",
+      "ADULTS": "Adult volunteers",
+      "OTHER": "Other"
     }
   },
   "BASE_LIST": {
@@ -513,7 +584,8 @@
     "HOMES": "Nursing homes",
     "PARTNERS": "Institution\nrepresentatives",
     "SENIORS": "Residents",
-    "VOLUNTEERS": "Volunteers"
+    "VOLUNTEERS": "Volunteers",
+    "ORDERS": "Orders"
   },
   "OPS": {
     "ALL_OPS": {

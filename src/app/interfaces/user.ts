@@ -8,20 +8,19 @@ import type {
   UserOutdatingData,
   UserChangingData,
   OutdatedUserName,
-  UserDraftContacts
+  UserDraftContacts,
 } from '@shared/schemas/user.schema';
-
 
 export type {
   //UserDuplicates,
   //UserDraft,
   UserContacts,
   UserOutdatedData,
+  OutdatedUserName,
   ChangePassword,
   UserOutdatingData,
   UserChangingData,
-  OutdatedUserName,
-  UserDraftContacts
+  UserDraftContacts,
 };
 
 export interface User extends AdvancedModel {

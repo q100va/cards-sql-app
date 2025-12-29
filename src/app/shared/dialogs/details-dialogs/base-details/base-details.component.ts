@@ -94,7 +94,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     'otherContact',
   ];
 
-  kind!: "toponym" | Kind;// | "client"
+  kind!: "toponym" | Kind;
 
   ngOnInit() {
     this.params = this.data().addressFilterParams;

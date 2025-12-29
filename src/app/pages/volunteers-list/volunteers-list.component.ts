@@ -9,11 +9,12 @@ import {
   telegramNicknameControlSchema,
   vKontakteControlSchema,
   whatsAppControlSchema,
-} from '@shared/schemas/partner.schema';
+} from '@shared/schemas/volunteer.schema';
 
-import { partnerDraftSchema } from '@shared/schemas/partner.schema';
-
+import { volunteerDraftSchema } from '@shared/schemas/volunteer.schema';
 import { TranslateModule } from '@ngx-translate/core';
+import { TableComponent } from '../../shared/table/table.component';
+
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -23,43 +24,41 @@ import {
 } from '../../interfaces/base-list';
 
 import { zodValidator } from '../../utils/zod-validator';
-
-import { TableComponent } from '../../shared/table/table.component';
 import * as Validator from '../../utils/custom.validator';
-import { Kind, Partner } from 'src/app/interfaces/advanced-model';
+import { Kind, Volunteer } from 'src/app/interfaces/advanced-model';
 
 @Component({
-  selector: 'app-partners-list',
+  selector: 'app-volunteers-list',
   imports: [TableComponent, TranslateModule],
-  templateUrl: './partners-list.component.html',
-  styleUrl: './partners-list.component.css',
+  templateUrl: './volunteers-list.component.html',
+  styleUrl: './volunteers-list.component.css',
 })
-export class PartnersListComponent {
-  kind: Kind = 'partner';
+export class VolunteersListComponent {
+  kind: Kind = 'volunteer';
   viewOptions: ViewOption[] = [
     {
       id: 'all',
-      name: 'PARTNER.VIEW_OPTIONS.ALL',
+      name: 'VOLUNTEER.VIEW_OPTIONS.ALL',
       initiallySelected: false,
     },
     {
       id: 'only-active',
-      name: 'PARTNER.VIEW_OPTIONS.ONLY_ACTIVE',
+      name: 'VOLUNTEER.VIEW_OPTIONS.ONLY_ACTIVE',
       initiallySelected: true,
     },
     {
       id: 'only-blocked',
-      name: 'PARTNER.VIEW_OPTIONS.ONLY_BLOCKED',
+      name: 'VOLUNTEER.VIEW_OPTIONS.ONLY_BLOCKED',
       initiallySelected: false,
     },
   ];
 
-  componentType: FilterComponentSource = 'partnerList';
+  componentType: FilterComponentSource = 'volunteerList';
 
   tableParams: TableParams = {
-    title: 'PARTNER.TABLE_TITLE',
-    addTitle: 'PARTNER.ADD_PARTNER',
-    searchPlaceholder: 'PARTNER.SEARCH_PLACEHOLDER',
+    title: 'VOLUNTEER.TABLE_TITLE',
+    addTitle: 'VOLUNTEER.ADD_VOLUNTEER',
+    searchPlaceholder: 'VOLUNTEER.SEARCH_PLACEHOLDER',
     addIcon: 'person_add_alt',
   };
 
@@ -72,30 +71,28 @@ export class PartnersListComponent {
     },
     {
       id: 2,
-      columnName: 'affiliation',
-      columnFullName: 'TABLE.COLUMNS.AFFILIATION',
-      isUnchangeable: false,
-    },
-
-    {
-      id: 3,
       columnName: 'contacts',
       columnFullName: 'TABLE.COLUMNS.CONTACTS',
       isUnchangeable: false,
     },
     {
-      id: 4,
+      id: 3,
       columnName: 'address',
       columnFullName: 'TABLE.COLUMNS.ADDRESS',
       isUnchangeable: false,
     },
     {
-      id: 5,
-      columnName: 'homes',
-      columnFullName: 'TABLE.COLUMNS.HOMES',
+      id: 4,
+      columnName: 'institutes',
+      columnFullName: 'TABLE.COLUMNS.INSTITUTES',
       isUnchangeable: false,
     },
-
+    {
+      id: 5,
+      columnName: 'cooperations',
+      columnFullName: 'TABLE.COLUMNS.COOPERATIONS',
+      isUnchangeable: false,
+    },
     {
       id: 6,
       columnName: 'dateOfStart',
@@ -122,16 +119,16 @@ export class PartnersListComponent {
     },
   ];
 
-  partnerDialogConfig: DialogData<Partner> = {
-    creationTitle: 'PARTNER.CARD.CREATION_TITLE',
-    viewTitle: 'PARTNER.CARD.VIEW_TITLE',
+  volunteerDialogConfig: DialogData<Volunteer> = {
+    creationTitle: 'VOLUNTEER.CARD.CREATION_TITLE',
+    viewTitle: 'VOLUNTEER.CARD.VIEW_TITLE',
     controls: [
       {
         controlName: 'firstName',
         value: null,
-        validators: [zodValidator(partnerDraftSchema.shape.firstName)],
+        validators: [zodValidator(volunteerDraftSchema.shape.firstName)],
         type: 'inputText',
-        label: 'PARTNER.CARD.FIRST_NAME_LABEL',
+        label: 'VOLUNTEER.CARD.FIRST_NAME_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -141,9 +138,9 @@ export class PartnersListComponent {
       {
         controlName: 'patronymic',
         value: null,
-        validators: [zodValidator(partnerDraftSchema.shape.patronymic)],
+        validators: [zodValidator(volunteerDraftSchema.shape.patronymic)],
         type: 'inputText',
-        label: 'PARTNER.CARD.PATRONYMIC_LABEL',
+        label: 'VOLUNTEER.CARD.PATRONYMIC_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -153,32 +150,9 @@ export class PartnersListComponent {
       {
         controlName: 'lastName',
         value: null,
-        validators: [zodValidator(partnerDraftSchema.shape.lastName)],
+        validators: [zodValidator(volunteerDraftSchema.shape.lastName)],
         type: 'inputText',
-        label: 'PARTNER.CARD.LAST_NAME_LABEL',
-        placeholder: '',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
-      },
-      {
-        controlName: 'affiliation',
-        value: null,
-        validators: [zodValidator(partnerDraftSchema.shape.affiliation)],
-        type: 'select',
-        label: 'PARTNER.CARD.AFFILIATION_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
-      },
-      {
-        controlName: 'position',
-        value: null,
-        validators: [zodValidator(partnerDraftSchema.shape.position)],
-        type: 'inputText',
-        label: 'PARTNER.CARD.POSITION_LABEL',
+        label: 'VOLUNTEER.CARD.LAST_NAME_LABEL',
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
@@ -188,11 +162,22 @@ export class PartnersListComponent {
       {
         controlName: 'comment',
         value: null,
-        validators: [zodValidator(partnerDraftSchema.shape.comment)],
+        validators: [zodValidator(volunteerDraftSchema.shape.comment)],
         type: 'inputText',
-        label: 'PARTNER.CARD.COMMENT_LABEL',
+        label: 'VOLUNTEER.CARD.COMMENT_LABEL',
         placeholder: '',
         category: 'mainData',
+        formType: 'formControl',
+        colspan: 6,
+        rowspan: 1,
+      },
+      {
+        controlName: 'subscription',
+        value: false,
+        validators: [],
+        type: 'toggle',
+        label: 'VOLUNTEER.CARD.SUBSCRIPTION_LABEL',
+        category: 'subscription',
         formType: 'formControl',
         colspan: 6,
         rowspan: 1,
@@ -202,7 +187,7 @@ export class PartnersListComponent {
         value: false,
         validators: [],
         type: 'toggle',
-        label: 'PARTNER.CARD.BLOCKED_LABEL',
+        label: 'VOLUNTEER.CARD.BLOCKED_LABEL',
         category: 'extraData',
         formType: 'formControl',
         colspan: 6,
@@ -212,8 +197,8 @@ export class PartnersListComponent {
         controlName: 'email',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.EMAIL_LABEL',
-        placeholder: 'PARTNER.CARD.EMAIL_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.EMAIL_LABEL',
+        placeholder: 'VOLUNTEER.CARD.EMAIL_PLACEHOLDER',
         validators: [zodValidator(emailControlSchema)],
         errorName: 'emailFormat',
         category: 'contacts',
@@ -225,8 +210,8 @@ export class PartnersListComponent {
         controlName: 'phoneNumber',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.PHONE_NUMBER_LABEL',
-        placeholder: 'PARTNER.CARD.PHONE_NUMBER_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.PHONE_NUMBER_LABEL',
+        placeholder: 'VOLUNTEER.CARD.PHONE_NUMBER_PLACEHOLDER',
         validators: [zodValidator(phoneNumberControlSchema)],
         errorName: 'phoneNumberFormat',
         category: 'contacts',
@@ -238,8 +223,8 @@ export class PartnersListComponent {
         controlName: 'telegramId',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.TELEGRAM_ID_LABEL',
-        placeholder: 'PARTNER.CARD.TELEGRAM_ID_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.TELEGRAM_ID_LABEL',
+        placeholder: 'VOLUNTEER.CARD.TELEGRAM_ID_PLACEHOLDER',
         validators: [zodValidator(telegramIdControlSchema)],
         errorName: 'telegramIdFormat',
         category: 'contacts',
@@ -251,8 +236,8 @@ export class PartnersListComponent {
         controlName: 'telegramPhoneNumber',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.TELEGRAM_PHONE_NUMBER_LABEL',
-        placeholder: 'PARTNER.CARD.TELEGRAM_PHONE_NUMBER_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.TELEGRAM_PHONE_NUMBER_LABEL',
+        placeholder: 'VOLUNTEER.CARD.TELEGRAM_PHONE_NUMBER_PLACEHOLDER',
         validators: [zodValidator(phoneNumberControlSchema)],
         errorName: 'phoneNumberFormat',
         category: 'contacts',
@@ -264,8 +249,8 @@ export class PartnersListComponent {
         controlName: 'telegramNickname',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.TELEGRAM_NICKNAME_LABEL',
-        placeholder: 'PARTNER.CARD.TELEGRAM_NICKNAME_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.TELEGRAM_NICKNAME_LABEL',
+        placeholder: 'VOLUNTEER.CARD.TELEGRAM_NICKNAME_PLACEHOLDER',
         validators: [zodValidator(telegramNicknameControlSchema)],
         errorName: 'telegramNicknameFormat',
         category: 'contacts',
@@ -277,8 +262,8 @@ export class PartnersListComponent {
         controlName: 'whatsApp',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.WHATSAPP_LABEL',
-        placeholder: 'PARTNER.CARD.WHATSAPP_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.WHATSAPP_LABEL',
+        placeholder: 'VOLUNTEER.CARD.WHATSAPP_PLACEHOLDER',
         validators: [zodValidator(whatsAppControlSchema)],
         errorName: 'phoneNumberFormat',
         category: 'contacts',
@@ -290,8 +275,8 @@ export class PartnersListComponent {
         controlName: 'vKontakte',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.VKONTAKTE_LABEL',
-        placeholder: 'PARTNER.CARD.VKONTAKTE_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.VKONTAKTE_LABEL',
+        placeholder: 'VOLUNTEER.CARD.VKONTAKTE_PLACEHOLDER',
         validators: [zodValidator(vKontakteControlSchema)],
         errorName: 'vKontakteFormat',
         category: 'contacts',
@@ -303,8 +288,8 @@ export class PartnersListComponent {
         controlName: 'instagram',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.INSTAGRAM_LABEL',
-        placeholder: 'PARTNER.CARD.INSTAGRAM_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.INSTAGRAM_LABEL',
+        placeholder: 'VOLUNTEER.CARD.INSTAGRAM_PLACEHOLDER',
         validators: [zodValidator(instagramControlSchema)],
         errorName: 'instaFormat',
         category: 'contacts',
@@ -316,8 +301,8 @@ export class PartnersListComponent {
         controlName: 'facebook',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.FACEBOOK_LABEL',
-        placeholder: 'PARTNER.CARD.FACEBOOK_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.FACEBOOK_LABEL',
+        placeholder: 'VOLUNTEER.CARD.FACEBOOK_PLACEHOLDER',
         validators: [zodValidator(facebookControlSchema)],
         errorName: 'facebookFormat',
         category: 'contacts',
@@ -329,20 +314,35 @@ export class PartnersListComponent {
         controlName: 'otherContact',
         value: null,
         type: 'inputText',
-        label: 'PARTNER.CARD.OTHER_CONTACT_LABEL',
-        placeholder: 'PARTNER.CARD.OTHER_CONTACT_PLACEHOLDER',
+        label: 'VOLUNTEER.CARD.OTHER_CONTACT_LABEL',
+        placeholder: 'VOLUNTEER.CARD.OTHER_CONTACT_PLACEHOLDER',
         validators: [zodValidator(otherContactControlSchema)],
         category: 'contacts',
         formType: 'formArray',
         colspan: 3,
         rowspan: 1,
       },
+/*        {
+        controlName: 'institutes',
+        value: null,
+        type: 'group',
+        label: 'VOLUNTEER.CARD.INSTITUTES',
+        placeholder: '',
+        validators: [],
+        errorName: '',
+        category: 'institutes',
+        formType: 'formArray',
+        colspan: 6,
+        rowspan: 1,
+      }, */
+
+
     ],
     mainContactsValidator: [Validator.mainPartnerContactsValidator],
     object: null,
-    componentType: 'partner',
+    componentType: 'volunteer',
     addressFilterParams: {
-      source: 'partnerCard',
+      source: 'volunteerCard',
       multiple: false,
       cols: '2',
       gutterSize: '16px',

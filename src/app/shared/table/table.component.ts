@@ -48,6 +48,10 @@ import {
   PartnerMainService,
   PartnerService,
 } from '../../services/partner.service';
+import {
+  VolunteerMainService,
+  VolunteerService,
+} from '../../services/volunteer.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 
@@ -79,9 +83,9 @@ import { zodValidator } from '../../utils/zod-validator';
 import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
 import {
   PERMISSIONS_COMPONENT_REGISTRY,
-  DetailsComponentType,
   PermissionSet,
-} from './table-component-registry';
+  TableComponentType,
+} from './table-permissions.registry';
 import {
   ChangingByKind,
   DeletingByKind,
@@ -102,6 +106,7 @@ import {
   UserDraft,
   UserOutdatingData,
   UserRestoringData,
+  Volunteer,
 } from 'src/app/interfaces/advanced-model';
 //import { Owner } from 'src/app/interfaces/advanced-model';
 
@@ -129,8 +134,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   @ViewChild(MatSort) sort!: MatSort;
 
   private readonly destroyRef = inject(DestroyRef);
-  /*   private readonly userService = inject(UserService);
-  private readonly partnerService = inject(PartnerService); */
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
   private readonly msg = inject(MessageWrapperService);
@@ -167,6 +170,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
     { list: Partner[]; length: number }
   >; */
 
+  protected readonly volunteerService = inject(
+    VolunteerService
+  ) as VolunteerMainService;
+
   params = input.required<{
     columns: ColumnDefinition[];
     viewOptions: ViewOption[];
@@ -175,7 +182,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   }>();
 
   kind = input.required<K>();
-  private kind$ = new BehaviorSubject<Kind>('user');
+  private kind$ = new BehaviorSubject<Kind>('partner');
   ownerDialogConfig = input.required<DialogData<OwnerByKind<K>>>();
 
   owners!: OwnerByKind<K>[];
@@ -193,7 +200,9 @@ export class TableComponent<K extends Kind> implements OnChanges {
   } as const;
 
   sanitizeText = sanitizeText;
-  permissions!: PermissionSet;
+  //permissions!: PermissionSet<K>;
+
+  permissions!: PermissionSet<TableComponentType>;
 
   loading = signal(true);
   private reloadTick = signal(0);
@@ -286,7 +295,12 @@ export class TableComponent<K extends Kind> implements OnChanges {
     DeletingByKind<K>,
     ListDto<K>
   > {
-    const svc = this.kind() === 'user' ? this.userService : this.partnerService;
+    const svc =
+      this.kind() === 'user'
+        ? this.userService
+        : this.kind() === 'partner'
+        ? this.partnerService
+        : this.volunteerService; //this.kind() === 'volunteer' ?
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -354,11 +368,15 @@ export class TableComponent<K extends Kind> implements OnChanges {
   }
   ngOnInit() {
     this.displayedColumns = this.params().columns.map((c) => c.columnName);
+    console.log('this.displayedColumns', this.displayedColumns);
     this.dialogProps = this.ownerDialogConfig();
-    this.permissions = PERMISSIONS_COMPONENT_REGISTRY[this.kind()];
+    this.permissions = PERMISSIONS_COMPONENT_REGISTRY[
+      this.kind()
+    ] as PermissionSet<TableComponentType>;
   }
   ngOnChanges(changes: SimpleChanges) {
     if (changes['kind'] && this.kind) {
+      console.log('this.kind', this.kind());
       this.kind$.next(this.kind());
     }
   }
@@ -401,11 +419,28 @@ export class TableComponent<K extends Kind> implements OnChanges {
     //!!row?.outdatedData?.homes && row.outdatedData.homes.length > 0;
     return false;
   };
+  hasOutdatedInstitutes = (row: Volunteer): boolean => {
+    return (
+      !!row?.outdatedData?.institutes && row.outdatedData.institutes.length > 0
+    );
+  };
 
-  hasHomes = (row: OwnerByKind<K>): boolean => {
+/*   hasHomes = (row: OwnerByKind<K>): boolean => {
     //!!row?.homes && row.homes.length > 0;
     return false;
   };
+  hasInstitutes = (row: OwnerByKind<K>): boolean => {
+    //!!row?.institutes && row.institutes.length > 0;
+    return false;
+  };
+  hasSubscriptions = (row: OwnerByKind<K>): boolean => {
+    //!!row?.subscriptions && row.subscriptions.length > 0;
+    return false;
+  };
+  hasCooperations = (row: OwnerByKind<K>): boolean => {
+    //!!row?.cooperations && row.cooperations.length > 0;
+    return false;
+  }; */
   // ========== child → parent bridge ==========
   onAllFilterParametersChange = (p: FilterDraft) => {
     this.goToFirstPage();
@@ -534,7 +569,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
   onShowUsersOrdersClick(id: number) {}
   onShowUsersSubscribersClick(id: number) {}
   onShowUsersVolunteersClick(id: number) {}
-  onShowPartnerHomesClick(id: number) {}
+  onShowPartnersHomesClick(id: number) {}
+  onShowVolunteersSeniorsClick(id: number) {}
+  onShowVolunteersCooperationsClick(id: number) {}
+  onShowVolunteersOrdersClick(id: number) {}
 
   onBlockOwnerClick(id: number) {
     if (this.kind() !== 'partner') {

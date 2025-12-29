@@ -1,0 +1,399 @@
+import { Component, inject } from '@angular/core';
+import {
+  FormArray,
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+} from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatInputModule } from '@angular/material/input';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
+
+import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
+import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
+import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
+
+import { ContactUrlPipe } from '../../utils/contact-url.pipe';
+import {
+  Institute,
+  OutdatedInstitute,
+  Cooperation,
+  Subscription,
+  InstituteFormGroup,
+} from '../../interfaces/volunteer';
+import {
+  VolunteerService,
+  VolunteerMainService,
+} from 'src/app/services/volunteer.service';
+import { zodValidator } from 'src/app/utils/zod-validator';
+import {
+  instituteCategoryControlSchema,
+  instituteNameControlSchema,
+} from '@shared/schemas/volunteer.schema';
+import { DefaultAddressParams } from '@shared/schemas/toponym.schema';
+
+@Component({
+  selector: 'app-volunteer-details',
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatGridListModule,
+    MatInputModule,
+    MatTabsModule,
+    MatSelectModule,
+    MatSlideToggleModule,
+    MatIconModule,
+    MatMenuModule,
+    MatButtonModule,
+    AddressFilterComponent,
+    OutdatedItemMenuComponent,
+    TranslateModule,
+    ContactUrlPipe,
+  ],
+  templateUrl:
+    '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
+  styleUrl:
+    '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.css',
+})
+export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunteer'> {
+  override volunteerService = inject(VolunteerService) as VolunteerMainService;
+  override ngOnInit(): void {
+    /*     this.existingOwner = this.data().object;
+      if (this.existingOwner) {
+        this.outdatedDataDraft = structuredClone(this.existingOwner.outdatedData);
+        console.log(this.outdatedDataDraft);
+      } */
+    super.ngOnInit();
+    this.mainProps = [
+      'comment',
+      'isRestricted',
+      'causeOfRestriction',
+      'dateOfRestriction',
+    ];
+    this.hasOutdatedInstitutes.set(
+      this.outdatedDataDraft.institutes.length > 0
+    );
+  }
+
+  override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
+    super.setInitialValues(mode);
+
+    //institutes
+    const formArray = this.institutesArray;
+    const values = this.object!.institutes;
+    let diff = values.length - formArray.length;
+    while (diff > 0) {
+      formArray.push(this.createInstituteGroup(mode));
+      diff--;
+    }
+    while (diff < 0 && formArray.length > 1) {
+      formArray.removeAt(formArray.length - 1);
+      diff++;
+    }
+    if (values.length) {
+      values.forEach((v, i) => {
+        formArray.at(i).patchValue({
+          instituteName: v.instituteName,
+          category: v.category,
+        });
+      });
+    }
+    const SUB = structuredClone(this.object!.subscriptions);
+    const SUBOWNER = structuredClone(this.existingOwner!.subscriptions);
+    console.log('mode', mode);
+    console.log('SUB - setInitialValues - this.object!.subscriptions', SUB);
+    console.log(
+      'SUBOWNER - setInitialValues - this.existingOwner!.subscriptions',
+      SUBOWNER
+    );
+    //subscription
+    if (this.object!.subscriptions.length) {
+      this.mainForm.controls['subscription'].setValue(this.getSubsValue());
+    }
+  }
+  //TODO: заменить this.object! на existingOwner
+  private getSubsValue() {
+    const idx = this.object!.subscriptions.findIndex(
+      (s) => s.userId === this.user()!.id
+    );
+    console.log('this.object', structuredClone(this.object));
+    console.log('idx', idx);
+    return idx !== -1;
+  }
+
+  override setEmptyOutdatedDataDraft() {
+    this.outdatedDataDraft = {
+      addresses: [],
+      names: [],
+      institutes: [],
+      contacts: {},
+    };
+  }
+
+  override setRestoringDataDraft() {
+    this.restoringDataDraft = {
+      addresses: null,
+      names: null,
+      institutes: null,
+      contacts: null,
+    };
+  }
+  override setDeletingDataDraft() {
+    this.deletingDataDraft = {
+      addresses: null,
+      names: null,
+      institutes: null,
+      contacts: null,
+      subscriptions: null,
+    };
+  }
+  override setChangingData() {
+    this.changingData = {
+      main: null,
+      contacts: null,
+      address: null,
+      institutes: null,
+      subscriptions: null,
+      cooperations: null,
+    };
+  }
+  override setOutdatingData() {
+    this.outdatingData = {
+      address: null,
+      names: null,
+      institutes: null,
+      contacts: null,
+    };
+  }
+
+  override onRestoreOutdatedInstitute(data: OutdatedInstitute) {
+    this.restoringDataDraft['institutes'] ??= [];
+    this.restoringDataDraft['institutes']?.push(data.id);
+    const fa = this.mainForm.get('institutes') as FormArray;
+    if (fa.length === 0) {
+      fa.at(0)?.setValue(data.instituteName);
+    } else {
+      //TODO: add new insts
+    }
+  }
+
+  override async correctRestoringData() {
+    super.correctRestoringData();
+
+    // Institutes
+    const { restoring, outdating } = this.ownerDiffService.corrInstitutes(
+      this.restoringDataDraft.institutes ?? [],
+      this.outdatedDataDraft.institutes ?? [],
+      this.ownerDraft.draftInstitutes ?? [],
+      this.existingOwner!.outdatedData.institutes ?? []
+    );
+
+    this.restoringDataDraft.institutes = structuredClone(restoring);
+    this.outdatedDataDraft.institutes = structuredClone(outdating);
+  }
+
+  override async checkOutdatedDataDuplicates() {
+    const institutes = await this.ownerDiffService.checkInstitutes(
+      this.outdatedDataDraft.institutes,
+      this.ownerDraft.draftInstitutes ?? []
+    );
+    if (!institutes.restoring) return false;
+    if (institutes.restoring.length > 0) {
+      this.restoringDataDraft.institutes = [
+        ...(this.restoringDataDraft.institutes ?? []),
+        ...institutes.restoring,
+      ];
+    }
+
+    return await super.checkOutdatedDataDuplicates();
+  }
+  override async checkAllChanges() {
+    const institutes = await this.ownerDiffService.diffInstitutes(
+      this.existingOwner!.institutes ?? [],
+      this.ownerDraft.draftInstitutes ?? [],
+      this.restoringDataDraft.institutes ?? [],
+      this.existingOwner!.outdatedData.institutes ?? []
+    );
+    if (institutes.changes) this.changingData.institutes = institutes.changes;
+    if (institutes.outdating)
+      this.outdatingData.institutes = institutes.outdating;
+    if (institutes.deleting)
+      this.deletingDataDraft.institutes = institutes.deleting;
+
+    const subscriptions = await this.ownerDiffService.diffSubs(
+      this.existingOwner!.subscriptions ?? [],
+      this.ownerDraft.draftSubscriptions ?? [],
+      this.user()!.id
+    );
+    if (subscriptions.changes)
+      this.changingData.subscriptions = subscriptions.changes;
+    if (subscriptions.deleting)
+      this.deletingDataDraft.subscriptions = subscriptions.deleting;
+    return await super.checkAllChanges();
+  }
+
+  override getRowSpanForInstitutes(): number {
+    return this.outdatedDataDraft.institutes.length;
+  }
+
+  override get outdatedInstitutes(): OutdatedInstitute[] {
+    const data = this.outdatedDataDraft;
+    const list = data?.institutes;
+    return Array.isArray(list) ? list : [];
+  }
+
+  override get institutes(): Institute[] {
+    const list = this.object!.institutes;
+    return Array.isArray(list) ? list : [];
+  }
+
+  override get subscriptions(): Subscription[] {
+    let list = structuredClone(this.object!.subscriptions) ?? [];
+    const idx = list.findIndex((s) => s.userId === this.user()!.id);
+    if (idx !== -1) list.splice(idx, 1);
+    return list;
+  }
+
+  override get cooperations(): Cooperation[] {
+    const list = this.object!.cooperations;
+    return Array.isArray(list) ? list : [];
+  }
+
+  override hasSubscriptions(): boolean {
+    return true;
+  }
+  override hasCooperations(): boolean {
+    return true;
+  }
+  override hasInstitutes(): boolean {
+    return true;
+  }
+
+  override setHasOutdatedInstitutes() {
+    this.hasOutdatedInstitutes.set(
+      this.outdatedDataDraft.institutes.length > 0
+    );
+  }
+
+  private createInstituteGroup(
+    mode: 'view' | 'edit' | 'create'
+  ): InstituteFormGroup {
+    return new FormGroup<{
+      instituteName: FormControl<string | null>;
+      category: FormControl<string | null>;
+    }>({
+      instituteName: new FormControl<string | null>(
+        { value: null, disabled: mode === 'view' },
+        [zodValidator(instituteNameControlSchema)]
+      ),
+      category: new FormControl<string | null>(
+        { value: null, disabled: mode === 'view' },
+        [zodValidator(instituteCategoryControlSchema)]
+      ),
+    });
+  }
+
+  override get institutesArray(): FormArray<InstituteFormGroup> {
+    let fa = this.mainForm.get(
+      'institutes'
+    ) as FormArray<InstituteFormGroup> | null;
+
+    if (!fa) {
+      fa = new FormArray<InstituteFormGroup>([]);
+      this.mainForm.addControl('institutes', fa);
+    }
+
+    return fa;
+  }
+
+  override onAddInstituteClick() {
+    this.institutesArray.push(this.createInstituteGroup('create'));
+  }
+
+  // View-mode: disable institutes controls
+  protected override changeToViewMode(
+    addressParams: DefaultAddressParams | null
+  ) {
+    super.changeToViewMode(addressParams);
+    this.updateInstitutesControlsValidity(false);
+  }
+
+  // Edit-mode: enable institutes controls
+  override onEditClick() {
+    super.onEditClick();
+    this.updateInstitutesControlsValidity(true);
+  }
+
+  protected updateInstitutesControlsValidity(enable: boolean) {
+    const fa = this.mainForm.get(
+      'institutes'
+    ) as FormArray<InstituteFormGroup> | null;
+    if (fa) {
+      fa.controls.forEach((group) =>
+        enable
+          ? group.enable({ emitEvent: false })
+          : group.disable({ emitEvent: false })
+      );
+    }
+    this.checkIsSaveDisabled();
+  }
+
+  protected override additionalValidationHooks(): boolean {
+    //TODO: for partner houses
+
+    return (
+      this.contactsChangeValidation() ||
+      this.addressChangeValidation() ||
+      this.institutesChangeValidation() ||
+      this.subscriptionChangeValidation()
+    );
+  }
+
+  private institutesChangeValidation(): boolean {
+    const original = this.object!['institutes'];
+    const current = this.mainForm.get('institutes')!.getRawValue();
+
+    // lengths differ -> changed
+    if (original.length !== current.length) return true;
+
+    // content differs -> changed
+    const normalize = (arr: { instituteName: string; category: string }[]) =>
+      arr
+        .map((item) => ({
+          instituteName: item.instituteName?.trim(),
+          category: item.category,
+        }))
+        .sort(
+          (x, y) =>
+            x.instituteName.localeCompare(y.instituteName) ||
+            x.category.localeCompare(y.category)
+        );
+    /*     console.log(
+      'JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))',
+      JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))
+    ); */
+
+    return !(
+      JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))
+    );
+  }
+
+  private subscriptionChangeValidation(): boolean {
+    const original = this.getSubsValue();
+    const current = this.mainForm.get('subscription')!.getRawValue();
+    console.log('original', original);
+    console.log('current', current);
+    return original !== current;
+  }
+}
+
+//TODO: при открытии карточки созданной на руччком у орг-й не показывается категория

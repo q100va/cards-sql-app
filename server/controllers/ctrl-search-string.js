@@ -83,8 +83,31 @@ const OWNER_CONFIG = {
         .flatMap(i => [i.firstName, i.patronymic, i.lastName])
         .filter(Boolean)
         .join(' '),
-    //houses: (p) => p?.name ?? [],
+    //homes: (p) => p?.homes ?? [],
   },
+
+  volunteer: {
+    basicTokens: (v) => [
+      t(v?.firstName), t(v?.patronymic), t(v?.lastName),
+      t(v?.comment),
+      v?.isRestricted ? 'заблокирован blocked from' : '',
+      ...dateVariants(v?.dateOfRestriction),
+      t(v?.causeOfRestriction),
+      ...dateVariants(v?.dateOfStart),
+      //TODO: DateOfLastOrder
+    ],
+    contacts: (v) => v?.contacts ?? [],
+    addresses: (v) => v?.addresses ?? [],
+    institutes: (v) => v?.institutes ?? [],
+    subscriptions: (v) => v?.subscriptions ?? [],
+    cooperations: (v) => v?.cooperations ?? [],
+    firstNonRestrictedAddress: (v) => (v?.addresses ?? []).find(a => !a?.isRestricted),
+    outdatedNames: (v) =>
+      (v?.outdatedNames ?? [])
+        .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+        .filter(Boolean)
+        .join(' '),
+  }
 };
 
 // ---------- Public API ----------
@@ -104,6 +127,22 @@ export function createSearchStringFor(kind, record) {
   // first non-restricted address
   const addr = C.firstNonRestrictedAddress(record);
   pushAddressTokens(tokens, addr);
+
+  if (kind == 'volunteer') {
+    for (const i of C.institutes(record)) {
+      if (!i?.isRestricted) {
+        tokens.push(t(i.instituteName));
+        tokens.push(t(i.category));
+      }
+    }
+    if(C.subscriptions(record).length) tokens.push('subscription подписка');
+    for (const s of C.subscriptions(record)) {
+      tokens.push(t(s.userName));
+    }
+    for (const c of C.cooperations(record)) {
+      tokens.push(t(c.userName));
+    }
+  }
 
   return normalizeSpace(tokens.join(' '));
 }
@@ -128,5 +167,13 @@ export function createOutdatedSearchStringFor(kind, record) {
   const names = C.outdatedNames(record);
   if (names) parts.push(names);
 
+  if (kind == 'volunteer') {
+    for (const i of C.institutes(record)) {
+      if (i?.isRestricted) {
+        parts.push(t(i.instituteName));
+        parts.push(t(i.category));
+      }
+    }
+  }
   return normalizeSpace(parts.join(' '));
 }

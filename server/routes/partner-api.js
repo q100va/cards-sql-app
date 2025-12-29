@@ -82,6 +82,9 @@ router.post(
             affiliation: creatingPartner.affiliation,
             position: creatingPartner.position,
             comment: creatingPartner.comment,
+            isRestricted: creatingPartner.isRestricted,
+            causeOfRestriction: creatingPartner.causeOfRestriction,
+            dateOfRestriction: creatingPartner.dateOfRestriction,
           },
           { transaction: t }
         );

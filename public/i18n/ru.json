@@ -28,6 +28,7 @@
     "PROFILE": "Профайл",
     "ROLES": "Роли",
     "USERS": "Пользователи",
+    "VOLUNTEERS": "Волонтеры",
     "TOPONYMS": "Топонимы",
     "COUNTRIES": "Страны",
     "REGIONS": "Регионы",
@@ -63,7 +64,8 @@
       "NAMES": "ФИО",
       "USER_NAME": "имя пользователя",
       "CONTACTS": "контакт(ы)",
-      "HOMES": "интернат(ы)"
+      "HOMES": "интернат(ы)",
+      "INSTITUTES": "организация(ии)"
     }
   },
   "TOAST": {
@@ -189,22 +191,28 @@
       "COMMENT": "Комментарий",
       "STATUS": "Статус",
       "ACTIONS": "Действия",
-      "HOMES": "Координируемые дома"
+      "HOMES": "Координируемые дома",
+      "COOPERATIONS": "Взаимодействие",
+      "INSTITUTES": "Организации"
     },
     "NOTES": {
       "CLOSE": "закрыт",
       "DEACTIVATED": "не поздравляем",
-      "OUTDATED_DATA": "прежние значения:",
+      "OUTDATED_DATA": "прежние данные:",
       "BLOCKED_FROM": "заблокирован с ",
-      "ACTIVE": "активен"
+      "ACTIVE": "активен",
+      "SUBSCRIPTION": "подписка"
     },
     "MENU": {
       "OPEN_LIST_TITLE": "Открыть перечень",
       "OPEN_CARD": "открыть карточку",
       "OPEN_ORDERS": "открыть список заявок",
       "OPEN_SUBSCRIBERS": "открыть список подписчиков",
+      "OPEN_COOPERATIONS": "открыть список связанных пользователей",
       "OPEN_VOLUNTEERS": "открыть список волонтеров",
       "OPEN_HOMES": "открыть список интернатов",
+      "OPEN_USERS": "открыть список пользователей",
+      "OPEN_SENIORS": "открыть список жителей интернатов",
       "BLOCK_OWNER": "заблокировать",
       "UNBLOCK_OWNER": "разблокировать",
       "DELETE_OWNER": "удалить"
@@ -218,16 +226,21 @@
       "CONTACTS_LABEL": "Контактные данные",
       "OUTDATED_DATA_LABEL": "Неактуальные данные",
       "COORDINATED_HOMES_LABEL": "Координируемые интернаты",
+      "INSTITUTES_LABEL": "Организации",
       "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
       "BLOCKED_LABEL": "Заблокирован",
+      "CAUSE_OF_BLOCK_LABEL": "Причина блокировки(дезактивации)",
       "CAUSE_OF_BLOCK_PLACEHOLDER": "прекращение волонтерства",
+      "SUBSCRIPTION_LABEL": "Мой подписчик",
       "DELETE_BUTTON_TITLE": "Удалить",
       "EXTRA_CONTACT_BUTTON": "Дополнительный контакт",
       "OUTDATED_NAMES_TITLE": "Прежние ФИО:",
       "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
       "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
       "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
-      "OUTDATED_HOMES_TITLE": "Прежние координируемые интернаты:"
+      "OUTDATED_HOMES_TITLE": "Прежние координируемые интернаты:",
+      "ADD_INSTITUTE_BUTTON": "Добавить организацию",
+      "COOPERATIONS": "Взаимодействует с:"
     }
   },
   "USER": {
@@ -343,7 +356,6 @@
       "FACEBOOK_LABEL": "Facebook",
       "OTHER_CONTACT_LABEL": "Другой контакт",
 
-      "USER_NAME_PLACEHOLDER": "a.petrova",
       "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
       "PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
       "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
@@ -354,6 +366,69 @@
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
       "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше"
+    }
+  },
+
+  "VOLUNTEER": {
+    "TABLE_TITLE": "Волонтеры",
+    "ADD_PARTNER": "Добавить Волонтера",
+    "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
+
+    "VIEW_OPTIONS": {
+      "ALL": "Все волонтеры",
+      "ONLY_ACTIVE": "Только активные",
+      "ONLY_BLOCKED": "Только заблокированные"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "Новый волонтер",
+      "VIEW_TITLE": "Волонтер",
+
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия",
+      "COMMENT_LABEL": "Комментарий",
+      "BLOCKED_LABEL": "Заблокирован",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_ID_LABEL": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше",
+
+      "INSTITUTE_NAME_LABEL": "Название организации*",
+      "INSTITUTE_NAME_PLACEHOLDER": "ГБОУ 'Школа Кузьминки'",
+      "CATEGORY_LABEL": "Категория*"
+    },
+
+    "CATEGORIES": {
+      "KINDERGARTEN": "дошкольное ОУ",
+      "SCHOOL": "школа",
+      "COLLEGE": "профессиональное ОУ",
+      "UNIVERSITY": "ВУЗ",
+      "GOVERNMENT": "бюджетная орг-я",
+      "BUSINESS": "коммерческая орг-я",
+      "CHURCH": "религиозная орг-я",
+      "CHARITY": "благотворительная орг-я",
+      "CHILDREN": "детский коллектив",
+      "YOUTH": "юношеский коллектив",
+      "ADULTS": "взрослые волонтеры",
+      "OTHER": "другое"
     }
   },
 
@@ -376,7 +451,7 @@
       "ADDR_LABEL": "адрес",
       "STRONG_FILTER": "все выбранные значения должны присутствовать одновременно",
       "ROLE_LABEL": "роль",
-      "AFFILIATION_LABEL":"позиция",
+      "AFFILIATION_LABEL": "позиция",
       "CHOOSE_VALUE_LABEL": "выберите значение(я)",
       "START_DATE_LABEL": "дата присоединения",
       "CHOOSE_RANGE_LABEL": "Введите диапазон",
@@ -515,7 +590,8 @@
     "HOMES": "Интернаты",
     "PARTNERS": "Представители\nинтернатов",
     "SENIORS": "Жители\nинтернатов",
-    "VOLUNTEERS": "Поздравляющие"
+    "VOLUNTEERS": "Поздравляющие",
+    "ORDERS": "Заявки"
   },
   "OPS": {
     "ALL_OPS": {

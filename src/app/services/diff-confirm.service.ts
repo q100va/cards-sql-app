@@ -3,7 +3,13 @@ import { ConfirmationService } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
 import { sanitizeText } from '../utils/sanitize-text';
 
-export type ConfirmKind = 'address' | 'names' | 'userName' | 'contact' | 'home';
+export type ConfirmKind =
+  | 'address'
+  | 'names'
+  | 'userName'
+  | 'contact'
+  | 'home'
+  | 'institute';
 
 @Injectable({ providedIn: 'root' })
 export class DiffConfirmService {
@@ -11,13 +17,17 @@ export class DiffConfirmService {
   private readonly t = inject(TranslateService);
 
   /** Ask: move previous value to 'outdated' (Accept) or delete it (Reject). */
-  async confirmOutdateOrDelete(kind: ConfirmKind, value: string): Promise<boolean> {
+  async confirmOutdateOrDelete(
+    kind: ConfirmKind,
+    value: string
+  ): Promise<boolean> {
     const kindLabel = {
       address: this.t.instant('PRIME_CONFIRM.DATA_TYPES.ADDRESS'),
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contact: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
       home: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
+      institute: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
     }[kind];
 
     const header = this.t.instant('PRIME_CONFIRM.WARNING_HEADER');
@@ -50,7 +60,13 @@ export class DiffConfirmService {
   /** Ask:  is correct new data when it matches outdated records.
    * (Accept) - restore it or (Reject) - cancel saving. */
   confirmDataCorrectness(
-    type: 'address' | 'names' | 'userName' | 'contacts' | 'homes',
+    type:
+      | 'address'
+      | 'names'
+      | 'userName'
+      | 'contacts'
+      | 'homes'
+      | 'institutes',
     value: string
   ): Promise<boolean> {
     const types = {
@@ -59,6 +75,7 @@ export class DiffConfirmService {
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contacts: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
       homes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
+      institutes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
     };
 
     return new Promise((resolve) => {

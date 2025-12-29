@@ -183,7 +183,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     super.correctRestoringData();
 
     // UserNames
-    const { restoring, outdating } = this.userDiffService.corrUserNames(
+    const { restoring, outdating } = this.ownerDiffService.corrUserNames(
       this.restoringDataDraft.userNames ?? [],
       this.outdatedDataDraft.userNames ?? [],
       this.ownerDraft.userName,
@@ -197,7 +197,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
   override async checkOutdatedDataDuplicates() {
-    const userName = await this.userDiffService.checkUserNames(
+    const userName = await this.ownerDiffService.checkUserNames(
       this.outdatedDataDraft.userNames,
       this.ownerDraft.userName
     );
@@ -211,7 +211,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   }
 
   override async checkAllChanges() {
-    const userName = await this.userDiffService.diffUserName(
+    const userName = await this.ownerDiffService.diffUserName(
       this.existingOwner!,
       this.ownerDraft
     );

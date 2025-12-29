@@ -14,7 +14,7 @@ import {
   Kind,
   NonTelegram,
   PartnerDraft,
-  ClientDraft,
+  VolunteerDraft,
   UserDraft,
   DraftCommon,
   OwnerDraft,
@@ -28,20 +28,10 @@ import {
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
-import { normalize, completeContact, isFieldEqual } from '../utils/user-diff';
+import { normalize, completeContact, isFieldEqual, lightNormalize } from '../utils/diff';
 
 // --- Kind & Draft types ------------------------------------------------------
-type OwnerMap = {
-  user: User;
-  partner: Partner;
-  //client: Client;
-};
 
-type OwnerDraftMap = {
-  user: UserDraft;
-  partner: PartnerDraft;
-  client: ClientDraft;
-};
 type Names = {
   firstName: string;
   patronymic: string | null;
@@ -51,6 +41,8 @@ type RestoringData = UserRestoringData | PartnerRestoringData;
 
 // --- Helpers -----------------------------------------------------------------
 const get = (form: FormGroup, name: string) => form.get(name)?.value ?? null;
+const getInstitutes = (form: FormGroup) =>
+  form.get('institutes')!.getRawValue();
 
 function first<T>(arr?: T[] | null): T | null {
   return (arr && arr.length ? arr[0] : null) as T | null;
@@ -58,17 +50,19 @@ function first<T>(arr?: T[] | null): T | null {
 
 // --- Per-kind config ---------------------------------
 const BUILD_EXTRAS = {
-  user: (form: FormGroup) => ({
+  user: (form: FormGroup, userId_: number) => ({
     userName: normalize(get(form, 'userName')),
     password: get(form, 'password'),
     roleId: get(form, 'roleId'),
   }),
-  partner: (form: FormGroup) => ({
+  partner: (form: FormGroup, userId_: number) => ({
     affiliation: normalize(get(form, 'affiliation')),
-    position: normalize(get(form, 'position')),
+    position: lightNormalize(get(form, 'position')),
   }),
-  client: (form: FormGroup) => ({
-    displayName: normalize(get(form, 'displayName')), // TODO:
+  volunteer: (form: FormGroup, userId: number) => ({
+    draftSubscriptions: get(form, 'subscription') ? [userId] : [],
+    draftCooperations: [],
+    draftInstitutes: getInstitutes(form),
   }),
 } as const;
 
@@ -85,7 +79,8 @@ export class OwnerService {
     form: FormGroup,
     address: AddressFilter,
     contactTypes: NonTelegram[],
-    existing: OwnerByKind<K> | null
+    existing: OwnerByKind<K> | null,
+    userId: number
   ): OwnerDraftByKind<K> {
     const isRestricted = !!get(form, 'isRestricted');
 
@@ -95,7 +90,7 @@ export class OwnerService {
       firstName: normalize(get(form, 'firstName')),
       patronymic: normalize(get(form, 'patronymic')),
       lastName: normalize(get(form, 'lastName')),
-      comment: normalize(get(form, 'comment')),
+      comment: lightNormalize(get(form, 'comment')),
 
       isRestricted,
       causeOfRestriction: isRestricted ? get(form, 'causeOfRestriction') : null,
@@ -125,7 +120,10 @@ export class OwnerService {
     }
 
     // per-kind extras
-    const extras = (BUILD_EXTRAS as any)[kind](form);
+    const extras = (BUILD_EXTRAS as any)[kind](form, userId);
+ console.log('draft');
+ console.log({ ...base, ...extras });
+
 
     return { ...base, ...extras } as OwnerDraftByKind<K>;
   }
@@ -412,12 +410,14 @@ export class OwnerService {
     const oldA = existing.address;
     const newA = draft.draftAddress;
     let changes: OwnerDraft['draftAddress'] | null = null;
-
+console.log('oldA', oldA);
+console.log('newA', newA);
     const changed =
       !isFieldEqual(newA.countryId, oldA.country?.id ?? null) ||
       !isFieldEqual(newA.regionId, oldA.region?.id ?? null) ||
       !isFieldEqual(newA.districtId, oldA.district?.id ?? null) ||
       !isFieldEqual(newA.localityId, oldA.locality?.id ?? null);
+      console.log('changed', changed);
     let moveToOutdated = false;
     if (changed) {
       if (!restoringId) {
@@ -455,8 +455,8 @@ export class OwnerService {
     return {
       changed,
       changes,
-      outdatingId: moveToOutdated && oldA.id ? oldA.id : null,
-      deletingId: !moveToOutdated && oldA.id ? oldA.id : null,
+      outdatingId: changed && moveToOutdated && oldA.id ? oldA.id : null,
+      deletingId: changed && !moveToOutdated && oldA.id ? oldA.id : null,
     };
   }
 

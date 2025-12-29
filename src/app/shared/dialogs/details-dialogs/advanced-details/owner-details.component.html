@@ -5,6 +5,35 @@
     <mat-tab [label]="'TABLE.CARD.MAIN_DATA_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
         @for (control of data().controls; track $index) {
+        <!-- Subscription -->
+        @if (control.category=='subscription') {
+        <mat-grid-tile colspan="2" rowspan="1">
+          <mat-slide-toggle [formControlName]="control.controlName">{{'TABLE.CARD.SUBSCRIPTION_LABEL' | translate}}
+          </mat-slide-toggle>
+        </mat-grid-tile>
+        <!-- TODO: отформатировать -->
+        @if(data().operation == 'view-edit'){
+        <mat-grid-tile colspan="4" rowspan="1">
+          @if(subscriptions.length || cooperations.length){
+          <h5>{{'TABLE.CARD.COOPERATIONS' | translate}}</h5>
+          }
+          @for (subscription of subscriptions; track $index) {
+          <div>
+            {{subscription.userName}} ({{'TABLE.NOTES.SUBSCRIPTION' | translate}})
+            <br />
+          </div>
+          }
+
+          @for (cooperation of cooperations; track $index) {
+          <div>
+            {{cooperation.userName}}
+            <br />
+          </div>
+          }
+        </mat-grid-tile>
+        }
+        }
+
         @if (control.category=='mainData') {
         @if(control.type=='inputText') {
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
@@ -138,17 +167,80 @@
     @if(data().operation == 'view-edit' && hasHomes()){
     <mat-tab [label]="'TABLE.CARD.COORDINATED_HOMES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
-        @for (item of coordinatedHomes; track item.id) {
+        @for (item of homes; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
-            <div>{{ item.name }}</div>
+          <div>{{ item.name }}</div>
         </mat-grid-tile>
         }
-
       </mat-grid-list>
     </mat-tab>
     }
 
+    <!-- Institutes --TODO:-->
+    @if(hasInstitutes()){
+    <mat-tab [label]="'TABLE.CARD.INSTITUTES_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        <!--        @for (item of institutes; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div>{{ item.instituteName }}</div>
+        </mat-grid-tile>
+        } -->
+        @if(institutesArray.length){
+        <ng-container formArrayName="institutes">
+          @for (group of institutesArray.controls; track $index; let k = $index) {
+          <ng-container [formGroupName]="k">
+            <mat-grid-tile colspan="3" rowspan="1">
+              <mat-form-field>
+                <mat-label>{{'VOLUNTEER.CARD.INSTITUTE_NAME_LABEL' | translate}}</mat-label>
+                <input type="text" matInput formControlName="instituteName"
+                  [placeholder]="'VOLUNTEER.CARD.INSTITUTE_NAME_PLACEHOLDER' | translate" />
+                @if(group.controls.instituteName.hasError('zodError')){
+                <mat-error class="error">{{group.controls.instituteName.errors!['zodError'] |
+                  translate}}</mat-error>
+                }
+              </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile colspan="2" rowspan="1">
+              <mat-form-field>
+                <mat-label>{{'VOLUNTEER.CARD.CATEGORY_LABEL' | translate}}</mat-label>
+                <mat-select formControlName="category">
+                  @for (c of categories; track $index) {
+                  <mat-option [value]="translate.instant(c)">{{ c | translate}}</mat-option>
+                  }
+                </mat-select>
+                @if(group.controls.category.hasError('zodError')){
+                <mat-error class="error">{{group.controls.category.errors!['zodError'] |
+                  translate}}</mat-error>
+                }
+              </mat-form-field>
+            </mat-grid-tile>
 
+            @if ((data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create')) {
+            <mat-grid-tile colspan="1" rowspan="1">
+              <button matSuffix mat-icon-button [title]="'TABLE.CARD.DELETE_BUTTON_TITLE' | translate"
+                (click)="deleteInstituteControl(k)">
+                <mat-icon>delete_outlined</mat-icon>
+              </button>
+            </mat-grid-tile>
+            }
+          </ng-container>
+          }
+        </ng-container>
+        }
+
+        <!--
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px"> -->
+        <mat-grid-tile colspan="3" rowspan="1">
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
+            (click)="onAddInstituteClick()">
+            <mat-icon>add_business</mat-icon>
+            {{'TABLE.CARD.ADD_INSTITUTE_BUTTON' | translate}}</button>
+        </mat-grid-tile>
+
+      </mat-grid-list>
+
+    </mat-tab>
+    }
 
     <!-- Outdated Data -->
     @if (data().operation == 'view-edit') {
@@ -164,8 +256,8 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedData('names', item)"
-              (delete)="onDeleteOutdatedData('names', item.id)">
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedData('names', item)" (delete)="onDeleteOutdatedData('names', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">
@@ -184,8 +276,8 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedUserName(item)"
-              (delete)="onDeleteOutdatedData('userNames', item.id)">
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedUserName(item)" (delete)="onDeleteOutdatedData('userNames', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">{{ item.userName }}</div>
@@ -202,7 +294,7 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: address.isRecoverable}"
+            <app-outdated-item-menu [params]="{isRecoverable: address.isRecoverable, isDeletable: true}"
               (restore)="onRestoreOutdatedData('addresses', address)"
               (delete)="onDeleteOutdatedData('addresses', address.id)">
             </app-outdated-item-menu>
@@ -230,7 +322,7 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}"
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
               (restore)="onRestoreOutdatedData('contacts', contact, type)"
               (delete)="onDeleteOutdatedData('contacts', contact.id)">
             </app-outdated-item-menu>
@@ -254,8 +346,8 @@
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true}" (restore)="onRestoreOutdatedHome(item)"
-              (delete)="onDeleteOutdatedData('homes', item.id)">
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedHome(item)" (delete)="onDeleteOutdatedData('homes', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">{{ item.name }}</div>
@@ -263,6 +355,27 @@
         </mat-grid-tile>
         }
         }
+
+        <!-- Outdated Institutes -->
+        @if (hasOutdatedInstitutes()) {
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForInstitutes()">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_INSTITUTES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (institute of outdatedInstitutes; track institute.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: institute.isDeletable}"
+              (restore)="onRestoreOutdatedInstitute(institute)"
+              (delete)="onDeleteOutdatedData('institutes', institute.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ institute.instituteName }} ({{institute.category}})</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
       </mat-grid-list>
     </mat-tab>
     }

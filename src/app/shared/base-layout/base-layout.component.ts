@@ -109,6 +109,16 @@ export class BaseLayoutComponent {
       text: 'MENU.PARTNERS',
       link: '/partners',
     },
+      {
+      params: {
+        codes: ['VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-volunteers',
+      icon: 'groups',
+      text: 'MENU.VOLUNTEERS',
+      link: '/volunteers',
+    },
     {
       params: {
         codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],

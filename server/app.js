@@ -17,6 +17,7 @@ import ToponymsApi from './routes/toponyms-api.js';
 import FilesApi from './routes/files-api.js';
 import UsersApi from './routes/users-api.js';
 import PartnersApi from './routes/partner-api.js';
+import VolunteersApi from './routes/volunteer-api.js';
 import RolesApi from './routes/roles-api.js';
 import AuditApi from './routes/audit-api.js';
 import ClientLogsApi from './routes/client-logs.js';
@@ -25,8 +26,16 @@ import AuthApi from './routes/auth-api.js';
 import { scheduleAuditCleanup } from './retention/scheduler.js';
 import { runAuditCleanupCatchUp } from './retention/startup-catchup.js';
 
-import { AuditLog, Role, Locality, District, Region, Country, UserContact, UserAddress, User, UserSearch, RolePermission, UserOutdatedName, RefreshToken, Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch } from './models/index.js';
+import {
+  AuditLog, RefreshToken,
+  Locality, District, Region, Country,
+  Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
+  Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
+  VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
+  VolunteerSubscription, VolunteerCooperation, Institute
+} from './models/index.js';
 import { corsMiddleware } from './cors.js';
+import { Subscription } from 'rxjs';
 
 const app = express();
 
@@ -79,6 +88,7 @@ app.use('/api/toponyms', ToponymsApi);
 app.use('/api/files', FilesApi);
 app.use('/api/users', UsersApi);
 app.use('/api/partners', PartnersApi);
+app.use('/api/volunteers', VolunteersApi);
 app.use('/api/roles', RolesApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/client-logs', ClientLogsApi);
@@ -122,6 +132,14 @@ export async function initInfrastructure() {
   await PartnerAddress.sync(syncOpts);
   await PartnerSearch.sync(syncOpts);
   await PartnerOutdatedName.sync(syncOpts);
+  await Volunteer.sync(syncOpts);
+  await VolunteerContact.sync(syncOpts);
+  await VolunteerAddress.sync(syncOpts);
+  await VolunteerSearch.sync(syncOpts);
+  await VolunteerOutdatedName.sync(syncOpts);
+  await VolunteerSubscription.sync(syncOpts);
+  await VolunteerCooperation.sync(syncOpts);
+  await Institute.sync(syncOpts);
   await AuditLog.sync(syncOpts);
   await RefreshToken.sync(syncOpts);
 
