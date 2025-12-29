@@ -10,6 +10,7 @@ export const objects = [
   'holidays',  // holidays
   'reports', // reports
   'statistics', // statistics
+  'orders', // orders
 ];
 
 // List of operations available for each object type in the system
@@ -583,6 +584,82 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View volunteer list with full access',
     objectName: 'OBJECT.VOLUNTEERS',
+    flag: 'FULL',
+  },
+  // --- Orders ---
+  {
+    operation: 'ALL_OPS_ORDERS',
+    object: 'orders',
+    accessToAllOps: true,
+    operationName: 'OPS.ALL_OPS.NAME',
+    description: 'Full access to all order operations',
+    objectName: 'OBJECT.ORDERS',
+  },
+  {
+    operation: 'ADD_NEW_ORDER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.ADD.NAME',
+    description: 'Create a new order',
+    objectName: 'OBJECT.ORDERS',
+  },
+  {
+    operation: 'VIEW_ORDER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW.NAME',
+    description: 'View order',
+    objectName: 'OBJECT.ORDERS',
+  },
+  {
+    operation: 'EDIT_ORDER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.EDIT.NAME',
+    description: 'Edit order',
+    objectName: 'OBJECT.ORDERS',
+  },
+  {
+    operation: 'DELETE_ORDER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.DELETE.NAME',
+    description: 'Permanently delete order',
+    objectName: 'OBJECT.ORDERS',
+  },
+/*   {
+    operation: 'BLOCK_VOLUNTEER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.BLOCK.NAME',
+    description: 'Block a volunteer (temporary absence, refusal, or other reasons)',
+    objectName: 'OBJECT.ORDERS',
+  },
+  {
+    operation: 'UNBLOCK_VOLUNTEER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.UNBLOCK.NAME',
+    description: 'Unblock a volunteer',
+    objectName: 'OBJECT.ORDERS',
+  }, */
+
+  {
+    operation: 'VIEW_LIMITED_ORDERS_LIST',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
+    description: 'View volunteer list with limited access',
+    objectName: 'OBJECT.ORDERS',
+    flag: 'LIMITED',
+  },
+  {
+    operation: 'VIEW_FULL_ORDERS_LIST',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_FULL_LIST.NAME',
+    description: 'View volunteer list with full access',
+    objectName: 'OBJECT.ORDERS',
     flag: 'FULL',
   },
 ];

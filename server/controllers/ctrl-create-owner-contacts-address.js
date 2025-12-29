@@ -19,7 +19,7 @@ export function collectFlatContacts(contactsObj) {
 }
 /**
  * @param {Object} cfg
- * @param {'user'|'partner'} cfg.ownerKind
+ * @param {'user' | 'partner' | 'volunteer'} cfg.ownerKind
  * @param {Object} cfg.models { User, Partner, UserContact, PartnerContact }
  * @param {Object} cfg.excludeSelf ({ id: { [Op.ne]: userId } })
  * @param {Array<{type:string,content:string}>} cfg.flatContacts
@@ -50,6 +50,13 @@ export async function findDuplicateContacts({ ownerKind, models, excludeSelf = {
     partner: {
       Model: models.Partner,
       ContactModel: models.PartnerContact,
+      includeAs: 'contacts',
+      ownerAttrs: ['firstName', 'patronymic', 'lastName'],
+      displayName: row => fullName(row),
+    },
+    volunteer: {
+      Model: models.Volunteer,
+      ContactModel: models.VolunteerContact,
       includeAs: 'contacts',
       ownerAttrs: ['firstName', 'patronymic', 'lastName'],
       displayName: row => fullName(row),
@@ -130,6 +137,17 @@ export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draf
       idField: 'partnerId',
       ContactModel: models.PartnerContact,
       AddressModel: models.PartnerAddress,
+      addressShape: a => ({
+        countryId: a.countryId ?? null,
+        regionId: a.regionId ?? null,
+        districtId: a.districtId ?? null,
+        localityId: a.localityId ?? null,
+      }),
+    },
+    volunteer: {
+      idField: 'volunteerId',
+      ContactModel: models.VolunteerContact,
+      AddressModel: models.VolunteerAddress,
       addressShape: a => ({
         countryId: a.countryId ?? null,
         regionId: a.regionId ?? null,

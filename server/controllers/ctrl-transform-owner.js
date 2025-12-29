@@ -110,11 +110,48 @@ function splitHomesForPartner(raw) {
   return { homes, outdatedHomes };
 }
 
+/**
+ * Extract volunteer institutes and outdated institutes.
+ * Expects either:
+ *   - raw.institutes / raw.outdatedInstitutes
+ */
+function splitInstitutesForVolunteer(raw) {
+  const institutesSource = raw.institutes ?? [];
+  // const outdatedSource = raw.outdatedInstitutes ?? [];
+
+  console.log("raw.institutes", raw.institutes);
+
+  const institutes = institutesSource
+    .filter(i => !i?.isRestricted)
+    .map(i => ({
+      id: i.id,
+      instituteName: i.instituteName,
+      category: i.category,
+      isDeletable: i.isDeletable
+    }));
+
+  const outdatedInstitutes = institutesSource
+    .filter(i => i?.isRestricted)
+    .map(i => ({
+      id: i.id,
+      instituteName: i.instituteName,
+      category: i.category,
+      isDeletable: i.isDeletable
+      // isRecoverable: !!i.isRecoverable, TODO: не могу вспомнить, в каком случае орг-я может быть восстановима или нет
+      //более важно, удаляемая или нет (нет, если были заявки)
+    }));
+  console.log("institutesSource", institutesSource);
+  console.log("institutes", institutes);
+  console.log("outdatedInstitutes", outdatedInstitutes);
+
+  return { institutes, outdatedInstitutes };
+}
+
 // --- Public API ------------------------------------------------------------
 
 /**
  * Universal transformer for owner data.
- * kind: 'user' | 'partner'
+ * kind: 'user' | 'partner' | 'volunteer'
  * Returns a shallow-cloned, view-ready object:
  *  - orderedContacts
  *  - address
@@ -137,7 +174,7 @@ export function transformOwnerData(kind, raw) {
 
   // 3) Outdated names (differs for user vs partner)
   const outdatedData = { contacts: outdatedContacts, addresses: outdatedAddresses, names: [] };
-    console.log('outdatedData', outdatedData);
+  console.log('outdatedData', outdatedData);
 
   if (kind === 'user') {
     // Pull role name onto root and drop original relation
@@ -155,10 +192,50 @@ export function transformOwnerData(kind, raw) {
     delete o.outdatedNames;
 
     // 4) Homes (actual + outdated)
-    const { homes, outdatedHomes } = splitHomesForPartner(raw);
+    const { homes, outdatedHomes } = splitHomesForPartner(o);
     o.homes = homes;
     outdatedData.homes = outdatedHomes;
-  } else {
+  } else if (kind === 'volunteer') {
+    const { names } = splitNamesPartner(o.outdatedNames);
+    outdatedData.names = names;
+    delete o.outdatedNames;
+
+    // 5) Institutes (actual + outdated)
+    const { institutes, outdatedInstitutes } = splitInstitutesForVolunteer(o);
+    o.institutes = institutes;
+    outdatedData.institutes = outdatedInstitutes;
+
+    //console.log('VOLUNTEERs SUBs');
+    //console.dir(o.subscriptions, { depth: null });
+    const subscriptionsSource = o.subscriptions ?? [];
+    const cooperationsSource = o.cooperations ?? [];
+
+    const subscriptions = subscriptionsSource.map(i => ({
+      id: i.id,
+      userName: i.user.userName,
+      userId: i.userId,
+    }));
+
+    let cooperations = cooperationsSource.map(i => ({
+      id: i.id,
+      userName: i.user.userName,
+      userId: i.userId,
+    }));
+
+    subscriptions.forEach(async (s) => {
+      const idx = cooperations.findIndex(
+        (c) => c.id === s.id
+      );
+      if (idx !== -1) cooperations.splice(idx, 1);
+    });
+
+    o.subscriptions = subscriptions;
+    o.cooperations = cooperations;
+  }
+
+
+
+  else {
     throw new Error(`Unsupported kind: ${kind}`);
   }
 

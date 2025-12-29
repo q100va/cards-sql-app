@@ -13,6 +13,7 @@ import { LocalitiesListComponent } from './pages/toponyms-lists/localities-list/
 import { AuditTableComponent } from './pages/audit-table/audit-table.component';
 import { waitAuthReady } from './guards/auth-ready.guard';
 import { requireAnyOp, requireOp } from './guards/route-perms.guard';
+import { VolunteersListComponent } from './pages/volunteers-list/volunteers-list.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -46,6 +47,16 @@ export const routes: Routes = [
           requireAnyOp('VIEW_FULL_PARTNERS_LIST', 'VIEW_LIMITED_PARTNERS_LIST'),
         ],
         component: PartnersListComponent,
+      },
+      {
+        path: 'volunteers',
+        canMatch: [
+          requireAnyOp(
+            'VIEW_FULL_VOLUNTEERS_LIST',
+            'VIEW_LIMITED_VOLUNTEERS_LIST'
+          ),
+        ],
+        component: VolunteersListComponent,
       },
       {
         path: 'roles',

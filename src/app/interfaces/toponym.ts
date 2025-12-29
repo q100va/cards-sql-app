@@ -61,7 +61,15 @@ export interface AddressFilterParams {
   isShowRegion: boolean;
   isShowDistrict: boolean;
   isShowLocality: boolean;
-  source?: 'toponymCard' | 'toponymList' | 'userCard' | 'userList' | 'partnerList' | 'partnerCard';
+  source?:
+    | 'toponymCard'
+    | 'toponymList'
+    | 'userCard'
+    | 'userList'
+    | 'partnerList'
+    | 'partnerCard'
+    | 'volunteerList'
+    | 'volunteerCard';
   multiple?: boolean;
   cols?: string;
   gutterSize?: string;

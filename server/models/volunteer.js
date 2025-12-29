@@ -1,9 +1,9 @@
 // server/models/partner.js
 import { DataTypes, Model } from 'sequelize';
 
-export default function PartnerModel(sequelize) {
-  class Partner extends Model { }
-  Partner.init(
+export default function VolunteerModel(sequelize) {
+  class Volunteer extends Model { }
+  Volunteer.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -26,14 +26,6 @@ export default function PartnerModel(sequelize) {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      affiliation: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      position: {
-        type: DataTypes.STRING(100),
-        allowNull: true
-      },
       comment: {
         type: DataTypes.TEXT
       },
@@ -55,12 +47,12 @@ export default function PartnerModel(sequelize) {
     },
     {
       sequelize,
-      modelName: 'partner',
-      tableName: 'partners',
+      modelName: 'volunteer',
+      tableName: 'volunteers',
       underscored: false,
       timestamps: true, // createdAt
       updatedAt: true,
     }
   );
-  return Partner;
+  return Volunteer;
 }

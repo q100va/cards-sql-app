@@ -9,9 +9,10 @@
     <span>{{'OUTDATED_DATA_MENU.RESTORE_DATA' | translate}}</span>
   </button>
 }
-
+@if(params()?.isDeletable){
   <button mat-menu-item (click)="handleDelete()">
     <mat-icon>delete_outlined</mat-icon>
     <span>{{'OUTDATED_DATA_MENU.DELETE_DATA' | translate}}</span>
   </button>
+}
 </mat-menu>

@@ -41,7 +41,8 @@ export interface Control {
     | 'select'
     | 'checkbox'
     | 'radio'
-    | 'toggle';
+    | 'toggle'
+    | 'group';
   label: string;
   placeholder?: string;
   errorName?: string;

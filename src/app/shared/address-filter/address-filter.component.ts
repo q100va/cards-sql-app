@@ -160,7 +160,11 @@ export class AddressFilterComponent {
       this.params().class = 'none';
       this.params().readonly = false;
 
-      if (this.params().source != 'userCard' && this.params().source != 'partnerCard') {
+      if (
+        this.params().source != 'userCard' &&
+        this.params().source != 'partnerCard' &&
+        this.params().source != 'volunteerCard'
+      ) {
         // enable all controls if not userCard
         this.enableChain(['country', 'region', 'district', 'locality']);
         console.log('onChangeMode ', this.form.controls['country'].value);
@@ -466,7 +470,6 @@ export class AddressFilterComponent {
     addressFilter: AddressFilter,
     id: number = -1
   ) {
-
     const parentIdMap: Record<ToponymType, number[]> = {
       country: [],
       region: addressFilter.countries,

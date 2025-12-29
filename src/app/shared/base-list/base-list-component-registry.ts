@@ -30,5 +30,15 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry  = {
       mode: 'any',
     },
   },
+   volunteerList: {
+    create: {
+      codes: ['ADD_NEW_VOLUNTEER'],
+      mode: 'all',
+    },
+    downloadTable: {
+      codes: ['DOWNLOAD_VOLUNTEERS_TABLE'],
+      mode: 'any',
+    },
+  },
   // ...
 };

@@ -25,7 +25,7 @@ export class OutdatedItemMenuComponent {
 
   readonly restore = output<void>();
   readonly delete = output<void>();
-  readonly params = input<{ isRecoverable: boolean }>();
+  readonly params = input<{ isRecoverable: boolean, isDeletable: boolean }>();
   private readonly translateService = inject(TranslateService);
 
   handleRestore() {

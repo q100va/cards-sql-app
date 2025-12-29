@@ -1,17 +1,12 @@
 import { BaseModel } from './base-model';
+import { UserContacts, OutdatedUserName } from './user';
+import { OutdatedHome } from './partner';
 import {
-  // User,
-  UserContacts,
-  OutdatedUserName,
-  //UserChangingData,
-  // UserOutdatingData,
-} from './user';
-import {
-  OutdatedHome,
-  // Partner,
-  //PartnerChangingData,
-  // PartnerOutdatingData,
-} from './partner';
+  OutdatedInstitute,
+  Institute,
+  Subscription,
+  Cooperation,
+} from './volunteer';
 
 import type {
   Contact,
@@ -24,7 +19,6 @@ import type {
   DraftAddress,
   Duplicates,
 } from '@shared/schemas/common.schema';
-import { Client } from './client';
 import { Observable } from 'rxjs';
 
 export type {
@@ -42,16 +36,13 @@ export interface AdvancedModel extends BaseModel {
   address: Address;
   comment: string | null;
   orderedContacts: UserContacts | OptionalContacts;
-  outdatedData: UserOutdatedData | PartnerOutdatedData;
+  outdatedData: UserOutdatedData | PartnerOutdatedData | VolunteerOutdatedData;
 }
 
-export type Kind = 'user' | 'partner'; // | 'client'
-//export type Owner = User | Partner; // | Client
-export type OwnerDraft = UserDraft | PartnerDraft; // | ClientDraft
-export type OwnerContacts = UserContacts | OptionalContacts;
-//export type OwnerOutdatedData = UserOutdatedData | PartnerOutdatedData;
+export type Kind = 'user' | 'partner' | 'volunteer';
 
-type RestoreCommonKey = 'addresses' | 'names' | 'contacts';
+export type OwnerDraft = UserDraft | PartnerDraft | VolunteerDraft;
+export type OwnerContacts = UserContacts | OptionalContacts;
 
 export type BaseRestoringData = {
   addresses: number[] | null;
@@ -64,6 +55,9 @@ export type UserRestoringData = BaseRestoringData & {
 export type PartnerRestoringData = BaseRestoringData & {
   homes: number[] | null;
 };
+export type VolunteerRestoringData = BaseRestoringData & {
+  institutes: number[] | null;
+};
 
 export type BaseDeletingData = {
   addresses: number[] | null;
@@ -75,11 +69,19 @@ export type UserDeletingData = BaseDeletingData & {
 };
 export type PartnerDeletingData = BaseDeletingData & { homes: number[] | null };
 
+export type VolunteerDeletingData = BaseDeletingData & {
+  institutes: number[] | null;
+  subscriptions: number[] | null;
+};
+
 export type UserOutdatedData = BaseOutdatedData & {
   userNames: OutdatedUserName[];
 };
 export type PartnerOutdatedData = BaseOutdatedData & {
   homes: OutdatedHome[];
+};
+export type VolunteerOutdatedData = BaseOutdatedData & {
+  institutes: OutdatedInstitute[];
 };
 
 export type BaseChangingMain = {
@@ -87,7 +89,6 @@ export type BaseChangingMain = {
   patronymic?: string | null;
   lastName?: string | null;
   comment?: string | null;
-
   isRestricted?: boolean;
   causeOfRestriction?: string | null;
   dateOfRestriction?: Date | null;
@@ -110,6 +111,11 @@ export type PartnerChangingMain = BaseChangingMain & {
 export type PartnerChangingData = BaseChangingData<PartnerChangingMain> & {
   homes: number[] | null;
 };
+export type VolunteerChangingData = BaseChangingData<BaseChangingMain> & {
+  institutes: {instituteName: string, category: string}[] | null;
+  subscriptions: number[] | null;
+  cooperations: number[] | null;
+};
 
 export type BaseOutdatingNames = {
   firstName: string;
@@ -127,11 +133,26 @@ export type UserOutdatingData = BaseOutdatingData & {
 export type PartnerOutdatingData = BaseOutdatingData & {
   homes: number[] | null;
 };
+export type VolunteerOutdatingData = BaseOutdatingData & {
+  institutes: number[] | null;
+};
 
-export type OwnerChangingData = UserChangingData | PartnerChangingData;
-export type OwnerOutdatingData = UserOutdatingData | PartnerOutdatingData;
-export type OwnerDeletingData = UserDeletingData | PartnerDeletingData;
-export type OwnerRestoringData = UserRestoringData | PartnerRestoringData;
+export type OwnerChangingData =
+  | UserChangingData
+  | PartnerChangingData
+  | VolunteerChangingData;
+export type OwnerOutdatingData =
+  | UserOutdatingData
+  | PartnerOutdatingData
+  | VolunteerOutdatingData;
+export type OwnerDeletingData =
+  | UserDeletingData
+  | PartnerDeletingData
+  | VolunteerDeletingData;
+export type OwnerRestoringData =
+  | UserRestoringData
+  | PartnerRestoringData
+  | VolunteerRestoringData;
 
 type ItemOf<T> = T extends (infer U)[] ? U : never;
 
@@ -179,8 +200,10 @@ export type PartnerDraft = DraftCommon & {
   draftHomes: number[];
 };
 
-export type ClientDraft = DraftCommon & {
-  displayName: string | null;
+export type VolunteerDraft = DraftCommon & {
+  draftInstitutes: {instituteName: string, category: string}[];
+  draftSubscriptions: number[];
+  draftCooperations: number[];
 };
 
 export type Owner = {
@@ -211,54 +234,60 @@ export type Partner = Owner & {
   outdatedData: PartnerOutdatedData;
   homes: OutdatedHome[];
 };
+export type Volunteer = Owner & {
+  institutes: Institute[];
+  subscriptions: Subscription[];
+  cooperations: Cooperation[];
+  outdatedData: VolunteerOutdatedData;
+};
 
-export type OwnerByKind<K extends Kind> = K extends 'user'
-  ? User
-  : K extends 'partner'
-  ? Partner
-  : never;
+export type OwnerByKind<K extends Kind> =
+  K extends 'user' ? User :
+  K extends 'partner' ? Partner :
+  K extends 'volunteer' ? Volunteer :
+  never;
 
-export type OwnerDraftByKind<K extends Kind> = K extends 'user'
-  ? UserDraft
-  : K extends 'partner'
-  ? PartnerDraft
-  : never;
+export type OwnerDraftByKind<K extends Kind> =
+  K extends 'user' ? UserDraft :
+  K extends 'partner' ? PartnerDraft :
+  K extends 'volunteer' ? VolunteerDraft :
+  never;
 
-export type ChangingByKind<K extends Kind> = K extends 'user'
-  ? UserChangingData
-  : K extends 'partner'
-  ? PartnerChangingData
-  : never;
+export type ChangingByKind<K extends Kind> =
+  K extends 'user' ? UserChangingData :
+  K extends 'partner' ? PartnerChangingData :
+  K extends 'volunteer' ? VolunteerChangingData :
+  never;
 
-export type RestoringByKind<K extends Kind> = K extends 'user'
-  ? UserRestoringData
-  : K extends 'partner'
-  ? PartnerRestoringData
-  : never;
+export type RestoringByKind<K extends Kind> =
+  K extends 'user' ? UserRestoringData :
+  K extends 'partner' ? PartnerRestoringData :
+  K extends 'volunteer' ? VolunteerRestoringData :
+  never;
 
-export type OutdatingByKind<K extends Kind> = K extends 'user'
-  ? UserOutdatingData
-  : K extends 'partner'
-  ? PartnerOutdatingData
-  : never;
+export type OutdatingByKind<K extends Kind> =
+  K extends 'user' ? UserOutdatingData :
+  K extends 'partner' ? PartnerOutdatingData :
+  K extends 'volunteer' ? VolunteerOutdatingData :
+  never;
 
-export type DeletingByKind<K extends Kind> = K extends 'user'
-  ? UserDeletingData
-  : K extends 'partner'
-  ? PartnerDeletingData
-  : never;
+export type DeletingByKind<K extends Kind> =
+  K extends 'user' ? UserDeletingData :
+  K extends 'partner' ? PartnerDeletingData :
+  K extends 'volunteer' ? VolunteerDeletingData :
+  never;
 
-export type OutdatedByKind<K extends Kind> = K extends 'user'
-  ? UserOutdatedData
-  : K extends 'partner'
-  ? PartnerOutdatedData
-  : never;
+export type OutdatedByKind<K extends Kind> =
+  K extends 'user' ? UserOutdatedData :
+  K extends 'partner' ? PartnerOutdatedData :
+  K extends 'volunteer' ? VolunteerOutdatedData :
+  never;
 
-export type ListDto<K extends Kind> = K extends 'user'
-  ? { list: User[]; length: number }
-  : K extends 'partner'
-  ? { list: Partner[]; length: number }
-  : never;
+export type ListDto<K extends Kind> =
+  K extends 'user' ? { list: User[]; length: number } :
+  K extends 'partner' ? { list: Partner[]; length: number } :
+  K extends 'volunteer' ? { list: Volunteer[]; length: number } :
+  never;
 
 export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
   changingData: TChanging;
@@ -298,6 +327,5 @@ export interface OwnerMainService<
   unblockOwner(id: number): Observable<ApiResponse<null>>;
   checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>>;
   deleteOwner(id: number): Observable<ApiResponse<null>>;
-    getOwnerName(owner: TOwner): string;
-
+  getOwnerName(owner: TOwner): string;
 }

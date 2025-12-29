@@ -27,16 +27,6 @@
         <td mat-cell *matCellDef="let row"> {{row.roleName}} </td>
       </ng-container>
 
-      <!-- Affiliation/position Column -->
-      <ng-container matColumnDef="affiliation">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.AFFILIATION' | translate}}</th>
-        <td mat-cell *matCellDef="let row">
-          <div> <span>{{row.affiliation}}</span><br />
-            @if (row.position) {<span>{{row.position}}</span><br />}
-          </div>
-        </td>
-      </ng-container>
-
       <!-- Full Name Column -->
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.FULL_NAME' | translate}}</th>
@@ -61,36 +51,13 @@
         </td>
       </ng-container>
 
-      <!-- Homes Column -->
-      <ng-container matColumnDef="homes">
-        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.HOMES' | translate}}</th>
+      <!-- Affiliation/position Column -->
+      <ng-container matColumnDef="affiliation">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.AFFILIATION' | translate}}</th>
         <td mat-cell *matCellDef="let row">
-          @if (hasHomes(row)) {
-          @for (home of row.homes; track $index) {
-          <div>
-            {{home.name}} ({{home.region.shortName}})
-            @if (home.close) {
-            - {{'TABLE.NOTES.CLOSE' | translate}}
-            } @else if (home.isRestricted) {
-            - {{'TABLE.NOTES.DEACTIVATED' | translate}}
-            }<br />
+          <div> <span>{{row.affiliation}}</span><br />
+            @if (row.position) {<span>{{row.position}}</span><br />}
           </div>
-          }
-          }
-
-          @if(allFilterParameters().includeOutdated && hasOutdatedHomes(row)) {
-          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
-          @for (home of row.outdatedData.homes; track $index) {
-          <div class="outdated-data">
-            {{home.name}} ({{home.region.shortName}})
-            @if (home.close) {
-            - {{'TABLE.NOTES.CLOSE' | translate}}
-            } @else if (home.isRestricted) {
-            - {{'TABLE.NOTES.DEACTIVATED' | translate}}
-            }<br />
-          </div>
-          }
-          }
         </td>
       </ng-container>
 
@@ -177,6 +144,86 @@
         </td>
       </ng-container>
 
+      <!-- Homes Column -->
+      <ng-container matColumnDef="homes">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.HOMES' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+          @for (home of row.homes; track $index) {
+          <div>
+            {{home.name}} ({{home.region.shortName}})
+            @if (home.close) {
+            - {{'TABLE.NOTES.CLOSE' | translate}}
+            } @else if (home.isRestricted) {
+            - {{'TABLE.NOTES.DEACTIVATED' | translate}}
+            }<br />
+          </div>
+          }
+
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedHomes(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (home of row.outdatedData.homes; track $index) {
+          <div class="outdated-data">
+            {{home.name}} ({{home.region.shortName}})
+            @if (home.close) {
+            - {{'TABLE.NOTES.CLOSE' | translate}}
+            } @else if (home.isRestricted) {
+            - {{'TABLE.NOTES.DEACTIVATED' | translate}}
+            }<br />
+          </div>
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Institutes Column -->
+      <ng-container matColumnDef="institutes">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.INSTITUTES' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+          @for (institute of row.institutes; track $index) {
+          <div>
+            {{institute.instituteName}} ({{institute.category}})
+            <br />
+          </div>
+          }
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedInstitutes(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (institute of row.outdatedData.institutes; track $index) {
+          <div class="outdated-data">
+            {{institute.instituteName}} ({{institute.category}})
+            <br />
+          </div>
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Cooperations Column -->
+      <ng-container matColumnDef="cooperations">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.COOPERATIONS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+
+          @for (subscription of row.subscriptions; track $index) {
+          <div>
+            {{subscription.userName}} ({{'TABLE.NOTES.SUBSCRIPTION' | translate}})
+            <br />
+          </div>
+          }
+
+          @for (cooperation of row.cooperations; track $index) {
+          <div>
+            {{cooperation.userName}}
+            <br />
+          </div>
+          }
+
+        </td>
+      </ng-container>
+
       <!-- Date Of Start Column -->
       <ng-container matColumnDef="dateOfStart">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.START_DATE' | translate}}</th>
@@ -223,22 +270,38 @@
               </button>
               @if(kind() == 'user'){
               <button mat-menu-item (click)="onShowUsersOrdersClick(row.id)" *hasOp="permissions.viewOrders">
-                <mat-icon fontSet="material-icons-outlined" fontSet="material-icons-outlined">list_alt</mat-icon>
+                <mat-icon fontSet="material-icons-outlined"
+                  fontSet="material-icons-outlined">local_post_office</mat-icon>
                 <span>{{'TABLE.MENU.OPEN_ORDERS' | translate}}</span>
               </button>
               <button mat-menu-item (click)="onShowUsersSubscribersClick(row.id)" *hasOp="permissions.viewVolunteers">
-                <mat-icon>hub</mat-icon>
+                <mat-icon>subscriptions</mat-icon>
                 <span>{{'TABLE.MENU.OPEN_SUBSCRIBERS' | translate}}</span>
               </button>
               <button mat-menu-item (click)="onShowUsersVolunteersClick(row.id)" *hasOp="permissions.viewVolunteers">
-                <mat-icon>groups</mat-icon>
+                <mat-icon>hub</mat-icon>
                 <span>{{'TABLE.MENU.OPEN_VOLUNTEERS' | translate}}</span>
               </button>
               }
               @if(kind() == 'partner'){
-              <button mat-menu-item (click)="onShowPartnerHomesClick(row.id)" *hasOp="permissions.viewHomes">
+              <button mat-menu-item (click)="onShowPartnersHomesClick(row.id)" *hasOp="permissions.viewHomes">
                 <mat-icon>house</mat-icon>
                 <span>{{'TABLE.MENU.OPEN_HOMES' | translate}}</span>
+              </button>
+              }
+              @if(kind() == 'volunteer'){
+              <button mat-menu-item (click)="onShowVolunteersOrdersClick(row.id)" *hasOp="permissions.viewOrders">
+                <mat-icon fontSet="material-icons-outlined"
+                  fontSet="material-icons-outlined">local_post_office</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_ORDERS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowVolunteersCooperationsClick(row.id)" *hasOp="permissions.viewUsers">
+                <mat-icon>hub</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_COOPERATIONS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowVolunteersSeniorsClick(row.id)" *hasOp="permissions.viewSeniors">
+                <mat-icon>elderly_woman</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_SENIORS' | translate}}</span>
               </button>
               }
               <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockOwnerClick(row.id)"

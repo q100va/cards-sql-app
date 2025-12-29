@@ -1,5 +1,10 @@
 import { Op } from 'sequelize';
-import { PartnerAddress, PartnerContact, PartnerOutdatedName, UserAddress, UserContact, UserOutdatedName } from '../models/index.js';
+import {
+  Institute,
+  VolunteerAddress, VolunteerContact, VolunteerOutdatedName, VolunteerCooperation, VolunteerSubscription,
+  PartnerAddress, PartnerContact, PartnerOutdatedName,
+  UserAddress, UserContact, UserOutdatedName
+} from '../models/index.js';
 
 const CONFIG = {
   user: {
@@ -28,13 +33,26 @@ const CONFIG = {
       lastName: names.lastName ?? null,
     }),
   },
+  volunteer: {
+    idField: 'volunteerId',
+    AddressModel: VolunteerAddress,
+    ContactModel: VolunteerContact,
+    OutdatedNameModel: VolunteerOutdatedName,
+    supportsUserName: false,
+    mapOutdatedNames: (id, names) => ({
+      volunteerId: id,
+      firstName: names.firstName ?? null,
+      patronymic: names.patronymic ?? null,
+      lastName: names.lastName ?? null,
+    }),
+  },
   // client: { ... }
 };
 
 /**
- * ownerKind: 'user' | 'partner' | 'client'
+ * ownerKind: 'user' | 'partner' | 'volunteer'
  *
- * @param {'user'|'partner'} ownerKind
+ * @param {'user' | 'partner' | 'volunteer'} ownerKind
  * @param {number} id
  * @param {object} payload         // { changingData?, restoringData?, outdatingData?, deletingData? }
  * @param {object} models
@@ -63,10 +81,9 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
       );
     }
   }
-   console.log('changingData?.contacts', changingData?.contacts);
+  console.log('changingData?.contacts', changingData?.contacts);
   // contacts: bulkCreate {type: string[]}
   if (changingData?.contacts) {
-
     const contactRows = Object.entries(changingData.contacts)
       .flatMap(([type, list]) =>
         (list ?? [])
@@ -83,6 +100,48 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
         // ignoreDuplicates: true, // TODO: UNIQUE(ownerId,type,content)
       });
     }
+  }
+
+  if (changingData?.institutes?.length) {
+    await Institute.bulkCreate(
+      changingData.institutes.map((i) => ({
+        instituteName: i.instituteName,
+        category: i.category,
+        volunteerId: id,
+      })),
+      {
+        validate: true,
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+  if (changingData?.subscriptions?.length) {
+    await VolunteerSubscription.bulkCreate(
+      changingData.subscriptions.map((userId) => ({
+        volunteerId: id,
+        userId,
+      })),
+      {
+        validate: true,
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+
+  if (changingData?.cooperations?.length) {
+    await VolunteerCooperation.bulkCreate(
+      changingData.cooperations.map((userId) => ({
+        volunteerId: id,
+        userId,
+      })),
+      {
+        validate: true,
+        individualHooks: true,
+        transaction: t,
+      }
+    );
   }
 
   // ---------- RESTORING ----------
@@ -133,6 +192,19 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     }
   }
 
+  //institutes
+  if (restoringData?.institutes?.length) {
+    await Institute.update(
+      { isRestricted: false },
+      {
+        where: { id: { [Op.in]: restoringData.institutes } },
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+
+
   // ---------- OUTDATING ----------
   if (outdatingData?.names) {
     const row = C.mapOutdatedNames(id, outdatingData.names);
@@ -154,6 +226,18 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     await C.ContactModel.update(
       { isRestricted: true },
       { where: { id: { [Op.in]: outdatingData.contacts } }, individualHooks: true, transaction: t }
+    );
+  }
+
+  //institutes
+  if (outdatingData?.institutes?.length) {
+    await Institute.update(
+      { isRestricted: true },
+      {
+        where: { id: { [Op.in]: outdatingData.institutes } },
+        individualHooks: true,
+        transaction: t,
+      }
     );
   }
 
@@ -187,6 +271,24 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
       where: { id: { [Op.in]: deletingData.userNames } },
       transaction: t,
       individualHooks: true,
+    });
+  }
+
+  //institutes
+  if (deletingData?.institutes?.length) {
+    await Institute.destroy({
+      where: { id: { [Op.in]: deletingData.institutes } },
+      individualHooks: true,
+      transaction: t,
+    });
+  }
+
+  //subscriptions
+  if (deletingData?.subscriptions?.length) {
+    await VolunteerSubscription.destroy({
+      where: { id: { [Op.in]: deletingData.subscriptions } },
+      individualHooks: true,
+      transaction: t,
     });
   }
 }

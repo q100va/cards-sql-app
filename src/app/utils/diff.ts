@@ -2,6 +2,7 @@
 
 
 export const normalize = (v: string | null | undefined) => (v ?? '').trim();
+export const lightNormalize = (v: string | null | undefined) => (v ?? '').trim() !== '' ? (v ?? '').trim() : null;
 
 export const isFieldEqual = (
   newValue: number | null,
