@@ -18,6 +18,7 @@ export declare const telegramIdSchema: z.ZodPipe<z.ZodTransform<string, unknown>
 export declare const vKontakteSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const instagramSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const facebookSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
+export declare const websiteSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const otherContactSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const draftAddressSchema: z.ZodObject<{
     countryId: z.ZodNullable<z.ZodNumber>;

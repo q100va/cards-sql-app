@@ -1,9 +1,9 @@
-// server/models/volunteer.js
+// server/models/home.js
 import { DataTypes, Model } from 'sequelize';
 
-export default function VolunteerModel(sequelize) {
-  class Volunteer extends Model { }
-  Volunteer.init(
+export default function HomeModel(sequelize) {
+  class Home extends Model { }
+  Home.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -11,22 +11,43 @@ export default function VolunteerModel(sequelize) {
         allowNull: false,
         primaryKey: true,
       },
-      firstName: {
+      homeName: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: true,
         }
       },
-      patronymic: {
+      officialName: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        }
       },
-      lastName: {
+      postalName: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        }
+      },
+      noAddress: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+      },
+      specialHome: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      acceptableForSchool: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
       },
       comment: {
+        type: DataTypes.TEXT
+      },
+      infoNote: {
         type: DataTypes.TEXT
       },
       dateOfStart: {
@@ -47,12 +68,12 @@ export default function VolunteerModel(sequelize) {
     },
     {
       sequelize,
-      modelName: 'volunteer',
-      tableName: 'volunteers',
+      modelName: 'home',
+      tableName: 'homes',
       underscored: false,
       timestamps: true, // createdAt
       updatedAt: true,
     }
   );
-  return Volunteer;
+  return Home;
 }

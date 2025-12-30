@@ -32,10 +32,10 @@ import {
   Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute
+  VolunteerSubscription, VolunteerCooperation, Institute,
+  Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination
 } from './models/index.js';
 import { corsMiddleware } from './cors.js';
-import { Subscription } from 'rxjs';
 
 const app = express();
 
@@ -140,6 +140,12 @@ export async function initInfrastructure() {
   await VolunteerSubscription.sync(syncOpts);
   await VolunteerCooperation.sync(syncOpts);
   await Institute.sync(syncOpts);
+  await Home.sync(syncOpts);
+  await HomeContact.sync(syncOpts);
+  await HomeAddress.sync(syncOpts);
+  await HomeSearch.sync(syncOpts);
+  await HomeOutdatedName.sync(syncOpts);
+  await HomeCoordination.sync(syncOpts);
   await AuditLog.sync(syncOpts);
   await RefreshToken.sync(syncOpts);
 

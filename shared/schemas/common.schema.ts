@@ -125,6 +125,16 @@ export const facebookSchema = z.preprocess(
   z.string().regex(/^[A-Za-z0-9_.]{5,}$/)
 );
 
+export const websiteSchema = z.preprocess(
+  toTrim,
+  z
+    .string()
+    .regex(
+      /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
+      "Invalid website URL"
+    )
+);
+
 export const otherContactSchema = z.preprocess(
   toTrim,
   z.string().min(1).max(256)

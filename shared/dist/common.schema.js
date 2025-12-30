@@ -81,6 +81,9 @@ export const instagramSchema = z.preprocess(toTrim, z
     .string()
     .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/));
 export const facebookSchema = z.preprocess(toTrim, z.string().regex(/^[A-Za-z0-9_.]{5,}$/));
+export const websiteSchema = z.preprocess(toTrim, z
+    .string()
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, "Invalid website URL"));
 export const otherContactSchema = z.preprocess(toTrim, z.string().min(1).max(256));
 /* ===================== Address (draft + view) ===================== */
 export const draftAddressSchema = z

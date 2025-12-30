@@ -1,9 +1,9 @@
-// server/models/volunteer.js
+// server/models/senior.js
 import { DataTypes, Model } from 'sequelize';
 
-export default function VolunteerModel(sequelize) {
-  class Volunteer extends Model { }
-  Volunteer.init(
+export default function SeniorModel(sequelize) {
+  class Senior extends Model { }
+  Senior.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -43,16 +43,19 @@ export default function VolunteerModel(sequelize) {
       dateOfRestriction: {
         type: DataTypes.DATE
       },
+      dateOfExit: {
+        type: DataTypes.DATE
+      },
 
     },
     {
       sequelize,
-      modelName: 'volunteer',
-      tableName: 'volunteers',
+      modelName: 'senior',
+      tableName: 'seniors',
       underscored: false,
       timestamps: true, // createdAt
       updatedAt: true,
     }
   );
-  return Volunteer;
+  return Senior;
 }

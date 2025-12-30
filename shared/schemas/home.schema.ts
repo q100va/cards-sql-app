@@ -11,6 +11,9 @@ import {
   nullableInt,
   nullableIsoDate,
   intOptArray,
+  nonEmptyContacts,
+  addressRefFullSchema,
+  addressRefShortSchema,
 } from './common.schema.js';
 import {
   emailSchema,
@@ -21,70 +24,39 @@ import {
   telegramIdSchema,
   telegramNicknameSchema,
   vKontakteSchema,
+  websiteSchema,
 } from './common.schema.js';
-import {
-  draftAddressSchema,
-  addressSchema,
-} from './common.schema.js';
-import {
-  contactType,
-  optionalContactsSchema,
-} from './common.schema.js';
-import {
-  changingContactsSchema,
-} from './common.schema.js';
-import {
-  outdatedNameItemSchema,
-  outdatedAddressItemSchema,
-} from './common.schema.js';
+import { contactType } from './common.schema.js';
 
-const instituteItemSchema = z
+//TODO:
+const partnerItemSchema = z
   .object({
-    category: nonEmpty,
-    instituteName: nonEmpty,
-    isDeletable: z.boolean(),
+    partnerContacts: nonEmpty,
+    partnerName: nonEmpty,
+    partnerId: positiveInt,
+    isRecoverable: z.boolean(),
     id: positiveInt,
   })
   .strict();
 
-  const draftInstituteItemSchema = z
+export const optionalContactsSchema = z
   .object({
-    category: nonEmpty,
-    instituteName: nonEmpty,
+    email: nonEmptyContacts.optional(),
+    phoneNumber: nonEmptyContacts.optional(),
+    whatsApp: nonEmptyContacts.optional(),
+    telegram: nonEmptyContacts.optional(),
+    telegramNickname: nonEmptyContacts.optional(),
+    telegramId: nonEmptyContacts.optional(),
+    telegramPhoneNumber: nonEmptyContacts.optional(),
+    vKontakte: nonEmptyContacts.optional(),
+    instagram: nonEmptyContacts.optional(),
+    facebook: nonEmptyContacts.optional(),
+    website: nonEmptyContacts.optional(),
+    otherContact: nonEmptyContacts.optional(),
   })
   .strict();
-
-
-const subsItemSchema = z
-  .object({
-    userName: nonEmpty,
-    userId: positiveInt,
-    id: positiveInt,
-  })
-  .strict();
-const coopItemSchema = z
-  .object({
-    userName: nonEmpty,
-    userId: positiveInt,
-    id: positiveInt,
-  })
-  .strict();
-
 /* ===================== Some Schemas for form validation ===================== */
-export const instituteNameControlSchema = z.preprocess(
-  toTrim,
-  z
-    .string()
-    .min(1, 'FORM_VALIDATION.REQUIRED')
-    .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
-    .max(150, 'FORM_VALIDATION.TOO_LONG_150')
-);
 
-export const instituteCategoryControlSchema = z.preprocess(
-  emptyToNull,
-  z
-    .string({ message: 'FORM_VALIDATION.REQUIRED' })
-);
 export const emailControlSchema = z
   .preprocess(
     emptyToNull,
@@ -206,6 +178,17 @@ export const facebookControlSchema = z.preprocess(
     .nullable()
 );
 
+export const websiteControlSchema = z.preprocess(
+  emptyToNull,
+  z
+    .string()
+    .regex(
+      /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
+      'FORM_VALIDATION.CONTACT.INVALID_URL' //"Invalid website URL"
+    )
+    .nullable()
+);
+
 export const otherContactControlSchema = z.preprocess(
   emptyToNull,
   z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
@@ -225,63 +208,67 @@ export const draftContactsSchema = z
     vKontakte: z.array(vKontakteSchema),
     instagram: z.array(instagramSchema),
     facebook: z.array(facebookSchema),
+    website: z.array(websiteSchema),
     otherContact: z.array(otherContactSchema),
-  })
-  .strict()
-  .superRefine((o, ctx) => {
-    const hasAny = Object.values(o).some(
-      (arr) => Array.isArray(arr) && arr.length > 0
-    );
-    if (!hasAny) {
-      ctx.addIssue({
-        code: 'custom',
-        path: [],
-        message: 'FORM_VALIDATION.MIN_ONE_CONTACT',
-      });
-    }
-  });
-
-/* ===================== DTOs ===================== */
-export const checkVolunteerDataSchema = z
-  .object({
-    id: z.coerce.number().int().optional(),
-    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    lastName: z
-      .preprocess(
-        toTrim,
-        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-      )
-      .nullable(),
-    contacts: draftContactsSchema,
   })
   .strict();
 
-export const volunteerIdSchema = z
+/* ===================== DTOs ===================== */
+export const checkHomeNameSchema = z
+  .object({
+    id: z.coerce.number().int().optional(),
+    homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+  })
+  .strict();
+
+export const homeIdSchema = z
   .object({ id: z.coerce.number().int().positive() })
   .strict();
 
-export const volunteerBlockingSchema = z
+/* export const homeBlockingSchema = z
   .object({
     id: z.coerce.number().int().positive(),
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
   })
+  .strict(); */
+
+/* ===================== Home Draft ===================== */
+
+export const draftAddressSchema = z
+  .object({
+    countryId: positiveInt,
+    regionId: positiveInt,
+    districtId: positiveInt,
+    localityId: positiveInt,
+  })
   .strict();
 
-/* ===================== Volunteer Draft ===================== */
-
-export const volunteerDraftSchema = z
+export const homeDraftSchema = z
   .object({
     id: nullableInt,
-    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    patronymic: z.preprocess(
-      emptyToNull,
-      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()
-    ),
-    lastName: z.preprocess(
-      emptyToNull,
-      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()
+    homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    officialName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
+    postalName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
+    // type: z.enum(['NURSING_HOME', 'SPECIAL_HOME', 'PSYCH_NEURO_HOME', 'HOSPICE', 'OTHER']),
+    noAddress: z.boolean(),
+    specialHome: z.boolean(),
+    acceptableForSchool: z.boolean(),
+    postalCode: z.preprocess(
+      toTrim,
+      z
+        .string()
+        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+        .min(6, { message: 'FORM_VALIDATION.TOO_SHORT_6' })
+        .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' })
     ),
     draftAddress: draftAddressSchema,
+    postalAddressPart: z.preprocess(
+      emptyToNull,
+      z
+        .string()
+        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
+        .nullable()
+    ),
     comment: z.preprocess(
       emptyToNull,
       z
@@ -289,7 +276,12 @@ export const volunteerDraftSchema = z
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
         .nullable()
     ),
-
+    infoNote: z
+      .preprocess(
+        toTrim,
+        z.string().max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
+      )
+      .nullable(),
     isRestricted: z.boolean(),
     causeOfRestriction: z.preprocess(
       emptyToNull,
@@ -300,9 +292,7 @@ export const volunteerDraftSchema = z
     ),
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
-    draftInstitutes: z.array(draftInstituteItemSchema),
-    draftSubscriptions: z.array(positiveInt),
-    draftCooperations: z.array(positiveInt),
+    draftPartners: z.array(positiveInt),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -339,30 +329,44 @@ export const volunteerDraftSchema = z
     }
   });
 
-/* ===================== UpdateVolunteerData ===================== */
+/* ===================== UpdateHomeData ===================== */
+
+export const changingAddressSchema = z
+  .object({
+    postalCode: z.preprocess(
+      toTrim,
+      z
+        .string()
+        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+        .min(6, { message: 'FORM_VALIDATION.TOO_SHORT_6' })
+        .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' })
+    ),
+    countryId: positiveInt,
+    regionId: positiveInt,
+    districtId: positiveInt,
+    localityId: positiveInt,
+    postalAddressPart: z.preprocess(
+      emptyToNull,
+      z
+        .string()
+        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
+        .nullable()
+    ),
+  })
+  .strict();
 
 // ChangingData.main — PATCH-like
 export const changingMainSchema = z
   .object({
-    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
-    patronymic: z
-      .preprocess(
-        emptyToNull,
-        z
-          .string()
-          .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-          .nullable()
-      )
-      .optional(),
-    lastName: z
-      .preprocess(
-        emptyToNull,
-        z
-          .string()
-          .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-          .nullable()
-      )
-      .optional(),
+    homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
+    officialName: nonEmptyTrimMax(
+      500,
+      'FORM_VALIDATION.TOO_LONG_500'
+    ).optional(),
+    postalName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500').optional(),
+    noAddress: z.boolean().optional(),
+    specialHome: z.boolean().optional(),
+    acceptableForSchool: z.boolean().optional(),
     comment: z
       .preprocess(
         emptyToNull,
@@ -371,6 +375,13 @@ export const changingMainSchema = z
           .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
           .nullable()
       )
+      .optional(),
+    infoNote: z
+      .preprocess(
+        toTrim,
+        z.string().max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
+      )
+      .nullable()
       .optional(),
 
     isRestricted: z.boolean().optional(),
@@ -387,14 +398,28 @@ export const changingMainSchema = z
   })
   .strict();
 
+export const changingContactsSchema = z
+  .object({
+    email: z.array(emailSchema).optional(),
+    phoneNumber: z.array(phoneNumberSchema).optional(),
+    whatsApp: z.array(phoneNumberSchema).optional(),
+    telegramNickname: z.array(telegramNicknameSchema).optional(),
+    telegramId: z.array(telegramIdSchema).optional(),
+    telegramPhoneNumber: z.array(phoneNumberSchema).optional(),
+    vKontakte: z.array(vKontakteSchema).optional(),
+    instagram: z.array(instagramSchema).optional(),
+    facebook: z.array(facebookSchema).optional(),
+    website: z.array(websiteSchema).optional(),
+    otherContact: z.array(otherContactSchema).optional(),
+  })
+  .strict();
+
 export const changingDataSchema = z
   .object({
     main: changingMainSchema.nullable(),
-    address: draftAddressSchema.nullable(),
+    address: changingAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
-    institutes: z.array(draftInstituteItemSchema).nullable(),
-    subscriptions: z.array(positiveInt).nullable(),
-    cooperations: z.array(positiveInt).nullable(),
+    partners: z.array(positiveInt).nullable(),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -442,14 +467,12 @@ export const outdatingDataSchema = z
     address: positiveInt.nullable(),
     names: z
       .object({
-        firstName: nonEmptyTrim,
-        patronymic: z.preprocess(toTrim, z.string().min(1)).nullable(),
-        lastName: z.preprocess(toTrim, z.string().min(1)).nullable(),
+        officialName: nonEmptyTrim,
       })
       .strict()
       .nullable(),
     contacts: z.array(positiveInt).nullable(),
-    institutes: z.array(positiveInt).nullable(),
+    partners: z.array(positiveInt).nullable(),
   })
   .strict();
 
@@ -459,8 +482,7 @@ export const deletingDataSchema = z
     names: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
-    institutes: z.array(positiveInt).nullable(),
-    subscriptions: z.array(positiveInt).nullable(),
+    partners: z.array(positiveInt).nullable(),
   })
   .strict();
 
@@ -470,12 +492,12 @@ export const restoringDataSchema = z
     addresses: z.array(positiveInt).nullable(),
     names: z.array(positiveInt).nullable(),
     contacts: optionalContactsSchema.nullable(),
-    institutes: z.array(positiveInt).nullable(),
+    partners: z.array(positiveInt).nullable(),
   })
   .strict();
 
-/* ========= UpdateVolunteerData wrapper ========= */
-export const updateVolunteerDataSchema = z
+/* ========= UpdateHomeData wrapper ========= */
+export const updateHomeDataSchema = z
   .object({
     id: positiveInt,
     changingData: changingDataSchema,
@@ -485,11 +507,11 @@ export const updateVolunteerDataSchema = z
   })
   .strict();
 
-/* ========= Volunteer query DTO ========= */
+/* ========= Home query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
 
-export const volunteersQueryDTOSchema = z
+export const homesQueryDTOSchema = z
   .object({
     page: z.object({
       size: z.number().int().min(1),
@@ -511,11 +533,12 @@ export const volunteersQueryDTOSchema = z
       .object({
         general: z
           .object({
-            subscriptions: z.array(positiveInt).min(1).optional(),
-            cooperations: z.array(positiveInt).min(1).optional(),
-            instituteCategories: z.array(nonEmpty).min(1).optional(),
-
+            partners: z.array(positiveInt).min(1).optional(),
+            noAddress: z.boolean().optional(),
+            specialHome: z.boolean().optional(),
+            acceptableForSchool: z.boolean().optional(),
             comment: z.boolean().optional(),
+            infoNote: z.boolean().optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -542,7 +565,6 @@ export const volunteersQueryDTOSchema = z
           })
           .partial()
           .optional(),
-        //houses
       })
       .partial()
       .optional(),
@@ -551,53 +573,81 @@ export const volunteersQueryDTOSchema = z
 
 /* ===================== OutdatedData (view) ===================== */
 
+export const outdatedNameItemSchema = z
+  .object({
+    officialName: nonEmpty,
+    id: positiveInt,
+  })
+  .strict();
+
+export const outdatedAddressItemSchema = z
+  .object({
+    postalCode: nonEmpty,
+    country: addressRefFullSchema,
+    region: addressRefShortSchema,
+    district: addressRefShortSchema,
+    locality: addressRefShortSchema,
+    postalAddressPart: nonEmpty.nullable(),
+    id: positiveInt,
+    isRecoverable: z.boolean(),
+  })
+  .strict();
+
 export const outdatedDataSchema = z
   .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    institutes: z.array(instituteItemSchema), //TODO:
+    partners: z.array(partnerItemSchema),
   })
   .strict();
 
-/* ===================== Volunteer (view) & volunteers list ===================== */
+/* ===================== Home (view) & homes list ===================== */
+export const addressSchema = z
+  .object({
+    postalCode: nonEmpty,
+    postalAddressPart: nonEmpty.nullable(),
+    country: addressRefFullSchema.nullable(),
+    region: addressRefShortSchema.nullable(),
+    district: addressRefShortSchema.nullable(),
+    locality: addressRefShortSchema.nullable(),
+    id: positiveInt.optional(),
+  })
+  .strict();
 
-export const volunteerSchema = z
+export const homeSchema = z
   .object({
     id: positiveInt,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty.nullable(),
+    homeName: nonEmpty,
+    officialName: nonEmpty,
+    postalName: nonEmpty,
+    noAddress: z.boolean(),
+    specialHome: z.boolean(),
+    acceptableForSchool: z.boolean(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
     causeOfRestriction: nonEmpty.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: addressSchema,
     comment: nonEmpty.nullable(),
+    infoNote: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
-    institutes: z.array(instituteItemSchema),
-    subscriptions: z.array(subsItemSchema),
-    cooperations: z.array(coopItemSchema),
+    partners: z.array(partnerItemSchema),
+    dateOfLastUpdate: z.coerce.date(),
   })
   .strict();
 
-export const volunteersSchema = z
+export const homesSchema = z
   .object({
-    list: z.array(volunteerSchema),
+    list: z.array(homeSchema),
     length: z.coerce.number().int().min(0),
   })
   .strict();
 
 /* ===================== Types ===================== */
-export type VolunteerDraft = z.infer<typeof volunteerDraftSchema>;
-export type VolunteerDraftContacts = z.infer<typeof draftContactsSchema>;
-
-export type VolunteerOutdatedData = z.infer<typeof outdatedDataSchema>;
-
-export type VolunteerChangingData = z.infer<typeof changingDataSchema>;
-export type VolunteerOutdatingData = z.infer<typeof outdatingDataSchema>;
-export type Institute = z.infer<typeof instituteItemSchema>;
-export type OutdatedInstitute = z.infer<typeof instituteItemSchema>;
-export type Cooperation = z.infer<typeof coopItemSchema>;
-export type Subscription = z.infer<typeof subsItemSchema>;
+export type HomeDraft = z.infer<typeof homeDraftSchema>;
+export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
+export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
+export type HomerChangingData = z.infer<typeof changingDataSchema>;
+export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;

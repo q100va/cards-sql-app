@@ -25,6 +25,13 @@ import VolunteerOutdatedNameModel from './volunteer-outdated-name.js';
 import VolunteerSubscriptionModel from './volunteer-subscription.js';
 import VolunteerCooperationModel from './volunteer-cooperation.js';
 import InstituteModel from './institute.js';
+import HomeModel from './home.js';
+import HomeAddressModel from './home-address.js';
+import HomeContactModel from './home-contact.js';
+import HomeOutdatedNameModel from './home-outdated-name.js';
+import HomeSearchModel from './home-search.js';
+import HomeCoordinationModel from './home-coordination.js';
+import SeniorModel from './senior.js';
 
 const AuditLog = AuditLogModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
@@ -49,6 +56,13 @@ const VolunteerOutdatedName = VolunteerOutdatedNameModel(sequelize);
 const VolunteerSubscription = VolunteerSubscriptionModel(sequelize);
 const VolunteerCooperation = VolunteerCooperationModel(sequelize);
 const Institute = InstituteModel(sequelize);
+const Home = HomeModel(sequelize);
+const HomeAddress = HomeAddressModel(sequelize);
+const HomeContact = HomeContactModel(sequelize);
+const HomeOutdatedName = HomeOutdatedNameModel(sequelize);
+const HomeSearch = HomeSearchModel(sequelize);
+const HomeCoordination = HomeCoordinationModel(sequelize);
+const Senior = SeniorModel(sequelize);
 
 User.hasMany(UserContact, {
   as: 'contacts',
@@ -75,6 +89,16 @@ Volunteer.hasMany(VolunteerContact, {
 });
 VolunteerContact.belongsTo(Volunteer, {
   foreignKey: 'volunteerId',
+});
+
+Home.hasMany(HomeContact, {
+  as: 'contacts',
+  foreignKey: 'homeId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+HomeContact.belongsTo(Home, {
+  foreignKey: 'homeId',
 });
 
 Country.hasMany(Region, {
@@ -113,6 +137,13 @@ Volunteer.hasMany(VolunteerAddress, {
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE'
 });
+Home.hasMany(HomeAddress, {
+  as: 'addresses',
+  foreignKey: 'homeId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
 UserAddress.belongsTo(User);
 UserAddress.belongsTo(Country);
 UserAddress.belongsTo(Region);
@@ -134,6 +165,14 @@ VolunteerAddress.belongsTo(Country);
 VolunteerAddress.belongsTo(Region);
 VolunteerAddress.belongsTo(District);
 VolunteerAddress.belongsTo(Locality);
+
+HomeAddress.belongsTo(Home, {
+  foreignKey: 'homeId',
+});
+HomeAddress.belongsTo(Country);
+HomeAddress.belongsTo(Region);
+HomeAddress.belongsTo(District);
+HomeAddress.belongsTo(Locality);
 
 Country.hasMany(UserAddress, {
   onDelete: 'RESTRICT',
@@ -182,6 +221,23 @@ District.hasMany(VolunteerAddress, {
   onUpdate: 'CASCADE',
 });
 Locality.hasMany(VolunteerAddress, {
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE',
+});
+
+Country.hasMany(HomeAddress, {
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE',
+});
+Region.hasMany(HomeAddress, {
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE',
+});
+District.hasMany(HomeAddress, {
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE',
+});
+Locality.hasMany(HomeAddress, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
 });
@@ -238,6 +294,26 @@ Volunteer.hasMany(VolunteerOutdatedName, {
 
 VolunteerOutdatedName.belongsTo(Volunteer, {
   foreignKey: 'volunteerId',
+});
+
+Home.hasMany(HomeOutdatedName, {
+  as: 'outdatedNames',
+  foreignKey: 'homeId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+HomeOutdatedName.belongsTo(Home, {
+  foreignKey: 'homeId',
+});
+
+Home.hasMany(HomeSearch, {
+  foreignKey: 'homeId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+HomeSearch.belongsTo(Home, {
+  foreignKey: 'homeId',
 });
 
 User.belongsTo(Role);
@@ -299,6 +375,7 @@ VolunteerCooperation.belongsTo(User, {
   foreignKey: 'userId',
 });
 
+//institutes
 Institute.belongsTo(Volunteer, {
   foreignKey: 'volunteerId',
 });
@@ -309,6 +386,41 @@ Volunteer.hasMany(Institute, {
   onUpdate: 'CASCADE'
 });
 
+// coordinations
+Home.hasMany(HomeCoordination, {
+  as: 'coordinations',
+  foreignKey: 'homeId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+Partner.hasMany(HomeCoordination, {
+  as: 'homeCoordinations',
+  foreignKey: 'homeId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+HomeCoordination.belongsTo(Partner, {
+  as: 'partners',
+  foreignKey: 'partnerId',
+});
+HomeCoordination.belongsTo(Home, {
+  as: 'homes',
+  foreignKey: 'homeId',
+});
+
+//seniors
+Home.hasMany(Senior, {
+  as: 'seniors',
+  foreignKey: 'homeId',
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE',
+});
+Senior.belongsTo(Home, {
+  as: 'homes',
+  foreignKey: 'homeId',
+});
+
 
 export {
   AuditLog, RefreshToken,
@@ -316,6 +428,7 @@ export {
   Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute
+  VolunteerSubscription, VolunteerCooperation, Institute,
+  Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination
 };
 
