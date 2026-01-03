@@ -120,7 +120,12 @@ export function collectDraftContacts(draftContacts = {}) {
  * @param {object} models — { UserContact, PartnerContact, UserAddress, PartnerAddress }
  * @param {object} t — transaction
  */
-export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draft, models, t) {
+export async function saveOwnerContactsAndAddress(
+  ownerKind,
+  ownerInstance,
+  draft,
+  models,
+  t) {
   const CONFIG = {
     user: {
       idField: 'userId',
@@ -153,6 +158,19 @@ export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draf
         regionId: a.regionId ?? null,
         districtId: a.districtId ?? null,
         localityId: a.localityId ?? null,
+      }),
+    },
+    home: {
+      idField: 'homeId',
+      ContactModel: models.HomeContact,
+      AddressModel: models.HomeAddress,
+      addressShape: a => ({
+        countryId: a.countryId,
+        regionId: a.regionId,
+        districtId: a.districtId,
+        localityId: a.localityId,
+        postalCode: a.postalCode,
+        postalAddressPart: a.postalAddressPart
       }),
     },
   };

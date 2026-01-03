@@ -200,7 +200,7 @@ export const homeDraftSchema = z
         .nullable()),
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
-    draftPartners: z.array(positiveInt),
+    draftCoordinations: z.array(positiveInt),
 })
     .strict()
     .superRefine((data, ctx) => {
@@ -410,7 +410,7 @@ export const homesQueryDTOSchema = z
         .object({
         general: z
             .object({
-            partners: z.array(positiveInt).min(1).optional(),
+            //  partners: z.array(positiveInt).min(1).optional(),
             noAddress: z.boolean().optional(),
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
@@ -420,6 +420,9 @@ export const homesQueryDTOSchema = z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             dateRestrictionRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            dateUpdateRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             contactTypes: z.array(contactType).min(1).optional(),

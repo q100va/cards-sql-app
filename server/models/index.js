@@ -31,6 +31,7 @@ import HomeContactModel from './home-contact.js';
 import HomeOutdatedNameModel from './home-outdated-name.js';
 import HomeSearchModel from './home-search.js';
 import HomeCoordinationModel from './home-coordination.js';
+import HomeUpdateDateModel from './home-update-date.js';
 import SeniorModel from './senior.js';
 
 const AuditLog = AuditLogModel(sequelize);
@@ -62,6 +63,7 @@ const HomeContact = HomeContactModel(sequelize);
 const HomeOutdatedName = HomeOutdatedNameModel(sequelize);
 const HomeSearch = HomeSearchModel(sequelize);
 const HomeCoordination = HomeCoordinationModel(sequelize);
+const HomeUpdateDate = HomeUpdateDateModel(sequelize);
 const Senior = SeniorModel(sequelize);
 
 User.hasMany(UserContact, {
@@ -367,11 +369,11 @@ User.hasMany(VolunteerCooperation, {
 });
 
 VolunteerCooperation.belongsTo(Volunteer, {
-  as: 'volunteer',
+  as: 'volunteers',
   foreignKey: 'volunteerId',
 });
 VolunteerCooperation.belongsTo(User, {
-  as: 'user',
+  as: 'users',
   foreignKey: 'userId',
 });
 
@@ -417,6 +419,18 @@ Home.hasMany(Senior, {
   onUpdate: 'CASCADE',
 });
 Senior.belongsTo(Home, {
+  as: 'homes',
+  foreignKey: 'homeId',
+});
+
+//update dates
+Home.hasMany(HomeUpdateDate, {
+  as: 'updateDates',
+  foreignKey: 'homeId',
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE',
+});
+HomeUpdateDate.belongsTo(Home, {
   as: 'homes',
   foreignKey: 'homeId',
 });

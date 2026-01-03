@@ -49,7 +49,7 @@ const OWNER_CONFIG = {
       t(u?.role?.name),
       t(u?.firstName), t(u?.patronymic), t(u?.lastName),
       t(u?.comment),
-      u?.isRestricted ? 'заблокирован blocked from' : 'активен active',
+      u?.isRestricted ? 'заблокирован с blocked from' : 'активен active',
       ...dateVariants(u?.dateOfRestriction),
       t(u?.causeOfRestriction),
       ...dateVariants(u?.dateOfStart),
@@ -90,7 +90,7 @@ const OWNER_CONFIG = {
     basicTokens: (v) => [
       t(v?.firstName), t(v?.patronymic), t(v?.lastName),
       t(v?.comment),
-      v?.isRestricted ? 'заблокирован blocked from' : '',
+      v?.isRestricted ? 'заблокирован с blocked from' : '',
       ...dateVariants(v?.dateOfRestriction),
       t(v?.causeOfRestriction),
       ...dateVariants(v?.dateOfStart),
@@ -105,6 +105,27 @@ const OWNER_CONFIG = {
     outdatedNames: (v) =>
       (v?.outdatedNames ?? [])
         .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+        .filter(Boolean)
+        .join(' '),
+  },
+
+  home: {
+    basicTokens: (v) => [
+      t(v?.homeName), t(v?.officialName), t(v?.postalName),
+      t(v?.comment), t(v?.infoNote),
+      ...dateVariants(v?.updateDates ? v?.updateDates[0] : null),
+      v?.isRestricted ? 'не участвует с inactive from' : '',
+      ...dateVariants(v?.dateOfRestriction),
+      t(v?.causeOfRestriction),
+      ...dateVariants(v?.dateOfStart),
+    ],
+    contacts: (v) => v?.contacts ?? [],
+    addresses: (v) => v?.addresses ?? [],
+    coordinations: (v) => v?.coordinations ?? [],
+    firstNonRestrictedAddress: (v) => (v?.addresses ?? []).find(a => !a?.isRestricted),
+    outdatedNames: (v) =>
+      (v?.outdatedNames ?? [])
+        .flatMap(i => [i.officialName])
         .filter(Boolean)
         .join(' '),
   }
@@ -135,12 +156,25 @@ export function createSearchStringFor(kind, record) {
         tokens.push(t(i.category));
       }
     }
-    if(C.subscriptions(record).length) tokens.push('subscription подписка');
+    if (C.subscriptions(record).length) tokens.push('subscription подписка');
     for (const s of C.subscriptions(record)) {
       tokens.push(t(s.userName));
     }
     for (const c of C.cooperations(record)) {
       tokens.push(t(c.userName));
+    }
+  }
+
+  if (kind == 'home') {
+    for (const c of C.coordinations(record)) {
+      if (!c?.isRestricted) {
+        tokens.push(t(c.firstName));
+        tokens.push(t(c.patronymic));
+        tokens.push(t(c.lastName));
+        for (const contact of c.contacts) {
+          if (!contact?.isRestricted && contact?.content) tokens.push(t(contact.content));
+        }
+      }
     }
   }
 
@@ -175,5 +209,19 @@ export function createOutdatedSearchStringFor(kind, record) {
       }
     }
   }
+
+    if (kind == 'home') {
+    for (const c of C.coordinations(record)) {
+      if (c?.isRestricted) {
+        tokens.push(t(c.firstName));
+        tokens.push(t(c.patronymic));
+        tokens.push(t(c.lastName));
+        for (const contact of c.contacts) {
+          if (!contact?.isRestricted && contact?.content) tokens.push(t(contact.content));
+        }
+      }
+    }
+  }
+
   return normalizeSpace(parts.join(' '));
 }

@@ -119,7 +119,7 @@ export declare const homeDraftSchema: z.ZodObject<{
         website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
-    draftPartners: z.ZodArray<z.ZodNumber>;
+    draftCoordinations: z.ZodArray<z.ZodNumber>;
 }, z.core.$strict>;
 export declare const changingAddressSchema: z.ZodObject<{
     postalCode: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
@@ -392,7 +392,6 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
     }, z.core.$strip>>;
     filters: z.ZodOptional<z.ZodObject<{
         general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
-            partners: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             noAddress: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             specialHome: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             acceptableForSchool: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
@@ -400,6 +399,7 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
             infoNote: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
+            dateUpdateRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             contactTypes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
                 email: "email";
                 phoneNumber: "phoneNumber";

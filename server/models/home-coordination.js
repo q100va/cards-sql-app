@@ -23,10 +23,10 @@ export default function HomeCoordinationModel(sequelize) {
     {
       sequelize,
       modelName: 'home-coordination',
-      tableName: 'home-coordination',
+      tableName: 'home-coordinations',
       timestamps: true, // createdAt
       updatedAt: true,
     });
 
-  return HomeSubscription;
+  return HomeCoordination;
 }
