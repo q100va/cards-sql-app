@@ -323,7 +323,7 @@ router.post(
           model: PartnerOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-          separate: true,
+         // separate: true,
         }
       ];
 
