@@ -182,7 +182,7 @@ router.post(
               as: 'subscriptions',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'users', attributes: ['userName'] },
+                { model: User, as: 'user', attributes: ['userName'] },
               ]
             },
             {
@@ -190,7 +190,7 @@ router.post(
               as: 'cooperations',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'users', attributes: ['userName'] },
+                { model: User, as: 'user', attributes: ['userName'] },
               ]
             }
             //TODO: DateOfLastOrder
@@ -276,7 +276,7 @@ router.post(
               as: 'subscriptions',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'users', attributes: ['userName'] },
+                { model: User, as: 'user', attributes: ['userName'] },
               ]
             },
             {
@@ -284,7 +284,7 @@ router.post(
               as: 'cooperations',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'users', attributes: ['userName'] },
+                { model: User, as: 'user', attributes: ['userName'] },
               ]
             }
             //TODO: DateOfLastOrder
@@ -426,7 +426,7 @@ router.post(
           as: 'subscriptions',
           attributes: ['id', 'userId'],
           include: [
-            { model: User, as: 'users', attributes: ['userName'] },
+            { model: User, as: 'user', attributes: ['userName'] },
           ]
         },
         {
@@ -434,7 +434,7 @@ router.post(
           as: 'cooperations',
           attributes: ['id', 'userId'],
           include: [
-            { model: User, as: 'users', attributes: ['userName'] },
+            { model: User, as: 'user', attributes: ['userName'] },
           ]
         }
 
@@ -542,7 +542,7 @@ router.get("/get-volunteer-by-id/:id",
             as: 'subscriptions',
             attributes: ['id', 'userId'],
             include: [
-              { model: User, as: 'users', attributes: ['userName'] },
+              { model: User, as: 'user', attributes: ['userName'] },
             ]
           },
           {
@@ -550,7 +550,7 @@ router.get("/get-volunteer-by-id/:id",
             as: 'cooperations',
             attributes: ['id', 'userId'],
             include: [
-              { model: User, as: 'users', attributes: ['userName'] },
+              { model: User, as: 'user', attributes: ['userName'] },
             ]
           }
           //TODO: DateOfLastOrder

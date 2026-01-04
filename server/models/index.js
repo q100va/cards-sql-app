@@ -369,11 +369,11 @@ User.hasMany(VolunteerCooperation, {
 });
 
 VolunteerCooperation.belongsTo(Volunteer, {
-  as: 'volunteers',
+  as: 'volunteer',
   foreignKey: 'volunteerId',
 });
 VolunteerCooperation.belongsTo(User, {
-  as: 'users',
+  as: 'user',
   foreignKey: 'userId',
 });
 
