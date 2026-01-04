@@ -86,6 +86,7 @@ import {
   Cooperation,
   InstituteFormGroup,
 } from '../../../../interfaces/volunteer';
+import { OutdatedHomeAddress } from '../../../../interfaces/home';
 
 import {
   causeOfRestrictionControlSchema,
@@ -96,6 +97,7 @@ import {
   telegramIdControlSchema,
   telegramNicknameControlSchema,
   vKontakteControlSchema,
+  websiteControlSchema
 } from '@shared/schemas/user.schema';
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
@@ -138,7 +140,7 @@ export class AdvancedDetailsComponent<
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
   readonly ownerDiffService = inject(OwnerDiffService);
-  private readonly ownerService = inject(OwnerService);
+  readonly ownerService = inject(OwnerService);
   readonly translate = inject(TranslateService);
   readonly auth = inject(AuthService);
 
@@ -271,6 +273,7 @@ export class AdvancedDetailsComponent<
     { name: 'vKontakte', availableForExtra: false },
     { name: 'instagram', availableForExtra: false },
     { name: 'facebook', availableForExtra: false },
+    { name: 'website', availableForExtra: false },
   ];
   availableContactTypes: Exclude<ContactType, 'telegram' | 'otherContact'>[] =
     [];
@@ -402,6 +405,7 @@ export class AdvancedDetailsComponent<
       vKontakte: [zodValidator(vKontakteControlSchema)],
       instagram: [zodValidator(instagramControlSchema)],
       facebook: [zodValidator(facebookControlSchema)],
+      website: [zodValidator(websiteControlSchema)],
     };
 
     this.getFormArray(type).push(
@@ -604,7 +608,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   // --- Outdated data actions
   onRestoreOutdatedData(
     type: keyof RestoringByKind<K>,
-    data: Contact | OutdatedAddress | OutdatedFullName,
+    data: Contact | OutdatedAddress | OutdatedHomeAddress | OutdatedFullName,
     //     | OutdatedUserName
     //    | OutdatedHome,
     contactType?: Exclude<ContactType, 'telegram'>
@@ -637,7 +641,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     if (type === 'names' || type === 'addresses') {
       if (this.restoringDataDraft[nameOrAddr] !== null) {
         const restoredValue = this.existingOwner!.outdatedData[nameOrAddr].find(
-          (item: OutdatedAddress | OutdatedFullName) =>
+          (item: OutdatedAddress | OutdatedFullName | OutdatedHomeAddress) =>
             item.id === this.restoringDataDraft[nameOrAddr]![0]
         );
         if (restoredValue)
@@ -938,13 +942,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft
     );
 
-    const names = await this.ownerService.diffNames(
-      this.existingOwner!,
-      this.ownerDraft
-    );
-    if (names.changes) this.changingData.main = names.changes;
-    if (names.outdating) this.outdatingData.names = names.outdating;
-
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -1058,8 +1055,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       .subscribe({
         next: (res) => {
           if (this.action === 'saveAndExit') {
-            this.closeDialogDataSignal.set(res.data.lastName);
-            this.emittedCloseDialogData.emit(res.data.lastName);
+            this.closeDialogDataSignal.set('close');//TODO: change?
+            this.emittedCloseDialogData.emit('close');
             return;
           }
 

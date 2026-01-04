@@ -26,7 +26,7 @@ import {
   OutdatedFullName,
 } from '@shared/schemas/common.schema';
 import { OutdatedUserName } from '@shared/dist/user.schema';
-import {
+/* import {
   ContactType,
   UserRestoringData,
   UserOutdatedData,
@@ -34,7 +34,7 @@ import {
   UserDraft,
   UserChangingData,
   UserOutdatingData,
-} from '../../interfaces/advanced-model';
+} from '../../interfaces/advanced-model'; */
 import { UserMainService, UserService } from 'src/app/services/user.service';
 import { of } from 'rxjs';
 @Component({
@@ -64,7 +64,7 @@ import { of } from 'rxjs';
 export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   override userService = inject(UserService) as UserMainService;
   override ngOnInit(): void {
-/*     this.existingOwner = this.data().object;
+    /*     this.existingOwner = this.data().object;
     console.log('this.existingOwner', this.existingOwner);
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(this.existingOwner.outdatedData);
@@ -79,11 +79,9 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
       'dateOfRestriction',
     ];
     this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
-
-
   }
 
-    override setEmptyOutdatedDataDraft() {
+  override setEmptyOutdatedDataDraft() {
     this.outdatedDataDraft = {
       addresses: [],
       names: [],
@@ -221,6 +219,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
         ...{ userName: userName.changes },
       };
     if (userName.outdating) this.outdatingData.userName = userName.outdating;
+
+    const names = await this.ownerService.diffNames(
+      this.existingOwner!,
+      this.ownerDraft
+    );
+    if (names.changes) this.changingData.main = names.changes;
+    if (names.outdating) this.outdatingData.names = names.outdating;
+
     return await super.checkAllChanges();
   }
 

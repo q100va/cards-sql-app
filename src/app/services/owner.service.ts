@@ -25,10 +25,19 @@ import {
   Partner,
   OwnerByKind,
   OwnerDraftByKind,
+  VolunteerRestoringData,
+  HomeRestoringData,
+  PersonDraft,
+  Person,
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
-import { normalize, completeContact, isFieldEqual, lightNormalize } from '../utils/diff';
+import {
+  normalize,
+  completeContact,
+  isFieldEqual,
+  lightNormalize,
+} from '../utils/diff';
 
 // --- Kind & Draft types ------------------------------------------------------
 
@@ -37,12 +46,18 @@ type Names = {
   patronymic: string | null;
   lastName: string | null;
 };
-type RestoringData = UserRestoringData | PartnerRestoringData;
+type RestoringData =
+  | UserRestoringData
+  | PartnerRestoringData
+  | VolunteerRestoringData
+  | HomeRestoringData;
 
 // --- Helpers -----------------------------------------------------------------
 const get = (form: FormGroup, name: string) => form.get(name)?.value ?? null;
 const getInstitutes = (form: FormGroup) =>
   form.get('institutes')!.getRawValue();
+const getCoordinations = (form: FormGroup) =>
+  form.get('partners')!.getRawValue();
 
 function first<T>(arr?: T[] | null): T | null {
   return (arr && arr.length ? arr[0] : null) as T | null;
@@ -51,18 +66,39 @@ function first<T>(arr?: T[] | null): T | null {
 // --- Per-kind config ---------------------------------
 const BUILD_EXTRAS = {
   user: (form: FormGroup, userId_: number) => ({
+    firstName: normalize(get(form, 'firstName')),
+    patronymic: normalize(get(form, 'patronymic')),
+    lastName: normalize(get(form, 'lastName')),
     userName: normalize(get(form, 'userName')),
     password: get(form, 'password'),
     roleId: get(form, 'roleId'),
   }),
   partner: (form: FormGroup, userId_: number) => ({
+    firstName: normalize(get(form, 'firstName')),
+    patronymic: normalize(get(form, 'patronymic')),
+    lastName: normalize(get(form, 'lastName')),
     affiliation: normalize(get(form, 'affiliation')),
     position: lightNormalize(get(form, 'position')),
   }),
   volunteer: (form: FormGroup, userId: number) => ({
+    firstName: normalize(get(form, 'firstName')),
+    patronymic: normalize(get(form, 'patronymic')),
+    lastName: normalize(get(form, 'lastName')),
     draftSubscriptions: get(form, 'subscription') ? [userId] : [],
     draftCooperations: [],
     draftInstitutes: getInstitutes(form),
+  }),
+  home: (form: FormGroup, userId_: number) => ({
+    homeName: normalize(get(form, 'homeName')),
+    officialName: normalize(get(form, 'officialName')),
+    postalName: normalize(get(form, 'postalName')),
+    draftCoordinations: getCoordinations(form),
+    infoNote: normalize(get(form, 'infoNote')),
+    noAddress: normalize(get(form, 'noAddress')),
+    specialHome: normalize(get(form, 'specialHome')),
+    acceptableForSchool: normalize(get(form, 'acceptableForSchool')),
+    postalCode: normalize(get(form, 'postalCode')),
+    postalAddressPart: normalize(get(form, 'postalAddressPart')),
   }),
 } as const;
 
@@ -86,12 +122,7 @@ export class OwnerService {
 
     const base: DraftCommon = {
       id: existing?.id ?? null,
-
-      firstName: normalize(get(form, 'firstName')),
-      patronymic: normalize(get(form, 'patronymic')),
-      lastName: normalize(get(form, 'lastName')),
       comment: lightNormalize(get(form, 'comment')),
-
       isRestricted,
       causeOfRestriction: isRestricted ? get(form, 'causeOfRestriction') : null,
       dateOfRestriction: isRestricted
@@ -121,9 +152,8 @@ export class OwnerService {
 
     // per-kind extras
     const extras = (BUILD_EXTRAS as any)[kind](form, userId);
- console.log('draft');
- console.log({ ...base, ...extras });
-
+    console.log('draft');
+    console.log({ ...base, ...extras });
 
     return { ...base, ...extras } as OwnerDraftByKind<K>;
   }
@@ -275,7 +305,7 @@ export class OwnerService {
   // Names duplicates
   async checkNames(
     outdatedNames: OutdatedFullName[],
-    draft: OwnerDraft
+    draft: PersonDraft
   ): Promise<{
     restoringId: number | null;
   }> {
@@ -347,21 +377,21 @@ export class OwnerService {
   }
   /** Compare names; return changes + what should be outdated (previous value) */
   async diffNames(
-    existing: Owner,
-    draft: OwnerDraft
+    existing: Person,
+    draft: PersonDraft
   ): Promise<{
     changed: boolean;
     changes: Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+      Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
     > | null;
     outdating: Names | null;
   }> {
     console.log('diffNames');
     const changes: Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+      Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
     > | null = {};
     const outdating: Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+      Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
     > | null = {};
 
     const changed =
@@ -390,7 +420,7 @@ export class OwnerService {
       changed: !!changed,
       changes: Object.keys(changes).length
         ? (changes as Partial<
-            Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+            Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
           >)
         : null,
       outdating: Object.keys(outdating).length ? (outdating as Names) : null,
@@ -410,14 +440,14 @@ export class OwnerService {
     const oldA = existing.address;
     const newA = draft.draftAddress;
     let changes: OwnerDraft['draftAddress'] | null = null;
-console.log('oldA', oldA);
-console.log('newA', newA);
+    console.log('oldA', oldA);
+    console.log('newA', newA);
     const changed =
       !isFieldEqual(newA.countryId, oldA.country?.id ?? null) ||
       !isFieldEqual(newA.regionId, oldA.region?.id ?? null) ||
       !isFieldEqual(newA.districtId, oldA.district?.id ?? null) ||
       !isFieldEqual(newA.localityId, oldA.locality?.id ?? null);
-      console.log('changed', changed);
+    console.log('changed', changed);
     let moveToOutdated = false;
     if (changed) {
       if (!restoringId) {

@@ -465,7 +465,7 @@ export const changingDataSchema = z
 export const outdatingDataSchema = z
   .object({
     address: positiveInt.nullable(),
-    names: z
+    officialNames: z
       .object({
         officialName: nonEmptyTrim,
       })
@@ -479,7 +479,7 @@ export const outdatingDataSchema = z
 /* ========= DeletingData ========= */
 export const deletingDataSchema = z
   .object({
-    names: z.array(positiveInt).nullable(),
+    officialNames: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
     partners: z.array(positiveInt).nullable(),
@@ -490,7 +490,7 @@ export const deletingDataSchema = z
 export const restoringDataSchema = z
   .object({
     addresses: z.array(positiveInt).nullable(),
-    names: z.array(positiveInt).nullable(),
+    officialNames: z.array(positiveInt).nullable(),
     contacts: optionalContactsSchema.nullable(),
     partners: z.array(positiveInt).nullable(),
   })
@@ -600,21 +600,27 @@ export const outdatedDataSchema = z
   .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
-    names: z.array(outdatedNameItemSchema),
+    officialNames: z.array(outdatedNameItemSchema),
     partners: z.array(partnerItemSchema),
   })
   .strict();
 
 /* ===================== Home (view) & homes list ===================== */
-export const addressSchema = z
+export const nonNullableAddressSchema = z
+  .object({
+    country: addressRefFullSchema,
+    region: addressRefShortSchema,
+    district: addressRefShortSchema,
+    locality: addressRefShortSchema,
+    id: positiveInt,
+  })
+  .strict();
+
+export const postalAddressSchema = z
   .object({
     postalCode: nonEmpty,
     postalAddressPart: nonEmpty.nullable(),
-    country: addressRefFullSchema.nullable(),
-    region: addressRefShortSchema.nullable(),
-    district: addressRefShortSchema.nullable(),
-    locality: addressRefShortSchema.nullable(),
-    id: positiveInt.optional(),
+    id: positiveInt,
   })
   .strict();
 
@@ -631,7 +637,8 @@ export const homeSchema = z
     dateOfStart: z.coerce.date(),
     causeOfRestriction: nonEmpty.nullable(),
     dateOfRestriction: nullableIsoDate,
-    address: addressSchema,
+    address: nonNullableAddressSchema,
+    postalAddress: postalAddressSchema,
     comment: nonEmpty.nullable(),
     infoNote: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,
@@ -652,5 +659,12 @@ export const homesSchema = z
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
 export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
-export type HomerChangingData = z.infer<typeof changingDataSchema>;
+export type HomeChangingData = z.infer<typeof changingDataSchema>;
 export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
+export type HomeCoordination = z.infer<typeof partnerItemSchema>;
+export type HomeAddress = z.infer<typeof nonNullableAddressSchema>;
+export type PostalAddress = z.infer<typeof postalAddressSchema>;
+export type HomeContacts = z.infer<typeof optionalContactsSchema>;
+//export type OutdatedCoordination = z.infer<typeof partnerItemSchema>;
+//export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
+export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;

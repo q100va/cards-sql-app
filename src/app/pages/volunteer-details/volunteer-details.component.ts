@@ -217,6 +217,13 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     return await super.checkOutdatedDataDuplicates();
   }
   override async checkAllChanges() {
+     const names = await this.ownerService.diffNames(
+      this.existingOwner!,
+      this.ownerDraft
+    );
+    if (names.changes) this.changingData.main = names.changes;
+    if (names.outdating) this.outdatingData.names = names.outdating;
+
     const institutes = await this.ownerDiffService.diffInstitutes(
       this.existingOwner!.institutes ?? [],
       this.ownerDraft.draftInstitutes ?? [],

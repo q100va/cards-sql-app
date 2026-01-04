@@ -348,7 +348,7 @@ export const changingDataSchema = z
 export const outdatingDataSchema = z
     .object({
     address: positiveInt.nullable(),
-    names: z
+    officialNames: z
         .object({
         officialName: nonEmptyTrim,
     })
@@ -361,7 +361,7 @@ export const outdatingDataSchema = z
 /* ========= DeletingData ========= */
 export const deletingDataSchema = z
     .object({
-    names: z.array(positiveInt).nullable(),
+    officialNames: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
     partners: z.array(positiveInt).nullable(),
@@ -371,7 +371,7 @@ export const deletingDataSchema = z
 export const restoringDataSchema = z
     .object({
     addresses: z.array(positiveInt).nullable(),
-    names: z.array(positiveInt).nullable(),
+    officialNames: z.array(positiveInt).nullable(),
     contacts: optionalContactsSchema.nullable(),
     partners: z.array(positiveInt).nullable(),
 })
@@ -473,20 +473,25 @@ export const outdatedDataSchema = z
     .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
-    names: z.array(outdatedNameItemSchema),
+    officialNames: z.array(outdatedNameItemSchema),
     partners: z.array(partnerItemSchema),
 })
     .strict();
 /* ===================== Home (view) & homes list ===================== */
-export const addressSchema = z
+export const nonNullableAddressSchema = z
+    .object({
+    country: addressRefFullSchema,
+    region: addressRefShortSchema,
+    district: addressRefShortSchema,
+    locality: addressRefShortSchema,
+    id: positiveInt,
+})
+    .strict();
+export const postalAddressSchema = z
     .object({
     postalCode: nonEmpty,
     postalAddressPart: nonEmpty.nullable(),
-    country: addressRefFullSchema.nullable(),
-    region: addressRefShortSchema.nullable(),
-    district: addressRefShortSchema.nullable(),
-    locality: addressRefShortSchema.nullable(),
-    id: positiveInt.optional(),
+    id: positiveInt,
 })
     .strict();
 export const homeSchema = z
@@ -502,7 +507,8 @@ export const homeSchema = z
     dateOfStart: z.coerce.date(),
     causeOfRestriction: nonEmpty.nullable(),
     dateOfRestriction: nullableIsoDate,
-    address: addressSchema,
+    address: nonNullableAddressSchema,
+    postalAddress: postalAddressSchema,
     comment: nonEmpty.nullable(),
     infoNote: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,

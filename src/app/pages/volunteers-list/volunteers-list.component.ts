@@ -9,6 +9,7 @@ import {
   telegramNicknameControlSchema,
   vKontakteControlSchema,
   whatsAppControlSchema,
+  websiteControlSchema
 } from '@shared/schemas/volunteer.schema';
 
 import { volunteerDraftSchema } from '@shared/schemas/volunteer.schema';
@@ -305,6 +306,19 @@ export class VolunteersListComponent {
         placeholder: 'VOLUNTEER.CARD.FACEBOOK_PLACEHOLDER',
         validators: [zodValidator(facebookControlSchema)],
         errorName: 'facebookFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'website',
+        value: null,
+        type: 'inputText',
+        label: 'PARTNER.CARD.WEBSITE_LABEL',
+        placeholder: 'PARTNER.CARD.WEBSITE_PLACEHOLDER',
+        validators: [zodValidator(websiteControlSchema)],
+        errorName: 'websiteFormat',
         category: 'contacts',
         formType: 'formArray',
         colspan: 3,

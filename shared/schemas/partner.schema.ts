@@ -22,6 +22,7 @@ import {
   telegramIdSchema,
   telegramNicknameSchema,
   vKontakteSchema,
+  websiteSchema
 } from './common.schema.js';
 import {
   draftAddressSchema,
@@ -167,6 +168,17 @@ export const facebookControlSchema = z.preprocess(
     .nullable()
 );
 
+export const websiteControlSchema = z.preprocess(
+  emptyToNull,
+  z
+    .string()
+    .regex(
+      /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
+      "Invalid website URL"
+    )
+    .nullable()
+);
+
 export const otherContactControlSchema = z.preprocess(
   emptyToNull,
   z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
@@ -186,6 +198,7 @@ export const draftContactsSchema = z
     vKontakte: z.array(vKontakteSchema),
     instagram: z.array(instagramSchema),
     facebook: z.array(facebookSchema),
+    website: z.array(websiteSchema),
     otherContact: z.array(otherContactSchema),
   })
   .strict()

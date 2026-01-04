@@ -1,4 +1,11 @@
 import { z } from 'zod';
+declare const partnerItemSchema: z.ZodObject<{
+    partnerContacts: z.ZodString;
+    partnerName: z.ZodString;
+    partnerId: z.ZodNumber;
+    isRecoverable: z.ZodBoolean;
+    id: z.ZodNumber;
+}, z.core.$strict>;
 export declare const optionalContactsSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
@@ -194,21 +201,21 @@ export declare const changingDataSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const outdatingDataSchema: z.ZodObject<{
     address: z.ZodNullable<z.ZodNumber>;
-    names: z.ZodNullable<z.ZodObject<{
+    officialNames: z.ZodNullable<z.ZodObject<{
         officialName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     }, z.core.$strict>>;
     contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     partners: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const deletingDataSchema: z.ZodObject<{
-    names: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+    officialNames: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     partners: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const restoringDataSchema: z.ZodObject<{
     addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
-    names: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+    officialNames: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     contacts: z.ZodNullable<z.ZodObject<{
         email: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
@@ -302,7 +309,7 @@ export declare const updateHomeDataSchema: z.ZodObject<{
     }, z.core.$strict>;
     restoringData: z.ZodObject<{
         addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
-        names: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+        officialNames: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         contacts: z.ZodNullable<z.ZodObject<{
             email: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
@@ -357,14 +364,14 @@ export declare const updateHomeDataSchema: z.ZodObject<{
     }, z.core.$strict>;
     outdatingData: z.ZodObject<{
         address: z.ZodNullable<z.ZodNumber>;
-        names: z.ZodNullable<z.ZodObject<{
+        officialNames: z.ZodNullable<z.ZodObject<{
             officialName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
         }, z.core.$strict>>;
         contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         partners: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     }, z.core.$strict>;
     deletingData: z.ZodObject<{
-        names: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+        officialNames: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         partners: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -411,6 +418,7 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
                 vKontakte: "vKontakte";
                 instagram: "instagram";
                 facebook: "facebook";
+                website: "website";
                 otherContact: "otherContact";
             }>>>>;
         }, z.core.$strip>>>;
@@ -525,7 +533,7 @@ export declare const outdatedDataSchema: z.ZodObject<{
         id: z.ZodNumber;
         isRecoverable: z.ZodBoolean;
     }, z.core.$strict>>;
-    names: z.ZodArray<z.ZodObject<{
+    officialNames: z.ZodArray<z.ZodObject<{
         officialName: z.ZodString;
         id: z.ZodNumber;
     }, z.core.$strict>>;
@@ -537,26 +545,29 @@ export declare const outdatedDataSchema: z.ZodObject<{
         id: z.ZodNumber;
     }, z.core.$strict>>;
 }, z.core.$strict>;
-export declare const addressSchema: z.ZodObject<{
-    postalCode: z.ZodString;
-    postalAddressPart: z.ZodNullable<z.ZodString>;
-    country: z.ZodNullable<z.ZodObject<{
+export declare const nonNullableAddressSchema: z.ZodObject<{
+    country: z.ZodObject<{
         id: z.ZodNumber;
         name: z.ZodString;
-    }, z.core.$strict>>;
-    region: z.ZodNullable<z.ZodObject<{
+    }, z.core.$strict>;
+    region: z.ZodObject<{
         id: z.ZodNumber;
         shortName: z.ZodString;
-    }, z.core.$strict>>;
-    district: z.ZodNullable<z.ZodObject<{
+    }, z.core.$strict>;
+    district: z.ZodObject<{
         id: z.ZodNumber;
         shortName: z.ZodString;
-    }, z.core.$strict>>;
-    locality: z.ZodNullable<z.ZodObject<{
+    }, z.core.$strict>;
+    locality: z.ZodObject<{
         id: z.ZodNumber;
         shortName: z.ZodString;
-    }, z.core.$strict>>;
-    id: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strict>;
+    id: z.ZodNumber;
+}, z.core.$strict>;
+export declare const postalAddressSchema: z.ZodObject<{
+    postalCode: z.ZodString;
+    postalAddressPart: z.ZodNullable<z.ZodString>;
+    id: z.ZodNumber;
 }, z.core.$strict>;
 export declare const homeSchema: z.ZodObject<{
     id: z.ZodNumber;
@@ -571,25 +582,28 @@ export declare const homeSchema: z.ZodObject<{
     causeOfRestriction: z.ZodNullable<z.ZodString>;
     dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     address: z.ZodObject<{
-        postalCode: z.ZodString;
-        postalAddressPart: z.ZodNullable<z.ZodString>;
-        country: z.ZodNullable<z.ZodObject<{
+        country: z.ZodObject<{
             id: z.ZodNumber;
             name: z.ZodString;
-        }, z.core.$strict>>;
-        region: z.ZodNullable<z.ZodObject<{
+        }, z.core.$strict>;
+        region: z.ZodObject<{
             id: z.ZodNumber;
             shortName: z.ZodString;
-        }, z.core.$strict>>;
-        district: z.ZodNullable<z.ZodObject<{
+        }, z.core.$strict>;
+        district: z.ZodObject<{
             id: z.ZodNumber;
             shortName: z.ZodString;
-        }, z.core.$strict>>;
-        locality: z.ZodNullable<z.ZodObject<{
+        }, z.core.$strict>;
+        locality: z.ZodObject<{
             id: z.ZodNumber;
             shortName: z.ZodString;
-        }, z.core.$strict>>;
-        id: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strict>;
+        id: z.ZodNumber;
+    }, z.core.$strict>;
+    postalAddress: z.ZodObject<{
+        postalCode: z.ZodString;
+        postalAddressPart: z.ZodNullable<z.ZodString>;
+        id: z.ZodNumber;
     }, z.core.$strict>;
     comment: z.ZodNullable<z.ZodString>;
     infoNote: z.ZodNullable<z.ZodString>;
@@ -716,7 +730,7 @@ export declare const homeSchema: z.ZodObject<{
             id: z.ZodNumber;
             isRecoverable: z.ZodBoolean;
         }, z.core.$strict>>;
-        names: z.ZodArray<z.ZodObject<{
+        officialNames: z.ZodArray<z.ZodObject<{
             officialName: z.ZodString;
             id: z.ZodNumber;
         }, z.core.$strict>>;
@@ -751,25 +765,28 @@ export declare const homesSchema: z.ZodObject<{
         causeOfRestriction: z.ZodNullable<z.ZodString>;
         dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
         address: z.ZodObject<{
-            postalCode: z.ZodString;
-            postalAddressPart: z.ZodNullable<z.ZodString>;
-            country: z.ZodNullable<z.ZodObject<{
+            country: z.ZodObject<{
                 id: z.ZodNumber;
                 name: z.ZodString;
-            }, z.core.$strict>>;
-            region: z.ZodNullable<z.ZodObject<{
+            }, z.core.$strict>;
+            region: z.ZodObject<{
                 id: z.ZodNumber;
                 shortName: z.ZodString;
-            }, z.core.$strict>>;
-            district: z.ZodNullable<z.ZodObject<{
+            }, z.core.$strict>;
+            district: z.ZodObject<{
                 id: z.ZodNumber;
                 shortName: z.ZodString;
-            }, z.core.$strict>>;
-            locality: z.ZodNullable<z.ZodObject<{
+            }, z.core.$strict>;
+            locality: z.ZodObject<{
                 id: z.ZodNumber;
                 shortName: z.ZodString;
-            }, z.core.$strict>>;
-            id: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strict>;
+            id: z.ZodNumber;
+        }, z.core.$strict>;
+        postalAddress: z.ZodObject<{
+            postalCode: z.ZodString;
+            postalAddressPart: z.ZodNullable<z.ZodString>;
+            id: z.ZodNumber;
         }, z.core.$strict>;
         comment: z.ZodNullable<z.ZodString>;
         infoNote: z.ZodNullable<z.ZodString>;
@@ -896,7 +913,7 @@ export declare const homesSchema: z.ZodObject<{
                 id: z.ZodNumber;
                 isRecoverable: z.ZodBoolean;
             }, z.core.$strict>>;
-            names: z.ZodArray<z.ZodObject<{
+            officialNames: z.ZodArray<z.ZodObject<{
                 officialName: z.ZodString;
                 id: z.ZodNumber;
             }, z.core.$strict>>;
@@ -922,5 +939,11 @@ export declare const homesSchema: z.ZodObject<{
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
 export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
-export type HomerChangingData = z.infer<typeof changingDataSchema>;
+export type HomeChangingData = z.infer<typeof changingDataSchema>;
 export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
+export type HomeCoordination = z.infer<typeof partnerItemSchema>;
+export type HomeAddress = z.infer<typeof nonNullableAddressSchema>;
+export type PostalAddress = z.infer<typeof postalAddressSchema>;
+export type HomeContacts = z.infer<typeof optionalContactsSchema>;
+export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;
+export {};

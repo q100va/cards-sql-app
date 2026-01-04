@@ -65,4 +65,5 @@ export type ContactTypeForList =
   | 'vKontakte'
   | 'instagram'
   | 'facebook'
+  | 'website'
   | 'otherContact';

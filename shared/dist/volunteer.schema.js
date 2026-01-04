@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
-import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './common.schema.js';
-import { draftAddressSchema, addressSchema, } from './common.schema.js';
-import { contactType, optionalContactsSchema, } from './common.schema.js';
-import { changingContactsSchema, } from './common.schema.js';
+import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, } from './common.schema.js';
+import { draftAddressSchema, addressSchema } from './common.schema.js';
+import { contactType, optionalContactsSchema } from './common.schema.js';
+import { changingContactsSchema } from './common.schema.js';
 import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
 const instituteItemSchema = z
     .object({
@@ -39,8 +39,7 @@ export const instituteNameControlSchema = z.preprocess(toTrim, z
     .min(1, 'FORM_VALIDATION.REQUIRED')
     .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
     .max(150, 'FORM_VALIDATION.TOO_LONG_150'));
-export const instituteCategoryControlSchema = z.preprocess(emptyToNull, z
-    .string({ message: 'FORM_VALIDATION.REQUIRED' }));
+export const instituteCategoryControlSchema = z.preprocess(emptyToNull, z.string({ message: 'FORM_VALIDATION.REQUIRED' }));
 export const emailControlSchema = z
     .preprocess(emptyToNull, z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable())
     .superRefine((v, ctx) => {
@@ -130,6 +129,10 @@ export const facebookControlSchema = z.preprocess(emptyToNull, z
     .string()
     .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
     .nullable());
+export const websiteControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL')
+    .nullable());
 export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
 /* ===================== Contacts (draft / ordered / optional) ===================== */
 // Draft
@@ -144,6 +147,7 @@ export const draftContactsSchema = z
     vKontakte: z.array(vKontakteSchema),
     instagram: z.array(instagramSchema),
     facebook: z.array(facebookSchema),
+    website: z.array(websiteSchema),
     otherContact: z.array(otherContactSchema),
 })
     .strict()

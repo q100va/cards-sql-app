@@ -91,6 +91,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     'vKontakte',
     'instagram',
     'facebook',
+    'website',
     'otherContact',
   ];
 

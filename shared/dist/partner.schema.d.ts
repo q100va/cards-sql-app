@@ -7,6 +7,7 @@ export declare const telegramNicknameControlSchema: z.ZodPipe<z.ZodTransform<str
 export declare const vKontakteControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const instagramControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const facebookControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const websiteControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const otherContactControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const draftContactsSchema: z.ZodObject<{
     email: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>;
@@ -18,6 +19,7 @@ export declare const draftContactsSchema: z.ZodObject<{
     vKontakte: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     instagram: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     facebook: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
 }, z.core.$strict>;
 export declare const checkPartnerDataSchema: z.ZodObject<{
@@ -34,6 +36,7 @@ export declare const checkPartnerDataSchema: z.ZodObject<{
         vKontakte: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         instagram: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         facebook: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+        website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
 }, z.core.$strict>;
@@ -71,6 +74,7 @@ export declare const partnerDraftSchema: z.ZodObject<{
         vKontakte: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         instagram: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         facebook: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+        website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
 }, z.core.$strict>;
@@ -113,6 +117,7 @@ export declare const changingDataSchema: z.ZodObject<{
         vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     }, z.core.$strict>>;
     homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -177,6 +182,10 @@ export declare const restoringDataSchema: z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
@@ -214,6 +223,7 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
             vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         }, z.core.$strict>>;
         homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -259,6 +269,10 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
                 content: z.ZodString;
             }, z.core.$strict>>>;
             facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
@@ -316,14 +330,15 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
-                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
                 vKontakte: "vKontakte";
                 instagram: "instagram";
                 facebook: "facebook";
+                website: "website";
                 otherContact: "otherContact";
+                telegram: "telegram";
             }>>>>;
         }, z.core.$strip>>>;
         address: z.ZodOptional<z.ZodOptional<z.ZodObject<{
@@ -381,6 +396,10 @@ export declare const outdatedDataSchema: z.ZodObject<{
             content: z.ZodString;
         }, z.core.$strict>>>;
         facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
@@ -492,6 +511,10 @@ export declare const partnerSchema: z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
@@ -536,6 +559,10 @@ export declare const partnerSchema: z.ZodObject<{
                 content: z.ZodString;
             }, z.core.$strict>>>;
             facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
@@ -653,6 +680,10 @@ export declare const partnersSchema: z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
@@ -697,6 +728,10 @@ export declare const partnersSchema: z.ZodObject<{
                     content: z.ZodString;
                 }, z.core.$strict>>>;
                 facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                website: z.ZodOptional<z.ZodArray<z.ZodObject<{
                     id: z.ZodNumber;
                     content: z.ZodString;
                 }, z.core.$strict>>>;

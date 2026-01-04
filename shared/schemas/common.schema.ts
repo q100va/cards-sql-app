@@ -181,6 +181,7 @@ export const contactType = z.enum([
   'vKontakte',
   'instagram',
   'facebook',
+  'website',
   'otherContact',
 ]);
 
@@ -203,6 +204,7 @@ export const optionalContactsSchema = z
     vKontakte: nonEmptyContacts.optional(),
     instagram: nonEmptyContacts.optional(),
     facebook: nonEmptyContacts.optional(),
+    website: nonEmptyContacts.optional(),
     otherContact: nonEmptyContacts.optional(),
   })
   .strict();
@@ -230,6 +232,7 @@ export const changingContactsSchema = z
     vKontakte: z.array(vKontakteSchema).optional(),
     instagram: z.array(instagramSchema).optional(),
     facebook: z.array(facebookSchema).optional(),
+    website: z.array(websiteSchema).optional(),
     otherContact: z.array(otherContactSchema).optional(),
   })
   .strict();

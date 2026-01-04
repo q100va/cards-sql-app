@@ -64,6 +64,7 @@ export declare const contactType: z.ZodEnum<{
     vKontakte: "vKontakte";
     instagram: "instagram";
     facebook: "facebook";
+    website: "website";
     otherContact: "otherContact";
 }>;
 export declare const contactSchema: z.ZodObject<{
@@ -115,6 +116,10 @@ export declare const optionalContactsSchema: z.ZodObject<{
         id: z.ZodNumber;
         content: z.ZodString;
     }, z.core.$strict>>>;
+    website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodNumber;
+        content: z.ZodString;
+    }, z.core.$strict>>>;
     otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
         content: z.ZodString;
@@ -130,6 +135,7 @@ export declare const changingContactsSchema: z.ZodObject<{
     vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
+    website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
 }, z.core.$strict>;
 export declare const outdatedNameItemSchema: z.ZodObject<{
@@ -197,6 +203,10 @@ export declare const outdatedCommonSchema: z.ZodObject<{
             content: z.ZodString;
         }, z.core.$strict>>>;
         facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
