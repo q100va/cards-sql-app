@@ -35,7 +35,7 @@
     "DISTRICTS": "Districts",
     "LOCALITIES": "Localities",
     "AUDIT": "Audit",
-    "PARTNERS": "Coordinators"
+    "PARTNERS": "Partners"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -320,7 +320,7 @@
     "CANCEL_BUTTON": "Cancel"
   },
   "PARTNER": {
-    "TABLE_TITLE": "Coordinators",
+    "TABLE_TITLE": "Partners",
     "ADD_PARTNER": "Add partner",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
     "VIEW_OPTIONS": {
