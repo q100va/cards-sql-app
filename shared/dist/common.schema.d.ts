@@ -235,12 +235,6 @@ export declare const outdatedCommonSchema: z.ZodObject<{
         id: z.ZodNumber;
         isRecoverable: z.ZodBoolean;
     }, z.core.$strict>>;
-    names: z.ZodArray<z.ZodObject<{
-        firstName: z.ZodString;
-        patronymic: z.ZodNullable<z.ZodString>;
-        lastName: z.ZodNullable<z.ZodString>;
-        id: z.ZodNumber;
-    }, z.core.$strict>>;
 }, z.core.$strict>;
 export declare const duplicatesSchema: z.ZodObject<{
     duplicatesName: z.ZodArray<z.ZodString>;

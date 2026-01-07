@@ -8,8 +8,10 @@ export type ConfirmKind =
   | 'names'
   | 'userName'
   | 'contact'
-  | 'home'
-  | 'institute';
+  | 'coordination'
+ // | 'partner'
+  | 'institute'
+  | 'officialName';
 
 @Injectable({ providedIn: 'root' })
 export class DiffConfirmService {
@@ -26,8 +28,10 @@ export class DiffConfirmService {
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contact: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
-      home: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
+    //  home: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
+      coordination: this.t.instant('PRIME_CONFIRM.DATA_TYPES.COORDINATIONS'),
       institute: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
+      officialName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.OFFICIAL_NAME'),
     }[kind];
 
     const header = this.t.instant('PRIME_CONFIRM.WARNING_HEADER');
@@ -65,8 +69,10 @@ export class DiffConfirmService {
       | 'names'
       | 'userName'
       | 'contacts'
-      | 'homes'
-      | 'institutes',
+      | 'coordinations'
+      //| 'partners'
+      | 'institutes'
+      | 'officialName',
     value: string
   ): Promise<boolean> {
     const types = {
@@ -74,8 +80,10 @@ export class DiffConfirmService {
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contacts: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
-      homes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
+      coordinations: this.t.instant('PRIME_CONFIRM.DATA_TYPES.COORDINATIONS'),
+      //coordinations: this.t.instant('PRIME_CONFIRM.DATA_TYPES.PARTNERS'),
       institutes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
+      officialName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.OFFICIAL_NAME'),
     };
 
     return new Promise((resolve) => {

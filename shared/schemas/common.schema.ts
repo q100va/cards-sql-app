@@ -262,7 +262,7 @@ export const outdatedAddressItemSchema = z
   .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
-    names: z.array(outdatedNameItemSchema)
+  //  names: z.array(outdatedNameItemSchema)
   })
   .strict();
 

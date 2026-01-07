@@ -69,7 +69,9 @@ export interface AddressFilterParams {
     | 'partnerList'
     | 'partnerCard'
     | 'volunteerList'
-    | 'volunteerCard';
+    | 'volunteerCard'
+    | 'homeList'
+    | 'homeCard';
   multiple?: boolean;
   cols?: string;
   gutterSize?: string;

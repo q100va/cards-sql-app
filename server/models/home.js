@@ -64,6 +64,13 @@ export default function HomeModel(sequelize) {
       dateOfRestriction: {
         type: DataTypes.DATE
       },
+      status:{
+        type: DataTypes.TEXT,
+        defaultValue: 'OPEN'
+      },
+      dateOfClose: {
+        type: DataTypes.DATE
+      },
 
     },
     {

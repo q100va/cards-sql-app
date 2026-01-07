@@ -39,6 +39,7 @@ import {
   instituteNameControlSchema,
 } from '@shared/schemas/volunteer.schema';
 import { DefaultAddressParams } from '@shared/schemas/toponym.schema';
+import { OutdatedFullName } from '@shared/schemas/common.schema';
 
 @Component({
   selector: 'app-volunteer-details',
@@ -79,6 +80,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       'causeOfRestriction',
       'dateOfRestriction',
     ];
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
     this.hasOutdatedInstitutes.set(
       this.outdatedDataDraft.institutes.length > 0
     );
@@ -217,7 +219,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     return await super.checkOutdatedDataDuplicates();
   }
   override async checkAllChanges() {
-     const names = await this.ownerService.diffNames(
+    const names = await this.ownerService.diffNames(
       this.existingOwner!,
       this.ownerDraft
     );
@@ -400,6 +402,16 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     console.log('original', original);
     console.log('current', current);
     return original !== current;
+  }
+
+  override get outdatedNames(): OutdatedFullName[] {
+    const data = this.outdatedDataDraft;
+    const list = data?.names;
+    return Array.isArray(list) ? list : [];
+  }
+
+  override setHasOutdatedNames() {
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 }
 

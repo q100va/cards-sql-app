@@ -28,16 +28,29 @@ const OWNER = {
       name: () =>
         "firstName"
     },
-  }, volunteer: {
+  },
+  volunteer: {
     idField: 'volunteerId',
     contactsTable: 'volunteer-contacts',
     addressesTable: 'volunteer-addresses',
     defaultOrderField: 'firstName',
     orderKeys: {
-     // affiliation: () => "affiliation",
+      // affiliation: () => "affiliation",
       //position:    () => literal(`"partner"."position"`),
       name: () =>
         "firstName"
+    },
+  },
+  home: {
+    idField: 'homeId',
+    contactsTable: 'home-contacts',
+    addressesTable: 'home-addresses',
+    defaultOrderField: 'homeName',
+    orderKeys: {
+      // affiliation: () => "affiliation",
+      //position:    () => literal(`"partner"."position"`),
+      name: () =>
+        "homeName"
     },
   },
 };

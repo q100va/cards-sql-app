@@ -78,6 +78,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
       'causeOfRestriction',
       'dateOfRestriction',
     ];
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
     this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
   }
 
@@ -238,6 +239,12 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     return this.outdatedDataDraft.userNames.length;
   }
 
+  override get outdatedNames(): OutdatedFullName[] {
+    const data = this.outdatedDataDraft;
+    const list = data?.names;
+    return Array.isArray(list) ? list : [];
+  }
+
   override get outdatedUserNames(): OutdatedUserName[] {
     const data = this.outdatedDataDraft;
     const list = data?.userNames;
@@ -249,5 +256,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   }
   override setHasOutdatedUserNames() {
     this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
+  }
+  override setHasOutdatedNames() {
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 }

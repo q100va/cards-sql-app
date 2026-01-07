@@ -255,7 +255,7 @@ export const changingDataSchema = z
     main: changingMainSchema.nullable(),
     address: draftAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
-    homes: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
 })
     .strict()
     .superRefine((data, ctx) => {
@@ -308,7 +308,7 @@ export const outdatingDataSchema = z
         .strict()
         .nullable(),
     contacts: z.array(positiveInt).nullable(),
-    homes: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
 })
     .strict();
 /* ========= DeletingData ========= */
@@ -317,7 +317,7 @@ export const deletingDataSchema = z
     names: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
-    homes: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
 })
     .strict();
 /* ========= RestoringData ========= */
@@ -326,7 +326,7 @@ export const restoringDataSchema = z
     addresses: z.array(positiveInt).nullable(),
     names: z.array(positiveInt).nullable(),
     contacts: optionalContactsSchema.nullable(),
-    homes: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
 })
     .strict();
 /* ========= UpdatePartnerData wrapper ========= */
@@ -398,18 +398,22 @@ export const partnersQueryDTOSchema = z
 })
     .strict();
 /* ===================== OutdatedData (view) ===================== */
-const outdatedHomesItemSchema = z
+const cooperationItemSchema = z
     .object({
-    name: nonEmpty,
+    partnerContacts: nonEmpty,
+    partnerName: nonEmpty,
+    homeName: nonEmpty,
+    regionName: nonEmpty,
+    partnerId: positiveInt,
+    isRecoverable: z.boolean(),
     id: positiveInt,
-})
-    .strict();
+});
 export const outdatedDataSchema = z
     .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    homes: z.array(outdatedHomesItemSchema), //TODO:
+    coordinations: z.array(cooperationItemSchema), //TODO:
 })
     .strict();
 /* ===================== Partner (view) & partners list ===================== */
@@ -429,7 +433,7 @@ export const partnerSchema = z
     comment: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
-    homes: z.array(outdatedHomesItemSchema),
+    coordinations: z.array(cooperationItemSchema),
 })
     .strict();
 export const partnersSchema = z

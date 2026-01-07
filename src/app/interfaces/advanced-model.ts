@@ -14,7 +14,13 @@ import {
   HomeCoordination,
   HomeOutdatedData,
   PostalAddress,
+
 } from './home';
+
+import type {
+OutdatedCoordination,
+  OutdatedOfficialName,
+} from '@shared/schemas/home.schema';
 
 import type {
   Contact,
@@ -27,6 +33,7 @@ import type {
   DraftAddress,
   Duplicates,
 } from '@shared/schemas/common.schema';
+
 import { Observable } from 'rxjs';
 
 export type {
@@ -38,6 +45,9 @@ export type {
   OptionalContacts,
   //BaseOutdatedData,
   Duplicates,
+  OutdatedCoordination,
+  OutdatedOfficialName,
+  HomeCoordination
 };
 
 export interface AdvancedModel extends BaseModel {
@@ -69,14 +79,14 @@ export type UserRestoringData = PersonRestoringData & {
   userNames: number[] | null;
 };
 export type PartnerRestoringData = PersonRestoringData & {
-  homes: number[] | null;
+  coordinations: number[] | null;
 };
 export type VolunteerRestoringData = PersonRestoringData & {
   institutes: number[] | null;
 };
 export type HomeRestoringData = BaseRestoringData & {
   officialNames: number[] | null;
-  partners: number[] | null;
+  coordinations: number[] | null;
 };
 
 type BaseDeletingData = {
@@ -90,7 +100,7 @@ export type UserDeletingData = PersonDeletingData & {
   userNames: number[] | null;
 };
 export type PartnerDeletingData = PersonDeletingData & {
-  homes: number[] | null;
+  coordinations: number[] | null;
 };
 export type VolunteerDeletingData = PersonDeletingData & {
   institutes: number[] | null;
@@ -98,7 +108,7 @@ export type VolunteerDeletingData = PersonDeletingData & {
 };
 export type HomeDeletingData = BaseDeletingData & {
   officialNames: number[] | null;
-  partners: number[] | null;
+  coordinations: number[] | null;
 };
 
 /* type BaseOutdatedData = {
@@ -112,13 +122,13 @@ export type UserOutdatedData = PersonOutdatedData & {
   userNames: OutdatedUserName[];
 };
 export type PartnerOutdatedData = PersonOutdatedData & {
-  homes: OutdatedHome[];
+  coordinations: OutdatedHome[];
 };
 export type VolunteerOutdatedData = PersonOutdatedData & {
   institutes: OutdatedInstitute[];
 };
 export type HomeOutdatedData = BaseOutdatedData & {
-  partners: OutdatedCoordination[];
+  coordinations: OutdatedCoordination[];
   officialNames: OutdatedOfficialName[];
 }; */
 
@@ -150,7 +160,7 @@ export type PartnerChangingMain = PersonChangingMain & {
   position?: string | null;
 };
 export type PartnerChangingData = BaseChangingData<PartnerChangingMain> & {
-  homes: number[] | null;
+  coordinations: number[] | null;
 };
 
 export type VolunteerChangingData = BaseChangingData<PersonChangingMain> & {
@@ -164,7 +174,7 @@ export type HomeChangingMain = BaseChangingMain & {
   position?: string | null;
 };
 export type HomeChangingData = BaseChangingData<HomeChangingMain> & {
-  partners: number[] | null;
+  coordinations: number[] | null;
 };
 
 type BaseOutdatingNames = {
@@ -184,14 +194,14 @@ export type UserOutdatingData = PersonOutdatingData & {
   userName: string | null;
 };
 export type PartnerOutdatingData = PersonOutdatingData & {
-  homes: number[] | null;
+  coordinations: number[] | null;
 };
 export type VolunteerOutdatingData = PersonOutdatingData & {
   institutes: number[] | null;
 };
 export type HomeOutdatingData = BaseOutdatingData & {
-  officialNames: number[] | null;
-  partners: number[] | null;
+  officialName: string | null;
+  coordinations: number[] | null;
 };
 
 export type OwnerChangingData =
@@ -263,7 +273,7 @@ export type UserDraft = PersonDraft & {
 export type PartnerDraft = PersonDraft & {
   affiliation: string;
   position: string | null;
-  draftHomes: number[];
+  draftCoordinations: number[];
 };
 
 export type VolunteerDraft = PersonDraft & {
@@ -315,7 +325,7 @@ export type Partner = Person & {
   affiliation: string;
   position: string | null;
   outdatedData: PartnerOutdatedData;
-  homes: OutdatedHome[];
+  coordinations: OutdatedCoordination[];
 };
 export type Volunteer = Person & {
   institutes: Institute[];
@@ -335,8 +345,10 @@ export type Home = Owner & {
   infoNote: string | null;
   orderedContacts: HomeContacts;
   outdatedData: HomeOutdatedData;
-  partners: HomeCoordination[];
+  coordinations: HomeCoordination[];
   dateOfLastUpdate: Date | null;
+  status: 'OPEN' | 'CLOSE';
+  dateOfClose: Date | null;
 };
 
 export type OwnerByKind<K extends Kind> = K extends 'user'

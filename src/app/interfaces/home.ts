@@ -42,6 +42,6 @@ export interface Home extends AdvancedModel {
   dateOfRestriction: Date | null;
   orderedContacts: HomeContacts;
   outdatedData: HomeOutdatedData;
-  partners: HomeCoordination[];
+  coordinations: HomeCoordination[];
   dateOfLastUpdate: Date | null;
 }

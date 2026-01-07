@@ -443,6 +443,6 @@ export {
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
   VolunteerSubscription, VolunteerCooperation, Institute,
-  Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination
+  Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate
 };
 

@@ -5,15 +5,15 @@ import { TranslateService } from '@ngx-translate/core';
 import { DiffConfirmService } from './diff-confirm.service';
 
 import {
-  User,
   OutdatedUserName,
-  UserChangingData,
-  UserOutdatingData,
   UserContacts,
   UserDraftContacts,
 } from '../interfaces/user';
 
 import {
+  User,
+  UserChangingData,
+  UserOutdatingData,
   ContactType,
   UserRestoringData,
   UserDeletingData,
@@ -27,6 +27,10 @@ import {
   Partner,
   Volunteer,
   VolunteerDraft,
+  OutdatedCoordination,
+  Home,
+  HomeDraft,
+  OutdatedOfficialName,
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
@@ -82,15 +86,48 @@ export class OwnerDiffService {
       outdating: nextOutdating,
     };
   }
-  // Homes
-  corrHomes(
+
+  // Official Names
+
+  corrOfficialNames(
     restoringIds: number[],
-    outdating: OutdatedHome[],
-    draftHomes: PartnerDraft['draftHomes'],
-    outdatedAll: OutdatedHome[]
+    outdating: OutdatedOfficialName[],
+    draftOfficialName: HomeDraft['officialName'],
+    outdatedAll: OutdatedOfficialName[]
   ): {
     restoring: number[] | null;
-    outdating: OutdatedHome[];
+    outdating: OutdatedOfficialName[];
+  } {
+    // clone inputs to avoid external mutation
+    let nextRestoring = [...restoringIds];
+    const nextOutdating = [...outdating];
+
+    const toRemoveId = restoringIds.find((id) => {
+      const candidate = outdatedAll.find((x) => x.id === id);
+      return candidate && candidate.officialName !== draftOfficialName;
+    });
+
+    if (toRemoveId) {
+      const toRemove = outdatedAll.find((x) => x.id === toRemoveId);
+      if (toRemove) nextOutdating.push(toRemove);
+      nextRestoring = nextRestoring.filter((id) => id !== toRemoveId);
+    }
+
+    return {
+      restoring: nextRestoring.length ? nextRestoring : null,
+      outdating: nextOutdating,
+    };
+  }
+
+  // Coordinations
+  corrCoordinations(
+    restoringIds: number[],
+    outdating: OutdatedCoordination[],
+    draftCoordinations: HomeDraft['draftCoordinations'] | PartnerDraft['draftCoordinations'],
+    outdatedAll: OutdatedCoordination[]
+  ): {
+    restoring: number[] | null;
+    outdating: OutdatedCoordination[];
   } {
     // clone inputs to avoid external mutation
     let nextRestoring = [...restoringIds];
@@ -99,7 +136,7 @@ export class OwnerDiffService {
     const toRemove: number[] = [];
     for (const id of restoringIds) {
       const restoring = outdatedAll.find((h) => h.id === id);
-      if (restoring && !draftHomes.includes(id)) {
+      if (restoring && !draftCoordinations.includes(id)) {
         nextOutdating = [...nextOutdating, restoring];
         toRemove.push(id);
       }
@@ -177,27 +214,53 @@ export class OwnerDiffService {
     return { restoringId };
   }
 
-  // Homes duplicates
-  async checkHomes(
-    outdated: OutdatedHome[],
-    draftHomes: PartnerDraft['draftHomes']
+  // Official Names duplicates
+  async checkOfficialNames(
+    outdatedOfficialNames: OutdatedOfficialName[],
+    draftOfficialName: HomeDraft['officialName']
+  ): Promise<{
+    restoringId: number | null;
+  }> {
+    let restoringId: number | null = -1;
+    const dups = outdatedOfficialNames.filter(
+      (u) => u.officialName === draftOfficialName
+    );
+    if (dups.length > 0) {
+      const isConfirmed = await this.diffConfirmService.confirmDataCorrectness(
+        'officialName',
+        draftOfficialName
+      );
+      if (isConfirmed) {
+        restoringId = dups[0].id;
+      } else {
+        restoringId = null;
+      }
+    }
+    return { restoringId };
+  }
+
+  // Coordinations duplicates
+  async checkCoordinations(
+    outdated: OutdatedCoordination[],
+    draftCoordinations: HomeDraft['draftCoordinations'] | PartnerDraft['draftCoordinations']
   ): Promise<{
     restoring: number[] | null;
   }> {
     let restoring: number[] | null = [];
     const duplicates: { id: number; name: string }[] = [];
-    for (const v of draftHomes ?? []) {
+    for (const v of draftCoordinations ?? []) {
       if (!v) continue;
       if (Array.isArray(outdated)) {
         for (const old of outdated) {
-          if (old.id === v) duplicates.push({ id: old.id, name: old.name });
+          if (old.id === v)
+            duplicates.push({ id: old.id, name: old.partnerName });
         }
       }
     }
     if (duplicates.length > 0) {
-      const contentString = `${duplicates.map((h) => h.name).join(', ')}`;
+      const contentString = `${duplicates.map((p) => p.name).join(', ')}`;
       const isConfirmed = await this.diffConfirmService.confirmDataCorrectness(
-        'homes',
+        'coordinations',
         contentString
       );
       if (isConfirmed) {
@@ -275,10 +338,36 @@ export class OwnerDiffService {
     };
   }
 
-  //Homes
-  async diffHomes(
-    current: Partner['homes'],
-    draftIds: PartnerDraft['draftHomes']
+  //Official Name
+  async diffOfficialName(
+    existing: Home,
+    draft: HomeDraft
+  ): Promise<{
+    changed: boolean;
+    changes: string | null;
+    outdating: string | null;
+  }> {
+    const changed =
+      normalize(existing.officialName) !== normalize(draft.officialName);
+    let moveToOutdated = false;
+    if (changed) {
+      const oldUserName = `${existing.officialName}`.trim();
+      moveToOutdated = await this.diffConfirmService.confirmOutdateOrDelete(
+        'officialName',
+        oldUserName
+      );
+    }
+    return {
+      changed: !!changed,
+      changes: changed ? draft.officialName : null,
+      outdating: changed && moveToOutdated ? existing.officialName : null,
+    };
+  }
+
+  //Partners
+  async diffCoordinations(
+    current: Home['coordinations'] | Partner['coordinations'],
+    draftIds: HomeDraft['draftCoordinations']
   ): Promise<{
     changed: boolean;
     changes: number[] | null;
@@ -288,17 +377,17 @@ export class OwnerDiffService {
     const outdating: number[] | null = [];
     const deleting: number[] | null = [];
     const changes: number[] | null = [];
-    const currentIds = current?.map((h) => h.id) ?? [];
+    const currentIds = current?.map((p) => p.id) ?? [];
     if (current.length) {
-      current.forEach(async (h) => {
-        if (!draftIds.includes(h.id)) {
+      current.forEach(async (p) => {
+        if (!draftIds.includes(p.id)) {
           const moveToOutdated =
             await this.diffConfirmService.confirmOutdateOrDelete(
-              'home',
-              h.name
+              'coordination',
+              p.partnerName
             );
-          if (moveToOutdated) outdating.push(h.id);
-          else deleting.push(h.id);
+          if (moveToOutdated) outdating.push(p.id);
+          else deleting.push(p.id);
         }
       });
     }

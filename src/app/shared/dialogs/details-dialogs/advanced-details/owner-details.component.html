@@ -163,20 +163,20 @@
       </mat-grid-list>
     </mat-tab>
 
-    <!-- Homes --TODO:-->
-    @if(data().operation == 'view-edit' && hasHomes()){
+    <!-- Coordinations --TODO:-->
+    @if(data().operation == 'view-edit' && hasCoordinations()){
     <mat-tab [label]="'TABLE.CARD.COORDINATED_HOMES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
-        @for (item of homes; track item.id) {
+        @for (item of coordinations; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
-          <div>{{ item.name }}</div>
+          <div>{{ item[homeOrPartner() == 'partner' ? 'homeName' : 'partnerName'] }}</div>
         </mat-grid-tile>
         }
       </mat-grid-list>
     </mat-tab>
     }
 
-    <!-- Institutes --TODO:-->
+    <!-- Institutes ---->
     @if(hasInstitutes()){
     <mat-tab [label]="'TABLE.CARD.INSTITUTES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
@@ -249,15 +249,15 @@
         <!-- Outdated Names -->
         @if (hasOutdatedNames()) {
         <!--   style="background-color: rgb(224, 241, 227);" -->
-        <mat-grid-tile colspan='2' [rowspan]="outdatedDataDraft.names.length">
+        <mat-grid-tile colspan='2' [rowspan]="outdatedNames.length">
           <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_NAMES_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (item of outdatedDataDraft.names; track item.id) {
+        @for (item of outdatedNames; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
             <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
-              (restore)="onRestoreOutdatedData('names', item)" (delete)="onDeleteOutdatedData('names', item.id)">
+              (restore)="onRestoreOutdatedName(item)" (delete)="onDeleteOutdatedData('names', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">
@@ -281,6 +281,24 @@
             </app-outdated-item-menu>
             }
             <div class="outdated-data">{{ item.userName }}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        <!-- Outdated Official Names -->
+        @if (hasOutdatedOfficialNames()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedOfficialNames.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_HOME_OFFICIAL_NAMES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedOfficialNames; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdateOfficialName(item)" (delete)="onDeleteOutdatedData('officialNames', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.officialName }}</div>
           </div>
         </mat-grid-tile>
         }
@@ -337,20 +355,21 @@
         }
         }
 
-        <!-- Outdated Homes -->
-        @if (hasOutdatedHomes()) {
-        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForHomes()">
-          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_HOMES_TITLE' | translate}}</div>
+        <!-- Outdated Coordinations -->
+        @if (hasOutdatedCoordinations() && homeOrPartner()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedCoordinations.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_COORDINATIONS_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (item of outdatedHomes; track item.id) {
+        @for (item of outdatedCoordinations; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
             <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
-              (restore)="onRestoreOutdatedHome(item)" (delete)="onDeleteOutdatedData('homes', item.id)">
+              (restore)="onRestoreOutdatedCoordination(item, homeOrPartner())"
+              (delete)="onDeleteOutdatedData('coordinations', item.id)">
             </app-outdated-item-menu>
             }
-            <div class="outdated-data">{{ item.name }}</div>
+            <div class="outdated-data">{{ item.homeName }} ({{ item.regionName }})</div>
           </div>
         </mat-grid-tile>
         }

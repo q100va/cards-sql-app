@@ -158,6 +158,7 @@ export const mainPartnerContactsValidator: ValidatorFn = (
     'vKontakte',
     'instagram',
     'facebook',
+    'website',
     'otherContact',
   ];
   for (const type of possibleContactTypes) {

@@ -3,8 +3,7 @@ import { Op } from 'sequelize';
 import {
   Country, Region, District, Locality,
   HomeAddress, Home, HomeContact, HomeSearch, HomeOutdatedName,
-  User,
-  HomeCoordination
+  Partner, PartnerContact, HomeUpdateDate, HomeCoordination
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -381,7 +380,7 @@ router.post(
         {
           model: HomeOutdatedName,
           as: 'outdatedNames',
-          attributes: ['id', 'firstName', 'patronymic', 'lastName'],
+          attributes: ['id', 'officialName'],
           //separate: true,
         },
         {
@@ -398,7 +397,7 @@ router.post(
                   model: PartnerContact,
                   as: 'contacts',
                   where: { isRestricted: false },
-                  attributes: ['content', 'isRestricted'],
+                  attributes: ['type', 'content', 'isRestricted'],
                 },
               ]
             }
@@ -449,6 +448,7 @@ router.post(
         offset: pageSize * pageNumber,
         limit: pageSize,
         // subQuery: false, // avoid subquery limits in includes
+        subQuery: false,//TODO: delete????
         distinct: true,
       });
 

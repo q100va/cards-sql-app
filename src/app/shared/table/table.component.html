@@ -27,6 +27,12 @@
         <td mat-cell *matCellDef="let row"> {{row.roleName}} </td>
       </ng-container>
 
+      <!-- Region Column -->
+      <ng-container matColumnDef="regionName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.REGION_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row"> {{row.address.region.shortName}} </td>
+      </ng-container>
+
       <!-- Full Name Column -->
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.FULL_NAME' | translate}}</th>
@@ -51,6 +57,12 @@
         </td>
       </ng-container>
 
+      <!-- Home name Column -->
+      <ng-container matColumnDef="homeName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.HOME_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row"> {{row.homeName}} </td>
+      </ng-container>
+
       <!-- Affiliation/position Column -->
       <ng-container matColumnDef="affiliation">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.AFFILIATION' | translate}}</th>
@@ -61,10 +73,38 @@
         </td>
       </ng-container>
 
+      <!-- Home categories Column -->
+      <ng-container matColumnDef="categories">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.HOME_CATEGORIES' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <div>
+            <span>@if (row.noAddress){ {{'TABLE.HOME_CATEGORIES.NO_ADDRESS' | translate}} }
+              @else { {{'TABLE.HOME_CATEGORIES.WITH_ADDRESS' | translate}} }
+            </span><br />
+            @if (row.specialHome){ <span>{{'TABLE.HOME_CATEGORIES.SPECIAL_HOME' | translate}} </span><br />}
+            @if (row.acceptableForSchool){ <span>{{'TABLE.HOME_CATEGORIES.ACC_SCHOOL' | translate}} </span><br />}
+          </div>
+        </td>
+      </ng-container>
+
       <!-- Contact Column -->
       <ng-container matColumnDef="contacts">
         <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.CONTACTS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
+          <!-- Official home name -->
+          @if(row.officialName){
+          {{row.officialName}}<br />
+          @if(allFilterParameters().includeOutdated && hasOutdatedOfficialNames(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (item of row.outdatedData.officialNames; track item.id) {
+          <div class="outdated-data">
+            <span>{{item.officialName}}</span>
+          </div>
+          }
+          }
+          }
+
+
           @for (item of contactTypes; track $index) {
           @if (row.orderedContacts[item.type]) {
           <div class="outer">
@@ -103,10 +143,20 @@
         </td>
       </ng-container>
 
+      <!-- Date Of Last Update Column -->
+      <ng-container matColumnDef="dateOfLastUpdate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.LAST_UPDATE_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfLastUpdate)}}
+      </ng-container>
+
       <!-- Address Column -->
       <ng-container matColumnDef="address">
         <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.ADDRESS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
+          @if (row.postalAddress) {
+          {{row.postalAddress.fullPostalAddress}}<br />
+          } @else {
           @if (row.address.country) {
           {{row.address.country.name}}<br />
           }
@@ -119,12 +169,16 @@
           @if (row.address.locality) {
           {{row.address.locality.shortName}}<br />
           }
+          }
+
 
           @if(allFilterParameters().includeOutdated && hasOutdatedAddresses(row)) {
           <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
           @for (address of row.outdatedData.addresses; track $index) {
           <div class="outdated-data">
-
+            @if (address.postalAddress) {
+            {{address.fullPostalAddress}}<br />
+            } @else {
             @if (address.country) {
             {{address.country.name}}<br />
             }
@@ -136,6 +190,7 @@
             }
             @if (address.locality) {
             {{address.locality.shortName}}<br />
+            }
             }
 
           </div>
@@ -166,7 +221,7 @@
           @for (home of row.outdatedData.homes; track $index) {
           <div class="outdated-data">
             {{home.name}} ({{home.region.shortName}})
-            @if (home.close) {
+            @if (home.status == 'CLOSE') {
             - {{'TABLE.NOTES.CLOSE' | translate}}
             } @else if (home.isRestricted) {
             - {{'TABLE.NOTES.DEACTIVATED' | translate}}
@@ -224,6 +279,37 @@
         </td>
       </ng-container>
 
+      <!-- Partners Column -->
+      <ng-container matColumnDef="partners">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.COOPERATIONS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+
+          @for (partner of row.partners; track $index) {
+          <div>
+            {{partner.name}}
+            @for (item of contactTypes; track $index) {
+            @if (row.partner.contacts[item.type]) {
+            <div class="outer">
+              <div class="inner-left" [title]="item.label | translate">
+                <mat-icon [svgIcon]="item.type"></mat-icon>
+              </div>
+              <div class="inner-right">
+                @for (contact of row.partner.contacts[item.type]; track $index) {
+                {{ contact.content | contactUrl:item.type }}<br />
+                }
+              </div>
+            </div>
+            }
+            }
+          </div>
+          }
+
+        </td>
+      </ng-container>
+
+
+
       <!-- Date Of Start Column -->
       <ng-container matColumnDef="dateOfStart">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.START_DATE' | translate}}</th>
@@ -246,6 +332,9 @@
           @if (row.isRestricted) {
           {{('TABLE.NOTES.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
           {{row.causeOfRestriction}}
+          @if(row.status == 'CLOSE'){
+          {{('TABLE.NOTES.HOME_CLOSE_FROM' | translate) + dateUtils.transformDate(row.dateOfClose) }}
+          }
           } @else {
           {{'TABLE.NOTES.ACTIVE' | translate}}
           }
@@ -304,6 +393,18 @@
                 <span>{{'TABLE.MENU.OPEN_SENIORS' | translate}}</span>
               </button>
               }
+              @if(kind() == 'home'){
+              <button mat-menu-item (click)="onShowHomesSeniorsClick(row.id)" *hasOp="permissions.viewSeniors">
+                <mat-icon>elderly_woman</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_SENIORS' | translate}}</span>
+              </button>
+
+              <button mat-menu-item (click)="onShowHomesPartnersClick(row.id)" *hasOp="permissions.viewPartners">
+                <mat-icon fontSet="material-icons-outlined" fontSet="material-icons-outlined">handshake</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_PARTNERS' | translate}}</span>
+              </button>
+              }
+
               <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockOwnerClick(row.id)"
                 *hasOp="permissions.block">
                 <mat-icon fontSet="material-icons-outlined">lock</mat-icon>

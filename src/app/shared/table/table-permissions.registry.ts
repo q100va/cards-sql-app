@@ -1,7 +1,7 @@
 import { Params } from '../../directives/has-op.directive';
 
 
-export type TableComponentType = 'user' | 'partner' | 'volunteer';
+export type TableComponentType = 'user' | 'partner' | 'volunteer' | 'home';
 
 
 type PermissionKeysByKind = {
@@ -25,6 +25,14 @@ type PermissionKeysByKind = {
     | 'viewSeniors'
     | 'viewUsers'
     | 'viewOrders'
+    | 'block'
+    | 'unblock'
+    | 'delete';
+
+      home:
+    | 'viewOrEdit'
+    | 'viewSeniors'
+    | 'viewPartners'
     | 'block'
     | 'unblock'
     | 'delete';
@@ -116,6 +124,32 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
     },
     viewUsers: {
       codes: ['VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST'],
+      mode: 'any',
+    },
+  },
+    home: {
+    viewOrEdit: {
+      codes: ['VIEW_HOME', 'EDIT_HOME'],
+      mode: 'any',
+    },
+    block: {
+      codes: ['BLOCK_HOME'],
+      mode: 'any',
+    },
+    unblock: {
+      codes: ['UNBLOCK_HOME'],
+      mode: 'any',
+    },
+    delete: {
+      codes: ['DELETE_HOME'],
+      mode: 'any',
+    },
+    viewPartners: {
+      codes: ['VIEW_LIMITED_PARTNERS_LIST', 'VIEW_FULL_PARTNERS_LIST'],
+      mode: 'any',
+    },
+    viewSeniors: {
+      codes: ['VIEW_LIMITED_SENIORS_LIST', 'VIEW_FULL_SENIORS_LIST'],
       mode: 'any',
     },
   },

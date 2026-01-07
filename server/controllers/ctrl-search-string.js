@@ -83,7 +83,7 @@ const OWNER_CONFIG = {
         .flatMap(i => [i.firstName, i.patronymic, i.lastName])
         .filter(Boolean)
         .join(' '),
-    //homes: (p) => p?.homes ?? [],
+    //coordinations: (p) => p?.homes ?? [],
   },
 
   volunteer: {

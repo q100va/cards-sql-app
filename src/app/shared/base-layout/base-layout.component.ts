@@ -69,7 +69,7 @@ export class BaseLayoutComponent {
   readonly userName = computed(() => this.user()?.userName ?? '');
 
   menu: Menu = [
-/*     {
+    /*     {
       params: {
         codes: [],
         mode: 'any',
@@ -101,16 +101,6 @@ export class BaseLayoutComponent {
     },
     {
       params: {
-        codes: ['VIEW_LIMITED_PARTNERS_LIST', 'VIEW_FULL_PARTNERS_LIST'],
-        mode: 'any',
-      },
-      dataCy: 'nav-partners',
-      icon: 'handshake',
-      text: 'MENU.PARTNERS',
-      link: '/partners',
-    },
-      {
-      params: {
         codes: ['VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST'],
         mode: 'any',
       },
@@ -119,6 +109,28 @@ export class BaseLayoutComponent {
       text: 'MENU.VOLUNTEERS',
       link: '/volunteers',
     },
+    {
+      params: {
+        codes: ['VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-homes',
+      icon: 'house',
+      text: 'MENU.HOMES',
+      link: '/homes',
+    },
+
+    {
+      params: {
+        codes: ['VIEW_LIMITED_PARTNERS_LIST', 'VIEW_FULL_PARTNERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-partners',
+      icon: 'handshake',
+      text: 'MENU.PARTNERS',
+      link: '/partners',
+    },
+
     {
       params: {
         codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],

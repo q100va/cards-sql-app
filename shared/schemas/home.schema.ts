@@ -29,10 +29,12 @@ import {
 import { contactType } from './common.schema.js';
 
 //TODO:
-const partnerItemSchema = z
+const cooperationItemSchema = z
   .object({
     partnerContacts: nonEmpty,
     partnerName: nonEmpty,
+    homeName: nonEmpty,
+    regionName: nonEmpty,
     partnerId: positiveInt,
     isRecoverable: z.boolean(),
     id: positiveInt,
@@ -419,7 +421,7 @@ export const changingDataSchema = z
     main: changingMainSchema.nullable(),
     address: changingAddressSchema.nullable(),
     contacts: changingContactsSchema.nullable(),
-    partners: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -472,7 +474,7 @@ export const outdatingDataSchema = z
       .strict()
       .nullable(),
     contacts: z.array(positiveInt).nullable(),
-    partners: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
   })
   .strict();
 
@@ -482,7 +484,7 @@ export const deletingDataSchema = z
     officialNames: z.array(positiveInt).nullable(),
     addresses: z.array(positiveInt).nullable(),
     contacts: z.array(positiveInt).nullable(),
-    partners: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
   })
   .strict();
 
@@ -492,7 +494,7 @@ export const restoringDataSchema = z
     addresses: z.array(positiveInt).nullable(),
     officialNames: z.array(positiveInt).nullable(),
     contacts: optionalContactsSchema.nullable(),
-    partners: z.array(positiveInt).nullable(),
+    coordinations: z.array(positiveInt).nullable(),
   })
   .strict();
 
@@ -533,7 +535,7 @@ export const homesQueryDTOSchema = z
       .object({
         general: z
           .object({
-            //  partners: z.array(positiveInt).min(1).optional(),
+            //  coordinations: z.array(positiveInt).min(1).optional(),
             noAddress: z.boolean().optional(),
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
@@ -591,6 +593,7 @@ export const outdatedAddressItemSchema = z
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
     postalAddressPart: nonEmpty.nullable(),
+    fullPostalAddress: nonEmpty,
     id: positiveInt,
     isRecoverable: z.boolean(),
   })
@@ -601,7 +604,7 @@ export const outdatedDataSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     officialNames: z.array(outdatedNameItemSchema),
-    partners: z.array(partnerItemSchema),
+    coordinations: z.array(cooperationItemSchema),
   })
   .strict();
 
@@ -620,6 +623,7 @@ export const postalAddressSchema = z
   .object({
     postalCode: nonEmpty,
     postalAddressPart: nonEmpty.nullable(),
+    fullPostalAddress: nonEmpty,
     id: positiveInt,
   })
   .strict();
@@ -643,8 +647,10 @@ export const homeSchema = z
     infoNote: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
-    partners: z.array(partnerItemSchema),
-    dateOfLastUpdate: z.coerce.date(),
+    coordinations: z.array(cooperationItemSchema),
+    dateOfLastUpdate: nullableIsoDate,
+    status: z.enum(['OPEN', 'CLOSE']),
+    dateOfClose: nullableIsoDate,
   })
   .strict();
 
@@ -661,10 +667,10 @@ export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
 export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type HomeChangingData = z.infer<typeof changingDataSchema>;
 export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
-export type HomeCoordination = z.infer<typeof partnerItemSchema>;
+export type HomeCoordination = z.infer<typeof cooperationItemSchema>;
 export type HomeAddress = z.infer<typeof nonNullableAddressSchema>;
 export type PostalAddress = z.infer<typeof postalAddressSchema>;
 export type HomeContacts = z.infer<typeof optionalContactsSchema>;
-//export type OutdatedCoordination = z.infer<typeof partnerItemSchema>;
-//export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
+export type OutdatedCoordination = z.infer<typeof cooperationItemSchema>;
+export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;

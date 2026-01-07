@@ -52,6 +52,10 @@ import {
   VolunteerMainService,
   VolunteerService,
 } from '../../services/volunteer.service';
+import {
+  HomeMainService,
+  HomeService,
+} from '../../services/home.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 
@@ -106,7 +110,7 @@ import {
   UserDraft,
   UserOutdatingData,
   UserRestoringData,
-  Volunteer,
+  Volunteer, Home
 } from 'src/app/interfaces/advanced-model';
 //import { Owner } from 'src/app/interfaces/advanced-model';
 
@@ -173,6 +177,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
   protected readonly volunteerService = inject(
     VolunteerService
   ) as VolunteerMainService;
+
+    protected readonly homeService = inject(
+   HomeService
+  ) as HomeMainService;
 
   params = input.required<{
     columns: ColumnDefinition[];
@@ -300,7 +308,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
         ? this.userService
         : this.kind() === 'partner'
         ? this.partnerService
-        : this.volunteerService; //this.kind() === 'volunteer' ?
+        : this.kind() === 'volunteer'
+        ? this.volunteerService
+        : this.kind() === 'home'
+        ? this.homeService : this.homeService;//this.seniorService
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -405,7 +416,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   hasOutdatedUserNames = (row: User): boolean =>
     !!row?.outdatedData?.userNames && row.outdatedData.userNames.length > 0;
 
-  hasOutdatedNames = (row: OwnerByKind<K>): boolean =>
+  hasOutdatedNames = (row: User | Partner | Volunteer): boolean =>
     !!row?.outdatedData?.names && row.outdatedData.names.length > 0;
 
   hasOutdatedContacts = (row: OwnerByKind<K>): boolean =>
@@ -424,6 +435,12 @@ export class TableComponent<K extends Kind> implements OnChanges {
       !!row?.outdatedData?.institutes && row.outdatedData.institutes.length > 0
     );
   };
+  hasOutdatedOfficialNames = (row: Home): boolean => {
+    return (
+      !!row?.outdatedData?.officialNames && row.outdatedData.officialNames.length > 0
+    );
+  };
+
 
 /*   hasHomes = (row: OwnerByKind<K>): boolean => {
     //!!row?.homes && row.homes.length > 0;
@@ -573,6 +590,8 @@ export class TableComponent<K extends Kind> implements OnChanges {
   onShowVolunteersSeniorsClick(id: number) {}
   onShowVolunteersCooperationsClick(id: number) {}
   onShowVolunteersOrdersClick(id: number) {}
+  onShowHomesPartnersClick(id: number) {}
+  onShowHomesSeniorsClick(id: number) {}
 
   onBlockOwnerClick(id: number) {
     if (this.kind() !== 'partner') {

@@ -20,7 +20,8 @@ import { OutdatedHome } from '../../interfaces/partner';
 import {
   PartnerService,
   PartnerMainService,
-} from 'src/app/services/partner.service';
+} from '../../services/partner.service';
+import { OutdatedFullName } from '@shared/schemas/common.schema';
 
 @Component({
   selector: 'app-partner-details',
@@ -63,14 +64,16 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       'causeOfRestriction',
       'dateOfRestriction',
     ];
-    this.hasOutdatedHomes.set(this.outdatedDataDraft.homes.length > 0);
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+    this.hasOutdatedCoordinations.set(this.outdatedDataDraft.coordinations.length > 0);
+    this.homeOrPartner.set('partner');
   }
 
   override setEmptyOutdatedDataDraft() {
     this.outdatedDataDraft = {
       addresses: [],
       names: [],
-      homes: [],
+      coordinations: [],
       contacts: {},
     };
   }
@@ -79,7 +82,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.restoringDataDraft = {
       addresses: null,
       names: null,
-      homes: null,
+      coordinations: null,
       contacts: null,
     };
   }
@@ -87,7 +90,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.deletingDataDraft = {
       addresses: null,
       names: null,
-      homes: null,
+      coordinations: null,
       contacts: null,
     };
   }
@@ -96,81 +99,22 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       main: null,
       contacts: null,
       address: null,
-      homes: null,
+      coordinations: null,
     };
   }
   override setOutdatingData() {
     this.outdatingData = {
       address: null,
       names: null,
-      homes: null,
+      coordinations: null,
       contacts: null,
     };
   }
 
-  override onRestoreOutdatedHome(data: OutdatedHome) {
-    this.restoringDataDraft['homes'] ??= [];
-    this.restoringDataDraft['homes']?.push(data.id);
-    const fa = this.mainForm.get('homes') as FormArray;
-    if (fa.length === 1 && fa.at(0).value == null) {
-      fa.at(0)?.setValue(data.name);
-    } else {
-      //TODO: add new home
-    }
-  }
 
-  override async correctRestoringData() {
-    super.correctRestoringData();
-
-    // Homes
-    const { restoring, outdating } = this.ownerDiffService.corrHomes(
-      this.restoringDataDraft.homes ?? [],
-      this.outdatedDataDraft.homes ?? [],
-      this.ownerDraft.draftHomes ?? [],
-      this.existingOwner!.outdatedData.homes ?? []
-    );
-
-    this.restoringDataDraft.homes = structuredClone(restoring);
-    this.outdatedDataDraft.homes = structuredClone(outdating);
-  }
-
-  override async checkOutdatedDataDuplicates() {
-    const homes = await this.ownerDiffService.checkHomes(
-      this.outdatedDataDraft.homes,
-      this.ownerDraft.draftHomes
-    );
-    if (!homes.restoring) return false;
-    if (homes.restoring.length > 0) {
-      this.restoringDataDraft.homes = [
-        ...(this.restoringDataDraft.homes ?? []),
-        ...homes.restoring,
-      ];
-    }
-
-    return await super.checkOutdatedDataDuplicates();
-  }
-  override async checkAllChanges() {
-    const homes = await this.ownerDiffService.diffHomes(
-      this.existingOwner!.homes ?? [],
-      this.ownerDraft.draftHomes ?? []
-    );
-    if (homes.changes) this.changingData.homes = homes.changes;
-    if (homes.outdating) this.outdatingData.homes = homes.outdating;
-    return await super.checkAllChanges();
-  }
-
-  override getRowSpanForHomes(): number {
-    return this.outdatedDataDraft.homes.length;
-  }
-
-  override get outdatedHomes(): OutdatedHome[] {
+  override get outdatedNames(): OutdatedFullName[] {
     const data = this.outdatedDataDraft;
-    const list = data?.homes;
-    return Array.isArray(list) ? list : [];
-  }
-
-  override get homes(): OutdatedHome[] {
-    const list = this.data().object?.homes;
+    const list = data?.names;
     return Array.isArray(list) ? list : [];
   }
 
@@ -178,11 +122,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     return true;
   }
 
-  override hasHomes(): boolean {
-    return true;
-  }
-
-  override setHasOutdatedHomes() {
-    this.hasOutdatedHomes.set(this.outdatedDataDraft.homes.length > 0);
+  override setHasOutdatedNames() {
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 }
