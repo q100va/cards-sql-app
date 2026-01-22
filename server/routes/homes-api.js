@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import {
   Country, Region, District, Locality,
   HomeAddress, Home, HomeContact, HomeSearch, HomeOutdatedName,
-  Partner, PartnerContact, HomeUpdateDate, HomeCoordination
+  Partner, PartnerContact, HomeUpdateDate, HomeCoordination,// Senior
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -18,6 +18,70 @@ import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 
 const router = Router();
+const includes = [
+  {
+    model: HomeContact,
+    as: 'contacts',
+    attributes: ['id', 'type', 'content', 'isRestricted'],
+  },
+  {
+    model: HomeAddress,
+    as: 'addresses',
+    attributes: [
+      'id', 'isRestricted', 'isRecoverable', 'postalName', 'postalCode', 'postalAddressPart', 'fullPostalAddress'],
+    include: [
+      {
+        model: Country,
+        attributes: ['id', 'name'],
+      },
+      {
+        model: Region,
+        attributes: ['id', 'shortName'],
+      },
+      {
+        model: District,
+        attributes: ['id', 'shortName'],
+      },
+      {
+        model: Locality,
+        attributes: ['id', 'shortName'],
+      },
+    ]
+  },
+  {
+    model: HomeOutdatedName, as: 'outdatedNames',
+    attributes: ['id', 'officialName']
+  },
+  {
+    model: HomeCoordination,
+    as: 'coordinations',
+    attributes: ['id', 'partnerId', 'homeId', 'isRecoverable', 'isRestricted'],
+    include: [
+      {
+        model: Partner,
+        as: 'partner',
+        attributes: ['firstName', 'patronymic', 'lastName'],
+        include: [
+          {
+            model: PartnerContact,
+            as: 'contacts',
+            where: { isRestricted: false },
+            attributes: ['id', 'type', 'content', 'isRestricted'],
+          },
+        ]
+      }
+    ]
+  },
+  {
+    model: HomeUpdateDate,
+    as: 'updateDates',
+    attributes: ['date'],
+    separate: true,
+    limit: 1,
+    order: [['date', 'DESC']]
+  },
+
+];
 
 // API create home
 
@@ -52,7 +116,7 @@ router.get(
       next(error);
     }
   });
-//TODO:
+
 router.post(
   '/create-home',
   requireAuth,
@@ -62,7 +126,7 @@ router.post(
     try {
       const creatingHome = req.body;
 
-      //console.log('creatingHome', creatingHome)
+      //  console.log('creatingHOME', creatingHome)
 
       const result = await withTransaction(async (t) => {
 
@@ -70,7 +134,7 @@ router.post(
           {
             homeName: creatingHome.homeName,
             officialName: creatingHome.officialName,
-            postalName: creatingHome.postalName,
+            // postalName: creatingHome.postalName,
             noAddress: creatingHome.noAddress,
             specialHome: creatingHome.specialHome,
             acceptableForSchool: creatingHome.acceptableForSchool,
@@ -82,6 +146,12 @@ router.post(
           },
           { transaction: t }
         );
+        /*         console.log('HOME', home.id);
+                const freshHome1 = await Home.findOne({
+                  where: { id: home.id },
+                  transaction: t,
+                });
+                console.log('freshHOME1', freshHome1) */
 
         await saveOwnerContactsAndAddress(
           'home',
@@ -90,6 +160,7 @@ router.post(
           { HomeContact, HomeAddress },
           t
         );
+
 
         if ((creatingHome.draftCoordinations ?? []).length) {
           await HomeCoordination.bulkCreate(
@@ -112,53 +183,12 @@ router.post(
               'createdAt',
               'updatedAt']
           },
-          include: [
-            {
-              model: HomeContact,
-              as: 'contacts',
-              attributes: ['content', 'isRestricted'],
-            },
-            {
-              model: HomeAddress,
-              as: 'addresses',
-              attributes: ['isRestricted'],
-              include: [
-                { model: Country, attributes: ['name'] },
-                { model: Region, attributes: ['name'] },
-                { model: District, attributes: ['name'] },
-                { model: Locality, attributes: ['name'] },
-              ],
-            },
-            {
-              model: HomeCoordination,
-              as: 'coordinations',
-              attributes: ['id', 'partnerId'],
-              include: [
-                {
-                  model: Partner,
-                  as: 'partners',
-                  attributes: ['firstName', 'patronymic', 'lastName'],
-                  include: [
-                    {
-                      model: PartnerContact,
-                      as: 'contacts',
-                      where: { isRestricted: false },
-                      attributes: ['content', 'isRestricted'],
-                    },
-                  ]
-                }
-              ]
-            },
-            {
-              model: HomeUpdateDate,
-              as: 'updateDates',
-              attributes: ['date'],
-              separate: true,
-              limit: 1,
-              order: [['date', 'DESC']]
-            },
-          ],
+          include: includes,
+          transaction: t,
         });
+
+        //   console.log('freshHOME', freshHome)
+
 
         const searchString = createSearchStringFor('home', freshHome);
         await HomeSearch.create({ homeId: home.id, content: searchString }, { transaction: t });
@@ -200,6 +230,26 @@ router.post(
                 individualHooks: true
               });
           }
+          if (changingData.main.isClose === true) {
+            await HomeCoordination.update(
+              { isRestricted: true, isRecoverable: false },
+              {
+                where: { homeId: id },
+                individualHooks: true,
+                transaction: t,
+              }
+            );
+          }
+          if (changingData.main.isClose === false) {
+            await HomeCoordination.update(
+              { isRecoverable: true },
+              {
+                where: { homeId: id },
+                individualHooks: true,
+                transaction: t,
+              }
+            );
+          }
         }
 
         //addresses, contacts, outdated
@@ -214,52 +264,7 @@ router.post(
         const fresh = await Home.findOne({
           where: { id },
           attributes: { exclude: ['createdAt', 'updatedAt'] },
-          include: [
-            { model: HomeContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
-            {
-              model: HomeAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
-              include: [
-                { model: Country, attributes: ['id', 'name'] },
-                { model: Region, attributes: ['id', 'shortName', 'name'] },
-                { model: District, attributes: ['id', 'shortName', 'name'] },
-                { model: Locality, attributes: ['id', 'shortName', 'name'] },
-              ]
-            },
-            {
-              model: HomeOutdatedName,
-              as: 'outdatedNames',
-              attributes: ['id', 'firstName', 'patronymic', 'lastName']
-            },
-            {
-              model: HomeCoordination,
-              as: 'coordinations',
-              attributes: ['id', 'partnerId'],
-              include: [
-                {
-                  model: Partner,
-                  as: 'partners',
-                  attributes: ['firstName', 'patronymic', 'lastName'],
-                  include: [
-                    {
-                      model: PartnerContact,
-                      as: 'contacts',
-                      where: { isRestricted: false },
-                      attributes: ['content', 'isRestricted'],
-                    },
-                  ]
-                }
-              ]
-            },
-            {
-              model: HomeUpdateDate,
-              as: 'updateDates',
-              attributes: ['date'],
-              separate: true,          // важно: делает отдельный запрос для hasMany
-              limit: 1,                // берём только одну
-              order: [['date', 'DESC']]// самую свежую
-            },
-
-          ],
+          include: includes,
           transaction: t,
         });
 
@@ -314,6 +319,9 @@ router.post(
       const whereHome = {};
       const whereAddress = {};
       const whereContact = {};
+      const wherePartner = {};
+      const whereUpdateDate = {};
+
 
       // view option (if you still use it)
       switch (view?.option) {
@@ -327,6 +335,24 @@ router.post(
       if (filters?.general?.comment !== undefined) {
         whereHome.comment = !filters.general.comment ? null : { [Op.not]: null };
       }
+      if (filters?.general?.infoNote !== undefined) {
+        whereHome.infoNote = !filters.general.infoNote ? null : { [Op.not]: null };
+      }
+      if (filters?.general?.noAddress !== undefined) {
+        whereHome.noAddress = !filters.general.noAddress ? null : { [Op.not]: null };
+      }
+      if (filters?.general?.specialHome !== undefined) {
+        whereHome.specialHome = !filters.general.specialHome ? null : { [Op.not]: null };
+      }
+      if (filters?.general?.acceptableForSchool !== undefined) {
+        whereHome.acceptableForSchool = !filters.general.acceptableForSchool ? null : { [Op.not]: null };
+      }
+      if (filters?.general?.isClose !== undefined) {
+        whereHome.isClose = filters.general.isClose;;
+      }
+      if (filters?.general?.hasCoordinators !== undefined) {
+        whereHome.hasCoordinators = !filters.general.hasCoordinators ? null : { [Op.not]: null };
+      }
 
       if (filters?.general?.dateBeginningRange) {
         whereHome.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
@@ -334,6 +360,11 @@ router.post(
       if (filters?.general?.dateRestrictionRange) {
         whereHome.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
+      //TODO: проверить правильно ли выставлены эти параметры. м.б. вообще всегда достаточно false
+      const coordRequired = filters?.general?.hasPartners == undefined || filters?.general?.hasPartners == false ? false : true;
+
+
+      //TODO: noAddress specialHome acceptableForSchool infoNote dateUpdateRange, hasCoordinators, status, dateOfClose
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
@@ -353,7 +384,21 @@ router.post(
         if (sub) whereAddress.homeId = { [Op.in]: sub };
       }
 
-      //TODO: noAddress specialHome acceptableForSchool infoNote dateUpdateRange
+      // partners filter
+      const partners = filters?.general?.partners || [];
+      const partnersRequired = (partners.length ?? 0) > 0;
+      if (partnersRequired) {
+        if (!includeOutdated) wherePartner.isRestricted = false;
+        wherePartner.partnerId = { [Op.in]: partners };
+      }
+
+      // dateOfLastUpdate filter
+      const dates = filters?.general?.dateUpdateRange || [];
+      const datesRequired = (dates.length ?? 0) > 0;
+      if (datesRequired) {
+        whereUpdateDate.date = betweenDatesInclusive(filters.general.dateUpdateRange);
+      }
+
 
       // ---- includes (contacts / addresses / outdated names / search) ----
       const includes = [
@@ -368,7 +413,9 @@ router.post(
           model: HomeAddress,
           as: 'addresses',
           required: addrRequired,
-          attributes: ['id', 'isRestricted', 'isRecoverable'],
+          attributes: [
+            'id', 'isRestricted', 'isRecoverable', 'postalName', 'postalCode', 'postalAddressPart', 'fullPostalAddress'],
+
           where: whereAddress,
           include: [
             { model: Country, attributes: ['id', 'name'] },
@@ -386,18 +433,23 @@ router.post(
         {
           model: HomeCoordination,
           as: 'coordinations',
-          attributes: ['id', 'partnerId'],
+          attributes: ['id', 'partnerId', 'homeId', 'isRecoverable', 'isRestricted'],
+          required: coordRequired,
+          where: !includeOutdated ? { isRestricted: false } : {},
           include: [
             {
               model: Partner,
-              as: 'partners',
+              as: 'partner',
+              where: wherePartner,
+              required: partnersRequired,
               attributes: ['firstName', 'patronymic', 'lastName'],
               include: [
                 {
                   model: PartnerContact,
                   as: 'contacts',
                   where: { isRestricted: false },
-                  attributes: ['type', 'content', 'isRestricted'],
+                  attributes: ['id', 'type', 'content', 'isRestricted'],
+                  required: false,//TODO: partnersRequired???
                 },
               ]
             }
@@ -407,11 +459,23 @@ router.post(
           model: HomeUpdateDate,
           as: 'updateDates',
           attributes: ['date'],
+          where: whereUpdateDate,
+          required: datesRequired,
           separate: true,
+          order: [['date', 'DESC']],
           limit: 1,
-          order: [['date', 'DESC']]
         },
       ];
+      //order by region.shortName
+      if (sort?.[0]?.field === 'regionName') {
+        includes.push({
+          model: HomeAddress,
+          as: 'activeAddress',
+          attributes: [],
+          required: false,
+          include: [{ model: Region, as: 'region', attributes: [], }],
+        });
+      }
 
       // search by HomeSearch.content (words; exact → AND; else OR)
       if (search?.value?.trim()) {
@@ -434,8 +498,8 @@ router.post(
         distinct: true,
       });
 
-      console.log('whereHome', whereHome);
-      console.log('ORDER', order);
+      //console.log('whereHome', whereHome);
+      //console.log('ORDER', order);
       /*  console.log('includes', includes);
        console.log('whereHome', whereHome); */
 
@@ -448,12 +512,12 @@ router.post(
         offset: pageSize * pageNumber,
         limit: pageSize,
         // subQuery: false, // avoid subquery limits in includes
-        subQuery: false,//TODO: delete????
+        // subQuery: false,//TODO: delete????
         distinct: true,
       });
-
+      //console.log('HOMEs', JSON.stringify(homes));
       const items = homes.map(p => transformOwnerData('home', p.toJSON()));
-      //console.log('HOMEs', items);
+      //console.log('HOMEs-2', JSON.stringify(items));
 
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
@@ -472,76 +536,44 @@ router.get("/get-home-by-id/:id",
       const id = req.params.id;
       const home = await Home.findByPk(id, {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: [
-          {
-            model: HomeContact,
-            as: 'contacts',
-            attributes: ['id', 'type', 'content', 'isRestricted'],
-          },
-          {
-            model: HomeAddress,
-            as: 'addresses',
-            attributes: ['id', 'isRestricted', 'isRecoverable'],
-            include: [
-              {
-                model: Country,
-                attributes: ['id', 'name'],
-              },
-              {
-                model: Region,
-                attributes: ['id', 'shortName'],
-              },
-              {
-                model: District,
-                attributes: ['id', 'shortName'],
-              },
-              {
-                model: Locality,
-                attributes: ['id', 'shortName'],
-              },
-            ]
-          },
-          {
-            model: HomeOutdatedName, as: 'outdatedNames',
-            attributes: ['id', 'firstName', 'patronymic', 'lastName']
-          },
-          {
-            model: HomeCoordination,
-            as: 'coordinations',
-            attributes: ['id', 'partnerId'],
-            include: [
-              {
-                model: Partner,
-                as: 'partners',
-                attributes: ['firstName', 'patronymic', 'lastName'],
-                include: [
-                  {
-                    model: PartnerContact,
-                    as: 'contacts',
-                    where: { isRestricted: false },
-                    attributes: ['content', 'isRestricted'],
-                  },
-                ]
-              }
-            ]
-          },
-          {
-            model: HomeUpdateDate,
-            as: 'updateDates',
-            attributes: ['date'],
-            separate: true,
-            limit: 1,
-            order: [['date', 'DESC']]
-          },
-
-        ],
+        include: includes,
       });
       if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
       const data = transformOwnerData('home', home.toJSON());
-      console.log('HOME', data);
+      //console.log('HOME', data);
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.HOME.NOT_FOUND';
+      next(error);
+    }
+  });
+
+router.get("/get-list-of-homes",
+  requireAuth,
+  requireAny('VIEW_PARTNER', 'EDIT_PARTNER', 'ADD_PARTNER'),
+  async (req, res, next) => {
+    try {
+      const homes = await Home.findAll({
+        attributes: ['id', 'homeName'],
+        where: { isRestricted: false, isClose: false },
+        include: [{
+          model: HomeAddress,
+          as: 'addresses',
+          attributes: ['id'],
+          where: { isRestricted: false },
+          include: [
+            { model: Region, attributes: ['shortName'] }
+          ]
+        },],
+      });
+
+      // console.log('HOMEs', JSON.stringify(homes));
+
+      const data = homes.map(h => ({ id: h.id, name: (h.homeName + ' - ' + h.addresses[0].region.shortName) }));
+      // console.log('HOMES', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
       next(error);
     }
   });
@@ -559,12 +591,12 @@ router.get(
 
       //TODO: find does this home has seniors, partners
       const [countSeniors, countPartners] = await Promise.all([
-        /*         Senior.count({
-                   where: {homeId: id}
-                 }),
-                 Partner.count({
-                   where: {homeId: id}
-                 }) */
+    /*     Senior.count({
+          where: { homeId: id }
+        }), */
+        Partner.count({
+          where: { homeId: id }
+        })
       ]);
       const count = (countSeniors ?? 0) + (countPartners ?? 0);
       const response = {

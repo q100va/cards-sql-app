@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
-import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema } from './common.schema.js';
+import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, } from './common.schema.js';
 import { draftAddressSchema, addressSchema, } from './common.schema.js';
 import { contactType, optionalContactsSchema, } from './common.schema.js';
 import { 
@@ -99,7 +99,7 @@ export const facebookControlSchema = z.preprocess(emptyToNull, z
     .nullable());
 export const websiteControlSchema = z.preprocess(emptyToNull, z
     .string()
-    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, "Invalid website URL")
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL')
     .nullable());
 export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
 /* ===================== Contacts (draft / ordered / optional) ===================== */
@@ -174,6 +174,7 @@ export const partnerDraftSchema = z
         .nullable()),
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
+    draftCoordinations: z.array(positiveInt)
 })
     .strict()
     .superRefine((data, ctx) => {
@@ -365,6 +366,7 @@ export const partnersQueryDTOSchema = z
             .object({
             affiliations: z.array(nonEmpty).min(1).optional(),
             comment: z.boolean().optional(),
+            hasHomes: z.boolean().optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
@@ -372,6 +374,8 @@ export const partnersQueryDTOSchema = z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
+            homes: intOptArray,
+            homeRegions: intOptArray,
         })
             .partial()
             .optional(),
@@ -398,13 +402,13 @@ export const partnersQueryDTOSchema = z
 })
     .strict();
 /* ===================== OutdatedData (view) ===================== */
-const cooperationItemSchema = z
-    .object({
-    partnerContacts: nonEmpty,
-    partnerName: nonEmpty,
-    homeName: nonEmpty,
-    regionName: nonEmpty,
+const coordinationItemSchema = z.object({
+    partnerContacts: optionalContactsSchema.optional(),
+    partnerName: nonEmpty.optional(),
+    homeName: nonEmpty.optional(),
+    regionName: nonEmpty.optional(),
     partnerId: positiveInt,
+    homeId: positiveInt,
     isRecoverable: z.boolean(),
     id: positiveInt,
 });
@@ -413,7 +417,7 @@ export const outdatedDataSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    coordinations: z.array(cooperationItemSchema), //TODO:
+    coordinations: z.array(coordinationItemSchema), //TODO:
 })
     .strict();
 /* ===================== Partner (view) & partners list ===================== */
@@ -433,7 +437,7 @@ export const partnerSchema = z
     comment: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
-    coordinations: z.array(cooperationItemSchema),
+    coordinations: z.array(coordinationItemSchema),
 })
     .strict();
 export const partnersSchema = z

@@ -2,8 +2,9 @@ import { Router } from "express";
 import { Op } from 'sequelize';
 import { z } from 'zod';
 import {
-  Country, Region, District, Locality,
-  Role, PartnerAddress, Partner, PartnerContact, PartnerSearch, PartnerOutdatedName,
+  Country, Region, District, Locality, Home,
+  Role, PartnerAddress, Partner, PartnerContact, PartnerSearch, PartnerOutdatedName, HomeCoordination,
+  HomeAddress
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -18,6 +19,68 @@ import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 
 const router = Router();
+const includes = [
+  {
+    model: PartnerContact,
+    as: 'contacts',
+    attributes: ['id', 'type', 'content', 'isRestricted'],
+  },
+  {
+    model: PartnerAddress,
+    as: 'addresses',
+    attributes: ['id', 'isRestricted'],
+    include: [
+      { model: Country, attributes: ['id', 'name'] },
+      { model: Region, attributes: ['id', 'shortName', 'name'] },
+      { model: District, attributes: ['id', 'shortName', 'name'] },
+      { model: Locality, attributes: ['id', 'shortName', 'name'] },
+    ]
+  },
+  {
+    model: HomeCoordination,
+    as: 'coordinations',
+    attributes: ['id', 'homeId', 'partnerId', 'isRecoverable', 'isRestricted'],
+    include: [
+      /*       {
+              model: Partner,
+              as: 'partner',
+              attributes: ['firstName', 'patronymic', 'lastName'],
+              include: [
+                {
+                  model: PartnerContact,
+                  as: 'contacts',
+                  where: { isRestricted: false },
+                  attributes: ['content', 'isRestricted'],
+                },
+              ]
+            }, */
+      {
+        model: Home,
+        as: 'home',
+        attributes: ['homeName'],
+        include: [
+          {
+            model: HomeAddress,
+            as: 'addresses',
+            attributes: ['id'],
+            where: { isRestricted: false },
+            include: [
+              {
+                model: Region,
+                attributes: ['shortName']
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    model: PartnerOutdatedName,
+    as: 'outdatedNames',
+    attributes: ['id', 'firstName', 'patronymic', 'lastName']
+  },
+];
 
 // API create partner
 
@@ -96,6 +159,17 @@ router.post(
           { PartnerContact, PartnerAddress },
           t
         );
+        if (creatingPartner.draftCoordinations.length) {
+          const coordinationRows = creatingPartner.draftCoordinations.map(
+            id => ({ partnerId: partner.id, homeId: id })
+          )
+          await HomeCoordination.bulkCreate(coordinationRows, {
+            validate: true,
+            individualHooks: true,
+            transaction: t,
+          });
+
+        }
 
         const freshPartner = await Partner.findOne({
           where: { id: partner.id },
@@ -104,31 +178,7 @@ router.post(
               'createdAt',
               'updatedAt']
           },
-          include: [
-            {
-              model: PartnerContact,
-              as: 'contacts',
-              attributes: ['content', 'isRestricted'],
-            },
-            {
-              model: PartnerAddress,
-              as: 'addresses',
-              attributes: ['isRestricted'],
-              include: [
-                { model: Country, attributes: ['name'] },
-                { model: Region, attributes: ['name'] },
-                { model: District, attributes: ['name'] },
-                { model: Locality, attributes: ['name'] },
-              ],
-            },
-            /*   TODO:          {
-                          model: House,
-                          attributes: ['name'],
-                          include: [
-                            { model: Region, attributes: ['name', 'participation'] },
-                          ],
-                        } */
-          ],
+          include: includes,
           transaction: t,
         });
 
@@ -186,20 +236,7 @@ router.post(
         const fresh = await Partner.findOne({
           where: { id },
           attributes: { exclude: ['createdAt', 'updatedAt'] },
-          include: [
-            { model: PartnerContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
-            {
-              model: PartnerAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
-              include: [
-                { model: Country, attributes: ['id', 'name'] },
-                { model: Region, attributes: ['id', 'shortName', 'name'] },
-                { model: District, attributes: ['id', 'shortName', 'name'] },
-                { model: Locality, attributes: ['id', 'shortName', 'name'] },
-              ]
-            },
-            { model: PartnerOutdatedName, as: 'outdatedNames', attributes: ['id', 'firstName', 'patronymic', 'lastName'] },
-            //TODO: House
-          ],
+          include: includes,
           transaction: t,
         });
 
@@ -254,6 +291,9 @@ router.post(
       const wherePartner = {};
       const whereAddress = {};
       const whereContact = {};
+      const whereHome = {};
+      const whereHomeAddress = {};
+      whereHomeAddress.isRestricted = false;
 
       // view option (if you still use it)
       switch (view?.option) {
@@ -267,17 +307,20 @@ router.post(
       if (filters?.general?.affiliations?.length) {
         wherePartner.affiliation = { [Op.in]: filters.general.affiliations };
       }
-
       if (filters?.general?.comment !== undefined) {
         wherePartner.comment = !filters.general.comment ? null : { [Op.not]: null };
       }
-
       if (filters?.general?.dateBeginningRange) {
         wherePartner.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
       }
       if (filters?.general?.dateRestrictionRange) {
         wherePartner.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
+      if (filters?.general?.hasHomes !== undefined) {
+        wherePartner['$coordinations.id$'] = !filters.general.hasHomes ? null : { [Op.not]: null };
+      }
+      //TODO: проверить правильно ли выставлены эти параметры. м.б. вообще всегда достаточно false
+      const coordRequired = filters?.general?.hasHomes == undefined || filters?.general?.hasHomes == false ? false : true;
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
@@ -297,7 +340,22 @@ router.post(
         if (sub) whereAddress.partnerId = { [Op.in]: sub };
       }
 
-      // ---- includes (contacts / addresses / outdated names / search) ----
+      // homes filter
+      const homes = filters?.general?.homes || [];
+      const homesRequired = (homes.length ?? 0) > 0;
+      if (homesRequired) {
+        if (!includeOutdated) whereHome.isRestricted = false;
+        whereHome.homeId = { [Op.in]: homes };
+      }
+
+      // homeRegions filter
+      const homeRegions = filters?.general?.homeRegions || [];
+      const homeAddressRequired = (homeRegions.length ?? 0) > 0;
+      if (homeAddressRequired) {
+        whereHomeAddress['$region.id$'] = { [Op.in]: homeRegions };
+      }
+
+      // ---- includes (contacts / addresses / coordinations / outdated names / search) ----
       const includes = [
         {
           model: PartnerContact,
@@ -323,8 +381,40 @@ router.post(
           model: PartnerOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-         // separate: true,
-        }
+          // separate: true,
+        },
+
+        {
+          model: HomeCoordination,
+          as: 'coordinations',
+          attributes: ['id', 'homeId', 'partnerId', 'isRecoverable', 'isRestricted'],
+          required: coordRequired,
+          where: !includeOutdated ? { isRestricted: false } : {},
+          include: [
+            {
+              model: Home,
+              as: 'home',
+              attributes: ['homeName'],
+              where: whereHome,
+              required: homesRequired,
+              include: [
+                {
+                  model: HomeAddress,
+                  as: 'addresses',
+                  attributes: ['id'],
+                  where: whereHomeAddress,
+                  required: homeAddressRequired,
+                  include: [
+                    {
+                      model: Region,
+                      attributes: ['shortName']
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
       ];
 
       // search by PartnerSearch.content (words; exact → AND; else OR)
@@ -340,6 +430,10 @@ router.post(
           }
         });
       }
+    //  console.log('INCLUDES', includes);
+    //  console.log(JSON.stringify(includes, null, 2));
+
+
 
       // ---- count (distinct) ----
       const total = await Partner.count({
@@ -348,8 +442,8 @@ router.post(
         distinct: true,
       });
 
-      console.log('wherePartner', wherePartner);
-      console.log('ORDER', order);
+     // console.log('wherePartner', wherePartner);
+     // console.log('ORDER', order);
       /*  console.log('includes', includes);
        console.log('wherePartner', wherePartner); */
 
@@ -361,10 +455,10 @@ router.post(
         include: includes,
         offset: pageSize * pageNumber,
         limit: pageSize,
-        // subQuery: false, // avoid subquery limits in includes
+        //subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-      // console.log('partners', partners);
+    //  console.log('partners', partners);
 
       const items = partners.map(p => transformOwnerData('partner', p.toJSON()));
       res.status(200).send({ data: { list: items, length: total } });
@@ -384,41 +478,7 @@ router.get("/get-partner-by-id/:id",
       const id = req.params.id;
       const partner = await Partner.findByPk(id, {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: [
-          {
-            model: PartnerContact,
-            as: 'contacts',
-            attributes: ['id', 'type', 'content', 'isRestricted'],
-          },
-          {
-            model: PartnerAddress,
-            as: 'addresses',
-            attributes: ['id', 'isRestricted', 'isRecoverable'],
-            include: [
-              {
-                model: Country,
-                attributes: ['id', 'name'],
-              },
-              {
-                model: Region,
-                attributes: ['id', 'shortName'],
-              },
-              {
-                model: District,
-                attributes: ['id', 'shortName'],
-              },
-              {
-                model: Locality,
-                attributes: ['id', 'shortName'],
-              },
-            ]
-          },
-          {
-            model: PartnerOutdatedName, as: 'outdatedNames',
-            attributes: ['id', 'firstName', 'patronymic', 'lastName']
-          },
-          //TODO: House
-        ],
+        include: includes,
       });
       if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
       const data = transformOwnerData('partner', partner.toJSON());
@@ -426,6 +486,25 @@ router.get("/get-partner-by-id/:id",
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.NOT_FOUND';
+      next(error);
+    }
+  });
+
+router.get("/get-list-of-partners",
+  requireAuth,
+  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME'),
+  async (req, res, next) => {
+    try {
+      const partners = await Partner.findAll({
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        where: { isRestricted: false },
+      });
+
+      const data = partners.map(p => ({ id: p.id, name: fullName(p) }));
+      console.log('PARTNERS', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
       next(error);
     }
   });
@@ -443,10 +522,9 @@ router.get(
 
       //TODO: find does this partner has houses
       const [countHouses] = await Promise.all([
-        /*         HouseCoordinator.count({
-                  where: {partnerId: id}
-                }),
-                }) */
+        HomeCoordination.count({
+          where: { partnerId: id }
+        }),
       ]);
       const count = (countHouses ?? 0);
       const response = {
@@ -502,10 +580,9 @@ router.get(
 
       //TODO: find does this partner has actual houses
       const [countHouses] = await Promise.all([
-        /*         HouseCoordinator.count({
-                  where: {partnerId: id, outdated: false}
-                }),
-                }) */
+        HomeCoordination.count({
+          where: { partnerId: id, isRestricted: false }
+        }),
       ]);
       const count = (countHouses ?? 0);
       const response = {

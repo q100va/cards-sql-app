@@ -22,13 +22,23 @@ export default function HomeAddressModel(sequelize) {
     },
     postalCode:
     {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     postalAddressPart:
     {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    postalName:
+    {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    fullPostalAddress:
+    {
+      type: DataTypes.STRING,
+      allowNull: false,
     }
   },
     {

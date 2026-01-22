@@ -83,7 +83,7 @@ export const instagramSchema = z.preprocess(toTrim, z
 export const facebookSchema = z.preprocess(toTrim, z.string().regex(/^[A-Za-z0-9_.]{5,}$/));
 export const websiteSchema = z.preprocess(toTrim, z
     .string()
-    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, "Invalid website URL"));
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL'));
 export const otherContactSchema = z.preprocess(toTrim, z.string().min(1).max(256));
 /* ===================== Address (draft + view) ===================== */
 export const draftAddressSchema = z
@@ -211,3 +211,12 @@ export const duplicatesSchema = z
         .strict()),
 })
     .strict();
+export const coordinationNameControlSchema = z.object({
+    id: z
+        .number()
+        .int()
+        .positive(),
+    name: z
+        .string()
+        .min(1),
+}, 'FORM_VALIDATION.REQUIRED');

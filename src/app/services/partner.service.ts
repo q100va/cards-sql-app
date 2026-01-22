@@ -4,7 +4,7 @@ import {
   HttpErrorResponse,
   HttpParams,
 } from '@angular/common/http';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 import {
@@ -17,6 +17,7 @@ import {
   PartnerRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
+  CoordinationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -43,6 +44,7 @@ export interface PartnerMainService
     { list: Partner[]; length: number }
   > {
   checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>>;
+  getPartnersPickList(): Observable<CoordinationPick[]>;
 }
 
 @Injectable({
@@ -58,11 +60,11 @@ export class PartnerService implements PartnerMainService {
     private translateService: TranslateService
   ) {}
 
-  getOwnerName(owner: Partner){
-  const fn = owner['firstName'] ?? '';
-  const pn = owner['patronymic'] ?? '';
-  const ln = owner['lastName'] ?? '';
-  return [fn, pn, ln].filter(Boolean).join(' ').trim();
+  getOwnerName(owner: Partner) {
+    const fn = owner['firstName'] ?? '';
+    const pn = owner['patronymic'] ?? '';
+    const ln = owner['lastName'] ?? '';
+    return [fn, pn, ln].filter(Boolean).join(' ').trim();
   }
 
   checkOwnerData(
@@ -114,8 +116,10 @@ export class PartnerService implements PartnerMainService {
       );
   }
 
-  formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    if (commentFilter.length === 1) {
+  formCommentFilterValue(
+    commentFilter: string[] | undefined
+  ): boolean | undefined {
+    if (commentFilter && commentFilter.length === 1) {
       return (
         commentFilter[0] ==
         this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
@@ -166,9 +170,12 @@ export class PartnerService implements PartnerMainService {
         general: ctrl.omitEmpty({
           affiliations: p.filter.affiliations,
           comment: this.formCommentFilterValue(p.filter.comment),
+          hasHomes: this.formCommentFilterValue(p.filter.hasHomes),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
+          homes: p.filter.homes,
+          homeRegions: p.filter.homeRegions,
         }),
         address: ctrl.omitEmpty({
           countries: p.addressFilter.countries,
@@ -176,6 +183,7 @@ export class PartnerService implements PartnerMainService {
           districts: p.addressFilter.districts,
           localities: p.addressFilter.localities,
         }),
+
         mode: ctrl.omitEmpty({
           strictAddress: p.strongAddressFilter,
           strictContact: p.strongContactFilter,
@@ -192,6 +200,23 @@ export class PartnerService implements PartnerMainService {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-partner-by-id/${id}`)
       .pipe(validateResponse(partnerSchema), catchError(this.handleError));
+  }
+
+  getPartnersPickList(): Observable<CoordinationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-partners`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+            })
+          )
+        ),
+        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        catchError(this.handleError)
+      );
   }
 
   checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {

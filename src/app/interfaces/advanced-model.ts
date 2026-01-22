@@ -13,12 +13,12 @@ import {
   HomeContacts,
   HomeCoordination,
   HomeOutdatedData,
-  PostalAddress,
-
+  //PostalAddress,
+  HomeAddressDraft,
 } from './home';
 
 import type {
-OutdatedCoordination,
+  OutdatedCoordination,
   OutdatedOfficialName,
 } from '@shared/schemas/home.schema';
 
@@ -47,7 +47,7 @@ export type {
   Duplicates,
   OutdatedCoordination,
   OutdatedOfficialName,
-  HomeCoordination
+  HomeCoordination,
 };
 
 export interface AdvancedModel extends BaseModel {
@@ -170,8 +170,17 @@ export type VolunteerChangingData = BaseChangingData<PersonChangingMain> & {
 };
 
 export type HomeChangingMain = BaseChangingMain & {
-  affiliation?: string;
-  position?: string | null;
+  homeName?: string;
+  officialName?: string;
+  noAddress?: boolean;
+  specialHome?: boolean;
+  acceptableForSchool?: boolean;
+  isClose?: boolean;
+  dateOfClose?: Date | null;
+  infoNote?: string;
+  /*   postalAddressPart?: string;
+  postalName?: string;
+  postalCode?: string; */
 };
 export type HomeChangingData = BaseChangingData<HomeChangingMain> & {
   coordinations: number[] | null;
@@ -289,7 +298,8 @@ export type HomeDraft = DraftCommon & {
   noAddress: boolean;
   specialHome: boolean;
   acceptableForSchool: boolean;
-  draftAddress: Exclude<HomeAddress, 'id'>;
+  //draftAddress: Exclude<HomeAddress, 'id'>;
+  draftAddress: HomeAddressDraft;
   postalCode: string;
   postalAddressPart: string | null;
   infoNote: string | null;
@@ -325,7 +335,7 @@ export type Partner = Person & {
   affiliation: string;
   position: string | null;
   outdatedData: PartnerOutdatedData;
-  coordinations: OutdatedCoordination[];
+  coordinations: HomeCoordination[];
 };
 export type Volunteer = Person & {
   institutes: Institute[];
@@ -336,18 +346,18 @@ export type Volunteer = Person & {
 export type Home = Owner & {
   homeName: string;
   officialName: string;
-  postalName: string;
+  //postalName: string;
   noAddress: boolean;
   specialHome: boolean;
   acceptableForSchool: boolean;
   address: HomeAddress;
-  postalAddress: PostalAddress;
+  //postalAddress: PostalAddress;
   infoNote: string | null;
   orderedContacts: HomeContacts;
   outdatedData: HomeOutdatedData;
   coordinations: HomeCoordination[];
   dateOfLastUpdate: Date | null;
-  status: 'OPEN' | 'CLOSE';
+  isClose: boolean;
   dateOfClose: Date | null;
 };
 
@@ -430,6 +440,8 @@ export type ListDto<K extends Kind> = K extends 'user'
   : K extends 'home'
   ? { list: Home[]; length: number }
   : never;
+
+export type CoordinationPick = { id: number; name: string };
 
 export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
   changingData: TChanging;

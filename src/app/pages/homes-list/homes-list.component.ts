@@ -61,7 +61,7 @@ export class HomesListComponent {
     title: 'HOME.TABLE_TITLE',
     addTitle: 'HOME.ADD_HOME',
     searchPlaceholder: 'HOME.SEARCH_PLACEHOLDER',
-    addIcon: 'person_add_alt',
+    addIcon: 'add_home',
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
@@ -77,7 +77,7 @@ export class HomesListComponent {
       columnFullName: 'TABLE.COLUMNS.HOME_NAME',
       isUnchangeable: true,
     },
-     {
+    {
       id: 3,
       columnName: 'categories', //noAddress, specialHome, acceptableForSchool
       columnFullName: 'TABLE.COLUMNS.HOME_CATEGORIES',
@@ -98,12 +98,12 @@ export class HomesListComponent {
     {
       id: 6,
       columnName: 'dateOfLastUpdate',
-      columnFullName: 'TABLE.COLUMNS.UPDATE_DATE',
+      columnFullName: 'TABLE.COLUMNS.LAST_UPDATE_DATE',
       isUnchangeable: false,
     },
     {
       id: 7,
-      columnName: 'partners',//partner fullname+partner contacts
+      columnName: 'partners', //partner fullname+partner contacts
       columnFullName: 'TABLE.COLUMNS.PARTNERS',
       isUnchangeable: false,
     },
@@ -121,7 +121,7 @@ export class HomesListComponent {
     },
     {
       id: 10,
-      columnName: 'isRestricted',//+status
+      columnName: 'isRestricted', //+status
       columnFullName: 'TABLE.COLUMNS.STATUS',
       isUnchangeable: false,
     },
@@ -146,7 +146,7 @@ export class HomesListComponent {
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
-        colspan: 2,
+        colspan: 3,
         rowspan: 1,
       },
       {
@@ -158,25 +158,13 @@ export class HomesListComponent {
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
-      },
-      {
-        controlName: 'postalName',
-        value: null,
-        validators: [zodValidator(homeDraftSchema.shape.postalName)],
-        type: 'inputText',
-        label: 'HOME.CARD.POSTAL_NAME_LABEL',
-        placeholder: '',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 2,
+        colspan: 3,
         rowspan: 1,
       },
       {
         controlName: 'noAddress',
-        value: null,
-        validators: [zodValidator(homeDraftSchema.shape.noAddress)],
+        value: false,
+        validators: [], // [zodValidator(homeDraftSchema.shape.noAddress)],
         type: 'checkbox',
         label: 'HOME.CARD.NO_ADDRESS_LABEL',
         category: 'mainData',
@@ -186,11 +174,10 @@ export class HomesListComponent {
       },
       {
         controlName: 'specialHome',
-        value: null,
-        validators: [zodValidator(homeDraftSchema.shape.specialHome)],
+        value: false,
+        validators: [], // [zodValidator(homeDraftSchema.shape.specialHome)],
         type: 'checkbox',
         label: 'HOME.CARD.SPECIAL_HOME_LABEL',
-        placeholder: '',
         category: 'mainData',
         formType: 'formControl',
         colspan: 2,
@@ -198,11 +185,10 @@ export class HomesListComponent {
       },
       {
         controlName: 'acceptableForSchool',
-        value: null,
-        validators: [zodValidator(homeDraftSchema.shape.acceptableForSchool)],
+        value: false,
+        validators: [], // [zodValidator(homeDraftSchema.shape.acceptableForSchool)],
         type: 'checkbox',
         label: 'HOME.CARD.ACC_SCHOOL_LABEL',
-        placeholder: '',
         category: 'mainData',
         formType: 'formControl',
         colspan: 2,
@@ -221,18 +207,6 @@ export class HomesListComponent {
         rowspan: 1,
       },
       {
-        controlName: 'infoNote',
-        value: null,
-        validators: [zodValidator(homeDraftSchema.shape.comment)],
-        type: 'inputText',
-        label: 'HOME.CARD.COMMENT_LABEL',
-        placeholder: '',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 6,
-        rowspan: 1,
-      },
-      {
         controlName: 'isRestricted',
         value: false,
         validators: [],
@@ -240,7 +214,43 @@ export class HomesListComponent {
         label: 'HOME.CARD.BLOCKED_LABEL',
         category: 'extraData',
         formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'isClose',
+        value: false,
+        validators: [],
+        type: 'toggle',
+        label: 'HOME.CARD.CLOSE_LABEL',
+        category: 'status',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'postalAddressPart',
+        value: null,
+        type: 'inputText',
+        label: 'HOME.CARD.POSTAL_ADDR_LABEL',
+        placeholder: 'HOME.CARD.POSTAL_ADDR_PLACEHOLDER',
+        validators: [zodValidator(homeDraftSchema.shape.postalAddressPart)],
+        errorName: 'postalAddrFormat',
+        category: 'address',
+        formType: 'formControl',
         colspan: 6,
+        rowspan: 1,
+      },
+      {
+        controlName: 'postalName',
+        value: null,
+        validators: [zodValidator(homeDraftSchema.shape.postalName)],
+        type: 'inputText',
+        label: 'HOME.CARD.POSTAL_NAME_LABEL',
+        placeholder: '',
+        category: 'address',
+        formType: 'formControl',
+        colspan: 4,
         rowspan: 1,
       },
       {
@@ -256,17 +266,17 @@ export class HomesListComponent {
         colspan: 2,
         rowspan: 1,
       },
+
       {
-        controlName: 'postalAddressPart',
+        controlName: 'infoNote',
         value: null,
+        validators: [zodValidator(homeDraftSchema.shape.comment)],
         type: 'inputText',
-        label: 'HOME.CARD.POSTAL_ADDR_LABEL',
-        placeholder: 'HOME.CARD.POSTAL_ADDR_PLACEHOLDER',
-        validators: [zodValidator(homeDraftSchema.shape.postalAddressPart)],
-        errorName: 'postalAddrFormat',
+        label: 'HOME.CARD.INFO_COMMENT_LABEL',
+        placeholder: '',
         category: 'address',
         formType: 'formControl',
-        colspan: 2,
+        colspan: 6,
         rowspan: 1,
       },
       {
@@ -411,6 +421,7 @@ export class HomesListComponent {
         colspan: 3,
         rowspan: 1,
       },
+
       //TODO: partners
     ],
     mainContactsValidator: [],

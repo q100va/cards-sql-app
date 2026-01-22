@@ -16,10 +16,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
-
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
+import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
 
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import {
@@ -32,14 +33,14 @@ import {
 import {
   VolunteerService,
   VolunteerMainService,
-} from 'src/app/services/volunteer.service';
-import { zodValidator } from 'src/app/utils/zod-validator';
+} from '../../services/volunteer.service';
+import { zodValidator } from '../../utils/zod-validator';
 import {
   instituteCategoryControlSchema,
   instituteNameControlSchema,
-} from '@shared/schemas/volunteer.schema';
-import { DefaultAddressParams } from '@shared/schemas/toponym.schema';
-import { OutdatedFullName } from '@shared/schemas/common.schema';
+} from '../../../../shared/schemas/volunteer.schema';
+import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
+import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
 
 @Component({
   selector: 'app-volunteer-details',
@@ -59,6 +60,8 @@ import { OutdatedFullName } from '@shared/schemas/common.schema';
     OutdatedItemMenuComponent,
     TranslateModule,
     ContactUrlPipe,
+    MatAutocompleteModule,
+    AutocompleteRowComponent,
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -68,13 +71,11 @@ import { OutdatedFullName } from '@shared/schemas/common.schema';
 export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunteer'> {
   override volunteerService = inject(VolunteerService) as VolunteerMainService;
   override ngOnInit(): void {
-    /*     this.existingOwner = this.data().object;
-      if (this.existingOwner) {
-        this.outdatedDataDraft = structuredClone(this.existingOwner.outdatedData);
-        console.log(this.outdatedDataDraft);
-      } */
     super.ngOnInit();
     this.mainProps = [
+      'firstName',
+      'patronymic',
+      'lastName',
       'comment',
       'isRestricted',
       'causeOfRestriction',
@@ -109,14 +110,14 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
         });
       });
     }
-    const SUB = structuredClone(this.object!.subscriptions);
+    /*    const SUB = structuredClone(this.object!.subscriptions);
     const SUBOWNER = structuredClone(this.existingOwner!.subscriptions);
     console.log('mode', mode);
     console.log('SUB - setInitialValues - this.object!.subscriptions', SUB);
     console.log(
       'SUBOWNER - setInitialValues - this.existingOwner!.subscriptions',
       SUBOWNER
-    );
+    ); */
     //subscription
     if (this.object!.subscriptions.length) {
       this.mainForm.controls['subscription'].setValue(this.getSubsValue());
@@ -191,6 +192,18 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   override async correctRestoringData() {
     super.correctRestoringData();
 
+    // Addresses
+    if (this.restoringDataDraft.addresses?.length) {
+      const addresses = await this.ownerService.corrAddress(
+        this.restoringDataDraft.addresses,
+        this.outdatedDataDraft.addresses,
+        this.ownerDraft.draftAddress,
+        this.existingOwner!.outdatedData.addresses
+      );
+      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
+      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
+    }
+
     // Institutes
     const { restoring, outdating } = this.ownerDiffService.corrInstitutes(
       this.restoringDataDraft.institutes ?? [],
@@ -204,6 +217,15 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   override async checkOutdatedDataDuplicates() {
+    const address = await this.ownerService.checkAddress(
+      this.outdatedDataDraft.addresses,
+      this.ownerDraft.draftAddress
+    );
+    if (!address.restoringId) return false;
+    if (address.restoringId > -1) {
+      this.restoringDataDraft.addresses ??= [];
+      this.restoringDataDraft.addresses.push(address.restoringId);
+    }
     const institutes = await this.ownerDiffService.checkInstitutes(
       this.outdatedDataDraft.institutes,
       this.ownerDraft.draftInstitutes ?? []
@@ -219,6 +241,20 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     return await super.checkOutdatedDataDuplicates();
   }
   override async checkAllChanges() {
+    const address = await this.ownerService.diffAddress(
+      this.existingOwner!,
+      this.ownerDraft,
+      this.restoringDataDraft.addresses == null
+        ? null
+        : this.restoringDataDraft.addresses![0]
+    );
+    if (address.changes) this.changingData.address = address.changes;
+    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
+    if (address.deletingId) {
+      this.deletingDataDraft.addresses ??= [];
+      this.deletingDataDraft.addresses.push(address.deletingId);
+    }
+
     const names = await this.ownerService.diffNames(
       this.existingOwner!,
       this.ownerDraft
@@ -260,10 +296,10 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     return Array.isArray(list) ? list : [];
   }
 
-  override get institutes(): Institute[] {
+  /*   override get institutes(): Institute[] {
     const list = this.object!.institutes;
     return Array.isArray(list) ? list : [];
-  }
+  } */
 
   override get subscriptions(): Subscription[] {
     let list = structuredClone(this.object!.subscriptions) ?? [];

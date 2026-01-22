@@ -14,3 +14,12 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: #f2f2f2;
 }
+.small-toggle {
+  transform: scale(0.6);
+  transform-origin: left center;
+}
+/* :host ::ng-deep .small-toggle .mdc-switch {
+  transform: scale(0.6);
+  transform-origin: left center;
+} */
+

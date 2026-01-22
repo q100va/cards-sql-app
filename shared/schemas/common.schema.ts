@@ -131,7 +131,7 @@ export const websiteSchema = z.preprocess(
     .string()
     .regex(
       /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
-      "Invalid website URL"
+      'Invalid website URL'
     )
 );
 
@@ -258,17 +258,17 @@ export const outdatedAddressItemSchema = z
   })
   .strict();
 
-  export const outdatedCommonSchema = z
+export const outdatedCommonSchema = z
   .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
-  //  names: z.array(outdatedNameItemSchema)
+    //  names: z.array(outdatedNameItemSchema)
   })
   .strict();
 
-  /* ===================== DTO ===================== */
+/* ===================== DTO ===================== */
 
-  export const duplicatesSchema = z
+export const duplicatesSchema = z
   .object({
     duplicatesName: z.array(z.string()),
     duplicatesContact: z.array(
@@ -282,6 +282,17 @@ export const outdatedAddressItemSchema = z
     ),
   })
   .strict();
+
+export const coordinationNameControlSchema = z.object({
+  id: z
+    .number()
+    .int()
+    .positive(),
+
+  name: z
+    .string()
+    .min(1),
+}, 'FORM_VALIDATION.REQUIRED');
 
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;

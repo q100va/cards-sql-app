@@ -224,7 +224,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   pageSize = signal(5);
   pageSizeOptions = [5, 10, 25, 50, 100];
 
-  // filters/sort
+  // filters/sort TODO: добавить параметры фильтра для остальных сущностей
   filterParameters = signal<FilterDraft>({
     viewOption: 'only-active',
     searchValue: '',
@@ -426,9 +426,13 @@ export class TableComponent<K extends Kind> implements OnChanges {
   hasOutdatedAddresses = (row: OwnerByKind<K>): boolean =>
     !!row?.outdatedData?.addresses && row.outdatedData.addresses.length > 0;
 
-  hasOutdatedHomes = (row: OwnerByKind<K>): boolean => {
-    //!!row?.outdatedData?.homes && row.outdatedData.homes.length > 0;
-    return false;
+  hasOutdatedHomes = (row: Home): boolean => {
+    return !!row?.outdatedData?.coordinations && row.outdatedData.coordinations.length > 0 && this.kind() == 'partner';
+
+  };
+   hasOutdatedPartners = (row: Partner): boolean => {
+   return !!row?.outdatedData?.coordinations && row.outdatedData.coordinations.length > 0 && this.kind() == 'home';
+
   };
   hasOutdatedInstitutes = (row: Volunteer): boolean => {
     return (

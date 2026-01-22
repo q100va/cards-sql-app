@@ -4,7 +4,7 @@ import {
   HttpErrorResponse,
   HttpParams,
 } from '@angular/common/http';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 import {
@@ -17,6 +17,7 @@ import {
   HomeRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
+  CoordinationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -44,7 +45,9 @@ export interface HomeMainService
     HomeDeletingData,
     { list: Home[]; length: number }
   > {
+  checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>>;
   checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>>;
+  getHomesPickList(): Observable<CoordinationPick[]>;
 }
 
 @Injectable({
@@ -63,14 +66,30 @@ export class HomeService implements HomeMainService {
   getOwnerName(owner: Home) {
     return owner['homeName'].trim();
   }
-  checkOwnerData(ownerDraft: HomeDraft): Observable<ApiResponse<Duplicates>> {
-    let body = {
-      id: ownerDraft.id,
-      homeName: ownerDraft.homeName,
-    };
+  checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>> {
+    let params = new HttpParams().set('homeName', ownerDraft.homeName);
+    if (ownerDraft.id != null) params = params.set('id', String(ownerDraft.id));
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/check-home-data/`, body)
-      .pipe(validateResponse(duplicatesSchema), catchError(this.handleError));
+      .get<RawApiResponse>(`${this.BASE_URL}/check-home-name/`, {
+        params,
+      })
+      .pipe(
+        validateResponse(z.boolean()),
+        this.msgWrapper.messageTap('warn', {
+          source: 'CreateHomeDialog',
+          stage: 'checkHomeName',
+          name: ownerDraft.homeName,
+        }),
+        catchError(this.handleError)
+      );
+  }
+  checkOwnerData(ownerDraft: HomeDraft): Observable<ApiResponse<Duplicates>> {
+    return of({
+      data: {
+        duplicatesName: [],
+        duplicatesContact: [],
+      },
+    });
   }
 
   saveOwner(ownerDraft: HomeDraft): Observable<ApiResponse<string>> {
@@ -187,6 +206,36 @@ export class HomeService implements HomeMainService {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-home-by-id/${id}`)
       .pipe(validateResponse(homeSchema), catchError(this.handleError));
+  }
+
+  /*   getHomesPickList(): Observable<ApiResponse<CoordinationPick[]>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({ id: z.number().int().positive(), name: z.string() })
+          )
+        ),
+        catchError(this.handleError)
+      );
+  }
+ */
+  getHomesPickList(): Observable<CoordinationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+            })
+          )
+        ),
+        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        catchError(this.handleError)
+      );
   }
 
   checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {

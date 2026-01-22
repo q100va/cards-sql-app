@@ -6,8 +6,8 @@ import type {
   HomeOutdatingData,
   HomeCoordination,
   HomeAddress,
-  PostalAddress,
-  HomeContacts, OutdatedHomeAddress
+  //PostalAddress,
+  HomeContacts, OutdatedHomeAddress, HomeAddressDraft
   //OutdatedCoordination,
  // OutdatedOfficialName
 } from '@shared/schemas/home.schema';
@@ -19,8 +19,8 @@ export type {
   HomeOutdatingData,
   HomeCoordination,
   HomeAddress,
-  PostalAddress,
-  HomeContacts, OutdatedHomeAddress
+ // PostalAddress,
+  HomeContacts, OutdatedHomeAddress, HomeAddressDraft
  // OutdatedCoordination,
   //OutdatedOfficialName
 };
@@ -29,12 +29,12 @@ export interface Home extends AdvancedModel {
   id: number;
   homeName: string;
   officialName: string;
-  postalName: string;
+  //postalName: string;
   noAddress: boolean;
   specialHome: boolean;
   acceptableForSchool: boolean;
   address: HomeAddress;
-  postalAddress: PostalAddress;
+  //postalAddress: PostalAddress;
   comment: string | null;
   infoNote: string | null;
   isRestricted: boolean;

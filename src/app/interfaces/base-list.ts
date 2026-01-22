@@ -8,6 +8,9 @@ export interface GeneralFilter {
   dateRestrictionRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
   affiliations?: string[];
+  hasHomes?: string[];
+  homes?: number[];
+  homeRegions?: number[];
 }
 
 export type FilterDraft = {

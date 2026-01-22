@@ -244,6 +244,10 @@ export declare const duplicatesSchema: z.ZodObject<{
         owners: z.ZodArray<z.ZodString>;
     }, z.core.$strict>>;
 }, z.core.$strict>;
+export declare const coordinationNameControlSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    name: z.ZodString;
+}, z.core.$strip>;
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
 export type Address = z.infer<typeof addressSchema>;

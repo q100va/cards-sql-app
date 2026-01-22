@@ -25,13 +25,6 @@ export default function HomeModel(sequelize) {
           notEmpty: true,
         }
       },
-      postalName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          notEmpty: true,
-        }
-      },
       noAddress: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
@@ -64,9 +57,9 @@ export default function HomeModel(sequelize) {
       dateOfRestriction: {
         type: DataTypes.DATE
       },
-      status:{
-        type: DataTypes.TEXT,
-        defaultValue: 'OPEN'
+      isClose:{
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
       },
       dateOfClose: {
         type: DataTypes.DATE

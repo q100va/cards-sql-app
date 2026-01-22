@@ -146,6 +146,15 @@ Home.hasMany(HomeAddress, {
   onUpdate: 'CASCADE'
 });
 
+Home.hasOne(HomeAddress, {               // ✅ одна актуальная
+  as: 'activeAddress',
+  foreignKey: 'homeId',
+  scope: { isRestricted: false },        // ✅ фильтр прямо в ассоциации
+  constraints: false,
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'                  // чтобы не ругался на множественные связи
+});
+
 UserAddress.belongsTo(User);
 UserAddress.belongsTo(Country);
 UserAddress.belongsTo(Region);
@@ -396,18 +405,18 @@ Home.hasMany(HomeCoordination, {
   onUpdate: 'CASCADE',
 });
 Partner.hasMany(HomeCoordination, {
-  as: 'homeCoordinations',
-  foreignKey: 'homeId',
+  as: 'coordinations',
+  foreignKey: 'partnerId',
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 });
 
 HomeCoordination.belongsTo(Partner, {
-  as: 'partners',
+  as: 'partner',
   foreignKey: 'partnerId',
 });
 HomeCoordination.belongsTo(Home, {
-  as: 'homes',
+  as: 'home',
   foreignKey: 'homeId',
 });
 
@@ -419,7 +428,7 @@ Home.hasMany(Senior, {
   onUpdate: 'CASCADE',
 });
 Senior.belongsTo(Home, {
-  as: 'homes',
+  as: 'home',
   foreignKey: 'homeId',
 });
 
@@ -431,7 +440,7 @@ Home.hasMany(HomeUpdateDate, {
   onUpdate: 'CASCADE',
 });
 HomeUpdateDate.belongsTo(Home, {
-  as: 'homes',
+  as: 'home',
   foreignKey: 'homeId',
 });
 
