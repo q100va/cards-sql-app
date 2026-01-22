@@ -1,6 +1,6 @@
 // utils/query-builders.js
 import { Op, literal } from 'sequelize';
-import { Region, District, Locality } from '../models/index.js';
+import { Region, District, Locality, HomeAddress } from '../models/index.js';
 
 // ── CONFIG per owner ───────────────────────────────────────────────────────────
 const OWNER = {
@@ -14,7 +14,7 @@ const OWNER = {
       role: () =>
         literal(`(SELECT "name" FROM "roles" WHERE "roles"."id" = "user"."roleId")`),
       name: () =>
-        literal(`"user"."firstName"`)
+        "firstName"
     },
   },
   partner: {
@@ -28,16 +28,39 @@ const OWNER = {
       name: () =>
         "firstName"
     },
-  }, volunteer: {
+  },
+  volunteer: {
     idField: 'volunteerId',
     contactsTable: 'volunteer-contacts',
     addressesTable: 'volunteer-addresses',
     defaultOrderField: 'firstName',
     orderKeys: {
-     // affiliation: () => "affiliation",
+      // affiliation: () => "affiliation",
       //position:    () => literal(`"partner"."position"`),
       name: () =>
         "firstName"
+    },
+  },
+  home: {
+    idField: 'homeId',
+    contactsTable: 'home-contacts',
+    addressesTable: 'home-addresses',
+    defaultOrderField: 'homeName',
+    orderKeys: {
+      // affiliation: () => "affiliation",
+      //position:    () => literal(`"partner"."position"`),
+      name: () =>
+        "homeName",
+      /*       order: [
+              [{ model: HomeAddress, as: 'activeAddress' }, { model: Region, as: 'region' }, 'shortName', 'ASC'],
+              ['homeName', 'ASC'],
+            ], */
+      regionName: () => ([
+        { model: HomeAddress, as: 'activeAddress' },
+        { model: Region, as: 'region' },
+        'name',
+      ]),
+
     },
   },
 };
@@ -54,13 +77,24 @@ export function buildOrderFor(kind, sort) {
   const [{ field, direction }] = sort;
   const dir = String(direction || 'ASC').toUpperCase();
 
-  // спец-ключи (role / affiliation / position и т.п.)
-  if (C.orderKeys[field]) {
-    return [[C.orderKeys[field](), dir]];
+   const keyFn = C.orderKeys?.[field];
+
+  if (keyFn) {
+    const key = keyFn();
+
+    // 1) order-path: [ {model, as}, {model, as}, 'col' ]
+    if (Array.isArray(key)) {
+      return [[...key, dir]];
+    }
+
+    // 2) literal / fn / string field
+    return [[key, dir]];
   }
+
   // обычные поля
   return [[field, dir]];
 }
+
 
 // ── даты/поиск по контенту ────────────────────────────────────────────────────
 

@@ -81,6 +81,9 @@ export const instagramSchema = z.preprocess(toTrim, z
     .string()
     .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/));
 export const facebookSchema = z.preprocess(toTrim, z.string().regex(/^[A-Za-z0-9_.]{5,}$/));
+export const websiteSchema = z.preprocess(toTrim, z
+    .string()
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL'));
 export const otherContactSchema = z.preprocess(toTrim, z.string().min(1).max(256));
 /* ===================== Address (draft + view) ===================== */
 export const draftAddressSchema = z
@@ -118,6 +121,7 @@ export const contactType = z.enum([
     'vKontakte',
     'instagram',
     'facebook',
+    'website',
     'otherContact',
 ]);
 // View: { id, content }[]
@@ -138,6 +142,7 @@ export const optionalContactsSchema = z
     vKontakte: nonEmptyContacts.optional(),
     instagram: nonEmptyContacts.optional(),
     facebook: nonEmptyContacts.optional(),
+    website: nonEmptyContacts.optional(),
     otherContact: nonEmptyContacts.optional(),
 })
     .strict();
@@ -163,6 +168,7 @@ export const changingContactsSchema = z
     vKontakte: z.array(vKontakteSchema).optional(),
     instagram: z.array(instagramSchema).optional(),
     facebook: z.array(facebookSchema).optional(),
+    website: z.array(websiteSchema).optional(),
     otherContact: z.array(otherContactSchema).optional(),
 })
     .strict();
@@ -189,7 +195,7 @@ export const outdatedCommonSchema = z
     .object({
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
-    names: z.array(outdatedNameItemSchema)
+    //  names: z.array(outdatedNameItemSchema)
 })
     .strict();
 /* ===================== DTO ===================== */
@@ -205,3 +211,12 @@ export const duplicatesSchema = z
         .strict()),
 })
     .strict();
+export const coordinationNameControlSchema = z.object({
+    id: z
+        .number()
+        .int()
+        .positive(),
+    name: z
+        .string()
+        .min(1),
+}, 'FORM_VALIDATION.REQUIRED');

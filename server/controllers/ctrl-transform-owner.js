@@ -1,5 +1,7 @@
 // utils/transform-owner.js
 
+import { fullName } from "./ctrl-create-owner-contacts-address.js";
+
 // --- Helpers ---------------------------------------------------------------
 
 const TELEGRAM_TYPES = new Set(['telegramNickname', 'telegramPhoneNumber', 'telegramId']);
@@ -60,6 +62,45 @@ function splitAddresses(addresses) {
 
   return { address, outdatedAddresses };
 }
+//TODO:
+function splitHomeAddresses(addresses) {
+  const all = addresses ?? [];
+  const actual = all.filter(a => !a?.isRestricted);
+  const a = actual[0];
+
+  const address = a
+    ? {
+      country: ref(a.country, 'name'),
+      region: ref(a.region, 'shortName'),
+      district: ref(a.district, 'shortName'),
+      locality: ref(a.locality, 'shortName'),
+      id: a.id,
+      postalCode: a.postalCode,
+      postalAddressPart: a.postalAddressPart,
+      postalName: a.postalName,
+      fullPostalAddress: a.fullPostalAddress,
+      isRecoverable: a.isRecoverable
+    }
+    : { country: null, region: null, district: null, locality: null };
+
+  const outdatedAddresses = all
+    .filter(a => a?.isRestricted)
+    .map(a => ({
+      country: ref(a.country, 'name'),
+      region: ref(a.region, 'shortName'),
+      district: ref(a.district, 'shortName'),
+      locality: ref(a.locality, 'shortName'),
+      isRecoverable: !!a.isRecoverable,
+      id: a.id,
+      postalCode: a.postalCode,
+      postalAddressPart: a.postalAddressPart,
+      postalName: a.postalName,
+      fullPostalAddress: a.fullPostalAddress,
+      isRecoverable: a.isRecoverable
+    }));
+
+  return { address, outdatedAddresses };
+}
 
 /** Map outdated names for User: split into names[] and userNames[] */
 function splitNamesUser(list) {
@@ -74,14 +115,6 @@ function splitNamesUser(list) {
   return { names, userNames };
 }
 
-/** Map outdated names for Partner: only FIO list */
-function splitNamesPartner(list) {
-  const names = (list ?? [])
-    .filter(n => n && n.firstName !== null)
-    .map(n => ({ id: n.id, firstName: n.firstName, patronymic: n.patronymic, lastName: n.lastName }));
-  return { names };
-}
-
 /**
  * Extract partner homes and outdated homes.
  * Expects either:
@@ -89,25 +122,62 @@ function splitNamesPartner(list) {
  *   - or raw.homes / raw.outdatedHomes
  */
 function splitHomesForPartner(raw) {
-  const homesSource = raw.coordinatedHomes ?? raw.homes ?? [];
-  const outdatedSource = raw.outdatedCoordinatedHomes ?? raw.outdatedHomes ?? [];
+  const homesSource = raw.coordinations ?? [];
+  // const outdatedSource = raw.outdatedCoordinations ?? [];
 
-  const homes = homesSource.map(h => ({
-    id: h.id,
-    homeId: h.homeId,
-    homeName: h.homeName,
-    homeRegionName: h.homeRegionName,
-  }));
+  console.log('homesSource', JSON.stringify(homesSource));
 
-  const outdatedHomes = outdatedSource.map(h => ({
-    id: h.id,
-    homeId: h.homeId,
-    homeName: h.homeName,
-    homeRegionName: h.homeRegionName,
-    isRecoverable: !!h.isRecoverable,
-  }));
+  const homes = homesSource
+    .filter(i => !i?.isRestricted)
+    .map(h => ({
+      id: h.id,
+      homeId: h.homeId,
+      homeName: h.home.homeName,
+      regionName: h.home.addresses[0].region.shortName,
+      partnerId: h.partnerId,
+      isRecoverable: !!h.isRecoverable,
+    }));
+
+  const outdatedHomes = homesSource
+    .filter(i => i?.isRestricted)
+    .map(h => ({
+      id: h.id,
+      homeId: h.homeId,
+      homeName: h.home.homeName,
+      regionName: h.home.addresses[0].region.shortName,
+      partnerId: h.partnerId,
+      isRecoverable: !!h.isRecoverable,
+    }));
 
   return { homes, outdatedHomes };
+}
+
+function splitPartnersForHome(raw) {
+  const partnersSource = raw.coordinations ?? [];
+
+  const partners = partnersSource
+    .filter(i => !i?.isRestricted)
+    .map(p => ({
+      id: p.id,
+      homeId: p.homeId,
+      partnerId: p.partnerId,
+      partnerName: fullName(p.partner),
+      partnerContacts: (splitContacts(p.partner.contacts)).orderedContacts,
+      isRecoverable: !!p.isRecoverable,
+    }));
+
+  const outdatedPartners = partnersSource
+    .filter(i => i?.isRestricted)
+    .map(p => ({
+      id: p.id,
+      homeId: p.homeId,
+      partnerId: p.partnerId,
+      partnerName: fullName(p.partner),
+      partnerContacts: (splitContacts(p.partner.contacts)).orderedContacts,
+      isRecoverable: !!p.isRecoverable,
+    }));
+
+  return { partners, outdatedPartners };
 }
 
 /**
@@ -151,7 +221,7 @@ function splitInstitutesForVolunteer(raw) {
 
 /**
  * Universal transformer for owner data.
- * kind: 'user' | 'partner' | 'volunteer'
+ * kind: 'user' | 'partner' | 'volunteer' | 'home'
  * Returns a shallow-cloned, view-ready object:
  *  - orderedContacts
  *  - address
@@ -167,16 +237,22 @@ export function transformOwnerData(kind, raw) {
   o.orderedContacts = orderedContacts;
   delete o.contacts;
 
-  // 2) Addresses
-  const { address, outdatedAddresses } = splitAddresses(o.addresses);
-  o.address = address;
-  delete o.addresses;
+  /*   // 2) Addresses
+    const { address, outdatedAddresses } = splitAddresses(o.addresses);
+    o.address = address;
+    delete o.addresses; */
 
-  // 3) Outdated names (differs for user vs partner)
-  const outdatedData = { contacts: outdatedContacts, addresses: outdatedAddresses, names: [] };
+  const outdatedData = { contacts: outdatedContacts };
   console.log('outdatedData', outdatedData);
 
   if (kind === 'user') {
+
+    // 2) Addresses
+    const { address, outdatedAddresses } = splitAddresses(o.addresses);
+    o.address = address;
+    outdatedData.addresses = outdatedAddresses;
+    delete o.addresses;
+
     // Pull role name onto root and drop original relation
     o.roleName = o.role?.name;
     delete o.role;
@@ -187,17 +263,30 @@ export function transformOwnerData(kind, raw) {
     delete o.outdatedNames;
 
   } else if (kind === 'partner') {
-    const { names } = splitNamesPartner(o.outdatedNames);
-    outdatedData.names = names;
+
+    // 2) Addresses
+    const { address, outdatedAddresses } = splitAddresses(o.addresses);
+    o.address = address;
+    outdatedData.addresses = outdatedAddresses;
+    delete o.addresses;
+
+    outdatedData.names = o.outdatedNames;
     delete o.outdatedNames;
 
     // 4) Homes (actual + outdated)
     const { homes, outdatedHomes } = splitHomesForPartner(o);
-    o.homes = homes;
-    outdatedData.homes = outdatedHomes;
+    o.coordinations = homes;
+    outdatedData.coordinations = outdatedHomes;
+
   } else if (kind === 'volunteer') {
-    const { names } = splitNamesPartner(o.outdatedNames);
-    outdatedData.names = names;
+
+    // 2) Addresses
+    const { address, outdatedAddresses } = splitAddresses(o.addresses);
+    o.address = address;
+    outdatedData.addresses = outdatedAddresses;
+    delete o.addresses;
+
+    outdatedData.names = o.outdatedNames;
     delete o.outdatedNames;
 
     // 5) Institutes (actual + outdated)
@@ -231,14 +320,31 @@ export function transformOwnerData(kind, raw) {
 
     o.subscriptions = subscriptions;
     o.cooperations = cooperations;
+
+  } else if (kind === 'home') {
+    o.dateOfLastUpdate = o.updateDates.length ? o.updateDates[0] : null;
+    delete o.updateDates;
+
+    // 2) Addresses
+    const { address, outdatedAddresses } = splitHomeAddresses(o.addresses);
+    o.address = address;
+    outdatedData.addresses = outdatedAddresses;
+    delete o.addresses;
+    delete o.activeAddress;
+
+    outdatedData.officialNames = o.outdatedNames;
+    delete o.outdatedNames;
+
+    // 6) Partners (actual + outdated)
+    const { partners, outdatedPartners } = splitPartnersForHome(o);
+    o.coordinations = partners;
+    outdatedData.coordinations = outdatedPartners;
   }
-
-
-
   else {
     throw new Error(`Unsupported kind: ${kind}`);
   }
-
   o.outdatedData = outdatedData;
+
+  console.log('PARTNERS', JSON.stringify(o.coordinations));
   return o;
 }

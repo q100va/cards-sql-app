@@ -9,8 +9,6 @@ import {
 import {
   FormControl,
   FormArray,
-  AbstractControl,
-  FormGroup,
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
@@ -52,6 +50,15 @@ import {
   DeletingByKind,
   ListDto,
   OutdatedByKind,
+  Home,
+  HomeDraft,
+  HomeChangingData,
+  HomeRestoringData,
+  HomeOutdatingData,
+  HomeDeletingData,
+  OutdatedOfficialName,
+  OutdatedCoordination,
+  CoordinationPick,
 } from '../../../../interfaces/advanced-model';
 import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
@@ -67,6 +74,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 import { RoleService } from '../../../../services/role.service';
 import { UserService } from '../../../../services/user.service';
@@ -78,14 +87,13 @@ import { OwnerService } from '../../../../services/owner.service';
 import { buildDuplicateInfoMessage, normalize } from '../../../../utils/diff';
 
 import { OutdatedUserName } from '../../../../interfaces/user';
-import { OutdatedHome } from '../../../../interfaces/partner';
 import {
-  Institute,
   OutdatedInstitute,
   Subscription,
   Cooperation,
   InstituteFormGroup,
 } from '../../../../interfaces/volunteer';
+import { OutdatedHomeAddress } from '../../../../interfaces/home';
 
 import {
   causeOfRestrictionControlSchema,
@@ -96,13 +104,17 @@ import {
   telegramIdControlSchema,
   telegramNicknameControlSchema,
   vKontakteControlSchema,
-} from '@shared/schemas/user.schema';
+  websiteControlSchema,
+} from '../../../../../../shared/schemas/user.schema';
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
 import { debounceTime, finalize, Observable, of } from 'rxjs';
-import { DefaultAddressParams } from '@shared/dist/toponym.schema';
-import { AuthUser } from '@shared/schemas/auth.schema';
-import { AuthService } from 'src/app/services/auth.service';
+import { DefaultAddressParams } from '../../../../../../shared/schemas/toponym.schema';
+import { AuthUser } from '../../../../../../shared/schemas/auth.schema';
+import { AuthService } from '../../../../services/auth.service';
+import { HomeService } from '../../../../services/home.service';
+import { ApiResponse } from '../../../../interfaces/api-response';
+import { coordinationNameControlSchema } from '../../../../../../shared/schemas/common.schema';
 
 @Component({
   selector: 'app-advanced-details',
@@ -120,6 +132,8 @@ import { AuthService } from 'src/app/services/auth.service';
     MatMenuModule,
     MatButtonModule,
     TranslateModule,
+    MatCheckboxModule,
+    MatAutocompleteModule,
   ],
   providers: [],
   templateUrl: './advanced-details.component.html',
@@ -138,7 +152,7 @@ export class AdvancedDetailsComponent<
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
   readonly ownerDiffService = inject(OwnerDiffService);
-  private readonly ownerService = inject(OwnerService);
+  readonly ownerService = inject(OwnerService);
   readonly translate = inject(TranslateService);
   readonly auth = inject(AuthService);
 
@@ -191,6 +205,16 @@ export class AdvancedDetailsComponent<
     { list: Volunteer[]; length: number }
   >;
 
+  protected readonly homeService = inject(HomeService) as OwnerMainService<
+    Home,
+    HomeDraft,
+    HomeChangingData,
+    HomeRestoringData,
+    HomeOutdatingData,
+    HomeDeletingData,
+    { list: Home[]; length: number }
+  >;
+
   protected getService(): OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
@@ -205,7 +229,11 @@ export class AdvancedDetailsComponent<
         ? this.userService
         : this.kind === 'partner'
         ? this.partnerService
-        : this.volunteerService;
+        : this.kind === 'volunteer'
+        ? this.volunteerService
+        : this.kind === 'home'
+        ? this.homeService
+        : this.homeService; //seniorService
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -271,6 +299,7 @@ export class AdvancedDetailsComponent<
     { name: 'vKontakte', availableForExtra: false },
     { name: 'instagram', availableForExtra: false },
     { name: 'facebook', availableForExtra: false },
+    { name: 'website', availableForExtra: false },
   ];
   availableContactTypes: Exclude<ContactType, 'telegram' | 'otherContact'>[] =
     [];
@@ -280,15 +309,20 @@ export class AdvancedDetailsComponent<
   hasOutdatedContacts = signal<boolean>(false);
   hasOutdatedAddresses = signal<boolean>(false);
   hasOutdatedUserNames = signal<boolean>(false);
-  hasOutdatedHomes = signal<boolean>(false);
+  hasOutdatedOfficialNames = signal<boolean>(false);
+  //hasOutdatedHomes = signal<boolean>(false);
   hasOutdatedInstitutes = signal<boolean>(false);
+  hasOutdatedCoordinations = signal<boolean>(false);
+  hasPostalAddress = signal<boolean>(false);
+  hasStatus = signal<boolean>(false);
+  homeOpen = signal<boolean>(true);
+  homeOrPartner = signal<'home' | 'partner' | 'other'>('other');
+  coordinationPickList$: Observable<CoordinationPick[]> = of([]);
+  showRestrictedToggle = true;
 
   override ngOnInit(): void {
     super.ngOnInit();
-    //this.existingOwner = this.getOwner();
-
     this.kind = this.data().componentType as K;
-    //this.existingOwner = this.data().object;
     console.log(' this.object', structuredClone(this.object));
     console.log('this.existingOwner', structuredClone(this.existingOwner));
     if (this.existingOwner) {
@@ -321,7 +355,6 @@ export class AdvancedDetailsComponent<
           }),
       });
 
-    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
     this.hasOutdatedContacts.set(
       Object.keys(this.outdatedDataDraft.contacts).length > 0
     );
@@ -359,6 +392,11 @@ export class AdvancedDetailsComponent<
       );
       if (idx !== -1) this.controlsNames.splice(idx, 1);
     }
+    this.onChangeValidation();
+  }
+
+  onCloseToggleClick() {
+    this.showRestrictedToggle = !this.mainForm.controls['isClose'].value;
     this.onChangeValidation();
   }
 
@@ -402,6 +440,7 @@ export class AdvancedDetailsComponent<
       vKontakte: [zodValidator(vKontakteControlSchema)],
       instagram: [zodValidator(instagramControlSchema)],
       facebook: [zodValidator(facebookControlSchema)],
+      website: [zodValidator(websiteControlSchema)],
     };
 
     this.getFormArray(type).push(
@@ -417,6 +456,12 @@ export class AdvancedDetailsComponent<
 
   deleteInstituteControl(index: number) {
     const formArray = this.getFormArray('institutes');
+    formArray.removeAt(index);
+    this.onChangeValidation();
+  }
+  //TODO:
+  deleteCoordinationControl(index: number) {
+    const formArray = this.getFormArray('coordinations');
     formArray.removeAt(index);
     this.onChangeValidation();
   }
@@ -457,7 +502,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     const isQualified =
       this.kind === 'user' ||
       this.kind === 'partner' ||
-      this.kind === 'volunteer';
+      this.kind === 'volunteer' ||
+      this.kind === 'home';
     // this.logInvalid(this.mainForm); //TODO: delete
     const disabled =
       (isQualified && !this.mainForm.valid) ||
@@ -539,6 +585,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
       if (originalId !== selectedId) return true;
     }
+    return this.homeAddressChangeValidation();
+  }
+
+  homeAddressChangeValidation() {
     return false;
   }
 
@@ -602,11 +652,38 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   // --- Outdated data actions
+
+  onRestoreOutdatedName(data: OutdatedFullName) {
+    if (
+      'names' in this.restoringDataDraft &&
+      'names' in this.existingOwner!.outdatedData
+    ) {
+      if (this.restoringDataDraft.names !== null) {
+        const nameId = this.restoringDataDraft.names![0];
+        const restoredValue = this.existingOwner!.outdatedData.names.find(
+          (item: OutdatedAddress | OutdatedFullName | OutdatedHomeAddress) =>
+            item.id === nameId
+        );
+        if ('names' in this.outdatedDataDraft && restoredValue)
+          (this.outdatedDataDraft.names as any[]).push(restoredValue);
+        this.restoringDataDraft.names = [];
+      }
+      //  }
+      this.restoringDataDraft.names = [data.id];
+      if ('firstName' in data) {
+        this.mainForm.patchValue({
+          firstName: data.firstName,
+          patronymic: data.patronymic,
+          lastName: data.lastName,
+        });
+      }
+    }
+  }
+
   onRestoreOutdatedData(
     type: keyof RestoringByKind<K>,
-    data: Contact | OutdatedAddress | OutdatedFullName,
-    //     | OutdatedUserName
-    //    | OutdatedHome,
+    data: Contact | OutdatedAddress | OutdatedHomeAddress,
+    //  | OutdatedHome,
     contactType?: Exclude<ContactType, 'telegram'>
   ) {
     //восстанавливаемое значение присваиваем соответветствующему form.control,
@@ -631,53 +708,43 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     //для этих типов восстановить можно только одно значение,
     //поэтому проверяем, были ли уже восстановленные значения,
     //если были, то удаляем их их restoringDataDraft и помещаем в outdatingDataDraft
-    type NameOrAddr = 'names' | 'addresses';
-    const nameOrAddr = type as NameOrAddr;
-
-    if (type === 'names' || type === 'addresses') {
-      if (this.restoringDataDraft[nameOrAddr] !== null) {
-        const restoredValue = this.existingOwner!.outdatedData[nameOrAddr].find(
-          (item: OutdatedAddress | OutdatedFullName) =>
-            item.id === this.restoringDataDraft[nameOrAddr]![0]
+    if (type === 'addresses') {
+      if (this.restoringDataDraft.addresses !== null) {
+        const restoredValue = this.existingOwner!.outdatedData.addresses.find(
+          (item: OutdatedAddress | OutdatedFullName | OutdatedHomeAddress) =>
+            item.id === this.restoringDataDraft.addresses![0]
         );
         if (restoredValue)
-          (this.outdatedDataDraft[nameOrAddr] as any[]).push(restoredValue);
-        this.restoringDataDraft[nameOrAddr] = [];
+          (this.outdatedDataDraft.addresses as any[]).push(restoredValue);
+        this.restoringDataDraft.addresses = [];
       }
       //  }
-      this.restoringDataDraft[nameOrAddr] = [data.id];
+      this.restoringDataDraft.addresses = [data.id];
 
-      switch (type) {
-        case 'names':
-          if ('firstName' in data) {
-            this.mainForm.patchValue({
-              firstName: data.firstName,
-              patronymic: data.patronymic,
-              lastName: data.lastName,
-            });
-          }
-          break;
-        case 'addresses':
-          if ('country' in data) {
-            this.addressFilterComponent.onChangeMode('edit', {
-              localityId: data.locality?.id ?? null,
-              districtId: data.district?.id ?? null,
-              regionId: data.region?.id ?? null,
-              countryId: data.country.id,
-            });
-          }
-          break;
+      if ('country' in data) {
+        this.addressFilterComponent.onChangeMode('edit', {
+          localityId: data.locality?.id ?? null,
+          districtId: data.district?.id ?? null,
+          regionId: data.region?.id ?? null,
+          countryId: data.country.id,
+        });
       }
     }
-    if ('homes' in this.existingOwner! && type === 'homes') {
-    }
+    /*     if ('homes' in this.existingOwner! && type === 'homes') {
+    } */
     //восстанавливаемые значения удаляем из outdatingDataDraft
     this.deleteFromOutdatedDataDraft(type as keyof OutdatedByKind<K>, data.id);
     this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
   onDeleteOutdatedData(
-    type: keyof DeletingByKind<K> | 'userNames' | 'homes' | 'institutes',
+    type:
+      | keyof DeletingByKind<K>
+      | 'names'
+      | 'userNames'
+      | 'officialNames'
+      | 'coordinations'
+      | 'institutes',
     id: number
   ) {
     if (!(type in this.deletingDataDraft)) return;
@@ -758,17 +825,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
-  /*   getService(kind: Kind): OwnerMainService<T, ChangingByKind<K>, RestoringByKind<K>, OutdatingByKind<K>, DeletingByKind<K>> {
-    const svc = (
-      {
-        user: this.userService,
-        partner: this.partnerService,
-      } as const
-    )[kind];
-    if (!svc) throw new Error(`Unknown kind: ${kind}`);
-    return svc;
-  } */
-
   checkOwnerData() {
     const service = this.getService();
     service
@@ -848,7 +904,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
   async correctRestoringData() {
     // Addresses
-    if (this.restoringDataDraft.addresses?.length) {
+    /*     if (this.restoringDataDraft.addresses?.length) {
       const addresses = await this.ownerService.corrAddress(
         this.restoringDataDraft.addresses,
         this.outdatedDataDraft.addresses,
@@ -857,10 +913,18 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       );
       this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
       this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
-    }
+    } */
 
     // Names
-    if (this.restoringDataDraft.names?.length) {
+    if (
+      'names' in this.restoringDataDraft &&
+      'names' in this.outdatedDataDraft &&
+      'names' in this.existingOwner!.outdatedData &&
+      'firstName' in this.ownerDraft /*
+      'patronymic' in this.ownerDraft &&
+      'lastName' in this.ownerDraft && */ &&
+      this.restoringDataDraft.names?.length
+    ) {
       const names = await this.ownerService.corrNames(
         this.restoringDataDraft.names,
         this.outdatedDataDraft.names,
@@ -885,29 +949,59 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft.contacts = structuredClone(contacts.restoring);
       this.outdatedDataDraft.contacts = structuredClone(contacts.outdating);
     }
+
+    //Coordinations
+    if (
+      (this.kind == 'home' || this.kind == 'partner') &&
+      'coordinations' in this.restoringDataDraft &&
+      'coordinations' in this.outdatedDataDraft &&
+      'coordinations' in this.existingOwner!.outdatedData &&
+      'draftCoordinations' in this.ownerDraft
+    ) {
+      const dataCoordinations = this.ownerDiffService.corrCoordinations(
+        this.kind,
+        this.restoringDataDraft.coordinations ?? [],
+        this.outdatedDataDraft.coordinations ?? [],
+        this.ownerDraft.draftCoordinations ?? [],
+        this.existingOwner!.outdatedData.coordinations ?? []
+      );
+
+      this.restoringDataDraft.coordinations = structuredClone(
+        dataCoordinations.restoring
+      );
+      this.outdatedDataDraft.coordinations = structuredClone(
+        dataCoordinations.outdating
+      );
+    }
   }
 
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
   async checkOutdatedDataDuplicates() {
-    const address = await this.ownerService.checkAddress(
+    /*    const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
     );
     if (!address.restoringId) return false;
-    if (address.restoringId > 0) {
+    if (address.restoringId > -1) {
       this.restoringDataDraft.addresses ??= [];
       this.restoringDataDraft.addresses.push(address.restoringId);
-    }
+    } */
 
-    const names = await this.ownerService.checkNames(
-      this.outdatedDataDraft.names,
-      this.ownerDraft
-    );
-    if (!names.restoringId) return false;
-    if (names.restoringId > 0) {
-      this.restoringDataDraft.names ??= [];
-      this.restoringDataDraft.names.push(names.restoringId);
+    if (
+      'names' in this.outdatedDataDraft &&
+      'names' in this.restoringDataDraft &&
+      'firstName' in this.ownerDraft
+    ) {
+      const names = await this.ownerService.checkNames(
+        this.outdatedDataDraft.names,
+        this.ownerDraft
+      );
+      if (!names.restoringId) return false;
+      if (names.restoringId > -1) {
+        this.restoringDataDraft.names ??= [];
+        this.restoringDataDraft.names.push(names.restoringId);
+      }
     }
 
     const contacts = await this.ownerService.checkContacts(
@@ -926,6 +1020,26 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
 
+    if (
+      (this.kind == 'home' || this.kind == 'partner') &&
+      'coordinations' in this.outdatedDataDraft &&
+      'coordinations' in this.restoringDataDraft &&
+      'draftCoordinations' in this.ownerDraft
+    ) {
+      const dataPartners = await this.ownerDiffService.checkCoordinations(
+        this.kind,
+        this.outdatedDataDraft.coordinations,
+        this.ownerDraft.draftCoordinations
+      );
+      if (!dataPartners.restoring) return false;
+      if (dataPartners.restoring.length > 0) {
+        this.restoringDataDraft.coordinations = [
+          ...(this.restoringDataDraft.coordinations ?? []),
+          ...dataPartners.restoring,
+        ];
+      }
+    }
+
     return true;
   }
 
@@ -938,14 +1052,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft
     );
 
-    const names = await this.ownerService.diffNames(
-      this.existingOwner!,
-      this.ownerDraft
-    );
-    if (names.changes) this.changingData.main = names.changes;
-    if (names.outdating) this.outdatingData.names = names.outdating;
-
-    const address = await this.ownerService.diffAddress(
+    /*     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
       restoringData.addresses == null ? null : restoringData.addresses![0]
@@ -955,7 +1062,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     if (address.deletingId) {
       deletingData.addresses ??= [];
       deletingData.addresses.push(address.deletingId);
-    }
+    } */
 
     const contacts = await this.ownerService.diffContacts(
       this.existingOwner!,
@@ -978,7 +1085,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     for (const key of this.mainProps) {
       const existing = this.existingOwner as Record<string, unknown>;
       const draft = this.ownerDraft as Record<string, unknown>;
-
+      console.log(key, existing[key as string]);
+      console.log(key, draft[key as string]);
       if (existing[key as string] !== draft[key as string]) {
         const currentMain =
           (this.changingData.main as NonNullable<
@@ -1020,7 +1128,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             this.closeDialogDataSignal.set(res.data);
             this.emittedCloseDialogData.emit(res.data);
           } else {
-            // keep dialog open, could re-load user data if needed
+            // keep dialog open, could re-load owner data if needed
           }
         },
         error: (err) =>
@@ -1058,22 +1166,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       .subscribe({
         next: (res) => {
           if (this.action === 'saveAndExit') {
-            this.closeDialogDataSignal.set(res.data.lastName);
-            this.emittedCloseDialogData.emit(res.data.lastName);
+            this.closeDialogDataSignal.set('close'); //TODO: change?
+            this.emittedCloseDialogData.emit('close');
             return;
           }
 
           // inline update to view state
-          if (
-            !this.mainForm.controls['isRestricted'].value &&
-            this.mainForm.get('causeOfRestriction')
-          ) {
-            this.mainForm.removeControl('causeOfRestriction');
-            const idx = this.controlsNames.findIndex(
-              (n) => n === 'causeOfRestriction'
-            );
-            if (idx !== -1) this.controlsNames.splice(idx, 1);
-          }
+          this.correctRestrictedController();
 
           this.data().object = res.data;
           this.data().defaultAddressParams = {
@@ -1104,8 +1203,12 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           console.log('OOO - this.outdatedDataDraft', this.outdatedDataDraft);
 
           this.setHasOutdatedUserNames();
-          this.setHasOutdatedHomes();
-          this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+          //this.setHasOutdatedHomes();
+          this.setHasOutdatedNames();
+          this.setHasOutdatedOfficialNames();
+          this.setHasOutdatedCoordinations();
+          this.setHomeOpen();
+
           this.hasOutdatedContacts.set(
             Object.keys(this.outdatedDataDraft.contacts).length > 0
           );
@@ -1138,6 +1241,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       });
   }
 
+  correctRestrictedController() {
+    if (
+      !this.mainForm.controls['isRestricted'].value &&
+      this.mainForm.get('causeOfRestriction')
+    ) {
+      this.mainForm.removeControl('causeOfRestriction');
+      const idx = this.controlsNames.findIndex(
+        (n) => n === 'causeOfRestriction'
+      );
+      if (idx !== -1) this.controlsNames.splice(idx, 1);
+    }
+  }
+
   // badges (for template)
   setEmptyOutdatedDataDraft() {}
   setRestoringDataDraft() {}
@@ -1150,9 +1266,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   hasAffiliation(): boolean {
     return false;
   }
-  hasHomes(): boolean {
-    return false;
+  hasCoordinations(): boolean {
+    if (this.kind == 'home' || this.kind == 'partner') return true;
+    else return false;
   }
+
   hasSubscriptions(): boolean {
     return false;
   }
@@ -1162,50 +1280,119 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   hasInstitutes(): boolean {
     return false;
   }
-  setHasOutdatedUserNames() {}
+
   checkUserName() {}
   onChangePasswordClick() {}
   onAddInstituteClick() {}
   getRowSpanForUserNames() {
     return 0;
   }
-  get outdatedUserNames(): OutdatedUserName[] {
-    return [];
-  }
-  onRestoreOutdatedUserName(data: OutdatedUserName) {}
 
-  setHasOutdatedHomes() {}
+  setHasOutdatedUserNames() {}
+  //setHasOutdatedHomes() {}
   setHasOutdatedInstitutes() {}
+  setHasOutdatedNames() {}
+  setHasOutdatedOfficialNames() {}
+  setHasOutdatedCoordinations() {
+    if ('coordinations' in this.outdatedDataDraft)
+      this.hasOutdatedCoordinations.set(
+        this.outdatedDataDraft.coordinations.length > 0
+      );
+    else this.hasOutdatedCoordinations.set(false);
+  }
+   setHomeOpen() {}
 
   getRowSpanForHomes() {
+    return 0;
+  }
+  getRowSpanForPartners() {
     return 0;
   }
   getRowSpanForInstitutes() {
     return 0;
   }
 
-  get homes(): OutdatedHome[] {
+  /*   get homes(): OutdatedHome[] {
     return [];
-  }
-  get institutes(): Institute[] {
-    return [];
-  }
+  } */
 
+  /*   get coordinations(): HomeCoordination[] {
+    if (this.existingOwner && 'coordinations' in this.existingOwner) {
+      const list = this.existingOwner.coordinations;
+      return Array.isArray(list) ? list : [];
+    } else return [];
+  } */
+  /* get institutes(): Institute[] {
+    return [];
+  } */
+  getPostalAddress(): string {
+    return '';
+  }
   get institutesArray(): FormArray<InstituteFormGroup> {
     return new FormArray<InstituteFormGroup>([]);
   }
+
+  get coordinationsArray(): FormArray<FormControl<CoordinationPick | string>> {
+    let fa = this.mainForm.get('coordinations') as FormArray<
+      FormControl<CoordinationPick | string>
+    >;
+
+    if (!fa) {
+      fa = new FormArray<FormControl<CoordinationPick | string>>([]);
+      this.mainForm.addControl('coordinations', fa);
+    }
+    return fa;
+  }
+
+  onAddCoordinationClick() {
+    this.coordinationsArray.push(
+      new FormControl<CoordinationPick | string>(
+        { value: '', disabled: false },
+        {
+          nonNullable: true,
+          validators: [zodValidator(coordinationNameControlSchema)],
+        }
+      )
+    );
+  }
+
+  /*  get coordinationsArray(): FormArray<FormControl<CoordinationPick | string>> {
+    return new FormArray<FormControl<CoordinationPick | string>>([]);
+  } */
   get subscriptions(): Subscription[] {
     return [];
   }
   get cooperations(): Cooperation[] {
     return [];
   }
-  get outdatedHomes(): OutdatedHome[] {
+  get outdatedNames(): OutdatedFullName[] {
     return [];
+  }
+  get outdatedUserNames(): OutdatedUserName[] {
+    return [];
+  }
+  get outdatedOfficialNames(): OutdatedOfficialName[] {
+    return [];
+  }
+  /*   get outdatedCoordinations(): OutdatedCoordination[] {
+    return [];
+  } */
+
+  get outdatedCoordinations(): OutdatedCoordination[] {
+    const data = this.outdatedDataDraft;
+    if ('coordinations' in data) {
+      const list = data?.coordinations;
+      return Array.isArray(list) ? list : [];
+    } else return [];
   }
   get outdatedInstitutes(): OutdatedInstitute[] {
     return [];
   }
-  onRestoreOutdatedHome(data: OutdatedHome) {}
+
+  onRestoreOutdatedUserName(data: OutdatedUserName) {}
+  onRestoreOutdateOfficialName(data: OutdatedOfficialName) {}
+  // onRestoreOutdatedHome(data: OutdatedHome) {}
   onRestoreOutdatedInstitute(data: OutdatedInstitute) {}
+  onRestoreOutdatedOfficialName(data: OutdatedOfficialName) {}
+  onRestoreOutdatedCoordination(data: OutdatedCoordination) {}
 }

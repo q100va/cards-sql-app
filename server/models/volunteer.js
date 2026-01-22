@@ -1,4 +1,4 @@
-// server/models/partner.js
+// server/models/volunteer.js
 import { DataTypes, Model } from 'sequelize';
 
 export default function VolunteerModel(sequelize) {

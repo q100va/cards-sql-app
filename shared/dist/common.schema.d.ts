@@ -18,6 +18,7 @@ export declare const telegramIdSchema: z.ZodPipe<z.ZodTransform<string, unknown>
 export declare const vKontakteSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const instagramSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const facebookSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
+export declare const websiteSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const otherContactSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const draftAddressSchema: z.ZodObject<{
     countryId: z.ZodNullable<z.ZodNumber>;
@@ -63,6 +64,7 @@ export declare const contactType: z.ZodEnum<{
     vKontakte: "vKontakte";
     instagram: "instagram";
     facebook: "facebook";
+    website: "website";
     otherContact: "otherContact";
 }>;
 export declare const contactSchema: z.ZodObject<{
@@ -114,6 +116,10 @@ export declare const optionalContactsSchema: z.ZodObject<{
         id: z.ZodNumber;
         content: z.ZodString;
     }, z.core.$strict>>>;
+    website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodNumber;
+        content: z.ZodString;
+    }, z.core.$strict>>>;
     otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
         content: z.ZodString;
@@ -129,6 +135,7 @@ export declare const changingContactsSchema: z.ZodObject<{
     vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
+    website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
 }, z.core.$strict>;
 export declare const outdatedNameItemSchema: z.ZodObject<{
@@ -199,6 +206,10 @@ export declare const outdatedCommonSchema: z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
@@ -224,12 +235,6 @@ export declare const outdatedCommonSchema: z.ZodObject<{
         id: z.ZodNumber;
         isRecoverable: z.ZodBoolean;
     }, z.core.$strict>>;
-    names: z.ZodArray<z.ZodObject<{
-        firstName: z.ZodString;
-        patronymic: z.ZodNullable<z.ZodString>;
-        lastName: z.ZodNullable<z.ZodString>;
-        id: z.ZodNumber;
-    }, z.core.$strict>>;
 }, z.core.$strict>;
 export declare const duplicatesSchema: z.ZodObject<{
     duplicatesName: z.ZodArray<z.ZodString>;
@@ -239,6 +244,10 @@ export declare const duplicatesSchema: z.ZodObject<{
         owners: z.ZodArray<z.ZodString>;
     }, z.core.$strict>>;
 }, z.core.$strict>;
+export declare const coordinationNameControlSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    name: z.ZodString;
+}, z.core.$strip>;
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
 export type Address = z.infer<typeof addressSchema>;

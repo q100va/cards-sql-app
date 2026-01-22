@@ -1,6 +1,9 @@
 import { Op } from 'sequelize';
+import {
+  Region, District, Locality
+} from "../models/index.js";
 
-export const fullName = (row) => {
+export function fullName(row) {
   const fn = row['firstName'] ?? '';
   const pn = row['patronymic'] ?? '';
   const ln = row['lastName'] ?? '';
@@ -113,20 +116,55 @@ export function collectDraftContacts(draftContacts = {}) {
   return rows;
 }
 
+export async function formFullPostAddress(draft, t) {
+//console.log('draft.draftAddress', draft.draftAddress);
+
+  const shortRegionName = (await Region.findOne({
+    where: { id: draft.draftAddress.regionId },
+    attributes: ['shortName'],
+    transaction: t,
+  })).shortName;
+  const postalDistrictName = (await District.findOne({
+    where: { id: draft.draftAddress.districtId },
+    attributes: ['shortPostName'],
+    transaction: t,
+  })).shortPostName;
+  const shortLocalityName = (await Locality.findOne({
+    where: { id: draft.draftAddress.localityId },
+    attributes: ['shortName'],
+    transaction: t,
+  })).shortName;
+ // console.log('ADDRESS', shortRegionName, postalDistrictName, shortLocalityName);
+
+ // console.log('ADDRESS', shortRegionName.shortName, postalDistrictName.shortPostName, shortLocalityName.shortName);
+
+  const mainPart = shortRegionName +
+    (postalDistrictName == shortRegionName ? '' : ', ' + postalDistrictName) +
+    (shortLocalityName == postalDistrictName ? '' : ', ' + shortLocalityName);
+
+  return draft.postalCode + ', ' + mainPart + ', ' + (draft.postalAddressPart ? draft.postalAddressPart + ', ' : '') + draft.postalName;
+
+}
+
 /**
  * @param {'user'|'partner'} ownerKind
  * @param {object} ownerInstance
- * @param {object} draft — { draftContacts?, draftAddress? }
+ * @param {object} draft — ownerDraft
  * @param {object} models — { UserContact, PartnerContact, UserAddress, PartnerAddress }
  * @param {object} t — transaction
  */
-export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draft, models, t) {
+export async function saveOwnerContactsAndAddress(
+  ownerKind,
+  ownerInstance,
+  draft,
+  models,
+  t) {
   const CONFIG = {
     user: {
       idField: 'userId',
       ContactModel: models.UserContact,
       AddressModel: models.UserAddress,
-      addressShape: a => ({
+      addressShape: async (a) => ({
         countryId: a.countryId ?? null,
         regionId: a.regionId ?? null,
         districtId: a.districtId ?? null,
@@ -137,7 +175,7 @@ export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draf
       idField: 'partnerId',
       ContactModel: models.PartnerContact,
       AddressModel: models.PartnerAddress,
-      addressShape: a => ({
+      addressShape: async (a) => ({
         countryId: a.countryId ?? null,
         regionId: a.regionId ?? null,
         districtId: a.districtId ?? null,
@@ -148,15 +186,29 @@ export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draf
       idField: 'volunteerId',
       ContactModel: models.VolunteerContact,
       AddressModel: models.VolunteerAddress,
-      addressShape: a => ({
+      addressShape: async (a) => ({
         countryId: a.countryId ?? null,
         regionId: a.regionId ?? null,
         districtId: a.districtId ?? null,
         localityId: a.localityId ?? null,
       }),
     },
+    home: {
+      idField: 'homeId',
+      ContactModel: models.HomeContact,
+      AddressModel: models.HomeAddress,
+      addressShape: async (a, draft, t) => ({
+        countryId: a.countryId,
+        regionId: a.regionId,
+        districtId: a.districtId,
+        localityId: a.localityId,
+        postalCode: draft.postalCode,
+        postalAddressPart: draft.postalAddressPart,
+        postalName: draft.postalName,
+        fullPostalAddress: await formFullPostAddress(draft, t)
+      }),
+    },
   };
-  console.log('ownerInstance', ownerInstance);
 
   const C = CONFIG[ownerKind];
   if (!C) throw new Error(`Unsupported ownerKind: ${ownerKind}`);
@@ -173,25 +225,30 @@ export async function saveOwnerContactsAndAddress(ownerKind, ownerInstance, draf
       content,
     }));
 
-    await C.ContactModel.bulkCreate(contactRows, {
+   const contacts = await C.ContactModel.bulkCreate(contactRows, {
       validate: true,
       individualHooks: true,
       transaction: t,
     });
+    console.log('contacts', contacts);
   }
 
   // 2) Address
   const a = draft?.draftAddress ?? {};
   const hasAnyAddress = !!(a.countryId || a.regionId || a.districtId || a.localityId);
 
+  //console.log('DRAFT', await C.addressShape(a, draft))
+
   if (hasAnyAddress) {
-    await C.AddressModel.create(
+    const address = await C.addressShape(a, draft, t);
+    const freshAddress = await C.AddressModel.create(
       {
         [C.idField]: ownerId,
-        ...C.addressShape(a),
+        ...address,
       },
       { transaction: t }
     );
+   // console.log('freshAddress', freshAddress);
   }
 }
 

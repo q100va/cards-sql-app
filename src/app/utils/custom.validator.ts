@@ -7,7 +7,7 @@ import {
 } from '@angular/forms';
 import { ContactType } from '../interfaces/advanced-model';
 
-export function emailFormatValidator(): ValidatorFn {
+/* export function emailFormatValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const emailRe = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const allowed = emailRe.test(control.value);
@@ -31,10 +31,6 @@ export function phoneNumberFormatValidator(): ValidatorFn {
       phoneRe = /^\+[1-9]{1}[0-9]{0,2}[2-9]{1}[0-9]{1,2}[0-9]{3}[0-9]{4}$/;
     }
     const allowed = phoneRe.test(cleanValue);
-    /*       //console.log('control.value');
-      //console.log(control.value);
-      //console.log(control.value == null || control.value == ''); */
-
     return allowed || control.value == null || control.value == ''
       ? null
       : { pattern: true };
@@ -102,7 +98,7 @@ export function facebookFormatValidator(): ValidatorFn {
       ? null
       : { pattern: { value: control.value } };
   };
-}
+} */
 
 export const mainUserContactsValidator: ValidatorFn = (
   control: AbstractControl
@@ -162,6 +158,7 @@ export const mainPartnerContactsValidator: ValidatorFn = (
     'vKontakte',
     'instagram',
     'facebook',
+    'website',
     'otherContact',
   ];
   for (const type of possibleContactTypes) {

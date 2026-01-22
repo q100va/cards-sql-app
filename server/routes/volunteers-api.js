@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { Op } from 'sequelize';
-import { z } from 'zod';
 import {
   Country, Region, District, Locality,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
@@ -18,7 +17,6 @@ import { createSearchStringFor, createOutdatedSearchStringFor } from "../control
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
-import { Subscription } from "rxjs";
 
 const router = Router();
 
@@ -135,17 +133,6 @@ router.post(
               individualHooks: true,
             }
           );
-
-
-          /*           creatingVolunteer.draftSubscriptions.forEach(async id =>
-                      await VolunteerSubscription.create(
-                        {
-                          volunteerId: volunteer.id,
-                          userId: id
-                        },
-                        { transaction: t }
-                      )
-                    ) */
         }
 
         if ((creatingVolunteer.draftCooperations ?? []).length) {
@@ -159,15 +146,6 @@ router.post(
               individualHooks: true,
             }
           );
-
-          /*          creatingVolunteer.draftCooperations.forEach(async id =>
-                     await VolunteerCooperation.create(
-                       {
-                         volunteerId: volunteer.id,
-                         userId: id
-                       },
-                       { transaction: t }
-                     )) */
         }
 
         const freshVolunteer = await Volunteer.findOne({
@@ -373,12 +351,11 @@ router.post(
         case 'only-blocked': whereVolunteer.isRestricted = true; break;
         default:              /* 'all' or undefined */        break;
       }
-      console.log('filters?.general?.affiliations', filters?.general?.affiliations);
 
       // general filters
-      if (filters?.general?.affiliations?.length) {
+  /*     if (filters?.general?.affiliations?.length) {
         whereVolunteer.affiliation = { [Op.in]: filters.general.affiliations };
-      }
+      } */
 
       if (filters?.general?.comment !== undefined) {
         whereVolunteer.comment = !filters.general.comment ? null : { [Op.not]: null };
@@ -409,6 +386,8 @@ router.post(
         if (sub) whereAddress.volunteerId = { [Op.in]: sub };
       }
 
+      //TODO: категории орг-й, подписка, сотрудничество
+
       // ---- includes (contacts / addresses / outdated names / search) ----
       const includes = [
         {
@@ -435,7 +414,7 @@ router.post(
           model: VolunteerOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-          separate: true,
+          //separate: true,
         },
         {
           model: Institute,

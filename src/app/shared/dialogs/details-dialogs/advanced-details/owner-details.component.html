@@ -8,7 +8,8 @@
         <!-- Subscription -->
         @if (control.category=='subscription') {
         <mat-grid-tile colspan="2" rowspan="1">
-          <mat-slide-toggle [formControlName]="control.controlName">{{'TABLE.CARD.SUBSCRIPTION_LABEL' | translate}}
+          <mat-slide-toggle [formControlName]="control.controlName"
+            class="small-toggle">{{'TABLE.CARD.SUBSCRIPTION_LABEL' | translate}}
           </mat-slide-toggle>
         </mat-grid-tile>
         <!-- TODO: отформатировать -->
@@ -91,18 +92,22 @@
           </mat-form-field>
         </mat-grid-tile>
         }
-        }
-        }
 
-        <!-- Address -->
-        <mat-grid-tile colspan="6" rowspan="2">
-          <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
-            (addressFilter)="onChangeAddress($event)" (showSpinner)="emitShowSpinner($event)"></app-address-filter>
+
+        <!-- noAddress specialHome acceptableForSchool -->
+        @if(control.type=='checkbox'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-slide-toggle [formControlName]="control.controlName" class="small-toggle">{{control.label | translate}}
+          </mat-slide-toggle>
         </mat-grid-tile>
+        }
+        }
+        }
 
         <!-- Blocking -->
-        <mat-grid-tile colspan="6" rowspan="1">
-          <mat-slide-toggle formControlName="isRestricted"
+        @if(showRestrictedToggle){
+        <mat-grid-tile colspan="2" rowspan="1">
+          <mat-slide-toggle formControlName="isRestricted" class="small-toggle"
             (change)="onRestrictedToggleClick()">{{'TABLE.CARD.BLOCKED_LABEL' | translate}}</mat-slide-toggle>
         </mat-grid-tile>
         @if (mainForm.controls['isRestricted'].value) {
@@ -111,14 +116,60 @@
             <mat-label>{{'TABLE.CARD.CAUSE_OF_BLOCK_LABEL' | translate}}</mat-label>
             <input type="text" matInput formControlName="causeOfRestriction"
               [placeholder]="'TABLE.CARD.CAUSE_OF_BLOCK_PLACEHOLDER' | translate" />
-            @if (mainForm.controls['causeOfRestriction'].hasError('zodError')) {
+            @if (showRestrictedToggle && mainForm.controls['causeOfRestriction'].hasError('zodError')) {
             <mat-error class="error">{{mainForm.controls['causeOfRestriction'].errors!['zodError'] |
               translate}}</mat-error>
             }
           </mat-form-field>
         </mat-grid-tile> }
+        }
+
+        <!-- Close -->
+        @if(hasStatus()){
+        <mat-grid-tile colspan="2" rowspan="1">
+          <mat-slide-toggle formControlName="isClose" class="small-toggle"
+            (change)="onCloseToggleClick()">{{'HOME.CARD.CLOSE_LABEL' | translate}}</mat-slide-toggle>
+        </mat-grid-tile>
+        }
       </mat-grid-list>
     </mat-tab>
+
+
+    <!-- Address -->
+    <mat-tab [label]="'TABLE.CARD.ADDRESS_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        <mat-grid-tile colspan="6" rowspan="2">
+          <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
+            (addressFilter)="onChangeAddress($event)" (showSpinner)="emitShowSpinner($event)"></app-address-filter>
+        </mat-grid-tile>
+
+        <!-- PostalAddress -->
+        @for (control of data().controls; track $index) {
+        @if(control.category=='address'){
+        @if(control.type=='inputText') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="text" matInput [formControlName]="control.controlName"
+              [placeholder]="control.placeholder | translate" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+        }
+        }
+
+        @if(hasPostalAddress() && data().operation == 'view-edit' && !isEditModeSignal()){
+        <mat-grid-tile colspan="6" rowspan="1">
+          {{getPostalAddress()}}
+        </mat-grid-tile>
+        }
+      </mat-grid-list>
+    </mat-tab>
+
 
     <!-- Contacts -->
     <mat-tab [label]="'TABLE.CARD.CONTACTS_LABEL' | translate">
@@ -163,28 +214,49 @@
       </mat-grid-list>
     </mat-tab>
 
-    <!-- Homes --TODO:-->
-    @if(data().operation == 'view-edit' && hasHomes()){
+    <!-- Coordinations ---->
+    @if(hasCoordinations()){
     <mat-tab [label]="'TABLE.CARD.COORDINATED_HOMES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
-        @for (item of homes; track item.id) {
-        <mat-grid-tile colspan="4" rowspan="1">
-          <div>{{ item.name }}</div>
+        @if(coordinationsArray.length){
+        <ng-container formArrayName="coordinations">
+          @for (ctrl of coordinationsArray.controls; track ctrl; let l = $index) {
+          <mat-grid-tile colspan="6" rowspan="1">
+            <div style="width: 100%;">
+
+              <app-autocomplete-row [ctrl]="ctrl" [index]="l" [coordinationPickList$]="coordinationPickList$"
+                [showDeleteButton]="data().operation == 'create' || isEditModeSignal()"
+                (delete)="deleteCoordinationControl($event)"></app-autocomplete-row>
+            </div>
+          </mat-grid-tile>
+          }
+        </ng-container>
+        }
+        @if(homeOpen()){
+        <mat-grid-tile colspan="3" rowspan="1">
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
+            (click)="onAddCoordinationClick()">
+            <mat-icon>combine_columns</mat-icon>
+            {{'TABLE.CARD.ADD_COORDINATION_BUTTON' | translate}}</button>
         </mat-grid-tile>
+        @if (data().operation == 'create' || isEditModeSignal()) {
+        <mat-grid-tile colspan="3" rowspan="1">
+          <mat-hint>{{'TABLE.CARD.COORDINATION_HINT' | translate}}</mat-hint>
+        </mat-grid-tile>
+        }
+
+
+
+
         }
       </mat-grid-list>
     </mat-tab>
     }
 
-    <!-- Institutes --TODO:-->
+    <!-- Institutes ---->
     @if(hasInstitutes()){
     <mat-tab [label]="'TABLE.CARD.INSTITUTES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
-        <!--        @for (item of institutes; track item.id) {
-        <mat-grid-tile colspan="4" rowspan="1">
-          <div>{{ item.instituteName }}</div>
-        </mat-grid-tile>
-        } -->
         @if(institutesArray.length){
         <ng-container formArrayName="institutes">
           @for (group of institutesArray.controls; track $index; let k = $index) {
@@ -249,15 +321,15 @@
         <!-- Outdated Names -->
         @if (hasOutdatedNames()) {
         <!--   style="background-color: rgb(224, 241, 227);" -->
-        <mat-grid-tile colspan='2' [rowspan]="outdatedDataDraft.names.length">
+        <mat-grid-tile colspan='2' [rowspan]="outdatedNames.length">
           <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_NAMES_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (item of outdatedDataDraft.names; track item.id) {
+        @for (item of outdatedNames; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
             <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
-              (restore)="onRestoreOutdatedData('names', item)" (delete)="onDeleteOutdatedData('names', item.id)">
+              (restore)="onRestoreOutdatedName(item)" (delete)="onDeleteOutdatedData('names', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">
@@ -281,6 +353,24 @@
             </app-outdated-item-menu>
             }
             <div class="outdated-data">{{ item.userName }}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        <!-- Outdated Official Names -->
+        @if (hasOutdatedOfficialNames()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedOfficialNames.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_HOME_OFFICIAL_NAMES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedOfficialNames; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdateOfficialName(item)" (delete)="onDeleteOutdatedData('officialNames', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.officialName }}</div>
           </div>
         </mat-grid-tile>
         }
@@ -337,20 +427,26 @@
         }
         }
 
-        <!-- Outdated Homes -->
-        @if (hasOutdatedHomes()) {
-        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForHomes()">
-          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_HOMES_TITLE' | translate}}</div>
+        <!-- Outdated Coordinations -->
+        @if (hasOutdatedCoordinations() && homeOrPartner()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedCoordinations.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_COORDINATIONS_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (item of outdatedHomes; track item.id) {
+        @for (item of outdatedCoordinations; track item.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
-            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
-              (restore)="onRestoreOutdatedHome(item)" (delete)="onDeleteOutdatedData('homes', item.id)">
+            <app-outdated-item-menu [params]="{isRecoverable: item.isRecoverable, isDeletable: true}"
+              (restore)="onRestoreOutdatedCoordination(item)" (delete)="onDeleteOutdatedData('coordinations', item.id)">
             </app-outdated-item-menu>
             }
-            <div class="outdated-data">{{ item.name }}</div>
+            @if(homeOrPartner() == 'home'){
+            <div class="outdated-data">{{ item.partnerName }}</div>
+            }
+            @if(homeOrPartner() == 'partner') {
+            <div class="outdated-data">{{ item.homeName }} ({{ item.regionName }})</div>
+            }
+
           </div>
         </mat-grid-tile>
         }

@@ -52,7 +52,7 @@ router.get(
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NAME_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.USER.NAME_NOT_CHECKED';
       next(error);
     }
   });
@@ -554,7 +554,7 @@ router.post(
           model: UserOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'],
-          separate: true,
+         // separate: true,
         }
       ];
 

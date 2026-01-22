@@ -74,5 +74,11 @@ html {
   ));
 }
 
+:root {
+  @include mat.slide-toggle-overrides((
+    label-text-size: 24px
+  ));
+}
+
 
 

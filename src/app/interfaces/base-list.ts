@@ -8,6 +8,9 @@ export interface GeneralFilter {
   dateRestrictionRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
   affiliations?: string[];
+  hasHomes?: string[];
+  homes?: number[];
+  homeRegions?: number[];
 }
 
 export type FilterDraft = {
@@ -49,7 +52,9 @@ export type FilterComponentSource =
   | 'partnerList'
   | 'partnerCard'
   | 'volunteerList'
-  | 'volunteerCard';
+  | 'volunteerCard'
+  | 'homeList'
+  | 'homeCard';
 
 export interface ContactParamsForList {
   type: string;
@@ -65,4 +70,5 @@ export type ContactTypeForList =
   | 'vKontakte'
   | 'instagram'
   | 'facebook'
+  | 'website'
   | 'otherContact';

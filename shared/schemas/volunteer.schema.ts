@@ -1,8 +1,7 @@
-import { number, z } from 'zod';
+import { z } from 'zod';
 import {
   toTrim,
   emptyToNull,
-  toLowerTrim,
   keepE164Chars,
   keepE164CharsNullable,
   nonEmpty,
@@ -22,23 +21,11 @@ import {
   telegramIdSchema,
   telegramNicknameSchema,
   vKontakteSchema,
+  websiteSchema,
 } from './common.schema.js';
-import {
-  draftAddressSchema,
-  addressSchema,
-  addressRefFullSchema,
-  addressRefShortSchema,
-} from './common.schema.js';
-import {
-  contactType,
-  contactSchema,
-  nonEmptyContacts,
-  optionalContactsSchema,
-} from './common.schema.js';
-import {
-  //changingAddressSchema,
-  changingContactsSchema,
-} from './common.schema.js';
+import { draftAddressSchema, addressSchema } from './common.schema.js';
+import { contactType, optionalContactsSchema } from './common.schema.js';
+import { changingContactsSchema } from './common.schema.js';
 import {
   outdatedNameItemSchema,
   outdatedAddressItemSchema,
@@ -53,13 +40,12 @@ const instituteItemSchema = z
   })
   .strict();
 
-  const draftInstituteItemSchema = z
+const draftInstituteItemSchema = z
   .object({
     category: nonEmpty,
     instituteName: nonEmpty,
   })
   .strict();
-
 
 const subsItemSchema = z
   .object({
@@ -83,13 +69,12 @@ export const instituteNameControlSchema = z.preprocess(
     .string()
     .min(1, 'FORM_VALIDATION.REQUIRED')
     .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
-    .max(500, { message: 'FORM_VALIDATION.TOO_LONG_150' })
+    .max(150, 'FORM_VALIDATION.TOO_LONG_150')
 );
 
 export const instituteCategoryControlSchema = z.preprocess(
   emptyToNull,
-  z
-    .string({ message: 'FORM_VALIDATION.REQUIRED' })
+  z.string({ message: 'FORM_VALIDATION.REQUIRED' })
 );
 export const emailControlSchema = z
   .preprocess(
@@ -212,6 +197,17 @@ export const facebookControlSchema = z.preprocess(
     .nullable()
 );
 
+export const websiteControlSchema = z.preprocess(
+  emptyToNull,
+  z
+    .string()
+    .regex(
+      /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
+      'Invalid website URL'
+    )
+    .nullable()
+);
+
 export const otherContactControlSchema = z.preprocess(
   emptyToNull,
   z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
@@ -231,6 +227,7 @@ export const draftContactsSchema = z
     vKontakte: z.array(vKontakteSchema),
     instagram: z.array(instagramSchema),
     facebook: z.array(facebookSchema),
+    website: z.array(websiteSchema),
     otherContact: z.array(otherContactSchema),
   })
   .strict()
@@ -518,7 +515,7 @@ export const volunteersQueryDTOSchema = z
         general: z
           .object({
             subscriptions: z.array(positiveInt).min(1).optional(),
-            partners: z.array(positiveInt).min(1).optional(),
+            cooperations: z.array(positiveInt).min(1).optional(),
             instituteCategories: z.array(nonEmpty).min(1).optional(),
 
             comment: z.boolean().optional(),

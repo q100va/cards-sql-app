@@ -35,7 +35,8 @@
     "DISTRICTS": "Районы",
     "LOCALITIES": "Нас. пункты",
     "AUDIT": "Аудит",
-    "PARTNERS": "Координаторы"
+    "PARTNERS": "Координаторы",
+    "HOMES": "Интернаты"
   },
   "LANG": {
     "SWITCH": "Язык",
@@ -65,7 +66,9 @@
       "USER_NAME": "имя пользователя",
       "CONTACTS": "контакт(ы)",
       "HOMES": "интернат(ы)",
-      "INSTITUTES": "организация(ии)"
+      "INSTITUTES": "организация(ии)",
+      "COORDINATIONS": "координацию",
+      "OFFICIAL_NAME": "официальное название"
     }
   },
   "TOAST": {
@@ -193,13 +196,21 @@
       "ACTIONS": "Действия",
       "HOMES": "Координируемые дома",
       "COOPERATIONS": "Взаимодействие",
-      "INSTITUTES": "Организации"
+      "INSTITUTES": "Организации",
+      "REGION_NAME": "Регион",
+      "HOME_NAME": "Название",
+      "HOME_CATEGORIES": "Категория",
+      "OFFICIAL_HOME_DATA": "Контакты",
+      "POSTAL_ADDRESS": "Почтовый адрес",
+      "LAST_UPDATE_DATE": "Дата обновления",
+      "PARTNERS": "Координаторы"
     },
     "NOTES": {
       "CLOSE": "закрыт",
       "DEACTIVATED": "не поздравляем",
       "OUTDATED_DATA": "прежние данные:",
       "BLOCKED_FROM": "заблокирован с ",
+      "CLOSE_FROM": "закрыт с ",
       "ACTIVE": "активен",
       "SUBSCRIPTION": "подписка"
     },
@@ -212,6 +223,7 @@
       "OPEN_VOLUNTEERS": "открыть список волонтеров",
       "OPEN_HOMES": "открыть список интернатов",
       "OPEN_USERS": "открыть список пользователей",
+      "OPEN_PARTNERS": "открыть список координаторов",
       "OPEN_SENIORS": "открыть список жителей интернатов",
       "BLOCK_OWNER": "заблокировать",
       "UNBLOCK_OWNER": "разблокировать",
@@ -224,8 +236,9 @@
     "CARD": {
       "MAIN_DATA_LABEL": "Основные сведения",
       "CONTACTS_LABEL": "Контактные данные",
+      "ADDRESS_LABEL": "Адрес",
       "OUTDATED_DATA_LABEL": "Неактуальные данные",
-      "COORDINATED_HOMES_LABEL": "Координируемые интернаты",
+      "COORDINATED_HOMES_LABEL": "Координация",
       "INSTITUTES_LABEL": "Организации",
       "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
       "BLOCKED_LABEL": "Заблокирован",
@@ -238,9 +251,13 @@
       "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
       "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
       "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
-      "OUTDATED_HOMES_TITLE": "Прежние координируемые интернаты:",
+      "OUTDATED_COORDINATIONS_TITLE": "Прежняя координация:",
       "ADD_INSTITUTE_BUTTON": "Добавить организацию",
-      "COOPERATIONS": "Взаимодействует с:"
+      "COOPERATIONS": "Взаимодействует с:",
+      "COORDINATION_NAME_LABEL": "Имя/название",
+      "ADD_COORDINATION_BUTTON": "Добавить координацию",
+      "COORDINATION_PLACEHOLDER": "начните печатать и выберите значение",
+      "COORDINATION_HINT": "Если значение не найдено, перейдите в соответствующий раздел и создайте карточку."
     }
   },
   "USER": {
@@ -271,6 +288,7 @@
       "VKONTAKTE_LABEL": "Вконтакте",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Другой контакт"
     },
     "CARD": {
@@ -294,6 +312,7 @@
       "VKONTAKTE_LABEL": "Вконтакте",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Другой контакт",
 
       "USER_NAME_PLACEHOLDER": "a.petrova",
@@ -306,6 +325,7 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше",
 
       "CHANGE_PASSWORD_TITLE": "Изменить пароль",
@@ -327,7 +347,7 @@
     "VIEW_OPTIONS": {
       "ALL": "Все координаторы",
       "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только прекратившие"
+      "ONLY_BLOCKED": "Только бывшие"
     },
     "AFF": {
       "VOLUNTEER_COORDINATOR": "Координатор",
@@ -337,7 +357,6 @@
     "CARD": {
       "CREATION_TITLE": "Новый координатор",
       "VIEW_TITLE": "Координатор",
-
       "FIRST_NAME_LABEL": "Имя*",
       "PATRONYMIC_LABEL": "Отчество",
       "LAST_NAME_LABEL": "Фамилия",
@@ -354,6 +373,7 @@
       "VKONTAKTE_LABEL": "Вконтакте",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Другой контакт",
 
       "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
@@ -365,13 +385,65 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше"
+    }
+  },
+  "HOME": {
+    "TABLE_TITLE": "Интернаты",
+    "ADD_PARTNER": "Добавить интернат",
+    "SEARCH_PLACEHOLDER": "КАБАНОВО",
+    "VIEW_OPTIONS": {
+      "ALL": "Все интернаты",
+      "ONLY_ACTIVE": "Только активные",
+      "ONLY_BLOCKED": "Только неактивные"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "Новый интернат",
+      "VIEW_TITLE": "Интернат",
+
+      "HOME_NAME_LABEL": "Короткое название*",
+      "OFFICIAL_NAME_LABEL": "Официальное название",
+      "COMMENT_LABEL": "Комментарий",
+      "SPECIAL_HOME_LABEL": "специнтернат",
+      "NO_ADDRESS_LABEL": "БОА",
+      "ACC_SCHOOL_LABEL": "подходит для школ",
+      "POSTAL_CODE_LABEL": "Индекс",
+      "POSTAL_NAME_LABEL": "Интернат-получатель",
+      "POSTAL_ADDR_LABEL": "Улица, номер дома",
+      "INFO_COMMENT_LABEL": "Информационный комментарий",
+      "BLOCKED_LABEL": "Прекратить участие",
+      "CLOSE_LABEL": "Интернат закрыт",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_ID_LABEL": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
     }
   },
 
   "VOLUNTEER": {
     "TABLE_TITLE": "Волонтеры",
-    "ADD_PARTNER": "Добавить Волонтера",
+    "ADD_PARTNER": "Добавить волонтера",
     "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
 
     "VIEW_OPTIONS": {
@@ -398,6 +470,7 @@
       "VKONTAKTE_LABEL": "Вконтакте",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Другой контакт",
 
       "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
@@ -409,6 +482,7 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше",
 
       "INSTITUTE_NAME_LABEL": "Название организации*",
@@ -557,6 +631,7 @@
     "TOO_LONG_50": "Максимум 50 символов",
     "TOO_LONG_20": "Максимум 20 символов",
     "TOO_SHORT_7": "Минимум 5 символов",
+    "NOT_FOUND": "Поле пустое или введенное значение не найдено",
 
     "ROLE": {
       "NAME_MIN": "Имя должно содержать минимум 2 символа",

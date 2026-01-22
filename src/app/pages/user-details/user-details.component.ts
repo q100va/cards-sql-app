@@ -11,10 +11,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
-
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
+import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
 
 import { User } from '../../interfaces/user';
 import { ContactUrlPipe } from 'src/app/utils/contact-url.pipe';
@@ -26,7 +27,7 @@ import {
   OutdatedFullName,
 } from '@shared/schemas/common.schema';
 import { OutdatedUserName } from '@shared/dist/user.schema';
-import {
+/* import {
   ContactType,
   UserRestoringData,
   UserOutdatedData,
@@ -34,7 +35,7 @@ import {
   UserDraft,
   UserChangingData,
   UserOutdatingData,
-} from '../../interfaces/advanced-model';
+} from '../../interfaces/advanced-model'; */
 import { UserMainService, UserService } from 'src/app/services/user.service';
 import { of } from 'rxjs';
 @Component({
@@ -55,6 +56,8 @@ import { of } from 'rxjs';
     OutdatedItemMenuComponent,
     TranslateModule,
     ContactUrlPipe,
+    MatAutocompleteModule,
+    AutocompleteRowComponent,
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -64,26 +67,23 @@ import { of } from 'rxjs';
 export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   override userService = inject(UserService) as UserMainService;
   override ngOnInit(): void {
-/*     this.existingOwner = this.data().object;
-    console.log('this.existingOwner', this.existingOwner);
-    if (this.existingOwner) {
-      this.outdatedDataDraft = structuredClone(this.existingOwner.outdatedData);
-      console.log(this.outdatedDataDraft);
-    } */
     super.ngOnInit();
     this.mainProps = [
+      'firstName',
+      'patronymic',
+      'lastName',
+      'userName',
       'roleId',
       'comment',
       'isRestricted',
       'causeOfRestriction',
       'dateOfRestriction',
     ];
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
     this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
-
-
   }
 
-    override setEmptyOutdatedDataDraft() {
+  override setEmptyOutdatedDataDraft() {
     this.outdatedDataDraft = {
       addresses: [],
       names: [],
@@ -181,6 +181,17 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
 
   override async correctRestoringData() {
     super.correctRestoringData();
+    // Addresses
+    if (this.restoringDataDraft.addresses?.length) {
+      const addresses = await this.ownerService.corrAddress(
+        this.restoringDataDraft.addresses,
+        this.outdatedDataDraft.addresses,
+        this.ownerDraft.draftAddress,
+        this.existingOwner!.outdatedData.addresses
+      );
+      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
+      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
+    }
 
     // UserNames
     const { restoring, outdating } = this.ownerDiffService.corrUserNames(
@@ -197,12 +208,21 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
   override async checkOutdatedDataDuplicates() {
+    const address = await this.ownerService.checkAddress(
+      this.outdatedDataDraft.addresses,
+      this.ownerDraft.draftAddress
+    );
+    if (!address.restoringId) return false;
+    if (address.restoringId > -1) {
+      this.restoringDataDraft.addresses ??= [];
+      this.restoringDataDraft.addresses.push(address.restoringId);
+    }
     const userName = await this.ownerDiffService.checkUserNames(
       this.outdatedDataDraft.userNames,
       this.ownerDraft.userName
     );
     if (!userName.restoringId) return false;
-    if (userName.restoringId > 0) {
+    if (userName.restoringId > -1) {
       this.restoringDataDraft.userNames ??= [];
       this.restoringDataDraft.userNames.push(userName.restoringId);
     }
@@ -211,6 +231,20 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   }
 
   override async checkAllChanges() {
+    const address = await this.ownerService.diffAddress(
+      this.existingOwner!,
+      this.ownerDraft,
+      this.restoringDataDraft.addresses == null
+        ? null
+        : this.restoringDataDraft.addresses![0]
+    );
+    if (address.changes) this.changingData.address = address.changes;
+    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
+    if (address.deletingId) {
+      this.deletingDataDraft.addresses ??= [];
+      this.deletingDataDraft.addresses.push(address.deletingId);
+    }
+
     const userName = await this.ownerDiffService.diffUserName(
       this.existingOwner!,
       this.ownerDraft
@@ -221,6 +255,14 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
         ...{ userName: userName.changes },
       };
     if (userName.outdating) this.outdatingData.userName = userName.outdating;
+
+    const names = await this.ownerService.diffNames(
+      this.existingOwner!,
+      this.ownerDraft
+    );
+    if (names.changes) this.changingData.main = names.changes;
+    if (names.outdating) this.outdatingData.names = names.outdating;
+
     return await super.checkAllChanges();
   }
 
@@ -230,6 +272,12 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
 
   override getRowSpanForUserNames(): number {
     return this.outdatedDataDraft.userNames.length;
+  }
+
+  override get outdatedNames(): OutdatedFullName[] {
+    const data = this.outdatedDataDraft;
+    const list = data?.names;
+    return Array.isArray(list) ? list : [];
   }
 
   override get outdatedUserNames(): OutdatedUserName[] {
@@ -243,5 +291,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   }
   override setHasOutdatedUserNames() {
     this.hasOutdatedUserNames.set(this.outdatedDataDraft.userNames.length > 0);
+  }
+  override setHasOutdatedNames() {
+    this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 }

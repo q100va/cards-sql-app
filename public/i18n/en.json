@@ -35,7 +35,8 @@
     "DISTRICTS": "Districts",
     "LOCALITIES": "Localities",
     "AUDIT": "Audit",
-    "PARTNERS": "Coordinators"
+    "PARTNERS": "Partners",
+    "HOMES": "Nursing homes"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -65,7 +66,9 @@
       "USER_NAME": "username",
       "CONTACTS": "contact(s)",
       "HOMES": "nursing home(s)",
-      "INSTITUTES": "institute(s)"
+      "INSTITUTES": "institute(s)",
+      "COORDINATIONS": "coordination",
+      "OFFICIAL_NAME": "official name"
     }
   },
   "TOAST": {
@@ -163,7 +166,7 @@
       "OPEN_USERS": "open users list",
       "OPEN_VOLUNTEERS": "open volunteers list",
       "OPEN_SENIORS": "open seniors list",
-      "OPEN_HOMES": "open institutions list",
+      "OPEN_HOMES": "open homes list",
       "OPEN_REGIONS": "open regions list",
       "OPEN_DISTRICTS": "open districts list",
       "OPEN_LOCALITIES": "open localities list",
@@ -193,13 +196,21 @@
       "ACTIONS": "Actions",
       "HOMES": "Coordinated homes",
       "COOPERATIONS": "Cooperation",
-      "INSTITUTES": "Institutes"
+      "INSTITUTES": "Institutes",
+      "REGION_NAME": "Region",
+      "HOME_NAME": "Home name",
+      "HOME_CATEGORIES": "Category",
+      "OFFICIAL_HOME_DATA": "Contacts",
+      "POSTAL_ADDRESS": "Postal address",
+      "UPDATE_DATE": "Updated",
+      "PARTNERS": "Coordinators"
     },
     "NOTES": {
       "CLOSE": "close",
       "DEACTIVATED": "not participate",
       "OUTDATED_DATA": "outdated data:",
       "BLOCKED_FROM": "blocked from ",
+      "CLOSE_FROM": "close from ",
       "ACTIVE": "active",
       "SUBSCRIPTION": "subscription"
     },
@@ -211,6 +222,7 @@
       "OPEN_VOLUNTEERS": "open volunteers list",
       "OPEN_COOPERATIONS": "open collaborating users",
       "OPEN_HOMES": "open nursing homes list",
+      "OPEN_PARTNERS": "open coordinators list",
       "OPEN_USERS": "open users list",
       "OPEN_SENIORS": "open seniors list",
       "BLOCK_OWNER": "block",
@@ -224,8 +236,9 @@
     "CARD": {
       "MAIN_DATA_LABEL": "Main info",
       "CONTACTS_LABEL": "Contact details",
+      "ADDRESS_LABEL": "Address",
       "OUTDATED_DATA_LABEL": "Outdated data",
-      "COORDINATED_HOMES_LABEL": "Coordinated homes",
+      "COORDINATED_HOMES_LABEL": "Coordination",
       "INSTITUTES_LABEL": "Institutes",
       "CHANGE_PASSWORD_BUTTON": "Change password",
       "BLOCKED_LABEL": "Blocked",
@@ -238,10 +251,15 @@
       "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
       "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
       "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
-      "OUTDATED_HOMES_TITLE": "Former coordinated homes:",
-      "ADD_INSTITUTE_BUTTON":"Add institute",
-      "COOPERATIONS": "Cooperation with:"
-    }
+      "OUTDATED_COORDINATIONS_TITLE": "Former coordination:",
+      "ADD_INSTITUTE_BUTTON": "Add institute",
+      "COOPERATIONS": "Cooperation with:",
+      "COORDINATION_NAME_LABEL": "Name",
+      "ADD_COORDINATION_BUTTON": "Add coordination",
+      "COORDINATION_PLACEHOLDER": "start typing and select value",
+      "COORDINATION_HINT": "If the value is not found, go to the corresponding section and create a record."
+    },
+    "HOME_CATEGORIES": {}
   },
   "USER": {
     "CREATED": "User \"{{userName}}\" created",
@@ -271,6 +289,7 @@
       "VKONTAKTE_LABEL": "VKontakte",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Other contact"
     },
 
@@ -295,6 +314,7 @@
       "VKONTAKTE_LABEL": "VKontakte",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Other contact",
 
       "USER_NAME_PLACEHOLDER": "a.petrova",
@@ -307,6 +327,7 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above",
 
       "CHANGE_PASSWORD_TITLE": "Change Password",
@@ -353,6 +374,7 @@
       "VKONTAKTE_LABEL": "VKontakte",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Other contact",
 
       "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
@@ -364,17 +386,71 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
     }
   },
+  "HOME": {
+    "TABLE_TITLE": "Homes",
+    "ADD_PARTNER": "Add home",
+    "SEARCH_PLACEHOLDER": "KABANOVO",
+    "VIEW_OPTIONS": {
+      "ALL": "all homes",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only blocked"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "New home",
+      "VIEW_TITLE": "Home",
+
+      "HOME_NAME_LABEL": "Short name*",
+      "OFFICIAL_NAME_LABEL": "Official name",
+      "COMMENT_LABEL": "Comment",
+      "SPECIAL_HOME_LABEL": "special home",
+      "NO_ADDRESS_LABEL": "no return address",
+      "ACC_SCHOOL_LABEL": "accessible for school",
+      "POSTAL_CODE_LABEL": "Postal code",
+      "POSTAL_NAME_LABEL": "Postal name",
+      "POSTAL_ADDR_LABEL": "Street, house number",
+      "INFO_COMMENT_LABEL": "Info comment",
+      "BLOCKED_LABEL": "Blocked",
+      "CLOSE_LABEL": "Home is close",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_ID_LABEL": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+
   "VOLUNTEER": {
     "TABLE_TITLE": "Volunteers",
     "ADD_PARTNER": "Add volunteer",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
+
     "VIEW_OPTIONS": {
       "ALL": "all volunteers",
       "ONLY_ACTIVE": "only active",
-      "ONLY_BLOCKED": "only blocked"
+      "ONLY_BLOCKED": "only former"
     },
 
     "CARD": {
@@ -395,6 +471,7 @@
       "VKONTAKTE_LABEL": "VKontakte",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Other contact",
 
       "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
@@ -406,8 +483,10 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above",
-      "INSTITUTE_NAME_LABEL": "Institute name*",
+
+      "INSTITUTE_NAME_LABEL": "Institute's name*",
       "INSTITUTE_NAME_PLACEHOLDER": "MS 216 George J. Ryan",
       "CATEGORY_LABEL": "Category*"
     },
@@ -533,7 +612,6 @@
       "ROLE_REQUIRED": "User has no assigned role. Account not created.",
       "NOT_CREATED": "Failed to create the user",
       "NOT_UPDATED": "Failed to update the user",
-
       "LIST_FAILED": "Failed to get the list of users",
       "NOT_CHECKED": "Failed to check the user dependencies",
       "NOT_DELETED": "Failed to delete the user",
@@ -553,6 +631,8 @@
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",
+    "NOT_FOUND": "The field is empty or the entered value was not found",
+
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",

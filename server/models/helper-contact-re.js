@@ -40,6 +40,9 @@ export function regularExpression(type, value) {
     case "facebook":
       RegularExpression = /^[A-Za-z0-9_\.]{5,}$/;
       break;
+    case "website":
+      RegularExpression = /^(https?:\/\/)?[^\s]+\.[^\s]+$/i;
+      break;
     default:
       if (this.type != "otherContact") {
         throw new CustomError(`Invalid contact type ${this.type}!`, 422);

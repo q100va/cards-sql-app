@@ -1,18 +1,57 @@
 import { Op } from 'sequelize';
 import {
-  Institute,
+  Institute, Region, District, Locality,
   VolunteerAddress, VolunteerContact, VolunteerOutdatedName, VolunteerCooperation, VolunteerSubscription,
   PartnerAddress, PartnerContact, PartnerOutdatedName,
-  UserAddress, UserContact, UserOutdatedName
+  UserAddress, UserContact, UserOutdatedName,
+  HomeCoordination, HomeOutdatedName, HomeContact, HomeAddress
 } from '../models/index.js';
+//import { formFullPostAddress } from './ctrl-create-owner-contacts-address.js';
+
+export async function formFullPostAddress(a, t) {
+//console.log('draft.draftAddress', draft.draftAddress);
+
+  const shortRegionName = (await Region.findOne({
+    where: { id: a.regionId },
+    attributes: ['shortName'],
+    transaction: t,
+  })).shortName;
+  const postalDistrictName = (await District.findOne({
+    where: { id: a.districtId },
+    attributes: ['shortPostName'],
+    transaction: t,
+  })).shortPostName;
+  const shortLocalityName = (await Locality.findOne({
+    where: { id: a.localityId },
+    attributes: ['shortName'],
+    transaction: t,
+  })).shortName;
+ // console.log('ADDRESS', shortRegionName, postalDistrictName, shortLocalityName);
+
+// console.log('ADDRESS', shortRegionName.shortName, postalDistrictName.shortPostName, shortLocalityName.shortName);
+
+  const mainPart = shortRegionName +
+    (postalDistrictName == shortRegionName ? '' : ', ' + postalDistrictName) +
+    (shortLocalityName == postalDistrictName ? '' : ', ' + shortLocalityName);
+
+  return a.postalCode + ', ' + mainPart + ', ' + (a.postalAddressPart ? a.postalAddressPart + ', ' : '') + a.postalName;
+
+}
 
 const CONFIG = {
   user: {
     idField: 'userId',
+    addressShape: async (a, id) => ({
+      userId: id,
+      countryId: a.countryId ?? null,
+      regionId: a.regionId ?? null,
+      districtId: a.districtId ?? null,
+      localityId: a.localityId ?? null,
+    }),
     AddressModel: UserAddress,
     ContactModel: UserContact,
     OutdatedNameModel: UserOutdatedName,
-    supportsUserName: true,
+    //supportsUserName: true,
     mapOutdatedNames: (id, names) => ({
       userId: id,
       firstName: names.firstName ?? null,
@@ -22,10 +61,17 @@ const CONFIG = {
   },
   partner: {
     idField: 'partnerId',
+    addressShape: async (a, id) => ({
+      partnerId: id,
+      countryId: a.countryId ?? null,
+      regionId: a.regionId ?? null,
+      districtId: a.districtId ?? null,
+      localityId: a.localityId ?? null,
+    }),
     AddressModel: PartnerAddress,
     ContactModel: PartnerContact,
     OutdatedNameModel: PartnerOutdatedName,
-    supportsUserName: false,
+    //supportsUserName: false,
     mapOutdatedNames: (id, names) => ({
       partnerId: id,
       firstName: names.firstName ?? null,
@@ -35,10 +81,17 @@ const CONFIG = {
   },
   volunteer: {
     idField: 'volunteerId',
+    addressShape: async (a, id) => ({
+      volunteerId: id,
+      countryId: a.countryId ?? null,
+      regionId: a.regionId ?? null,
+      districtId: a.districtId ?? null,
+      localityId: a.localityId ?? null,
+    }),
     AddressModel: VolunteerAddress,
     ContactModel: VolunteerContact,
     OutdatedNameModel: VolunteerOutdatedName,
-    supportsUserName: false,
+    //supportsUserName: false,
     mapOutdatedNames: (id, names) => ({
       volunteerId: id,
       firstName: names.firstName ?? null,
@@ -46,13 +99,35 @@ const CONFIG = {
       lastName: names.lastName ?? null,
     }),
   },
-  // client: { ... }
+  home: {
+    idField: 'homeId',
+    addressShape: async (a, id, t) => ({
+      homeId: id,
+      countryId: a.countryId ?? null,
+      regionId: a.regionId ?? null,
+      districtId: a.districtId ?? null,
+      localityId: a.localityId ?? null,
+      postalCode: a.postalCode,
+      postalAddressPart: a.postalAddressPart,
+      postalName: a.postalName,
+      fullPostalAddress: await formFullPostAddress(a,t)
+    }),
+    AddressModel: HomeAddress,
+    ContactModel: HomeContact,
+    OutdatedNameModel: HomeOutdatedName,
+    //supportsUserName: false,
+    mapOutdatedNames: (id, names) => ({
+      homeId: id,
+      officialName: names.officialName ?? null,
+    }),
+  },
+
 };
 
 /**
- * ownerKind: 'user' | 'partner' | 'volunteer'
+ * ownerKind: 'user' | 'partner' | 'volunteer' | 'home'
  *
- * @param {'user' | 'partner' | 'volunteer'} ownerKind
+ * @param {'user' | 'partner' | 'volunteer' | 'home'} ownerKind
  * @param {number} id
  * @param {object} payload         // { changingData?, restoringData?, outdatingData?, deletingData? }
  * @param {object} models
@@ -67,16 +142,15 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
   // address
   if (changingData?.address) {
     const a = changingData.address;
+
     const hasAny = !!(a.countryId || a.regionId || a.districtId || a.localityId);
     if (hasAny) {
+      const addressShape = await C.addressShape(a, id, t);
+
+        console.log('ADDRESS', addressShape);
+
       await C.AddressModel.create(
-        {
-          [C.idField]: id,
-          countryId: a.countryId ?? null,
-          regionId: a.regionId ?? null,
-          districtId: a.districtId ?? null,
-          localityId: a.localityId ?? null,
-        },
+        addressShape,
         { transaction: t }
       );
     }
@@ -144,6 +218,20 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     );
   }
 
+  if (changingData?.coordinations?.length) {
+    await HomeCoordination.bulkCreate(
+      changingData.coordinations.map((foreignId) => ({
+        partnerId: ownerKind == 'home' ? foreignId : id,
+        homeId: ownerKind == 'home' ? id : foreignId,
+      })),
+      {
+        validate: true,
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+
   // ---------- RESTORING ----------
   // addresses
   if (restoringData?.addresses?.length) {
@@ -169,9 +257,18 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
   }
 
   // userNames
-  if (C.supportsUserName && restoringData?.userNames?.length) {
+  if (/* C.supportsUserName &&  */restoringData?.userNames?.length) {
     await C.OutdatedNameModel.destroy({
       where: { id: { [Op.in]: restoringData.userNames } },
+      transaction: t,
+      individualHooks: true,
+    });
+  }
+
+  // officialNames
+  if (restoringData?.officialNames?.length) {
+    await C.OutdatedNameModel.destroy({
+      where: { id: { [Op.in]: restoringData.officialNames } },
       transaction: t,
       individualHooks: true,
     });
@@ -204,6 +301,18 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     );
   }
 
+  //coordinations
+  if (restoringData?.coordinations?.length) {
+    await HomeCoordination.update(
+      { isRestricted: false },
+      {
+        where: { id: { [Op.in]: restoringData.coordinations } },
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+
 
   // ---------- OUTDATING ----------
   if (outdatingData?.names) {
@@ -211,8 +320,12 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     await C.OutdatedNameModel.create(row, { transaction: t });
   }
 
-  if (C.supportsUserName && outdatingData?.userName) {
+  if (/* C.supportsUserName && */ outdatingData?.userName) {
     await C.OutdatedNameModel.create({ [C.idField]: id, userName: outdatingData.userName }, { transaction: t });
+  }
+
+  if (outdatingData?.officialName) {
+    await C.OutdatedNameModel.create({ [C.idField]: id, officialName: outdatingData.officialName }, { transaction: t });
   }
 
   if (outdatingData?.address) {
@@ -235,6 +348,18 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
       { isRestricted: true },
       {
         where: { id: { [Op.in]: outdatingData.institutes } },
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+
+  //coordinations
+  if (outdatingData?.coordinations?.length) {
+    await HomeCoordination.update(
+      { isRestricted: true },
+      {
+        where: { id: { [Op.in]: outdatingData.coordinations } },
         individualHooks: true,
         transaction: t,
       }
@@ -266,9 +391,17 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     });
   }
 
-  if (C.supportsUserName && deletingData?.userNames?.length) {
+  if (/* C.supportsUserName &&  */deletingData?.userNames?.length) {
     await C.OutdatedNameModel.destroy({
       where: { id: { [Op.in]: deletingData.userNames } },
+      transaction: t,
+      individualHooks: true,
+    });
+  }
+
+  if (deletingData?.officialNames?.length) {
+    await C.OutdatedNameModel.destroy({
+      where: { id: { [Op.in]: deletingData.officialNames } },
       transaction: t,
       individualHooks: true,
     });
@@ -290,5 +423,16 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
       individualHooks: true,
       transaction: t,
     });
+  }
+
+  //coordinations
+  if (deletingData?.coordinations?.length) {
+    await HomeCoordination.destroy(
+      {
+        where: { id: { [Op.in]: deletingData.coordinations } },
+        individualHooks: true,
+        transaction: t,
+      }
+    );
   }
 }

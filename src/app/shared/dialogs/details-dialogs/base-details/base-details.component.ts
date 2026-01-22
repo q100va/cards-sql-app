@@ -91,6 +91,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     'vKontakte',
     'instagram',
     'facebook',
+    'website',
     'otherContact',
   ];
 
@@ -105,6 +106,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
     // cache control names for quick loops
     this.controlsNames = this.data().controls.map((c) => c.controlName);
+    console.log('controlsNames ', this.controlsNames);
 
     // init values by mode
     if (this.object) {
@@ -265,7 +267,9 @@ export class BaseDetailsComponent<T extends BaseModel> {
     if (this.data().operation == 'view-edit') {
       this.changesSignal.set(false);
 
+
       for (const controlName of this.controlsNames) {
+        console.log('onChangeValidation', controlName, controlName in this.object!);
         if (
           controlName != 'password' &&
           !isContactType(controlName) &&
@@ -273,8 +277,8 @@ export class BaseDetailsComponent<T extends BaseModel> {
         ) {
           const newVal = this.mainForm.controls[controlName].value;
           const oldVal = this.object![controlName];
-          // console.log('newVal', newVal);
-          // console.log('oldVal', oldVal);
+           console.log('newVal', controlName, newVal);
+           console.log('oldVal', controlName, oldVal);
           const isNbspToNull = newVal === '\u00A0' && oldVal === null;
           if (newVal != oldVal && !isNbspToNull) {
             this.changesSignal.set(true);

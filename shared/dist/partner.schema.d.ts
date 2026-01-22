@@ -7,6 +7,7 @@ export declare const telegramNicknameControlSchema: z.ZodPipe<z.ZodTransform<str
 export declare const vKontakteControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const instagramControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const facebookControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+export declare const websiteControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const otherContactControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const draftContactsSchema: z.ZodObject<{
     email: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>;
@@ -18,6 +19,7 @@ export declare const draftContactsSchema: z.ZodObject<{
     vKontakte: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     instagram: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     facebook: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
 }, z.core.$strict>;
 export declare const checkPartnerDataSchema: z.ZodObject<{
@@ -34,6 +36,7 @@ export declare const checkPartnerDataSchema: z.ZodObject<{
         vKontakte: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         instagram: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         facebook: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+        website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
 }, z.core.$strict>;
@@ -71,8 +74,10 @@ export declare const partnerDraftSchema: z.ZodObject<{
         vKontakte: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         instagram: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         facebook: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+        website: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
+    draftCoordinations: z.ZodArray<z.ZodNumber>;
 }, z.core.$strict>;
 export declare const changingMainSchema: z.ZodObject<{
     firstName: z.ZodOptional<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
@@ -113,9 +118,10 @@ export declare const changingDataSchema: z.ZodObject<{
         vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     }, z.core.$strict>>;
-    homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+    coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const outdatingDataSchema: z.ZodObject<{
     address: z.ZodNullable<z.ZodNumber>;
@@ -125,13 +131,13 @@ export declare const outdatingDataSchema: z.ZodObject<{
         lastName: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>>;
     contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
-    homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+    coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const deletingDataSchema: z.ZodObject<{
     names: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
-    homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+    coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const restoringDataSchema: z.ZodObject<{
     addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -177,12 +183,16 @@ export declare const restoringDataSchema: z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
     }, z.core.$strict>>;
-    homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+    coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
 }, z.core.$strict>;
 export declare const updatePartnerDataSchema: z.ZodObject<{
     id: z.ZodNumber;
@@ -214,9 +224,10 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
             vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         }, z.core.$strict>>;
-        homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+        coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     }, z.core.$strict>;
     restoringData: z.ZodObject<{
         addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -262,12 +273,16 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
         }, z.core.$strict>>;
-        homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+        coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     }, z.core.$strict>;
     outdatingData: z.ZodObject<{
         address: z.ZodNullable<z.ZodNumber>;
@@ -277,13 +292,13 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
             lastName: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
         }, z.core.$strict>>;
         contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
-        homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+        coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     }, z.core.$strict>;
     deletingData: z.ZodObject<{
         names: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         addresses: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
         contacts: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
-        homes: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
+        coordinations: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     }, z.core.$strict>;
 }, z.core.$strict>;
 export declare const partnersQueryDTOSchema: z.ZodObject<{
@@ -310,6 +325,7 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
         general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             affiliations: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
             comment: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasHomes: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             contactTypes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
@@ -323,8 +339,11 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
                 vKontakte: "vKontakte";
                 instagram: "instagram";
                 facebook: "facebook";
+                website: "website";
                 otherContact: "otherContact";
             }>>>>;
+            homes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
+            homeRegions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
         }, z.core.$strip>>>;
         address: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             countries: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
@@ -338,10 +357,65 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
         }, z.core.$strip>>>;
     }, z.core.$strip>>;
 }, z.core.$strict>;
-declare const outdatedHomesItemSchema: z.ZodObject<{
-    name: z.ZodString;
+declare const coordinationItemSchema: z.ZodObject<{
+    partnerContacts: z.ZodOptional<z.ZodObject<{
+        email: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+        otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
+    }, z.core.$strict>>;
+    partnerName: z.ZodOptional<z.ZodString>;
+    homeName: z.ZodOptional<z.ZodString>;
+    regionName: z.ZodOptional<z.ZodString>;
+    partnerId: z.ZodNumber;
+    homeId: z.ZodNumber;
+    isRecoverable: z.ZodBoolean;
     id: z.ZodNumber;
-}, z.core.$strict>;
+}, z.core.$strip>;
 export declare const outdatedDataSchema: z.ZodObject<{
     contacts: z.ZodObject<{
         email: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -384,6 +458,10 @@ export declare const outdatedDataSchema: z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
@@ -415,10 +493,65 @@ export declare const outdatedDataSchema: z.ZodObject<{
         lastName: z.ZodNullable<z.ZodString>;
         id: z.ZodNumber;
     }, z.core.$strict>>;
-    homes: z.ZodArray<z.ZodObject<{
-        name: z.ZodString;
+    coordinations: z.ZodArray<z.ZodObject<{
+        partnerContacts: z.ZodOptional<z.ZodObject<{
+            email: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+        }, z.core.$strict>>;
+        partnerName: z.ZodOptional<z.ZodString>;
+        homeName: z.ZodOptional<z.ZodString>;
+        regionName: z.ZodOptional<z.ZodString>;
+        partnerId: z.ZodNumber;
+        homeId: z.ZodNumber;
+        isRecoverable: z.ZodBoolean;
         id: z.ZodNumber;
-    }, z.core.$strict>>;
+    }, z.core.$strip>>;
 }, z.core.$strict>;
 export declare const partnerSchema: z.ZodObject<{
     id: z.ZodNumber;
@@ -492,6 +625,10 @@ export declare const partnerSchema: z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
         }, z.core.$strict>>>;
+        website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            content: z.ZodString;
+        }, z.core.$strict>>>;
         otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             content: z.ZodString;
@@ -539,6 +676,10 @@ export declare const partnerSchema: z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
@@ -570,15 +711,125 @@ export declare const partnerSchema: z.ZodObject<{
             lastName: z.ZodNullable<z.ZodString>;
             id: z.ZodNumber;
         }, z.core.$strict>>;
-        homes: z.ZodArray<z.ZodObject<{
-            name: z.ZodString;
+        coordinations: z.ZodArray<z.ZodObject<{
+            partnerContacts: z.ZodOptional<z.ZodObject<{
+                email: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+            }, z.core.$strict>>;
+            partnerName: z.ZodOptional<z.ZodString>;
+            homeName: z.ZodOptional<z.ZodString>;
+            regionName: z.ZodOptional<z.ZodString>;
+            partnerId: z.ZodNumber;
+            homeId: z.ZodNumber;
+            isRecoverable: z.ZodBoolean;
             id: z.ZodNumber;
-        }, z.core.$strict>>;
+        }, z.core.$strip>>;
     }, z.core.$strict>;
-    homes: z.ZodArray<z.ZodObject<{
-        name: z.ZodString;
+    coordinations: z.ZodArray<z.ZodObject<{
+        partnerContacts: z.ZodOptional<z.ZodObject<{
+            email: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+            otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
+        }, z.core.$strict>>;
+        partnerName: z.ZodOptional<z.ZodString>;
+        homeName: z.ZodOptional<z.ZodString>;
+        regionName: z.ZodOptional<z.ZodString>;
+        partnerId: z.ZodNumber;
+        homeId: z.ZodNumber;
+        isRecoverable: z.ZodBoolean;
         id: z.ZodNumber;
-    }, z.core.$strict>>;
+    }, z.core.$strip>>;
 }, z.core.$strict>;
 export declare const partnersSchema: z.ZodObject<{
     list: z.ZodArray<z.ZodObject<{
@@ -653,6 +904,10 @@ export declare const partnersSchema: z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
             }, z.core.$strict>>>;
+            website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                content: z.ZodString;
+            }, z.core.$strict>>>;
             otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 id: z.ZodNumber;
                 content: z.ZodString;
@@ -700,6 +955,10 @@ export declare const partnersSchema: z.ZodObject<{
                     id: z.ZodNumber;
                     content: z.ZodString;
                 }, z.core.$strict>>>;
+                website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
                 otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
                     id: z.ZodNumber;
                     content: z.ZodString;
@@ -731,15 +990,125 @@ export declare const partnersSchema: z.ZodObject<{
                 lastName: z.ZodNullable<z.ZodString>;
                 id: z.ZodNumber;
             }, z.core.$strict>>;
-            homes: z.ZodArray<z.ZodObject<{
-                name: z.ZodString;
+            coordinations: z.ZodArray<z.ZodObject<{
+                partnerContacts: z.ZodOptional<z.ZodObject<{
+                    email: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                    otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodNumber;
+                        content: z.ZodString;
+                    }, z.core.$strict>>>;
+                }, z.core.$strict>>;
+                partnerName: z.ZodOptional<z.ZodString>;
+                homeName: z.ZodOptional<z.ZodString>;
+                regionName: z.ZodOptional<z.ZodString>;
+                partnerId: z.ZodNumber;
+                homeId: z.ZodNumber;
+                isRecoverable: z.ZodBoolean;
                 id: z.ZodNumber;
-            }, z.core.$strict>>;
+            }, z.core.$strip>>;
         }, z.core.$strict>;
-        homes: z.ZodArray<z.ZodObject<{
-            name: z.ZodString;
+        coordinations: z.ZodArray<z.ZodObject<{
+            partnerContacts: z.ZodOptional<z.ZodObject<{
+                email: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                website: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+                otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    content: z.ZodString;
+                }, z.core.$strict>>>;
+            }, z.core.$strict>>;
+            partnerName: z.ZodOptional<z.ZodString>;
+            homeName: z.ZodOptional<z.ZodString>;
+            regionName: z.ZodOptional<z.ZodString>;
+            partnerId: z.ZodNumber;
+            homeId: z.ZodNumber;
+            isRecoverable: z.ZodBoolean;
             id: z.ZodNumber;
-        }, z.core.$strict>>;
+        }, z.core.$strip>>;
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
@@ -748,5 +1117,5 @@ export type PartnerDraftContacts = z.infer<typeof draftContactsSchema>;
 export type PartnerOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type PartnerChangingData = z.infer<typeof changingDataSchema>;
 export type PartnerOutdatingData = z.infer<typeof outdatingDataSchema>;
-export type OutdatedHome = z.infer<typeof outdatedHomesItemSchema>;
+export type OutdatedHome = z.infer<typeof coordinationItemSchema>;
 export {};

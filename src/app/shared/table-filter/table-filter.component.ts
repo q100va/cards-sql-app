@@ -197,6 +197,7 @@ export class TableFilterComponent implements OnInit {
     { type: 'vKontakte', label: 'NAV.FILTER.VKONTAKTE_OPT' },
     { type: 'instagram', label: 'NAV.FILTER.INSTAGRAM_OPT' },
     { type: 'facebook', label: 'NAV.FILTER.FACEBOOK_OPT' },
+    { type: 'website', label: 'NAV.FILTER.WEBSITE_OPT' },
     { type: 'otherContact', label: 'NAV.FILTER.OTHER_CONTACT_OPT' },
   ] as const;
 

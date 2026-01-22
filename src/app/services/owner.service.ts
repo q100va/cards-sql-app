@@ -25,10 +25,22 @@ import {
   Partner,
   OwnerByKind,
   OwnerDraftByKind,
+  VolunteerRestoringData,
+  HomeRestoringData,
+  PersonDraft,
+  Person,
+  CoordinationPick,
+  Home,
+  Volunteer,
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
-import { normalize, completeContact, isFieldEqual, lightNormalize } from '../utils/diff';
+import {
+  normalize,
+  completeContact,
+  isFieldEqual,
+  lightNormalize,
+} from '../utils/diff';
 
 // --- Kind & Draft types ------------------------------------------------------
 
@@ -37,12 +49,21 @@ type Names = {
   patronymic: string | null;
   lastName: string | null;
 };
-type RestoringData = UserRestoringData | PartnerRestoringData;
+type RestoringData =
+  | UserRestoringData
+  | PartnerRestoringData
+  | VolunteerRestoringData
+  | HomeRestoringData;
 
 // --- Helpers -----------------------------------------------------------------
 const get = (form: FormGroup, name: string) => form.get(name)?.value ?? null;
 const getInstitutes = (form: FormGroup) =>
   form.get('institutes')!.getRawValue();
+const getCoordinations = (form: FormGroup) =>
+  form
+    .get('coordinations')!
+    .getRawValue()
+    .map((c: CoordinationPick) => c.id);
 
 function first<T>(arr?: T[] | null): T | null {
   return (arr && arr.length ? arr[0] : null) as T | null;
@@ -50,20 +71,107 @@ function first<T>(arr?: T[] | null): T | null {
 
 // --- Per-kind config ---------------------------------
 const BUILD_EXTRAS = {
-  user: (form: FormGroup, userId_: number) => ({
+  user: (form: FormGroup, _userId: number, _existing_ = null) => ({
+    firstName: normalize(get(form, 'firstName')),
+    patronymic: normalize(get(form, 'patronymic')),
+    lastName: normalize(get(form, 'lastName')),
     userName: normalize(get(form, 'userName')),
     password: get(form, 'password'),
     roleId: get(form, 'roleId'),
   }),
-  partner: (form: FormGroup, userId_: number) => ({
+  partner: (form: FormGroup, _userId: number, _existing_ = null) => ({
+    firstName: normalize(get(form, 'firstName')),
+    patronymic: normalize(get(form, 'patronymic')),
+    lastName: normalize(get(form, 'lastName')),
     affiliation: normalize(get(form, 'affiliation')),
     position: lightNormalize(get(form, 'position')),
+    draftCoordinations: getCoordinations(form),
   }),
-  volunteer: (form: FormGroup, userId: number) => ({
+  volunteer: (form: FormGroup, userId: number, _existing = null) => ({
+    firstName: normalize(get(form, 'firstName')),
+    patronymic: normalize(get(form, 'patronymic')),
+    lastName: normalize(get(form, 'lastName')),
     draftSubscriptions: get(form, 'subscription') ? [userId] : [],
     draftCooperations: [],
     draftInstitutes: getInstitutes(form),
   }),
+  home: (form: FormGroup, _userId: number, existing: Home | null) => ({
+    homeName: normalize(get(form, 'homeName')),
+    officialName: normalize(get(form, 'officialName')),
+    postalName: normalize(get(form, 'postalName')),
+    draftCoordinations: getCoordinations(form),
+    infoNote: lightNormalize(get(form, 'infoNote')),
+    noAddress: get(form, 'noAddress'),
+    specialHome: get(form, 'specialHome'),
+    acceptableForSchool: get(form, 'acceptableForSchool'),
+    postalCode: normalize(get(form, 'postalCode')),
+    postalAddressPart: normalize(get(form, 'postalAddressPart')),
+    isClose: get(form, 'isClose'),
+    dateOfClose: get(form, 'isClose')
+      ? existing?.isClose
+        ? existing?.dateOfClose ?? new Date()
+        : new Date()
+      : null,
+  }),
+} as const;
+
+const BUILD_RESTRICTED = {
+  user: {
+    isRestricted: (form: FormGroup, _existing = null) =>
+      get(form, 'isRestricted'),
+    causeOfRestriction: (form: FormGroup, _existing = null) =>
+      get(form, 'isRestricted') ? get(form, 'causeOfRestriction') : null,
+    dateOfRestriction: (form: FormGroup, existing: User) =>
+      get(form, 'isRestricted')
+        ? existing?.isRestricted
+          ? existing?.dateOfRestriction ?? new Date()
+          : new Date()
+        : null,
+  },
+  partner: {
+    isRestricted: (form: FormGroup, _existing = null) =>
+      get(form, 'isRestricted'),
+    causeOfRestriction: (form: FormGroup, _existing = null) =>
+      get(form, 'isRestricted') ? get(form, 'causeOfRestriction') : null,
+    dateOfRestriction: (form: FormGroup, existing: Partner) =>
+      get(form, 'isRestricted')
+        ? existing?.isRestricted
+          ? existing?.dateOfRestriction ?? new Date()
+          : new Date()
+        : null,
+  },
+  volunteer: {
+    isRestricted: (form: FormGroup, _existing = null) =>
+      get(form, 'isRestricted'),
+    causeOfRestriction: (form: FormGroup, _existing = null) =>
+      get(form, 'isRestricted') ? get(form, 'causeOfRestriction') : null,
+    dateOfRestriction: (form: FormGroup, existing: Volunteer) =>
+      get(form, 'isRestricted')
+        ? existing?.isRestricted
+          ? existing?.dateOfRestriction ?? new Date()
+          : new Date()
+        : null,
+  },
+  home: {
+    isRestricted: (form: FormGroup, _existing = null) =>
+      get(form, 'isClose') ? true : get(form, 'isRestricted'),
+    causeOfRestriction: (form: FormGroup, _existing = null) =>
+      get(form, 'isClose')
+        ? get(form, 'causeOfRestriction') ?? '' + 'CLOSE'
+        : get(form, 'isRestricted')
+        ? get(form, 'causeOfRestriction')
+        : null,
+    dateOfRestriction: (form: FormGroup, existing: Home) =>
+      get(form, 'isClose')
+        ? existing?.isRestricted
+          ? existing?.dateOfRestriction ?? new Date()
+          : new Date()
+        : get(form, 'isRestricted')
+        ? existing?.isRestricted
+          ? existing?.dateOfRestriction ?? new Date()
+          : new Date()
+        : null,
+  },
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -72,6 +180,7 @@ export class OwnerService {
     private diffConfirmService: DiffConfirmService,
     private translateService: TranslateService
   ) {}
+  //TODO: isRestricted for home: блокировать, если закрыт!
 
   // --- Unified builder ---------------------------------------------------------
   buildDraft<K extends Kind>(
@@ -86,19 +195,19 @@ export class OwnerService {
 
     const base: DraftCommon = {
       id: existing?.id ?? null,
-
-      firstName: normalize(get(form, 'firstName')),
-      patronymic: normalize(get(form, 'patronymic')),
-      lastName: normalize(get(form, 'lastName')),
       comment: lightNormalize(get(form, 'comment')),
-
-      isRestricted,
-      causeOfRestriction: isRestricted ? get(form, 'causeOfRestriction') : null,
-      dateOfRestriction: isRestricted
-        ? existing?.isRestricted
-          ? existing?.dateOfRestriction ?? new Date()
-          : new Date()
-        : null,
+      isRestricted: (BUILD_RESTRICTED as any)[kind].isRestricted(
+        form,
+        existing
+      ),
+      causeOfRestriction: (BUILD_RESTRICTED as any)[kind].causeOfRestriction(
+        form,
+        existing
+      ),
+      dateOfRestriction: (BUILD_RESTRICTED as any)[kind].dateOfRestriction(
+        form,
+        existing
+      ),
 
       draftAddress: {
         countryId: first(address.countries),
@@ -120,14 +229,13 @@ export class OwnerService {
     }
 
     // per-kind extras
-    const extras = (BUILD_EXTRAS as any)[kind](form, userId);
- console.log('draft');
- console.log({ ...base, ...extras });
-
+    const extras = (BUILD_EXTRAS as any)[kind](form, userId, existing);
+    console.log('draft');
+    console.log({ ...base, ...extras });
 
     return { ...base, ...extras } as OwnerDraftByKind<K>;
   }
-
+//TODO: corrHomeAddress, checkHomeAddress
   /** Check if user changed restored values and correct them*/
   // Address
   async corrAddress(
@@ -275,7 +383,7 @@ export class OwnerService {
   // Names duplicates
   async checkNames(
     outdatedNames: OutdatedFullName[],
-    draft: OwnerDraft
+    draft: PersonDraft
   ): Promise<{
     restoringId: number | null;
   }> {
@@ -347,21 +455,21 @@ export class OwnerService {
   }
   /** Compare names; return changes + what should be outdated (previous value) */
   async diffNames(
-    existing: Owner,
-    draft: OwnerDraft
+    existing: Person,
+    draft: PersonDraft
   ): Promise<{
     changed: boolean;
     changes: Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+      Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
     > | null;
     outdating: Names | null;
   }> {
     console.log('diffNames');
     const changes: Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+      Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
     > | null = {};
     const outdating: Partial<
-      Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+      Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
     > | null = {};
 
     const changed =
@@ -390,7 +498,7 @@ export class OwnerService {
       changed: !!changed,
       changes: Object.keys(changes).length
         ? (changes as Partial<
-            Pick<OwnerDraft, 'firstName' | 'patronymic' | 'lastName'>
+            Pick<PersonDraft, 'firstName' | 'patronymic' | 'lastName'>
           >)
         : null,
       outdating: Object.keys(outdating).length ? (outdating as Names) : null,
@@ -410,14 +518,14 @@ export class OwnerService {
     const oldA = existing.address;
     const newA = draft.draftAddress;
     let changes: OwnerDraft['draftAddress'] | null = null;
-console.log('oldA', oldA);
-console.log('newA', newA);
+    console.log('oldA', oldA);
+    console.log('newA', newA);
     const changed =
       !isFieldEqual(newA.countryId, oldA.country?.id ?? null) ||
       !isFieldEqual(newA.regionId, oldA.region?.id ?? null) ||
       !isFieldEqual(newA.districtId, oldA.district?.id ?? null) ||
       !isFieldEqual(newA.localityId, oldA.locality?.id ?? null);
-      console.log('changed', changed);
+    console.log('changed', changed);
     let moveToOutdated = false;
     if (changed) {
       if (!restoringId) {

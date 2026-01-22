@@ -33,7 +33,7 @@ export interface Partner extends AdvancedModel {
   dateOfRestriction: Date | null;
   orderedContacts: OptionalContacts;
   outdatedData: PartnerOutdatedData;
-  homes: OutdatedHome[] | null;
+  coordinations: OutdatedHome[] | null;
 }
 
 

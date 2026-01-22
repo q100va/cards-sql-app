@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, toLowerTrim, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
-import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, } from './common.schema.js';
+import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema } from './common.schema.js';
 import { draftAddressSchema, addressSchema, } from './common.schema.js';
 import { contactType, nonEmptyContacts, optionalContactsSchema, } from './common.schema.js';
 import { 
@@ -100,6 +100,10 @@ export const facebookControlSchema = z.preprocess(emptyToNull, z
     .string()
     .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
     .nullable());
+export const websiteControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, "Invalid website URL")
+    .nullable());
 export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
 /* ===================== Contacts (draft / ordered / optional) ===================== */
 // Draft
@@ -120,6 +124,7 @@ export const draftContactsSchema = z
     vKontakte: z.array(vKontakteSchema),
     instagram: z.array(instagramSchema),
     facebook: z.array(facebookSchema),
+    website: z.array(websiteSchema),
     otherContact: z.array(otherContactSchema),
 })
     .strict();
@@ -136,25 +141,10 @@ export const contactsSchema = z
     vKontakte: nonEmptyContacts.optional(),
     instagram: nonEmptyContacts.optional(),
     facebook: nonEmptyContacts.optional(),
+    website: nonEmptyContacts.optional(),
     otherContact: nonEmptyContacts.optional(),
 })
     .strict();
-// Optional variant
-/* export const optionalContactsSchema = z
-  .object({
-    email: z.array(contactSchema).optional(),
-    phoneNumber: z.array(contactSchema).optional(),
-    whatsApp: z.array(contactSchema).optional(),
-    telegram: z.array(contactSchema).optional(),
-    telegramNickname: z.array(contactSchema).optional(),
-    telegramId: z.array(contactSchema).optional(),
-    telegramPhoneNumber: z.array(contactSchema).optional(),
-    vKontakte: z.array(contactSchema).optional(),
-    instagram: z.array(contactSchema).optional(),
-    facebook: z.array(contactSchema).optional(),
-    otherContact: z.array(contactSchema).optional(),
-  })
-  .strict(); */
 /* ===================== Small DTOs ===================== */
 export const userIdSchema = z
     .object({ id: z.coerce.number().int().positive() })

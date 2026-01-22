@@ -12,6 +12,7 @@ import {
   telegramNicknameControlSchema,
   vKontakteControlSchema,
   whatsAppControlSchema,
+  websiteControlSchema
 } from '@shared/schemas/user.schema';
 
 import { TranslateModule } from '@ngx-translate/core';
@@ -333,6 +334,19 @@ export class UsersListComponent {
         placeholder: 'USER.CARD.FACEBOOK_PLACEHOLDER',
         validators: [zodValidator(facebookControlSchema)],
         errorName: 'facebookFormat',
+        category: 'contacts',
+        formType: 'formArray',
+        colspan: 3,
+        rowspan: 1,
+      },
+      {
+        controlName: 'website',
+        value: null,
+        type: 'inputText',
+        label: 'PARTNER.CARD.WEBSITE_LABEL',
+        placeholder: 'PARTNER.CARD.WEBSITE_PLACEHOLDER',
+        validators: [zodValidator(websiteControlSchema)],
+        errorName: 'websiteFormat',
         category: 'contacts',
         formType: 'formArray',
         colspan: 3,

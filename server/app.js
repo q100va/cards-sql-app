@@ -16,8 +16,9 @@ import SessionApi from './routes/session-api.js';
 import ToponymsApi from './routes/toponyms-api.js';
 import FilesApi from './routes/files-api.js';
 import UsersApi from './routes/users-api.js';
-import PartnersApi from './routes/partner-api.js';
-import VolunteersApi from './routes/volunteer-api.js';
+import HomesApi from './routes/homes-api.js';
+import PartnersApi from './routes/partners-api.js';
+import VolunteersApi from './routes/volunteers-api.js';
 import RolesApi from './routes/roles-api.js';
 import AuditApi from './routes/audit-api.js';
 import ClientLogsApi from './routes/client-logs.js';
@@ -32,10 +33,10 @@ import {
   Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute
+  VolunteerSubscription, VolunteerCooperation, Institute,
+  Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate
 } from './models/index.js';
 import { corsMiddleware } from './cors.js';
-import { Subscription } from 'rxjs';
 
 const app = express();
 
@@ -87,6 +88,7 @@ app.use('/api/session', SessionApi);
 app.use('/api/toponyms', ToponymsApi);
 app.use('/api/files', FilesApi);
 app.use('/api/users', UsersApi);
+app.use('/api/homes', HomesApi);
 app.use('/api/partners', PartnersApi);
 app.use('/api/volunteers', VolunteersApi);
 app.use('/api/roles', RolesApi);
@@ -140,6 +142,13 @@ export async function initInfrastructure() {
   await VolunteerSubscription.sync(syncOpts);
   await VolunteerCooperation.sync(syncOpts);
   await Institute.sync(syncOpts);
+  await Home.sync(syncOpts);
+  await HomeContact.sync(syncOpts);
+  await HomeAddress.sync(syncOpts);
+  await HomeSearch.sync(syncOpts);
+  await HomeOutdatedName.sync(syncOpts);
+  await HomeCoordination.sync(syncOpts);
+  await HomeUpdateDate.sync(syncOpts);
   await AuditLog.sync(syncOpts);
   await RefreshToken.sync(syncOpts);
 
