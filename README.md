@@ -216,6 +216,14 @@ Or concurrently:
 - [ ] Continuous Integration (GitHub Actions: lint, test, build)  
 - [ ] Continuous Deployment (auto-deploy to Vercel/Render)  
 - [ ] OpenAPI/Swagger documentation for API  
+- [ ] заменить subscribe() на Angular pipe где нужно
+- [ ] из топонимов убрать жесткую привязку к 143 
+- [ ] привести к единообразию тесты 
+- [ ] решить вопрос двуязычности с типом орг-й, affiliation
+- [ ] добавить возможность создавать дом и партнера из карточки партнера/дома
+- [ ] добавить hint к тоггл close по интернатам "коорд-я становится недействит. и не восст автоматически"
+- [ ] CREATE INDEX idx_seniors_birth_month ON "Seniors" (EXTRACT(MONTH FROM "birthDate"));
+
 
 ---
 

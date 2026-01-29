@@ -129,6 +129,7 @@ router.post(
       //  console.log('creatingHOME', creatingHome)
 
       const result = await withTransaction(async (t) => {
+        //TODO: check that in creation home cant be close
 
         const home = await Home.create(
           {
@@ -339,13 +340,13 @@ router.post(
         whereHome.infoNote = !filters.general.infoNote ? null : { [Op.not]: null };
       }
       if (filters?.general?.noAddress !== undefined) {
-        whereHome.noAddress = !filters.general.noAddress ? null : { [Op.not]: null };
+        whereHome.noAddress = filters.general.noAddress;
       }
       if (filters?.general?.specialHome !== undefined) {
-        whereHome.specialHome = !filters.general.specialHome ? null : { [Op.not]: null };
+        whereHome.specialHome = filters.general.specialHome;
       }
       if (filters?.general?.acceptableForSchool !== undefined) {
-        whereHome.acceptableForSchool = !filters.general.acceptableForSchool ? null : { [Op.not]: null };
+        whereHome.acceptableForSchool = filters.general.acceptableForSchool;
       }
       if (filters?.general?.isClose !== undefined) {
         whereHome.isClose = filters.general.isClose;;

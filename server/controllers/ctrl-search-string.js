@@ -128,11 +128,11 @@ const OWNER_CONFIG = {
   home: {
     basicTokens: (v) => [
       t(v?.homeName), t(v?.officialName), //t(v?.postalName),
-      v.noAddress ? 'БОА no return address' : '',
-      v.specialHome ? 'специальный интернат special home' : '',
-      v.acceptableForSchool ? 'можно давать школам acceptable for school' : '',
+      v?.noAddress ? 'БОА no return address' : '',
+      v?.specialHome ? 'специальный интернат special home' : '',
+      v?.acceptableForSchool ? 'можно давать школам acceptable for school' : '',
       ...dateVariants(v?.dateOfClose),
-      v.isClose ? 'закрыт close' : '',
+      v?.isClose ? 'закрыт close' : '',
       t(v?.comment), t(v?.infoNote),
       ...dateVariants(v?.updateDates ? v?.updateDates[0] : null),
       v?.isRestricted ? 'не участвует с inactive from' : '',
@@ -150,6 +150,33 @@ const OWNER_CONFIG = {
         .flatMap(i => [i.officialName])
         .filter(Boolean)
         .join(' '),
+  },
+
+  senior: {
+
+    basicTokens: (v) => [
+      t(v?.firstName), t(v?.patronymic), t(v?.lastName),
+      t(v?.comment),
+      v?.isRestricted ? 'заблокирован с blocked from' : '',
+      ...dateVariants(v?.dateOfRestriction),
+      t(v?.causeOfRestriction),
+      ...dateVariants(v?.dateOfStart),
+      ...dateVariants(v?.birthDate),
+      ...dateVariants(v?.dateOfConsent),
+      ...dateVariants(v?.dateOfExit),
+      v?.gender == 'male' ? 'male муж.' : 'female жен.',
+      t(v?.infoNote), t(v?.photoLink),
+      v?.personalNoAddr ? 'БОА no return address' : '',
+      t(v?.kindergarten), t(v?.teacher), t(v?.veteran),
+      t(v?.childOfWar), t(v?.profession), t(v?.honoraryStatus),
+      t(v?.interests),
+    ],
+    outdatedNames: (v) =>
+      (v?.outdatedNames ?? [])
+        .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+        .filter(Boolean)
+        .join(' '),
+    home: (v) => v.home,
   }
 };
 
@@ -209,6 +236,14 @@ export function createSearchStringFor(kind, record) {
           if (!contact?.isRestricted && contact?.content) tokens.push(t(contact.content));
         }
       }
+    }
+  }
+
+  if (kind == 'senior') {
+    for (const c of C.homes(record)) {
+      tokens.push(t(c.homeName));
+      tokens.push(t(c.fullPostalAddress));
+      tokens.push(t(c.regionName));
     }
   }
 

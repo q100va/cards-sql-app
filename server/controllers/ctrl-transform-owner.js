@@ -4,6 +4,13 @@ import { fullName } from "./ctrl-create-owner-contacts-address.js";
 
 // --- Helpers ---------------------------------------------------------------
 
+//TODO: for Seniors DOB
+export function dateOnlyToLocalDate(v) {
+  const [y, m, d] = v.split('-').map(Number);
+  return new Date(y, m - 1, d); // локальная полночь, без UTC-сдвига
+}
+
+
 const TELEGRAM_TYPES = new Set(['telegramNickname', 'telegramPhoneNumber', 'telegramId']);
 
 /** Safe toponym ref: { id, name|shortName } or null */
@@ -221,7 +228,7 @@ function splitInstitutesForVolunteer(raw) {
 
 /**
  * Universal transformer for owner data.
- * kind: 'user' | 'partner' | 'volunteer' | 'home'
+ * kind: 'user' | 'partner' | 'volunteer' | 'home' | 'senior'
  * Returns a shallow-cloned, view-ready object:
  *  - orderedContacts
  *  - address
@@ -230,20 +237,27 @@ function splitInstitutesForVolunteer(raw) {
  *  - partner.homes (for partner)
  */
 export function transformOwnerData(kind, raw) {
-  const o = { ...raw }; // do not mutate input
 
-  // 1) Contacts
-  const { orderedContacts, outdatedContacts } = splitContacts(o.contacts);
-  o.orderedContacts = orderedContacts;
-  delete o.contacts;
+  /*    const C = CONFIG[ownerKind];
+    if (!C) throw new Error(`Unsupported kind: ${kind}`);;
+      */
+  const o = { ...raw }; // do not mutate input
+  const outdatedData = {};
+  if (kind !== 'senior') {
+    // 1) Contacts
+    const { orderedContacts, outdatedContacts } = splitContacts(o.contacts);
+    o.orderedContacts = orderedContacts;
+    delete o.contacts;
+
+    outdatedData.contacts = outdatedContacts;
+    console.log('outdatedData', outdatedData);
+  }
 
   /*   // 2) Addresses
     const { address, outdatedAddresses } = splitAddresses(o.addresses);
     o.address = address;
     delete o.addresses; */
 
-  const outdatedData = { contacts: outdatedContacts };
-  console.log('outdatedData', outdatedData);
 
   if (kind === 'user') {
 
@@ -262,7 +276,8 @@ export function transformOwnerData(kind, raw) {
     outdatedData.userNames = userNames;
     delete o.outdatedNames;
 
-  } else if (kind === 'partner') {
+  }
+  if (kind === 'partner') {
 
     // 2) Addresses
     const { address, outdatedAddresses } = splitAddresses(o.addresses);
@@ -278,7 +293,8 @@ export function transformOwnerData(kind, raw) {
     o.coordinations = homes;
     outdatedData.coordinations = outdatedHomes;
 
-  } else if (kind === 'volunteer') {
+  }
+  if (kind === 'volunteer') {
 
     // 2) Addresses
     const { address, outdatedAddresses } = splitAddresses(o.addresses);
@@ -321,7 +337,8 @@ export function transformOwnerData(kind, raw) {
     o.subscriptions = subscriptions;
     o.cooperations = cooperations;
 
-  } else if (kind === 'home') {
+  }
+  if (kind === 'home') {
     o.dateOfLastUpdate = o.updateDates.length ? o.updateDates[0] : null;
     delete o.updateDates;
 
@@ -340,9 +357,29 @@ export function transformOwnerData(kind, raw) {
     o.coordinations = partners;
     outdatedData.coordinations = outdatedPartners;
   }
-  else {
-    throw new Error(`Unsupported kind: ${kind}`);
+
+  if (kind === 'senior') {
+    const a = o.home.addresses[0];
+    o.address = {
+      country: ref(a.country, 'name'),
+      region: ref(a.region, 'shortName'),
+      district: ref(a.district, 'shortName'),
+      locality: ref(a.locality, 'shortName'),
+      fullPostalAddress: a.fullPostalAddress,
+    }
+    delete o.addresses;
+
+    outdatedData.names = o.outdatedNames;
+    delete o.outdatedNames;
+
+    o.spouse = {
+      spouseId: o.spouse.id,
+      spouseFullName: fullName(o.spouse)
+    }
+
+    o.birthDate = dateOnlyToLocalDate(o.birthDate);
   }
+
   o.outdatedData = outdatedData;
 
   console.log('PARTNERS', JSON.stringify(o.coordinations));

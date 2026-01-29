@@ -4,12 +4,13 @@ import {
   VolunteerAddress, VolunteerContact, VolunteerOutdatedName, VolunteerCooperation, VolunteerSubscription,
   PartnerAddress, PartnerContact, PartnerOutdatedName,
   UserAddress, UserContact, UserOutdatedName,
-  HomeCoordination, HomeOutdatedName, HomeContact, HomeAddress
+  HomeCoordination, HomeOutdatedName, HomeContact, HomeAddress,
+  Senior, SeniorOutdatedName
 } from '../models/index.js';
 //import { formFullPostAddress } from './ctrl-create-owner-contacts-address.js';
 
 export async function formFullPostAddress(a, t) {
-//console.log('draft.draftAddress', draft.draftAddress);
+  //console.log('draft.draftAddress', draft.draftAddress);
 
   const shortRegionName = (await Region.findOne({
     where: { id: a.regionId },
@@ -26,9 +27,9 @@ export async function formFullPostAddress(a, t) {
     attributes: ['shortName'],
     transaction: t,
   })).shortName;
- // console.log('ADDRESS', shortRegionName, postalDistrictName, shortLocalityName);
+  // console.log('ADDRESS', shortRegionName, postalDistrictName, shortLocalityName);
 
-// console.log('ADDRESS', shortRegionName.shortName, postalDistrictName.shortPostName, shortLocalityName.shortName);
+  // console.log('ADDRESS', shortRegionName.shortName, postalDistrictName.shortPostName, shortLocalityName.shortName);
 
   const mainPart = shortRegionName +
     (postalDistrictName == shortRegionName ? '' : ', ' + postalDistrictName) +
@@ -110,7 +111,7 @@ const CONFIG = {
       postalCode: a.postalCode,
       postalAddressPart: a.postalAddressPart,
       postalName: a.postalName,
-      fullPostalAddress: await formFullPostAddress(a,t)
+      fullPostalAddress: await formFullPostAddress(a, t)
     }),
     AddressModel: HomeAddress,
     ContactModel: HomeContact,
@@ -119,6 +120,17 @@ const CONFIG = {
     mapOutdatedNames: (id, names) => ({
       homeId: id,
       officialName: names.officialName ?? null,
+    }),
+  },
+  senior: {
+    idField: 'seniorId',
+    OutdatedNameModel: SeniorOutdatedName,
+    //supportsUserName: false,
+    mapOutdatedNames: (id, names) => ({
+      seniorId: id,
+      firstName: names.firstName ?? null,
+      patronymic: names.patronymic ?? null,
+      lastName: names.lastName ?? null,
     }),
   },
 
@@ -147,7 +159,7 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
     if (hasAny) {
       const addressShape = await C.addressShape(a, id, t);
 
-        console.log('ADDRESS', addressShape);
+      console.log('ADDRESS', addressShape);
 
       await C.AddressModel.create(
         addressShape,

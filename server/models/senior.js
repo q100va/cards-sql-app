@@ -26,6 +26,69 @@ export default function SeniorModel(sequelize) {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      birthDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      confirmedFirstName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: false
+      },
+      confirmedPatronymic: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: false
+      },
+      confirmedLastName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: false
+      },
+      confirmedBirthDate: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: false
+      },
+      gender: {
+        type: DataTypes.ENUM('male', 'female'),
+        allowNull: false,
+      },
+      infoNote: {
+        type: DataTypes.TEXT
+      },
+      photoLink: {
+        type: DataTypes.TEXT
+      },
+      dateOfConsent: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      personalNoAddr: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      kindergarten: {
+        type: DataTypes.TEXT
+      },
+      teacher: {
+        type: DataTypes.TEXT
+      },
+      veteran: {
+        type: DataTypes.TEXT
+      },
+      childOfWar: {
+        type: DataTypes.TEXT
+      },
+      profession: {
+        type: DataTypes.TEXT
+      },
+      honoraryStatus: {
+        type: DataTypes.TEXT
+      },
+      interests: {
+        type: DataTypes.TEXT
+      },
       comment: {
         type: DataTypes.TEXT
       },
@@ -44,9 +107,9 @@ export default function SeniorModel(sequelize) {
         type: DataTypes.DATE
       },
       dateOfExit: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        defaultValue: null
       },
-
     },
     {
       sequelize,

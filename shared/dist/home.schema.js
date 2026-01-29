@@ -421,7 +421,7 @@ export const homesQueryDTOSchema = z
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
             comment: z.boolean().optional(),
-            infoNote: z.boolean().optional(),
+            infoNote: z.boolean().optional(), //TODO: delete???
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
