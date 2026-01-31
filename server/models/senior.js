@@ -33,17 +33,17 @@ export default function SeniorModel(sequelize) {
       confirmedFirstName: {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: false
+        defaultValue: null
       },
       confirmedPatronymic: {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: false
+        defaultValue: null
       },
       confirmedLastName: {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: false
+        defaultValue: null
       },
       confirmedBirthDate: {
         type: DataTypes.STRING,

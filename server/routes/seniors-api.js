@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import { z } from 'zod';
 import {
   Country, Region, District, Locality, Home,
-  Role, SeniorAddress, Senior, SeniorContact, SeniorSearch, SeniorOutdatedName, HomeCoordination,
+  Senior, SeniorSearch, SeniorOutdatedName,
   HomeAddress
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
