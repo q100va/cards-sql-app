@@ -17,16 +17,11 @@ import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
 
-import { User } from '../../interfaces/user';
-import { ContactUrlPipe } from 'src/app/utils/contact-url.pipe';
+import { OutdatedFullName,OutdatedUserName} from '../../interfaces/advanced-model';
+import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  Contact,
-  OutdatedAddress,
-  OutdatedFullName,
-} from '@shared/schemas/common.schema';
-import { OutdatedUserName } from '@shared/dist/user.schema';
+
 /* import {
   ContactType,
   UserRestoringData,
@@ -36,7 +31,7 @@ import { OutdatedUserName } from '@shared/dist/user.schema';
   UserChangingData,
   UserOutdatingData,
 } from '../../interfaces/advanced-model'; */
-import { UserMainService, UserService } from 'src/app/services/user.service';
+import { UserMainService, UserService } from '../../services/user.service';
 import { of } from 'rxjs';
 @Component({
   selector: 'app-user-details',
@@ -179,7 +174,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   //если изменил,
   // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
 
-  override async correctRestoringData() {
+/*   override async correctRestoringData() {
     super.correctRestoringData();
     // Addresses
     if (this.restoringDataDraft.addresses?.length) {
@@ -203,11 +198,11 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
 
     this.restoringDataDraft.userNames = structuredClone(restoring);
     this.outdatedDataDraft.userNames = structuredClone(outdating);
-  }
+  } */
 
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
-  override async checkOutdatedDataDuplicates() {
+/*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -229,8 +224,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
 
     return await super.checkOutdatedDataDuplicates();
   }
-
-  override async checkAllChanges() {
+ */
+/*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -264,7 +259,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     if (names.outdating) this.outdatingData.names = names.outdating;
 
     return await super.checkAllChanges();
-  }
+  } */
 
   /*   override hasOutdatedUserNames(): boolean {
     return this.outdatedDataDraft.userNames.length > 0;

@@ -29,7 +29,7 @@ import {
   Cooperation,
   Subscription,
   InstituteFormGroup,
-} from '../../interfaces/volunteer';
+} from '../../interfaces/advanced-model';
 import {
   VolunteerService,
   VolunteerMainService,
@@ -41,6 +41,7 @@ import {
 } from '../../../../shared/schemas/volunteer.schema';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
 import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
+import { reconcileRestoredAddress, reconcileRestoredInstitutes } from '../../utils/owner-restoration-reconcile.util';
 
 @Component({
   selector: 'app-volunteer-details',
@@ -189,12 +190,12 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }
   }
 
-  override async correctRestoringData() {
+/*   override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
     if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.ownerService.corrAddress(
+      const addresses = reconcileRestoredAddress(
         this.restoringDataDraft.addresses,
         this.outdatedDataDraft.addresses,
         this.ownerDraft.draftAddress,
@@ -205,7 +206,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }
 
     // Institutes
-    const { restoring, outdating } = this.ownerDiffService.corrInstitutes(
+    const { restoring, outdating } = reconcileRestoredInstitutes(
       this.restoringDataDraft.institutes ?? [],
       this.outdatedDataDraft.institutes ?? [],
       this.ownerDraft.draftInstitutes ?? [],
@@ -214,9 +215,9 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
     this.restoringDataDraft.institutes = structuredClone(restoring);
     this.outdatedDataDraft.institutes = structuredClone(outdating);
-  }
+  } */
 
-  override async checkOutdatedDataDuplicates() {
+/*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -239,8 +240,8 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }
 
     return await super.checkOutdatedDataDuplicates();
-  }
-  override async checkAllChanges() {
+  } */
+/*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -284,7 +285,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     if (subscriptions.deleting)
       this.deletingDataDraft.subscriptions = subscriptions.deleting;
     return await super.checkAllChanges();
-  }
+  } */
 
   override getRowSpanForInstitutes(): number {
     return this.outdatedDataDraft.institutes.length;
@@ -383,7 +384,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       'institutes'
     ) as FormArray<InstituteFormGroup> | null;
     if (fa) {
-      fa.controls.forEach((group) =>
+      fa.controls.forEach((group: InstituteFormGroup) =>
         enable
           ? group.enable({ emitEvent: false })
           : group.disable({ emitEvent: false })
@@ -393,7 +394,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   protected override additionalValidationHooks(): boolean {
-    //TODO: for partner houses
 
     return (
       this.contactsChangeValidation() ||

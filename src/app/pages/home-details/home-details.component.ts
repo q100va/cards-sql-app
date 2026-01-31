@@ -40,7 +40,7 @@ import { combineLatest, shareReplay } from 'rxjs';
 import { zodValidator } from '../../utils/zod-validator';
 import { coordinationNameControlSchema } from '../../../../shared/schemas/common.schema';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
-import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
+import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user.schema';
 
 @Component({
   selector: 'app-home-details',
@@ -287,7 +287,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.mainForm.controls['officialNames'].setValue(data.officialName);
   }
 
-  override async correctRestoringData() {
+/*   override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
@@ -316,9 +316,9 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.outdatedDataDraft.officialNames = structuredClone(
       dataOffNames.outdating
     );
-  }
+  } */
 
-  override async checkOutdatedDataDuplicates() {
+/*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerDiffService.checkHomeAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft
@@ -339,7 +339,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       this.restoringDataDraft.officialNames.push(dataOffNames.restoringId);
     }
     return await super.checkOutdatedDataDuplicates();
-  }
+  } */
 
   override onRestoreOutdatedCoordination(data: OutdatedCoordination) {
     this.restoringDataDraft['coordinations'] ??= [];
@@ -371,7 +371,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.onChangeValidation();
   }
 
-  override async checkAllChanges() {
+/*   override async checkAllChanges() {
     const address = await this.ownerDiffService.diffHomeAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -413,7 +413,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       this.deletingDataDraft.coordinations = coordinations.deleting;
 
     return await super.checkAllChanges();
-  }
+  } */
 
   override getPostalAddress(): string {
     return this.existingOwner!.address.fullPostalAddress;

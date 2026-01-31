@@ -22,7 +22,6 @@ import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/a
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
 
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
-import { OutdatedHome } from '../../interfaces/partner';
 import {
   PartnerService,
   PartnerMainService,
@@ -272,7 +271,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.onChangeValidation();
   }
 
-    override async correctRestoringData() {
+/*     override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
@@ -287,9 +286,9 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
     }
 
-  }
+  } */
 
-    override async checkOutdatedDataDuplicates() {
+/*     override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -302,8 +301,8 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
 
     return await super.checkOutdatedDataDuplicates();
   }
-
-  override async checkAllChanges() {
+ */
+/*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -332,5 +331,5 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     if (coordinations.deleting)
       this.deletingDataDraft.coordinations = coordinations.deleting;
     return await super.checkAllChanges();
-  }
+  } */
 }

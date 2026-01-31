@@ -59,6 +59,20 @@ import {
   OutdatedOfficialName,
   OutdatedCoordination,
   CoordinationPick,
+  OutdatedHomeAddress,
+  OutdatedUserName,
+  OutdatedInstitute,
+  Subscription,
+  Cooperation,
+  InstituteFormGroup,
+  Senior,
+  SeniorDraft,
+  SeniorChangingData,
+  SeniorRestoringData,
+  SeniorOutdatingData,
+  SeniorDeletingData,
+  OptionalContacts,
+  UserContacts,
 } from '../../../../interfaces/advanced-model';
 import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
@@ -81,19 +95,11 @@ import { RoleService } from '../../../../services/role.service';
 import { UserService } from '../../../../services/user.service';
 import { PartnerService } from '../../../../services/partner.service';
 import { VolunteerService } from '../../../../services/volunteer.service';
-import { OwnerDiffService } from '../../../../services/owner-diff.service';
-import { OwnerService } from '../../../../services/owner.service';
 
-import { buildDuplicateInfoMessage, normalize } from '../../../../utils/diff';
-
-import { OutdatedUserName } from '../../../../interfaces/user';
 import {
-  OutdatedInstitute,
-  Subscription,
-  Cooperation,
-  InstituteFormGroup,
-} from '../../../../interfaces/volunteer';
-import { OutdatedHomeAddress } from '../../../../interfaces/home';
+  buildDuplicateInfoMessage,
+  normalize,
+} from '../../../../utils/owner-ctrls';
 
 import {
   causeOfRestrictionControlSchema,
@@ -113,9 +119,26 @@ import { DefaultAddressParams } from '../../../../../../shared/schemas/toponym.s
 import { AuthUser } from '../../../../../../shared/schemas/auth.schema';
 import { AuthService } from '../../../../services/auth.service';
 import { HomeService } from '../../../../services/home.service';
-import { ApiResponse } from '../../../../interfaces/api-response';
 import { coordinationNameControlSchema } from '../../../../../../shared/schemas/common.schema';
+import { SeniorService } from '../../../../services/senior.service';
+import { buildDraft } from '../../../../utils/owner-draft.builder';
+import {
+  reconcileRestoredAddress,
+  reconcileRestoredContacts,
+  reconcileRestoredCoordinations,
+  reconcileRestoredHomeAddress,
+  reconcileRestoredInstitutes,
+  reconcileRestoredNames,
+  reconcileRestoredOfficialNames,
+  reconcileRestoredUserNames,
+} from '../../../../utils/owner-restoration-reconcile.util';
+import { OwnerRestorationGuardService } from '../../../../services/owner-restoration-guard.service';
+import { OwnerChangesPlannerService } from '../../../../services/owner-changes-planner.service';
+import { ThisReceiver } from '@angular/compiler';
 
+type PersonKind = Exclude<Kind, 'home'>;
+type ContactsOwner = Exclude<Kind, 'senior'>;
+type CoordinationsOwner = Extract<Kind, 'partner' | 'home'>;
 @Component({
   selector: 'app-advanced-details',
   standalone: true,
@@ -140,7 +163,7 @@ import { coordinationNameControlSchema } from '../../../../../../shared/schemas/
   styleUrl: './advanced-details.component.css',
 })
 export class AdvancedDetailsComponent<
-  K extends Kind
+  K extends Kind,
 > extends BaseDetailsComponent<OwnerByKind<K>> {
   get existingOwner(): OwnerByKind<K> | null {
     return this.data().object;
@@ -151,8 +174,9 @@ export class AdvancedDetailsComponent<
   // DI
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
-  readonly ownerDiffService = inject(OwnerDiffService);
-  readonly ownerService = inject(OwnerService);
+
+  readonly ownerRestorationGuardService = inject(OwnerRestorationGuardService);
+  readonly ownerChangesPlannerService = inject(OwnerChangesPlannerService);
   readonly translate = inject(TranslateService);
   readonly auth = inject(AuthService);
 
@@ -160,7 +184,8 @@ export class AdvancedDetailsComponent<
   readonly user = toSignal<AuthUser | null>(this.auth.currentUser$, {
     initialValue: null,
   });
-  override kind!: K;
+  declare kind: K;
+  ownerDraft!: OwnerDraftByKind<K>;
   protected service!: OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
@@ -182,7 +207,7 @@ export class AdvancedDetailsComponent<
   >;
 
   protected readonly partnerService = inject(
-    PartnerService
+    PartnerService,
   ) as OwnerMainService<
     Partner,
     PartnerDraft,
@@ -194,7 +219,7 @@ export class AdvancedDetailsComponent<
   >;
 
   protected readonly volunteerService = inject(
-    VolunteerService
+    VolunteerService,
   ) as OwnerMainService<
     Volunteer,
     VolunteerDraft,
@@ -215,6 +240,16 @@ export class AdvancedDetailsComponent<
     { list: Home[]; length: number }
   >;
 
+  protected readonly seniorService = inject(SeniorService) as OwnerMainService<
+    Senior,
+    SeniorDraft,
+    SeniorChangingData,
+    SeniorRestoringData,
+    SeniorOutdatingData,
+    SeniorDeletingData,
+    { list: Senior[]; length: number }
+  >;
+
   protected getService(): OwnerMainService<
     OwnerByKind<K>,
     OwnerDraftByKind<K>,
@@ -228,12 +263,12 @@ export class AdvancedDetailsComponent<
       this.kind === 'user'
         ? this.userService
         : this.kind === 'partner'
-        ? this.partnerService
-        : this.kind === 'volunteer'
-        ? this.volunteerService
-        : this.kind === 'home'
-        ? this.homeService
-        : this.homeService; //seniorService
+          ? this.partnerService
+          : this.kind === 'volunteer'
+            ? this.volunteerService
+            : this.kind === 'home'
+              ? this.homeService
+              : this.seniorService;
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -256,12 +291,11 @@ export class AdvancedDetailsComponent<
 
   restoringDataDraft!: RestoringByKind<K>;
   deletingDataDraft!: DeletingByKind<K>;
+  //deletingData!: DeletingByKind<K>;
   outdatedDataDraft!: OutdatedByKind<K>;
   changingData!: ChangingByKind<K>;
   outdatingData!: OutdatingByKind<K>;
   mainProps!: (keyof NonNullable<ChangingByKind<K>['main']>)[];
-
-  ownerDraft!: OwnerDraftByKind<K>;
 
   affiliations = [
     'PARTNER.AFF.VOLUNTEER_COORDINATOR',
@@ -327,7 +361,7 @@ export class AdvancedDetailsComponent<
     console.log('this.existingOwner', structuredClone(this.existingOwner));
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(
-        this.existingOwner!.outdatedData
+        this.existingOwner!.outdatedData,
       ) as OutdatedByKind<K>;
     } else {
       this.setEmptyOutdatedDataDraft();
@@ -356,9 +390,63 @@ export class AdvancedDetailsComponent<
       });
 
     this.hasOutdatedContacts.set(
-      Object.keys(this.outdatedDataDraft.contacts).length > 0
+      'contacts' in this.outdatedDataDraft &&
+        Object.keys(this.outdatedDataDraft.contacts).length > 0,
     );
-    this.hasOutdatedAddresses.set(this.outdatedDataDraft.addresses.length > 0);
+    this.hasOutdatedAddresses.set(
+      'addresses' in this.outdatedDataDraft &&
+        this.outdatedDataDraft.addresses.length > 0,
+    );
+  }
+
+  private isPersonContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Exclude<Kind, 'home'>>> {
+    return this.kind !== 'home';
+  }
+  private isContactsOwnerContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Exclude<Kind, 'senior'>>> {
+    return this.kind !== 'senior';
+  }
+  private isCommonAddressOwnerContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<
+    Extract<K, Exclude<Kind, 'senior' | 'home'>>
+  > {
+    return this.kind !== 'senior' || this.kind !== 'home';
+  }
+  private isCoordinationsOwnerContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<
+    Extract<K, Extract<Kind, 'partner' | 'home'>>
+  > {
+    return this.kind === 'partner' || this.kind === 'home';
+  }
+  private isUserContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'user'>>> {
+    return this.kind === 'user';
+  }
+  private isPartnerContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'partner'>>> {
+    return this.kind === 'partner';
+  }
+  private isHomeContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'home'>>> {
+    return this.kind === 'home';
+  }
+  private isVolunteerContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'volunteer'>>> {
+    return this.kind === 'volunteer';
+  }
+  private isSeniorContext(
+    this: AdvancedDetailsComponent<K>,
+  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'senior'>>> {
+    return this.kind === 'senior';
   }
 
   // bridge spinner to parent
@@ -371,7 +459,7 @@ export class AdvancedDetailsComponent<
   countOutdatedContactsAmount(contacts: OutdatedContacts): number {
     return Object.values(contacts).reduce(
       (sum, arr) => sum + (arr?.length ?? 0),
-      0
+      0,
     );
   }
 
@@ -379,7 +467,7 @@ export class AdvancedDetailsComponent<
     if (this.mainForm.controls['isRestricted'].value) {
       this.mainForm.addControl(
         'causeOfRestriction',
-        new FormControl(null, [zodValidator(causeOfRestrictionControlSchema)])
+        new FormControl(null, [zodValidator(causeOfRestrictionControlSchema)]),
       );
       this.controlsNames.push('causeOfRestriction');
     } else if (
@@ -388,7 +476,7 @@ export class AdvancedDetailsComponent<
     ) {
       this.mainForm.removeControl('causeOfRestriction');
       const idx = this.controlsNames.findIndex(
-        (n) => n === 'causeOfRestriction'
+        (n) => n === 'causeOfRestriction',
       );
       if (idx !== -1) this.controlsNames.splice(idx, 1);
     }
@@ -404,7 +492,7 @@ export class AdvancedDetailsComponent<
     for (const contact of this.possibleContactTypes) {
       if (
         this.mainForm.controls[contact.name].value.findIndex(
-          (v: string | null) => v == null
+          (v: string | null) => v == null,
         ) === -1
       ) {
         contact.availableForExtra = true;
@@ -418,11 +506,11 @@ export class AdvancedDetailsComponent<
   onTypeClick(index: number, defaultValue: string | null): void;
   onTypeClick(
     contactType: Exclude<ContactType, 'telegram' | 'otherContact'>,
-    defaultValue: string | null
+    defaultValue: string | null,
   ): void;
   onTypeClick(
     arg: number | Exclude<ContactType, 'telegram' | 'otherContact'>,
-    defaultValue: string | null
+    defaultValue: string | null,
   ): void {
     const type =
       typeof arg === 'number' ? this.availableContactTypes[arg] : arg;
@@ -444,7 +532,7 @@ export class AdvancedDetailsComponent<
     };
 
     this.getFormArray(type).push(
-      new FormControl(defaultValue, validators[type] || [])
+      new FormControl(defaultValue, validators[type] || []),
     );
   }
 
@@ -524,39 +612,42 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.IsSaveDisabledSignal.set(disabled);
     this.emittedIsSaveDisabled.emit(disabled);
   }
-
+  //TODO: вынести хелперы в отдельный файл по адресам и контактам
   // Optional extra validation gates (true => changes detected)
   protected override additionalValidationHooks(): boolean {
-    //TODO: for partner houses, for volunteer institutes
-
     return this.contactsChangeValidation() || this.addressChangeValidation();
   }
 
   // Compare contacts between form and original orderedContacts
   contactsChangeValidation(): boolean {
-    const ordered: OwnerContacts = this.object!['orderedContacts'];
+    if ('orderedContacts' in this.existingOwner!) {
+      const ordered: OwnerContacts = this.existingOwner![
+        'orderedContacts'
+      ] as OwnerContacts;
 
-    for (const type of this.contactTypes) {
-      const original = ordered?.[type] ?? [];
-      const current: string[] = this.getFormArray(type)
-        .getRawValue()
-        .filter(Boolean);
+      for (const type of this.contactTypes) {
+        const original = ordered?.[type] ?? [];
+        const current: string[] = this.getFormArray(type)
+          .getRawValue()
+          .filter(Boolean);
 
-      // console.log('original', original);
-      //  console.log('current', current);
+        // console.log('original', original);
+        //  console.log('current', current);
 
-      // lengths differ -> changed
-      if (original.length !== current.length) return true;
+        // lengths differ -> changed
+        if (original.length !== current.length) return true;
 
-      // content differs -> changed
-      const originalSet = new Set(original.map((c) => c.content));
-      const currentSet = new Set(current);
+        // content differs -> changed
+        const originalSet = new Set(original.map((c) => c.content));
+        const currentSet = new Set(current);
 
-      if (originalSet.size !== currentSet.size) return true;
+        if (originalSet.size !== currentSet.size) return true;
 
-      for (const v of currentSet) {
-        if (!originalSet.has(v)) return true;
+        for (const v of currentSet) {
+          if (!originalSet.has(v)) return true;
+        }
       }
+      return false;
     }
     return false;
   }
@@ -580,7 +671,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       const originalId = address[key]?.id ?? null;
       const selectedIds = filter[keyMap[key]];
       const selectedId = Array.isArray(selectedIds)
-        ? selectedIds[0] ?? null
+        ? (selectedIds[0] ?? null)
         : null;
 
       if (originalId !== selectedId) return true;
@@ -596,57 +687,48 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
     super.setInitialValues(mode);
     console.log('setInitialValues');
+    if ('orderedContacts' in this.existingOwner!) {
+      const ordered: OwnerContacts = this.existingOwner![
+        'orderedContacts'
+      ] as OwnerContacts;
+      const toView = (val: string, type: string) =>
+        mode === 'view' ? this.contactUrl.transform(val, type) : val;
 
-    const ordered = this.object!['orderedContacts'];
-    const toView = (val: string, type: string) =>
-      mode === 'view' ? this.contactUrl.transform(val, type) : val;
+      for (const type of this.contactTypes) {
+        const formArray = this.getFormArray(type);
+        const values = ordered?.[type] ?? [];
+        const validators =
+          this.data().controls.find((c) => c.controlName === type)
+            ?.validators || [];
 
-    for (const type of this.contactTypes) {
-      const formArray = this.getFormArray(type);
-      const values = ordered?.[type] ?? [];
-      const validators =
-        this.data().controls.find((c) => c.controlName === type)?.validators ||
-        [];
+        let diff = values.length - formArray.length;
 
-      let diff = values.length - formArray.length;
-      /*       console.log('values.length', type, values.length);
-      console.log('formArray.length', type, formArray.length);
-      console.log('diff', type, diff); */
-
-      while (diff > 0) {
-        formArray.push(
-          new FormControl(
-            {
-              value: null,
-              disabled: mode === 'view',
-            },
-            validators
-          )
-        );
-        diff--;
-      }
-
-      while (diff < 0 && formArray.length > 1) {
-        formArray.removeAt(formArray.length - 1);
-        diff++;
-      }
-
-      if (values.length) {
-        for (let i = 0; i < values.length; i++) {
-          formArray.at(i)?.setValue(toView(values[i].content, type));
+        while (diff > 0) {
+          formArray.push(
+            new FormControl(
+              {
+                value: null,
+                disabled: mode === 'view',
+              },
+              validators,
+            ),
+          );
+          diff--;
         }
-      } else {
-        // show non-breaking space in view mode, null in edit/create
-        formArray.at(0)?.setValue(mode === 'view' ? '\u00A0' : null);
-        /*         formArray.push(
-          new FormControl(
-            {
-              value: mode === 'view' ? '\u00A0' : null,
-              disabled: mode === 'view',
-            },
-            validators
-          )
-        ); */
+
+        while (diff < 0 && formArray.length > 1) {
+          formArray.removeAt(formArray.length - 1);
+          diff++;
+        }
+
+        if (values.length) {
+          for (let i = 0; i < values.length; i++) {
+            formArray.at(i)?.setValue(toView(values[i].content, type));
+          }
+        } else {
+          // show non-breaking space in view mode, null in edit/create
+          formArray.at(0)?.setValue(mode === 'view' ? '\u00A0' : null);
+        }
       }
     }
   }
@@ -662,7 +744,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         const nameId = this.restoringDataDraft.names![0];
         const restoredValue = this.existingOwner!.outdatedData.names.find(
           (item: OutdatedAddress | OutdatedFullName | OutdatedHomeAddress) =>
-            item.id === nameId
+            item.id === nameId,
         );
         if ('names' in this.outdatedDataDraft && restoredValue)
           (this.outdatedDataDraft.names as any[]).push(restoredValue);
@@ -684,11 +766,15 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     type: keyof RestoringByKind<K>,
     data: Contact | OutdatedAddress | OutdatedHomeAddress,
     //  | OutdatedHome,
-    contactType?: Exclude<ContactType, 'telegram'>
+    contactType?: Exclude<ContactType, 'telegram'>,
   ) {
     //восстанавливаемое значение присваиваем соответветствующему form.control,
     //если он пустой, или добавляем новый form.control с этим значением
-    if (type === 'contacts' && 'content' in data) {
+    if (
+      type === 'contacts' &&
+      'contacts' in this.restoringDataDraft &&
+      'content' in data
+    ) {
       this.restoringDataDraft.contacts ??= {};
       this.restoringDataDraft.contacts[contactType!] ??= [];
       this.restoringDataDraft.contacts[contactType!]!.push(data);
@@ -708,11 +794,17 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     //для этих типов восстановить можно только одно значение,
     //поэтому проверяем, были ли уже восстановленные значения,
     //если были, то удаляем их их restoringDataDraft и помещаем в outdatingDataDraft
-    if (type === 'addresses') {
+    if (
+      type === 'addresses' &&
+      'addresses' in this.restoringDataDraft &&
+      'addresses' in this.existingOwner!.outdatedData &&
+      'addresses' in this.outdatedDataDraft
+    ) {
       if (this.restoringDataDraft.addresses !== null) {
+        const id = this.restoringDataDraft.addresses![0];
         const restoredValue = this.existingOwner!.outdatedData.addresses.find(
           (item: OutdatedAddress | OutdatedFullName | OutdatedHomeAddress) =>
-            item.id === this.restoringDataDraft.addresses![0]
+            item.id === id,
         );
         if (restoredValue)
           (this.outdatedDataDraft.addresses as any[]).push(restoredValue);
@@ -730,10 +822,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         });
       }
     }
-    /*     if ('homes' in this.existingOwner! && type === 'homes') {
-    } */
+
     //восстанавливаемые значения удаляем из outdatingDataDraft
-    this.deleteFromOutdatedDataDraft(type as keyof OutdatedByKind<K>, data.id);
+    this.deleteFromOutdatedDataDraft(
+      type as unknown as keyof OutdatedByKind<K>,
+      data.id,
+    );
+
     this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
@@ -745,7 +840,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       | 'officialNames'
       | 'coordinations'
       | 'institutes',
-    id: number
+    id: number,
   ) {
     if (!(type in this.deletingDataDraft)) return;
 
@@ -762,10 +857,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   deleteFromOutdatedDataDraft(type: keyof OutdatedByKind<K>, id: number) {
-    if (type === 'contacts') {
+    if (type === 'contacts' && 'contacts' in this.outdatedDataDraft) {
       for (const key of typedKeys(this.outdatedDataDraft.contacts)) {
         const idx = this.outdatedDataDraft.contacts[key]!.findIndex(
-          (c) => c.id === id
+          (c) => c.id === id,
         );
         if (idx !== -1) {
           this.outdatedDataDraft.contacts[key]!.splice(idx, 1);
@@ -782,13 +877,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
     this.emitShowSpinner(true);
     this.action = action;
-    this.ownerDraft = this.ownerService.buildDraft(
+    this.ownerDraft = buildDraft(
       this.kind,
       this.mainForm,
       this.addressFilter(),
       this.contactTypes,
       this.existingOwner,
-      this.user()!.id
+      this.user()!.id,
     );
     if ('userName' in this.ownerDraft) {
       this.checkUserName();
@@ -802,13 +897,16 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       Exclude<ContactType, 'telegram'>,
       string[]
     >;
+    //TODO: institutes, coordinations
 
-    for (const key of typedKeys(this.ownerDraft.draftContacts)) {
-      const temp = this.ownerDraft.draftContacts[key].sort();
-      const dups = new Set<string>();
-      for (let i = 0; i < temp.length - 1; i++)
-        if (temp[i + 1] === temp[i]) dups.add(temp[i]);
-      if (dups.size) contactDuplicates[key] = Array.from(dups);
+    if ('draftContacts' in this.ownerDraft) {
+      for (const key of typedKeys(this.ownerDraft.draftContacts)) {
+        const temp = this.ownerDraft.draftContacts[key].sort();
+        const dups = new Set<string>();
+        for (let i = 0; i < temp.length - 1; i++)
+          if (temp[i + 1] === temp[i]) dups.add(temp[i]);
+        if (dups.size) contactDuplicates[key] = Array.from(dups);
+      }
     }
 
     if (Object.keys(contactDuplicates).length) {
@@ -841,15 +939,15 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             const info = buildDuplicateInfoMessage(
               (k, p) => this.translateService.instant(k, p),
               duplicatesName,
-              duplicatesContact
+              duplicatesContact,
             );
             this.confirmationService.confirm({
               header: this.translateService.instant(
-                'PRIME_CONFIRM.WARNING_HEADER'
+                'PRIME_CONFIRM.WARNING_HEADER',
               ),
               message:
                 this.translateService.instant(
-                  'PRIME_CONFIRM.SAVE_WITH_DUPLICATES'
+                  'PRIME_CONFIRM.SAVE_WITH_DUPLICATES',
                 ) + info,
               closable: true,
               closeOnEscape: true,
@@ -904,139 +1002,232 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
   async correctRestoringData() {
     // Addresses
-    /*     if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.ownerService.corrAddress(
-        this.restoringDataDraft.addresses,
+    if (this.isCommonAddressOwnerContext()) {
+      const { restoring, outdating } = reconcileRestoredAddress(
+        this.restoringDataDraft.addresses ?? [],
         this.outdatedDataDraft.addresses,
         this.ownerDraft.draftAddress,
-        this.existingOwner!.outdatedData.addresses
+        this.existingOwner!.outdatedData.addresses,
       );
-      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
-      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
-    } */
+      this.restoringDataDraft.addresses = structuredClone(restoring);
+      this.outdatedDataDraft.addresses = structuredClone(outdating);
+    }
+
+    if (this.isHomeContext()) {
+      const { restoring, outdating } = reconcileRestoredHomeAddress(
+        this.restoringDataDraft.addresses ?? [],
+        this.outdatedDataDraft.addresses,
+        this.ownerDraft,
+        this.existingOwner!.outdatedData.addresses,
+      );
+      this.restoringDataDraft.addresses = structuredClone(restoring);
+      this.outdatedDataDraft.addresses = structuredClone(outdating);
+    }
 
     // Names
-    if (
-      'names' in this.restoringDataDraft &&
-      'names' in this.outdatedDataDraft &&
-      'names' in this.existingOwner!.outdatedData &&
-      'firstName' in this.ownerDraft /*
-      'patronymic' in this.ownerDraft &&
-      'lastName' in this.ownerDraft && */ &&
-      this.restoringDataDraft.names?.length
-    ) {
-      const names = await this.ownerService.corrNames(
-        this.restoringDataDraft.names,
+    if (this.isPersonContext()) {
+      const { restoring, outdating } = reconcileRestoredNames(
+        this.restoringDataDraft.names ?? [],
         this.outdatedDataDraft.names,
         {
           firstName: this.ownerDraft.firstName,
           patronymic: this.ownerDraft.patronymic,
           lastName: this.ownerDraft.lastName,
         },
-        this.existingOwner!.outdatedData.names
+        this.existingOwner!.outdatedData.names,
       );
-      this.restoringDataDraft.names = structuredClone(names.restoring);
-      this.outdatedDataDraft.names = structuredClone(names.outdating);
+      this.restoringDataDraft.names = structuredClone(restoring);
+      this.outdatedDataDraft.names = structuredClone(outdating);
+    }
+
+    if (this.isUserContext()) {
+      const { restoring, outdating } = reconcileRestoredUserNames(
+        this.restoringDataDraft.userNames ?? [],
+        this.outdatedDataDraft.userNames,
+        this.ownerDraft.userName,
+        this.existingOwner!.outdatedData.userNames,
+      );
+      this.restoringDataDraft.userNames = structuredClone(restoring);
+      this.outdatedDataDraft.userNames = structuredClone(outdating);
+    }
+
+    if (this.isHomeContext()) {
+      const { restoring, outdating } = reconcileRestoredOfficialNames(
+        this.restoringDataDraft.officialNames ?? [],
+        this.outdatedDataDraft.officialNames,
+        this.ownerDraft.officialName,
+        this.existingOwner!.outdatedData.officialNames,
+      );
+      this.restoringDataDraft.officialNames = structuredClone(restoring);
+      this.outdatedDataDraft.officialNames = structuredClone(outdating);
     }
 
     // Contacts
-    if (this.restoringDataDraft.contacts) {
-      const contacts = await this.ownerService.corrContacts(
-        this.restoringDataDraft.contacts,
+    if (this.isContactsOwnerContext()) {
+      const { restoring, outdating } = reconcileRestoredContacts(
+        this.restoringDataDraft.contacts ?? {},
         this.outdatedDataDraft.contacts,
-        this.ownerDraft.draftContacts
+        this.ownerDraft.draftContacts,
       );
-      this.restoringDataDraft.contacts = structuredClone(contacts.restoring);
-      this.outdatedDataDraft.contacts = structuredClone(contacts.outdating);
+      this.restoringDataDraft.contacts = structuredClone(restoring);
+      this.outdatedDataDraft.contacts = structuredClone(outdating);
     }
 
     //Coordinations
-    if (
-      (this.kind == 'home' || this.kind == 'partner') &&
-      'coordinations' in this.restoringDataDraft &&
-      'coordinations' in this.outdatedDataDraft &&
-      'coordinations' in this.existingOwner!.outdatedData &&
-      'draftCoordinations' in this.ownerDraft
-    ) {
-      const dataCoordinations = this.ownerDiffService.corrCoordinations(
+    if (this.isCoordinationsOwnerContext()) {
+      const { restoring, outdating } = reconcileRestoredCoordinations(
         this.kind,
         this.restoringDataDraft.coordinations ?? [],
-        this.outdatedDataDraft.coordinations ?? [],
-        this.ownerDraft.draftCoordinations ?? [],
-        this.existingOwner!.outdatedData.coordinations ?? []
+        this.outdatedDataDraft.coordinations,
+        this.ownerDraft.draftCoordinations,
+        this.existingOwner!.outdatedData.coordinations,
       );
+      this.restoringDataDraft.coordinations = structuredClone(restoring);
+      this.outdatedDataDraft.coordinations = structuredClone(outdating);
+    }
 
-      this.restoringDataDraft.coordinations = structuredClone(
-        dataCoordinations.restoring
+    //Institutes
+    if (this.isVolunteerContext()) {
+      const { restoring, outdating } = reconcileRestoredInstitutes(
+        this.restoringDataDraft.institutes ?? [],
+        this.outdatedDataDraft.institutes,
+        this.ownerDraft.draftInstitutes,
+        this.existingOwner!.outdatedData.institutes,
       );
-      this.outdatedDataDraft.coordinations = structuredClone(
-        dataCoordinations.outdating
-      );
+      this.restoringDataDraft.institutes = structuredClone(restoring);
+      this.outdatedDataDraft.institutes = structuredClone(outdating);
     }
   }
 
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
   async checkOutdatedDataDuplicates() {
-    /*    const address = await this.ownerService.checkAddress(
-      this.outdatedDataDraft.addresses,
-      this.ownerDraft.draftAddress
-    );
-    if (!address.restoringId) return false;
-    if (address.restoringId > -1) {
-      this.restoringDataDraft.addresses ??= [];
-      this.restoringDataDraft.addresses.push(address.restoringId);
-    } */
-
-    if (
-      'names' in this.outdatedDataDraft &&
-      'names' in this.restoringDataDraft &&
-      'firstName' in this.ownerDraft
-    ) {
-      const names = await this.ownerService.checkNames(
-        this.outdatedDataDraft.names,
-        this.ownerDraft
+    // Addresses
+    if (this.isCommonAddressOwnerContext()) {
+      const res = await this.ownerRestorationGuardService.checkAddress(
+        this.outdatedDataDraft.addresses,
+        this.ownerDraft.draftAddress,
       );
-      if (!names.restoringId) return false;
-      if (names.restoringId > -1) {
+
+      if (!res.ok) return false;
+
+      if (res.restoring) {
+        this.restoringDataDraft.addresses ??= [];
+        this.restoringDataDraft.addresses.push(res.restoring);
+      }
+    }
+
+    if (this.isHomeContext()) {
+      const res = await this.ownerRestorationGuardService.checkHomeAddress(
+        this.outdatedDataDraft.addresses,
+        this.ownerDraft,
+      );
+
+      if (!res.ok) return false;
+
+      if (res.restoring) {
+        this.restoringDataDraft.addresses ??= [];
+        this.restoringDataDraft.addresses.push(res.restoring);
+      }
+    }
+
+    // Names
+    if (this.isPersonContext()) {
+      const res = await this.ownerRestorationGuardService.checkNames(
+        this.outdatedDataDraft.names,
+        this.ownerDraft,
+      );
+
+      if (!res.ok) return false;
+
+      if (res.restoring) {
         this.restoringDataDraft.names ??= [];
-        this.restoringDataDraft.names.push(names.restoringId);
+        this.restoringDataDraft.names.push(res.restoring);
       }
     }
 
-    const contacts = await this.ownerService.checkContacts(
-      this.contactTypes,
-      this.outdatedDataDraft.contacts,
-      this.ownerDraft.draftContacts
-    );
-    if (!contacts.restoring) return false;
-    if (Object.keys(contacts.restoring).length) {
-      this.restoringDataDraft.contacts ??= {};
-      for (const key of typedKeys(contacts.restoring)) {
-        const vals = contacts.restoring[key] ?? [];
-        (this.restoringDataDraft.contacts[key as NonTelegram] ??= []).push(
-          ...vals
-        );
+    if (this.isUserContext()) {
+      const res = await this.ownerRestorationGuardService.checkUserNames(
+        this.outdatedDataDraft.userNames,
+        this.ownerDraft.userName,
+      );
+
+      if (!res.ok) return false;
+
+      if (res.restoring) {
+        this.restoringDataDraft.userNames ??= [];
+        this.restoringDataDraft.userNames.push(res.restoring);
       }
     }
 
-    if (
-      (this.kind == 'home' || this.kind == 'partner') &&
-      'coordinations' in this.outdatedDataDraft &&
-      'coordinations' in this.restoringDataDraft &&
-      'draftCoordinations' in this.ownerDraft
-    ) {
-      const dataPartners = await this.ownerDiffService.checkCoordinations(
+    if (this.isHomeContext()) {
+      const res = await this.ownerRestorationGuardService.checkOfficialNames(
+        this.outdatedDataDraft.officialNames,
+        this.ownerDraft.officialName,
+      );
+
+      if (!res.ok) return false;
+
+      if (res.restoring) {
+        this.restoringDataDraft.officialNames ??= [];
+        this.restoringDataDraft.officialNames.push(res.restoring);
+      }
+    }
+
+    //Institutes
+    if (this.isVolunteerContext()) {
+      const res = await this.ownerRestorationGuardService.checkInstitutes(
+        this.outdatedDataDraft.institutes,
+        this.ownerDraft.draftInstitutes,
+      );
+
+      if (!res.ok) return false;
+
+      if (res.restoring.length) {
+        this.restoringDataDraft.institutes = [
+          ...(this.restoringDataDraft.institutes ?? []),
+          ...res.restoring,
+        ];
+      }
+    }
+
+    //Coordinations
+
+    if (this.isCoordinationsOwnerContext()) {
+      const res = await this.ownerRestorationGuardService.checkCoordinations(
         this.kind,
         this.outdatedDataDraft.coordinations,
-        this.ownerDraft.draftCoordinations
+        this.ownerDraft.draftCoordinations,
       );
-      if (!dataPartners.restoring) return false;
-      if (dataPartners.restoring.length > 0) {
+
+      if (!res.ok) return false;
+
+      if (res.restoring.length) {
         this.restoringDataDraft.coordinations = [
           ...(this.restoringDataDraft.coordinations ?? []),
-          ...dataPartners.restoring,
+          ...res.restoring,
         ];
+      }
+    }
+
+    //Contacts
+
+    if (this.isContactsOwnerContext()) {
+      const res = await this.ownerRestorationGuardService.checkContacts(
+        this.contactTypes,
+        this.outdatedDataDraft.contacts,
+        this.ownerDraft.draftContacts,
+      );
+
+      if (!res.ok) return false;
+
+      if (Object.keys(res.restoring).length) {
+        this.restoringDataDraft.contacts ??= {};
+        for (const k of typedKeys(res.restoring)) {
+          (this.restoringDataDraft.contacts[k] ??= []).push(
+            ...(res.restoring[k] ?? []),
+          );
+        }
       }
     }
 
@@ -1045,43 +1236,161 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
   async checkAllChanges() {
-    const deletingData: DeletingByKind<K> = structuredClone(
-      this.deletingDataDraft
-    );
-    const restoringData: RestoringByKind<K> = structuredClone(
-      this.restoringDataDraft
-    );
+   /*  this.deletingData = structuredClone(this.deletingDataDraft); //clone deleting data in case saving cancellation
+        const restoringData: RestoringByKind<K> = structuredClone(
+      this.restoringDataDraft,
+    ); */
 
-    /*     const address = await this.ownerService.diffAddress(
-      this.existingOwner!,
-      this.ownerDraft,
-      restoringData.addresses == null ? null : restoringData.addresses![0]
-    );
-    if (address.changes) this.changingData.address = address.changes;
-    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
-    if (address.deletingId) {
-      deletingData.addresses ??= [];
-      deletingData.addresses.push(address.deletingId);
-    } */
+    // Addresses
 
-    const contacts = await this.ownerService.diffContacts(
-      this.existingOwner!,
-      this.ownerDraft,
-      this.contactTypes,
-      restoringData.contacts
-    );
-    console.log('contacts', contacts);
-
-    if (contacts.changes) this.changingData.contacts = contacts.changes;
-    if (contacts.outdatingIds)
-      this.outdatingData.contacts = contacts.outdatingIds;
-    console.log('deletingData.contacts', deletingData.contacts);
-    if (contacts.deletingIds) {
-      deletingData.contacts ??= [];
-      deletingData.contacts.push(...contacts.deletingIds);
+    if (this.isCommonAddressOwnerContext()) {
+      const { changes, outdatingId, deletingId } =
+        await this.ownerChangesPlannerService.diffAddress(
+          this.existingOwner!,
+          this.ownerDraft,
+          this.restoringDataDraft.addresses == null
+            ? null
+            : this.restoringDataDraft.addresses![0],
+        );
+      this.changingData.address = changes;
+      this.outdatingData.address = outdatingId;
+      if (deletingId) {
+        this.deletingDataDraft.addresses ??= [];
+        this.deletingDataDraft.addresses.push(deletingId);
+      }
     }
 
-    console.log('deletingData.contacts', deletingData.contacts);
+    if (this.isHomeContext()) {
+      const { changes, outdatingId, deletingId } =
+        await this.ownerChangesPlannerService.diffHomeAddress(
+          this.existingOwner!,
+          this.ownerDraft,
+          this.restoringDataDraft.addresses == null
+            ? null
+            : this.restoringDataDraft.addresses![0],
+        );
+      this.changingData.address = changes;
+      this.outdatingData.address = outdatingId;
+      if (deletingId) {
+        this.deletingDataDraft.addresses ??= [];
+        this.deletingDataDraft.addresses.push(deletingId);
+      }
+    }
+
+    // Names
+    if (this.isPersonContext()) {
+      const { changes, outdating } =
+        await this.ownerChangesPlannerService.diffNames(
+          this.existingOwner!,
+          this.ownerDraft,
+        );
+      if (changes)
+        this.changingData.main = {
+          ...(this.changingData.main ?? {}),
+          ...changes,
+        };
+      this.outdatingData.names = outdating;
+    }
+
+    if (this.isUserContext()) {
+      const { changes, outdating } =
+        await this.ownerChangesPlannerService.diffUserName(
+          this.existingOwner!,
+          this.ownerDraft,
+        );
+      if (changes)
+        this.changingData.main = {
+          ...(this.changingData.main ?? {}),
+          ...changes,
+        };
+      this.outdatingData.userName = outdating;
+    }
+
+    if (this.isHomeContext()) {
+      const { changes, outdating } =
+        await this.ownerChangesPlannerService.diffOfficialName(
+          this.existingOwner!,
+          this.ownerDraft,
+        );
+      if (changes)
+        this.changingData.main = {
+          ...(this.changingData.main ?? {}),
+          ...changes,
+        };
+      this.outdatingData.officialName = outdating;
+    }
+
+    // Contacts
+
+    if (this.isContactsOwnerContext()) {
+      const { changes, outdatingIds, deletingIds } =
+        await this.ownerChangesPlannerService.diffContacts(
+          this.existingOwner!,
+          this.ownerDraft,
+          this.contactTypes,
+          this.restoringDataDraft.contacts,
+        );
+      this.changingData.contacts = changes;
+      this.outdatingData.contacts = outdatingIds;
+      if (deletingIds) {
+        this.deletingDataDraft.contacts ??= [];
+        this.deletingDataDraft.contacts.push(...deletingIds);
+      }
+    }
+
+    // Coordinations
+
+    if (this.isCoordinationsOwnerContext()) {
+      const { changes, outdating, deleting } =
+        await this.ownerChangesPlannerService.diffCoordinations(
+          this.kind,
+          this.existingOwner!.coordinations,
+          this.ownerDraft.draftCoordinations ?? [],
+          this.restoringDataDraft.coordinations ?? [],
+          this.existingOwner!.outdatedData.coordinations ?? [],
+        );
+
+      this.changingData.coordinations = changes;
+      this.outdatingData.coordinations = outdating;
+      if (deleting) {
+        this.deletingDataDraft.coordinations ??= [];
+        this.deletingDataDraft.coordinations.push(...deleting);
+      }
+    }
+
+    // Institutes
+    if (this.isVolunteerContext()) {
+      const { changes, outdating, deleting } =
+        await this.ownerChangesPlannerService.diffInstitutes(
+          this.existingOwner!.institutes ?? [],
+          this.ownerDraft.draftInstitutes ?? [],
+          this.restoringDataDraft.institutes ?? [],
+          this.existingOwner!.outdatedData.institutes ?? [],
+        );
+      this.changingData.institutes = changes;
+      this.outdatingData.institutes = outdating;
+      if (deleting) {
+        this.deletingDataDraft.institutes ??= [];
+        this.deletingDataDraft.institutes.push(...deleting);
+      }
+    }
+    if (this.isVolunteerContext()) {
+      const { changes, outdating, deleting } =
+        await this.ownerChangesPlannerService.diffSubs(
+          this.existingOwner!.subscriptions ?? [],
+          this.ownerDraft.draftSubscriptions ?? [],
+          this.user()!.id,
+        );
+        this.changingData.subscriptions = changes;
+      if (deleting)
+        {
+        this.deletingDataDraft.subscriptions ??= [];
+        this.deletingDataDraft.subscriptions.push(...deleting);
+      }
+    }
+
+    //Main props
+
     for (const key of this.mainProps) {
       const existing = this.existingOwner as Record<string, unknown>;
       const draft = this.ownerDraft as Record<string, unknown>;
@@ -1101,15 +1410,15 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
     console.log('{ changes, restoringData, outdatingData, deletingData }', {
       changingData: this.changingData,
-      restoringData,
+      restoringData: this.restoringDataDraft,
       outdatingData: this.outdatingData,
-      deletingData,
+      deletingData: this.deletingDataDraft,
     });
     return {
       changingData: this.changingData,
-      restoringData,
+      restoringData: this.restoringDataDraft,
       outdatingData: this.outdatingData,
-      deletingData,
+      deletingData: this.deletingDataDraft,
     };
   }
 
@@ -1120,7 +1429,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       .saveOwner(this.ownerDraft)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.emitShowSpinner(false))
+        finalize(() => this.emitShowSpinner(false)),
       )
       .subscribe({
         next: (res) => {
@@ -1142,11 +1451,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
   // View-mode: set outdated data
   protected override changeToViewMode(
-    addressParams: DefaultAddressParams | null
+    addressParams: DefaultAddressParams | null,
   ) {
     super.changeToViewMode(addressParams);
     this.outdatedDataDraft = structuredClone(
-      this.existingOwner!.outdatedData
+      this.existingOwner!.outdatedData,
     ) as OutdatedByKind<K>;
   }
 
@@ -1161,7 +1470,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       .saveUpdatedOwner(this.existingOwner!.id, upgradedOwnerData)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.emitShowSpinner(false))
+        finalize(() => this.emitShowSpinner(false)),
       )
       .subscribe({
         next: (res) => {
@@ -1192,11 +1501,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           // this.existingOwner = this.data().object;
           console.log(
             'this.existingOwner',
-            structuredClone(this.existingOwner)
+            structuredClone(this.existingOwner),
           );
           if (this.existingOwner) {
             this.outdatedDataDraft = structuredClone(
-              this.existingOwner!.outdatedData
+              this.existingOwner!.outdatedData,
             ) as OutdatedByKind<K>;
           }
 
@@ -1210,17 +1519,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.setHomeOpen();
 
           this.hasOutdatedContacts.set(
-            Object.keys(this.outdatedDataDraft.contacts).length > 0
+            'contacts' in this.outdatedDataDraft &&
+              Object.keys(this.outdatedDataDraft.contacts).length > 0,
           );
           this.hasOutdatedAddresses.set(
-            this.outdatedDataDraft.addresses.length > 0
+            'addresses' in this.outdatedDataDraft &&
+              this.outdatedDataDraft.addresses.length > 0,
           );
 
           console.log('this.hasOutdatedContacts', this.hasOutdatedContacts());
 
           this.addressFilterComponent.onChangeMode(
             'view',
-            this.data().defaultAddressParams!
+            this.data().defaultAddressParams!,
           );
 
           this.setRestoringDataDraft();
@@ -1248,7 +1559,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     ) {
       this.mainForm.removeControl('causeOfRestriction');
       const idx = this.controlsNames.findIndex(
-        (n) => n === 'causeOfRestriction'
+        (n) => n === 'causeOfRestriction',
       );
       if (idx !== -1) this.controlsNames.splice(idx, 1);
     }
@@ -1289,18 +1600,17 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   setHasOutdatedUserNames() {}
-  //setHasOutdatedHomes() {}
   setHasOutdatedInstitutes() {}
   setHasOutdatedNames() {}
   setHasOutdatedOfficialNames() {}
   setHasOutdatedCoordinations() {
     if ('coordinations' in this.outdatedDataDraft)
       this.hasOutdatedCoordinations.set(
-        this.outdatedDataDraft.coordinations.length > 0
+        this.outdatedDataDraft.coordinations.length > 0,
       );
     else this.hasOutdatedCoordinations.set(false);
   }
-   setHomeOpen() {}
+  setHomeOpen() {}
 
   getRowSpanForHomes() {
     return 0;
@@ -1312,19 +1622,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return 0;
   }
 
-  /*   get homes(): OutdatedHome[] {
-    return [];
-  } */
-
-  /*   get coordinations(): HomeCoordination[] {
-    if (this.existingOwner && 'coordinations' in this.existingOwner) {
-      const list = this.existingOwner.coordinations;
-      return Array.isArray(list) ? list : [];
-    } else return [];
-  } */
-  /* get institutes(): Institute[] {
-    return [];
-  } */
   getPostalAddress(): string {
     return '';
   }
@@ -1351,8 +1648,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         {
           nonNullable: true,
           validators: [zodValidator(coordinationNameControlSchema)],
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -1391,7 +1688,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   onRestoreOutdatedUserName(data: OutdatedUserName) {}
   onRestoreOutdateOfficialName(data: OutdatedOfficialName) {}
-  // onRestoreOutdatedHome(data: OutdatedHome) {}
   onRestoreOutdatedInstitute(data: OutdatedInstitute) {}
   onRestoreOutdatedOfficialName(data: OutdatedOfficialName) {}
   onRestoreOutdatedCoordination(data: OutdatedCoordination) {}
