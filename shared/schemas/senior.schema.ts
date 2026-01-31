@@ -444,8 +444,12 @@ export const seniorSchema = z
     orthodoxBeliever: nullableString,
     dateOfExit: nullableIsoDate,
     spouse: z.object({
-      spouseId: positiveInt.nullable(),
+      spouseId: positiveInt,
       spouseFullName: nonEmpty,
+    }).nullable(),
+    home: z.object({
+      homeId: positiveInt,
+      homeName: nonEmpty,
     }),
     outdatedData: outdatedDataSchema,
   })
@@ -460,13 +464,13 @@ export const seniorsSchema = z
 
 /* ===================== Types ===================== */
 //export type SeniorDuplicates = z.infer<typeof duplicatesSchema>;
-export type SeniorDraft = z.infer<typeof seniorDraftSchema>;
+//export type SeniorDraft = z.infer<typeof seniorDraftSchema>;
 
 export type SeniorOutdatedData = z.infer<typeof outdatedDataSchema>;
 
 export type SeniorChangingData = z.infer<typeof changingDataSchema>;
 //export type SeniorRestoringData = z.infer<typeof restoringDataSchema>;
-export type SeniorOutdatingData = z.infer<typeof outdatingDataSchema>;
+//export type SeniorOutdatingData = z.infer<typeof outdatingDataSchema>;
 //export type SeniorDeletingData = z.infer<typeof deletingDataSchema>;
 //export type OutdatedHome = z.infer<typeof coordinationItemSchema>;
 export type SeniorAddress = z.infer<typeof seniorAddressSchema>;

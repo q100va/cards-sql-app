@@ -193,9 +193,9 @@ export const outdatedAddressItemSchema = z
     .strict();
 export const outdatedCommonSchema = z
     .object({
-    contacts: optionalContactsSchema,
-    addresses: z.array(outdatedAddressItemSchema),
-    //  names: z.array(outdatedNameItemSchema)
+//contacts: optionalContactsSchema,
+//addresses: z.array(outdatedAddressItemSchema),
+//  names: z.array(outdatedNameItemSchema)
 })
     .strict();
 /* ===================== DTO ===================== */

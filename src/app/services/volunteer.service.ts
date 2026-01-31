@@ -27,8 +27,8 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { volunteerSchema, volunteersSchema } from '@shared/schemas/volunteer.schema';
-import { duplicatesSchema } from '@shared/schemas/common.schema';
+import { volunteerSchema, volunteersSchema } from '../../../shared/schemas/volunteer.schema';
+import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 

@@ -73,6 +73,7 @@ export declare const changingMainSchema: z.ZodObject<{
     profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     dateOfStart: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     spouseId: z.ZodNullable<z.ZodNumber>;
@@ -106,6 +107,7 @@ export declare const changingDataSchema: z.ZodObject<{
         profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
         honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
         interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
         dateOfStart: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
         dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
         spouseId: z.ZodNullable<z.ZodNumber>;
@@ -155,6 +157,7 @@ export declare const updateSeniorDataSchema: z.ZodObject<{
             profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
             honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
             interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
             dateOfStart: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
             dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
             spouseId: z.ZodNullable<z.ZodNumber>;
@@ -198,24 +201,11 @@ export declare const seniorsQueryDTOSchema: z.ZodObject<{
         general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             comment: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
-            birthDateRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
-            contactTypes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
-                email: "email";
-                phoneNumber: "phoneNumber";
-                whatsApp: "whatsApp";
-                telegram: "telegram";
-                telegramNickname: "telegramNickname";
-                telegramId: "telegramId";
-                telegramPhoneNumber: "telegramPhoneNumber";
-                vKontakte: "vKontakte";
-                instagram: "instagram";
-                facebook: "facebook";
-                website: "website";
-                otherContact: "otherContact";
-            }>>>>;
+            dateRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodNullable<z.ZodNumber>, z.ZodNullable<z.ZodNumber>], null>>>;
+            monthRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodNullable<z.ZodNumber>, z.ZodNullable<z.ZodNumber>], null>>>;
+            yearRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodNullable<z.ZodNumber>, z.ZodNullable<z.ZodNumber>], null>>>;
             homes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            homeRegions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             noAddress: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             specialHome: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             acceptableForSchool: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
@@ -225,11 +215,14 @@ export declare const seniorsQueryDTOSchema: z.ZodObject<{
             }>>;
             hasPhotoLink: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             hasConsent: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-            kindergarten: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            teacher: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            honoraryStatus: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            veteran: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            childOfWar: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
+            hasSpouse: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasKindergartenStatus: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasTeacherStatus: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasHonoraryStatus: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasVeteranStatus: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasChildOfWarStatus: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasOrthodoxBelieverStatus: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            hasProfession: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
         }, z.core.$strip>>>;
         address: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             countries: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
@@ -247,6 +240,25 @@ export declare const outdatedDataSchema: z.ZodObject<{
         id: z.ZodNumber;
     }, z.core.$strict>>;
 }, z.core.$strict>;
+export declare const seniorAddressSchema: z.ZodObject<{
+    country: z.ZodObject<{
+        id: z.ZodNumber;
+        name: z.ZodString;
+    }, z.core.$strict>;
+    region: z.ZodObject<{
+        id: z.ZodNumber;
+        shortName: z.ZodString;
+    }, z.core.$strict>;
+    district: z.ZodObject<{
+        id: z.ZodNumber;
+        shortName: z.ZodString;
+    }, z.core.$strict>;
+    locality: z.ZodObject<{
+        id: z.ZodNumber;
+        shortName: z.ZodString;
+    }, z.core.$strict>;
+    fullPostalAddress: z.ZodString;
+}, z.core.$strict>;
 export declare const seniorSchema: z.ZodObject<{
     id: z.ZodNumber;
     firstName: z.ZodString;
@@ -257,25 +269,55 @@ export declare const seniorSchema: z.ZodObject<{
     causeOfRestriction: z.ZodNullable<z.ZodString>;
     dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     address: z.ZodObject<{
-        country: z.ZodNullable<z.ZodObject<{
+        country: z.ZodObject<{
             id: z.ZodNumber;
             name: z.ZodString;
-        }, z.core.$strict>>;
-        region: z.ZodNullable<z.ZodObject<{
+        }, z.core.$strict>;
+        region: z.ZodObject<{
             id: z.ZodNumber;
             shortName: z.ZodString;
-        }, z.core.$strict>>;
-        district: z.ZodNullable<z.ZodObject<{
+        }, z.core.$strict>;
+        district: z.ZodObject<{
             id: z.ZodNumber;
             shortName: z.ZodString;
-        }, z.core.$strict>>;
-        locality: z.ZodNullable<z.ZodObject<{
+        }, z.core.$strict>;
+        locality: z.ZodObject<{
             id: z.ZodNumber;
             shortName: z.ZodString;
-        }, z.core.$strict>>;
-        id: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strict>;
+        fullPostalAddress: z.ZodString;
     }, z.core.$strict>;
     comment: z.ZodNullable<z.ZodString>;
+    birthDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    confirmedFirstName: z.ZodNullable<z.ZodString>;
+    confirmedPatronymic: z.ZodNullable<z.ZodString>;
+    confirmedLastName: z.ZodNullable<z.ZodString>;
+    confirmedBirthDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    gender: z.ZodEnum<{
+        male: "male";
+        female: "female";
+    }>;
+    infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    dateOfConsent: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    personalNoAddr: z.ZodBoolean;
+    kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    spouse: z.ZodNullable<z.ZodObject<{
+        spouseId: z.ZodNumber;
+        spouseFullName: z.ZodString;
+    }, z.core.$strip>>;
+    home: z.ZodObject<{
+        homeId: z.ZodNumber;
+        homeName: z.ZodString;
+    }, z.core.$strip>;
     outdatedData: z.ZodObject<{
         names: z.ZodArray<z.ZodObject<{
             firstName: z.ZodString;
@@ -296,25 +338,55 @@ export declare const seniorsSchema: z.ZodObject<{
         causeOfRestriction: z.ZodNullable<z.ZodString>;
         dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
         address: z.ZodObject<{
-            country: z.ZodNullable<z.ZodObject<{
+            country: z.ZodObject<{
                 id: z.ZodNumber;
                 name: z.ZodString;
-            }, z.core.$strict>>;
-            region: z.ZodNullable<z.ZodObject<{
+            }, z.core.$strict>;
+            region: z.ZodObject<{
                 id: z.ZodNumber;
                 shortName: z.ZodString;
-            }, z.core.$strict>>;
-            district: z.ZodNullable<z.ZodObject<{
+            }, z.core.$strict>;
+            district: z.ZodObject<{
                 id: z.ZodNumber;
                 shortName: z.ZodString;
-            }, z.core.$strict>>;
-            locality: z.ZodNullable<z.ZodObject<{
+            }, z.core.$strict>;
+            locality: z.ZodObject<{
                 id: z.ZodNumber;
                 shortName: z.ZodString;
-            }, z.core.$strict>>;
-            id: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strict>;
+            fullPostalAddress: z.ZodString;
         }, z.core.$strict>;
         comment: z.ZodNullable<z.ZodString>;
+        birthDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+        confirmedFirstName: z.ZodNullable<z.ZodString>;
+        confirmedPatronymic: z.ZodNullable<z.ZodString>;
+        confirmedLastName: z.ZodNullable<z.ZodString>;
+        confirmedBirthDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+        gender: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+        infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        dateOfConsent: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+        personalNoAddr: z.ZodBoolean;
+        kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+        spouse: z.ZodNullable<z.ZodObject<{
+            spouseId: z.ZodNumber;
+            spouseFullName: z.ZodString;
+        }, z.core.$strip>>;
+        home: z.ZodObject<{
+            homeId: z.ZodNumber;
+            homeName: z.ZodString;
+        }, z.core.$strip>;
         outdatedData: z.ZodObject<{
             names: z.ZodArray<z.ZodObject<{
                 firstName: z.ZodString;
@@ -326,7 +398,6 @@ export declare const seniorsSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
-export type SeniorDraft = z.infer<typeof seniorDraftSchema>;
 export type SeniorOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type SeniorChangingData = z.infer<typeof changingDataSchema>;
-export type SeniorOutdatingData = z.infer<typeof outdatingDataSchema>;
+export type SeniorAddress = z.infer<typeof seniorAddressSchema>;

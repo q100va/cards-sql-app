@@ -664,22 +664,10 @@ export declare const outdatedDataSchema: z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strict>;
 declare const nonNullableAddressSchema: z.ZodObject<{
-    country: z.ZodObject<{
-        id: z.ZodNumber;
-        name: z.ZodString;
-    }, z.core.$strict>;
-    region: z.ZodObject<{
-        id: z.ZodNumber;
-        shortName: z.ZodString;
-    }, z.core.$strict>;
-    district: z.ZodObject<{
-        id: z.ZodNumber;
-        shortName: z.ZodString;
-    }, z.core.$strict>;
-    locality: z.ZodObject<{
-        id: z.ZodNumber;
-        shortName: z.ZodString;
-    }, z.core.$strict>;
+    countryId: z.ZodNumber;
+    regionId: z.ZodNumber;
+    districtId: z.ZodNumber;
+    localityId: z.ZodNumber;
 }, z.core.$strict>;
 export declare const homeAddressItemSchema: z.ZodObject<{
     postalCode: z.ZodString;
@@ -1294,7 +1282,6 @@ export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
 export type HomeCoordination = z.infer<typeof coordinationItemSchema>;
 export type HomeAddress = z.infer<typeof homeAddressItemSchema>;
 export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
-export type HomeContacts = z.infer<typeof optionalContactsSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;

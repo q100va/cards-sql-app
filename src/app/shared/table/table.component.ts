@@ -52,16 +52,11 @@ import {
   VolunteerMainService,
   VolunteerService,
 } from '../../services/volunteer.service';
-import {
-  HomeMainService,
-  HomeService,
-} from '../../services/home.service';
+import { HomeMainService, HomeService } from '../../services/home.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 
 import { sanitizeText } from '../../utils/sanitize-text';
-import { User } from '../../interfaces/user';
-import { Partner } from '../../interfaces/partner';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -84,7 +79,7 @@ import { CONTACT_PARAMS_FOR_LIST } from '../../shared/table/table.config';
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { AddressFilter } from '../../interfaces/toponym';
 import { zodValidator } from '../../utils/zod-validator';
-import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
+import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user.schema';
 import {
   PERMISSIONS_COMPONENT_REGISTRY,
   PermissionSet,
@@ -110,8 +105,11 @@ import {
   UserDraft,
   UserOutdatingData,
   UserRestoringData,
-  Volunteer, Home
-} from 'src/app/interfaces/advanced-model';
+  Volunteer,
+  Home,
+  User,
+  Partner,
+} from '../../interfaces/advanced-model';
 //import { Owner } from 'src/app/interfaces/advanced-model';
 
 @Component({
@@ -163,7 +161,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   >;
 
   protected readonly partnerService = inject(
-    PartnerService
+    PartnerService,
   ) as PartnerMainService; /* OwnerMainService<
     Partner,
     PartnerDraft,
@@ -175,12 +173,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
   >; */
 
   protected readonly volunteerService = inject(
-    VolunteerService
+    VolunteerService,
   ) as VolunteerMainService;
 
-    protected readonly homeService = inject(
-   HomeService
-  ) as HomeMainService;
+  protected readonly homeService = inject(HomeService) as HomeMainService;
 
   params = input.required<{
     columns: ColumnDefinition[];
@@ -273,10 +269,13 @@ export class TableComponent<K extends Kind> implements OnChanges {
       if (x && typeof x === 'object') {
         return Object.keys(x)
           .sort()
-          .reduce((acc, k) => {
-            acc[k] = normalize(x[k]);
-            return acc;
-          }, {} as Record<string, unknown>);
+          .reduce(
+            (acc, k) => {
+              acc[k] = normalize(x[k]);
+              return acc;
+            },
+            {} as Record<string, unknown>,
+          );
       }
       return x;
     };
@@ -307,11 +306,12 @@ export class TableComponent<K extends Kind> implements OnChanges {
       this.kind() === 'user'
         ? this.userService
         : this.kind() === 'partner'
-        ? this.partnerService
-        : this.kind() === 'volunteer'
-        ? this.volunteerService
-        : this.kind() === 'home'
-        ? this.homeService : this.homeService;//this.seniorService
+          ? this.partnerService
+          : this.kind() === 'volunteer'
+            ? this.volunteerService
+            : this.kind() === 'home'
+              ? this.homeService
+              : this.homeService; //this.seniorService
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -328,7 +328,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     for (const item of this.contactTypes) {
       iconRegistry.addSvgIconLiteral(
         item.type,
-        sanitizer.bypassSecurityTrustHtml(item.svg)
+        sanitizer.bypassSecurityTrustHtml(item.svg),
       );
     }
 
@@ -341,8 +341,8 @@ export class TableComponent<K extends Kind> implements OnChanges {
       const query$ = toObservable(this.query).pipe(
         rxFilter((q): q is NonNullable<typeof q> => !!q),
         distinctUntilChanged(
-          (a, b) => this.stableSerialize(a) === this.stableSerialize(b)
-        )
+          (a, b) => this.stableSerialize(a) === this.stableSerialize(b),
+        ),
       );
 
       combineLatest([this.kind$, query$])
@@ -369,10 +369,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
                 });
                 return of({ list: [], length: 0 });
               }),
-              finalize(() => this.loading.set(false))
-            )
+              finalize(() => this.loading.set(false)),
+            ),
           ),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({ next: () => {} });
     });
@@ -395,7 +395,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     kind: K,
     filter: any,
     pageSize: number,
-    page: number
+    page: number,
   ): Observable<ListDto<K>> {
     const service = this.getService();
     return service
@@ -420,19 +420,28 @@ export class TableComponent<K extends Kind> implements OnChanges {
     !!row?.outdatedData?.names && row.outdatedData.names.length > 0;
 
   hasOutdatedContacts = (row: OwnerByKind<K>): boolean =>
-    !!row?.outdatedData?.contacts &&
+    'contacts' in row.outdatedData &&
+    !!row.outdatedData.contacts &&
     Object.keys(row.outdatedData.contacts).length > 0;
 
   hasOutdatedAddresses = (row: OwnerByKind<K>): boolean =>
-    !!row?.outdatedData?.addresses && row.outdatedData.addresses.length > 0;
+    'addresses' in row.outdatedData &&
+    !!row.outdatedData.addresses &&
+    row.outdatedData.addresses.length > 0;
 
   hasOutdatedHomes = (row: Home): boolean => {
-    return !!row?.outdatedData?.coordinations && row.outdatedData.coordinations.length > 0 && this.kind() == 'partner';
-
+    return (
+      !!row?.outdatedData?.coordinations &&
+      row.outdatedData.coordinations.length > 0 &&
+      this.kind() == 'partner'
+    );
   };
-   hasOutdatedPartners = (row: Partner): boolean => {
-   return !!row?.outdatedData?.coordinations && row.outdatedData.coordinations.length > 0 && this.kind() == 'home';
-
+  hasOutdatedPartners = (row: Partner): boolean => {
+    return (
+      !!row?.outdatedData?.coordinations &&
+      row.outdatedData.coordinations.length > 0 &&
+      this.kind() == 'home'
+    );
   };
   hasOutdatedInstitutes = (row: Volunteer): boolean => {
     return (
@@ -441,12 +450,12 @@ export class TableComponent<K extends Kind> implements OnChanges {
   };
   hasOutdatedOfficialNames = (row: Home): boolean => {
     return (
-      !!row?.outdatedData?.officialNames && row.outdatedData.officialNames.length > 0
+      !!row?.outdatedData?.officialNames &&
+      row.outdatedData.officialNames.length > 0
     );
   };
 
-
-/*   hasHomes = (row: OwnerByKind<K>): boolean => {
+  /*   hasHomes = (row: OwnerByKind<K>): boolean => {
     //!!row?.homes && row.homes.length > 0;
     return false;
   };

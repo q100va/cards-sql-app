@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
-import { addressSchema, } from './common.schema.js';
-import { contactType, } from './common.schema.js';
+import { addressRefFullSchema, addressRefShortSchema, } from './common.schema.js';
 import { outdatedNameItemSchema, } from './common.schema.js';
 export const nullableDateOnly = z.preprocess((v) => {
     if (v == null || v === '')
@@ -132,6 +131,7 @@ export const changingMainSchema = z
     profession: nullableString,
     honoraryStatus: nullableString,
     interests: nullableString,
+    orthodoxBeliever: nullableString,
     dateOfStart: nullableIsoDate,
     dateOfExit: nullableIsoDate,
     spouseId: positiveInt.nullable(),
@@ -248,26 +248,27 @@ export const seniorsQueryDTOSchema = z
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
-            birthDateRange: z
-                .tuple([z.coerce.date(), z.coerce.date()])
-                .optional(),
             dateRestrictionRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
-            contactTypes: z.array(contactType).min(1).optional(),
+            dateRange: z.tuple([nullableInt, nullableInt]).optional(),
+            monthRange: z.tuple([nullableInt, nullableInt]).optional(),
+            yearRange: z.tuple([nullableInt, nullableInt]).optional(),
             homes: intOptArray,
-            homeRegions: intOptArray,
             noAddress: z.boolean().optional(),
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
             gender: z.enum(['male', 'female']),
             hasPhotoLink: z.boolean().optional(),
             hasConsent: z.boolean().optional(),
-            kindergarten: intOptArray,
-            teacher: intOptArray,
-            honoraryStatus: intOptArray,
-            veteran: intOptArray,
-            childOfWar: intOptArray,
+            hasSpouse: z.boolean().optional(),
+            hasKindergartenStatus: z.boolean().optional(),
+            hasTeacherStatus: z.boolean().optional(),
+            hasHonoraryStatus: z.boolean().optional(),
+            hasVeteranStatus: z.boolean().optional(),
+            hasChildOfWarStatus: z.boolean().optional(),
+            hasOrthodoxBelieverStatus: z.boolean().optional(),
+            hasProfession: z.boolean().optional(),
         })
             .partial()
             .optional(),
@@ -281,12 +282,12 @@ export const seniorsQueryDTOSchema = z
             .partial()
             .optional(),
         /*         mode: z
-                  .object({
-                    //  strictAddress: z.boolean().optional(),
-                    //  strictContact: z.boolean().optional(),
-                  })
-                  .partial()
-                  .optional(),   */
+          .object({
+            //  strictAddress: z.boolean().optional(),
+            //  strictContact: z.boolean().optional(),
+          })
+          .partial()
+          .optional(),   */
     })
         .partial()
         .optional(),
@@ -299,6 +300,16 @@ export const outdatedDataSchema = z
 })
     .strict();
 /* ===================== Senior (view) & seniors list ===================== */
+export const seniorAddressSchema = z
+    .object({
+    country: addressRefFullSchema,
+    region: addressRefShortSchema,
+    district: addressRefShortSchema,
+    locality: addressRefShortSchema,
+    fullPostalAddress: nonEmpty,
+    // id: positiveInt
+})
+    .strict();
 export const seniorSchema = z
     .object({
     id: positiveInt,
@@ -309,8 +320,35 @@ export const seniorSchema = z
     dateOfStart: z.coerce.date(),
     causeOfRestriction: nonEmpty.nullable(),
     dateOfRestriction: nullableIsoDate,
-    address: addressSchema,
+    address: seniorAddressSchema,
     comment: nonEmpty.nullable(),
+    birthDate: nullableIsoDate,
+    confirmedFirstName: nonEmpty.nullable(),
+    confirmedPatronymic: nonEmpty.nullable(),
+    confirmedLastName: nonEmpty.nullable(),
+    confirmedBirthDate: nullableIsoDate,
+    gender: z.enum(['male', 'female']),
+    infoNote: nullableString,
+    photoLink: nullableString,
+    dateOfConsent: nullableIsoDate,
+    personalNoAddr: z.boolean(),
+    kindergarten: nullableString,
+    teacher: nullableString,
+    veteran: nullableString,
+    childOfWar: nullableString,
+    profession: nullableString,
+    honoraryStatus: nullableString,
+    interests: nullableString,
+    orthodoxBeliever: nullableString,
+    dateOfExit: nullableIsoDate,
+    spouse: z.object({
+        spouseId: positiveInt,
+        spouseFullName: nonEmpty,
+    }).nullable(),
+    home: z.object({
+        homeId: positiveInt,
+        homeName: nonEmpty,
+    }),
     outdatedData: outdatedDataSchema,
 })
     .strict();
@@ -320,5 +358,3 @@ export const seniorsSchema = z
     length: z.coerce.number().int().min(0),
 })
     .strict();
-//export type SeniorDeletingData = z.infer<typeof deletingDataSchema>;
-//export type OutdatedHome = z.infer<typeof coordinationItemSchema>;

@@ -3,7 +3,7 @@ import type {
   ToponymNamesList,
   ToponymType,
   DefaultAddressParams,
-} from '@shared/schemas/toponym.schema';
+} from '../../../shared/schemas/toponym.schema';
 import { DialogData } from './dialog-props';
 
 export type { Toponym, ToponymNamesList, ToponymType, DefaultAddressParams };
