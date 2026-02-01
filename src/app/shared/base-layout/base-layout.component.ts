@@ -19,7 +19,7 @@ import { LanguageService } from '../../services/language.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import { IdleService } from '../../services/idle.service';
-import { AuthUser } from '@shared/schemas/auth.schema';
+import { AuthUser } from '../../../../shared/schemas/auth.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
 
 @Component({
@@ -118,6 +118,16 @@ export class BaseLayoutComponent {
       icon: 'house',
       text: 'MENU.HOMES',
       link: '/homes',
+    },
+      {
+      params: {
+        codes: ['VIEW_LIMITED_SENIORS_LIST', 'VIEW_FULL_SENIORS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-seniors',
+      icon: 'elderly_woman',
+      text: 'MENU.SENIORS',
+      link: '/seniors',
     },
 
     {

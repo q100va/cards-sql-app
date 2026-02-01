@@ -4,6 +4,7 @@ import { UserDetailsComponent } from '../../../../pages/user-details/user-detail
 import { PartnerDetailsComponent } from '../../../../pages/partner-details/partner-details.component';
 import { VolunteerDetailsComponent } from '../../../../pages/volunteer-details/volunteer-details.component';
 import { HomeDetailsComponent } from '../../../../pages/home-details/home-details.component';
+import { SeniorDetailsComponent } from '../../../../pages/senior-details/senior-details.component';
 
 export const DETAILS_COMPONENT_REGISTRY = {
   user: UserDetailsComponent,
@@ -11,6 +12,7 @@ export const DETAILS_COMPONENT_REGISTRY = {
   partner: PartnerDetailsComponent,
   volunteer: VolunteerDetailsComponent,
   home: HomeDetailsComponent,
+  senior: SeniorDetailsComponent
   // ...
 } as const;
 
@@ -64,13 +66,23 @@ export const PERMISSIONS_COMPONENT_REGISTRY = {
       mode: 'any',
     },
   },
-   home: {
+  home: {
     edit: {
       codes: ['EDIT_HOME'],
       mode: 'all',
     },
     createOrEdit: {
       codes: ['ADD_NEW_HOME', 'EDIT_HOME'],
+      mode: 'any',
+    },
+  },
+  senior: {
+    edit: {
+      codes: ['EDIT_SENIOR'],
+      mode: 'all',
+    },
+    createOrEdit: {
+      codes: ['ADD_NEW_SENIOR', 'EDIT_SENIOR'],
       mode: 'any',
     },
   },

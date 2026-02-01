@@ -23,7 +23,8 @@ const includes = [
   {
     model: Home,
     as: 'home',
-    attributes: ['homeName'],
+    attributes: ['id', 'homeName', 'noAddress', 'specialHome', 'acceptableForSchool',
+      'isRestricted', 'dateOfRestriction', 'causeOfRestriction', 'isClose', 'dateOfClose'],
     include: [
       {
         model: HomeAddress,
@@ -261,14 +262,29 @@ router.post(
       const whereSenior = {};
       const whereAddress = {};
       const whereHome = {};
+      const whereSpouse = {};
       // const whereHomeAddress = {};
       whereHome.isRestricted = false;
       let homesRequired = false;
 
+      //TODO: надо проверять еще по интернату:участвует/не участвует но с условием ИЛИ для only-blocked
+      //и когда жилец выбывает нужно блокировать его
+
       // view option (if you still use it)
       switch (view?.option) {
-        case 'only-active': whereSenior.isRestricted = false; break;
-        case 'only-blocked': whereSenior.isRestricted = true; break;
+        case 'only-active': {
+           whereSenior.isRestricted = false;
+          // whereSenior.dateOfExit = null;
+           whereHome.isRestricted = false;
+            break;
+          }
+
+        case 'only-blocked': {
+          whereSenior.isRestricted = true;
+       //TODO:     OR
+          whereHome.isRestricted = true;
+          break;
+        }
         default:              /* 'all' or undefined */        break;
       }
 
@@ -376,7 +392,8 @@ router.post(
           {
             model: Home,
             as: 'home',
-            attributes: ['homeName'],
+            attributes: ['id', 'homeName', 'noAddress', 'specialHome', 'acceptableForSchool',
+              'isRestricted', 'dateOfRestriction', 'causeOfRestriction', 'isClose', 'dateOfClose'],
             where: whereHome,
             required: homesRequired,
             include: [

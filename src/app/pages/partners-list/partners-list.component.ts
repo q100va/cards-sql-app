@@ -10,9 +10,9 @@ import {
   vKontakteControlSchema,
   whatsAppControlSchema,
   websiteControlSchema,
-} from '@shared/schemas/partner.schema';
+} from '../../../../shared/schemas/partner.schema';
 
-import { partnerDraftSchema } from '@shared/schemas/partner.schema';
+import { partnerDraftSchema } from '../../../../shared/schemas/partner.schema';
 
 import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
@@ -27,7 +27,7 @@ import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
 import * as Validator from '../../utils/custom.validator';
-import { Kind, Partner } from 'src/app/interfaces/advanced-model';
+import { Kind, Partner } from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-partners-list',

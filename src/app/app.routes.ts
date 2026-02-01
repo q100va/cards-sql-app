@@ -15,6 +15,7 @@ import { waitAuthReady } from './guards/auth-ready.guard';
 import { requireAnyOp, requireOp } from './guards/route-perms.guard';
 import { VolunteersListComponent } from './pages/volunteers-list/volunteers-list.component';
 import { HomesListComponent } from './pages/homes-list/homes-list.component';
+import { SeniorsListComponent } from './pages/seniors-list/seniors-list.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -55,6 +56,13 @@ export const routes: Routes = [
           requireAnyOp('VIEW_FULL_HOMES_LIST', 'VIEW_LIMITED_HOMES_LIST'),
         ],
         component: HomesListComponent,
+      },
+      {
+        path: 'seniors',
+        canMatch: [
+          requireAnyOp('VIEW_FULL_SENIORS_LIST', 'VIEW_LIMITED_SENIORS_LIST'),
+        ],
+        component: SeniorsListComponent,
       },
       {
         path: 'volunteers',

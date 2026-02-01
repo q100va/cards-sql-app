@@ -40,6 +40,7 @@ export declare const seniorDraftSchema: z.ZodObject<{
     profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     dateOfStart: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     homeId: z.ZodNumber;
@@ -317,6 +318,13 @@ export declare const seniorSchema: z.ZodObject<{
     home: z.ZodObject<{
         homeId: z.ZodNumber;
         homeName: z.ZodString;
+        noAddress: z.ZodBoolean;
+        specialHome: z.ZodBoolean;
+        acceptableForSchool: z.ZodBoolean;
+        isRestricted: z.ZodBoolean;
+        dateOfRestriction: z.ZodCoercedDate<unknown>;
+        isClose: z.ZodBoolean;
+        dateOfClose: z.ZodCoercedDate<unknown>;
     }, z.core.$strip>;
     outdatedData: z.ZodObject<{
         names: z.ZodArray<z.ZodObject<{
@@ -386,6 +394,13 @@ export declare const seniorsSchema: z.ZodObject<{
         home: z.ZodObject<{
             homeId: z.ZodNumber;
             homeName: z.ZodString;
+            noAddress: z.ZodBoolean;
+            specialHome: z.ZodBoolean;
+            acceptableForSchool: z.ZodBoolean;
+            isRestricted: z.ZodBoolean;
+            dateOfRestriction: z.ZodCoercedDate<unknown>;
+            isClose: z.ZodBoolean;
+            dateOfClose: z.ZodCoercedDate<unknown>;
         }, z.core.$strip>;
         outdatedData: z.ZodObject<{
             names: z.ZodArray<z.ZodObject<{

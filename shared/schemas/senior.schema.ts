@@ -126,6 +126,7 @@ export const seniorDraftSchema = z
     profession: nullableString,
     honoraryStatus: nullableString,
     interests: nullableString,
+    orthodoxBeliever: nullableString,
     dateOfStart: nullableIsoDate,
     dateOfExit: nullableIsoDate,
     homeId: positiveInt,
@@ -405,10 +406,9 @@ export const seniorAddressSchema = z
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
     fullPostalAddress: nonEmpty,
-   // id: positiveInt
+    // id: positiveInt
   })
   .strict();
-
 
 export const seniorSchema = z
   .object({
@@ -443,14 +443,24 @@ export const seniorSchema = z
     interests: nullableString,
     orthodoxBeliever: nullableString,
     dateOfExit: nullableIsoDate,
-    spouse: z.object({
-      spouseId: positiveInt,
-      spouseFullName: nonEmpty,
-    }).nullable(),
+    spouse: z
+      .object({
+        spouseId: positiveInt,
+        spouseFullName: nonEmpty,
+      })
+      .nullable(),
     home: z.object({
       homeId: positiveInt,
       homeName: nonEmpty,
+      noAddress: z.boolean(),
+      specialHome: z.boolean(),
+      acceptableForSchool: z.boolean(),
+      isRestricted: z.boolean(),
+      dateOfRestriction: z.coerce.date(),
+      isClose: z.boolean(),
+      dateOfClose: z.coerce.date(),
     }),
+    //homeName: nonEmpty,
     outdatedData: outdatedDataSchema,
   })
   .strict();

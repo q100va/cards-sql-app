@@ -53,10 +53,21 @@ import {
   VolunteerService,
 } from '../../services/volunteer.service';
 import { HomeMainService, HomeService } from '../../services/home.service';
+
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 
 import { sanitizeText } from '../../utils/sanitize-text';
+import { ContactUrlPipe } from '../../utils/contact-url.pipe';
+import { zodValidator } from '../../utils/zod-validator';
+
+import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
+import { HasOpDirective } from '../../directives/has-op.directive';
+
+import { BaseListComponent } from '../../shared/base-list/base-list.component';
+import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
+import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
+
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -66,25 +77,7 @@ import {
   TableParams,
   ViewOption,
 } from '../../interfaces/base-list';
-
-import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
-import { HasOpDirective } from '../../directives/has-op.directive';
-
-import { BaseListComponent } from '../../shared/base-list/base-list.component';
-import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
-import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
-
-import { CONTACT_PARAMS_FOR_LIST } from '../../shared/table/table.config';
-
-import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { AddressFilter } from '../../interfaces/toponym';
-import { zodValidator } from '../../utils/zod-validator';
-import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user.schema';
-import {
-  PERMISSIONS_COMPONENT_REGISTRY,
-  PermissionSet,
-  TableComponentType,
-} from './table-permissions.registry';
 import {
   ChangingByKind,
   DeletingByKind,
@@ -94,11 +87,6 @@ import {
   OwnerByKind,
   OwnerDraftByKind,
   OwnerMainService,
-  PartnerChangingData,
-  PartnerDeletingData,
-  PartnerDraft,
-  PartnerOutdatingData,
-  PartnerRestoringData,
   RestoringByKind,
   UserChangingData,
   UserDeletingData,
@@ -109,8 +97,20 @@ import {
   Home,
   User,
   Partner,
+  Senior,
 } from '../../interfaces/advanced-model';
-//import { Owner } from 'src/app/interfaces/advanced-model';
+
+import { CONTACT_PARAMS_FOR_LIST } from '../../shared/table/table.config';
+import {
+  PERMISSIONS_COMPONENT_REGISTRY,
+  PermissionSet,
+  TableComponentType,
+} from './table-permissions.registry';
+import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user.schema';
+import {
+  SeniorMainService,
+  SeniorService,
+} from '../../services/senior.service';
 
 @Component({
   selector: 'app-table',
@@ -162,21 +162,15 @@ export class TableComponent<K extends Kind> implements OnChanges {
 
   protected readonly partnerService = inject(
     PartnerService,
-  ) as PartnerMainService; /* OwnerMainService<
-    Partner,
-    PartnerDraft,
-    PartnerChangingData,
-    PartnerRestoringData,
-    PartnerOutdatingData,
-    PartnerDeletingData,
-    { list: Partner[]; length: number }
-  >; */
+  ) as PartnerMainService;
 
   protected readonly volunteerService = inject(
     VolunteerService,
   ) as VolunteerMainService;
 
   protected readonly homeService = inject(HomeService) as HomeMainService;
+
+  protected readonly seniorService = inject(SeniorService) as SeniorMainService;
 
   params = input.required<{
     columns: ColumnDefinition[];
@@ -188,12 +182,11 @@ export class TableComponent<K extends Kind> implements OnChanges {
   kind = input.required<K>();
   private kind$ = new BehaviorSubject<Kind>('partner');
   ownerDialogConfig = input.required<DialogData<OwnerByKind<K>>>();
-
   owners!: OwnerByKind<K>[];
-
   dataSource = new MatTableDataSource<OwnerByKind<K>>([]);
-  displayedColumns!: string[];
   dialogProps!: DialogData<OwnerByKind<K>>;
+
+  displayedColumns!: string[];
   contactTypes: ContactParamsForList[] = CONTACT_PARAMS_FOR_LIST;
   dialogConfig = {
     disableClose: true,
@@ -204,7 +197,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   } as const;
 
   sanitizeText = sanitizeText;
-  //permissions!: PermissionSet<K>;
 
   permissions!: PermissionSet<TableComponentType>;
 
@@ -311,7 +303,9 @@ export class TableComponent<K extends Kind> implements OnChanges {
             ? this.volunteerService
             : this.kind() === 'home'
               ? this.homeService
-              : this.homeService; //this.seniorService
+              : this.kind() === 'senior'
+                ? this.seniorService
+                : null;
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -416,12 +410,12 @@ export class TableComponent<K extends Kind> implements OnChanges {
   hasOutdatedUserNames = (row: User): boolean =>
     !!row?.outdatedData?.userNames && row.outdatedData.userNames.length > 0;
 
-  hasOutdatedNames = (row: User | Partner | Volunteer): boolean =>
+  hasOutdatedNames = (row: User | Partner | Volunteer | Senior): boolean =>
     !!row?.outdatedData?.names && row.outdatedData.names.length > 0;
 
   hasOutdatedContacts = (row: OwnerByKind<K>): boolean =>
     'contacts' in row.outdatedData &&
-    !!row.outdatedData.contacts &&
+    !!row?.outdatedData?.contacts &&
     Object.keys(row.outdatedData.contacts).length > 0;
 
   hasOutdatedAddresses = (row: OwnerByKind<K>): boolean =>
@@ -454,23 +448,20 @@ export class TableComponent<K extends Kind> implements OnChanges {
       row.outdatedData.officialNames.length > 0
     );
   };
+  createDetailsString(row: Senior) {
+    const parts = [
+      row.kindergarten,
+      row.teacher,
+      row.veteran,
+      row.childOfWar,
+      row.profession,
+      row.honoraryStatus,
+      row.orthodoxBeliever,
+      row.interests,
+    ];
+    return parts.filter(Boolean).join(', ').trim();
+  }
 
-  /*   hasHomes = (row: OwnerByKind<K>): boolean => {
-    //!!row?.homes && row.homes.length > 0;
-    return false;
-  };
-  hasInstitutes = (row: OwnerByKind<K>): boolean => {
-    //!!row?.institutes && row.institutes.length > 0;
-    return false;
-  };
-  hasSubscriptions = (row: OwnerByKind<K>): boolean => {
-    //!!row?.subscriptions && row.subscriptions.length > 0;
-    return false;
-  };
-  hasCooperations = (row: OwnerByKind<K>): boolean => {
-    //!!row?.cooperations && row.cooperations.length > 0;
-    return false;
-  }; */
   // ========== child → parent bridge ==========
   onAllFilterParametersChange = (p: FilterDraft) => {
     this.goToFirstPage();
@@ -605,6 +596,8 @@ export class TableComponent<K extends Kind> implements OnChanges {
   onShowVolunteersOrdersClick(id: number) {}
   onShowHomesPartnersClick(id: number) {}
   onShowHomesSeniorsClick(id: number) {}
+  onShowSeniorsOrdersClick(id: number) {}
+  onShowSeniorsVolunteersClick(id: number) {}
 
   onBlockOwnerClick(id: number) {
     if (this.kind() !== 'partner') {
@@ -658,43 +651,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
             kind: this.kind(),
           }),
       });
-
-    /*     const safeUserName = this.sanitizeText(userName);
-    this.confirmationService.confirm({
-      message: this.translate.instant('PRIME_CONFIRM.UNBLOCK_ITEM_MESSAGE', {
-        name: safeUserName,
-      }),
-      header: this.translate.instant('PRIME_CONFIRM.WARNING_HEADER'),
-      closable: true,
-      closeOnEscape: true,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.REJECT'),
-      },
-      acceptButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.ACCEPT'),
-        severity: 'secondary',
-        outlined: true,
-      },
-      accept: () => this.unblockOwner(id),
-    }); */
   }
-
-  /*   private unblockOwner(id: number) {
-    this.userService
-      .unblockUser(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.forceReload(),
-        error: (err) =>
-          this.msg.handle(err, {
-            source: 'TableComponent',
-            stage: 'unblockOwner',
-            ownerId: id,
-            kind: this.kind(),
-          }),
-      });
-  } */
 
   onDeleteOwnerClick(owner: OwnerByKind<K>) {
     const service = this.getService();

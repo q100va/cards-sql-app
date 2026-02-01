@@ -21,9 +21,7 @@ import type {
   OutdatedHomeAddress,
 } from '../../../shared/schemas/home.schema';
 
-import type {
-  SeniorAddress,
-} from '../../../shared/schemas/senior.schema';
+import type { SeniorAddress } from '../../../shared/schemas/senior.schema';
 
 import type {
   Contact,
@@ -371,8 +369,7 @@ export type SeniorDraft = PersonDraft & {
   homeId: number;
 };
 
-type BaseOutdatedData = {
-};
+type BaseOutdatedData = {};
 type PersonOutdatedData = BaseOutdatedData & {
   names: OutdatedFullName[];
 };
@@ -479,9 +476,17 @@ export type Senior = Person & {
     spouseId: number;
     spouseFullName: string;
   } | null;
+  //homeName: string;
   home: {
     homeId: number;
     homeName: string;
+    noAddress: boolean;
+    specialHome: boolean;
+    acceptableForSchool: boolean;
+    isRestricted: boolean;
+    dateOfRestriction: Date | null;
+    isClose: boolean;
+    dateOfClose: Date | null;
   };
 };
 

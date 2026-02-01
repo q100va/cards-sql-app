@@ -63,6 +63,7 @@ export const seniorDraftSchema = z
     profession: nullableString,
     honoraryStatus: nullableString,
     interests: nullableString,
+    orthodoxBeliever: nullableString,
     dateOfStart: nullableIsoDate,
     dateOfExit: nullableIsoDate,
     homeId: positiveInt,
@@ -341,14 +342,24 @@ export const seniorSchema = z
     interests: nullableString,
     orthodoxBeliever: nullableString,
     dateOfExit: nullableIsoDate,
-    spouse: z.object({
+    spouse: z
+        .object({
         spouseId: positiveInt,
         spouseFullName: nonEmpty,
-    }).nullable(),
+    })
+        .nullable(),
     home: z.object({
         homeId: positiveInt,
         homeName: nonEmpty,
+        noAddress: z.boolean(),
+        specialHome: z.boolean(),
+        acceptableForSchool: z.boolean(),
+        isRestricted: z.boolean(),
+        dateOfRestriction: z.coerce.date(),
+        isClose: z.boolean(),
+        dateOfClose: z.coerce.date(),
     }),
+    //homeName: nonEmpty,
     outdatedData: outdatedDataSchema,
 })
     .strict();

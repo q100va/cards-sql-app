@@ -54,7 +54,9 @@ export type FilterComponentSource =
   | 'volunteerList'
   | 'volunteerCard'
   | 'homeList'
-  | 'homeCard';
+  | 'homeCard'
+  | 'seniorList'
+  | 'seniorCard';
 
 export interface ContactParamsForList {
   type: string;

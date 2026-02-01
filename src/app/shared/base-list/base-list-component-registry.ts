@@ -52,5 +52,15 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
       mode: 'any',
     },
   },
+  seniorList: {
+    create: {
+      codes: ['ADD_NEW_SENIOR'],
+      mode: 'all',
+    },
+    downloadTable: {
+      codes: ['DOWNLOAD_SENIORS_TABLE'],
+      mode: 'any',
+    },
+  },
   // ...
 };

@@ -136,15 +136,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
           )
         );
       } else if (control.formType == 'formArray') {
-/*         const controlsArr =
-          this.data().operation === 'create'
-            ? [
-                new FormControl(
-                  { value: control.value, disabled: controlsDisable },
-                  control.validators || []
-                ),
-              ]
-            : []; */
         const fa = new FormArray([
                 new FormControl(
                   { value: control.value, disabled: controlsDisable },

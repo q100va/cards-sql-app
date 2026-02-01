@@ -359,6 +359,11 @@ export function transformOwnerData(kind, raw) {
   }
 
   if (kind === 'senior') {
+
+ /*    // Pull home name onto root and drop original relation
+    o.homeName = o.home?.homeName;
+    delete o.home; */
+
     const a = o.home.addresses[0];
     o.address = {
       country: ref(a.country, 'name'),
