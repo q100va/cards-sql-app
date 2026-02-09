@@ -360,9 +360,9 @@ export function transformOwnerData(kind, raw) {
 
   if (kind === 'senior') {
 
- /*    // Pull home name onto root and drop original relation
-    o.homeName = o.home?.homeName;
-    delete o.home; */
+    /*    // Pull home name onto root and drop original relation
+       o.homeName = o.home?.homeName;
+       delete o.home; */
 
     const a = o.home.addresses[0];
     o.address = {
@@ -372,15 +372,17 @@ export function transformOwnerData(kind, raw) {
       locality: ref(a.locality, 'shortName'),
       fullPostalAddress: a.fullPostalAddress,
     }
-    delete o.addresses;
+    delete o.home.addresses;
+
+    o.homeId = o.home.id;
+     delete o.home.id;
 
     outdatedData.names = o.outdatedNames;
     delete o.outdatedNames;
 
-    o.spouse = {
-      spouseId: o.spouse.id,
-      spouseFullName: fullName(o.spouse)
-    }
+    o.spouseId = o.spouse.id;
+    o.spouseFullName = fullName(o.spouse);
+    delete o.spouse;
 
     o.birthDate = dateOnlyToLocalDate(o.birthDate);
   }
