@@ -7,7 +7,9 @@ import { PRIME_NG_CONFIG, PrimeNGConfigType } from 'primeng/config';
 export type Lang = 'en' | 'ru';
 const LS_KEY = 'app.lang';
 
-const LOCALE_MAP: Record<Lang, string> = { en: 'en-US', ru: 'ru-RU' };
+//const LOCALE_MAP: Record<Lang, string> = { en: 'en-US', ru: 'ru-RU' };
+//const ANGULAR_LOCALE_MAP: Record<Lang, string> = { en: 'en-US', ru: 'ru-RU' };
+const MOMENT_LOCALE_MAP: Record<Lang, string> = { en: 'en', ru: 'ru' };
 type PrimeTranslation = Record<string, any>;
 
 export const enPrime: PrimeTranslation = {
@@ -146,7 +148,7 @@ export const ruPrime: PrimeTranslation = {
 
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
-  private _lang$ = new BehaviorSubject<Lang>('en');
+  private _lang$ = new BehaviorSubject<Lang>('ru');
   readonly lang$ = this._lang$.asObservable();
 
   private translateService = inject(TranslateService);
@@ -167,7 +169,7 @@ export class LanguageService {
     return this._lang$.value;
   }
   get locale(): string {
-    return LOCALE_MAP[this.current];
+    return MOMENT_LOCALE_MAP[this.current];
   }
 
   set(lang: Lang): void {
@@ -181,7 +183,7 @@ export class LanguageService {
     document.documentElement.setAttribute('lang', lang);
 
     this._lang$.next(lang);
-    this.dateAdapter.setLocale(LOCALE_MAP[lang]);
+    this.dateAdapter.setLocale(MOMENT_LOCALE_MAP[lang]);
 
     this.primeng.translation = { ...(lang === 'ru' ? ruPrime : enPrime) };
     /*      const tr = lang === 'ru' ? ruPrime : enPrime;
