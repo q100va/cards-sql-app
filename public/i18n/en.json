@@ -36,7 +36,8 @@
     "LOCALITIES": "Localities",
     "AUDIT": "Audit",
     "PARTNERS": "Partners",
-    "HOMES": "Nursing homes"
+    "HOMES": "Nursing homes",
+    "SENIORS": "Residents"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -203,7 +204,12 @@
       "OFFICIAL_HOME_DATA": "Contacts",
       "POSTAL_ADDRESS": "Postal address",
       "UPDATE_DATE": "Updated",
-      "PARTNERS": "Coordinators"
+      "PARTNERS": "Coordinators",
+      "GENDER": "Gender",
+      "BIRTH_DATE": "Date of birth",
+      "SENIOR_DETAILS": "Details",
+      "CONSENT_DATE": "Consent date",
+      "SENIOR_HOME_NAME": "Home name"
     },
     "NOTES": {
       "CLOSE": "close",
@@ -212,7 +218,12 @@
       "BLOCKED_FROM": "blocked from ",
       "CLOSE_FROM": "close from ",
       "ACTIVE": "active",
-      "SUBSCRIPTION": "subscription"
+      "SUBSCRIPTION": "subscription",
+      "MALE": "male",
+      "FEMALE": "female",
+      "NO_ADDRESS_LABEL": "no return address",
+      "SPECIAL_HOME_LABEL": "from special home",
+      "ACC_SCHOOL_LABEL": "accessible for school"
     },
     "MENU": {
       "OPEN_LIST_TITLE": "Open list",
@@ -257,7 +268,11 @@
       "COORDINATION_NAME_LABEL": "Name",
       "ADD_COORDINATION_BUTTON": "Add coordination",
       "COORDINATION_PLACEHOLDER": "start typing and select value",
-      "COORDINATION_HINT": "If the value is not found, go to the corresponding section and create a record."
+      "COORDINATION_HINT": "If the value is not found, go to the corresponding section and create a record.",
+      "CHOOSE_HOME_LABEL": "Nursing home name",
+      "CHOOSE_PARTNER_LABEL": "Partner name",
+      "CHOOSE_SPOUSE_LABEL":"Spouse name",
+      "SENIOR_DETAILS_LABEL": "Details"
     },
     "HOME_CATEGORIES": {}
   },
@@ -439,6 +454,58 @@
       "FACEBOOK_PLACEHOLDER": "daisy",
       "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+  "SENIOR": {
+    "TABLE_TITLE": "Nursing Home Residents",
+    "ADD_PARTNER": "Add Resident",
+    "SEARCH_PLACEHOLDER": "Volkova Anna Petrovna",
+    "VIEW_OPTIONS": {
+      "ALL": "All Residents",
+      "ONLY_ACTIVE": "Active Only",
+      "ONLY_BLOCKED": "Inactive Only"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New Resident",
+      "VIEW_TITLE": "Resident",
+
+      "FIRST_NAME_LABEL": "First Name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last Name",
+      "CONFIRM_FIRST_NAME_LABEL": "First Name Confirmed",
+      "CONFIRM_PATRONYMIC_LABEL": "Patronymic Confirmed",
+      "CONFIRM_LAST_NAME_LABEL": "Last Name Confirmed",
+      "COMMENT_LABEL": "Comment",
+      "GENDER": "Gender*",
+      "BIRTH_DATE_LABEL": "Date of Birth",
+      "CONFIRM_BIRTH_DATE_LABEL": "Date of Birth Confirmed",
+      "CONCENT_DATE_LABEL": "Consent Signing Date",
+      "NO_ADDRESS_LABEL": "No Mailing Address",
+      "BLOCKED_LABEL": "Terminate Participation",
+      "EXIT_DATE_LABEL": "Exit Date",
+      "HOME_LABEL": "Nursing Home*",
+      "INFO_NOTE_LABEL": "Building, Floor, Room Number",
+      "INFO_NOTE_PLACEHOLDER": "Building 1, Floor 2, Room 250",
+      "KINDERGARTEN_LABEL": "Preschool Worker",
+      "KINDERGARTEN_PLACEHOLDER": "nursery assistant",
+      "TEACHER_LABEL": "Teacher",
+      "TEACHER_PLACEHOLDER": "math teacher, school principal",
+      "VETERAN_LABEL": "WWII Veteran / Home Front / Prisoner",
+      "VETERAN_PLACEHOLDER": "home front worker, daughter of WWII veteran",
+      "CHILD_OF_WAR_LABEL": "Child of War",
+      "CHILD_OF_WAR_LABEL_PLACEHOLDER": "child of war",
+      "PROFESSION_LABEL": "Profession",
+      "PROFESSION_PLACEHOLDER": "electrician",
+      "HONORARY_STATUS_LABEL": "Special Honors",
+      "HONORARY_STATUS_PLACEHOLDER": "honorary donor, labor veteran, Chernobyl liquidator, military",
+      "INTERESTS_LABEL": "Interests",
+      "INTERESTS_PLACEHOLDER": "enjoys reading and gardening",
+      "ORTHODOX_BELIEVER_LABEL": "Faith (Orthodox)",
+      "ORTHODOX_BELIEVER_PLACEHOLDER": "believer, attends church",
+      "PHOTO_LINK_LABEL": "Photo Link",
+      "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
+      "SPOUSE_LABEL": "Spouse",
+      "DATE_HINT": "mm/dd/yyyy"
     }
   },
 

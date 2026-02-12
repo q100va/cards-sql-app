@@ -98,6 +98,8 @@ export class AddressFilterComponent {
     this.addControl('district', this.params().source === 'toponymCard', true);
     this.addControl('locality', false, true);
 
+    console.log("this.params()", this.params())
+
     if (this.params().readonly) this.form.get('country')?.disable();
 
     // initial load of countries

@@ -113,27 +113,29 @@ export type HomeRestoringData = BaseRestoringData & {
   coordinations: number[] | null;
 };
 
-type BaseDeletingData = {
-  addresses: number[] | null;
-};
+type BaseDeletingData = {};
 type PersonDeletingData = BaseDeletingData & {
   names: number[] | null;
 };
 export type UserDeletingData = PersonDeletingData & {
+  addresses: number[] | null;
   userNames: number[] | null;
   contacts: number[] | null;
 };
 export type PartnerDeletingData = PersonDeletingData & {
+  addresses: number[] | null;
   coordinations: number[] | null;
   contacts: number[] | null;
 };
 export type VolunteerDeletingData = PersonDeletingData & {
+  addresses: number[] | null;
   institutes: number[] | null;
   subscriptions: number[] | null;
   contacts: number[] | null;
 };
 export type SeniorDeletingData = PersonDeletingData;
 export type HomeDeletingData = BaseDeletingData & {
+  addresses: number[] | null;
   officialNames: number[] | null;
   coordinations: number[] | null;
   contacts: number[] | null;
@@ -194,10 +196,10 @@ export type HomeChangingData = AdvancedChangingData<HomeChangingMain> & {
 };
 export type SeniorChangingMain = PersonChangingMain & {
   birthDate?: Date | null;
-  confirmedFirstName: string | null;
-  confirmedPatronymic: string | null;
-  confirmedLastName: string | null;
-  confirmedBirthDate: Date | null;
+  confirmedFirstName?: string | null;
+  confirmedPatronymic?: string | null;
+  confirmedLastName?: string | null;
+  confirmedBirthDate?: Date | null;
   gender?: 'male' | 'female';
   infoNote?: string | null;
   photoLink?: string | null;
@@ -212,6 +214,8 @@ export type SeniorChangingMain = PersonChangingMain & {
   interests?: string | null;
   orthodoxBeliever?: string | null;
   dateOfExit?: Date | null;
+  homeId?: number;
+  spouseId?: number | null;
 };
 export type SeniorChangingData = BaseChangingData<SeniorChangingMain>;
 
@@ -361,10 +365,10 @@ export type SeniorDraft = PersonDraft & {
   interests: string | null;
   orthodoxBeliever: string | null;
   dateOfExit: Date | null;
-  confirmedFirstName?: string | null;
-  confirmedPatronymic?: string | null;
-  confirmedLastName?: string | null;
-  confirmedBirthDate?: Date | null;
+  confirmedFirstName: string | null;
+  confirmedPatronymic: string | null;
+  confirmedLastName: string | null;
+  confirmedBirthDate: Date | null;
   spouseId: number | null;
   homeId: number;
 };
@@ -472,13 +476,11 @@ export type Senior = Person & {
   confirmedPatronymic?: string | null;
   confirmedLastName?: string | null;
   confirmedBirthDate?: Date | null;
-  spouse: {
-    spouseId: number;
-    spouseFullName: string;
-  } | null;
+  spouseId: number | null;
+  spouseFullName: string | null;
+  homeId: number;
   //homeName: string;
   home: {
-    homeId: number;
     homeName: string;
     noAddress: boolean;
     specialHome: boolean;
@@ -490,7 +492,16 @@ export type Senior = Person & {
   };
 };
 
-export type OwnerByKind<K extends Kind> = K extends 'user'
+export type ConfOwnerByKind = {
+  user: User;
+  partner: Partner;
+  volunteer: Volunteer;
+  home: Home;
+  senior: Senior;
+};
+
+export type OwnerByKind<K extends Kind> =
+  ConfOwnerByKind[K]; /* K extends 'user'
   ? User
   : K extends 'partner'
     ? Partner
@@ -500,16 +511,16 @@ export type OwnerByKind<K extends Kind> = K extends 'user'
         ? Home
         : K extends 'senior'
           ? Senior
-          : never;
+          : never; */
 
-export type DraftByKind = {
+export type ConfOwnerDraftByKind = {
   user: UserDraft;
   partner: PartnerDraft;
   volunteer: VolunteerDraft;
   home: HomeDraft;
   senior: SeniorDraft;
 };
-export type OwnerDraftByKind<K extends Kind> = DraftByKind[K];
+export type OwnerDraftByKind<K extends Kind> = ConfOwnerDraftByKind[K];
 
 /* export type OwnerDraftByKind<K extends Kind> = K extends 'user'
   ? UserDraft
@@ -523,7 +534,16 @@ export type OwnerDraftByKind<K extends Kind> = DraftByKind[K];
           ? SeniorDraft
           : never; */
 
-export type ChangingByKind<K extends Kind> = K extends 'user'
+export type ConfChangingByKind = {
+  user: UserChangingData;
+  partner: PartnerChangingData;
+  volunteer: VolunteerChangingData;
+  home: HomeChangingData;
+  senior: SeniorChangingData;
+};
+
+export type ChangingByKind<K extends Kind> = ConfChangingByKind[K];
+/* K extends 'user'
   ? UserChangingData
   : K extends 'partner'
     ? PartnerChangingData
@@ -534,7 +554,7 @@ export type ChangingByKind<K extends Kind> = K extends 'user'
         : K extends 'senior'
           ? SeniorChangingData
           : never;
-
+ */
 export type RestoringByKind<K extends Kind> = K extends 'user'
   ? UserRestoringData
   : K extends 'partner'
@@ -583,7 +603,17 @@ export type OutdatedByKind<K extends Kind> = K extends 'user'
           ? SeniorOutdatedData
           : never;
 
-export type ListDto<K extends Kind> = K extends 'user'
+export type ConfListDto = {
+  user: { list: User[]; length: number };
+  partner: { list: Partner[]; length: number };
+  volunteer: { list: Volunteer[]; length: number };
+  home: { list: Home[]; length: number };
+  senior: { list: Senior[]; length: number };
+};
+
+export type ListDto<K extends Kind> = ConfListDto[K];
+
+/* K extends 'user'
   ? { list: User[]; length: number }
   : K extends 'partner'
     ? { list: Partner[]; length: number }
@@ -593,9 +623,17 @@ export type ListDto<K extends Kind> = K extends 'user'
         ? { list: Home[]; length: number }
         : K extends 'senior'
           ? { list: Senior[]; length: number }
-          : never;
+          : never; */
 
-export type CoordinationPick = { id: number; name: string };
+export type CoordinationPick = {
+  id: number;
+  name: string;
+  fullPostalAddress?: string;
+  countryId?: number;
+  regionId?: number;
+  districtId?: number;
+  localityId?: number;
+};
 
 export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
   changingData: TChanging;

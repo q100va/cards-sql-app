@@ -15,12 +15,25 @@ export declare const seniorBlockingSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
     causeOfRestriction: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 }, z.core.$strict>;
+export declare const homeControlSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    name: z.ZodString;
+    fullPostalAddress: z.ZodString;
+    countryId: z.ZodNumber;
+    regionId: z.ZodNumber;
+    districtId: z.ZodNumber;
+    localityId: z.ZodNumber;
+}, z.core.$strip>;
 export declare const seniorDraftSchema: z.ZodObject<{
     id: z.ZodNullable<z.ZodNumber>;
     firstName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     patronymic: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     lastName: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     birthDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    confirmedFirstName: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    confirmedPatronymic: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    confirmedLastName: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    confirmedBirthDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
     gender: z.ZodEnum<{
         male: "male";
         female: "female";
@@ -311,12 +324,10 @@ export declare const seniorSchema: z.ZodObject<{
     interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
-    spouse: z.ZodNullable<z.ZodObject<{
-        spouseId: z.ZodNumber;
-        spouseFullName: z.ZodString;
-    }, z.core.$strip>>;
+    spouseFullName: z.ZodNullable<z.ZodString>;
+    spouseId: z.ZodNullable<z.ZodNumber>;
+    homeId: z.ZodNumber;
     home: z.ZodObject<{
-        homeId: z.ZodNumber;
         homeName: z.ZodString;
         noAddress: z.ZodBoolean;
         specialHome: z.ZodBoolean;
@@ -387,12 +398,10 @@ export declare const seniorsSchema: z.ZodObject<{
         interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
         orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
         dateOfExit: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
-        spouse: z.ZodNullable<z.ZodObject<{
-            spouseId: z.ZodNumber;
-            spouseFullName: z.ZodString;
-        }, z.core.$strip>>;
+        spouseFullName: z.ZodNullable<z.ZodString>;
+        spouseId: z.ZodNullable<z.ZodNumber>;
+        homeId: z.ZodNumber;
         home: z.ZodObject<{
-            homeId: z.ZodNumber;
             homeName: z.ZodString;
             noAddress: z.ZodBoolean;
             specialHome: z.ZodBoolean;

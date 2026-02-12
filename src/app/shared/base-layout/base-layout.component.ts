@@ -69,16 +69,6 @@ export class BaseLayoutComponent {
   readonly userName = computed(() => this.user()?.userName ?? '');
 
   menu: Menu = [
-    /*     {
-      params: {
-        codes: [],
-        mode: 'any',
-      },
-      dataCy: 'nav-profile',
-      icon: 'settings',
-      text: 'MENU.PROFILE',
-      link: '/users/user/profile',
-    }, */
     {
       params: {
         codes: ['ALL_OPS_ROLES'],

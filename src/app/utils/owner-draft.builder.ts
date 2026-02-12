@@ -1,7 +1,7 @@
 import { FormGroup } from '@angular/forms';
 import {
+  ConfOwnerDraftByKind,
   CoordinationPick,
-  DraftByKind,
   DraftCommon,
   Home,
   HomeDraft,
@@ -81,13 +81,13 @@ function getContacts(form: FormGroup, contactTypes: NonTelegram[]) {
 function mergeDraft<K extends Kind>(
   base: DraftCommon,
   extras: ExtrasByKind[K],
-): DraftByKind[K] {
-  return { ...base, ...extras } as DraftByKind[K];
+): ConfOwnerDraftByKind[K] {
+  return { ...base, ...extras } as ConfOwnerDraftByKind[K];
 }
 
 // --- Per-kind config ---------------------------------
 type ExtrasByKind = {
-  [K in Kind]: Omit<DraftByKind[K], keyof DraftCommon>;
+  [K in Kind]: Omit<ConfOwnerDraftByKind[K], keyof DraftCommon>;
 };
 
 type BuildExtrasFn<K extends Kind> = (
@@ -262,7 +262,7 @@ export function buildDraft<K extends Kind>(
   contactTypes: NonTelegram[],
   existing: OwnerByKind<K> | null,
   userId: number,
-): DraftByKind[K] {
+): ConfOwnerDraftByKind[K] {
   const now = new Date();
 
   const rest = BUILD_RESTRICTED[kind](form, existing, now);

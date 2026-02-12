@@ -39,6 +39,15 @@ export const seniorBlockingSchema = z
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
 })
     .strict();
+export const homeControlSchema = z.object({
+    id: z.number().int().positive(),
+    name: z.string().min(1),
+    fullPostalAddress: z.string().min(1),
+    countryId: z.number().int().positive(),
+    regionId: z.number().int().positive(),
+    districtId: z.number().int().positive(),
+    localityId: z.number().int().positive(),
+}, 'FORM_VALIDATION.REQUIRED');
 /* ===================== Senior Draft ===================== */
 export const seniorDraftSchema = z
     .object({
@@ -47,6 +56,10 @@ export const seniorDraftSchema = z
     patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
     lastName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
     birthDate: nullableIsoDate,
+    confirmedFirstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').nullable(),
+    confirmedPatronymic: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').nullable(),
+    confirmedLastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').nullable(),
+    confirmedBirthDate: nullableIsoDate,
     gender: z.enum(['male', 'female']),
     comment: nullableString,
     infoNote: nullableString,
@@ -342,14 +355,10 @@ export const seniorSchema = z
     interests: nullableString,
     orthodoxBeliever: nullableString,
     dateOfExit: nullableIsoDate,
-    spouse: z
-        .object({
-        spouseId: positiveInt,
-        spouseFullName: nonEmpty,
-    })
-        .nullable(),
+    spouseFullName: nonEmpty.nullable(),
+    spouseId: positiveInt.nullable(),
+    homeId: positiveInt,
     home: z.object({
-        homeId: positiveInt,
         homeName: nonEmpty,
         noAddress: z.boolean(),
         specialHome: z.boolean(),

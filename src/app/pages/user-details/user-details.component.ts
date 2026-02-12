@@ -16,7 +16,7 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
-
+import {MatDatepickerModule} from '@angular/material/datepicker';
 import { OutdatedFullName,OutdatedUserName} from '../../interfaces/advanced-model';
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog';
@@ -53,6 +53,7 @@ import { of } from 'rxjs';
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
+    MatDatepickerModule
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',

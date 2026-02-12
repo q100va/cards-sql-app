@@ -560,7 +560,7 @@ router.get("/get-list-of-homes",
         include: [{
           model: HomeAddress,
           as: 'addresses',
-          attributes: ['id'],
+          attributes: ['id', 'fullPostalAddress', 'countryId', 'regionId', 'districtId', 'localityId'],
           where: { isRestricted: false },
           include: [
             { model: Region, attributes: ['shortName'] }
@@ -568,10 +568,18 @@ router.get("/get-list-of-homes",
         },],
       });
 
-      // console.log('HOMEs', JSON.stringify(homes));
+    //  console.log('HOMEs', JSON.stringify(homes));
 
-      const data = homes.map(h => ({ id: h.id, name: (h.homeName + ' - ' + h.addresses[0].region.shortName) }));
-      // console.log('HOMES', data);
+      const data = homes.map(h => ({
+        id: h.id,
+        name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
+        fullPostalAddress: h.addresses[0].fullPostalAddress,
+        countryId: h.addresses[0].countryId,
+        regionId: h.addresses[0].regionId,
+        districtId: h.addresses[0].districtId,
+        localityId: h.addresses[0].localityId,
+      }));
+       console.log('HOMES', data);
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
@@ -592,9 +600,9 @@ router.get(
 
       //TODO: find does this home has seniors, partners
       const [countSeniors, countPartners] = await Promise.all([
-    /*     Senior.count({
-          where: { homeId: id }
-        }), */
+        /*     Senior.count({
+              where: { homeId: id }
+            }), */
         Partner.count({
           where: { homeId: id }
         })

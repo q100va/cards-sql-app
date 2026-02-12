@@ -28,22 +28,24 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { seniorSchema, seniorsSchema } from '../../../shared/schemas/senior.schema';
+import {
+  seniorSchema,
+  seniorsSchema,
+} from '../../../shared/schemas/senior.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
-export interface SeniorMainService
-  extends OwnerMainService<
-    Senior,
-    SeniorDraft,
-    SeniorChangingData,
-    SeniorRestoringData,
-    SeniorOutdatingData,
-    SeniorDeletingData,
-    { list: Senior[]; length: number }
-  > {
-
+export interface SeniorMainService extends OwnerMainService<
+  Senior,
+  SeniorDraft,
+  SeniorChangingData,
+  SeniorRestoringData,
+  SeniorOutdatingData,
+  SeniorDeletingData,
+  { list: Senior[]; length: number }
+> {
+  getSeniorsPickList(id: number): Observable<CoordinationPick[]>;
 }
 
 @Injectable({
@@ -56,7 +58,7 @@ export class SeniorService implements SeniorMainService {
 
   constructor(
     private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
   ) {}
 
   getOwnerName(owner: Senior) {
@@ -66,14 +68,11 @@ export class SeniorService implements SeniorMainService {
     return [fn, pn, ln].filter(Boolean).join(' ').trim();
   }
 
-  checkOwnerData(
-    ownerDraft: SeniorDraft
-  ): Observable<ApiResponse<Duplicates>> {
+  checkOwnerData(ownerDraft: SeniorDraft): Observable<ApiResponse<Duplicates>> {
     let body = {
       id: ownerDraft.id,
       firstName: ownerDraft.firstName,
       lastName: ownerDraft.lastName,
-
     };
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/check-senior-data/`, body)
@@ -88,7 +87,7 @@ export class SeniorService implements SeniorMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           seniorFullName: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -99,7 +98,7 @@ export class SeniorService implements SeniorMainService {
       SeniorRestoringData,
       SeniorOutdatingData,
       SeniorDeletingData
-    >
+    >,
   ): Observable<ApiResponse<Senior>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-senior`, {
@@ -111,12 +110,12 @@ export class SeniorService implements SeniorMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           seniorData: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   formCommentFilterValue(
-    commentFilter: string[] | undefined
+    commentFilter: string[] | undefined,
   ): boolean | undefined {
     if (commentFilter && commentFilter.length === 1) {
       return (
@@ -143,7 +142,7 @@ export class SeniorService implements SeniorMainService {
       strongContactFilter: boolean;
     },
     pageSize: number,
-    currentPage: number
+    currentPage: number,
   ): Observable<ApiResponse<{ list: Senior[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
@@ -201,6 +200,23 @@ export class SeniorService implements SeniorMainService {
       .pipe(validateResponse(seniorSchema), catchError(this.handleError));
   }
 
+  getSeniorsPickList(id: number): Observable<CoordinationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-seniors/${id}`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
+
   checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/check-senior-before-delete/${id}`)
@@ -214,9 +230,9 @@ export class SeniorService implements SeniorMainService {
             seniorId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -226,13 +242,13 @@ export class SeniorService implements SeniorMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   blockOwner(
     id: number,
-    causeOfRestriction: string
+    causeOfRestriction: string,
   ): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/block-senior/`, {
@@ -242,7 +258,7 @@ export class SeniorService implements SeniorMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -252,7 +268,7 @@ export class SeniorService implements SeniorMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 }

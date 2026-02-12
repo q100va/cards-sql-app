@@ -16,7 +16,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-
+import {MatDatepickerModule} from '@angular/material/datepicker';
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
@@ -62,6 +62,7 @@ import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
+    MatDatepickerModule
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -116,8 +117,8 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(
-        new FormControl<CoordinationPick | string>(
-          { value: '', disabled: true },
+        new FormControl<CoordinationPick | null>(
+          { value: null, disabled: true },
           {
             nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
@@ -213,7 +214,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
 
   protected updateCoordinationsControlsValidity(enable: boolean) {
     const fa = this.mainForm.get('coordinations') as FormArray<
-      FormControl<CoordinationPick | string>
+      FormControl<CoordinationPick | null>
     > | null;
     if (fa) {
       fa.controls.forEach((control) =>
@@ -352,8 +353,8 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       });
     } else {
       this.coordinationsArray.push(
-        new FormControl<CoordinationPick | string>(
-          { value: '', disabled: false },
+        new FormControl<CoordinationPick | null>(
+          { value: null, disabled: false },
           {
             nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],

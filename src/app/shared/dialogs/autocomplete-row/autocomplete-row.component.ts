@@ -37,42 +37,51 @@ import { TranslateModule } from '@ngx-translate/core';
     MatIconModule,
     TranslateModule,
     MatButtonModule,
-    MatGridListModule
+    MatGridListModule,
   ],
   templateUrl: './autocomplete-row.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutocompleteRowComponent implements OnInit {
-  ctrl = input.required<FormControl<CoordinationPick | string>>();
+  ctrl = input.required<FormControl<CoordinationPick | null>>();
   showDeleteButton = input.required<boolean>();
+  label = input.required<string>();
   coordinationPickList$ = input.required<Observable<CoordinationPick[]>>();
-  minLength = 1;
+  minLength = 0;
   filtered$!: Observable<CoordinationPick[]>;
   //showHint$!: Observable<boolean>;
-  index = input.required<number>();
+  index = input<number>(0);
   delete = output<number>();
+  selectOption = output<CoordinationPick | null>();
 
   ngOnInit(): void {
     const q$ = this.ctrl().valueChanges.pipe(
       startWith(this.ctrl().value),
       debounceTime(200),
-      map((v) => (typeof v === 'string' ? v : v?.name ?? '')),
+      map((v) => (typeof v === 'string' ? v : (v?.name ?? ''))),
       map((s) => s.trim().toLowerCase()),
-      distinctUntilChanged()
+      distinctUntilChanged(),
     );
 
-   // this.showHint$ = q$.pipe(map((q) => q.length < this.minLength));
+    // this.showHint$ = q$.pipe(map((q) => q.length < this.minLength));
 
     this.filtered$ = combineLatest([this.coordinationPickList$(), q$]).pipe(
       map(([list, q]) => {
         if (q.length < this.minLength) return [];
         return list.filter((c) => c.name.toLowerCase().includes(q));
-      })
+      }),
     );
   }
 
   onDeleteClick() {
     this.delete.emit(this.index());
+  }
+
+  onSelectOption() {
+    /*     if (this.ctrl().value !== null) { */
+    console.log('this.ctrl().value', this.ctrl().value);
+    this.selectOption.emit(this.ctrl().value);
+    /*   } */
   }
 
   display = (v: CoordinationPick | string | null): string =>

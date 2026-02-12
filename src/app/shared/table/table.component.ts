@@ -496,7 +496,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   // ========== dialogs / CRUD ==========
   onAddOwnerClick() {
     this.dialogProps.object = null;
-    this.dialogProps.addressFilterParams.readonly = false;
+    this.dialogProps.addressFilterParams.readonly = this.kind() === 'senior' ? true : false;
     this.dialogProps.addressFilterParams.class = 'none';
 
     const dialogData: DialogData<OwnerByKind<K>> = {

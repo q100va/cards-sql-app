@@ -114,7 +114,7 @@ import {
 } from '../../../../../../shared/schemas/user.schema';
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
-import { debounceTime, finalize, Observable, of } from 'rxjs';
+import { debounceTime, finalize, Observable, of, shareReplay } from 'rxjs';
 import { DefaultAddressParams } from '../../../../../../shared/schemas/toponym.schema';
 import { AuthUser } from '../../../../../../shared/schemas/auth.schema';
 import { AuthService } from '../../../../services/auth.service';
@@ -318,6 +318,10 @@ export class AdvancedDetailsComponent<
     'VOLUNTEER.CATEGORIES.OTHER',
   ];
 
+  genders = ['male', 'female'];
+
+  //  genders = ['TABLE.NOTES.MALE', 'TABLE.NOTES.FEMALE'];
+
   action!: 'justSave' | 'saveAndExit';
 
   possibleContactTypes: {
@@ -352,6 +356,7 @@ export class AdvancedDetailsComponent<
   homeOpen = signal<boolean>(true);
   homeOrPartner = signal<'home' | 'partner' | 'other'>('other');
   coordinationPickList$: Observable<CoordinationPick[]> = of([]);
+  spousePickList$: Observable<CoordinationPick[]> = of([]);
   showRestrictedToggle = true;
 
   override ngOnInit(): void {
@@ -404,19 +409,19 @@ export class AdvancedDetailsComponent<
   ): this is AdvancedDetailsComponent<Extract<K, Exclude<Kind, 'home'>>> {
     return this.kind !== 'home';
   }
-  private isContactsOwnerContext(
+  isContactsOwnerContext(
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<Extract<K, Exclude<Kind, 'senior'>>> {
     return this.kind !== 'senior';
   }
-  private isCommonAddressOwnerContext(
+  isCommonAddressOwnerContext(
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<
     Extract<K, Exclude<Kind, 'senior' | 'home'>>
   > {
-    return this.kind !== 'senior' || this.kind !== 'home';
+    return this.kind !== 'senior' && this.kind !== 'home';
   }
-  private isCoordinationsOwnerContext(
+  isCoordinationsOwnerContext(
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<
     Extract<K, Extract<Kind, 'partner' | 'home'>>
@@ -433,7 +438,7 @@ export class AdvancedDetailsComponent<
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'partner'>>> {
     return this.kind === 'partner';
   }
-  private isHomeContext(
+  isHomeContext(
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'home'>>> {
     return this.kind === 'home';
@@ -443,7 +448,7 @@ export class AdvancedDetailsComponent<
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'volunteer'>>> {
     return this.kind === 'volunteer';
   }
-  private isSeniorContext(
+  isSeniorContext(
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'senior'>>> {
     return this.kind === 'senior';
@@ -485,6 +490,12 @@ export class AdvancedDetailsComponent<
 
   onCloseToggleClick() {
     this.showRestrictedToggle = !this.mainForm.controls['isClose'].value;
+    this.onChangeValidation();
+  }
+
+  onChangeDateOfExit() {
+    console.log('onChangeDateOfExit');
+    this.showRestrictedToggle = !!!this.mainForm.controls['dateOfExit'].value;
     this.onChangeValidation();
   }
 
@@ -763,7 +774,15 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   onRestoreOutdatedData(
-    type: keyof RestoringByKind<K>,
+    type:
+      | 'names'
+      | 'userNames'
+      | 'officialNames'
+      | 'coordinations'
+      | 'institutes'
+      | 'addresses'
+      | 'contacts',
+    //keyof RestoringByKind<K>,
     data: Contact | OutdatedAddress | OutdatedHomeAddress,
     //  | OutdatedHome,
     contactType?: Exclude<ContactType, 'telegram'>,
@@ -833,13 +852,14 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.onChangeValidation();
   }
   onDeleteOutdatedData(
-    type:
-      | keyof DeletingByKind<K>
+    type: // | keyof DeletingByKind<K>
       | 'names'
       | 'userNames'
       | 'officialNames'
       | 'coordinations'
-      | 'institutes',
+      | 'institutes'
+      | 'addresses'
+      | 'contacts',
     id: number,
   ) {
     if (!(type in this.deletingDataDraft)) return;
@@ -1236,7 +1256,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
   async checkAllChanges() {
-   /*  this.deletingData = structuredClone(this.deletingDataDraft); //clone deleting data in case saving cancellation
+    /*  this.deletingData = structuredClone(this.deletingDataDraft); //clone deleting data in case saving cancellation
         const restoringData: RestoringByKind<K> = structuredClone(
       this.restoringDataDraft,
     ); */
@@ -1381,9 +1401,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft.draftSubscriptions ?? [],
           this.user()!.id,
         );
-        this.changingData.subscriptions = changes;
-      if (deleting)
-        {
+      this.changingData.subscriptions = changes;
+      if (deleting) {
         this.deletingDataDraft.subscriptions ??= [];
         this.deletingDataDraft.subscriptions.push(...deleting);
       }
@@ -1629,22 +1648,54 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return new FormArray<InstituteFormGroup>([]);
   }
 
-  get coordinationsArray(): FormArray<FormControl<CoordinationPick | string>> {
+  get coordinationsArray(): FormArray<FormControl<CoordinationPick | null>> {
     let fa = this.mainForm.get('coordinations') as FormArray<
-      FormControl<CoordinationPick | string>
+      FormControl<CoordinationPick | null>
     >;
 
     if (!fa) {
-      fa = new FormArray<FormControl<CoordinationPick | string>>([]);
+      fa = new FormArray<FormControl<CoordinationPick | null>>([]);
       this.mainForm.addControl('coordinations', fa);
     }
     return fa;
   }
 
+  get homeIdCtrl(): FormControl<CoordinationPick | null> {
+    //  console.log("this.mainForm.get('homeId')", this.mainForm.get('homeId'));
+    return this.mainForm.get('homeId') as FormControl<CoordinationPick | null>;
+  }
+
+  get spouseIdCtrl(): FormControl<CoordinationPick | null> {
+    //  console.log("this.mainForm.get('homeId')", this.mainForm.get('homeId'));
+    return this.mainForm.get(
+      'spouseId',
+    ) as FormControl<CoordinationPick | null>;
+  }
+
+  clearHomeControl() {
+    this.mainForm.get('homeId')?.setValue(null);
+    this.addressFilterComponent.onChangeMode('view', {
+      countryId: null,
+      regionId: null,
+      districtId: null,
+      localityId: null,
+    });
+      this.mainForm.get('spouseId')?.setValue(null);
+      this.mainForm.get('spouseId')?.disable();
+  }
+
+  clearSpouseControl() {
+    this.mainForm.get('spouseId')?.setValue(null);
+  }
+
+  updateAddressFilter(home: CoordinationPick | null) {
+
+  }
+
   onAddCoordinationClick() {
     this.coordinationsArray.push(
-      new FormControl<CoordinationPick | string>(
-        { value: '', disabled: false },
+      new FormControl<CoordinationPick | null>(
+        { value: null, disabled: false },
         {
           nonNullable: true,
           validators: [zodValidator(coordinationNameControlSchema)],
@@ -1671,16 +1722,28 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   get outdatedOfficialNames(): OutdatedOfficialName[] {
     return [];
   }
-  /*   get outdatedCoordinations(): OutdatedCoordination[] {
+
+  get outdatedAddresses(): OutdatedAddress[] | OutdatedHomeAddress[] {
+    if (this.isCommonAddressOwnerContext() || this.isHomeContext()) {
+      const list = this.outdatedDataDraft.addresses;
+      return Array.isArray(list) ? list : [];
+    }
     return [];
-  } */
+  }
+  get outdatedContacts(): OutdatedContacts {
+    if (this.isContactsOwnerContext()) {
+      const list = this.outdatedDataDraft.contacts;
+      return list ? list : {};
+    }
+    return {};
+  }
 
   get outdatedCoordinations(): OutdatedCoordination[] {
-    const data = this.outdatedDataDraft;
-    if ('coordinations' in data) {
-      const list = data?.coordinations;
+    if (this.isCoordinationsOwnerContext()) {
+      const list = this.outdatedDataDraft.coordinations;
       return Array.isArray(list) ? list : [];
-    } else return [];
+    }
+    return [];
   }
   get outdatedInstitutes(): OutdatedInstitute[] {
     return [];

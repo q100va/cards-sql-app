@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
-import { seniorDraftSchema } from '../../../../shared/schemas/senior.schema';
+import {
+  homeControlSchema,
+  seniorDraftSchema,
+} from '../../../../shared/schemas/senior.schema';
 
 import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
@@ -15,6 +18,7 @@ import { zodValidator } from '../../utils/zod-validator';
 import { TableComponent } from '../../shared/table/table.component';
 import * as Validator from '../../utils/custom.validator';
 import { Kind, Senior } from '../../interfaces/advanced-model';
+import { readonly } from 'zod';
 
 @Component({
   selector: 'app-seniors-list',
@@ -100,7 +104,7 @@ export class SeniorsListComponent {
       columnFullName: 'TABLE.COLUMNS.START_DATE',
       isUnchangeable: false,
     },
-     {
+    {
       id: 9,
       columnName: 'dateOfConsent',
       columnFullName: 'TABLE.COLUMNS.CONSENT_DATE',
@@ -139,18 +143,7 @@ export class SeniorsListComponent {
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
-        colspan: 3,
-        rowspan: 1,
-      },
-      {
-        controlName: 'confirmedFirstName',
-        value: false,
-        validators: [],
-        type: 'checkbox',
-        label: 'SENIOR.CARD.CONFIRM_FIRST_NAME_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 3,
+        colspan: 2,
         rowspan: 1,
       },
       {
@@ -162,18 +155,7 @@ export class SeniorsListComponent {
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
-        colspan: 3,
-        rowspan: 1,
-      },
-      {
-        controlName: 'confirmedPatronymic',
-        value: false,
-        validators: [],
-        type: 'checkbox',
-        label: 'SENIOR.CARD.CONFIRM_PATRONYMIC_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 3,
+        colspan: 2,
         rowspan: 1,
       },
 
@@ -186,9 +168,33 @@ export class SeniorsListComponent {
         placeholder: '',
         category: 'mainData',
         formType: 'formControl',
-        colspan: 3,
+        colspan: 2,
         rowspan: 1,
       },
+      {
+        controlName: 'confirmedFirstName',
+        value: false,
+        validators: [],
+        type: 'checkbox',
+        label: 'SENIOR.CARD.CONFIRM_FIRST_NAME_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+
+      {
+        controlName: 'confirmedPatronymic',
+        value: false,
+        validators: [],
+        type: 'checkbox',
+        label: 'SENIOR.CARD.CONFIRM_PATRONYMIC_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+
       {
         controlName: 'confirmedLastName',
         value: false,
@@ -197,7 +203,41 @@ export class SeniorsListComponent {
         label: 'SENIOR.CARD.CONFIRM_LAST_NAME_LABEL',
         category: 'mainData',
         formType: 'formControl',
-        colspan: 3,
+        colspan: 2,
+        rowspan: 1,
+      },
+
+      {
+        controlName: 'birthDate',
+        value: null,
+        validators: [zodValidator(seniorDraftSchema.shape.birthDate)],
+        type: 'datePicker',
+        label: 'SENIOR.CARD.BIRTH_DATE_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 4,
+        rowspan: 1,
+      },
+      {
+        controlName: 'confirmedBirthDate',
+        value: false,
+        validators: [],
+        type: 'checkbox',
+        label: 'SENIOR.CARD.CONFIRM_BIRTH_DATE_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 2,
+        rowspan: 1,
+      },
+      {
+        controlName: 'dateOfConsent',
+        value: null,
+        validators: [zodValidator(seniorDraftSchema.shape.dateOfConsent)],
+        type: 'datePicker',
+        label: 'SENIOR.CARD.CONCENT_DATE_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 4,
         rowspan: 1,
       },
       {
@@ -212,43 +252,10 @@ export class SeniorsListComponent {
         rowspan: 1,
       },
       {
-        controlName: 'birthDate',
-        value: null,
-        validators: [zodValidator(seniorDraftSchema.shape.birthDate)],
-        type: 'datePicker',
-        label: 'SENIOR.CARD.BIRTH_DATE_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 3,
-        rowspan: 1,
-      },
-      {
-        controlName: 'confirmedBirthDate',
-        value: false,
-        validators: [],
-        type: 'checkbox',
-        label: 'SENIOR.CARD.CONFIRM_BIRTH_DATE_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 3,
-        rowspan: 1,
-      },
-      {
-        controlName: 'dateOfConsent',
-        value: null,
-        validators: [zodValidator(seniorDraftSchema.shape.dateOfConsent)],
-        type: 'datePicker',
-        label: 'SENIOR.CARD.CONCENT_DATE_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 3,
-        rowspan: 1,
-      },
-      {
         controlName: 'personalNoAddr',
         value: false,
         validators: [],
-        type: 'checkbox',
+        type: 'toggle',
         label: 'SENIOR.CARD.NO_ADDRESS_LABEL',
         category: 'mainData',
         formType: 'formControl',
@@ -284,7 +291,7 @@ export class SeniorsListComponent {
         validators: [zodValidator(seniorDraftSchema.shape.dateOfExit)],
         type: 'datePicker',
         label: 'SENIOR.CARD.EXIT_DATE_LABEL',
-        category: 'status',
+        category: 'extraData',
         formType: 'formControl',
         colspan: 2,
         rowspan: 1,
@@ -292,7 +299,7 @@ export class SeniorsListComponent {
       {
         controlName: 'homeId',
         value: null,
-        validators: [zodValidator(seniorDraftSchema.shape.homeId)],
+        validators: [zodValidator(homeControlSchema)],
         type: 'select',
         label: 'SENIOR.CARD.HOME_LABEL',
         category: 'address',
@@ -366,7 +373,7 @@ export class SeniorsListComponent {
         validators: [zodValidator(seniorDraftSchema.shape.profession)],
         type: 'inputText',
         label: 'SENIOR.CARD.PROFESSION_LABEL',
-        placeholder: 'SENIOR.CARD.DETAILS_PLACEHOLDER',
+        placeholder: 'SENIOR.CARD.PROFESSION_PLACEHOLDER',
         category: 'details',
         formType: 'formControl',
         colspan: 6,
@@ -428,8 +435,8 @@ export class SeniorsListComponent {
         label: 'SENIOR.CARD.SPOUSE_LABEL',
         category: 'details',
         formType: 'formControl',
-        colspan: 2,
-        rowspan: 1,
+        colspan: 6,
+        rowspan: 2,
       },
     ],
     mainContactsValidator: [],
@@ -453,6 +460,6 @@ export class SeniorsListComponent {
     columns: this.IMPLICITLY_DISPLAYED_COLUMNS,
     viewOptions: this.viewOptions,
     componentType: this.componentType,
-    tableParams: this.tableParams,
+    tableParams: this.tableParams
   };
 }
