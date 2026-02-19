@@ -97,6 +97,7 @@
           <mat-grid-tile colspan="3" rowspan="1">
             <div class="bottom-left">
               <section>
+                <!-- TODO: подумать какие кнопки для интернатов и сеньоров, т.к. у них есть активные, (выбывшие, закрытые), заблокированные -->
                 <mat-button-toggle-group>
                   @for (viewOption of params().viewOptions; track viewOption.id) {
                   <mat-button-toggle #option [checked]="viewOption.initiallySelected" [value]="viewOption.id"

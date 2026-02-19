@@ -7,8 +7,6 @@ import {
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-import { User, ChangePassword } from '../interfaces/user';
-
 import {
   Duplicates,
   UserDraft,
@@ -18,6 +16,7 @@ import {
   UserOutdatingData,
   OwnerMainService,
   UpdatedOwnerData,
+  User, ChangePassword
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
@@ -30,8 +29,8 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { userSchema, usersSchema } from '@shared/schemas/user.schema';
-import { duplicatesSchema } from '@shared/schemas/common.schema';
+import { userSchema, usersSchema } from '../../../shared/schemas/user.schema';
+import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 

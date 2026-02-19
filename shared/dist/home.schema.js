@@ -121,8 +121,7 @@ export const facebookControlSchema = z.preprocess(emptyToNull, z
     .nullable());
 export const websiteControlSchema = z.preprocess(emptyToNull, z
     .string()
-    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'FORM_VALIDATION.CONTACT.INVALID_URL' //"Invalid website URL"
-)
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'FORM_VALIDATION.CONTACT.INVALID_URL')
     .nullable());
 export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
 /* ===================== Contacts (draft / ordered / optional) ===================== */
@@ -421,7 +420,7 @@ export const homesQueryDTOSchema = z
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
             comment: z.boolean().optional(),
-            infoNote: z.boolean().optional(),
+            infoNote: z.boolean().optional(), //TODO: delete???
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
@@ -488,11 +487,10 @@ export const outdatedDataSchema = z
 /* ===================== Home (view) & homes list ===================== */
 const nonNullableAddressSchema = z
     .object({
-    country: addressRefFullSchema,
-    region: addressRefShortSchema,
-    district: addressRefShortSchema,
-    locality: addressRefShortSchema,
-    //id: positiveInt,
+    countryId: positiveInt,
+    regionId: positiveInt,
+    districtId: positiveInt,
+    localityId: positiveInt,
 })
     .strict();
 export const homeAddressItemSchema = z

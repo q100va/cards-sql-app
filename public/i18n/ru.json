@@ -36,7 +36,8 @@
     "LOCALITIES": "Нас. пункты",
     "AUDIT": "Аудит",
     "PARTNERS": "Координаторы",
-    "HOMES": "Интернаты"
+    "HOMES": "Интернаты",
+    "SENIORS": "Жители интернатов"
   },
   "LANG": {
     "SWITCH": "Язык",
@@ -203,7 +204,12 @@
       "OFFICIAL_HOME_DATA": "Контакты",
       "POSTAL_ADDRESS": "Почтовый адрес",
       "LAST_UPDATE_DATE": "Дата обновления",
-      "PARTNERS": "Координаторы"
+      "PARTNERS": "Координаторы",
+      "GENDER": "Пол",
+      "BIRTH_DATE": "Дата рождения",
+      "SENIOR_DETAILS": "Подробности",
+      "CONSENT_DATE": "Дата согласия",
+      "SENIOR_HOME_NAME": "Название интерната"
     },
     "NOTES": {
       "CLOSE": "закрыт",
@@ -212,7 +218,13 @@
       "BLOCKED_FROM": "заблокирован с ",
       "CLOSE_FROM": "закрыт с ",
       "ACTIVE": "активен",
-      "SUBSCRIPTION": "подписка"
+      "SUBSCRIPTION": "подписка",
+      "MALE":"муж.",
+      "FEMALE":"жен.",
+      "NO_ADDRESS_LABEL": "БОА",
+      "SPECIAL_HOME_LABEL": "проживает в специнтернате",
+      "ACC_SCHOOL_LABEL": "можно поздравлять школьникам",
+      "SPOUSE": "супруг(а) - "
     },
     "MENU": {
       "OPEN_LIST_TITLE": "Открыть перечень",
@@ -257,7 +269,11 @@
       "COORDINATION_NAME_LABEL": "Имя/название",
       "ADD_COORDINATION_BUTTON": "Добавить координацию",
       "COORDINATION_PLACEHOLDER": "начните печатать и выберите значение",
-      "COORDINATION_HINT": "Если значение не найдено, перейдите в соответствующий раздел и создайте карточку."
+      "COORDINATION_HINT": "Если значение не найдено, перейдите в соответствующий раздел и создайте карточку.",
+      "CHOOSE_HOME_LABEL": "Название интерната",
+      "CHOOSE_PARTNER_LABEL":"Имя координатора",
+      "CHOOSE_SPOUSE_LABEL":"Имя супруг(а)",
+      "SENIOR_DETAILS_LABEL": "Доп.информация"
     }
   },
   "USER": {
@@ -438,6 +454,59 @@
       "FACEBOOK_PLACEHOLDER": "daisy",
       "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+
+  "SENIOR": {
+    "TABLE_TITLE": "Жители интернатов",
+    "ADD_PARTNER": "Добавить жителя интерната",
+    "SEARCH_PLACEHOLDER": "Волкова Анна Петровна",
+    "VIEW_OPTIONS": {
+      "ALL": "Все жители",
+      "ONLY_ACTIVE": "Только активные",
+      "ONLY_BLOCKED": "Только неактивные"
+    },
+    "CARD": {
+      "CREATION_TITLE": "Новый житель интерната",
+      "VIEW_TITLE": "Житель интерната",
+
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия",
+      "CONFIRM_FIRST_NAME_LABEL": "Имя подтверждено",
+      "CONFIRM_PATRONYMIC_LABEL": "Отчество подтверждено",
+      "CONFIRM_LAST_NAME_LABEL": "Фамилия подтверждена",
+      "COMMENT_LABEL": "Комментарий",
+      "GENDER": "Пол*",
+      "BIRTH_DATE_LABEL": "Дата рождения",
+      "CONFIRM_BIRTH_DATE_LABEL": "ДР подтверждена",
+      "CONCENT_DATE_LABEL": "Дата подписания согласия",
+      "NO_ADDRESS_LABEL": "БОА (персонально)",
+      "BLOCKED_LABEL": "Прекратить участие",
+      "EXIT_DATE_LABEL": "Дата выбытия",
+      "HOME_LABEL": "Интернат проживания*",
+      "INFO_NOTE_LABEL": "Корпус, этаж, номер комнаты",
+      "INFO_NOTE_PLACEHOLDER": "1 корпус, 2 этаж, комн.250 ",
+      "KINDERGARTEN_LABEL": "Дошкольный работник",
+      "KINDERGARTEN_PLACEHOLDER": "нянечка в д/с",
+      "TEACHER_LABEL": "Учитель",
+      "TEACHER_PLACEHOLDER": "учитель математики, директор школы",
+      "VETERAN_LABEL": "УВОВ, ВВОВ, ТТ, узник",
+      "VETERAN_PLACEHOLDER": "труженик тыла, дочь УВОВ",
+      "CHILD_OF_WAR_LABEL": "Дети войны",
+      "CHILD_OF_WAR_LABEL_PLACEHOLDER": "дети войны",
+      "PROFESSION_LABEL": "Профессия",
+      "PROFESSION_PLACEHOLDER": "электрик",
+      "HONORARY_STATUS_LABEL": "Особые заслуги",
+      "HONORARY_STATUS_PLACEHOLDER": "почетный донор, ВТ, ликвидатор ЧАЭС, военный",
+      "INTERESTS_LABEL": "Интересы",
+      "INTERESTS_PLACEHOLDER": "любит читать и садоводство",
+      "ORTHODOX_BELIEVER_LABEL": "Вера (православная)",
+      "ORTHODOX_BELIEVER_PLACEHOLDER": "верующая, посещает церковь",
+      "PHOTO_LINK_LABEL": "Ссылка на фото",
+      "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
+      "SPOUSE_LABEL": "Супруг(а)",
+      "DATE_HINT":"ДД-ММ-ГГГГ"
     }
   },
 

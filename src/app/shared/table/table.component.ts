@@ -52,16 +52,22 @@ import {
   VolunteerMainService,
   VolunteerService,
 } from '../../services/volunteer.service';
-import {
-  HomeMainService,
-  HomeService,
-} from '../../services/home.service';
+import { HomeMainService, HomeService } from '../../services/home.service';
+
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 
 import { sanitizeText } from '../../utils/sanitize-text';
-import { User } from '../../interfaces/user';
-import { Partner } from '../../interfaces/partner';
+import { ContactUrlPipe } from '../../utils/contact-url.pipe';
+import { zodValidator } from '../../utils/zod-validator';
+
+import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
+import { HasOpDirective } from '../../directives/has-op.directive';
+
+import { BaseListComponent } from '../../shared/base-list/base-list.component';
+import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
+import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
+
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -71,25 +77,7 @@ import {
   TableParams,
   ViewOption,
 } from '../../interfaces/base-list';
-
-import { BlurOnClickDirective } from '../../directives/blur-on-click.directive';
-import { HasOpDirective } from '../../directives/has-op.directive';
-
-import { BaseListComponent } from '../../shared/base-list/base-list.component';
-import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
-import { CauseOfBlockingDialogComponent } from './cause-of-blocking-dialog/cause-of-blocking-dialog.component';
-
-import { CONTACT_PARAMS_FOR_LIST } from '../../shared/table/table.config';
-
-import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { AddressFilter } from '../../interfaces/toponym';
-import { zodValidator } from '../../utils/zod-validator';
-import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
-import {
-  PERMISSIONS_COMPONENT_REGISTRY,
-  PermissionSet,
-  TableComponentType,
-} from './table-permissions.registry';
 import {
   ChangingByKind,
   DeletingByKind,
@@ -99,20 +87,30 @@ import {
   OwnerByKind,
   OwnerDraftByKind,
   OwnerMainService,
-  PartnerChangingData,
-  PartnerDeletingData,
-  PartnerDraft,
-  PartnerOutdatingData,
-  PartnerRestoringData,
   RestoringByKind,
   UserChangingData,
   UserDeletingData,
   UserDraft,
   UserOutdatingData,
   UserRestoringData,
-  Volunteer, Home
-} from 'src/app/interfaces/advanced-model';
-//import { Owner } from 'src/app/interfaces/advanced-model';
+  Volunteer,
+  Home,
+  User,
+  Partner,
+  Senior,
+} from '../../interfaces/advanced-model';
+
+import { CONTACT_PARAMS_FOR_LIST } from '../../shared/table/table.config';
+import {
+  PERMISSIONS_COMPONENT_REGISTRY,
+  PermissionSet,
+  TableComponentType,
+} from './table-permissions.registry';
+import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user.schema';
+import {
+  SeniorMainService,
+  SeniorService,
+} from '../../services/senior.service';
 
 @Component({
   selector: 'app-table',
@@ -163,24 +161,16 @@ export class TableComponent<K extends Kind> implements OnChanges {
   >;
 
   protected readonly partnerService = inject(
-    PartnerService
-  ) as PartnerMainService; /* OwnerMainService<
-    Partner,
-    PartnerDraft,
-    PartnerChangingData,
-    PartnerRestoringData,
-    PartnerOutdatingData,
-    PartnerDeletingData,
-    { list: Partner[]; length: number }
-  >; */
+    PartnerService,
+  ) as PartnerMainService;
 
   protected readonly volunteerService = inject(
-    VolunteerService
+    VolunteerService,
   ) as VolunteerMainService;
 
-    protected readonly homeService = inject(
-   HomeService
-  ) as HomeMainService;
+  protected readonly homeService = inject(HomeService) as HomeMainService;
+
+  protected readonly seniorService = inject(SeniorService) as SeniorMainService;
 
   params = input.required<{
     columns: ColumnDefinition[];
@@ -192,12 +182,11 @@ export class TableComponent<K extends Kind> implements OnChanges {
   kind = input.required<K>();
   private kind$ = new BehaviorSubject<Kind>('partner');
   ownerDialogConfig = input.required<DialogData<OwnerByKind<K>>>();
-
   owners!: OwnerByKind<K>[];
-
   dataSource = new MatTableDataSource<OwnerByKind<K>>([]);
-  displayedColumns!: string[];
   dialogProps!: DialogData<OwnerByKind<K>>;
+
+  displayedColumns!: string[];
   contactTypes: ContactParamsForList[] = CONTACT_PARAMS_FOR_LIST;
   dialogConfig = {
     disableClose: true,
@@ -208,7 +197,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   } as const;
 
   sanitizeText = sanitizeText;
-  //permissions!: PermissionSet<K>;
 
   permissions!: PermissionSet<TableComponentType>;
 
@@ -273,10 +261,13 @@ export class TableComponent<K extends Kind> implements OnChanges {
       if (x && typeof x === 'object') {
         return Object.keys(x)
           .sort()
-          .reduce((acc, k) => {
-            acc[k] = normalize(x[k]);
-            return acc;
-          }, {} as Record<string, unknown>);
+          .reduce(
+            (acc, k) => {
+              acc[k] = normalize(x[k]);
+              return acc;
+            },
+            {} as Record<string, unknown>,
+          );
       }
       return x;
     };
@@ -307,11 +298,14 @@ export class TableComponent<K extends Kind> implements OnChanges {
       this.kind() === 'user'
         ? this.userService
         : this.kind() === 'partner'
-        ? this.partnerService
-        : this.kind() === 'volunteer'
-        ? this.volunteerService
-        : this.kind() === 'home'
-        ? this.homeService : this.homeService;//this.seniorService
+          ? this.partnerService
+          : this.kind() === 'volunteer'
+            ? this.volunteerService
+            : this.kind() === 'home'
+              ? this.homeService
+              : this.kind() === 'senior'
+                ? this.seniorService
+                : null;
     return svc as OwnerMainService<
       OwnerByKind<K>,
       OwnerDraftByKind<K>,
@@ -328,7 +322,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     for (const item of this.contactTypes) {
       iconRegistry.addSvgIconLiteral(
         item.type,
-        sanitizer.bypassSecurityTrustHtml(item.svg)
+        sanitizer.bypassSecurityTrustHtml(item.svg),
       );
     }
 
@@ -341,8 +335,8 @@ export class TableComponent<K extends Kind> implements OnChanges {
       const query$ = toObservable(this.query).pipe(
         rxFilter((q): q is NonNullable<typeof q> => !!q),
         distinctUntilChanged(
-          (a, b) => this.stableSerialize(a) === this.stableSerialize(b)
-        )
+          (a, b) => this.stableSerialize(a) === this.stableSerialize(b),
+        ),
       );
 
       combineLatest([this.kind$, query$])
@@ -369,10 +363,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
                 });
                 return of({ list: [], length: 0 });
               }),
-              finalize(() => this.loading.set(false))
-            )
+              finalize(() => this.loading.set(false)),
+            ),
           ),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({ next: () => {} });
     });
@@ -395,7 +389,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     kind: K,
     filter: any,
     pageSize: number,
-    page: number
+    page: number,
   ): Observable<ListDto<K>> {
     const service = this.getService();
     return service
@@ -416,23 +410,32 @@ export class TableComponent<K extends Kind> implements OnChanges {
   hasOutdatedUserNames = (row: User): boolean =>
     !!row?.outdatedData?.userNames && row.outdatedData.userNames.length > 0;
 
-  hasOutdatedNames = (row: User | Partner | Volunteer): boolean =>
+  hasOutdatedNames = (row: User | Partner | Volunteer | Senior): boolean =>
     !!row?.outdatedData?.names && row.outdatedData.names.length > 0;
 
   hasOutdatedContacts = (row: OwnerByKind<K>): boolean =>
+    'contacts' in row.outdatedData &&
     !!row?.outdatedData?.contacts &&
     Object.keys(row.outdatedData.contacts).length > 0;
 
   hasOutdatedAddresses = (row: OwnerByKind<K>): boolean =>
-    !!row?.outdatedData?.addresses && row.outdatedData.addresses.length > 0;
+    'addresses' in row.outdatedData &&
+    !!row.outdatedData.addresses &&
+    row.outdatedData.addresses.length > 0;
 
   hasOutdatedHomes = (row: Home): boolean => {
-    return !!row?.outdatedData?.coordinations && row.outdatedData.coordinations.length > 0 && this.kind() == 'partner';
-
+    return (
+      !!row?.outdatedData?.coordinations &&
+      row.outdatedData.coordinations.length > 0 &&
+      this.kind() == 'partner'
+    );
   };
-   hasOutdatedPartners = (row: Partner): boolean => {
-   return !!row?.outdatedData?.coordinations && row.outdatedData.coordinations.length > 0 && this.kind() == 'home';
-
+  hasOutdatedPartners = (row: Partner): boolean => {
+    return (
+      !!row?.outdatedData?.coordinations &&
+      row.outdatedData.coordinations.length > 0 &&
+      this.kind() == 'home'
+    );
   };
   hasOutdatedInstitutes = (row: Volunteer): boolean => {
     return (
@@ -441,27 +444,25 @@ export class TableComponent<K extends Kind> implements OnChanges {
   };
   hasOutdatedOfficialNames = (row: Home): boolean => {
     return (
-      !!row?.outdatedData?.officialNames && row.outdatedData.officialNames.length > 0
+      !!row?.outdatedData?.officialNames &&
+      row.outdatedData.officialNames.length > 0
     );
   };
+  createDetailsString(row: Senior) {
+    const parts = [
+      row.kindergarten,
+      row.teacher,
+      row.veteran,
+      row.childOfWar,
+      row.profession,
+      row.honoraryStatus,
+      row.orthodoxBeliever,
+      row.interests,
+      row.spouseFullName ? this.translate.instant('TABLE.NOTES.SPOUSE') + row.spouseFullName : ''
+    ];
+    return parts.filter(Boolean).join(', ').trim();
+  }
 
-
-/*   hasHomes = (row: OwnerByKind<K>): boolean => {
-    //!!row?.homes && row.homes.length > 0;
-    return false;
-  };
-  hasInstitutes = (row: OwnerByKind<K>): boolean => {
-    //!!row?.institutes && row.institutes.length > 0;
-    return false;
-  };
-  hasSubscriptions = (row: OwnerByKind<K>): boolean => {
-    //!!row?.subscriptions && row.subscriptions.length > 0;
-    return false;
-  };
-  hasCooperations = (row: OwnerByKind<K>): boolean => {
-    //!!row?.cooperations && row.cooperations.length > 0;
-    return false;
-  }; */
   // ========== child → parent bridge ==========
   onAllFilterParametersChange = (p: FilterDraft) => {
     this.goToFirstPage();
@@ -496,7 +497,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   // ========== dialogs / CRUD ==========
   onAddOwnerClick() {
     this.dialogProps.object = null;
-    this.dialogProps.addressFilterParams.readonly = false;
+    this.dialogProps.addressFilterParams.readonly = this.kind() === 'senior' ? true : false;
     this.dialogProps.addressFilterParams.class = 'none';
 
     const dialogData: DialogData<OwnerByKind<K>> = {
@@ -596,6 +597,9 @@ export class TableComponent<K extends Kind> implements OnChanges {
   onShowVolunteersOrdersClick(id: number) {}
   onShowHomesPartnersClick(id: number) {}
   onShowHomesSeniorsClick(id: number) {}
+  onShowSeniorsOrdersClick(id: number) {}
+  onShowSeniorsVolunteersClick(id: number) {}
+  onShowSeniorsUsersClick(id: number) {}
 
   onBlockOwnerClick(id: number) {
     if (this.kind() !== 'partner') {
@@ -649,43 +653,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
             kind: this.kind(),
           }),
       });
-
-    /*     const safeUserName = this.sanitizeText(userName);
-    this.confirmationService.confirm({
-      message: this.translate.instant('PRIME_CONFIRM.UNBLOCK_ITEM_MESSAGE', {
-        name: safeUserName,
-      }),
-      header: this.translate.instant('PRIME_CONFIRM.WARNING_HEADER'),
-      closable: true,
-      closeOnEscape: true,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.REJECT'),
-      },
-      acceptButtonProps: {
-        label: this.translate.instant('PRIME_CONFIRM.ACCEPT'),
-        severity: 'secondary',
-        outlined: true,
-      },
-      accept: () => this.unblockOwner(id),
-    }); */
   }
-
-  /*   private unblockOwner(id: number) {
-    this.userService
-      .unblockUser(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.forceReload(),
-        error: (err) =>
-          this.msg.handle(err, {
-            source: 'TableComponent',
-            stage: 'unblockOwner',
-            ownerId: id,
-            kind: this.kind(),
-          }),
-      });
-  } */
 
   onDeleteOwnerClick(owner: OwnerByKind<K>) {
     const service = this.getService();

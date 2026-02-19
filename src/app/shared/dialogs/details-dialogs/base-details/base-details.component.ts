@@ -23,11 +23,16 @@ import {
   AddressFilterParams,
 } from '../../../../interfaces/toponym';
 import { Control, DialogData } from '../../../../interfaces/dialog-props';
-import { ContactType, isContactType, Kind } from '../../../../interfaces/advanced-model';
+import {
+  ContactType,
+  isContactType,
+  Kind,
+} from '../../../../interfaces/advanced-model';
 import { BaseModel } from '../../../../interfaces/base-model';
 import { MessageWrapperService } from '../../../../services/message.service';
 import { AddressService } from '../../../../services/address.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { startWith } from 'rxjs';
 
 @Component({
   selector: 'app-base-details',
@@ -95,7 +100,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     'otherContact',
   ];
 
-  kind!: "toponym" | Kind;
+  kind!: 'toponym' | Kind;
 
   ngOnInit() {
     this.params = this.data().addressFilterParams;
@@ -106,18 +111,18 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
     // cache control names for quick loops
     this.controlsNames = this.data().controls.map((c) => c.controlName);
-    console.log('controlsNames ', this.controlsNames);
+    //console.log('controlsNames ', this.controlsNames);
 
     // init values by mode
     if (this.object) {
       this.setInitialValues(
-        this.data().operation == 'view-edit' ? 'view' : 'create'
+        this.data().operation == 'view-edit' ? 'view' : 'create',
       );
     } else if (this.data().toponymType == 'country') {
       // country form starts enabled
       this.updateControlsValidity(this.controlsNames, true);
     }
-  // console.log('ngOnInit ', this.addressFilter());
+    // console.log('ngOnInit ', this.addressFilter());
   }
 
   // Hook for specific components to implement
@@ -125,32 +130,23 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Build reactive form from declarative controls config
   protected createFormGroup(controls: Control[], controlsDisable: boolean) {
-    console.log('controls', controls)
+   // console.log('controls', controls);
     for (const control of controls) {
       if (control.formType == 'formControl') {
         this.mainForm.addControl(
           control.controlName,
           new FormControl(
             { value: control.value, disabled: controlsDisable },
-            control.validators || []
-          )
+            control.validators || [],
+          ),
         );
       } else if (control.formType == 'formArray') {
-/*         const controlsArr =
-          this.data().operation === 'create'
-            ? [
-                new FormControl(
-                  { value: control.value, disabled: controlsDisable },
-                  control.validators || []
-                ),
-              ]
-            : []; */
         const fa = new FormArray([
-                new FormControl(
-                  { value: control.value, disabled: controlsDisable },
-                  control.validators || []
-                ),
-              ]);
+          new FormControl(
+            { value: control.value, disabled: controlsDisable },
+            control.validators || [],
+          ),
+        ]);
         this.mainForm.addControl(control.controlName, fa);
       }
     }
@@ -200,7 +196,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     if (this.changesSignal() || this.deletingSignal()) {
       this.confirmationService.confirm({
         message: this.translateService.instant(
-          'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE'
+          'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE',
         ),
         header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
         icon: 'pi pi-exclamation-triangle',
@@ -226,7 +222,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Cancel dialog (with confirm if dirty or create mode)
   onCancelClick() {
-/*     console.log('this.changesSignal()', this.changesSignal());
+    /*     console.log('this.changesSignal()', this.changesSignal());
     console.log('this.deletingSignal()', this.deletingSignal());
     console.log('this.data().operation', this.data().operation); */
     if (
@@ -236,7 +232,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
     ) {
       this.confirmationService.confirm({
         message: this.translateService.instant(
-          'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE'
+          'PRIME_CONFIRM.LEAVE_WITHOUT_SAVE_MESSAGE',
         ),
         header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
         icon: 'pi pi-exclamation-triangle',
@@ -262,14 +258,17 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Recalculate `changes` + save-disabled
   protected onChangeValidation() {
-   // console.log('onChangeValidation');
+    // console.log('onChangeValidation');
 
     if (this.data().operation == 'view-edit') {
       this.changesSignal.set(false);
 
-
       for (const controlName of this.controlsNames) {
-        console.log('onChangeValidation', controlName, controlName in this.object!);
+       /*  console.log(
+          'onChangeValidation',
+          controlName,
+          controlName in this.object!,
+        ); */
         if (
           controlName != 'password' &&
           !isContactType(controlName) &&
@@ -277,8 +276,8 @@ export class BaseDetailsComponent<T extends BaseModel> {
         ) {
           const newVal = this.mainForm.controls[controlName].value;
           const oldVal = this.object![controlName];
-           console.log('newVal', controlName, newVal);
-           console.log('oldVal', controlName, oldVal);
+         // console.log('newVal', controlName, newVal);
+         // console.log('oldVal', controlName, oldVal);
           const isNbspToNull = newVal === '\u00A0' && oldVal === null;
           if (newVal != oldVal && !isNbspToNull) {
             this.changesSignal.set(true);
@@ -290,7 +289,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
       if (!this.changesSignal()) {
         // let specific component add extra dirty rules (address filter, etc.)
         this.changesSignal.set(this.additionalValidationHooks());
-     //   console.log('this.changesSignal()', this.changesSignal());
+        //   console.log('this.changesSignal()', this.changesSignal());
       }
 
       this.emittedChanges.emit(this.changesSignal());
@@ -317,10 +316,11 @@ export class BaseDetailsComponent<T extends BaseModel> {
   // Enable/disable a set of controls; also flip address-filter validity flag
   protected updateControlsValidity(
     controlsToUpdate: string[],
-    enable: boolean
+    enable: boolean,
   ) {
     for (const control of controlsToUpdate) {
-     // console.log('control', control);
+      // console.log('control', control);
+      if(control == 'nursingHome') continue;
       enable
         ? this.mainForm.controls[control].enable()
         : this.mainForm.controls[control].disable();
@@ -330,17 +330,16 @@ export class BaseDetailsComponent<T extends BaseModel> {
   }
 
   // Fill controls from current object (special casing for password/nbsp)
-  protected setInitialValues(
-    mode: 'view' | 'edit' | 'create'
-  ) {
+  protected setInitialValues(mode: 'view' | 'edit' | 'create') {
     for (const controlName of this.controlsNames) {
       if (isContactType(controlName)) continue;
       if (controlName === 'password')
         this.mainForm.controls[controlName].setValue('password123');
       if (hasKey(this.object!, controlName)) {
         const v = this.object![controlName];
+        //console.log(controlName, this.object![controlName]);
         this.mainForm.controls[controlName].setValue(
-          mode === 'view' && v === null ? '\u00A0' : v
+          mode === 'view' && v === null ? '\u00A0' : v,
         );
       }
     }

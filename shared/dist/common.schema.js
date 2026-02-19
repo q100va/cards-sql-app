@@ -193,9 +193,9 @@ export const outdatedAddressItemSchema = z
     .strict();
 export const outdatedCommonSchema = z
     .object({
-    contacts: optionalContactsSchema,
-    addresses: z.array(outdatedAddressItemSchema),
-    //  names: z.array(outdatedNameItemSchema)
+//contacts: optionalContactsSchema,
+//addresses: z.array(outdatedAddressItemSchema),
+//  names: z.array(outdatedNameItemSchema)
 })
     .strict();
 /* ===================== DTO ===================== */
@@ -208,7 +208,7 @@ export const duplicatesSchema = z
         content: z.string(),
         owners: z.array(z.string()),
     })
-        .strict()),
+        .strict()).optional(),
 })
     .strict();
 export const coordinationNameControlSchema = z.object({

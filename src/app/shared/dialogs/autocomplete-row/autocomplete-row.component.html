@@ -1,12 +1,17 @@
 <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
   <mat-grid-tile colspan="5" rowspan="1">
   <mat-form-field style="width: 100%;">
-    <mat-label>{{'TABLE.CARD.COORDINATION_NAME_LABEL' | translate}}</mat-label>
+    <mat-label>{{label() | translate}}</mat-label>
 
     <input type="text" matInput [formControl]="ctrl()" [matAutocomplete]="auto"
-      [placeholder]="'TABLE.CARD.COORDINATION_PLACEHOLDER' | translate" />
+      [placeholder]="'TABLE.CARD.COORDINATION_PLACEHOLDER' | translate"
+       />
 
-    <mat-autocomplete #auto="matAutocomplete" [displayWith]="display">
+    <mat-autocomplete
+    #auto="matAutocomplete"
+    [displayWith]="display"
+    (optionSelected)="onSelectOption($event)"
+    >
       @for(c of (filtered$ | async); track $index){
       <mat-option [value]="c">
         {{ c.name }}
@@ -22,6 +27,7 @@
   </mat-form-field>
   </mat-grid-tile>
   <mat-grid-tile colspan="1" rowspan="1">
+
     @if (showDeleteButton()) {
     <button mat-icon-button [title]="'TABLE.CARD.DELETE_BUTTON_TITLE' | translate" (click)="onDeleteClick() ">
       <mat-icon>delete_outlined</mat-icon>

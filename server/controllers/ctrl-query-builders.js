@@ -63,6 +63,28 @@ const OWNER = {
 
     },
   },
+  senior: {
+    idField: 'seniorId',/*
+    contactsTable: 'home-contacts',
+    addressesTable: 'home-addresses', */
+    defaultOrderField: 'lastName',
+    orderKeys: {
+      // affiliation: () => "affiliation",
+      //position:    () => literal(`"partner"."position"`),
+      lastName: () =>
+        "lastName",
+      /*       order: [
+              [{ model: HomeAddress, as: 'activeAddress' }, { model: Region, as: 'region' }, 'shortName', 'ASC'],
+              ['homeName', 'ASC'],
+            ], */
+/*       regionName: () => ([
+        { model: HomeAddress, as: 'activeAddress' },
+        { model: Region, as: 'region' },
+        'name',
+      ]), */
+
+    },
+  },
 };
 
 // ── сортировка ────────────────────────────────────────────────────────────────

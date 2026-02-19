@@ -42,7 +42,8 @@ export interface Control {
     | 'checkbox'
     | 'radio'
     | 'toggle'
-    | 'group';
+    | 'group'
+    | 'datePicker';
   label: string;
   placeholder?: string;
   errorName?: string;

@@ -35,6 +35,7 @@ function pushAddressTokens(tokens, addr) {
     t(addr.region?.name ?? addr.region?.shortName),
     t(addr.district?.name ?? addr.district?.shortName),
     t(addr.locality?.name ?? addr.locality?.shortName),
+    t(addr.fullPostalAddress ?? '')
   );
 }
 
@@ -128,11 +129,11 @@ const OWNER_CONFIG = {
   home: {
     basicTokens: (v) => [
       t(v?.homeName), t(v?.officialName), //t(v?.postalName),
-      v.noAddress ? 'БОА no return address' : '',
-      v.specialHome ? 'специальный интернат special home' : '',
-      v.acceptableForSchool ? 'можно давать школам acceptable for school' : '',
+      v?.noAddress ? 'БОА no return address' : '',
+      v?.specialHome ? 'специальный интернат special home' : '',
+      v?.acceptableForSchool ? 'можно давать школам acceptable for school' : '',
       ...dateVariants(v?.dateOfClose),
-      v.isClose ? 'закрыт close' : '',
+      v?.isClose ? 'закрыт close' : '',
       t(v?.comment), t(v?.infoNote),
       ...dateVariants(v?.updateDates ? v?.updateDates[0] : null),
       v?.isRestricted ? 'не участвует с inactive from' : '',
@@ -150,6 +151,40 @@ const OWNER_CONFIG = {
         .flatMap(i => [i.officialName])
         .filter(Boolean)
         .join(' '),
+  },
+
+  senior: {
+
+    basicTokens: (v) => [
+      t(v?.firstName), t(v?.patronymic), t(v?.lastName),
+      t(v?.comment),
+      v?.isRestricted ? 'заблокирован с blocked from' : '',
+      ...dateVariants(v?.dateOfRestriction),
+      t(v?.causeOfRestriction),
+      ...dateVariants(v?.dateOfStart),
+      ...dateVariants(v?.birthDate),
+      ...dateVariants(v?.dateOfConsent),
+      ...dateVariants(v?.dateOfExit),
+      v?.gender == 'male' ? 'male муж.' : 'female жен.',
+      t(v?.infoNote), t(v?.photoLink),
+      v?.personalNoAddr ? 'БОА no return address' : '',
+      t(v?.kindergarten), t(v?.teacher), t(v?.veteran),
+      t(v?.childOfWar), t(v?.profession), t(v?.honoraryStatus),
+      t(v?.interests),
+      t(v?.home.homeName),
+      v?.spouse ? (fullName(v.spouse) + (v.birthDate ? (' ' + v.birthDate) : '')) : ''
+    ],
+    outdatedNames: (v) =>
+      (v?.outdatedNames ?? [])
+        .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+        .filter(Boolean)
+        .join(' '),
+    // home: (v) => v.home,
+    // spouse: (v) => fullName(v.spouse) + (v.birthDate ? (' ' + v.birthDate) : ''),
+    firstNonRestrictedAddress: (s) => (s?.home.addresses ?? []).find(a => !a?.isRestricted),
+    pushAddressTokens: (tokens, addr) => pushAddressTokens(tokens, addr),
+    contacts: (s)=>[],
+    addresses: (s)=>[],
   }
 };
 
@@ -170,6 +205,7 @@ export function createSearchStringFor(kind, record) {
   // first non-restricted address
   const addr = C.firstNonRestrictedAddress(record);
   C.pushAddressTokens(tokens, addr);
+
 
   if (kind == 'volunteer') {
     for (const i of C.institutes(record)) {
@@ -210,6 +246,10 @@ export function createSearchStringFor(kind, record) {
         }
       }
     }
+  }
+
+  if (kind == 'senior') {
+
   }
 
   return normalizeSpace(tokens.join(' '));

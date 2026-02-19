@@ -1,8 +1,6 @@
 import { Params } from '../../directives/has-op.directive';
 
-
-export type TableComponentType = 'user' | 'partner' | 'volunteer' | 'home';
-
+export type TableComponentType = 'user' | 'partner' | 'volunteer' | 'home' | 'senior';
 
 type PermissionKeysByKind = {
   user:
@@ -13,12 +11,7 @@ type PermissionKeysByKind = {
     | 'unblock'
     | 'delete';
 
-  partner:
-    | 'viewOrEdit'
-    | 'viewHomes'
-    | 'block'
-    | 'unblock'
-    | 'delete';
+  partner: 'viewOrEdit' | 'viewHomes' | 'block' | 'unblock' | 'delete';
 
   volunteer:
     | 'viewOrEdit'
@@ -29,13 +22,15 @@ type PermissionKeysByKind = {
     | 'unblock'
     | 'delete';
 
-      home:
+  home:
     | 'viewOrEdit'
     | 'viewSeniors'
     | 'viewPartners'
     | 'block'
     | 'unblock'
     | 'delete';
+
+  senior: 'viewOrEdit' | 'viewUsers' | 'viewOrders' | 'viewVolunteers' | 'block' | 'unblock' | 'delete';
 };
 
 export type PermissionSet<K extends TableComponentType> = {
@@ -127,7 +122,7 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
       mode: 'any',
     },
   },
-    home: {
+  home: {
     viewOrEdit: {
       codes: ['VIEW_HOME', 'EDIT_HOME'],
       mode: 'any',
@@ -152,6 +147,37 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
       codes: ['VIEW_LIMITED_SENIORS_LIST', 'VIEW_FULL_SENIORS_LIST'],
       mode: 'any',
     },
+  },
+  senior: {
+    viewOrEdit: {
+      codes: ['VIEW_SENIOR', 'EDIT_SENIOR'],
+      mode: 'any',
+    },
+    block: {
+      codes: ['BLOCK_SENIOR'],
+      mode: 'any',
+    },
+    unblock: {
+      codes: ['UNBLOCK_SENIOR'],
+      mode: 'any',
+    },
+    delete: {
+      codes: ['DELETE_SENIOR'],
+      mode: 'any',
+    },
+    viewUsers: {
+      codes: ['VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST'],
+      mode: 'any',
+    },
+    viewOrders: {
+      codes: ['VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'],
+      mode: 'any',
+    },
+    viewVolunteers: {
+      codes: ['VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST'],
+      mode: 'any',
+    },
+
   },
   // ...
 } as const;

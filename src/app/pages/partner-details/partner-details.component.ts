@@ -20,9 +20,8 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
-
+import {MatDatepickerModule} from '@angular/material/datepicker';
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
-import { OutdatedHome } from '../../interfaces/partner';
 import {
   PartnerService,
   PartnerMainService,
@@ -33,7 +32,7 @@ import {
   OutdatedFullName,
 } from '../../../../shared/schemas/common.schema';
 import { shareReplay } from 'rxjs';
-import { CoordinationPick } from '../../interfaces/advanced-model';
+import { RelationPick } from '../../interfaces/advanced-model';
 import { zodValidator } from '../../utils/zod-validator';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
 import {
@@ -61,6 +60,7 @@ import {
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
+    MatDatepickerModule
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -72,7 +72,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
   override homeService = inject(HomeService) as HomeMainService;
   override ngOnInit(): void {
     super.ngOnInit();
-    this.coordinationPickList$ = this.homeService
+    this.relationPickList$ = this.homeService
       .getHomesPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
 
@@ -103,8 +103,8 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(
-        new FormControl<CoordinationPick | string>(
-          { value: '', disabled: true },
+        new FormControl<RelationPick | null>(
+          { value: null, disabled: true },
           {
             nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
@@ -199,7 +199,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
 
   protected updateCoordinationsControlsValidity(enable: boolean) {
     const fa = this.mainForm.get('coordinations') as FormArray<
-      FormControl<CoordinationPick | string>
+      FormControl<RelationPick | null>
     > | null;
     if (fa) {
       fa.controls.forEach((control) =>
@@ -226,7 +226,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     const current = this.mainForm
       .get('coordinations')!
       .getRawValue()
-      .map((c: CoordinationPick) => c.id)
+      .map((c: RelationPick) => c.id)
       .sort();
 
     // lengths differ -> changed
@@ -253,8 +253,8 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       });
     } else {
       this.coordinationsArray.push(
-        new FormControl<CoordinationPick | string>(
-          { value: '', disabled: false },
+        new FormControl<RelationPick | null>(
+          { value: null, disabled: false },
           {
             nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
@@ -272,7 +272,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.onChangeValidation();
   }
 
-    override async correctRestoringData() {
+/*     override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
@@ -287,9 +287,9 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
     }
 
-  }
+  } */
 
-    override async checkOutdatedDataDuplicates() {
+/*     override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -302,8 +302,8 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
 
     return await super.checkOutdatedDataDuplicates();
   }
-
-  override async checkAllChanges() {
+ */
+/*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -332,5 +332,5 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     if (coordinations.deleting)
       this.deletingDataDraft.coordinations = coordinations.deleting;
     return await super.checkAllChanges();
-  }
+  } */
 }

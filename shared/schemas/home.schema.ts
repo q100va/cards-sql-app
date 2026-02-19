@@ -63,7 +63,7 @@ const coordinationItemSchema = z.object({
 export const emailControlSchema = z
   .preprocess(
     emptyToNull,
-    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable()
+    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable(),
   )
   .superRefine((v, ctx) => {
     if (v) {
@@ -113,7 +113,7 @@ export const telegramIdControlSchema = z.preprocess(
   z
     .string()
     .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const whatsAppControlSchema = z
@@ -148,7 +148,7 @@ export const telegramNicknameControlSchema = z.preprocess(
   z
     .string()
     .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const vKontakteControlSchema = z.preprocess(
@@ -157,9 +157,9 @@ export const vKontakteControlSchema = z.preprocess(
     .string()
     .regex(
       /^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
+      'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const instagramControlSchema = z.preprocess(
@@ -168,9 +168,9 @@ export const instagramControlSchema = z.preprocess(
     .string()
     .regex(
       /^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
+      'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const facebookControlSchema = z.preprocess(
@@ -178,7 +178,7 @@ export const facebookControlSchema = z.preprocess(
   z
     .string()
     .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const websiteControlSchema = z.preprocess(
@@ -187,14 +187,14 @@ export const websiteControlSchema = z.preprocess(
     .string()
     .regex(
       /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
-      'FORM_VALIDATION.CONTACT.INVALID_URL' //"Invalid website URL"
+      'FORM_VALIDATION.CONTACT.INVALID_URL', //"Invalid website URL"
     )
-    .nullable()
+    .nullable(),
 );
 
 export const otherContactControlSchema = z.preprocess(
   emptyToNull,
-  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
+  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable(),
 );
 
 /* ===================== Contacts (draft / ordered / optional) ===================== */
@@ -228,7 +228,7 @@ export const homeIdSchema = z
   .object({ id: z.coerce.number().int().positive() })
   .strict();
 
- export const homeBlockingSchema = z
+export const homeBlockingSchema = z
   .object({
     id: z.coerce.number().int().positive(),
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
@@ -262,7 +262,7 @@ export const homeDraftSchema = z
         .string()
         .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
         .min(6, { message: 'FORM_VALIDATION.TOO_SHORT_6' })
-        .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' })
+        .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' }),
     ),
     draftAddress: draftAddressSchema,
     postalAddressPart: z.preprocess(
@@ -270,21 +270,21 @@ export const homeDraftSchema = z
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
     comment: z.preprocess(
       emptyToNull,
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
     infoNote: z.preprocess(
       emptyToNull,
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
     isRestricted: z.boolean(),
     causeOfRestriction: z.preprocess(
@@ -292,7 +292,7 @@ export const homeDraftSchema = z
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
@@ -343,7 +343,7 @@ export const changingAddressSchema = z
         .string()
         .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
         .min(6, { message: 'FORM_VALIDATION.TOO_SHORT_6' })
-        .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' })
+        .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' }),
     ),
     countryId: positiveInt,
     regionId: positiveInt,
@@ -354,7 +354,7 @@ export const changingAddressSchema = z
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
     postalName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
   })
@@ -366,7 +366,7 @@ export const changingMainSchema = z
     homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
     officialName: nonEmptyTrimMax(
       500,
-      'FORM_VALIDATION.TOO_LONG_500'
+      'FORM_VALIDATION.TOO_LONG_500',
     ).optional(),
     noAddress: z.boolean().optional(),
     specialHome: z.boolean().optional(),
@@ -377,7 +377,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
     infoNote: z
@@ -386,7 +386,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
 
@@ -397,7 +397,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
     dateOfRestriction: nullableIsoDate.optional(),
@@ -546,7 +546,7 @@ export const homesQueryDTOSchema = z
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
             comment: z.boolean().optional(),
-            infoNote: z.boolean().optional(),
+            infoNote: z.boolean().optional(), //TODO: delete???
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -618,11 +618,10 @@ export const outdatedDataSchema = z
 /* ===================== Home (view) & homes list ===================== */
 const nonNullableAddressSchema = z
   .object({
-    country: addressRefFullSchema,
-    region: addressRefShortSchema,
-    district: addressRefShortSchema,
-    locality: addressRefShortSchema,
-    //id: positiveInt,
+    countryId: positiveInt,
+    regionId: positiveInt,
+    districtId: positiveInt,
+    localityId: positiveInt,
   })
   .strict();
 
@@ -692,7 +691,7 @@ export type HomeCoordination = z.infer<typeof coordinationItemSchema>;
 export type HomeAddress = z.infer<typeof homeAddressItemSchema>;
 export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
 //export type PostalAddress = z.infer<typeof postalAddressSchema>;
-export type HomeContacts = z.infer<typeof optionalContactsSchema>;
+//export type HomeContacts = z.infer<typeof optionalContactsSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;

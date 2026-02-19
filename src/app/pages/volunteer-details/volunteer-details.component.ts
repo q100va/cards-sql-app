@@ -21,7 +21,7 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
-
+import {MatDatepickerModule} from '@angular/material/datepicker';
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import {
   Institute,
@@ -29,7 +29,7 @@ import {
   Cooperation,
   Subscription,
   InstituteFormGroup,
-} from '../../interfaces/volunteer';
+} from '../../interfaces/advanced-model';
 import {
   VolunteerService,
   VolunteerMainService,
@@ -41,6 +41,7 @@ import {
 } from '../../../../shared/schemas/volunteer.schema';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
 import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
+import { reconcileRestoredAddress, reconcileRestoredInstitutes } from '../../utils/owner-restoration-reconcile.util';
 
 @Component({
   selector: 'app-volunteer-details',
@@ -62,6 +63,7 @@ import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
+    MatDatepickerModule
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -92,7 +94,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
     //institutes
     const formArray = this.institutesArray;
-    const values = this.object!.institutes;
+    const values = this.existingOwner!.institutes;
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(this.createInstituteGroup(mode));
@@ -110,25 +112,24 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
         });
       });
     }
-    /*    const SUB = structuredClone(this.object!.subscriptions);
+    /*    const SUB = structuredClone(this.existingOwner!.subscriptions);
     const SUBOWNER = structuredClone(this.existingOwner!.subscriptions);
     console.log('mode', mode);
-    console.log('SUB - setInitialValues - this.object!.subscriptions', SUB);
+    console.log('SUB - setInitialValues - this.existingOwner!.subscriptions', SUB);
     console.log(
       'SUBOWNER - setInitialValues - this.existingOwner!.subscriptions',
       SUBOWNER
     ); */
     //subscription
-    if (this.object!.subscriptions.length) {
+    if (this.existingOwner!.subscriptions.length) {
       this.mainForm.controls['subscription'].setValue(this.getSubsValue());
     }
   }
-  //TODO: заменить this.object! на existingOwner
   private getSubsValue() {
-    const idx = this.object!.subscriptions.findIndex(
+    const idx = this.existingOwner!.subscriptions.findIndex(
       (s) => s.userId === this.user()!.id
     );
-    console.log('this.object', structuredClone(this.object));
+    console.log('this.existingOwner', structuredClone(this.existingOwner));
     console.log('idx', idx);
     return idx !== -1;
   }
@@ -189,12 +190,12 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }
   }
 
-  override async correctRestoringData() {
+/*   override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
     if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.ownerService.corrAddress(
+      const addresses = reconcileRestoredAddress(
         this.restoringDataDraft.addresses,
         this.outdatedDataDraft.addresses,
         this.ownerDraft.draftAddress,
@@ -205,7 +206,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }
 
     // Institutes
-    const { restoring, outdating } = this.ownerDiffService.corrInstitutes(
+    const { restoring, outdating } = reconcileRestoredInstitutes(
       this.restoringDataDraft.institutes ?? [],
       this.outdatedDataDraft.institutes ?? [],
       this.ownerDraft.draftInstitutes ?? [],
@@ -214,9 +215,9 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
     this.restoringDataDraft.institutes = structuredClone(restoring);
     this.outdatedDataDraft.institutes = structuredClone(outdating);
-  }
+  } */
 
-  override async checkOutdatedDataDuplicates() {
+/*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -239,8 +240,8 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }
 
     return await super.checkOutdatedDataDuplicates();
-  }
-  override async checkAllChanges() {
+  } */
+/*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -284,7 +285,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     if (subscriptions.deleting)
       this.deletingDataDraft.subscriptions = subscriptions.deleting;
     return await super.checkAllChanges();
-  }
+  } */
 
   override getRowSpanForInstitutes(): number {
     return this.outdatedDataDraft.institutes.length;
@@ -297,19 +298,19 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   /*   override get institutes(): Institute[] {
-    const list = this.object!.institutes;
+    const list = this.existingOwner!.institutes;
     return Array.isArray(list) ? list : [];
   } */
 
   override get subscriptions(): Subscription[] {
-    let list = structuredClone(this.object!.subscriptions) ?? [];
+    let list = structuredClone(this.existingOwner!.subscriptions) ?? [];
     const idx = list.findIndex((s) => s.userId === this.user()!.id);
     if (idx !== -1) list.splice(idx, 1);
     return list;
   }
 
   override get cooperations(): Cooperation[] {
-    const list = this.object!.cooperations;
+    const list = this.existingOwner!.cooperations;
     return Array.isArray(list) ? list : [];
   }
 
@@ -383,7 +384,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       'institutes'
     ) as FormArray<InstituteFormGroup> | null;
     if (fa) {
-      fa.controls.forEach((group) =>
+      fa.controls.forEach((group: InstituteFormGroup) =>
         enable
           ? group.enable({ emitEvent: false })
           : group.disable({ emitEvent: false })
@@ -393,7 +394,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   protected override additionalValidationHooks(): boolean {
-    //TODO: for partner houses
 
     return (
       this.contactsChangeValidation() ||
@@ -404,7 +404,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   private institutesChangeValidation(): boolean {
-    const original = this.object!['institutes'];
+    const original = this.existingOwner!['institutes'];
     const current = this.mainForm.get('institutes')!.getRawValue();
 
     // lengths differ -> changed

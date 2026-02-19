@@ -13,11 +13,9 @@ import {
   vKontakteControlSchema,
   whatsAppControlSchema,
   websiteControlSchema
-} from '@shared/schemas/user.schema';
+} from '../../../../shared/schemas/user.schema';
 
 import { TranslateModule } from '@ngx-translate/core';
-
-import { User } from '../../interfaces/user';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -30,7 +28,7 @@ import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
 import * as Validator from '../../utils/custom.validator';
-import { Kind } from 'src/app/interfaces/advanced-model';
+import { Kind, User} from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-users-list',

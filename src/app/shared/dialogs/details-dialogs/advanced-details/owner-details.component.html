@@ -49,6 +49,7 @@
           </mat-form-field>
         </mat-grid-tile>
         }
+
         <!-- password -->
         @if(control.type=='inputPassword') {
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
@@ -84,6 +85,11 @@
               @for (aff of affiliations; track $index) {
               <mat-option [value]="translate.instant(aff)">{{ aff | translate}}</mat-option>
               }}
+              @if(isSeniorContext()){
+              @for (gender of genders; track $index) {
+              <mat-option [value]="gender">{{ (gender === 'male' ? 'TABLE.NOTES.MALE' : 'TABLE.NOTES.FEMALE') |
+                translate}}</mat-option>
+              }}
             </mat-select>
             @if(mainForm.controls[control.controlName].hasError('zodError')){
             <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
@@ -95,12 +101,40 @@
 
 
         <!-- noAddress specialHome acceptableForSchool -->
-        @if(control.type=='checkbox'){
+        @if(control.type=='toggle'){
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
           <mat-slide-toggle [formControlName]="control.controlName" class="small-toggle">{{control.label | translate}}
           </mat-slide-toggle>
         </mat-grid-tile>
         }
+        @if(control.type=='checkbox'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <div style="text-align: left; width: 100%; height: 76px; vertical-align: top;">
+            <mat-checkbox [formControlName]="control.controlName" (change)="onChangeValidation()">{{control.label |
+              translate}}</mat-checkbox>
+          </div>
+
+          <!--          <mat-slide-toggle [formControlName]="control.controlName" class="small-toggle">{{control.label | translate}}
+          </mat-slide-toggle> -->
+        </mat-grid-tile>
+        }
+
+        @if(control.type=='datePicker'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input matInput [matDatepicker]="picker" [formControlName]="control.controlName">
+            <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+
+        <!--      TODO:  автоматически блокировать при выбытии, прятать заблокирован, если выбыл -->
+
+
+
         }
         }
 
@@ -131,13 +165,45 @@
             (change)="onCloseToggleClick()">{{'HOME.CARD.CLOSE_LABEL' | translate}}</mat-slide-toggle>
         </mat-grid-tile>
         }
+
+
+        <!-- Date of exit -->
+        @if(isSeniorContext()){
+        <mat-grid-tile colspan="3" rowspan="1">
+          <mat-form-field>
+            <mat-label>{{'SENIOR.CARD.EXIT_DATE_LABEL' | translate}}</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="dateOfExit" (dateChange)="onChangeDateOfExit()">
+            <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
+            <mat-datepicker-toggle matIconSuffix [for]=" picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </mat-grid-tile>}
+
+
+
+
       </mat-grid-list>
     </mat-tab>
-
 
     <!-- Address -->
     <mat-tab [label]="'TABLE.CARD.ADDRESS_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+
+        <!-- Home/Address -->
+        @if(isSeniorContext()){
+        <mat-grid-tile colspan="6" rowspan="2">
+          <div style="width: 100%;">
+            <app-autocomplete-row [ctrl]="homeCtrl" [relationPickList$]="relationPickList$"
+              [label]="'TABLE.CARD.CHOOSE_HOME_LABEL'" [showDeleteButton]="data().operation == 'create'"
+              (delete)="clearHomeControl()" (selectOption)="updateAddressFilter($event)"></app-autocomplete-row>
+            @if(homeCtrl.value && typeof homeCtrl.value !== 'string'){
+            <br />
+            {{ homeCtrl.value.fullPostalAddress ?? '' }}
+            }
+          </div>
+        </mat-grid-tile>
+        }
+
         <mat-grid-tile colspan="6" rowspan="2">
           <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
             (addressFilter)="onChangeAddress($event)" (showSpinner)="emitShowSpinner($event)"></app-address-filter>
@@ -161,17 +227,18 @@
         }
         }
         }
-
+        @if(isContactsOwnerContext()){
         @if(hasPostalAddress() && data().operation == 'view-edit' && !isEditModeSignal()){
         <mat-grid-tile colspan="6" rowspan="1">
           {{getPostalAddress()}}
         </mat-grid-tile>
         }
+        }
       </mat-grid-list>
     </mat-tab>
 
-
     <!-- Contacts -->
+    @if(isContactsOwnerContext()){
     <mat-tab [label]="'TABLE.CARD.CONTACTS_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
         @for (control of data().controls; track $index) {
@@ -199,6 +266,7 @@
         }
         }
 
+
         <!-- Extra Contacts Button-->
         <mat-grid-tile colspan="3" rowspan="1">
           @if (data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create') {
@@ -212,10 +280,10 @@
           }
         </mat-grid-tile>
       </mat-grid-list>
-    </mat-tab>
+    </mat-tab> }
 
     <!-- Coordinations ---->
-    @if(hasCoordinations()){
+    @if(isCoordinationsOwnerContext()){
     <mat-tab [label]="'TABLE.CARD.COORDINATED_HOMES_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
         @if(coordinationsArray.length){
@@ -224,7 +292,8 @@
           <mat-grid-tile colspan="6" rowspan="1">
             <div style="width: 100%;">
 
-              <app-autocomplete-row [ctrl]="ctrl" [index]="l" [coordinationPickList$]="coordinationPickList$"
+              <app-autocomplete-row [ctrl]="ctrl" [index]="l" [relationPickList$]="relationPickList$"
+                [label]="isHomeContext() ? 'TABLE.CARD.CHOOSE_PARTNER_LABEL' : 'TABLE.CARD.CHOOSE_HOME_LABEL'"
                 [showDeleteButton]="data().operation == 'create' || isEditModeSignal()"
                 (delete)="deleteCoordinationControl($event)"></app-autocomplete-row>
             </div>
@@ -244,10 +313,6 @@
           <mat-hint>{{'TABLE.CARD.COORDINATION_HINT' | translate}}</mat-hint>
         </mat-grid-tile>
         }
-
-
-
-
         }
       </mat-grid-list>
     </mat-tab>
@@ -314,6 +379,43 @@
     </mat-tab>
     }
 
+    <!-- Senior Details -->
+    @if (isSeniorContext()) {
+    <mat-tab [label]="'TABLE.CARD.SENIOR_DETAILS_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        @for (control of data().controls; track $index) {
+        @if (control.category=='details') {
+        @if(control.type=='inputText') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="text" matInput [formControlName]="control.controlName"
+              [placeholder]="control.placeholder | translate" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+        @if(control.type=='select'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <div style="width: 100%;">
+            <app-autocomplete-row [ctrl]="spouseCtrl" [relationPickList$]="spousePickList$"
+              [label]="'TABLE.CARD.CHOOSE_SPOUSE_LABEL'"
+              [showDeleteButton]="data().operation == 'create'  || isEditModeSignal()"
+              (delete)="clearSpouseControl()"></app-autocomplete-row>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        }
+      </mat-grid-list>
+    </mat-tab>
+    }
+
+
     <!-- Outdated Data -->
     @if (data().operation == 'view-edit') {
     <mat-tab [label]="'TABLE.CARD.OUTDATED_DATA_LABEL' | translate">
@@ -377,10 +479,10 @@
         }
         <!-- Outdated Addresses -->
         @if (hasOutdatedAddresses()) {
-        <mat-grid-tile colspan="2" [rowspan]="outdatedDataDraft.addresses.length">
+        <mat-grid-tile colspan="2" [rowspan]="outdatedAddresses.length">
           <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_ADDRESSES_TITLE' | translate}}</div>
         </mat-grid-tile>
-        @for (address of outdatedDataDraft.addresses; track address.id) {
+        @for (address of outdatedAddresses; track address.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {
@@ -403,12 +505,12 @@
         }
         <!-- Outdated Contacts -->
         @if (hasOutdatedContacts()) {
-        <mat-grid-tile colspan="2" [rowspan]="countOutdatedContactsAmount(outdatedDataDraft.contacts)">
+        <mat-grid-tile colspan="2" [rowspan]="countOutdatedContactsAmount(outdatedContacts)">
           <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_CONTACTS_TITLE' | translate}}</div>
         </mat-grid-tile>
         @for (type of contactTypes; track type) {
-        @if (outdatedDataDraft.contacts[type]) {
-        @for (contact of outdatedDataDraft.contacts[type]; track contact.id) {
+        @if (outdatedContacts[type]) {
+        @for (contact of outdatedContacts[type]; track contact.id) {
         <mat-grid-tile colspan="4" rowspan="1">
           <div class="outdated-row">
             @if (isEditModeSignal()) {

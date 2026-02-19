@@ -17,7 +17,7 @@ import {
   PartnerRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
-  CoordinationPick,
+  RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -28,8 +28,8 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { partnerSchema, partnersSchema } from '@shared/schemas/partner.schema';
-import { duplicatesSchema } from '@shared/schemas/common.schema';
+import { partnerSchema, partnersSchema } from '../../../shared/schemas/partner.schema';
+import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
@@ -44,7 +44,7 @@ export interface PartnerMainService
     { list: Partner[]; length: number }
   > {
   checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>>;
-  getPartnersPickList(): Observable<CoordinationPick[]>;
+  getPartnersPickList(): Observable<RelationPick[]>;
 }
 
 @Injectable({
@@ -202,7 +202,7 @@ export class PartnerService implements PartnerMainService {
       .pipe(validateResponse(partnerSchema), catchError(this.handleError));
   }
 
-  getPartnersPickList(): Observable<CoordinationPick[]> {
+  getPartnersPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-partners`)
       .pipe(
@@ -214,7 +214,7 @@ export class PartnerService implements PartnerMainService {
             })
           )
         ),
-        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
         catchError(this.handleError)
       );
   }

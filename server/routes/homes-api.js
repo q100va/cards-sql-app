@@ -129,6 +129,7 @@ router.post(
       //  console.log('creatingHOME', creatingHome)
 
       const result = await withTransaction(async (t) => {
+        //TODO: check that in creation home cant be close
 
         const home = await Home.create(
           {
@@ -339,13 +340,13 @@ router.post(
         whereHome.infoNote = !filters.general.infoNote ? null : { [Op.not]: null };
       }
       if (filters?.general?.noAddress !== undefined) {
-        whereHome.noAddress = !filters.general.noAddress ? null : { [Op.not]: null };
+        whereHome.noAddress = filters.general.noAddress;
       }
       if (filters?.general?.specialHome !== undefined) {
-        whereHome.specialHome = !filters.general.specialHome ? null : { [Op.not]: null };
+        whereHome.specialHome = filters.general.specialHome;
       }
       if (filters?.general?.acceptableForSchool !== undefined) {
-        whereHome.acceptableForSchool = !filters.general.acceptableForSchool ? null : { [Op.not]: null };
+        whereHome.acceptableForSchool = filters.general.acceptableForSchool;
       }
       if (filters?.general?.isClose !== undefined) {
         whereHome.isClose = filters.general.isClose;;
@@ -559,7 +560,7 @@ router.get("/get-list-of-homes",
         include: [{
           model: HomeAddress,
           as: 'addresses',
-          attributes: ['id'],
+          attributes: ['id', 'fullPostalAddress', 'countryId', 'regionId', 'districtId', 'localityId'],
           where: { isRestricted: false },
           include: [
             { model: Region, attributes: ['shortName'] }
@@ -567,10 +568,18 @@ router.get("/get-list-of-homes",
         },],
       });
 
-      // console.log('HOMEs', JSON.stringify(homes));
+    //  console.log('HOMEs', JSON.stringify(homes));
 
-      const data = homes.map(h => ({ id: h.id, name: (h.homeName + ' - ' + h.addresses[0].region.shortName) }));
-      // console.log('HOMES', data);
+      const data = homes.map(h => ({
+        id: h.id,
+        name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
+        fullPostalAddress: h.addresses[0].fullPostalAddress,
+        countryId: h.addresses[0].countryId,
+        regionId: h.addresses[0].regionId,
+        districtId: h.addresses[0].districtId,
+        localityId: h.addresses[0].localityId,
+      }));
+       console.log('HOMES', data);
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
@@ -591,9 +600,9 @@ router.get(
 
       //TODO: find does this home has seniors, partners
       const [countSeniors, countPartners] = await Promise.all([
-    /*     Senior.count({
-          where: { homeId: id }
-        }), */
+        /*     Senior.count({
+              where: { homeId: id }
+            }), */
         Partner.count({
           where: { homeId: id }
         })

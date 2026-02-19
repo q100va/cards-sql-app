@@ -17,7 +17,7 @@ import {
   HomeRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
-  CoordinationPick,
+  RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -35,19 +35,18 @@ import * as ctrl from '../utils/common-ctrls';
 import { homeSchema, homesSchema } from '../../../shared/schemas/home.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 
-export interface HomeMainService
-  extends OwnerMainService<
-    Home,
-    HomeDraft,
-    HomeChangingData,
-    HomeRestoringData,
-    HomeOutdatingData,
-    HomeDeletingData,
-    { list: Home[]; length: number }
-  > {
+export interface HomeMainService extends OwnerMainService<
+  Home,
+  HomeDraft,
+  HomeChangingData,
+  HomeRestoringData,
+  HomeOutdatingData,
+  HomeDeletingData,
+  { list: Home[]; length: number }
+> {
   checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>>;
   checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>>;
-  getHomesPickList(): Observable<CoordinationPick[]>;
+  getHomesPickList(): Observable<RelationPick[]>;
 }
 
 @Injectable({
@@ -60,7 +59,7 @@ export class HomeService implements HomeMainService {
 
   constructor(
     private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
   ) {}
 
   getOwnerName(owner: Home) {
@@ -80,7 +79,7 @@ export class HomeService implements HomeMainService {
           stage: 'checkHomeName',
           name: ownerDraft.homeName,
         }),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
   checkOwnerData(ownerDraft: HomeDraft): Observable<ApiResponse<Duplicates>> {
@@ -100,7 +99,7 @@ export class HomeService implements HomeMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           homeFullName: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -111,7 +110,7 @@ export class HomeService implements HomeMainService {
       HomeRestoringData,
       HomeOutdatingData,
       HomeDeletingData
-    >
+    >,
   ): Observable<ApiResponse<Home>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-home`, {
@@ -123,7 +122,7 @@ export class HomeService implements HomeMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           homeData: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -153,7 +152,7 @@ export class HomeService implements HomeMainService {
       strongContactFilter: boolean;
     },
     pageSize: number,
-    currentPage: number
+    currentPage: number,
   ): Observable<ApiResponse<{ list: Home[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
@@ -208,7 +207,7 @@ export class HomeService implements HomeMainService {
       .pipe(validateResponse(homeSchema), catchError(this.handleError));
   }
 
-  /*   getHomesPickList(): Observable<ApiResponse<CoordinationPick[]>> {
+  /*   getHomesPickList(): Observable<ApiResponse<RelationPick[]>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
       .pipe(
@@ -221,7 +220,7 @@ export class HomeService implements HomeMainService {
       );
   }
  */
-  getHomesPickList(): Observable<CoordinationPick[]> {
+  getHomesPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
       .pipe(
@@ -230,11 +229,16 @@ export class HomeService implements HomeMainService {
             z.object({
               id: z.number().int().positive(),
               name: z.string(),
-            })
-          )
+              fullPostalAddress: z.string().optional(),
+              countryId: z.number().int().positive().optional(),
+              regionId: z.number().int().positive().optional(),
+              districtId: z.number().int().positive().optional(),
+              localityId: z.number().int().positive().optional(),
+            }),
+          ),
         ),
-        map((res: ApiResponse<CoordinationPick[]>) => res.data),
-        catchError(this.handleError)
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
       );
   }
 
@@ -251,9 +255,9 @@ export class HomeService implements HomeMainService {
             homeId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -263,7 +267,7 @@ export class HomeService implements HomeMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -280,15 +284,15 @@ export class HomeService implements HomeMainService {
             homeId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   blockOwner(
     id: number,
-    causeOfRestriction: string
+    causeOfRestriction: string,
   ): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/block-home/`, {
@@ -298,7 +302,7 @@ export class HomeService implements HomeMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -308,7 +312,7 @@ export class HomeService implements HomeMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 }

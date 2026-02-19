@@ -260,8 +260,8 @@ export const outdatedAddressItemSchema = z
 
 export const outdatedCommonSchema = z
   .object({
-    contacts: optionalContactsSchema,
-    addresses: z.array(outdatedAddressItemSchema),
+    //contacts: optionalContactsSchema,
+    //addresses: z.array(outdatedAddressItemSchema),
     //  names: z.array(outdatedNameItemSchema)
   })
   .strict();
@@ -279,7 +279,7 @@ export const duplicatesSchema = z
           owners: z.array(z.string()),
         })
         .strict()
-    ),
+    ).optional(),
   })
   .strict();
 
