@@ -363,8 +363,8 @@ export class AdvancedDetailsComponent<
   override ngOnInit(): void {
     super.ngOnInit();
     this.kind = this.data().componentType as K;
-    console.log(' this.object', structuredClone(this.object));
-    console.log('this.existingOwner', structuredClone(this.existingOwner));
+   // console.log(' this.object', structuredClone(this.object));
+   // console.log('this.existingOwner', structuredClone(this.existingOwner));
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(
         this.existingOwner!.outdatedData,
@@ -666,7 +666,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Compare address selection against original address (country/region/district/locality)
   addressChangeValidation(): boolean {
-    const address = this.object!['address'];
+    const address = this.existingOwner!['address'];
     const filter = this.addressFilter();
 
     const keyMap: Record<

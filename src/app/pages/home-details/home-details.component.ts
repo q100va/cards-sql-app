@@ -113,7 +113,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
 
     //coordinations
     const formArray = this.coordinationsArray;
-    const values = this.object!.coordinations;
+    const values = this.existingOwner!.coordinations;
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(

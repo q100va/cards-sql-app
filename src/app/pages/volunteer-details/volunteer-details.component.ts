@@ -94,7 +94,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
     //institutes
     const formArray = this.institutesArray;
-    const values = this.object!.institutes;
+    const values = this.existingOwner!.institutes;
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(this.createInstituteGroup(mode));
@@ -112,25 +112,24 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
         });
       });
     }
-    /*    const SUB = structuredClone(this.object!.subscriptions);
+    /*    const SUB = structuredClone(this.existingOwner!.subscriptions);
     const SUBOWNER = structuredClone(this.existingOwner!.subscriptions);
     console.log('mode', mode);
-    console.log('SUB - setInitialValues - this.object!.subscriptions', SUB);
+    console.log('SUB - setInitialValues - this.existingOwner!.subscriptions', SUB);
     console.log(
       'SUBOWNER - setInitialValues - this.existingOwner!.subscriptions',
       SUBOWNER
     ); */
     //subscription
-    if (this.object!.subscriptions.length) {
+    if (this.existingOwner!.subscriptions.length) {
       this.mainForm.controls['subscription'].setValue(this.getSubsValue());
     }
   }
-  //TODO: заменить this.object! на existingOwner
   private getSubsValue() {
-    const idx = this.object!.subscriptions.findIndex(
+    const idx = this.existingOwner!.subscriptions.findIndex(
       (s) => s.userId === this.user()!.id
     );
-    console.log('this.object', structuredClone(this.object));
+    console.log('this.existingOwner', structuredClone(this.existingOwner));
     console.log('idx', idx);
     return idx !== -1;
   }
@@ -299,19 +298,19 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   /*   override get institutes(): Institute[] {
-    const list = this.object!.institutes;
+    const list = this.existingOwner!.institutes;
     return Array.isArray(list) ? list : [];
   } */
 
   override get subscriptions(): Subscription[] {
-    let list = structuredClone(this.object!.subscriptions) ?? [];
+    let list = structuredClone(this.existingOwner!.subscriptions) ?? [];
     const idx = list.findIndex((s) => s.userId === this.user()!.id);
     if (idx !== -1) list.splice(idx, 1);
     return list;
   }
 
   override get cooperations(): Cooperation[] {
-    const list = this.object!.cooperations;
+    const list = this.existingOwner!.cooperations;
     return Array.isArray(list) ? list : [];
   }
 
@@ -405,7 +404,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
 
   private institutesChangeValidation(): boolean {
-    const original = this.object!['institutes'];
+    const original = this.existingOwner!['institutes'];
     const current = this.mainForm.get('institutes')!.getRawValue();
 
     // lengths differ -> changed
