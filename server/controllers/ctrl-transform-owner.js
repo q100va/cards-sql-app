@@ -380,8 +380,8 @@ export function transformOwnerData(kind, raw) {
     outdatedData.names = o.outdatedNames;
     delete o.outdatedNames;
 
-    o.spouseId = o.spouse.id;
-    o.spouseFullName = fullName(o.spouse);
+    o.spouseId = o.spouse?.id ?? null;
+    o.spouseFullName = o.spouse ? fullName(o.spouse) : null;
     delete o.spouse;
 
     o.birthDate = dateOnlyToLocalDate(o.birthDate);

@@ -10,7 +10,7 @@
     <mat-autocomplete
     #auto="matAutocomplete"
     [displayWith]="display"
-    (optionSelected)="onSelectOption()"
+    (optionSelected)="onSelectOption($event)"
     >
       @for(c of (filtered$ | async); track $index){
       <mat-option [value]="c">

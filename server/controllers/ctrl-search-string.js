@@ -35,6 +35,7 @@ function pushAddressTokens(tokens, addr) {
     t(addr.region?.name ?? addr.region?.shortName),
     t(addr.district?.name ?? addr.district?.shortName),
     t(addr.locality?.name ?? addr.locality?.shortName),
+    t(addr.fullPostalAddress ?? '')
   );
 }
 
@@ -170,13 +171,20 @@ const OWNER_CONFIG = {
       t(v?.kindergarten), t(v?.teacher), t(v?.veteran),
       t(v?.childOfWar), t(v?.profession), t(v?.honoraryStatus),
       t(v?.interests),
+      t(v?.home.homeName),
+      v?.spouse ? (fullName(v.spouse) + (v.birthDate ? (' ' + v.birthDate) : '')) : ''
     ],
     outdatedNames: (v) =>
       (v?.outdatedNames ?? [])
         .flatMap(i => [i.firstName, i.patronymic, i.lastName])
         .filter(Boolean)
         .join(' '),
-    home: (v) => v.home,
+    // home: (v) => v.home,
+    // spouse: (v) => fullName(v.spouse) + (v.birthDate ? (' ' + v.birthDate) : ''),
+    firstNonRestrictedAddress: (s) => (s?.home.addresses ?? []).find(a => !a?.isRestricted),
+    pushAddressTokens: (tokens, addr) => pushAddressTokens(tokens, addr),
+    contacts: (s)=>[],
+    addresses: (s)=>[],
   }
 };
 
@@ -197,6 +205,7 @@ export function createSearchStringFor(kind, record) {
   // first non-restricted address
   const addr = C.firstNonRestrictedAddress(record);
   C.pushAddressTokens(tokens, addr);
+
 
   if (kind == 'volunteer') {
     for (const i of C.institutes(record)) {
@@ -240,11 +249,7 @@ export function createSearchStringFor(kind, record) {
   }
 
   if (kind == 'senior') {
-    for (const c of C.homes(record)) {
-      tokens.push(t(c.homeName));
-      tokens.push(t(c.fullPostalAddress));
-      tokens.push(t(c.regionName));
-    }
+
   }
 
   return normalizeSpace(tokens.join(' '));

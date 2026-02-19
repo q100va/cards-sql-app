@@ -58,7 +58,7 @@ import {
   HomeDeletingData,
   OutdatedOfficialName,
   OutdatedCoordination,
-  CoordinationPick,
+  RelationPick,
   OutdatedHomeAddress,
   OutdatedUserName,
   OutdatedInstitute,
@@ -114,7 +114,7 @@ import {
 } from '../../../../../../shared/schemas/user.schema';
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
-import { debounceTime, finalize, Observable, of, shareReplay } from 'rxjs';
+import { BehaviorSubject, debounceTime, finalize, Observable, of, shareReplay } from 'rxjs';
 import { DefaultAddressParams } from '../../../../../../shared/schemas/toponym.schema';
 import { AuthUser } from '../../../../../../shared/schemas/auth.schema';
 import { AuthService } from '../../../../services/auth.service';
@@ -134,11 +134,10 @@ import {
 } from '../../../../utils/owner-restoration-reconcile.util';
 import { OwnerRestorationGuardService } from '../../../../services/owner-restoration-guard.service';
 import { OwnerChangesPlannerService } from '../../../../services/owner-changes-planner.service';
-import { ThisReceiver } from '@angular/compiler';
 
-type PersonKind = Exclude<Kind, 'home'>;
+/* type PersonKind = Exclude<Kind, 'home'>;
 type ContactsOwner = Exclude<Kind, 'senior'>;
-type CoordinationsOwner = Extract<Kind, 'partner' | 'home'>;
+type CoordinationsOwner = Extract<Kind, 'partner' | 'home'>; */
 @Component({
   selector: 'app-advanced-details',
   standalone: true,
@@ -355,8 +354,10 @@ export class AdvancedDetailsComponent<
   hasStatus = signal<boolean>(false);
   homeOpen = signal<boolean>(true);
   homeOrPartner = signal<'home' | 'partner' | 'other'>('other');
-  coordinationPickList$: Observable<CoordinationPick[]> = of([]);
-  spousePickList$: Observable<CoordinationPick[]> = of([]);
+  relationPickList$: Observable<RelationPick[]> = of([]);
+  spousePickList$: Observable<RelationPick[]> = of([]);
+/*   spousePickListSubject = new BehaviorSubject<RelationPick[]>([]);
+  spousePickList$ = this.spousePickListSubject.asObservable(); */
   showRestrictedToggle = true;
 
   override ngOnInit(): void {
@@ -1413,8 +1414,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     for (const key of this.mainProps) {
       const existing = this.existingOwner as Record<string, unknown>;
       const draft = this.ownerDraft as Record<string, unknown>;
-      console.log(key, existing[key as string]);
-      console.log(key, draft[key as string]);
+      //console.log(key, existing[key as string]);
+     // console.log(key, draft[key as string]);
       if (existing[key as string] !== draft[key as string]) {
         const currentMain =
           (this.changingData.main as NonNullable<
@@ -1648,53 +1649,49 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return new FormArray<InstituteFormGroup>([]);
   }
 
-  get coordinationsArray(): FormArray<FormControl<CoordinationPick | null>> {
+  get coordinationsArray(): FormArray<FormControl<RelationPick | null>> {
     let fa = this.mainForm.get('coordinations') as FormArray<
-      FormControl<CoordinationPick | null>
+      FormControl<RelationPick | null>
     >;
 
     if (!fa) {
-      fa = new FormArray<FormControl<CoordinationPick | null>>([]);
+      fa = new FormArray<FormControl<RelationPick | null>>([]);
       this.mainForm.addControl('coordinations', fa);
     }
     return fa;
   }
 
-  get homeIdCtrl(): FormControl<CoordinationPick | null> {
+  get homeCtrl(): FormControl<RelationPick | null> {
     //  console.log("this.mainForm.get('homeId')", this.mainForm.get('homeId'));
-    return this.mainForm.get('homeId') as FormControl<CoordinationPick | null>;
+    return this.mainForm.get('nursingHome') as FormControl<RelationPick | null>;
   }
 
-  get spouseIdCtrl(): FormControl<CoordinationPick | null> {
+  get spouseCtrl(): FormControl<RelationPick | null> {
     //  console.log("this.mainForm.get('homeId')", this.mainForm.get('homeId'));
-    return this.mainForm.get(
-      'spouseId',
-    ) as FormControl<CoordinationPick | null>;
+    return this.mainForm.get('spouse') as FormControl<RelationPick | null>;
   }
 
   clearHomeControl() {
-    this.mainForm.get('homeId')?.setValue(null);
+    this.mainForm.get('home')?.setValue(null);
     this.addressFilterComponent.onChangeMode('view', {
       countryId: null,
       regionId: null,
       districtId: null,
       localityId: null,
     });
-      this.mainForm.get('spouseId')?.setValue(null);
-      this.mainForm.get('spouseId')?.disable();
+    this.mainForm.get('spouse')?.setValue(null);
+    this.mainForm.get('spouse')?.disable();
   }
 
   clearSpouseControl() {
-    this.mainForm.get('spouseId')?.setValue(null);
+    this.mainForm.get('spouse')?.setValue(null);
   }
 
-  updateAddressFilter(home: CoordinationPick | null) {
-
-  }
+  updateAddressFilter(home: RelationPick | null) {}
 
   onAddCoordinationClick() {
     this.coordinationsArray.push(
-      new FormControl<CoordinationPick | null>(
+      new FormControl<RelationPick | null>(
         { value: null, disabled: false },
         {
           nonNullable: true,
@@ -1704,8 +1701,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     );
   }
 
-  /*  get coordinationsArray(): FormArray<FormControl<CoordinationPick | string>> {
-    return new FormArray<FormControl<CoordinationPick | string>>([]);
+  /*  get coordinationsArray(): FormArray<FormControl<RelationPick | string>> {
+    return new FormArray<FormControl<RelationPick | string>>([]);
   } */
   get subscriptions(): Subscription[] {
     return [];

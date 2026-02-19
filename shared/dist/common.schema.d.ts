@@ -167,11 +167,11 @@ export declare const outdatedAddressItemSchema: z.ZodObject<{
 export declare const outdatedCommonSchema: z.ZodObject<{}, z.core.$strict>;
 export declare const duplicatesSchema: z.ZodObject<{
     duplicatesName: z.ZodArray<z.ZodString>;
-    duplicatesContact: z.ZodArray<z.ZodObject<{
+    duplicatesContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
         type: z.ZodString;
         content: z.ZodString;
         owners: z.ZodArray<z.ZodString>;
-    }, z.core.$strict>>;
+    }, z.core.$strict>>>;
 }, z.core.$strict>;
 export declare const coordinationNameControlSchema: z.ZodObject<{
     id: z.ZodNumber;

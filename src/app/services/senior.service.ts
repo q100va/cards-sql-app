@@ -17,7 +17,7 @@ import {
   SeniorRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
-  CoordinationPick,
+  RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -45,7 +45,7 @@ export interface SeniorMainService extends OwnerMainService<
   SeniorDeletingData,
   { list: Senior[]; length: number }
 > {
-  getSeniorsPickList(id: number): Observable<CoordinationPick[]>;
+  getSeniorsPickList(id: number): Observable<RelationPick[]>;
 }
 
 @Injectable({
@@ -72,7 +72,10 @@ export class SeniorService implements SeniorMainService {
     let body = {
       id: ownerDraft.id,
       firstName: ownerDraft.firstName,
+      patronymic: ownerDraft.patronymic,
       lastName: ownerDraft.lastName,
+      homeId: ownerDraft.homeId,
+      birthDate: ownerDraft.birthDate,
     };
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/check-senior-data/`, body)
@@ -200,7 +203,7 @@ export class SeniorService implements SeniorMainService {
       .pipe(validateResponse(seniorSchema), catchError(this.handleError));
   }
 
-  getSeniorsPickList(id: number): Observable<CoordinationPick[]> {
+  getSeniorsPickList(id: number): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-seniors/${id}`)
       .pipe(
@@ -212,7 +215,7 @@ export class SeniorService implements SeniorMainService {
             }),
           ),
         ),
-        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
         catchError(this.handleError),
       );
   }

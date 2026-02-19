@@ -1,7 +1,7 @@
 import { FormGroup } from '@angular/forms';
 import {
   ConfOwnerDraftByKind,
-  CoordinationPick,
+  RelationPick,
   DraftCommon,
   Home,
   HomeDraft,
@@ -23,11 +23,17 @@ const get = (form: FormGroup, name: string) => form.get(name)?.value ?? null;
 const getInstitutes = (form: FormGroup) =>
   form.get('institutes')!.getRawValue();
 
-const getCoordinations = (form: FormGroup) =>
-  form
-    .get('coordinations')!
-    .getRawValue()
-    .map((c: CoordinationPick) => c.id);
+const getIds = (form: FormGroup, ctrlName: string) => {
+  const v = form.get(ctrlName)!.getRawValue();
+  if (v === null) return v;
+  return v.map((c: RelationPick) => c.id);
+};
+const getId = (form: FormGroup, ctrlName: string) => {
+  const v = form.get(ctrlName)!.getRawValue();
+  console.log('V', v);
+  if (v === null) return v;
+  return v.id;
+};
 
 function first<T>(arr?: T[] | null): T | null {
   return arr?.length ? arr[0] : null;
@@ -121,7 +127,7 @@ const BUILD_EXTRAS: BuildExtrasMap = {
     lastName: normalize(get(form, 'lastName')),
     affiliation: normalize(get(form, 'affiliation')),
     position: lightNormalize(get(form, 'position')),
-    draftCoordinations: getCoordinations(form),
+    draftCoordinations: getIds(form, 'coordinations'),
     draftAddress: getAddress(address),
     draftContacts: getContacts(form, contactTypes),
   }),
@@ -141,7 +147,7 @@ const BUILD_EXTRAS: BuildExtrasMap = {
     homeName: normalize(get(form, 'homeName')),
     officialName: normalize(get(form, 'officialName')),
     postalName: normalize(get(form, 'postalName')),
-    draftCoordinations: getCoordinations(form),
+    draftCoordinations: getIds(form, 'coordinations'),
     infoNote: lightNormalize(get(form, 'infoNote')),
     noAddress: !!get(form, 'noAddress'),
     specialHome: !!get(form, 'specialHome'),
@@ -163,18 +169,10 @@ const BUILD_EXTRAS: BuildExtrasMap = {
     patronymic: normalize(get(form, 'patronymic')),
     lastName: normalize(get(form, 'lastName')),
     birthDate: get(form, 'birthDate'),
-    confirmedFirstName: get(form, 'confirmedFirstName')
-      ? normalize(get(form, 'firstName'))
-      : null,
-    confirmedPatronymic: get(form, 'confirmedPatronymic')
-      ? normalize(get(form, 'patronymic'))
-      : null,
-    confirmedLastName: get(form, 'confirmedLastName')
-      ? normalize(get(form, 'lastName'))
-      : null,
-    confirmedBirthDate: get(form, 'confirmedBirthDate')
-      ? get(form, 'birthDate')
-      : null,
+    confirmedFirstName: get(form, 'confirmedFirstName'),
+    confirmedPatronymic: get(form, 'confirmedPatronymic'),
+    confirmedLastName: get(form, 'confirmedLastName'),
+    confirmedBirthDate: get(form, 'confirmedBirthDate'),
     gender: get(form, 'gender'),
     infoNote: lightNormalize(get(form, 'infoNote')),
     photoLink: lightNormalize(get(form, 'photoLink')),
@@ -189,8 +187,8 @@ const BUILD_EXTRAS: BuildExtrasMap = {
     interests: lightNormalize(get(form, 'interests')),
     orthodoxBeliever: lightNormalize(get(form, 'orthodoxBeliever')),
     dateOfExit: get(form, 'dateOfExit'),
-    homeId: get(form, 'homeId'), //TODO: check
-    spouseId: get(form, 'spouseId'),//TODO: check
+    homeId: getId(form, 'nursingHome'),
+    spouseId: getId(form, 'spouse'),
   }),
 };
 
@@ -232,14 +230,39 @@ const BUILD_RESTRICTED: BuildRestrictedMap = {
   user: (form, existing, now) => getRestParams(form, existing, now),
   partner: (form, existing, now) => getRestParams(form, existing, now),
   volunteer: (form, existing, now) => getRestParams(form, existing, now),
-  senior: (form, existing, now) => getRestParams(form, existing, now),
+  // senior: (form, existing, now) => getRestParams(form, existing, now),
 
   home: (form, existing, now) => {
     const isClose = !!get(form, 'isClose');
     const isRestricted = isClose ? true : !!get(form, 'isRestricted');
 
     const causeOfRestriction = isClose
-      ? `${get(form, 'causeOfRestriction') ?? ''} CLOSE`.trim()
+      ? // ? `${get(form, 'causeOfRestriction') ?? ''} CLOSE`.trim()
+        get(form, 'causeOfRestriction')
+        ? get(form, 'causeOfRestriction')
+        : 'CLOSE'
+      : isRestricted
+        ? (get(form, 'causeOfRestriction') as string | null)
+        : null;
+
+    const dateOfRestriction = isRestricted
+      ? existing?.isRestricted
+        ? (existing?.dateOfRestriction ?? now)
+        : now
+      : null;
+
+    return { isRestricted, causeOfRestriction, dateOfRestriction };
+  },
+
+  senior: (form, existing, now) => {
+    const dateOfExit = !!get(form, 'dateOfExit');
+    const isRestricted = dateOfExit ? true : !!get(form, 'isRestricted');
+
+    const causeOfRestriction = dateOfExit
+      ? // ? `${get(form, 'causeOfRestriction') ?? ''} GONE`.trim()
+        get(form, 'causeOfRestriction')
+        ? get(form, 'causeOfRestriction')
+        : 'GONE'
       : isRestricted
         ? (get(form, 'causeOfRestriction') as string | null)
         : null;
@@ -281,8 +304,11 @@ export function buildDraft<K extends Kind>(
     contactTypes,
     now,
   );
+
+  console.log('base, extras');
+  console.log(base, extras);
   return mergeDraft(base, extras);
 
-/*   const draft: DraftByKind[K] = { ...base, ...extras };
-  return draft */;
+  /*   const draft: DraftByKind[K] = { ...base, ...extras };
+  return draft */
 }

@@ -493,15 +493,20 @@
               </button>
               }
               @if(kind() == 'senior'){
+
+               <button mat-menu-item (click)="onShowSeniorsUsersClick(row.id)" *hasOp="permissions.viewUsers">
+                <mat-icon>badge</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_USERS' | translate}}</span>
+              </button>
               <button mat-menu-item (click)="onShowSeniorsVolunteersClick(row.id)" *hasOp="permissions.viewVolunteers">
                 <mat-icon>hub</mat-icon>
-                <span>{{'TABLE.MENU.OPEN_SENIORS' | translate}}</span>
+                <span>{{'TABLE.MENU.OPEN_VOLUNTEERS' | translate}}</span>
               </button>
 
               <button mat-menu-item (click)="onShowSeniorsOrdersClick(row.id)" *hasOp="permissions.viewOrders">
                 <mat-icon fontSet="material-icons-outlined"
                   fontSet="material-icons-outlined">local_post_office</mat-icon>
-                <span>{{'TABLE.MENU.OPEN_PARTNERS' | translate}}</span>
+                <span>{{'TABLE.MENU.OPEN_ORDERS' | translate}}</span>
               </button>
               }
 

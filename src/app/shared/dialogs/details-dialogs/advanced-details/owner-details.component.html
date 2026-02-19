@@ -123,7 +123,7 @@
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
           <mat-form-field>
             <mat-label>{{control.label | translate}}</mat-label>
-            <input matInput [matDatepicker]="picker" formControlName="birthDate">
+            <input matInput [matDatepicker]="picker" [formControlName]="control.controlName">
             <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
@@ -193,12 +193,12 @@
         @if(isSeniorContext()){
         <mat-grid-tile colspan="6" rowspan="2">
           <div style="width: 100%;">
-            <app-autocomplete-row [ctrl]="homeIdCtrl" [coordinationPickList$]="coordinationPickList$"
-              [label]="'TABLE.CARD.CHOOSE_HOME_LABEL'" [showDeleteButton]="data().operation == 'create'" (delete)="clearHomeControl()"
-              (selectOption)="updateAddressFilter($event)"></app-autocomplete-row>
-            @if(homeIdCtrl.value && typeof homeIdCtrl.value !== 'string'){
+            <app-autocomplete-row [ctrl]="homeCtrl" [relationPickList$]="relationPickList$"
+              [label]="'TABLE.CARD.CHOOSE_HOME_LABEL'" [showDeleteButton]="data().operation == 'create'"
+              (delete)="clearHomeControl()" (selectOption)="updateAddressFilter($event)"></app-autocomplete-row>
+            @if(homeCtrl.value && typeof homeCtrl.value !== 'string'){
             <br />
-            {{ homeIdCtrl.value.fullPostalAddress ?? '' }}
+            {{ homeCtrl.value.fullPostalAddress ?? '' }}
             }
           </div>
         </mat-grid-tile>
@@ -292,8 +292,9 @@
           <mat-grid-tile colspan="6" rowspan="1">
             <div style="width: 100%;">
 
-              <app-autocomplete-row [ctrl]="ctrl" [index]="l" [coordinationPickList$]="coordinationPickList$"
-                [label]="isHomeContext() ? 'TABLE.CARD.CHOOSE_PARTNER_LABEL' : 'TABLE.CARD.CHOOSE_HOME_LABEL'" [showDeleteButton]="data().operation == 'create' || isEditModeSignal()"
+              <app-autocomplete-row [ctrl]="ctrl" [index]="l" [relationPickList$]="relationPickList$"
+                [label]="isHomeContext() ? 'TABLE.CARD.CHOOSE_PARTNER_LABEL' : 'TABLE.CARD.CHOOSE_HOME_LABEL'"
+                [showDeleteButton]="data().operation == 'create' || isEditModeSignal()"
                 (delete)="deleteCoordinationControl($event)"></app-autocomplete-row>
             </div>
           </mat-grid-tile>
@@ -312,10 +313,6 @@
           <mat-hint>{{'TABLE.CARD.COORDINATION_HINT' | translate}}</mat-hint>
         </mat-grid-tile>
         }
-
-
-
-
         }
       </mat-grid-list>
     </mat-tab>
@@ -385,7 +382,7 @@
     <!-- Senior Details -->
     @if (isSeniorContext()) {
     <mat-tab [label]="'TABLE.CARD.SENIOR_DETAILS_LABEL' | translate">
-      <mat-grid-list cols="6" gutterSize="12px" rowHeight="56px">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
         @for (control of data().controls; track $index) {
         @if (control.category=='details') {
         @if(control.type=='inputText') {
@@ -404,8 +401,10 @@
         @if(control.type=='select'){
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
           <div style="width: 100%;">
-            <app-autocomplete-row [ctrl]="spouseIdCtrl" [coordinationPickList$]="spousePickList$"
-             [label]="'TABLE.CARD.CHOOSE_SPOUSE_LABEL'" [showDeleteButton]="data().operation == 'create'" (delete)="clearSpouseControl()"></app-autocomplete-row>
+            <app-autocomplete-row [ctrl]="spouseCtrl" [relationPickList$]="spousePickList$"
+              [label]="'TABLE.CARD.CHOOSE_SPOUSE_LABEL'"
+              [showDeleteButton]="data().operation == 'create'  || isEditModeSignal()"
+              (delete)="clearSpouseControl()"></app-autocomplete-row>
           </div>
         </mat-grid-tile>
         }

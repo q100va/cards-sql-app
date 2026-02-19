@@ -196,10 +196,10 @@ export type HomeChangingData = AdvancedChangingData<HomeChangingMain> & {
 };
 export type SeniorChangingMain = PersonChangingMain & {
   birthDate?: Date | null;
-  confirmedFirstName?: string | null;
-  confirmedPatronymic?: string | null;
-  confirmedLastName?: string | null;
-  confirmedBirthDate?: Date | null;
+  confirmedFirstName?: boolean;
+  confirmedPatronymic?: boolean;
+  confirmedLastName?: boolean;
+  confirmedBirthDate?: boolean;
   gender?: 'male' | 'female';
   infoNote?: string | null;
   photoLink?: string | null;
@@ -365,10 +365,10 @@ export type SeniorDraft = PersonDraft & {
   interests: string | null;
   orthodoxBeliever: string | null;
   dateOfExit: Date | null;
-  confirmedFirstName: string | null;
-  confirmedPatronymic: string | null;
-  confirmedLastName: string | null;
-  confirmedBirthDate: Date | null;
+  confirmedFirstName: boolean;
+  confirmedPatronymic: boolean;
+  confirmedLastName: boolean;
+  confirmedBirthDate: boolean;
   spouseId: number | null;
   homeId: number;
 };
@@ -472,10 +472,10 @@ export type Senior = Person & {
   interests: string | null;
   orthodoxBeliever: string | null;
   dateOfExit: Date | null;
-  confirmedFirstName?: string | null;
-  confirmedPatronymic?: string | null;
-  confirmedLastName?: string | null;
-  confirmedBirthDate?: Date | null;
+  confirmedFirstName?: boolean;
+  confirmedPatronymic?: boolean;
+  confirmedLastName?: boolean;
+  confirmedBirthDate?: boolean;
   spouseId: number | null;
   spouseFullName: string | null;
   homeId: number;
@@ -625,7 +625,7 @@ export type ListDto<K extends Kind> = ConfListDto[K];
           ? { list: Senior[]; length: number }
           : never; */
 
-export type CoordinationPick = {
+export type RelationPick = {
   id: number;
   name: string;
   fullPostalAddress?: string;

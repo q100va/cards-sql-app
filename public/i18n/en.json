@@ -223,7 +223,8 @@
       "FEMALE": "female",
       "NO_ADDRESS_LABEL": "no return address",
       "SPECIAL_HOME_LABEL": "from special home",
-      "ACC_SCHOOL_LABEL": "accessible for school"
+      "ACC_SCHOOL_LABEL": "accessible for school",
+      "SPOUSE": "spouse - "
     },
     "MENU": {
       "OPEN_LIST_TITLE": "Open list",
@@ -271,7 +272,7 @@
       "COORDINATION_HINT": "If the value is not found, go to the corresponding section and create a record.",
       "CHOOSE_HOME_LABEL": "Nursing home name",
       "CHOOSE_PARTNER_LABEL": "Partner name",
-      "CHOOSE_SPOUSE_LABEL":"Spouse name",
+      "CHOOSE_SPOUSE_LABEL": "Spouse name",
       "SENIOR_DETAILS_LABEL": "Details"
     },
     "HOME_CATEGORIES": {}

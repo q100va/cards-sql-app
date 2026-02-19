@@ -6,14 +6,17 @@ export const nullableDateOnly = z.preprocess((v) => {
     if (v == null || v === '')
         return null;
     if (v instanceof Date) {
-        // превратим Date -> YYYY-MM-DD (локально)
         const y = v.getFullYear();
         const m = String(v.getMonth() + 1).padStart(2, '0');
         const d = String(v.getDate()).padStart(2, '0');
         return `${y}-${m}-${d}`;
     }
+    // если пришло ISO типа 1942-02-17T05:00:00.000Z — режем до даты
+    if (typeof v === 'string') {
+        return v.slice(0, 10);
+    }
     return String(v);
-}, z.date().nullable());
+}, z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable());
 const nullableString = z.preprocess(emptyToNull, z.string().max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' }).nullable());
 /* ===================== DTOs ===================== */
 export const checkSeniorDataSchema = z
@@ -48,6 +51,10 @@ export const homeControlSchema = z.object({
     districtId: z.number().int().positive(),
     localityId: z.number().int().positive(),
 }, 'FORM_VALIDATION.REQUIRED');
+export const spouseControlSchema = z.object({
+    id: z.number().int().positive(),
+    name: z.string().min(1),
+}).nullable();
 /* ===================== Senior Draft ===================== */
 export const seniorDraftSchema = z
     .object({
@@ -55,16 +62,16 @@ export const seniorDraftSchema = z
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
     lastName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    birthDate: nullableIsoDate,
-    confirmedFirstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').nullable(),
-    confirmedPatronymic: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').nullable(),
-    confirmedLastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').nullable(),
-    confirmedBirthDate: nullableIsoDate,
+    birthDate: nullableDateOnly,
+    confirmedFirstName: z.boolean(),
+    confirmedPatronymic: z.boolean(),
+    confirmedLastName: z.boolean(),
+    confirmedBirthDate: z.boolean(),
     gender: z.enum(['male', 'female']),
     comment: nullableString,
     infoNote: nullableString,
     photoLink: nullableString,
-    dateOfConsent: nullableIsoDate,
+    dateOfConsent: nullableDateOnly,
     personalNoAddr: z.boolean(),
     isRestricted: z.boolean(),
     causeOfRestriction: nullableString,
@@ -121,36 +128,35 @@ export const seniorDraftSchema = z
 // ChangingData.main — PATCH-like
 export const changingMainSchema = z
     .object({
-    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    lastName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    birthDate: nullableIsoDate,
-    confirmedFirstName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    confirmedPatronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    confirmedLastName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    confirmedBirthDate: nullableIsoDate,
-    gender: z.enum(['male', 'female']),
-    comment: nullableString,
-    infoNote: nullableString,
-    photoLink: nullableString,
-    dateOfConsent: nullableIsoDate,
-    personalNoAddr: z.boolean(),
-    isRestricted: z.boolean(),
-    causeOfRestriction: nullableString,
-    dateOfRestriction: nullableIsoDate,
-    kindergarten: nullableString,
-    teacher: nullableString,
-    veteran: nullableString,
-    childOfWar: nullableString,
-    profession: nullableString,
-    honoraryStatus: nullableString,
-    interests: nullableString,
-    orthodoxBeliever: nullableString,
-    dateOfStart: nullableIsoDate,
-    dateOfExit: nullableIsoDate,
-    spouseId: positiveInt.nullable(),
-})
-    .strict();
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
+    patronymic: nullableString.optional(), //TODO: add TOO_LONG_50
+    lastName: nullableString.optional(), //TODO: add TOO_LONG_50
+    birthDate: nullableDateOnly.optional(),
+    confirmedFirstName: z.boolean().optional(),
+    confirmedPatronymic: z.boolean().optional(),
+    confirmedLastName: z.boolean().optional(),
+    confirmedBirthDate: z.boolean().optional(),
+    gender: z.enum(['male', 'female']).optional(),
+    comment: nullableString.optional(),
+    infoNote: nullableString.optional(),
+    photoLink: nullableString.optional(),
+    dateOfConsent: nullableDateOnly.optional(),
+    personalNoAddr: z.boolean().optional(),
+    isRestricted: z.boolean().optional(),
+    causeOfRestriction: nullableString.optional(),
+    dateOfRestriction: nullableIsoDate.optional(),
+    kindergarten: nullableString.optional(),
+    teacher: nullableString.optional(),
+    veteran: nullableString.optional(),
+    childOfWar: nullableString.optional(),
+    profession: nullableString.optional(),
+    honoraryStatus: nullableString.optional(),
+    interests: nullableString.optional(),
+    orthodoxBeliever: nullableString.optional(),
+    dateOfStart: nullableIsoDate.optional(),
+    dateOfExit: nullableIsoDate.optional(),
+    spouseId: positiveInt.nullable().optional(),
+});
 export const changingDataSchema = z
     .object({
     main: changingMainSchema.nullable(),
@@ -337,10 +343,10 @@ export const seniorSchema = z
     address: seniorAddressSchema,
     comment: nonEmpty.nullable(),
     birthDate: nullableIsoDate,
-    confirmedFirstName: nonEmpty.nullable(),
-    confirmedPatronymic: nonEmpty.nullable(),
-    confirmedLastName: nonEmpty.nullable(),
-    confirmedBirthDate: nullableIsoDate,
+    confirmedFirstName: z.boolean(),
+    confirmedPatronymic: z.boolean(),
+    confirmedLastName: z.boolean(),
+    confirmedBirthDate: z.boolean(),
     gender: z.enum(['male', 'female']),
     infoNote: nullableString,
     photoLink: nullableString,

@@ -208,7 +208,7 @@ export const duplicatesSchema = z
         content: z.string(),
         owners: z.array(z.string()),
     })
-        .strict()),
+        .strict()).optional(),
 })
     .strict();
 export const coordinationNameControlSchema = z.object({

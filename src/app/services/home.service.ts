@@ -17,7 +17,7 @@ import {
   HomeRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
-  CoordinationPick,
+  RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -46,7 +46,7 @@ export interface HomeMainService extends OwnerMainService<
 > {
   checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>>;
   checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>>;
-  getHomesPickList(): Observable<CoordinationPick[]>;
+  getHomesPickList(): Observable<RelationPick[]>;
 }
 
 @Injectable({
@@ -207,7 +207,7 @@ export class HomeService implements HomeMainService {
       .pipe(validateResponse(homeSchema), catchError(this.handleError));
   }
 
-  /*   getHomesPickList(): Observable<ApiResponse<CoordinationPick[]>> {
+  /*   getHomesPickList(): Observable<ApiResponse<RelationPick[]>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
       .pipe(
@@ -220,7 +220,7 @@ export class HomeService implements HomeMainService {
       );
   }
  */
-  getHomesPickList(): Observable<CoordinationPick[]> {
+  getHomesPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
       .pipe(
@@ -237,7 +237,7 @@ export class HomeService implements HomeMainService {
             }),
           ),
         ),
-        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
         catchError(this.handleError),
       );
   }

@@ -31,24 +31,24 @@ export default function SeniorModel(sequelize) {
         allowNull: true,
       },
       confirmedFirstName: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
       },
       confirmedPatronymic: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
       },
       confirmedLastName: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
       },
       confirmedBirthDate: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: false
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
       },
       gender: {
         type: DataTypes.ENUM('male', 'female'),
@@ -87,6 +87,9 @@ export default function SeniorModel(sequelize) {
         type: DataTypes.TEXT
       },
       interests: {
+        type: DataTypes.TEXT
+      },
+      orthodoxBeliever: {
         type: DataTypes.TEXT
       },
       comment: {

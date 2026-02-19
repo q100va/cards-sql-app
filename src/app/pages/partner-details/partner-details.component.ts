@@ -32,7 +32,7 @@ import {
   OutdatedFullName,
 } from '../../../../shared/schemas/common.schema';
 import { shareReplay } from 'rxjs';
-import { CoordinationPick } from '../../interfaces/advanced-model';
+import { RelationPick } from '../../interfaces/advanced-model';
 import { zodValidator } from '../../utils/zod-validator';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
 import {
@@ -72,7 +72,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
   override homeService = inject(HomeService) as HomeMainService;
   override ngOnInit(): void {
     super.ngOnInit();
-    this.coordinationPickList$ = this.homeService
+    this.relationPickList$ = this.homeService
       .getHomesPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
 
@@ -103,7 +103,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(
-        new FormControl<CoordinationPick | null>(
+        new FormControl<RelationPick | null>(
           { value: null, disabled: true },
           {
             nonNullable: true,
@@ -199,7 +199,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
 
   protected updateCoordinationsControlsValidity(enable: boolean) {
     const fa = this.mainForm.get('coordinations') as FormArray<
-      FormControl<CoordinationPick | null>
+      FormControl<RelationPick | null>
     > | null;
     if (fa) {
       fa.controls.forEach((control) =>
@@ -226,7 +226,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     const current = this.mainForm
       .get('coordinations')!
       .getRawValue()
-      .map((c: CoordinationPick) => c.id)
+      .map((c: RelationPick) => c.id)
       .sort();
 
     // lengths differ -> changed
@@ -253,7 +253,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       });
     } else {
       this.coordinationsArray.push(
-        new FormControl<CoordinationPick | null>(
+        new FormControl<RelationPick | null>(
           { value: null, disabled: false },
           {
             nonNullable: true,

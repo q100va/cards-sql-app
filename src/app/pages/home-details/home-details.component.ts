@@ -28,7 +28,7 @@ import {
   OutdatedOfficialName,
   OutdatedCoordination,
   HomeCoordination,
-  CoordinationPick,
+  RelationPick,
 } from '../../interfaces/advanced-model';
 
 import { HomeService, HomeMainService } from '../../services/home.service';
@@ -74,7 +74,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
   override partnerService = inject(PartnerService) as PartnerMainService;
   override ngOnInit(): void {
     super.ngOnInit();
-    this.coordinationPickList$ = this.partnerService
+    this.relationPickList$ = this.partnerService
       .getPartnersPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
 
@@ -117,7 +117,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     let diff = values.length - formArray.length;
     while (diff > 0) {
       formArray.push(
-        new FormControl<CoordinationPick | null>(
+        new FormControl<RelationPick | null>(
           { value: null, disabled: true },
           {
             nonNullable: true,
@@ -214,7 +214,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
 
   protected updateCoordinationsControlsValidity(enable: boolean) {
     const fa = this.mainForm.get('coordinations') as FormArray<
-      FormControl<CoordinationPick | null>
+      FormControl<RelationPick | null>
     > | null;
     if (fa) {
       fa.controls.forEach((control) =>
@@ -256,7 +256,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     const current = this.mainForm
       .get('coordinations')!
       .getRawValue()
-      .map((c: CoordinationPick) => c.id)
+      .map((c: RelationPick) => c.id)
       .sort();
 
     // lengths differ -> changed
@@ -353,7 +353,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       });
     } else {
       this.coordinationsArray.push(
-        new FormControl<CoordinationPick | null>(
+        new FormControl<RelationPick | null>(
           { value: null, disabled: false },
           {
             nonNullable: true,

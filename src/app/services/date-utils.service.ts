@@ -6,7 +6,8 @@ import { TranslateService } from '@ngx-translate/core';
 export class DateUtilsService {
   constructor(private translateService: TranslateService) {}
 
-  transformDate(date: Date | string): string {
+  transformDate(date: Date | string | null): string {
+    if(date === null) return '';
     const locale =
       this.translateService.getCurrentLang() === 'en' ? 'en-US' : 'ru-RU';
     const format = locale === 'en-US' ? 'MM/dd/yyyy' : 'dd.MM.yyyy';

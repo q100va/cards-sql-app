@@ -25,8 +25,8 @@ import {
 } from '../../services/senior.service';
 import { HomeService, HomeMainService } from '../../services/home.service';
 import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
-import { of, shareReplay } from 'rxjs';
-import { CoordinationPick } from '../../interfaces/advanced-model';
+import { BehaviorSubject, of, shareReplay, switchMap } from 'rxjs';
+import { RelationPick } from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-senior-details',
@@ -59,13 +59,24 @@ import { CoordinationPick } from '../../interfaces/advanced-model';
 export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
   override seniorService = inject(SeniorService) as SeniorMainService;
   override homeService = inject(HomeService) as HomeMainService;
+
+  private selectedHomeId$ = new BehaviorSubject<number | null>(null);
+
+  override spousePickList$ = this.selectedHomeId$.pipe(
+    switchMap((id) =>
+      id ? this.seniorService.getSeniorsPickList(id) : of([]),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
   override ngOnInit(): void {
     super.ngOnInit();
     if (this.data().operation == 'create')
-      this.mainForm.get('spouseId')?.disable();
-    this.coordinationPickList$ = this.homeService
+      this.mainForm.get('spouse')?.disable();
+    this.relationPickList$ = this.homeService
       .getHomesPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+    this.selectedHomeId$.next(this.existingOwner?.homeId ?? null);
 
     this.mainProps = [
       'firstName',
@@ -93,7 +104,31 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
       'homeId',
       'spouseId',
     ];
+    this.showRestrictedToggle = !this.existingOwner?.dateOfExit;
     this.setHasOutdatedNames(); //hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+  }
+
+  //TODO: Доработать переход в режим редактирования и обратно, контроль изменений и ошибок
+
+  override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
+    super.setInitialValues(mode);
+
+    //home
+    this.mainForm.controls['nursingHome'].patchValue({
+      id: this.existingOwner!.homeId,
+      name:
+        this.existingOwner!.home.homeName +
+        ' - ' +
+        this.existingOwner!.address.region.shortName,
+      fullPostalAddress: this.existingOwner!.address.fullPostalAddress,
+    });
+    //spouse
+    if (this.existingOwner!.spouseId) {
+      this.mainForm.controls['spouse'].patchValue({
+        id: this.existingOwner!.spouseId,
+        name: this.existingOwner!.spouseFullName,
+      });
+    }
   }
 
   override setEmptyOutdatedDataDraft() {
@@ -133,11 +168,35 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
     this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 
-  override updateAddressFilter(home: CoordinationPick | null) {
-    this.mainForm.get('spouseId')?.enable();
+  override updateAddressFilter(home: RelationPick | null) {
+    this.mainForm.get('spouse')?.enable();
+    this.selectedHomeId$.next(home?.id ?? null);
+
+    this.addressFilterComponent.onChangeMode('view', {
+      countryId: home?.countryId ?? null,
+      regionId: home?.regionId ?? null,
+      districtId: home?.districtId ?? null,
+      localityId: home?.localityId ?? null,
+    });
+  }
+
+  protected override additionalValidationHooks(): boolean {
+    return this.spouseChangeValidation();
+  }
+
+  spouseChangeValidation(): boolean {
+    const original = this.existingOwner!['spouseId'] ?? null;
+    const current = this.mainForm.get('spouse')!.getRawValue()?.id ?? null;
+    return !(original === current);
+  }
+
+  /*
+  override updateAddressFilter(home: RelationPick | null) {
+    this.mainForm.get('spouse')?.enable();
     console.log('home', home);
     if (home === null) {
-      this.spousePickList$ = of([]);
+      // this.spousePickList$ = of([]);
+      this.spousePickListSubject.next([]);
       this.addressFilterComponent.onChangeMode('view', {
         countryId: null,
         regionId: null,
@@ -145,9 +204,12 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
         localityId: null,
       });
     } else {
-      this.spousePickList$ = this.seniorService
-        .getSeniorsPickList(home.id)
-        .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+      this.seniorService.getSeniorsPickList(home.id).subscribe((list) => {
+        this.spousePickListSubject.next(list);
+      });
+      console.log('this.spousePickList$', this.spousePickList$);
+
+
       this.addressFilterComponent.onChangeMode('view', {
         countryId: home.countryId!,
         regionId: home.regionId!,
@@ -155,5 +217,5 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
         localityId: home.localityId!,
       });
     }
-  }
+  } */
 }

@@ -8,7 +8,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -21,7 +21,7 @@ import {
   startWith,
   filter,
 } from 'rxjs/operators';
-import { CoordinationPick } from '../../../interfaces/advanced-model';
+import { RelationPick } from '../../../interfaces/advanced-model';
 
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -43,16 +43,16 @@ import { TranslateModule } from '@ngx-translate/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutocompleteRowComponent implements OnInit {
-  ctrl = input.required<FormControl<CoordinationPick | null>>();
+  ctrl = input.required<FormControl<RelationPick | null>>();
   showDeleteButton = input.required<boolean>();
   label = input.required<string>();
-  coordinationPickList$ = input.required<Observable<CoordinationPick[]>>();
+  relationPickList$ = input.required<Observable<RelationPick[]>>();
   minLength = 0;
-  filtered$!: Observable<CoordinationPick[]>;
+  filtered$!: Observable<RelationPick[]>;
   //showHint$!: Observable<boolean>;
   index = input<number>(0);
   delete = output<number>();
-  selectOption = output<CoordinationPick | null>();
+  selectOption = output<RelationPick | null>();
 
   ngOnInit(): void {
     const q$ = this.ctrl().valueChanges.pipe(
@@ -65,7 +65,7 @@ export class AutocompleteRowComponent implements OnInit {
 
     // this.showHint$ = q$.pipe(map((q) => q.length < this.minLength));
 
-    this.filtered$ = combineLatest([this.coordinationPickList$(), q$]).pipe(
+    this.filtered$ = combineLatest([this.relationPickList$(), q$]).pipe(
       map(([list, q]) => {
         if (q.length < this.minLength) return [];
         return list.filter((c) => c.name.toLowerCase().includes(q));
@@ -77,13 +77,17 @@ export class AutocompleteRowComponent implements OnInit {
     this.delete.emit(this.index());
   }
 
-  onSelectOption() {
-    /*     if (this.ctrl().value !== null) { */
-    console.log('this.ctrl().value', this.ctrl().value);
-    this.selectOption.emit(this.ctrl().value);
-    /*   } */
+    onSelectOption(e: MatAutocompleteSelectedEvent) {
+    this.selectOption.emit(e.option.value as RelationPick);
   }
 
-  display = (v: CoordinationPick | string | null): string =>
+/*   onSelectOption() {
+    console.log('this.ctrl().value', this.ctrl().value);
+    this.selectOption.emit(this.ctrl().value);
+  } */
+
+  display = (v: RelationPick | string | null): string =>
     !v ? '' : typeof v === 'string' ? v : v.name;
 }
+
+

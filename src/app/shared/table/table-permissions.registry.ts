@@ -30,7 +30,7 @@ type PermissionKeysByKind = {
     | 'unblock'
     | 'delete';
 
-  senior: 'viewOrEdit' | 'viewOrders' | 'viewVolunteers' | 'block' | 'unblock' | 'delete';
+  senior: 'viewOrEdit' | 'viewUsers' | 'viewOrders' | 'viewVolunteers' | 'block' | 'unblock' | 'delete';
 };
 
 export type PermissionSet<K extends TableComponentType> = {
@@ -163,6 +163,10 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
     },
     delete: {
       codes: ['DELETE_SENIOR'],
+      mode: 'any',
+    },
+    viewUsers: {
+      codes: ['VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST'],
       mode: 'any',
     },
     viewOrders: {

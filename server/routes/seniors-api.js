@@ -11,6 +11,7 @@ import { requireOperation, requireAny } from '../middlewares/require-permission.
 import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
 import * as seniorSchemas from "../../shared/dist/senior.schema.js";
+import * as homeSchemas from "../../shared/dist/home.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
@@ -48,7 +49,7 @@ const includes = [
   {
     model: Senior,
     as: 'spouse',
-    attributes: ['id', 'firstName', 'patronymic', 'lastName']
+    attributes: ['id', 'firstName', 'patronymic', 'lastName', 'birthDate']
   }
 ];
 
@@ -80,14 +81,14 @@ router.post(
 
       whereClause.birthDate = senior.birthDate == null
         ? { [Op.is]: null }
-        : senior.birthDate;
+        : new Date(senior.birthDate);
 
       const nameRows = await Senior.findAll({
         where: whereClause,
         attributes: ['firstName', 'patronymic', 'lastName', 'birthDate'],
         raw: true
       });
-      const duplicatesName = nameRows.map(row => fullName(row) + row.birthDate ? (' ' + row.birthDate) : '');
+      const duplicatesName = nameRows.map(row => fullName(row) + (row.birthDate ? (' ' + row.birthDate) : ''));
 
       let response = { data: { duplicatesName } };
       if (duplicatesName.length > 0) response.code = 'SENIOR.HAS_DATA_DUPLICATES';
@@ -136,8 +137,10 @@ router.post(
             honoraryStatus: creatingSenior.honoraryStatus,
             interests: creatingSenior.interests,
             orthodoxBeliever: creatingSenior.orthodoxBeliever,
-            dateOfStart: creatingSenior.dateOfStart,
+            //dateOfStart: creatingSenior.dateOfStart,
             dateOfExit: creatingSenior.dateOfExit,
+            homeId: creatingSenior.homeId,
+            spouseId: creatingSenior.spouseId,
           },
           { transaction: t }
         );
@@ -152,6 +155,28 @@ router.post(
           include: includes,
           transaction: t,
         });
+
+        if (creatingSenior.spouseId) {
+
+          await Senior.update(
+            { spouseId: null },
+            {
+              where: { spouseId: creatingSenior.spouseId, id: { [Op.ne]: freshSenior.id } },
+              transaction: t,
+            });
+
+          await Senior.update(
+            { spouseId: freshSenior.id },
+            {
+              where: { id: creatingSenior.spouseId },
+              transaction: t,
+            });
+
+
+        }
+
+        console.log('freshSenior');
+        console.log(JSON.stringify(freshSenior, null, 2));
 
         const searchString = createSearchStringFor('senior', freshSenior);
         await SeniorSearch.create({ seniorId: senior.id, content: searchString }, { transaction: t });
@@ -182,6 +207,43 @@ router.post(
         // CHANGES
         // main
         if (changingData?.main) {
+
+          const spouseId = changingData.main.spouseId;
+          if (spouseId !== undefined) {
+
+            if (senior.spouseId) {
+              await Senior.update(
+                { spouseId: null },
+                {
+                  where: { id: senior.spouseId },
+                  transaction: t
+                }
+              );
+            }
+
+            if (spouseId !== null) {
+              await Senior.update(
+                { spouseId: null },
+                {
+                  where: {
+                    spouseId: spouseId,
+                    id: { [Op.ne]: id }
+                  },
+                  transaction: t,
+                });
+
+              await Senior.update(
+                { spouseId: id },
+                {
+                  where: { id: spouseId },
+                  transaction: t
+                }
+              );
+
+
+            }
+          }
+
           console.log('changes?.main', changingData?.main);
           const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
@@ -265,7 +327,9 @@ router.post(
       const whereSpouse = {};
       // const whereHomeAddress = {};
       whereHome.isRestricted = false;
+      whereAddress.isRestricted = false;
       let homesRequired = false;
+      let spouseRequired = false;
 
       //TODO: надо проверять еще по интернату:участвует/не участвует но с условием ИЛИ для only-blocked
       //и когда жилец выбывает нужно блокировать его
@@ -273,15 +337,15 @@ router.post(
       // view option (if you still use it)
       switch (view?.option) {
         case 'only-active': {
-           whereSenior.isRestricted = false;
+          whereSenior.isRestricted = false;
           // whereSenior.dateOfExit = null;
-           whereHome.isRestricted = false;
-            break;
-          }
+          whereHome.isRestricted = false;
+          break;
+        }
 
         case 'only-blocked': {
           whereSenior.isRestricted = true;
-       //TODO:     OR
+          //TODO:     OR
           whereHome.isRestricted = true;
           break;
         }
@@ -346,7 +410,8 @@ router.post(
         whereSenior.photoLink = { [Op.not]: null };
       }
       if (filters?.general?.hasSpouse === true) {
-        whereSpouse['$spouse.id$'] = { [Op.not]: null };
+        //whereSpouse['$spouse.id$'] = { [Op.not]: null };
+        spouseRequired = true;
       }
 
       if (filters?.general?.noAddress !== undefined) {
@@ -374,7 +439,7 @@ router.post(
       const addrRequired = (addresses.countries?.length ?? 0) > 0;
       if (addrRequired) {
         const sub = await buildAddressOwnerIdSubquery('senior', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
-        whereAddress.isRestricted = false;
+        //whereAddress.isRestricted = false;
         if (sub) whereAddress.seniorId = { [Op.in]: sub };
       }
 
@@ -415,13 +480,15 @@ router.post(
           {
             model: SeniorOutdatedName,
             as: 'outdatedNames',
-            attributes: ['id', 'firstName', 'patronymic', 'lastName']
+            attributes: ['id', 'firstName', 'patronymic', 'lastName'],
+            required: false
           },
           {
             model: Senior,
             as: 'spouse',
             attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-            where: whereSpouse
+            // where: whereSpouse,
+            required: spouseRequired
           }
         ];
 
@@ -438,8 +505,8 @@ router.post(
           }
         });
       }
-      //  console.log('INCLUDES', includes);
-      //  console.log(JSON.stringify(includes, null, 2));
+      console.log('INCLUDES', includes);
+      console.log(JSON.stringify(includes, null, 2));
 
 
 
@@ -463,10 +530,10 @@ router.post(
         include: includes,
         offset: pageSize * pageNumber,
         limit: pageSize,
-        //subQuery: false, // avoid subquery limits in includes
-        distinct: true,
+        //  subQuery: false, // avoid subquery limits in includes
+        //  distinct: true,
       });
-      //  console.log('seniors', seniors);
+      console.log('seniors', seniors);
 
       const items = seniors.map(p => transformOwnerData('senior', p.toJSON()));
       res.status(200).send({ data: { list: items, length: total } });
@@ -498,14 +565,16 @@ router.get("/get-senior-by-id/:id",
     }
   });
 
-/* router.get("/get-list-of-seniors",
+  //TODO: исключать самого сеньора (при редактировании)
+router.get("/get-list-of-seniors/:id",
   requireAuth,
-  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME'),
+  requireAny('VIEW_SENIOR', 'EDIT_SENIOR', 'ADD_SENIOR'),
+  validateRequest(homeSchemas.homeIdSchema, 'params'),
   async (req, res, next) => {
     try {
       const seniors = await Senior.findAll({
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        where: { isRestricted: false },
+        where: { dateOfExit: null, homeId: req.params.id },
       });
 
       const data = seniors.map(p => ({ id: p.id, name: fullName(p) }));
@@ -515,7 +584,7 @@ router.get("/get-senior-by-id/:id",
       error.code = error.code ?? 'ERRORS.SENIOR.LIST_FAILED';
       next(error);
     }
-  }); */
+  });
 
 router.get(
   "/check-senior-before-delete/:id",

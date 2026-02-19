@@ -17,7 +17,7 @@ import {
   PartnerRestoringData,
   OwnerMainService,
   UpdatedOwnerData,
-  CoordinationPick,
+  RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { GeneralFilter } from '../interfaces/base-list';
@@ -44,7 +44,7 @@ export interface PartnerMainService
     { list: Partner[]; length: number }
   > {
   checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>>;
-  getPartnersPickList(): Observable<CoordinationPick[]>;
+  getPartnersPickList(): Observable<RelationPick[]>;
 }
 
 @Injectable({
@@ -202,7 +202,7 @@ export class PartnerService implements PartnerMainService {
       .pipe(validateResponse(partnerSchema), catchError(this.handleError));
   }
 
-  getPartnersPickList(): Observable<CoordinationPick[]> {
+  getPartnersPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-partners`)
       .pipe(
@@ -214,7 +214,7 @@ export class PartnerService implements PartnerMainService {
             })
           )
         ),
-        map((res: ApiResponse<CoordinationPick[]>) => res.data),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
         catchError(this.handleError)
       );
   }

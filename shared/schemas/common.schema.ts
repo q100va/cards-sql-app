@@ -279,7 +279,7 @@ export const duplicatesSchema = z
           owners: z.array(z.string()),
         })
         .strict()
-    ),
+    ).optional(),
   })
   .strict();
 

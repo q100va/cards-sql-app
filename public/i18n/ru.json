@@ -223,7 +223,8 @@
       "FEMALE":"жен.",
       "NO_ADDRESS_LABEL": "БОА",
       "SPECIAL_HOME_LABEL": "проживает в специнтернате",
-      "ACC_SCHOOL_LABEL": "можно поздравлять школьникам"
+      "ACC_SCHOOL_LABEL": "можно поздравлять школьникам",
+      "SPOUSE": "супруг(а) - "
     },
     "MENU": {
       "OPEN_LIST_TITLE": "Открыть перечень",

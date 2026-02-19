@@ -458,6 +458,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
       row.honoraryStatus,
       row.orthodoxBeliever,
       row.interests,
+      row.spouseFullName ? this.translate.instant('TABLE.NOTES.SPOUSE') + row.spouseFullName : ''
     ];
     return parts.filter(Boolean).join(', ').trim();
   }
@@ -598,6 +599,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   onShowHomesSeniorsClick(id: number) {}
   onShowSeniorsOrdersClick(id: number) {}
   onShowSeniorsVolunteersClick(id: number) {}
+  onShowSeniorsUsersClick(id: number) {}
 
   onBlockOwnerClick(id: number) {
     if (this.kind() !== 'partner') {
