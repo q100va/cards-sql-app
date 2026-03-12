@@ -45,23 +45,29 @@ import {
   outdatedAddressItemSchema,
 } from './common.schema.js';
 
-export const nullableDateOnly = z.preprocess((v: unknown) => {
-  if (v == null || v === '') return null;
+export const nullableDateOnly = z.preprocess(
+  (v: unknown) => {
+    if (v == null || v === '') return null;
 
-  if (v instanceof Date) {
-    const y = v.getFullYear();
-    const m = String(v.getMonth() + 1).padStart(2, '0');
-    const d = String(v.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
+    if (v instanceof Date) {
+      const y = v.getFullYear();
+      const m = String(v.getMonth() + 1).padStart(2, '0');
+      const d = String(v.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
 
-  // если пришло ISO типа 1942-02-17T05:00:00.000Z — режем до даты
-  if (typeof v === 'string') {
-    return v.slice(0, 10);
-  }
+    // если пришло ISO типа 1942-02-17T05:00:00.000Z — режем до даты
+    if (typeof v === 'string') {
+      return v.slice(0, 10);
+    }
 
-  return String(v);
-}, z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable());
+    return String(v);
+  },
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable(),
+);
 
 const nullableString = z.preprocess(
   emptyToNull,
@@ -113,12 +119,12 @@ export const homeControlSchema = z.object(
   },
   'FORM_VALIDATION.REQUIRED',
 );
-export const spouseControlSchema = z.object(
-  {
+export const spouseControlSchema = z
+  .object({
     id: z.number().int().positive(),
     name: z.string().min(1),
-  }
-).nullable();
+  })
+  .nullable();
 
 /* ===================== Senior Draft ===================== */
 
@@ -199,37 +205,36 @@ export const seniorDraftSchema = z
 /* ===================== UpdateSeniorData ===================== */
 
 // ChangingData.main — PATCH-like
-export const changingMainSchema = z
-  .object({
-    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
-    patronymic: nullableString.optional(), //TODO: add TOO_LONG_50
-    lastName: nullableString.optional(),//TODO: add TOO_LONG_50
-    birthDate: nullableDateOnly.optional(),
-    confirmedFirstName:  z.boolean().optional(),
-    confirmedPatronymic: z.boolean().optional(),
-    confirmedLastName: z.boolean().optional(),
-    confirmedBirthDate: z.boolean().optional(),
-    gender: z.enum(['male', 'female']).optional(),
-    comment: nullableString.optional(),
-    infoNote: nullableString.optional(),
-    photoLink: nullableString.optional(),
-    dateOfConsent: nullableDateOnly.optional(),
-    personalNoAddr: z.boolean().optional(),
-    isRestricted: z.boolean().optional(),
-    causeOfRestriction: nullableString.optional(),
-    dateOfRestriction: nullableIsoDate.optional(),
-    kindergarten: nullableString.optional(),
-    teacher: nullableString.optional(),
-    veteran: nullableString.optional(),
-    childOfWar: nullableString.optional(),
-    profession: nullableString.optional(),
-    honoraryStatus: nullableString.optional(),
-    interests: nullableString.optional(),
-    orthodoxBeliever: nullableString.optional(),
-    dateOfStart: nullableIsoDate.optional(),
-    dateOfExit: nullableIsoDate.optional(),
-    spouseId: positiveInt.nullable().optional(),
-  });
+export const changingMainSchema = z.object({
+  firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
+  patronymic: nullableString.optional(), //TODO: add TOO_LONG_50
+  lastName: nullableString.optional(), //TODO: add TOO_LONG_50
+  birthDate: nullableDateOnly.optional(),
+  confirmedFirstName: z.boolean().optional(),
+  confirmedPatronymic: z.boolean().optional(),
+  confirmedLastName: z.boolean().optional(),
+  confirmedBirthDate: z.boolean().optional(),
+  gender: z.enum(['male', 'female']).optional(),
+  comment: nullableString.optional(),
+  infoNote: nullableString.optional(),
+  photoLink: nullableString.optional(),
+  dateOfConsent: nullableDateOnly.optional(),
+  personalNoAddr: z.boolean().optional(),
+  isRestricted: z.boolean().optional(),
+  causeOfRestriction: nullableString.optional(),
+  dateOfRestriction: nullableIsoDate.optional(),
+  kindergarten: nullableString.optional(),
+  teacher: nullableString.optional(),
+  veteran: nullableString.optional(),
+  childOfWar: nullableString.optional(),
+  profession: nullableString.optional(),
+  honoraryStatus: nullableString.optional(),
+  interests: nullableString.optional(),
+  orthodoxBeliever: nullableString.optional(),
+  dateOfStart: nullableIsoDate.optional(),
+  dateOfExit: nullableIsoDate.optional(),
+  spouseId: positiveInt.nullable().optional(),
+});
 
 export const changingDataSchema = z
   .object({
@@ -344,6 +349,7 @@ export const seniorsQueryDTOSchema = z
     view: z
       .object({
         option: z.string().min(1).optional(),
+        homeOption: z.string().min(1).optional(),
         includeOutdated: z.boolean().optional(),
       })
       .optional(),
@@ -351,25 +357,31 @@ export const seniorsQueryDTOSchema = z
       .object({
         general: z
           .object({
-            comment: z.boolean().optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             dateRestrictionRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
+            dateExitRange: z
+              .tuple([z.coerce.date(), z.coerce.date()])
+              .optional(),
 
-            dateRange: z.tuple([nullableInt, nullableInt]).optional(),
+            dayRange: z.tuple([nullableInt, nullableInt]).optional(),
             monthRange: z.tuple([nullableInt, nullableInt]).optional(),
             yearRange: z.tuple([nullableInt, nullableInt]).optional(),
+
             homes: intOptArray,
+            gender: z.enum(['male', 'female']),
             noAddress: z.boolean().optional(),
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
-            gender: z.enum(['male', 'female']),
+
+            details: z.array(z.string()).optional(),
+
+            /* hasComment: z.boolean().optional(),
             hasPhotoLink: z.boolean().optional(),
             hasConsent: z.boolean().optional(),
-            hasSpouse: z.boolean().optional(),
             hasKindergartenStatus: z.boolean().optional(),
             hasTeacherStatus: z.boolean().optional(),
             hasHonoraryStatus: z.boolean().optional(),
@@ -377,6 +389,11 @@ export const seniorsQueryDTOSchema = z
             hasChildOfWarStatus: z.boolean().optional(),
             hasOrthodoxBelieverStatus: z.boolean().optional(),
             hasProfession: z.boolean().optional(),
+            hasInterests: z.boolean().optional(),
+            hasSpouse: z.boolean().optional(), */
+
+            hideWithoutYear: z.boolean().optional(),
+            hideWithoutBirthday: z.boolean().optional(),
           })
           .partial()
           .optional(),
@@ -390,13 +407,14 @@ export const seniorsQueryDTOSchema = z
           .partial()
           .optional(),
 
-        /*         mode: z
+        mode: z
           .object({
-            //  strictAddress: z.boolean().optional(),
-            //  strictContact: z.boolean().optional(),
+            strictAddress: z.boolean().optional(),
+            strictContact: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
           })
           .partial()
-          .optional(),   */
+          .optional(),
       })
       .partial()
       .optional(),
@@ -446,6 +464,7 @@ export const seniorSchema = z
     infoNote: nullableString,
     photoLink: nullableString,
     dateOfConsent: nullableIsoDate,
+
     personalNoAddr: z.boolean(),
     kindergarten: nullableString,
     teacher: nullableString,

@@ -1,6 +1,6 @@
 // utils/query-builders.js
 import { Op, literal } from 'sequelize';
-import { Region, District, Locality, HomeAddress } from '../models/index.js';
+import { Region, District, Locality, HomeAddress, Home } from '../models/index.js';
 
 // ── CONFIG per owner ───────────────────────────────────────────────────────────
 const OWNER = {
@@ -13,8 +13,7 @@ const OWNER = {
     orderKeys: {
       role: () =>
         literal(`(SELECT "name" FROM "roles" WHERE "roles"."id" = "user"."roleId")`),
-      name: () =>
-        "firstName"
+      name: () => "firstName"
     },
   },
   partner: {
@@ -23,10 +22,9 @@ const OWNER = {
     addressesTable: 'partner-addresses',
     defaultOrderField: 'firstName',
     orderKeys: {
-      affiliation: () => "affiliation",
-      //position:    () => literal(`"partner"."position"`),
-      name: () =>
-        "firstName"
+      //affiliation: () => "affiliation",
+      //position:    () => "position",
+      name: () => "firstName"
     },
   },
   volunteer: {
@@ -35,10 +33,9 @@ const OWNER = {
     addressesTable: 'volunteer-addresses',
     defaultOrderField: 'firstName',
     orderKeys: {
-      // affiliation: () => "affiliation",
-      //position:    () => literal(`"partner"."position"`),
       name: () =>
-        "firstName"
+        "firstName",
+      dateOfLastOrder: () => "firstName" //TODO:
     },
   },
   home: {
@@ -46,44 +43,39 @@ const OWNER = {
     contactsTable: 'home-contacts',
     addressesTable: 'home-addresses',
     defaultOrderField: 'homeName',
-    orderKeys: {
-      // affiliation: () => "affiliation",
-      //position:    () => literal(`"partner"."position"`),
-      name: () =>
-        "homeName",
-      /*       order: [
+    /*       order: [
               [{ model: HomeAddress, as: 'activeAddress' }, { model: Region, as: 'region' }, 'shortName', 'ASC'],
               ['homeName', 'ASC'],
             ], */
+    orderKeys: {
+      name: () => "homeName",
       regionName: () => ([
         { model: HomeAddress, as: 'activeAddress' },
         { model: Region, as: 'region' },
         'name',
       ]),
-
+      dateOfLastUpdate: () => literal(`(SELECT "date" FROM "home-update-dates" AS "updateDate" WHERE "updateDate"."homeId" = "home"."id" AND "updateDate"."isLatest" = true)`),
     },
   },
   senior: {
-    idField: 'seniorId',/*
-    contactsTable: 'home-contacts',
-    addressesTable: 'home-addresses', */
+    idField: 'homeId',
+    //contactsTable: 'home-contacts',
+    addressesTable: 'home-addresses',
+    as: 'activeAddress',
     defaultOrderField: 'lastName',
     orderKeys: {
-      // affiliation: () => "affiliation",
-      //position:    () => literal(`"partner"."position"`),
-      lastName: () =>
-        "lastName",
-      /*       order: [
-              [{ model: HomeAddress, as: 'activeAddress' }, { model: Region, as: 'region' }, 'shortName', 'ASC'],
-              ['homeName', 'ASC'],
-            ], */
-/*       regionName: () => ([
+      name: () => "lastName",
+      status: () => "isRestricted",
+      home: () => literal(`(SELECT "homeName" FROM "homes" AS "home" WHERE "home"."id" = "senior"."homeId")`),
+      //Sequelize.col('senior.home.homeName')
+      regionName: () => ([
+        { model: Home, as: 'home' },
         { model: HomeAddress, as: 'activeAddress' },
         { model: Region, as: 'region' },
         'name',
-      ]), */
-
+      ]),
     },
+
   },
 };
 
@@ -99,7 +91,7 @@ export function buildOrderFor(kind, sort) {
   const [{ field, direction }] = sort;
   const dir = String(direction || 'ASC').toUpperCase();
 
-   const keyFn = C.orderKeys?.[field];
+  const keyFn = C.orderKeys?.[field];
 
   if (keyFn) {
     const key = keyFn();
@@ -241,14 +233,14 @@ export async function buildAddressOwnerIdSubquery(kind, addresses, includeOutdat
 
   if (!strictAddressMode) {
     return literal(
-      `(SELECT DISTINCT "${C.idField}" FROM "${C.addressesTable}"
+      `(SELECT DISTINCT "${C.idField}" FROM "${C.addressesTable}" ${C.as ? 'AS "' + C.as + '"' : ''}
         WHERE ${restricted} (${whereString}))`
     );
   }
 
   // strict: требуем наличие ВСЕХ выбранных уровней (по количеству distinct)
   return literal(
-    `(SELECT DISTINCT "${C.idField}" FROM "${C.addressesTable}"
+    `(SELECT DISTINCT "${C.idField}" FROM "${C.addressesTable}" AS "${C.as}"
       WHERE ${restricted} (${whereString})
       GROUP BY "${C.idField}"
       HAVING

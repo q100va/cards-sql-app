@@ -21,7 +21,7 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
-import {MatDatepickerModule} from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import {
   Institute,
@@ -41,7 +41,10 @@ import {
 } from '../../../../shared/schemas/volunteer.schema';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
 import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
-import { reconcileRestoredAddress, reconcileRestoredInstitutes } from '../../utils/owner-restoration-reconcile.util';
+import {
+  reconcileRestoredAddress,
+  reconcileRestoredInstitutes,
+} from '../../utils/owner-restoration-reconcile.util';
 
 @Component({
   selector: 'app-volunteer-details',
@@ -63,7 +66,7 @@ import { reconcileRestoredAddress, reconcileRestoredInstitutes } from '../../uti
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
-    MatDatepickerModule
+    MatDatepickerModule,
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -85,7 +88,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     ];
     this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
     this.hasOutdatedInstitutes.set(
-      this.outdatedDataDraft.institutes.length > 0
+      this.outdatedDataDraft.institutes.length > 0,
     );
   }
 
@@ -127,7 +130,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   }
   private getSubsValue() {
     const idx = this.existingOwner!.subscriptions.findIndex(
-      (s) => s.userId === this.user()!.id
+      (s) => s.userId === this.user()!.id,
     );
     console.log('this.existingOwner', structuredClone(this.existingOwner));
     console.log('idx', idx);
@@ -140,6 +143,8 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       names: [],
       institutes: [],
       contacts: {},
+      subscriptions:[],
+      cooperations:[]
     };
   }
 
@@ -183,14 +188,23 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     this.restoringDataDraft['institutes'] ??= [];
     this.restoringDataDraft['institutes']?.push(data.id);
     const fa = this.mainForm.get('institutes') as FormArray;
-    if (fa.length === 0) {
-      fa.at(0)?.setValue(data.instituteName);
-    } else {
-      //TODO: add new insts
-    }
+    /*     if (fa.length === 0) {
+      fa.at(0)?.patchValue({
+        instituteName: data.instituteName,
+        category: data.category,
+      });
+    } else { */
+    fa.push(this.createInstituteGroup('edit')); //add new insts
+    fa.at(fa.length - 1)?.patchValue({
+      instituteName: data.instituteName,
+      category: data.category,
+    });
+    /*     } */
+    this.deleteFromOutdatedDataDraft('institutes', data.id);
+    this.onChangeValidation();
   }
 
-/*   override async correctRestoringData() {
+  /*   override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
@@ -217,7 +231,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     this.outdatedDataDraft.institutes = structuredClone(outdating);
   } */
 
-/*   override async checkOutdatedDataDuplicates() {
+  /*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -241,7 +255,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
     return await super.checkOutdatedDataDuplicates();
   } */
-/*   override async checkAllChanges() {
+  /*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -326,12 +340,12 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
   override setHasOutdatedInstitutes() {
     this.hasOutdatedInstitutes.set(
-      this.outdatedDataDraft.institutes.length > 0
+      this.outdatedDataDraft.institutes.length > 0,
     );
   }
 
   private createInstituteGroup(
-    mode: 'view' | 'edit' | 'create'
+    mode: 'view' | 'edit' | 'create',
   ): InstituteFormGroup {
     return new FormGroup<{
       instituteName: FormControl<string | null>;
@@ -339,18 +353,18 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     }>({
       instituteName: new FormControl<string | null>(
         { value: null, disabled: mode === 'view' },
-        [zodValidator(instituteNameControlSchema)]
+        [zodValidator(instituteNameControlSchema)],
       ),
       category: new FormControl<string | null>(
         { value: null, disabled: mode === 'view' },
-        [zodValidator(instituteCategoryControlSchema)]
+        [zodValidator(instituteCategoryControlSchema)],
       ),
     });
   }
 
   override get institutesArray(): FormArray<InstituteFormGroup> {
     let fa = this.mainForm.get(
-      'institutes'
+      'institutes',
     ) as FormArray<InstituteFormGroup> | null;
 
     if (!fa) {
@@ -367,7 +381,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
   // View-mode: disable institutes controls
   protected override changeToViewMode(
-    addressParams: DefaultAddressParams | null
+    addressParams: DefaultAddressParams | null,
   ) {
     super.changeToViewMode(addressParams);
     this.updateInstitutesControlsValidity(false);
@@ -381,20 +395,19 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
   protected updateInstitutesControlsValidity(enable: boolean) {
     const fa = this.mainForm.get(
-      'institutes'
+      'institutes',
     ) as FormArray<InstituteFormGroup> | null;
     if (fa) {
       fa.controls.forEach((group: InstituteFormGroup) =>
         enable
           ? group.enable({ emitEvent: false })
-          : group.disable({ emitEvent: false })
+          : group.disable({ emitEvent: false }),
       );
     }
     this.checkIsSaveDisabled();
   }
 
   protected override additionalValidationHooks(): boolean {
-
     return (
       this.contactsChangeValidation() ||
       this.addressChangeValidation() ||
@@ -420,7 +433,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
         .sort(
           (x, y) =>
             x.instituteName.localeCompare(y.instituteName) ||
-            x.category.localeCompare(y.category)
+            x.category.localeCompare(y.category),
         );
     /*     console.log(
       'JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))',

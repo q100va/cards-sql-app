@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import {
   Country, Region, District, Locality,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
@@ -182,7 +182,7 @@ router.post(
               as: 'subscriptions',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'user', attributes: ['userName'] },
+                { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
               ]
             },
             {
@@ -190,7 +190,7 @@ router.post(
               as: 'cooperations',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'user', attributes: ['userName'] },
+                { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
               ]
             }
             //TODO: DateOfLastOrder
@@ -353,13 +353,6 @@ router.post(
       }
 
       // general filters
-  /*     if (filters?.general?.affiliations?.length) {
-        whereVolunteer.affiliation = { [Op.in]: filters.general.affiliations };
-      } */
-
-      if (filters?.general?.comment !== undefined) {
-        whereVolunteer.comment = !filters.general.comment ? null : { [Op.not]: null };
-      }
 
       if (filters?.general?.dateBeginningRange) {
         whereVolunteer.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
@@ -367,6 +360,170 @@ router.post(
       if (filters?.general?.dateRestrictionRange) {
         whereVolunteer.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
+      //TODO:
+      // dateOfLastOrder filter
+
+      const whereLastOrderDate = { isLatest: true }
+      const dates = filters?.general?.dateLastOrderRange || [];
+      const datesRequired = (dates.length ?? 0) > 0;
+      if (datesRequired) {
+        whereLastOrderDate.date = betweenDatesInclusive(filters.general.dateUpdateRange);
+        console.log('whereLastOrderDate.date', whereLastOrderDate.date);
+      }
+
+      // details && has... filter
+      const buildHasInstsLiteral = (has, includeOutdated) => {
+        const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
+        const restrictedClause = includeOutdated ? '' : 'AND i."isRestricted" = false';
+
+        return Sequelize.literal(`
+          ${existsKeyword} (
+            SELECT 1
+            FROM "institutes" i
+            WHERE i."volunteerId" = "volunteer"."id"
+            ${restrictedClause}
+          )
+        `);
+      };
+
+      const buildHasLiteral = (has, includeOutdated, tableName) => {
+        const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
+        const restrictedClause = includeOutdated ? '' : 'AND u."isRestricted" = false';
+
+        return Sequelize.literal(`
+          ${existsKeyword} (
+            SELECT 1
+            FROM "${tableName}" t
+            JOIN "users" u
+            ON u.id = t."userId"
+            ${restrictedClause}
+            WHERE t."volunteerId" = "volunteer"."id"
+          )
+        `);
+      };
+
+
+      const buildInstLiteral = (categoriesList, includeOutdated) => {
+        const restrictedClause = includeOutdated ? '' : 'AND i."isRestricted" = false';
+        return Sequelize.literal(`
+                EXISTS (
+                  SELECT 1
+                    FROM "institutes" i
+                    WHERE i."volunteerId" = "volunteer"."id"
+                    AND i."category" IN (${categoriesList})
+                     ${restrictedClause}
+                )
+              `);
+      };
+      const buildUserLiteral = (userList, tableName) => {
+        const restrictedClause = includeOutdated ? '' : 'AND u."isRestricted" = false';
+        return Sequelize.literal(`
+                EXISTS (
+                  SELECT 1
+                    FROM "${tableName}" c
+                    JOIN "users" u
+                    ON u.id = c."userId"
+                    ${restrictedClause}
+                    WHERE c."volunteerId" = "volunteer"."id"
+                    AND c."userId" IN (${userList})
+                )
+              `);
+      };
+
+      const hasInstituteValue = filters?.general?.hasInstitute;
+      const instituteCondition = hasInstituteValue !== undefined && hasInstituteValue !== null;
+      const hasInstitute = instituteCondition
+        ? buildHasInstsLiteral(!!hasInstituteValue, !!includeOutdated)
+        : undefined;
+
+      const hasSubscriptionValue = filters?.general?.hasSubscription;
+      const subscriptionCondition = hasSubscriptionValue !== undefined && hasSubscriptionValue !== null;
+      const hasSubscription = subscriptionCondition
+        ? buildHasLiteral(!!hasSubscriptionValue, !!includeOutdated, "volunteer-subscriptions")
+        : undefined;
+
+      const hasCooperationValue = filters?.general?.hasCooperation;
+      const cooperationCondition = hasCooperationValue !== undefined && hasCooperationValue !== null;
+      const hasCooperation = cooperationCondition
+        ? buildHasLiteral(!!hasCooperationValue, !!includeOutdated, "volunteer-cooperations")
+        : undefined;
+
+      const details = filters?.general?.details ?? [];
+      const strict = !!filters?.mode?.strictDetail;
+      const op = strict ? Op.and : Op.or;
+      if (details.length > 0) {
+        whereVolunteer[op] = [
+          ...details.map(detail => ({ [detail]: { [Op.not]: null } })),
+          ...(hasInstitute ? [hasInstitute] : []),
+          ...(hasSubscription ? [hasSubscription] : []),
+          ...(hasCooperation ? [hasCooperation] : []),
+        ];
+      } else {
+        if (hasInstitute) {
+          whereVolunteer[op] = [hasInstitute];
+        }
+        if (hasSubscription) {
+          whereVolunteer[op] = [...(whereVolunteer[op] ?? []), hasSubscription];
+        }
+        if (hasCooperation) {
+          whereVolunteer[op] = [...(whereVolunteer[op] ?? []), hasCooperation];
+        }
+      }
+
+
+      //institutes
+      const categories = filters?.general?.categories || [];
+      const institutesRequired = (categories.length ?? 0) > 0;
+      if (institutesRequired) {
+        const categoriesList = categories.map(s => `'${s}'`).join(',');
+        whereVolunteer[Op.and] = [
+          ...(whereVolunteer[Op.and] ?? []),
+          buildInstLiteral(categoriesList, !!includeOutdated),
+        ];
+      }
+
+      // subscriptions and cooperations filter
+      const subs = filters?.general?.subscriptions || [];
+      const subscriptionsRequired = (subs.length ?? 0) > 0;
+      if (subscriptionsRequired) {
+        const userList = subs.map(Number).join(',');
+        whereVolunteer[Op.and] = [
+          ...(whereVolunteer[Op.and] ?? []),
+          buildUserLiteral(userList, "volunteer-subscriptions"),
+        ];
+      }
+      const coops = filters?.general?.cooperations || [];
+      const cooperationsRequired = (coops.length ?? 0) > 0;
+      if (cooperationsRequired) {
+        const userList = coops.map(Number).join(',');
+        whereVolunteer[Op.and] = [
+          ...(whereVolunteer[Op.and] ?? []),
+          buildUserLiteral(userList, "volunteer-cooperations"),
+        ];
+      }
+
+      const instsRequired =
+        institutesRequired ? true :
+          (
+            instituteCondition ? (!!hasInstituteValue && strict) :
+              false
+          );
+
+      const subsRequired =
+        subscriptionsRequired ? true :
+          (
+            subscriptionCondition ? (!!hasInstituteValue && strict) :
+              false
+          );
+
+      const coopsRequired =
+        cooperationsRequired ? true :
+          (
+            cooperationCondition ? (!!hasInstituteValue && strict) :
+              false
+          );
+
+
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
@@ -386,7 +543,6 @@ router.post(
         if (sub) whereAddress.volunteerId = { [Op.in]: sub };
       }
 
-      //TODO: категории орг-й, подписка, сотрудничество
 
       // ---- includes (contacts / addresses / outdated names / search) ----
       const includes = [
@@ -419,22 +575,25 @@ router.post(
         {
           model: Institute,
           as: 'institutes',
+          required: instsRequired,
           attributes: ['id', 'instituteName', 'category', 'isRestricted', 'isDeletable'],
         },
         {
           model: VolunteerSubscription,
           as: 'subscriptions',
           attributes: ['id', 'userId'],
+          required: subsRequired,
           include: [
-            { model: User, as: 'user', attributes: ['userName'] },
+            { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
           ]
         },
         {
           model: VolunteerCooperation,
           as: 'cooperations',
           attributes: ['id', 'userId'],
+          required: coopsRequired,
           include: [
-            { model: User, as: 'user', attributes: ['userName'] },
+            { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
           ]
         }
 

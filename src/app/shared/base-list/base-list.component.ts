@@ -18,7 +18,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -39,6 +39,7 @@ import {
 } from '../../interfaces/toponym';
 import {
   ColumnDefinition,
+  createEmptyGeneralFilter,
   FilterComponentSource,
   GeneralFilter,
   TableParams,
@@ -52,6 +53,8 @@ import {
   PermissionSet,
 } from './base-list-component-registry';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ContactType, RelationPick } from '../../interfaces/advanced-model';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-base-list',
@@ -109,31 +112,26 @@ export class BaseListComponent {
     addressFilter: AddressFilter;
     strongAddressFilter: boolean;
     strongContactFilter: boolean;
+    strongDetailFilter: boolean;
   }>();
   defaultAddressFilterValue = output<AddressFilter>();
 
   // UI state
   settingsBadgeValue = 0;
   filterBadgeValue = 0;
-  avoidDoubleRequest = false;
 
   // Permissions
   permissions!: PermissionSet;
 
   // Filters state (signals)
   selectedViewOptionId = signal<string>('only-active');
+  selectedHomeViewOptionId = signal<string>('only-active');
   includeOutdated = signal<boolean>(false);
   exactMatch = signal<boolean>(false);
   searchValue = signal<string>('');
   inputValue = '';
 
-  filterValue = signal<GeneralFilter>({
-    roles: [],
-    comment: [],
-    contactTypes: [],
-    dateBeginningRange: [],
-    dateRestrictionRange: [],
-  });
+  filterValue = signal<GeneralFilter>(createEmptyGeneralFilter());
 
   addressFilterValue = signal<AddressFilter>({
     countries: [],
@@ -145,10 +143,12 @@ export class BaseListComponent {
   addressStringValue = signal<string>('');
   strongAddressFilter = signal<boolean>(false);
   strongContactFilter = signal<boolean>(false);
+  strongDetailFilter = signal<boolean>(false);
 
   // Derived DTO for API
   allFilterParameters = computed(() => ({
     viewOption: this.selectedViewOptionId(),
+    viewHomeOption: this.selectedHomeViewOptionId(),
     searchValue: this.searchValue(),
     includeOutdated: this.includeOutdated(),
     exactMatch: this.exactMatch(),
@@ -156,6 +156,7 @@ export class BaseListComponent {
     addressFilter: this.addressFilterValue(),
     strongAddressFilter: this.strongAddressFilter(),
     strongContactFilter: this.strongContactFilter(),
+    strongDetailFilter: this.strongDetailFilter(),
   }));
 
   // Human-readable summary for UI
@@ -165,43 +166,217 @@ export class BaseListComponent {
     const pieces: string[] = [];
 
     // View option label
+
+    console.log('ap.viewOption', ap.viewOption);
+    console.log('this.params().viewOptions', this.params().viewOptions);
+
     const vo = this.params().viewOptions.find(
-      (v) => v.id === ap.viewOption
+      (v) => v.id === ap.viewOption,
     )?.name;
     if (vo) pieces.push(this.translate.instant(vo));
+
+    const vho = this.homeViewOptions.find(
+      (v) => v.id === ap.viewHomeOption,
+    )?.name;
+    if (vho && this.params().componentType === 'seniorList')
+      pieces.push(
+        /* this.translate.instant('BASE_LIST.FROM_LABEL') + */
+        this.translate.instant(vho) +
+          (vho !== 'HOME.VIEW_OPTIONS.ALL'
+            ? this.translate.instant('BASE_LIST.HOMES_LABEL')
+            : ''),
+      );
+
+    /*     const vo = ap.viewOption.map((v) =>
+      this.translate.instant(
+        this.params().viewOptions.find((i) => i.id === v)!.name,
+      ),
+    ); */
 
     if (ap.searchValue) pieces.push(ap.searchValue);
 
     // GeneralFilter
-    const gf = ap.filter;
-    for (const key of typedKeys(gf)) {
-      const value = gf[key];
-      if (!value || value.length === 0) continue;
+    const gf: GeneralFilter = ap.filter;
 
-      if (key === 'dateBeginningRange' || key === 'dateRestrictionRange') {
-        const label =
-          key === 'dateBeginningRange'
-            ? this.translate.instant('BASE_LIST.START_LABEL')
-            : this.translate.instant('BASE_LIST.BLOCK_LABEL');
-        const [from, to] = value as Date[];
-        pieces.push(
-          `${label}: ${this.dateUtils.transformDate(
-            from
-          )}-${this.dateUtils.transformDate(to)}`
-        );
-        continue;
-      }
+    console.log('GeneralFilter', gf);
 
-      for (const item of value) {
-        if (key === 'contactTypes') {
-          const lab = (item as { type: string; label: string }).label;
-          pieces.push(this.translate.instant(lab));
-        } else if (key === 'roles') {
-          pieces.push((item as { id: number; name: string }).name);
-        } else {
-          pieces.push(String(item));
-        }
-      }
+    if (gf.birthDate.dayRange.length) {
+      pieces.push(
+        this.translate.instant('BASE_LIST.DAY_LABEL') +
+          gf.birthDate.dayRange.join('-'),
+      );
+    }
+    if (gf.birthDate.monthRange.length) {
+      pieces.push(
+        this.translate.instant('BASE_LIST.MONTH_LABEL') +
+          gf.birthDate.monthRange.join('-'),
+      );
+    }
+    if (gf.birthDate.yearRange.length) {
+      pieces.push(
+        this.translate.instant('BASE_LIST.YEAR_LABEL') +
+          gf.birthDate.yearRange.join('-'),
+      );
+    }
+    if (gf.dateUpdateRange.length) {
+      const label = this.translate.instant('BASE_LIST.UPDATE_LABEL');
+      const [from, to] = gf.dateUpdateRange;
+      pieces.push(
+        `${label}: ${this.dateUtils.transformDate(
+          from,
+        )}-${this.dateUtils.transformDate(to)}`,
+      );
+    }
+    if (gf.dateBeginningRange.length) {
+      const label = this.translate.instant('BASE_LIST.START_LABEL');
+      const [from, to] = gf.dateBeginningRange;
+      pieces.push(
+        `${label}: ${this.dateUtils.transformDate(
+          from,
+        )}-${this.dateUtils.transformDate(to)}`,
+      );
+    }
+    if (gf.dateRestrictionRange.length) {
+      const label = this.translate.instant('BASE_LIST.BLOCK_LABEL');
+      const [from, to] = gf.dateRestrictionRange;
+      pieces.push(
+        `${label}: ${this.dateUtils.transformDate(
+          from,
+        )}-${this.dateUtils.transformDate(to)}`,
+      );
+    }
+    if (gf.dateExitRange.length) {
+      const label =
+        this.params().componentType === 'seniorList'
+          ? this.translate.instant('BASE_LIST.EXIT_LABEL')
+          : this.translate.instant('BASE_LIST.CLOSE_LABEL');
+      const [from, to] = gf.dateExitRange;
+      pieces.push(
+        `${label}: ${this.dateUtils.transformDate(
+          from,
+        )}-${this.dateUtils.transformDate(to)}`,
+      );
+    }
+    if (gf.dateLastOrderRange.length) {
+      const label = this.translate.instant('BASE_LIST.LAST_ORDER_LABEL');
+      const [from, to] = gf.dateLastOrderRange;
+      pieces.push(
+        `${label}: ${this.dateUtils.transformDate(
+          from,
+        )}-${this.dateUtils.transformDate(to)}`,
+      );
+    }
+    if (gf.contactTypes.length) {
+      const labs = gf.contactTypes.map((i) => this.translate.instant(i.label));
+      pieces.push(...labs);
+    }
+    if (gf.details.length) {
+      const labs = gf.details.map((i) => this.translate.instant(i.label));
+      pieces.push(...labs);
+    }
+    if (gf.hasCoordination !== null && gf.hasCoordination !== undefined) {
+      const text =
+        gf.hasCoordination === true
+          ? 'NAV.FILTER.ONLY_WITH_COORDINATION'
+          : 'NAV.FILTER.ONLY_WITHOUT_COORDINATION';
+      pieces.push(this.translate.instant(text));
+    }
+
+    if (gf.hasInstitute !== null && gf.hasInstitute !== undefined) {
+      const text =
+        gf.hasInstitute === true
+          ? 'NAV.FILTER.ONLY_WITH_INSTITUTE'
+          : 'NAV.FILTER.ONLY_WITHOUT_INSTITUTE';
+      pieces.push(this.translate.instant(text));
+    }
+    if (gf.hasSubscription !== null && gf.hasSubscription !== undefined) {
+      const text =
+        gf.hasSubscription === true
+          ? 'NAV.FILTER.ONLY_WITH_SUBSCRIPTION'
+          : 'NAV.FILTER.ONLY_WITHOUT_SUBSCRIPTION';
+      pieces.push(this.translate.instant(text));
+    }
+    if (gf.hasCooperation !== null && gf.hasCooperation !== undefined) {
+      const text =
+        gf.hasCooperation === true
+          ? 'NAV.FILTER.ONLY_WITH_COOPERATION'
+          : 'NAV.FILTER.ONLY_WITHOUT_COOPERATION';
+      pieces.push(this.translate.instant(text));
+    }
+
+    if (gf.roles.length) {
+      const names = gf.roles.map((i) => i.name);
+      pieces.push(...names);
+    }
+
+    if (gf.affiliations.length) {
+      const affs = gf.affiliations.map((i) => this.translate.instant(i));
+      pieces.push(...affs);
+    }
+
+    if (gf.categories.length) {
+      const categories = gf.categories.map((i) => this.translate.instant(i));
+      pieces.push(...categories);
+    }
+    if (gf.homes.length) {
+      const names = gf.homes.map((i) => i.name);
+      pieces.push(...names);
+    }
+    if (gf.homeRegions.length) {
+      const names = gf.homeRegions.map((i) => i.name);
+      pieces.push(...names);
+    }
+    if (gf.partners.length) {
+      const names = gf.partners.map((i) => i.name);
+      pieces.push(...names);
+    }
+    if (gf.subscriptions.length) {
+      const names = gf.subscriptions.map((i) => i.name);
+      pieces.push(...names);
+    }
+    if (gf.cooperations.length) {
+      const names = gf.cooperations.map((i) => i.name);
+      pieces.push(...names);
+    }
+
+    if (gf.gender !== null && gf.gender !== undefined) {
+      const gender =
+        gf.gender === 'male'
+          ? 'NAV.FILTER.ONLY_MALE'
+          : 'NAV.FILTER.ONLY_FEMALE';
+      pieces.push(this.translate.instant(gender));
+    }
+    if (gf.noAddress !== null && gf.noAddress !== undefined) {
+      const text =
+        gf.noAddress === true
+          ? 'NAV.FILTER.ONLY_NO_ADDRESS'
+          : 'NAV.FILTER.WITHOUT_NO_ADDRESS';
+      pieces.push(this.translate.instant(text));
+    }
+    if (gf.specialHome !== null && gf.specialHome !== undefined) {
+      const text =
+        gf.specialHome === true
+          ? 'NAV.FILTER.ONLY_SPECIAL'
+          : 'NAV.FILTER.WITHOUT_SPECIAL';
+      pieces.push(this.translate.instant(text));
+    }
+    if (
+      gf.acceptableForSchool !== null &&
+      gf.acceptableForSchool !== undefined
+    ) {
+      const text =
+        gf.acceptableForSchool === true
+          ? 'NAV.FILTER.ONLY_ACC_FOR_SCHOOL'
+          : 'NAV.FILTER.WITHOUT_ACC_FOR_SCHOOL';
+      pieces.push(this.translate.instant(text));
+    }
+    if (gf.hideWithoutYear === true) {
+      const text = 'NAV.FILTER.WITHOUT_YEAR';
+      pieces.push(this.translate.instant(text));
+    }
+    if (gf.hideWithoutBirthday === true) {
+      const text = 'NAV.FILTER.WITHOUT_BIRTHDAY';
+      pieces.push(this.translate.instant(text));
     }
 
     // Address as a single string
@@ -214,6 +389,37 @@ export class BaseListComponent {
   });
 
   defaultAddressParams!: DefaultAddressParams;
+  viewCtrl = new FormControl<string>('only-active', { nonNullable: true });
+  homeViewCtrl = new FormControl<string>('only-active', { nonNullable: true });
+  homeViewOptions: ViewOption[] = [
+    {
+      id: 'all',
+      name: 'HOME.VIEW_OPTIONS.ALL',
+      initiallySelected: false,
+    },
+    {
+      id: 'only-active',
+      name: 'HOME.VIEW_OPTIONS.ONLY_ACTIVE',
+      initiallySelected: true,
+    },
+    {
+      id: 'only-blocked',
+      name: 'HOME.VIEW_OPTIONS.ONLY_BLOCKED',
+      initiallySelected: false,
+    },
+    {
+      id: 'only-closed',
+      name: 'HOME.VIEW_OPTIONS.ONLY_CLOSED',
+      initiallySelected: false,
+    },
+    {
+      id: 'exclude-closed',
+      name: 'HOME.VIEW_OPTIONS.EXCLUDE_CLOSED',
+      initiallySelected: false,
+    },
+  ];
+
+  //prevViewOptionsValue: string[] = ['active'];
 
   constructor() {
     // Init address defaults from query params
@@ -252,6 +458,34 @@ export class BaseListComponent {
     const type = this.params().componentType;
     const found = PERMISSIONS_COMPONENT_REGISTRY[type];
     if (found) this.permissions = found;
+
+    this.homeViewCtrl.valueChanges
+      .pipe(
+        //debounceTime(250), // ← задержка (подбери 200–300мс)
+        //distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        if (!value) return;
+        this.selectedHomeViewOptionId.set(value);
+        if (value === 'only-closed') {
+          this.viewCtrl.disable({ emitEvent: false });
+          this.viewCtrl.setValue('only-discharged');
+        } else {
+          this.viewCtrl.enable({ emitEvent: false });
+        }
+      });
+
+    this.viewCtrl.valueChanges
+      .pipe(
+        //debounceTime(250), // ← задержка (подбери 200–300мс)
+        //distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        if (!value) return;
+        this.selectedViewOptionId.set(value);
+      });
   }
 
   // Columns selection passthrough
@@ -272,28 +506,26 @@ export class BaseListComponent {
   }
 
   // View option
+  /*
   onChangeViewSelection(option: string): void {
-    this.avoidDoubleRequest = true;
     this.selectedViewOptionId.set(option);
-  }
+  } */
 
   // Search
   onSearchEnter(event: Event): void {
     const raw = (event.target as HTMLInputElement).value ?? '';
     const normalized = raw.trim().toLowerCase().replaceAll('ё', 'е');
-    this.avoidDoubleRequest = true;
+
     this.searchValue.set(normalized);
   }
 
   onClearSearchClick(): void {
-    this.avoidDoubleRequest = true;
     this.searchValue.set('');
     this.inputValue = '';
   }
 
   // Filter reset
   onClearFilterClick(): void {
-    this.avoidDoubleRequest = true;
     this.tableFilterComponent.clearForm();
   }
 }

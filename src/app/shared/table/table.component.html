@@ -37,20 +37,35 @@
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.FULL_NAME' | translate}}</th>
         <td mat-cell *matCellDef="let row">
+          @if(kind() === 'senior'){
+          <div>
+            @if (row.lastName) { <span>{{row.lastName}}</span><br />}
+            <span>{{row.firstName}}</span><br />
+            @if (row.patronymic) {<span>{{row.patronymic}}</span>}
+          </div>
+          }
+          @else{
           <div> <span>{{row.firstName}}</span><br />
             @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
-            <span>{{row.lastName}}</span>
-          </div>
+            @if (row.lastName) {<span>{{row.lastName}}</span>}
+          </div>}
           <br>
           @if(allFilterParameters().includeOutdated && hasOutdatedNames(row)) {
           <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
           @for (item of row.outdatedData.names; track item.id) {
           @if(item.firstName) {
+          @if(kind() === 'senior'){
+          <div class="outdated-data">
+            @if (item.lastName) { <span>{{item.lastName}}</span><br />}
+            <span>{{item.firstName}}</span><br />
+            @if (item.patronymic) {<span>{{item.patronymic}}</span>}
+          </div>
+          } @else{
           <div class="outdated-data">
             <span>{{item.firstName}}</span><br />
             @if (item.patronymic) {<span>{{item.patronymic}}</span><br />}
-            <span>{{item.lastName}}</span>
-          </div>
+            @if (item.lastName) { <span>{{item.lastName}}</span>}
+          </div>}
           }
           }
           }
@@ -176,7 +191,9 @@
         <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.SENIOR_DETAILS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
           <div>
-            @if (row.home.noAddress || row.personalNoAddr){ <span> {{'TABLE.NOTES.NO_ADDRESS_LABEL' | translate}}
+            @if (row.personalNoAddr){ <span> {{'TABLE.NOTES.PERSONAL_NO_ADDRESS_LABEL' | translate}}
+            </span><br />}
+            @if (row.home.noAddress){ <span> {{'TABLE.NOTES.NO_ADDRESS_LABEL' | translate}}
             </span><br />}
             @if (row.home.specialHome){ <span>{{'TABLE.NOTES.SPECIAL_HOME_LABEL' | translate}} </span><br />}
             @if (row.home.acceptableForSchool){ <span>{{'TABLE.NOTES.ACC_SCHOOL_LABEL' | translate}} </span><br />}
@@ -263,25 +280,48 @@
       <ng-container matColumnDef="cooperations">
         <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.COOPERATIONS' | translate}}</th>
         <td mat-cell *matCellDef="let row">
-
-
+          @if(row.subscriptions.length){
+          <span>{{'TABLE.NOTES.SUBSCRIPTION' | translate}}:</span>
           @for (subscription of row.subscriptions; track $index) {
           <div>
-            {{subscription.userName}} ({{'TABLE.NOTES.SUBSCRIPTION' | translate}})
+            {{subscription.userFullName}} - {{subscription.userName}}
             <br />
           </div>
-          }
-
+          } }
+          @if(row.cooperations.length){
+          <span>{{'TABLE.NOTES.COOPERATION' | translate}}:</span>
           @for (cooperation of row.cooperations; track $index) {
           <div>
-            {{cooperation.userName}}
+            {{cooperation.userFullName}} - {{cooperation.userName}}
             <br />
           </div>
-          }
+          }}
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedCooperations(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}<br />
+            @if(row.outdatedData.subscriptions.length){
+            <span>{{'TABLE.NOTES.SUBSCRIPTION' | translate}}:</span>
+            @for (subscription of row.outdatedData.subscriptions; track $index) {
+            <div>
+              {{subscription.userFullName}} - {{subscription.userName}} ({{'TABLE.NOTES.SUBSCRIPTION' | translate}})
+              <br />
+            </div>
+            }}
+
+            @if(row.outdatedData.cooperations.length){
+            <span>{{'TABLE.NOTES.COOPERATION' | translate}}:</span>
+            @for (cooperation of row.outdatedData.cooperations; track $index) {
+            <div>
+              {{cooperation.userFullName}} - {{cooperation.userName}}
+              <br />
+            </div>
+            }}
+          </div>}
 
         </td>
       </ng-container>
 
+      <!-- Coordinations -->
       <!-- Homes Column -->
       <ng-container matColumnDef="homes">
         <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.HOMES' | translate}}</th>
@@ -289,12 +329,8 @@
 
           @for (home of row.coordinations; track $index) {
           <div>
-            {{home.homeName}} ({{home.regionName}})
-            <!--             @if (home.close) {
-            - {{'TABLE.NOTES.CLOSE' | translate}}
-            } @else if (home.isRestricted) {
-            - {{'TABLE.NOTES.DEACTIVATED' | translate}}
-            } --><br />
+            {{home.homeName}} - {{home.regionName}}{{ home.homeStatus ? (' - ' + (home.homeStatus | translate)) : '' }}
+            <br />
           </div>
           }
 
@@ -303,12 +339,8 @@
           <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
           @for (home of row.outdatedData.coordinations; track $index) {
           <div class="outdated-data">
-            {{home.homeName}} ({{home.regionName}})
-            <!--  @if (home.status == 'CLOSE') {
-            - {{'TABLE.NOTES.CLOSE' | translate}}
-            } @else if (home.isRestricted) {
-            - {{'TABLE.NOTES.DEACTIVATED' | translate}}
-            } --><br />
+            {{home.homeName}} - {{home.regionName}}{{ home.homeStatus ? (' - ' + (home.homeStatus | translate)) : '' }}
+            <br />
           </div>
           }
           }
@@ -323,7 +355,7 @@
 
           @for (partner of row.coordinations; track $index) {
           <div>
-            {{partner.partnerName}}
+            {{partner.partnerName}} - {{partner.partnerOccupation}}
             @for (item of contactTypes; track $index) {
             @if (partner.partnerContacts[item.type]) {
             <div class="outer">
@@ -345,7 +377,7 @@
           <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}
             @for (partner of row.outdatedData.coordinations; track $index) {
             <div>
-              {{partner.partnerName}}
+              {{partner.partnerName}} - {{partner.partnerOccupation}}
               @for (item of contactTypes; track $index) {
               @if (partner.partnerContacts[item.type]) {
               <div class="outer">
@@ -415,18 +447,44 @@
           }
           @else if (row.home.isRestricted){
           {{('TABLE.NOTES.HOME_BLOCKED_FROM' | translate) + dateUtils.transformDate(row.home.dateOfRestriction) }}
+
+          @if (row.dateOfExit) {
+          ({{('TABLE.NOTES.LEFT' | translate)}})
+          }
+          @else if (row.isRestricted) {
+          ({{('TABLE.NOTES.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
+          {{row.causeOfRestriction}})
+          }
+          @else {
+          ({{'TABLE.NOTES.ACCESSIBLE' | translate}})
+          }
+
           }
           @else if (row.dateOfExit) {
-          {{('TABLE.NOTES.LEFT' | translate) + dateUtils.transformDate(row.dateOfExit)}}
+          {{('TABLE.NOTES.LEFT' | translate)}}
           }
           @else if (row.isRestricted) {
           {{('TABLE.NOTES.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
           {{row.causeOfRestriction}}
           }
           @else {
-          {{'TABLE.NOTES.ACTIVE' | translate}}
+          {{'TABLE.NOTES.ACCESSIBLE' | translate}}
           }
         </td>
+      </ng-container>
+
+      <!-- Date Of Exit Column -->
+      <ng-container matColumnDef="dateOfExit">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.EXIT_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfExit)}}
+      </ng-container>
+
+       <!-- Date Of Last Order -->
+      <ng-container matColumnDef="dateOfLastOrder">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.LAST_ORDER_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfLastOrder)}}
       </ng-container>
 
       <!-- Actions Column -->
@@ -494,7 +552,7 @@
               }
               @if(kind() == 'senior'){
 
-               <button mat-menu-item (click)="onShowSeniorsUsersClick(row.id)" *hasOp="permissions.viewUsers">
+              <button mat-menu-item (click)="onShowSeniorsUsersClick(row.id)" *hasOp="permissions.viewUsers">
                 <mat-icon>badge</mat-icon>
                 <span>{{'TABLE.MENU.OPEN_USERS' | translate}}</span>
               </button>

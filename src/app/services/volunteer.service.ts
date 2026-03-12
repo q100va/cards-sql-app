@@ -19,7 +19,7 @@ import {
   UpdatedOwnerData,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
-import { GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -27,21 +27,23 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { volunteerSchema, volunteersSchema } from '../../../shared/schemas/volunteer.schema';
+import {
+  volunteerSchema,
+  volunteersSchema,
+} from '../../../shared/schemas/volunteer.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
-export interface VolunteerMainService
-  extends OwnerMainService<
-    Volunteer,
-    VolunteerDraft,
-    VolunteerChangingData,
-    VolunteerRestoringData,
-    VolunteerOutdatingData,
-    VolunteerDeletingData,
-    { list: Volunteer[]; length: number }
-  > {
+export interface VolunteerMainService extends OwnerMainService<
+  Volunteer,
+  VolunteerDraft,
+  VolunteerChangingData,
+  VolunteerRestoringData,
+  VolunteerOutdatingData,
+  VolunteerDeletingData,
+  { list: Volunteer[]; length: number }
+> {
   checkPossibilityToBlockVolunteer(id: number): Observable<ApiResponse<number>>;
 }
 
@@ -55,18 +57,18 @@ export class VolunteerService implements VolunteerMainService {
 
   constructor(
     private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
   ) {}
 
-  getOwnerName(owner: Volunteer){
-  const fn = owner['firstName'] ?? '';
-  const pn = owner['patronymic'] ?? '';
-  const ln = owner['lastName'] ?? '';
-  return [fn, pn, ln].filter(Boolean).join(' ').trim();
+  getOwnerName(owner: Volunteer) {
+    const fn = owner['firstName'] ?? '';
+    const pn = owner['patronymic'] ?? '';
+    const ln = owner['lastName'] ?? '';
+    return [fn, pn, ln].filter(Boolean).join(' ').trim();
   }
 
   checkOwnerData(
-    ownerDraft: VolunteerDraft
+    ownerDraft: VolunteerDraft,
   ): Observable<ApiResponse<Duplicates>> {
     let body = {
       id: ownerDraft.id,
@@ -87,7 +89,7 @@ export class VolunteerService implements VolunteerMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           volunteerFullName: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -98,7 +100,7 @@ export class VolunteerService implements VolunteerMainService {
       VolunteerRestoringData,
       VolunteerOutdatingData,
       VolunteerDeletingData
-    >
+    >,
   ): Observable<ApiResponse<Volunteer>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-volunteer`, {
@@ -110,7 +112,7 @@ export class VolunteerService implements VolunteerMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           volunteerData: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -125,22 +127,9 @@ export class VolunteerService implements VolunteerMainService {
   }
 
   getList(
-    allFilterParameters: {
-      viewOption: string;
-      includeOutdated: boolean;
-      searchValue: string;
-      exactMatch: boolean;
-      sortParameters: {
-        active: string;
-        direction: 'asc' | 'desc' | '';
-      };
-      filter: GeneralFilter;
-      addressFilter: AddressFilter;
-      strongAddressFilter: boolean;
-      strongContactFilter: boolean;
-    },
+    allFilterParameters: AllFilterParameters,
     pageSize: number,
-    currentPage: number
+    currentPage: number,
   ): Observable<ApiResponse<{ list: Volunteer[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
@@ -164,11 +153,17 @@ export class VolunteerService implements VolunteerMainService {
       }),
       filters: ctrl.omitEmpty({
         general: ctrl.omitEmpty({
-          affiliations: p.filter.affiliations,
-          comment: this.formCommentFilterValue(p.filter.comment),
+          categories: p.filter.categories,
+          subscriptions: p.filter.subscriptions.map((u) => u.id),
+          cooperations: p.filter.cooperations.map((u) => u.id),
+          details: p.filter.details.map((d) => d.value),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
+          dateLastOrderRange: ctrl.toIsoRange(p.filter.dateLastOrderRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
+          hasInstitute: p.filter.hasInstitute,
+          hasSubscription: p.filter.hasSubscription,
+          hasCooperation: p.filter.hasCooperation,
         }),
         address: ctrl.omitEmpty({
           countries: p.addressFilter.countries,
@@ -179,6 +174,7 @@ export class VolunteerService implements VolunteerMainService {
         mode: ctrl.omitEmpty({
           strictAddress: p.strongAddressFilter,
           strictContact: p.strongContactFilter,
+          strictDetail: p.strongDetailFilter,
         }),
       }),
     };
@@ -196,7 +192,9 @@ export class VolunteerService implements VolunteerMainService {
 
   checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
     return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-volunteer-before-delete/${id}`)
+      .get<RawApiResponse>(
+        `${this.BASE_URL}/check-volunteer-before-delete/${id}`,
+      )
       .pipe(
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap(
@@ -207,9 +205,9 @@ export class VolunteerService implements VolunteerMainService {
             volunteerId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -219,13 +217,17 @@ export class VolunteerService implements VolunteerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
-  checkPossibilityToBlockVolunteer(id: number): Observable<ApiResponse<number>> {
+  checkPossibilityToBlockVolunteer(
+    id: number,
+  ): Observable<ApiResponse<number>> {
     return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-volunteer-before-block/${id}`)
+      .get<RawApiResponse>(
+        `${this.BASE_URL}/check-volunteer-before-block/${id}`,
+      )
       .pipe(
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap(
@@ -236,15 +238,15 @@ export class VolunteerService implements VolunteerMainService {
             volunteerId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   blockOwner(
     id: number,
-    causeOfRestriction: string
+    causeOfRestriction: string,
   ): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/block-volunteer/`, {
@@ -254,7 +256,7 @@ export class VolunteerService implements VolunteerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -264,7 +266,7 @@ export class VolunteerService implements VolunteerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 }

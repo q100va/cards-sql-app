@@ -2,13 +2,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  inject,
   input,
   output,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -23,7 +27,7 @@ import {
 } from 'rxjs/operators';
 import { RelationPick } from '../../../interfaces/advanced-model';
 
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-autocomplete-row',
@@ -43,6 +47,7 @@ import { TranslateModule } from '@ngx-translate/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutocompleteRowComponent implements OnInit {
+    readonly translateService = inject(TranslateService);
   ctrl = input.required<FormControl<RelationPick | null>>();
   showDeleteButton = input.required<boolean>();
   label = input.required<string>();
@@ -53,8 +58,13 @@ export class AutocompleteRowComponent implements OnInit {
   index = input<number>(0);
   delete = output<number>();
   selectOption = output<RelationPick | null>();
+  homeStatus = '';
 
   ngOnInit(): void {
+    /*  if (this.ctrl().value) {
+      this.setHomeStatusValue(this.ctrl().value as RelationPick);
+    }
+    console.log('this.homeStatus', this.homeStatus); */
     const q$ = this.ctrl().valueChanges.pipe(
       startWith(this.ctrl().value),
       debounceTime(200),
@@ -71,23 +81,41 @@ export class AutocompleteRowComponent implements OnInit {
         return list.filter((c) => c.name.toLowerCase().includes(q));
       }),
     );
+    /* if (this.ctrl().value && typeof this.ctrl().value !== 'string') {
+      this.setHomeStatusValue(this.ctrl().value as RelationPick);
+    }
+    console.log('this.ctrl().value', this.ctrl().value); */
   }
 
   onDeleteClick() {
     this.delete.emit(this.index());
   }
 
-    onSelectOption(e: MatAutocompleteSelectedEvent) {
+  onSelectOption(e: MatAutocompleteSelectedEvent) {
+    console.log('this.ctrl().value', e.option.value);
     this.selectOption.emit(e.option.value as RelationPick);
+    //  this.setHomeStatusValue(e.option.value as RelationPick);
+   // console.log('this.ctrl().value', this.ctrl().value);
   }
 
-/*   onSelectOption() {
+ /*  setHomeStatusValue(value: RelationPick) {
+    if (this.hasIsRestricted(value)) {
+      this.homeStatus = value.isClose
+        ? 'TABLE.NOTES.CLOSE'
+        : value.isRestricted
+          ? 'TABLE.NOTES.DEACTIVATED'
+          : 'TABLE.NOTES.ACTIVE';
+    }
+  }
+  hasIsRestricted(obj: unknown): obj is { isRestricted: boolean } {
+    return !!obj && typeof obj === 'object' && 'isRestricted' in obj;
+  } */
+  /*   onSelectOption() {
     console.log('this.ctrl().value', this.ctrl().value);
     this.selectOption.emit(this.ctrl().value);
   } */
 
   display = (v: RelationPick | string | null): string =>
-    !v ? '' : typeof v === 'string' ? v : v.name;
+    !v ? '' : typeof v === 'string' ? v : v.name +
+  (v.homeStatus ? (' - ' + (this.translateService.instant(v.homeStatus))) : '');
 }
-
-

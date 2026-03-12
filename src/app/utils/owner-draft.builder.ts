@@ -288,8 +288,9 @@ export function buildDraft<K extends Kind>(
 ): ConfOwnerDraftByKind[K] {
   const now = new Date();
 
-  const rest = BUILD_RESTRICTED[kind](form, existing, now);
+ // const rest = BUILD_RESTRICTED[kind](form, existing, now);
 
+  const rest = getRestParams(form, existing, now);
   const base: DraftCommon = {
     id: existing?.id ?? null,
     comment: lightNormalize(get(form, 'comment')),

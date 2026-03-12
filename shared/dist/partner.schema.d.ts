@@ -63,7 +63,7 @@ export declare const partnerDraftSchema: z.ZodObject<{
     comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     isRestricted: z.ZodBoolean;
     causeOfRestriction: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
-    dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    dateOfRestriction: z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>;
     draftContacts: z.ZodObject<{
         email: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>;
         phoneNumber: z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>;
@@ -88,7 +88,7 @@ export declare const changingMainSchema: z.ZodObject<{
     comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
     isRestricted: z.ZodOptional<z.ZodBoolean>;
     causeOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
-    dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>>;
+    dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>>;
 }, z.core.$strict>;
 export declare const changingDataSchema: z.ZodObject<{
     main: z.ZodNullable<z.ZodObject<{
@@ -100,7 +100,7 @@ export declare const changingDataSchema: z.ZodObject<{
         comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
         isRestricted: z.ZodOptional<z.ZodBoolean>;
         causeOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
-        dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>>;
+        dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>>;
     }, z.core.$strict>>;
     address: z.ZodNullable<z.ZodObject<{
         countryId: z.ZodNullable<z.ZodNumber>;
@@ -206,7 +206,7 @@ export declare const updatePartnerDataSchema: z.ZodObject<{
             comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
             isRestricted: z.ZodOptional<z.ZodBoolean>;
             causeOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
-            dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>>;
+            dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>>;
         }, z.core.$strict>>;
         address: z.ZodNullable<z.ZodObject<{
             countryId: z.ZodNullable<z.ZodNumber>;
@@ -324,8 +324,6 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
     filters: z.ZodOptional<z.ZodObject<{
         general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             affiliations: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
-            comment: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-            hasHomes: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             contactTypes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
@@ -342,6 +340,8 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
                 website: "website";
                 otherContact: "otherContact";
             }>>>>;
+            details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
+            hasCoordination: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             homes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             homeRegions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
         }, z.core.$strip>>>;
@@ -354,6 +354,7 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
         mode: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             strictAddress: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             strictContact: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+            strictDetail: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
         }, z.core.$strip>>>;
     }, z.core.$strip>>;
 }, z.core.$strict>;
@@ -415,6 +416,7 @@ declare const coordinationItemSchema: z.ZodObject<{
     homeId: z.ZodNumber;
     isRecoverable: z.ZodBoolean;
     id: z.ZodNumber;
+    homeStatus: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const outdatedDataSchema: z.ZodObject<{
     contacts: z.ZodObject<{
@@ -551,6 +553,7 @@ export declare const outdatedDataSchema: z.ZodObject<{
         homeId: z.ZodNumber;
         isRecoverable: z.ZodBoolean;
         id: z.ZodNumber;
+        homeStatus: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$strict>;
 export declare const partnerSchema: z.ZodObject<{
@@ -563,7 +566,7 @@ export declare const partnerSchema: z.ZodObject<{
     isRestricted: z.ZodBoolean;
     dateOfStart: z.ZodCoercedDate<unknown>;
     causeOfRestriction: z.ZodNullable<z.ZodString>;
-    dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+    dateOfRestriction: z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>;
     address: z.ZodObject<{
         country: z.ZodNullable<z.ZodObject<{
             id: z.ZodNumber;
@@ -769,6 +772,7 @@ export declare const partnerSchema: z.ZodObject<{
             homeId: z.ZodNumber;
             isRecoverable: z.ZodBoolean;
             id: z.ZodNumber;
+            homeStatus: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>>;
     }, z.core.$strict>;
     coordinations: z.ZodArray<z.ZodObject<{
@@ -829,6 +833,7 @@ export declare const partnerSchema: z.ZodObject<{
         homeId: z.ZodNumber;
         isRecoverable: z.ZodBoolean;
         id: z.ZodNumber;
+        homeStatus: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$strict>;
 export declare const partnersSchema: z.ZodObject<{
@@ -842,7 +847,7 @@ export declare const partnersSchema: z.ZodObject<{
         isRestricted: z.ZodBoolean;
         dateOfStart: z.ZodCoercedDate<unknown>;
         causeOfRestriction: z.ZodNullable<z.ZodString>;
-        dateOfRestriction: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+        dateOfRestriction: z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>;
         address: z.ZodObject<{
             country: z.ZodNullable<z.ZodObject<{
                 id: z.ZodNumber;
@@ -1048,6 +1053,7 @@ export declare const partnersSchema: z.ZodObject<{
                 homeId: z.ZodNumber;
                 isRecoverable: z.ZodBoolean;
                 id: z.ZodNumber;
+                homeStatus: z.ZodOptional<z.ZodString>;
             }, z.core.$strip>>;
         }, z.core.$strict>;
         coordinations: z.ZodArray<z.ZodObject<{
@@ -1108,6 +1114,7 @@ export declare const partnersSchema: z.ZodObject<{
             homeId: z.ZodNumber;
             isRecoverable: z.ZodBoolean;
             id: z.ZodNumber;
+            homeStatus: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>>;
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;

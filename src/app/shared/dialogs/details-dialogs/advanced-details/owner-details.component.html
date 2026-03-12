@@ -127,6 +127,10 @@
             <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
+            @if (mainForm.controls[control.controlName].hasError('matDatepickerParse')) {
+            <mat-error class="error">{{'FORM_VALIDATION.INVALID_ISO_DATE' |
+              translate}}</mat-error>
+            }
           </mat-form-field>
         </mat-grid-tile>
         }
@@ -158,6 +162,8 @@
         </mat-grid-tile> }
         }
 
+        <!-- TODO: для домов и сеньоров доработать сочетание блок-закрытие/выход -->
+
         <!-- Close -->
         @if(hasStatus()){
         <mat-grid-tile colspan="2" rowspan="1">
@@ -166,8 +172,6 @@
         </mat-grid-tile>
         }
 
-
-        <!-- Date of exit -->
         @if(isSeniorContext()){
         <mat-grid-tile colspan="3" rowspan="1">
           <mat-form-field>
@@ -176,6 +180,9 @@
             <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
             <mat-datepicker-toggle matIconSuffix [for]=" picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
+            @if (mainForm.controls['dateOfExit'].hasError('matDatepickerParse')) {
+            <mat-error class="error">{{'FORM_VALIDATION.INVALID_ISO_DATE' |
+              translate}}</mat-error>}
           </mat-form-field>
         </mat-grid-tile>}
 
@@ -198,7 +205,17 @@
               (delete)="clearHomeControl()" (selectOption)="updateAddressFilter($event)"></app-autocomplete-row>
             @if(homeCtrl.value && typeof homeCtrl.value !== 'string'){
             <br />
-            {{ homeCtrl.value.fullPostalAddress ?? '' }}
+            <div>
+              {{ homeCtrl.value.fullPostalAddress ?? '' }}
+
+              <!--  TODO: -->
+              @if (homeCtrl.value.noAddress){ <br /><span> {{'HOME.CARD.NO_ADDRESS_LABEL' | translate}}
+                <!--    @else { {{'TABLE.HOME_CATEGORIES.WITH_ADDRESS' | translate}} } -->
+              </span>}
+              @if (homeCtrl.value.specialHome){ <br /><span>{{'HOME.CARD.SPECIAL_HOME_LABEL' | translate}} </span>}
+              @if (homeCtrl.value.acceptableForSchool){ <br /><span>{{'HOME.CARD.ACC_SCHOOL_LABEL' | translate}}
+              </span><br />}
+            </div>
             }
           </div>
         </mat-grid-tile>
@@ -227,13 +244,13 @@
         }
         }
         }
-        @if(isContactsOwnerContext()){
+
         @if(hasPostalAddress() && data().operation == 'view-edit' && !isEditModeSignal()){
         <mat-grid-tile colspan="6" rowspan="1">
           {{getPostalAddress()}}
         </mat-grid-tile>
         }
-        }
+
       </mat-grid-list>
     </mat-tab>
 
@@ -297,11 +314,13 @@
                 [showDeleteButton]="data().operation == 'create' || isEditModeSignal()"
                 (delete)="deleteCoordinationControl($event)"></app-autocomplete-row>
             </div>
+
           </mat-grid-tile>
           }
         </ng-container>
         }
-        @if(homeOpen()){
+
+        @if(homeOpen() && partnerActive()){
         <mat-grid-tile colspan="3" rowspan="1">
           <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
             (click)="onAddCoordinationClick()">
@@ -469,7 +488,7 @@
           <div class="outdated-row">
             @if (isEditModeSignal()) {
             <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
-              (restore)="onRestoreOutdateOfficialName(item)" (delete)="onDeleteOutdatedData('officialNames', item.id)">
+              (restore)="onRestoreOutdatedOfficialName(item)" (delete)="onDeleteOutdatedData('officialNames', item.id)">
             </app-outdated-item-menu>
             }
             <div class="outdated-data">{{ item.officialName }}</div>
@@ -546,7 +565,8 @@
             <div class="outdated-data">{{ item.partnerName }}</div>
             }
             @if(homeOrPartner() == 'partner') {
-            <div class="outdated-data">{{ item.homeName }} ({{ item.regionName }})</div>
+            <div class="outdated-data">{{ item.homeName }} - {{item.regionName}}{{ item.homeStatus ? (' - ' +
+              (item.homeStatus | translate)) : '' }}</div>
             }
 
           </div>

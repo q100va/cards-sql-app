@@ -16,8 +16,11 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
 import { AutocompleteRowComponent } from '../../shared/dialogs/autocomplete-row/autocomplete-row.component';
-import {MatDatepickerModule} from '@angular/material/datepicker';
-import { OutdatedFullName,OutdatedUserName} from '../../interfaces/advanced-model';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import {
+  OutdatedFullName,
+  OutdatedUserName,
+} from '../../interfaces/advanced-model';
 import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -53,7 +56,7 @@ import { of } from 'rxjs';
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
-    MatDatepickerModule
+    MatDatepickerModule,
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -160,7 +163,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     if ((this.restoringDataDraft['userNames'] ?? []).length > 0) {
       const restoredValue = this.existingOwner!.outdatedData['userNames'].find(
         (item: OutdatedUserName) =>
-          item.id === this.restoringDataDraft['userNames']![0]
+          item.id === this.restoringDataDraft['userNames']![0],
       );
       if (restoredValue)
         this.outdatedDataDraft['userNames'].push(restoredValue);
@@ -168,6 +171,10 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     }
     this.restoringDataDraft['userNames'] = [data.id];
     this.mainForm.controls['userName'].setValue(data.userName);
+    this.deleteFromOutdatedDataDraft('userNames', data.id);
+
+   // this.updateControlsValidity(this.controlsNames, true);
+    this.onChangeValidation();
   }
 
   // --- Compare draft vs restoring/outdated
@@ -175,7 +182,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
   //если изменил,
   // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
 
-/*   override async correctRestoringData() {
+  /*   override async correctRestoringData() {
     super.correctRestoringData();
     // Addresses
     if (this.restoringDataDraft.addresses?.length) {
@@ -203,7 +210,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
 
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
-/*   override async checkOutdatedDataDuplicates() {
+  /*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerService.checkAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft.draftAddress
@@ -226,7 +233,7 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     return await super.checkOutdatedDataDuplicates();
   }
  */
-/*   override async checkAllChanges() {
+  /*   override async checkAllChanges() {
     const address = await this.ownerService.diffAddress(
       this.existingOwner!,
       this.ownerDraft,

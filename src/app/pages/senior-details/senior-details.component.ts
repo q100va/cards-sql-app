@@ -56,6 +56,8 @@ import { RelationPick } from '../../interfaces/advanced-model';
   styleUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.css',
 })
+
+//TODO: не удаляется интернат при создании
 export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
   override seniorService = inject(SeniorService) as SeniorMainService;
   override homeService = inject(HomeService) as HomeMainService;
@@ -74,7 +76,7 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
     if (this.data().operation == 'create')
       this.mainForm.get('spouse')?.disable();
     this.relationPickList$ = this.homeService
-      .getHomesPickList()
+      .getActiveHomesPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
     this.selectedHomeId$.next(this.existingOwner?.homeId ?? null);
 
@@ -108,8 +110,6 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
     this.setHasOutdatedNames(); //hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 
-  //TODO: Доработать переход в режим редактирования и обратно, контроль изменений и ошибок
-
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
     super.setInitialValues(mode);
 
@@ -121,6 +121,9 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
         ' - ' +
         this.existingOwner!.address.region.shortName,
       fullPostalAddress: this.existingOwner!.address.fullPostalAddress,
+      noAddress: this.existingOwner!.home.noAddress,
+      specialHome: this.existingOwner!.home.specialHome,
+      acceptableForSchool: this.existingOwner!.home.acceptableForSchool,
     });
     //spouse
     if (this.existingOwner!.spouseId) {
@@ -157,7 +160,7 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
       names: null,
     };
   }
-
+  // TODO: проверить восстановление, есть ошибки
   override get outdatedNames(): OutdatedFullName[] {
     const data = this.outdatedDataDraft;
     const list = data?.names;

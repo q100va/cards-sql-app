@@ -538,7 +538,7 @@ export const usersQueryDTOSchema = z
         general: z
           .object({
             roles: z.array(positiveInt).min(1).optional(),
-            comment: z.boolean().optional(),
+            //comment: z.boolean().optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -546,6 +546,7 @@ export const usersQueryDTOSchema = z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
+            details: z.array(z.string()).optional(),
           })
           .partial()
           .optional(),

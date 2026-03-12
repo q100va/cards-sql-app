@@ -174,7 +174,7 @@ export const partnerDraftSchema = z
         .nullable()),
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
-    draftCoordinations: z.array(positiveInt)
+    draftCoordinations: z.array(positiveInt),
 })
     .strict()
     .superRefine((data, ctx) => {
@@ -365,8 +365,6 @@ export const partnersQueryDTOSchema = z
         general: z
             .object({
             affiliations: z.array(nonEmpty).min(1).optional(),
-            comment: z.boolean().optional(),
-            hasHomes: z.boolean().optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
@@ -374,6 +372,8 @@ export const partnersQueryDTOSchema = z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
+            details: z.array(z.string()).optional(),
+            hasCoordination: z.boolean().optional(),
             homes: intOptArray,
             homeRegions: intOptArray,
         })
@@ -392,6 +392,7 @@ export const partnersQueryDTOSchema = z
             .object({
             strictAddress: z.boolean().optional(),
             strictContact: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
         })
             .partial()
             .optional(),
@@ -411,6 +412,7 @@ const coordinationItemSchema = z.object({
     homeId: positiveInt,
     isRecoverable: z.boolean(),
     id: positiveInt,
+    homeStatus: z.string().optional(),
 });
 export const outdatedDataSchema = z
     .object({

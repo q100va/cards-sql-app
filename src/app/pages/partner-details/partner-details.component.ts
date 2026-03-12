@@ -73,7 +73,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
   override ngOnInit(): void {
     super.ngOnInit();
     this.relationPickList$ = this.homeService
-      .getHomesPickList()
+      .getPotentialHomesPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
 
     this.mainProps = [
@@ -87,6 +87,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       'causeOfRestriction',
       'dateOfRestriction',
     ];
+    this.setPartnerActive();
     this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
     this.hasOutdatedCoordinations.set(
       this.outdatedDataDraft.coordinations.length > 0
@@ -106,7 +107,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
         new FormControl<RelationPick | null>(
           { value: null, disabled: true },
           {
-            nonNullable: true,
+          //  nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
           }
         )
@@ -122,6 +123,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
         formArray.at(i).patchValue({
           id: v.homeId,
           name: v.homeName! + ' - ' + v.regionName!,
+          homeStatus: v.homeStatus
         });
       });
     }
@@ -183,6 +185,10 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
   }
 
+  override setPartnerActive() {
+    this.partnerActive.set(!this.existingOwner?.isRestricted);
+  }
+
   // View-mode: disable institutes controls
   protected override changeToViewMode(
     addressParams: DefaultAddressParams | null
@@ -226,6 +232,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     const current = this.mainForm
       .get('coordinations')!
       .getRawValue()
+      .filter((i: RelationPick | null | undefined) => i != null)
       .map((c: RelationPick) => c.id)
       .sort();
 
@@ -268,7 +275,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     }
 
     this.deleteFromOutdatedDataDraft('coordinations', data.id);
-    this.updateControlsValidity(this.controlsNames, true);
+    //this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
 

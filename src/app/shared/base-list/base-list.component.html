@@ -18,18 +18,15 @@
     <app-table-filter (filterBadgeValue)="changeFilterBadge($event)" (filterValue)="filterValue.set($event)"
       (addressStringValue)="addressStringValue.set($event)" (addressFilterValue)="addressFilterValue.set($event)"
       (strongContactFilter)="strongContactFilter.set($event)" (strongAddressFilter)="strongAddressFilter.set($event)"
-      [(includeOutdatedOption)]="includeOutdated" [defaultAddressParams]="defaultAddressParams"
-      [source]="params().componentType"></app-table-filter>
+      (strongDetailFilter)="strongDetailFilter.set($event)" [(includeOutdatedOption)]="includeOutdated"
+      [defaultAddressParams]="defaultAddressParams" [source]="params().componentType"
+      [labels]="params().tableParams.labels" [viewOption]="selectedViewOptionId()"
+      [viewHomeOption]="selectedHomeViewOptionId()"></app-table-filter>
   </mat-sidenav>
 
   <mat-sidenav-content>
     <mat-card class="list-card" appearance="outlined">
-      @if(showSpinner()){
-      <div class="overlay">
-        <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
-          [style]="{ width: '150px', height: '150px' }" />
-      </div>
-      }
+
       <mat-card-header>
         <mat-grid-list cols="24" rowHeight="42px">
           <mat-grid-tile colspan="8" rowspan="1">
@@ -92,18 +89,36 @@
       </mat-card-header>
 
       <mat-card-content>
-        <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        <mat-grid-list cols="6" gutterSize="0px" rowHeight="64px">
+          <!-- Home status setting -->
+          @if(params().componentType === 'seniorList'){
+          <mat-grid-tile colspan="3" rowspan="1">
+            <div class="bottom-left">
+              <section>
+                <mat-button-toggle-group [formControl]="homeViewCtrl">
+                  @for (viewOption of homeViewOptions; track viewOption.id) {
+                  <mat-button-toggle [value]="viewOption.id">{{viewOption.name | translate}}</mat-button-toggle>
+                  }
+                </mat-button-toggle-group>
+              </section>
+            </div>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+          }
+
           <!-- Status setting -->
           <mat-grid-tile colspan="3" rowspan="1">
             <div class="bottom-left">
               <section>
-                <!-- TODO: подумать какие кнопки для интернатов и сеньоров, т.к. у них есть активные, (выбывшие, закрытые), заблокированные -->
-                <mat-button-toggle-group>
+                <mat-button-toggle-group [formControl]="viewCtrl">
                   @for (viewOption of params().viewOptions; track viewOption.id) {
-                  <mat-button-toggle #option [checked]="viewOption.initiallySelected" [value]="viewOption.id"
-                    (change)="onChangeViewSelection(option.value)">{{viewOption.name | translate}}</mat-button-toggle>
+                  <mat-button-toggle [value]="viewOption.id">{{viewOption.name | translate}}</mat-button-toggle>
                   }
                 </mat-button-toggle-group>
+                <!--                 <mat-checkbox [formControl]="includeInactiveHomesCtrl">
+                  {{'BASE_LIST.INCLUDE_INACTIVE_HOMES' | translate}}</mat-checkbox>
+                <mat-checkbox [formControl]="includeClosedHomesCtrl">
+                  {{'BASE_LIST.INCLUDE_CLOSED_HOMES' | translate}}</mat-checkbox> -->
               </section>
             </div>
           </mat-grid-tile>
@@ -149,6 +164,12 @@
 
         <!-- Table -->
         <div class="mat-elevation-z8">
+          @if(showSpinner()){
+          <div class="overlay">
+            <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+              [style]="{ width: '150px', height: '150px' }" />
+          </div>
+          }
           <ng-content></ng-content>
         </div>
 

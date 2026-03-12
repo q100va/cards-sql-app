@@ -36,7 +36,7 @@
     "LOCALITIES": "Localities",
     "AUDIT": "Audit",
     "PARTNERS": "Partners",
-    "HOMES": "Nursing homes",
+    "HOMES": "Homes",
     "SENIORS": "Residents"
   },
   "LANG": {
@@ -209,21 +209,29 @@
       "BIRTH_DATE": "Date of birth",
       "SENIOR_DETAILS": "Details",
       "CONSENT_DATE": "Consent date",
-      "SENIOR_HOME_NAME": "Home name"
+      "SENIOR_HOME_NAME": "Home name",
+      "EXIT_DATE": "Date of exit",
+      "LAST_ORDER_DATE": "Date of last order"
     },
     "NOTES": {
-      "CLOSE": "close",
+      "CLOSE": "closed",
       "DEACTIVATED": "not participate",
       "OUTDATED_DATA": "outdated data:",
       "BLOCKED_FROM": "blocked from ",
-      "CLOSE_FROM": "close from ",
+      "CLOSE_FROM": "closed from ",
       "ACTIVE": "active",
+      "ACCESSIBLE": "accessible",
+      "LEFT": "discharged ",
+      "HOME_BLOCKED_FROM": "home inactive from ",
       "SUBSCRIPTION": "subscription",
+      "COOPERATION": "cooperation",
+      "HOME_CLOSE_FROM": "home closed from ",
       "MALE": "male",
       "FEMALE": "female",
       "NO_ADDRESS_LABEL": "no return address",
+      "PERSONAL_NO_ADDRESS_LABEL": "personal no return address",
       "SPECIAL_HOME_LABEL": "from special home",
-      "ACC_SCHOOL_LABEL": "accessible for school",
+      "ACC_SCHOOL_LABEL": "suitable for schools",
       "SPOUSE": "spouse - "
     },
     "MENU": {
@@ -294,7 +302,7 @@
     "VIEW_OPTIONS": {
       "ALL": "all users",
       "ONLY_ACTIVE": "only active",
-      "ONLY_BLOCKED": "only blocked"
+      "ONLY_BLOCKED": "only former"
     },
 
     "CONTACTS": {
@@ -407,13 +415,15 @@
     }
   },
   "HOME": {
-    "TABLE_TITLE": "Homes",
+    "TABLE_TITLE": "Nursing Homes",
     "ADD_PARTNER": "Add home",
     "SEARCH_PLACEHOLDER": "KABANOVO",
     "VIEW_OPTIONS": {
       "ALL": "all homes",
       "ONLY_ACTIVE": "only active",
-      "ONLY_BLOCKED": "only blocked"
+      "ONLY_BLOCKED": "only inactive",
+      "ONLY_CLOSED": "only closed",
+      "EXCLUDE_CLOSED": "exclude closed"
     },
 
     "CARD": {
@@ -425,13 +435,13 @@
       "COMMENT_LABEL": "Comment",
       "SPECIAL_HOME_LABEL": "special home",
       "NO_ADDRESS_LABEL": "no return address",
-      "ACC_SCHOOL_LABEL": "accessible for school",
+      "ACC_SCHOOL_LABEL": "suitable for schools",
       "POSTAL_CODE_LABEL": "Postal code",
       "POSTAL_NAME_LABEL": "Postal name",
       "POSTAL_ADDR_LABEL": "Street, house number",
       "INFO_COMMENT_LABEL": "Info comment",
       "BLOCKED_LABEL": "Blocked",
-      "CLOSE_LABEL": "Home is close",
+      "CLOSE_LABEL": "Home is closed",
       "EMAIL_LABEL": "Email",
       "PHONE_NUMBER_LABEL": "Phone number",
       "TELEGRAM_ID_LABEL": "Telegram ID",
@@ -461,15 +471,20 @@
     "TABLE_TITLE": "Nursing Home Residents",
     "ADD_PARTNER": "Add Resident",
     "SEARCH_PLACEHOLDER": "Volkova Anna Petrovna",
+
     "VIEW_OPTIONS": {
-      "ALL": "All Residents",
-      "ONLY_ACTIVE": "Active Only",
-      "ONLY_BLOCKED": "Inactive Only"
+      "ALL": "all residents",
+      "ONLY_ACTIVE": "only accessible",
+      "ONLY_BLOCKED": "only blocked",
+      "ONLY_QUITTED": "only discharged",
+      "EXCLUDE_BLOCKED_AND_QUITTED": "excl. blocked and discharged",
+      "EXCLUDE_QUITTED": "exclude discharged"
     },
     "CARD": {
       "CREATION_TITLE": "New Resident",
       "VIEW_TITLE": "Resident",
-
+      "HOME_BLOCKED_LABEL": " - home doesn't participate!",
+      "HOME_CLOSED_LABEL": " - home was closed!",
       "FIRST_NAME_LABEL": "First Name*",
       "PATRONYMIC_LABEL": "Patronymic",
       "LAST_NAME_LABEL": "Last Name",
@@ -518,7 +533,7 @@
     "VIEW_OPTIONS": {
       "ALL": "all volunteers",
       "ONLY_ACTIVE": "only active",
-      "ONLY_BLOCKED": "only former"
+      "ONLY_BLOCKED": "only blocked"
     },
 
     "CARD": {
@@ -582,8 +597,17 @@
     "SET_FILTER": "Configure filter",
     "RESET_FILTER": "Reset filter",
     "SET_COLUMNS": "Configure column visibility",
+    "UPDATE_LABEL": "update",
     "START_LABEL": "start",
-    "BLOCK_LABEL": "block"
+    "BLOCK_LABEL": "block",
+    "EXIT_LABEL": "exit",
+    "CLOSE_LABEL": "close",
+    "LAST_ORDER_LABEL": "last order",
+    "DAY_LABEL": "DOB days: ",
+    "MONTH_LABEL": "DOB months: ",
+    "YEAR_LABEL": "DOB years: ",
+    "FROM_LABEL": "from ",
+    "HOMES_LABEL": " homes"
   },
   "NAV": {
     "COLUMNS_HEADER": "Configure column visibility",
@@ -592,13 +616,33 @@
       "ADDR_LABEL": "address",
       "STRONG_FILTER": "all selected values must be present simultaneously",
       "ROLE_LABEL": "role",
-      "AFFILIATION_LABEL": "affiliation*",
+      "AFFILIATION_LABEL": "affiliation",
+      "INSTITUTE_LABEL": "institute category",
+      "SUBSCRIPTIONS_LABEL": "subscription",
+      "COOPERATIONS_LABEL": "cooperation",
       "CHOOSE_VALUE_LABEL": "select value(s)",
+      "CHOOSE_REGION_VALUE_LABEL": "select region(s)",
+      "CHOOSE_HOME_VALUE_LABEL": "select home(s)",
       "START_DATE_LABEL": "start date",
       "CHOOSE_RANGE_LABEL": "Enter a range",
       "DATE_PLACEHOLDER": "mm/dd/yyyy",
       "BLOCK_DATE_LABEL": "block date",
-      "BLOCK_COMMENT": "The result will make sense only if ‘All’ or ‘Blocked only’ is selected",
+      "EXIT_DATE_LABEL": "exit date",
+      "CLOSE_DATE_LABEL": "close date",
+      "UPDATE_DATE_LABEL": "update date",
+      "LAST_ORDER_DATE_LABEL": "last order date",
+      "BLOCK_COMMENT": "The result will make sense only if ‘all’ or ‘only blocked’ is selected",
+      "BLOCK_COMMENT_USERS": "The result will make sense only if ‘all’ or ‘only blocked’ is selected",
+      "BLOCK_COMMENT_VOLUNTEERS": "The result will make sense only if ‘all’ or ‘only blocked’ is selected",
+      "BLOCK_COMMENT_PARTNERS": "The result will make sense only if ‘all’ or ‘only former’ is selected",
+      "BLOCK_COMMENT_HOMES": "The result will make sense only if ‘all’ or ‘only inactive’ or ‘exclude closed’ is selected",
+      "BLOCK_COMMENT_SENIORS": "The result will make sense only if ‘all’ or ‘only blocked’ or ‘exclude discharged’ is selected",
+      "CLOSE_COMMENT_HOMES": "The result will make sense only if ‘all’ or ‘only closed’ is selected",
+      "CLOSE_COMMENT_SENIORS": "The result will make sense only if ‘all’ or ‘only discharged’ is selected",
+      "NOT_ACTIVE_COMMENT_PARTNERS": "to select closed homes, include outdated data",
+      "NOT_ACTIVE_COMMENT_SENIORS": "to select inactive homes, choose ‘all’ or ‘only inactive’ or ‘exclude closed’, to select closed homes - ‘all’ or ‘only closed’",
+      "NOT_ACTIVE_COMMENT_HOMES": "to select former partners, include outdated data",
+      "NOT_ACTIVE_COMMENT_VOLUNTEERS": "to select former users, include outdated data",
       "CONTACT_TYPE_LABEL": "contact type",
       "COMMENT_LABEL": "comment",
       "WITH_COMMENT_OPT": "with comment",
@@ -612,7 +656,62 @@
       "VKONTAKTE_OPT": "VKontakte",
       "INSTAGRAM_OPT": "Instagram",
       "FACEBOOK_OPT": "Facebook",
-      "OTHER_CONTACT_OPT": "Other contact"
+      "OTHER_CONTACT_OPT": "Other contact",
+      "GENDER_LABEL": "gender",
+      "ONLY_MALE": "male",
+      "ONLY_FEMALE": "female",
+      "PECULIARITIES_LABEL": "peculiarities",
+      "ONLY_NO_ADDRESS": "no return address only",
+      "WITHOUT_NO_ADDRESS": "exclude no return address",
+      "ONLY_SPECIAL": "special care homes only",
+      "WITHOUT_SPECIAL": "exclude special care homes",
+      "ONLY_ACC_FOR_SCHOOL": "suitable for schools only",
+      "WITHOUT_ACC_FOR_SCHOOL": "exclude suitable for schools",
+      "ONLY_WITH_COORDINATION": "active coordination",
+      "ONLY_WITHOUT_COORDINATION": "vacant coordination",
+      "ONLY_WITH_INSTITUTE": "institutes",
+      "ONLY_WITHOUT_INSTITUTE": "no institutes",
+      "ONLY_WITH_SUBSCRIPTION": "active subscription",
+      "ONLY_WITHOUT_SUBSCRIPTION": "vacant subscription",
+      "ONLY_WITH_COOPERATION": "active cooperation",
+      "ONLY_WITHOUT_COOPERATION": "vacant cooperation",
+      "PARTNERS_LABEL": "coordinators",
+      "HOMES_LABEL": "nursing homes",
+      "REGIONS_LABEL": "home regions",
+      "DETAILS_LABEL": "only with",
+      "PERSONAL_NO_ADDRESS_LABEL": "personal no return address status",
+      "COMMENT_OPT": "comment",
+      "PHOTO_LINK_OPT": "photo",
+      "CONSENT_OPT": "consent",
+      "TEACHER_OPT": "teacher status",
+      "KINDERGARTEN_OPT": "preschool worker status",
+      "HONORARY_OPT": "honorary status",
+      "VETERAN_OPT": "veteran status",
+      "CHILD_OF_WAR_OPT": "child of war status",
+      "BELIEVER_OPT": "believer status",
+      "PROFESSION_OPT": "profession",
+      "INTERESTS_OPT": "interests",
+      "SPOUSE_OPT": "spouse",
+      "BIRTHDAY_LABEL": "birthday",
+      "DAY_LABEL": "day",
+      "MONTH_LABEL": "month",
+      "YEAR_LABEL": "year",
+      "FROM_LABEL": "from",
+      "TO_LABEL": "to",
+      "JANUARY": "January",
+      "FEBRUARY": "February",
+      "MARCH": "March",
+      "APRIL": "April",
+      "MAY": "May",
+      "JUNE": "June",
+      "JULY": "July",
+      "AUGUST": "August",
+      "SEPTEMBER": "September",
+      "OCTOBER": "October",
+      "NOVEMBER": "November",
+      "DECEMBER": "December",
+      "WITHOUT_YEAR": "hide entries without year of birth",
+      "WITHOUT_BIRTHDAY": "hide entries without DOB"
     }
   },
   "ERRORS": {
@@ -700,7 +799,7 @@
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",
     "NOT_FOUND": "The field is empty or the entered value was not found",
-
+    "INVALID_ISO_DATE": "Invalid date",
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",

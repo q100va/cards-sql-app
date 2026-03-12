@@ -117,6 +117,8 @@ export class OwnerRestorationGuardService {
 
     if (!match) return { ok: true, restoring: null };
 
+
+
     const fullName =
       `${draft.firstName} ${draft.patronymic || ''} ${draft.lastName || ''}`.trim();
     const confirmed = await this.diffConfirmService.confirmDataCorrectness(

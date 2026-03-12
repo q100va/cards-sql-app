@@ -1,6 +1,5 @@
 import { Router } from "express";
-import { Op } from 'sequelize';
-import { z } from 'zod';
+import { Op, fn, col, where } from 'sequelize';
 import {
   Country, Region, District, Locality, Home,
   Senior, SeniorSearch, SeniorOutdatedName,
@@ -16,6 +15,7 @@ import { withTransaction } from "../controllers/with-transaction.js";
 import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
+import { applyBirthDatePartsFilters } from "../controllers/ctrl-birth-date-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 
@@ -29,7 +29,7 @@ const includes = [
     include: [
       {
         model: HomeAddress,
-        as: 'addresses',
+        as: 'activeAddress',
         attributes: ['id', 'fullPostalAddress', 'isRestricted'],
         where: { isRestricted: false },
         include: [
@@ -155,15 +155,37 @@ router.post(
           include: includes,
           transaction: t,
         });
-
+        //TODO: упростить кор-ку бывших и определяемых супругов
         if (creatingSenior.spouseId) {
-
-          await Senior.update(
-            { spouseId: null },
+          const exSpouse = await Senior.findOne(
             {
-              where: { spouseId: creatingSenior.spouseId, id: { [Op.ne]: freshSenior.id } },
+              where: {
+                spouseId: creatingSenior.spouseId,
+                id: { [Op.ne]: freshSenior.id }
+              },
               transaction: t,
             });
+          if (exSpouse) {
+            await Senior.update(
+              { spouseId: null },
+              {
+                where: { id: exSpouse.id },
+                transaction: t,
+              });
+            const freshExSpouse = await Senior.findOne({
+              where: { id: exSpouse.id },
+              attributes: {
+                exclude: [
+                  'createdAt',
+                  'updatedAt']
+              },
+              include: includes,
+              transaction: t,
+            });
+            const searchString = createSearchStringFor('senior', freshExSpouse);
+            await SeniorSearch.create({ seniorId: freshExSpouse.id, content: searchString }, { transaction: t });
+
+          }
 
           await Senior.update(
             { spouseId: freshSenior.id },
@@ -171,8 +193,18 @@ router.post(
               where: { id: creatingSenior.spouseId },
               transaction: t,
             });
-
-
+          const freshNewSpouse = await Senior.findOne({
+            where: { id: creatingSenior.spouseId },
+            attributes: {
+              exclude: [
+                'createdAt',
+                'updatedAt']
+            },
+            include: includes,
+            transaction: t,
+          });
+          const searchString = createSearchStringFor('senior', freshNewSpouse);
+          await SeniorSearch.create({ seniorId: freshNewSpouse.id, content: searchString }, { transaction: t });
         }
 
         console.log('freshSenior');
@@ -219,11 +251,22 @@ router.post(
                   transaction: t
                 }
               );
+              const freshExSpouse = await Senior.findOne({
+                where: { id: senior.spouseId },
+                attributes: {
+                  exclude: [
+                    'createdAt',
+                    'updatedAt']
+                },
+                include: includes,
+                transaction: t,
+              });
+              const searchString = createSearchStringFor('senior', freshExSpouse);
+              await SeniorSearch.create({ seniorId: freshExSpouse.id, content: searchString }, { transaction: t });
             }
 
             if (spouseId !== null) {
-              await Senior.update(
-                { spouseId: null },
+              const exSpouse = await Senior.findOne(
                 {
                   where: {
                     spouseId: spouseId,
@@ -231,6 +274,26 @@ router.post(
                   },
                   transaction: t,
                 });
+              if (exSpouse) {
+                await Senior.update(
+                  { spouseId: null },
+                  {
+                    where: { id: exSpouse.id },
+                    transaction: t,
+                  });
+                const freshExSpouse = await Senior.findOne({
+                  where: { id: exSpouse.id },
+                  attributes: {
+                    exclude: [
+                      'createdAt',
+                      'updatedAt']
+                  },
+                  include: includes,
+                  transaction: t,
+                });
+                const searchString = createSearchStringFor('senior', freshExSpouse);
+                await SeniorSearch.create({ seniorId: freshExSpouse.id, content: searchString }, { transaction: t });
+              }
 
               await Senior.update(
                 { spouseId: id },
@@ -240,7 +303,18 @@ router.post(
                 }
               );
 
-
+              const freshNewSpouse = await Senior.findOne({
+                where: { id: spouseId },
+                attributes: {
+                  exclude: [
+                    'createdAt',
+                    'updatedAt']
+                },
+                include: includes,
+                transaction: t,
+              });
+              const searchString = createSearchStringFor('senior', freshNewSpouse);
+              await SeniorSearch.create({ seniorId: freshNewSpouse.id, content: searchString }, { transaction: t });
             }
           }
 
@@ -300,7 +374,7 @@ router.post(
   }
 );
 
-// API get seniors TODO:
+// API get seniors
 
 router.post(
   '/get-seniors',
@@ -319,134 +393,150 @@ router.post(
 
       const includeOutdated = !!view?.includeOutdated; // false => only actual
       const order = buildOrderFor('senior', sort);
+      /*       console.log('ORDER');
+            console.log(JSON.stringify(order, null, 2)); */
 
       // ---- base where (Senior) ----
       const whereSenior = {};
       const whereAddress = {};
       const whereHome = {};
-      const whereSpouse = {};
+      // const whereSpouse = {};
       // const whereHomeAddress = {};
-      whereHome.isRestricted = false;
+      //whereHome.isRestricted = false;
       whereAddress.isRestricted = false;
-      let homesRequired = false;
+      let homesRequired = true;
       let spouseRequired = false;
 
-      //TODO: надо проверять еще по интернату:участвует/не участвует но с условием ИЛИ для only-blocked
+      // проверять еще и по интернату:участвует/не участвует но с условием ИЛИ для only-blocked
       //и когда жилец выбывает нужно блокировать его
 
       // view option (if you still use it)
-      switch (view?.option) {
-        case 'only-active': {
-          whereSenior.isRestricted = false;
-          // whereSenior.dateOfExit = null;
-          whereHome.isRestricted = false;
-          break;
-        }
 
-        case 'only-blocked': {
-          whereSenior.isRestricted = true;
-          //TODO:     OR
-          whereHome.isRestricted = true;
-          break;
+      switch (view?.homeOption) {
+        case 'only-active': whereHome.isRestricted = false; break;
+        case 'only-blocked': whereHome.isRestricted = true; whereHome.isClose = false; break;
+        case 'only-closed': whereHome.isClose = true; break;
+        case 'exclude-closed': whereHome.isClose = false; break;
+        default:      /* 'all' or undefined */    break;
+      }
+
+
+      if (view?.homeOption !== 'only-closed') {
+        switch (view?.option) {
+          case 'only-active': {
+            whereSenior.isRestricted = false;
+            break;
+          }
+          case 'only-blocked': {
+            whereSenior.isRestricted = true;
+            whereSenior.dateOfExit = null;
+            break;
+          }
+          case 'only-discharged': {
+            whereSenior.dateOfExit = { [Op.not]: null };
+            break;
+          }
+          case 'exclude-discharged': {
+            whereSenior.dateOfExit = null;
+            break;
+          }
+
+          default:              /* 'all' or undefined */        break;
         }
-        default:              /* 'all' or undefined */        break;
       }
 
       // general filters
 
-      if (filters?.general?.comment !== undefined) {
-        whereSenior.comment = !filters.general.comment ? null : { [Op.not]: null };
-      }
       if (filters?.general?.dateBeginningRange) {
         whereSenior.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
       }
       if (filters?.general?.dateRestrictionRange) {
         whereSenior.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
-      if (filters?.general?.hasConsent !== undefined) {
-        whereSenior.dateOfConsent = !filters.general.hasConsent ? null : { [Op.not]: null };
+      if (filters?.general?.dateExitRange) {
+        whereSenior.dateOfExit = betweenDatesInclusive(filters.general.dateExitRange);
       }
 
-      /* TODO:   dateRange: z.tuple([nullableInt, nullableInt]).optional(),
-                  monthRange: z.tuple([nullableInt, nullableInt]).optional(),
-                  yearRange: z.tuple([nullableInt, nullableInt]).optional(), */
       // если хоть один фильтр задан — исключаем null birthDate
       const hasAny =
-        (filters?.general?.dateRange && (filters?.general?.dateRange[0] != null || filters?.general?.dateRange[1] != null)) ||
+        (filters?.general?.dayRange && (filters?.general?.dayRange[0] != null || filters?.general?.dayRange[1] != null)) ||
         (filters?.general?.monthRange && (filters?.general?.monthRange[0] != null || filters?.general?.monthRange[1] != null)) ||
         (filters?.general?.yearRange && (filters?.general?.yearRange[0] != null || filters?.general?.yearRange[1] != null));
 
-      if (hasAny)
-        applyBirthDatePartsFilters(whereSenior, {
-          dateRange: filters?.general?.dateRange,
+      if (hasAny) {
+        applyBirthDatePartsFilters(whereSenior, filters?.general?.hideWithoutYear ?? false, {
+          dayRange: filters?.general?.dayRange,
           monthRange: filters?.general?.monthRange,
           yearRange: filters?.general?.yearRange,
         });
-
-
-      //TODO: проверить
-      if (filters?.general?.hasPhotoLink === true) {
-        whereSenior.photoLink = { [Op.not]: null };
       }
-      if (filters?.general?.hasKindergartenStatus === true) {
-        whereSenior.hasKindergartenStatus = { [Op.not]: null };
+      if (filters?.general?.hideWithoutYear && !hasAny) {
+        whereSenior.birthDate = {
+          [Op.and]: [
+            where(fn('DATE_PART', 'year', col('senior.birthDate')), { [Op.not]: 1800 }),
+            { [Op.not]: null },
+          ],
+        };
       }
-      if (filters?.general?.hasTeacherStatus === true) {
-        whereSenior.hasTeacherStatus = { [Op.not]: null };
-      }
-      if (filters?.general?.hasHonoraryStatus === true) {
-        whereSenior.hasHonoraryStatus = { [Op.not]: null };
-      }
-      if (filters?.general?.hasVeteranStatus === true) {
-        whereSenior.hasVeteranStatus = { [Op.not]: null };
-      }
-      if (filters?.general?.hasChildOfWarStatus === true) {
-        whereSenior.hasChildOfWarStatus = { [Op.not]: null };
-      }
-      if (filters?.general?.hasOrthodoxBelieverStatus === true) {
-        whereSenior.hasOrthodoxBelieverStatus = { [Op.not]: null };
-      }
-      if (filters?.general?.hasProfession === true) {
-        whereSenior.photoLink = { [Op.not]: null };
-      }
-      if (filters?.general?.hasSpouse === true) {
-        //whereSpouse['$spouse.id$'] = { [Op.not]: null };
-        spouseRequired = true;
+      if (filters?.general?.hideWithoutBirthday && !hasAny && !filters?.general?.hideWithoutYear) {
+        whereSenior.birthDate = { [Op.not]: null };
       }
 
-      if (filters?.general?.noAddress !== undefined) {
+      /*       console.log('WHERESENIOR');
+            console.log(JSON.stringify(whereSenior, null, 2)); */
+
+      if (filters?.general?.noAddress === true || filters?.general?.noAddress === false) {
         whereHome.noAddress = filters.general.noAddress;
         homesRequired = true;
       }
-      if (filters?.general?.specialHome !== undefined) {
+      if (filters?.general?.specialHome === true || filters?.general?.specialHome === false) {
         whereHome.specialHome = filters.general.specialHome;
         homesRequired = true;
       }
-      if (filters?.general?.acceptableForSchool !== undefined) {
+      if (filters?.general?.acceptableForSchool === true || filters?.general?.acceptableForSchool === false) {
         whereHome.acceptableForSchool = filters.general.acceptableForSchool;
         homesRequired = true;
       }
+      if (filters?.general?.gender) {
+        whereSenior.gender = filters.general.gender;
+      }
 
-      /*       if (filters?.general?.hasHomes !== undefined) {
-              whereSenior['$coordinations.id$'] = !filters.general.hasHomes ? null : { [Op.not]: null };
-            }
-            if (filters?.general?.affiliations?.length) {
-              whereSenior.affiliation = { [Op.in]: filters.general.affiliations };
-            } */
+
+      const details = filters?.general?.details || [];
+      if (details.length > 0) {
+        const strict = !!filters?.mode?.strictDetail;
+        if (strict) whereSenior[Op.and] = details.map(detail => ({
+          [detail]: detail !== 'personalNoAddr' ? { [Op.not]: null } : true
+        }));
+        if (!strict) whereSenior[Op.or] = details.map(detail => ({
+          [detail]: detail !== 'personalNoAddr' ? { [Op.not]: null } : true
+        }));
+      }
+
 
       // address filter (weak/strong)
       const addresses = filters?.address || {};
       const addrRequired = (addresses.countries?.length ?? 0) > 0;
       if (addrRequired) {
-        const sub = await buildAddressOwnerIdSubquery('senior', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
+        const sub = await buildAddressOwnerIdSubquery('senior', addresses, false, false);
         //whereAddress.isRestricted = false;
-        if (sub) whereAddress.seniorId = { [Op.in]: sub };
+
+        if (sub) whereHome.id = { [Op.in]: sub };
       }
 
       // homes filter
       const homes = filters?.general?.homes || [];
-      if ((homes.length ?? 0) > 0) {
-        whereHome.homeId = { [Op.in]: homes };
+      if (homes.length > 0) {
+        if (whereHome.id) {
+          whereHome.id = {
+            [Op.and]: [
+              whereHome.id,
+              { [Op.in]: homes }
+            ]
+          };
+        } else {
+          whereHome.id = { [Op.in]: homes };
+        }
         homesRequired = true;
       }
 
@@ -464,8 +554,15 @@ router.post(
             include: [
               {
                 model: HomeAddress,
-                as: 'addresses',
-                attributes: ['id', 'fullPostalAddress', 'isRestricted'],
+                as: 'activeAddress',
+                attributes: [
+                  'id',
+                  'fullPostalAddress',
+                  'isRestricted',
+                  'countryId',
+                  'regionId',
+                  'districtId',
+                  'localityId',],
                 where: whereAddress,
                 required: addrRequired,
                 include: [
@@ -474,7 +571,14 @@ router.post(
                   { model: District, attributes: ['id', 'shortName', 'name'] },
                   { model: Locality, attributes: ['id', 'shortName', 'name'] },
                 ]
-              }
+              }/* ,
+              {
+                model: HomeAddress,
+                as: 'activeAddress',
+                attributes: [],
+                required: false,
+                include: [{ model: Region, as: 'region', attributes: [], }],
+              } */
             ]
           },
           {
@@ -505,9 +609,19 @@ router.post(
           }
         });
       }
-      console.log('INCLUDES', includes);
-      console.log(JSON.stringify(includes, null, 2));
+      /*       console.log('INCLUDES');
+            console.log(JSON.stringify(includes, null, 2)); */
 
+      //order by region.shortName
+      /*      if (sort?.[0]?.field === 'regionName') {
+             includes.push({
+               model: HomeAddress,
+               as: 'activeAddress',
+               attributes: [],
+               required: false,
+               include: [{ model: Region, as: 'region', attributes: [], }],
+             });
+           } */
 
 
       // ---- count (distinct) ----
@@ -533,8 +647,9 @@ router.post(
         //  subQuery: false, // avoid subquery limits in includes
         //  distinct: true,
       });
-      console.log('seniors', seniors);
-
+      // console.log('seniors', seniors);
+      console.log('SENIORS');
+      console.log(JSON.stringify(seniors, null, 2));
       const items = seniors.map(p => transformOwnerData('senior', p.toJSON()));
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
@@ -565,7 +680,7 @@ router.get("/get-senior-by-id/:id",
     }
   });
 
-  //TODO: исключать самого сеньора (при редактировании)
+//TODO: исключать самого сеньора (при редактировании)
 router.get("/get-list-of-seniors/:id",
   requireAuth,
   requireAny('VIEW_SENIOR', 'EDIT_SENIOR', 'ADD_SENIOR'),

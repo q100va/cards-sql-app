@@ -391,6 +391,9 @@ export type VolunteerOutdatedData = PersonOutdatedData & {
   addresses: OutdatedAddress[];
   contacts: OutdatedContacts;
   institutes: OutdatedInstitute[];
+  subscriptions: Cooperation[];
+  cooperations: Cooperation[];
+
 };
 export type HomeOutdatedData = BaseOutdatedData & {
   contacts: OutdatedContacts;
@@ -633,6 +636,12 @@ export type RelationPick = {
   regionId?: number;
   districtId?: number;
   localityId?: number;
+  isRestricted?: boolean;
+  isClose?: boolean;
+  noAddress?: boolean;
+  specialHome?: boolean;
+  acceptableForSchool?: boolean;
+  homeStatus?: string
 };
 
 export type UpdatedOwnerData<TChanging, TRestoring, TOutdating, TDeleting> = {
@@ -675,3 +684,24 @@ export interface OwnerMainService<
   deleteOwner(id: number): Observable<ApiResponse<null>>;
   getOwnerName(owner: TOwner): string;
 }
+
+export const affiliations = [
+    'PARTNER.AFF.VOLUNTEER_COORDINATOR',
+    'PARTNER.AFF.HOME_REPRESENTATIVE',
+    'PARTNER.AFF.FOUNDATION_STAFF',
+  ];
+
+  export const categories = [
+    'VOLUNTEER.CATEGORIES.SCHOOL',
+    'VOLUNTEER.CATEGORIES.KINDERGARTEN',
+    'VOLUNTEER.CATEGORIES.COLLEGE',
+    'VOLUNTEER.CATEGORIES.UNIVERSITY',
+    'VOLUNTEER.CATEGORIES.GOVERNMENT',
+    'VOLUNTEER.CATEGORIES.BUSINESS',
+    'VOLUNTEER.CATEGORIES.CHURCH',
+    'VOLUNTEER.CATEGORIES.CHARITY',
+    'VOLUNTEER.CATEGORIES.CHILDREN',
+    'VOLUNTEER.CATEGORIES.YOUTH',
+    'VOLUNTEER.CATEGORIES.ADULTS',
+    'VOLUNTEER.CATEGORIES.OTHER',
+  ];

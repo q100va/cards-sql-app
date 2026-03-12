@@ -16,7 +16,12 @@ export default function HomeUpdateDateModel(sequelize) {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-    }
+    },
+    isLatest:
+    {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+    },
 
   },
     {

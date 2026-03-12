@@ -60,7 +60,7 @@ function reconcileRestoringIds<TOutdated extends { id: number }>(
   restoringIds: readonly number[],
   outdating: readonly TOutdated[],
   outdatedAll: readonly TOutdated[],
-  shouldKeep: (candidate: TOutdated) => boolean,
+  shouldRemove: (candidate: TOutdated) => boolean,
 ): ReconcileResult<number[], TOutdated[]> {
   const ids = restoringIds ?? [];
   const nextOutdating = [...(outdating ?? [])];
@@ -74,11 +74,12 @@ function reconcileRestoringIds<TOutdated extends { id: number }>(
   for (const id of ids) {
     const candidate = byId.get(id);
     if (!candidate) continue; // если запись пропала — просто выкинули id
-
-    if (shouldKeep(candidate)) {
-      nextRestoring.push(id);
-    } else {
+    console.log('candidate', candidate);
+    console.log('shouldRemove(candidate)', shouldRemove(candidate));
+    if (shouldRemove(candidate)) {
       nextOutdating.push(candidate);
+    } else {
+      nextRestoring.push(id);
     }
   }
 
@@ -157,6 +158,7 @@ export function reconcileRestoredNames(
   draftNames: Names,
   outdatedAll: readonly OutdatedFullName[],
 ) {
+  console.log('draftNames', draftNames);
   return reconcileRestoringIds(
     restoringIds,
     outdating,
@@ -248,7 +250,7 @@ export function reconcileRestoredCoordinations(
     outdatedAll,
     (candidate) => {
       const checkId = kind === 'home' ? candidate.partnerId : candidate.homeId;
-      return typeof checkId === 'number' && draftSet.has(checkId);
+      return !(typeof checkId === 'number' && draftSet.has(checkId));
     },
   );
 }
@@ -273,7 +275,7 @@ export function reconcileRestoredInstitutes(
     (candidate) => {
       // candidate может иметь instituteName/category как строки — предполагаю так
       const key = `${norm(candidate.instituteName)}|${candidate.category}`;
-      return draftKeySet.has(key);
+      return !draftKeySet.has(key);
     },
   );
 }

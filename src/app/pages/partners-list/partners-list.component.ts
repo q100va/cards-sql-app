@@ -62,6 +62,11 @@ export class PartnersListComponent {
     addTitle: 'PARTNER.ADD_PARTNER',
     searchPlaceholder: 'PARTNER.SEARCH_PLACEHOLDER',
     addIcon: 'person_add_alt',
+    labels: {
+      blockLabel: 'NAV.FILTER.BLOCK_COMMENT_PARTNERS',
+      closeLabel: '',
+      notActiveLabel: 'NAV.FILTER.NOT_ACTIVE_COMMENT_PARTNERS',
+    },
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [

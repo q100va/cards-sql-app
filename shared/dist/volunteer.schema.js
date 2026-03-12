@@ -24,6 +24,10 @@ const subsItemSchema = z
     userName: nonEmpty,
     userId: positiveInt,
     id: positiveInt,
+    userFullName: nonEmpty,
+    isRestricted: z.boolean().optional(),
+    isRecoverable: z.boolean().optional(),
+    isDeletable: z.boolean().optional(),
 })
     .strict();
 const coopItemSchema = z
@@ -31,6 +35,10 @@ const coopItemSchema = z
     userName: nonEmpty,
     userId: positiveInt,
     id: positiveInt,
+    userFullName: nonEmpty,
+    isRestricted: z.boolean().optional(),
+    isRecoverable: z.boolean().optional(),
+    isDeletable: z.boolean().optional(),
 })
     .strict();
 /* ===================== Some Schemas for form validation ===================== */
@@ -390,15 +398,21 @@ export const volunteersQueryDTOSchema = z
             .object({
             subscriptions: z.array(positiveInt).min(1).optional(),
             cooperations: z.array(positiveInt).min(1).optional(),
-            instituteCategories: z.array(nonEmpty).min(1).optional(),
-            comment: z.boolean().optional(),
+            categories: z.array(nonEmpty).min(1).optional(),
+            details: z.array(z.string()).optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             dateRestrictionRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
+            dateLastOrderRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
+            hasInstitute: z.boolean().optional(),
+            hasSubscription: z.boolean().optional(),
+            hasCooperation: z.boolean().optional(),
         })
             .partial()
             .optional(),
@@ -415,6 +429,7 @@ export const volunteersQueryDTOSchema = z
             .object({
             strictAddress: z.boolean().optional(),
             strictContact: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
         })
             .partial()
             .optional(),
@@ -431,6 +446,8 @@ export const outdatedDataSchema = z
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
     institutes: z.array(instituteItemSchema), //TODO:
+    subscriptions: z.array(subsItemSchema),
+    cooperations: z.array(coopItemSchema),
 })
     .strict();
 /* ===================== Volunteer (view) & volunteers list ===================== */
@@ -444,6 +461,7 @@ export const volunteerSchema = z
     dateOfStart: z.coerce.date(),
     causeOfRestriction: nonEmpty.nullable(),
     dateOfRestriction: nullableIsoDate,
+    dateOfLastOrder: nullableIsoDate,
     address: addressSchema,
     comment: nonEmpty.nullable(),
     orderedContacts: optionalContactsSchema,

@@ -19,14 +19,22 @@ export const positiveInt = z.number().int().positive();
 export const nullableInt = positiveInt.nullable();
 const stringArray = z.array(nonEmptyTrim); // [] ok
 // null | '' | Date | ISO → Date|null
+/* export const nullableIsoDate = z.preprocess((v: unknown) => {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return v;
+  const d = new Date(String(v));
+  return Number.isNaN(+d) ? v : d;
+}, z.date().nullable()); */
 export const nullableIsoDate = z.preprocess((v) => {
     if (v == null || v === '')
         return null;
     if (v instanceof Date)
         return v;
     const d = new Date(String(v));
-    return Number.isNaN(+d) ? v : d;
-}, z.date().nullable());
+    if (Number.isNaN(+d))
+        return undefined;
+    return d;
+}, z.date().nullable().refine((val) => val === null || !Number.isNaN(+val), { message: 'FORM_VALIDATION.INVALID_ISO_DATE' }));
 export const intOptArray = z.array(positiveInt).min(1).optional();
 /* ===================== Contacts for array ===================== */
 export const emailSchema = z

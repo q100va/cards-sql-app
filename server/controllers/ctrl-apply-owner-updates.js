@@ -4,7 +4,7 @@ import {
   VolunteerAddress, VolunteerContact, VolunteerOutdatedName, VolunteerCooperation, VolunteerSubscription,
   PartnerAddress, PartnerContact, PartnerOutdatedName,
   UserAddress, UserContact, UserOutdatedName,
-  HomeCoordination, HomeOutdatedName, HomeContact, HomeAddress,
+  Home, HomeCoordination, HomeOutdatedName, HomeContact, HomeAddress,
   Senior, SeniorOutdatedName
 } from '../models/index.js';
 //import { formFullPostAddress } from './ctrl-create-owner-contacts-address.js';
@@ -447,4 +447,47 @@ export async function applyOwnerUpdates(ownerKind, id, payload, t) {
       }
     );
   }
+}
+
+export async function updateCoordinationByPartner(isPartnerRestricted, partnerId, t) {
+  if (isPartnerRestricted === true) {
+    await HomeCoordination.update(
+      { isRestricted: true, isRecoverable: false },
+      {
+        where: { partnerId },
+        individualHooks: true,
+        transaction: t,
+      }
+    );
+  }
+  if (isPartnerRestricted === false) {
+    const coordinations = await HomeCoordination.findAll({
+      where: { partnerId },
+      include: [
+        {
+          model: Home,
+          as: 'home',
+          where: { isClose: false },
+          attributes: [],
+          required: true,
+        },
+      ],
+      attributes: ['id'],
+      transaction: t,
+    });
+
+    const coordinationIds = coordinations.map(c => c.id);
+
+    if (coordinationIds.length > 0) {
+      await HomeCoordination.update(
+        { isRecoverable: true },
+        {
+          where: { id: coordinationIds },
+          individualHooks: true,
+          transaction: t,
+        }
+      );
+    }
+  }
+
 }
