@@ -182,7 +182,15 @@ router.post(
               as: 'subscriptions',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
+                {
+                  model: User, as: 'user', attributes: [
+                    'id',
+                    'userName',
+                    'firstName',
+                    'patronymic',
+                    'lastName',
+                    'isRestricted']
+                },
               ]
             },
             {
@@ -190,7 +198,15 @@ router.post(
               as: 'cooperations',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
+                {
+                  model: User, as: 'user', attributes: [
+                    'id',
+                    'userName',
+                    'firstName',
+                    'patronymic',
+                    'lastName',
+                    'isRestricted']
+                },
               ]
             }
             //TODO: DateOfLastOrder
@@ -276,7 +292,15 @@ router.post(
               as: 'subscriptions',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'user', attributes: ['userName'] },
+                {
+                  model: User, as: 'user', attributes: [
+                    'id',
+                    'userName',
+                    'firstName',
+                    'patronymic',
+                    'lastName',
+                    'isRestricted']
+                },
               ]
             },
             {
@@ -284,7 +308,15 @@ router.post(
               as: 'cooperations',
               attributes: ['id', 'userId'],
               include: [
-                { model: User, as: 'user', attributes: ['userName'] },
+                {
+                  model: User, as: 'user', attributes: [
+                    'id',
+                    'userName',
+                    'firstName',
+                    'patronymic',
+                    'lastName',
+                    'isRestricted']
+                },
               ]
             }
             //TODO: DateOfLastOrder
@@ -584,7 +616,15 @@ router.post(
           attributes: ['id', 'userId'],
           required: subsRequired,
           include: [
-            { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
+            {
+              model: User, as: 'user', attributes: [
+                'id',
+                'userName',
+                'firstName',
+                'patronymic',
+                'lastName',
+                'isRestricted']
+            },
           ]
         },
         {
@@ -593,7 +633,15 @@ router.post(
           attributes: ['id', 'userId'],
           required: coopsRequired,
           include: [
-            { model: User, as: 'user', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'] },
+            {
+              model: User, as: 'user', attributes: [
+                'id',
+                'userName',
+                'firstName',
+                'patronymic',
+                'lastName',
+                'isRestricted']
+            },
           ]
         }
 
@@ -701,7 +749,15 @@ router.get("/get-volunteer-by-id/:id",
             as: 'subscriptions',
             attributes: ['id', 'userId'],
             include: [
-              { model: User, as: 'user', attributes: ['userName'] },
+              {
+                model: User, as: 'user', attributes: [
+                  'id',
+                  'userName',
+                  'firstName',
+                  'patronymic',
+                  'lastName',
+                  'isRestricted']
+              },
             ]
           },
           {
@@ -709,7 +765,15 @@ router.get("/get-volunteer-by-id/:id",
             as: 'cooperations',
             attributes: ['id', 'userId'],
             include: [
-              { model: User, as: 'user', attributes: ['userName'] },
+              {
+                model: User, as: 'user', attributes: [
+                  'id',
+                  'userName',
+                  'firstName',
+                  'patronymic',
+                  'lastName',
+                  'isRestricted']
+              },
             ]
           }
           //TODO: DateOfLastOrder

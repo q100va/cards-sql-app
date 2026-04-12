@@ -7,30 +7,38 @@
         @for (control of data().controls; track $index) {
         <!-- Subscription -->
         @if (control.category=='subscription') {
-        <mat-grid-tile colspan="2" rowspan="1">
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
           <mat-slide-toggle [formControlName]="control.controlName"
             class="small-toggle">{{'TABLE.CARD.SUBSCRIPTION_LABEL' | translate}}
           </mat-slide-toggle>
         </mat-grid-tile>
-        <!-- TODO: отформатировать -->
-        @if(data().operation == 'view-edit'){
-        <mat-grid-tile colspan="4" rowspan="1">
-          @if(subscriptions.length || cooperations.length){
-          <h5>{{'TABLE.CARD.COOPERATIONS' | translate}}</h5>
-          }
-          @for (subscription of subscriptions; track $index) {
-          <div>
-            {{subscription.userName}} ({{'TABLE.NOTES.SUBSCRIPTION' | translate}})
-            <br />
-          </div>
-          }
 
-          @for (cooperation of cooperations; track $index) {
+        @if(data().operation == 'view-edit'){
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
           <div>
-            {{cooperation.userName}}
-            <br />
+            @if(subscriptions.length){
+            <span>{{'TABLE.NOTES.SUBSCRIPTION' | translate}}:</span> <br />
+
+            @for (subscription of subscriptions; track $index) {
+
+            <div>
+              {{subscription.userFullName}} - {{subscription.userName}} <br />
+            </div>
+            } }
           </div>
-          }
+        </mat-grid-tile>
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
+          <div>
+            @if(cooperations.length){
+            <span>{{'TABLE.NOTES.COOPERATION' | translate}}:</span> <br />
+
+            @for (cooperation of cooperations; track $index) {
+
+            <div>
+              {{cooperation.userFullName}} - {{cooperation.userName}} <br />
+            </div>
+            } }
+          </div>
         </mat-grid-tile>
         }
         }
@@ -569,6 +577,41 @@
               (item.homeStatus | translate)) : '' }}</div>
             }
 
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        <!-- Outdated Subs and Coops -->
+        @if (hasOutdatedSubs()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedSubscriptions.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_SUBSCRIPTIONS_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedSubscriptions; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: false, isDeletable: false}">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.userFullName }} - {{item.userName}}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        @if (hasOutdatedCoops()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedCooperations.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_COOPERATIONS_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedCooperations; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: false, isDeletable: false}">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.userFullName }} - {{item.userName}}</div>
           </div>
         </mat-grid-tile>
         }

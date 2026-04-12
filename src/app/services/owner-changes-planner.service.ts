@@ -499,10 +499,10 @@ export class OwnerChangesPlannerService {
       });
       if (draftKeys.has(key)) continue;
 
-      const moveToOutdated = await this.diffConfirm.confirmOutdateOrDelete(
+      const moveToOutdated = i.isDeletable ? await this.diffConfirm.confirmOutdateOrDelete(
         'institute',
         i.instituteName,
-      );
+      ) : true;
       if (moveToOutdated) outdating.push(i.id);
       else deleting.push(i.id);
     }

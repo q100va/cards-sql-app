@@ -341,6 +341,8 @@ export class AdvancedDetailsComponent<
   //hasOutdatedHomes = signal<boolean>(false);
   hasOutdatedInstitutes = signal<boolean>(false);
   hasOutdatedCoordinations = signal<boolean>(false);
+  hasOutdatedSubs = signal<boolean>(false);
+  hasOutdatedCoops = signal<boolean>(false);
   hasPostalAddress = signal<boolean>(false);
   hasStatus = signal<boolean>(false);
   homeOpen = signal<boolean>(true);
@@ -1673,9 +1675,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   getRowSpanForUserNames() {
     return 0;
   }
-
+  //TODO: doI need these funcs?
   setHasOutdatedUserNames() {}
   setHasOutdatedInstitutes() {}
+  setHasOutdatedSubs() {}
+  setHasOutdatedCoops() {}
   setHasOutdatedNames() {}
   setHasOutdatedOfficialNames() {}
   setHasOutdatedCoordinations() {
@@ -1695,6 +1699,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return 0;
   }
   getRowSpanForInstitutes() {
+    return 0;
+  }
+  getRowSpanForCoops() {
     return 0;
   }
 
@@ -1797,6 +1804,12 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return [];
   }
   get outdatedInstitutes(): OutdatedInstitute[] {
+    return [];
+  }
+  get outdatedSubscriptions(): Subscription[] {
+    return [];
+  }
+  get outdatedCooperations(): Cooperation[] {
     return [];
   }
 

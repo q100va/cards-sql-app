@@ -29,6 +29,7 @@ import {
   Cooperation,
   Subscription,
   InstituteFormGroup,
+  RelationPick,
 } from '../../interfaces/advanced-model';
 import {
   VolunteerService,
@@ -90,6 +91,8 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     this.hasOutdatedInstitutes.set(
       this.outdatedDataDraft.institutes.length > 0,
     );
+    this.hasOutdatedSubs.set(this.outdatedDataDraft.subscriptions.length > 0);
+    this.hasOutdatedCoops.set(this.outdatedDataDraft.cooperations.length > 0);
   }
 
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
@@ -143,8 +146,8 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       names: [],
       institutes: [],
       contacts: {},
-      subscriptions:[],
-      cooperations:[]
+      subscriptions: [],
+      cooperations: [],
     };
   }
 
@@ -311,6 +314,18 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     return Array.isArray(list) ? list : [];
   }
 
+    override get outdatedSubscriptions(): Subscription[] {
+    const data = this.outdatedDataDraft;
+    const list = data?.subscriptions;
+    return Array.isArray(list) ? list : [];
+  }
+
+    override get outdatedCooperations(): Cooperation[] {
+    const data = this.outdatedDataDraft;
+    const list = data?.cooperations;
+    return Array.isArray(list) ? list : [];
+  }
+
   /*   override get institutes(): Institute[] {
     const list = this.existingOwner!.institutes;
     return Array.isArray(list) ? list : [];
@@ -318,9 +333,10 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
   override get subscriptions(): Subscription[] {
     let list = structuredClone(this.existingOwner!.subscriptions) ?? [];
-    const idx = list.findIndex((s) => s.userId === this.user()!.id);
+    /*     const idx = list.findIndex((s) => s.userId === this.user()!.id);
     if (idx !== -1) list.splice(idx, 1);
-    return list;
+    return list;*/
+    return Array.isArray(list) ? list : [];
   }
 
   override get cooperations(): Cooperation[] {
@@ -342,6 +358,12 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     this.hasOutdatedInstitutes.set(
       this.outdatedDataDraft.institutes.length > 0,
     );
+  }
+  override setHasOutdatedSubs() {
+    this.hasOutdatedSubs.set(this.outdatedDataDraft.subscriptions.length > 0);
+  }
+  override setHasOutdatedCoops() {
+    this.hasOutdatedCoops.set(this.outdatedDataDraft.cooperations.length > 0);
   }
 
   private createInstituteGroup(
@@ -461,6 +483,10 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
   override setHasOutdatedNames() {
     this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+  }
+
+  override getRowSpanForCoops() {
+    return Math.max(this.subscriptions.length, this.cooperations.length);
   }
 }
 
