@@ -16,7 +16,10 @@ export const nullableDateOnly = z.preprocess((v) => {
         return v.slice(0, 10);
     }
     return String(v);
-}, z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable());
+}, z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable());
 const nullableString = z.preprocess(emptyToNull, z.string().max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' }).nullable());
 /* ===================== DTOs ===================== */
 export const checkSeniorDataSchema = z
@@ -51,10 +54,12 @@ export const homeControlSchema = z.object({
     districtId: z.number().int().positive(),
     localityId: z.number().int().positive(),
 }, 'FORM_VALIDATION.REQUIRED');
-export const spouseControlSchema = z.object({
+export const spouseControlSchema = z
+    .object({
     id: z.number().int().positive(),
     name: z.string().min(1),
-}).nullable();
+})
+    .nullable();
 /* ===================== Senior Draft ===================== */
 export const seniorDraftSchema = z
     .object({
@@ -126,8 +131,7 @@ export const seniorDraftSchema = z
 });
 /* ===================== UpdateSeniorData ===================== */
 // ChangingData.main — PATCH-like
-export const changingMainSchema = z
-    .object({
+export const changingMainSchema = z.object({
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
     patronymic: nullableString.optional(), //TODO: add TOO_LONG_50
     lastName: nullableString.optional(), //TODO: add TOO_LONG_50
@@ -257,6 +261,7 @@ export const seniorsQueryDTOSchema = z
     view: z
         .object({
         option: z.string().min(1).optional(),
+        homeOption: z.string().min(1).optional(),
         includeOutdated: z.boolean().optional(),
     })
         .optional(),
@@ -264,24 +269,27 @@ export const seniorsQueryDTOSchema = z
         .object({
         general: z
             .object({
-            comment: z.boolean().optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             dateRestrictionRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
-            dateRange: z.tuple([nullableInt, nullableInt]).optional(),
+            dateExitRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            dayRange: z.tuple([nullableInt, nullableInt]).optional(),
             monthRange: z.tuple([nullableInt, nullableInt]).optional(),
             yearRange: z.tuple([nullableInt, nullableInt]).optional(),
             homes: intOptArray,
+            gender: z.enum(['male', 'female']),
             noAddress: z.boolean().optional(),
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
-            gender: z.enum(['male', 'female']),
+            details: z.array(z.string()).optional(),
+            /* hasComment: z.boolean().optional(),
             hasPhotoLink: z.boolean().optional(),
             hasConsent: z.boolean().optional(),
-            hasSpouse: z.boolean().optional(),
             hasKindergartenStatus: z.boolean().optional(),
             hasTeacherStatus: z.boolean().optional(),
             hasHonoraryStatus: z.boolean().optional(),
@@ -289,6 +297,10 @@ export const seniorsQueryDTOSchema = z
             hasChildOfWarStatus: z.boolean().optional(),
             hasOrthodoxBelieverStatus: z.boolean().optional(),
             hasProfession: z.boolean().optional(),
+            hasInterests: z.boolean().optional(),
+            hasSpouse: z.boolean().optional(), */
+            hideWithoutYear: z.boolean().optional(),
+            hideWithoutBirthday: z.boolean().optional(),
         })
             .partial()
             .optional(),
@@ -301,13 +313,14 @@ export const seniorsQueryDTOSchema = z
         })
             .partial()
             .optional(),
-        /*         mode: z
-          .object({
-            //  strictAddress: z.boolean().optional(),
-            //  strictContact: z.boolean().optional(),
-          })
-          .partial()
-          .optional(),   */
+        mode: z
+            .object({
+            strictAddress: z.boolean().optional(),
+            strictContact: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
+        })
+            .partial()
+            .optional(),
     })
         .partial()
         .optional(),

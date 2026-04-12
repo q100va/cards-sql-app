@@ -4,7 +4,7 @@ import { Op, fn, col, where } from 'sequelize';
 type RangeTuple = [NullableInt, NullableInt];
 
 type BirthPartsRanges = {
-  dateRange?: RangeTuple;  // day of month: 1..31
+  dayRange?: RangeTuple;  // day of month: 1..31
   monthRange?: RangeTuple; // 1..12 (may wrap: [11,2])
   yearRange?: RangeTuple;  // e.g. 1945..1954 (must be ascending if both set)
 }; */
@@ -53,7 +53,7 @@ function buildPartRangeCondition(
     if (end != null) end = clamp(end, opts.clampTo[0], opts.clampTo[1]);
   }
 
-  const expr = fn('DATE_PART', part, col('birthDate'));
+  const expr = fn('DATE_PART', part, col('senior.birthDate'));
 
   // open ended
   if (start != null && end == null) {
@@ -86,7 +86,7 @@ function buildPartRangeCondition(
  *
  * Example:
  *  buildBirthDatePartsWhere({
- *    dateRange: [1, 15],
+ *    dayRange: [1, 15],
  *    monthRange: [11, 2],  // wraps
  *    yearRange: [1945, 1954]
  *  })
@@ -99,21 +99,25 @@ function pushAnd(whereObj, cond) {
 
 export function applyBirthDatePartsFilters(
   whereSenior,
+  hideWithoutYear,
   ranges
 ) {
-  const { dateRange, monthRange, yearRange } = ranges;
+  const { dayRange, monthRange, yearRange } = ranges;
+  const currYear = +new Date().getFullYear();
 
   pushAnd(whereSenior, { birthDate: { [Op.not]: null } });
 
-  if (dateRange) {
-    assertAscendingRange('dateRange', dateRange);
-    pushAnd(whereSenior, buildPartRangeCondition('day', dateRange, { clampTo: [1, 31] }));
+  if (dayRange) {
+    assertAscendingRange('dayRange', dayRange);
+    pushAnd(whereSenior, buildPartRangeCondition('day', dayRange, { clampTo: [1, 31] }));
   }
   if (monthRange)
     pushAnd(whereSenior, buildPartRangeCondition('month', monthRange, { allowWrap: true, clampTo: [1, 12] }));
   if (yearRange) {
     assertAscendingRange('yearRange', yearRange);
-    pushAnd(whereSenior, buildPartRangeCondition('year', yearRange, { clampTo: [1910, 2026] }));
+    pushAnd(whereSenior, buildPartRangeCondition('year', yearRange, { clampTo: [1917, currYear] }));
+  } else if (hideWithoutYear) {
+    pushAnd(whereSenior, where(fn('DATE_PART', 'year', col('senior.birthDate')), { [Op.not]: 1800 }));
   }
 }
 
@@ -123,8 +127,8 @@ export function applyBirthDatePartsFilters(
   ranges,
   options = {}
 ) {
-  const dateRange = ranges.dateRange
-    ? [normalizeInt(ranges.dateRange[0]), normalizeInt(ranges.dateRange[1])]
+  const dayRange = ranges.dayRange
+    ? [normalizeInt(ranges.dayRange[0]), normalizeInt(ranges.dayRange[1])]
     : undefined;
 
   const monthRange = ranges.monthRange
@@ -136,7 +140,7 @@ export function applyBirthDatePartsFilters(
     : undefined;
 
   // Validate ascending constraints (only where you required it)
-  if (dateRange && !isEmptyRange(dateRange)) assertAscendingRange('dateRange', dateRange);
+  if (dayRange && !isEmptyRange(dayRange)) assertAscendingRange('dayRange', dayRange);
   if (yearRange && !isEmptyRange(yearRange)) assertAscendingRange('yearRange', yearRange);
 
   const and = [];
@@ -146,9 +150,9 @@ export function applyBirthDatePartsFilters(
     and.push({ birthDate: { [Op.not]: null } });
   }
 
-  if (dateRange && !isEmptyRange(dateRange)) {
+  if (dayRange && !isEmptyRange(dayRange)) {
     and.push(
-      buildPartRangeCondition('day', dateRange, { clampTo: [1, 31] })
+      buildPartRangeCondition('day', dayRange, { clampTo: [1, 31] })
     );
   }
 

@@ -72,6 +72,7 @@ import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
   ContactParamsForList,
+  createEmptyGeneralFilter,
   FilterComponentSource,
   FilterDraft,
   TableParams,
@@ -214,17 +215,11 @@ export class TableComponent<K extends Kind> implements OnChanges {
 
   // filters/sort TODO: добавить параметры фильтра для остальных сущностей
   filterParameters = signal<FilterDraft>({
-    viewOption: 'only-active',
+    viewOption: 'active',
     searchValue: '',
     includeOutdated: false,
     exactMatch: false,
-    filter: {
-      roles: [],
-      comment: [],
-      contactTypes: [],
-      dateBeginningRange: [],
-      dateRestrictionRange: [],
-    },
+    filter: createEmptyGeneralFilter(),
     addressFilter: {
       countries: [],
       regions: [],
@@ -233,6 +228,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     },
     strongAddressFilter: false,
     strongContactFilter: false,
+    strongDetailFilter: false,
   });
 
   /*
@@ -351,7 +347,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
                   this.length.set(length ?? 0);
                   this.dataSource.data = list as OwnerByKind<K>[];
                   console.log(' this.dataSource.data', this.dataSource.data);
-                  this.dataSource.sort = this.sort;
+                  //this.dataSource.sort = this.sort;
                 },
                 complete: () => {},
               }),
@@ -437,6 +433,15 @@ export class TableComponent<K extends Kind> implements OnChanges {
       this.kind() == 'home'
     );
   };
+  hasOutdatedCooperations = (row: Volunteer): boolean => {
+    return (
+      this.kind() == 'volunteer' &&
+      ((!!row?.outdatedData?.cooperations &&
+        row.outdatedData.cooperations.length > 0) ||
+        (!!row?.outdatedData?.subscriptions &&
+          row.outdatedData.subscriptions.length > 0))
+    );
+  };
   hasOutdatedInstitutes = (row: Volunteer): boolean => {
     return (
       !!row?.outdatedData?.institutes && row.outdatedData.institutes.length > 0
@@ -458,7 +463,9 @@ export class TableComponent<K extends Kind> implements OnChanges {
       row.honoraryStatus,
       row.orthodoxBeliever,
       row.interests,
-      row.spouseFullName ? this.translate.instant('TABLE.NOTES.SPOUSE') + row.spouseFullName : ''
+      row.spouseFullName
+        ? this.translate.instant('TABLE.NOTES.SPOUSE') + row.spouseFullName
+        : '',
     ];
     return parts.filter(Boolean).join(', ').trim();
   }
@@ -497,7 +504,8 @@ export class TableComponent<K extends Kind> implements OnChanges {
   // ========== dialogs / CRUD ==========
   onAddOwnerClick() {
     this.dialogProps.object = null;
-    this.dialogProps.addressFilterParams.readonly = this.kind() === 'senior' ? true : false;
+    this.dialogProps.addressFilterParams.readonly =
+      this.kind() === 'senior' ? true : false;
     this.dialogProps.addressFilterParams.class = 'none';
 
     const dialogData: DialogData<OwnerByKind<K>> = {
@@ -551,6 +559,13 @@ export class TableComponent<K extends Kind> implements OnChanges {
               category: 'extraData',
               formType: 'formControl',
             });
+          }
+
+          if (this.dialogProps.componentType === 'senior' && 'home' in owner) {
+            if (owner.home.isClose) {
+              dialogProps.extraTitle = 'SENIOR.CARD.HOME_CLOSED_LABEL';
+            } else if (owner.home.isRestricted)
+              dialogProps.extraTitle = 'SENIOR.CARD.HOME_BLOCKED_LABEL';
           }
 
           const dialogData: DialogData<OwnerByKind<K>> = {

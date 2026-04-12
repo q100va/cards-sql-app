@@ -10,6 +10,13 @@ export function dateOnlyToLocalDate(v) {
   return new Date(y, m - 1, d); // локальная полночь, без UTC-сдвига
 }
 
+export const setHomeStatusValue = (value) =>
+  value.isClose
+    ? 'TABLE.NOTES.CLOSE'
+    : value.isRestricted
+      ? 'TABLE.NOTES.DEACTIVATED'
+      : 'TABLE.NOTES.ACTIVE';
+
 
 const TELEGRAM_TYPES = new Set(['telegramNickname', 'telegramPhoneNumber', 'telegramId']);
 
@@ -143,6 +150,8 @@ function splitHomesForPartner(raw) {
       regionName: h.home.addresses[0].region.shortName,
       partnerId: h.partnerId,
       isRecoverable: !!h.isRecoverable,
+      homeStatus: setHomeStatusValue(h.home)
+
     }));
 
   const outdatedHomes = homesSource
@@ -154,6 +163,7 @@ function splitHomesForPartner(raw) {
       regionName: h.home.addresses[0].region.shortName,
       partnerId: h.partnerId,
       isRecoverable: !!h.isRecoverable,
+      homeStatus: setHomeStatusValue(h.home)
     }));
 
   return { homes, outdatedHomes };
@@ -170,6 +180,7 @@ function splitPartnersForHome(raw) {
       partnerId: p.partnerId,
       partnerName: fullName(p.partner),
       partnerContacts: (splitContacts(p.partner.contacts)).orderedContacts,
+      partnerOccupation: p.partner.affiliation + (p.partner.position ? (' - ' + p.partner.position) : ''),
       isRecoverable: !!p.isRecoverable,
     }));
 
@@ -181,6 +192,7 @@ function splitPartnersForHome(raw) {
       partnerId: p.partnerId,
       partnerName: fullName(p.partner),
       partnerContacts: (splitContacts(p.partner.contacts)).orderedContacts,
+      partnerOccupation: p.partner.affiliation + (p.partner.position ? (' - ' + p.partner.position) : ''),
       isRecoverable: !!p.isRecoverable,
     }));
 
@@ -314,32 +326,84 @@ export function transformOwnerData(kind, raw) {
     //console.dir(o.subscriptions, { depth: null });
     const subscriptionsSource = o.subscriptions ?? [];
     const cooperationsSource = o.cooperations ?? [];
+   /*  console.log('VOLUNTEERs SUBs');
+    console.dir(subscriptionsSource, { depth: null });
+    console.dir(cooperationsSource, { depth: null }); */
 
-    const subscriptions = subscriptionsSource.map(i => ({
-      id: i.id,
-      userName: i.user.userName,
-      userId: i.userId,
-    }));
+    const subscriptions = subscriptionsSource
+      .filter(s => s.user.isRestricted === false)
+      .map(i => ({
+        id: i.id,
+        userName: i.user.userName,
+        userFullName: fullName(i.user),
+        userId: i.userId,
+      }));
 
-    let cooperations = cooperationsSource.map(i => ({
-      id: i.id,
-      userName: i.user.userName,
-      userId: i.userId,
-    }));
+    const outdatedSubscriptions = subscriptionsSource
+      .filter(s => s.user.isRestricted === true)
+      .map(i => ({
+        id: i.id,
+        userName: i.user.userName,
+        userFullName: fullName(i.user),
+        userId: i.userId,
+        isRestricted: i.user.isRestricted,
+        isRecoverable: !i.user.isRestricted,
+        isDeletable: false
+      }));
 
-    subscriptions.forEach(async (s) => {
+    let cooperations = cooperationsSource
+      .filter(s => s.user.isRestricted === false)
+      .map(i => ({
+        id: i.id,
+        userName: i.user.userName,
+        userFullName: fullName(i.user),
+        userId: i.userId,
+      }));
+
+    const outdatedCooperations = cooperationsSource
+      .filter(s => s.user.isRestricted === true)
+      .map(i => ({
+        id: i.id,
+        userName: i.user.userName,
+        userFullName: fullName(i.user),
+        userId: i.userId,
+        isRestricted: i.user.isRestricted,
+        isRecoverable: !i.user.isRestricted,
+        isDeletable: false
+      }));
+
+/*     subscriptions.forEach(async (s) => {
       const idx = cooperations.findIndex(
-        (c) => c.id === s.id
+        (c) => c.userId === s.userId
       );
       if (idx !== -1) cooperations.splice(idx, 1);
     });
 
+    outdatedSubscriptions.forEach(async (s) => {
+      const idx = outdatedCooperations.findIndex(
+        (c) => c.userId === s.userId
+      );
+      if (idx !== -1) outdatedCooperations.splice(idx, 1);
+    }); */
+
+   /*  console.dir(subscriptions, { depth: null });
+    console.dir(cooperations, { depth: null });
+
+    console.dir(outdatedSubscriptions, { depth: null });
+    console.dir(outdatedCooperations, { depth: null }); */
+
     o.subscriptions = subscriptions;
+    outdatedData.subscriptions = outdatedSubscriptions;
     o.cooperations = cooperations;
+    outdatedData.cooperations = outdatedCooperations;
+    //TODO: dateOfLastOrder
+    o.dateOfLastOrder = null;
 
   }
   if (kind === 'home') {
-    o.dateOfLastUpdate = o.updateDates.length ? o.updateDates[0] : null;
+
+    // Date of last update
+    o.dateOfLastUpdate = o.updateDates?.length ? o.updateDates[0].date : null;
     delete o.updateDates;
 
     // 2) Addresses
@@ -356,6 +420,9 @@ export function transformOwnerData(kind, raw) {
     const { partners, outdatedPartners } = splitPartnersForHome(o);
     o.coordinations = partners;
     outdatedData.coordinations = outdatedPartners;
+
+
+
   }
 
   if (kind === 'senior') {
@@ -364,7 +431,7 @@ export function transformOwnerData(kind, raw) {
        o.homeName = o.home?.homeName;
        delete o.home; */
 
-    const a = o.home.addresses[0];
+    const a = o.home.activeAddress;
     o.address = {
       country: ref(a.country, 'name'),
       region: ref(a.region, 'shortName'),
@@ -372,10 +439,10 @@ export function transformOwnerData(kind, raw) {
       locality: ref(a.locality, 'shortName'),
       fullPostalAddress: a.fullPostalAddress,
     }
-    delete o.home.addresses;
+    delete o.home.activeAddress;
 
     o.homeId = o.home.id;
-     delete o.home.id;
+    delete o.home.id;
 
     outdatedData.names = o.outdatedNames;
     delete o.outdatedNames;
@@ -384,11 +451,11 @@ export function transformOwnerData(kind, raw) {
     o.spouseFullName = o.spouse ? fullName(o.spouse) : null;
     delete o.spouse;
 
-    o.birthDate = dateOnlyToLocalDate(o.birthDate);
+    o.birthDate = o.birthDate ? dateOnlyToLocalDate(o.birthDate) : o.birthDate;
   }
 
   o.outdatedData = outdatedData;
 
-  console.log('PARTNERS', JSON.stringify(o.coordinations));
+  // console.log('PARTNERS', JSON.stringify(o.coordinations));
   return o;
 }

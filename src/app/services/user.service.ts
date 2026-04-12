@@ -4,7 +4,7 @@ import {
   HttpErrorResponse,
   HttpParams,
 } from '@angular/common/http';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 import {
@@ -16,11 +16,12 @@ import {
   UserOutdatingData,
   OwnerMainService,
   UpdatedOwnerData,
-  User, ChangePassword
+  User, ChangePassword,
+  RelationPick
 } from '../interfaces/advanced-model';
 
 import { AddressFilter } from '../interfaces/toponym';
-import { GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
 
 import {
   validateNoSchemaResponse,
@@ -170,20 +171,7 @@ export class UserService implements UserMainService {
   }
 
   getList(
-    allFilterParameters: {
-      viewOption: string;
-      includeOutdated: boolean;
-      searchValue: string;
-      exactMatch: boolean;
-      sortParameters: {
-        active: string;
-        direction: 'asc' | 'desc' | '';
-      };
-      filter: GeneralFilter;
-      addressFilter: AddressFilter;
-      strongAddressFilter: boolean;
-      strongContactFilter: boolean;
-    },
+    allFilterParameters: AllFilterParameters,
     pageSize: number,
     currentPage: number
   ): Observable<ApiResponse<{ list: User[]; length: number }>> {
@@ -210,7 +198,8 @@ export class UserService implements UserMainService {
       filters: ctrl.omitEmpty({
         general: ctrl.omitEmpty({
           roles: p.filter.roles!.map((r) => r.id),
-          comment: this.formCommentFilterValue(p.filter.comment),
+          details: p.filter.details.map((d) => d.value),
+         // comment: this.formCommentFilterValue(p.filter.comment),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
@@ -238,6 +227,24 @@ export class UserService implements UserMainService {
       .get<RawApiResponse>(`${this.BASE_URL}/get-user-by-id/${id}`)
       .pipe(validateResponse(userSchema), catchError(this.handleError));
   }
+
+  getUsersPickList(): Observable<RelationPick[]> {
+      return this.http
+        .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-users`)
+        .pipe(
+          validateResponse(
+            z.array(
+              z.object({
+                id: z.number().int().positive(),
+                name: z.string(),
+                isRestricted: z.boolean(),
+              }),
+            ),
+          ),
+          map((res: ApiResponse<RelationPick[]>) => res.data),
+          catchError(this.handleError),
+        );
+    }
 
   checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
     return this.http

@@ -14,7 +14,7 @@ import * as userSchemas from "../../shared/dist/user.schema.js";
 import { hashPassword } from "../controllers/passwords.mjs";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { verify } from '../controllers/passwords.mjs';
-import { collectFlatContacts, findDuplicateContacts, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
+import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
@@ -369,51 +369,51 @@ router.post(
           t
         );
 
-/*         const freshes = await User.findAll({
-          attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
-          include: [
-            { model: Role, attributes: ['name'] },
-            { model: UserContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
-            {
-              model: UserAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
-              include: [
-                { model: Country, attributes: ['id', 'name'] },
-                { model: Region, attributes: ['id', 'shortName', 'name'] },
-                { model: District, attributes: ['id', 'shortName', 'name'] },
-                { model: Locality, attributes: ['id', 'shortName', 'name'] },
-              ]
-            },
-            { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
-          ],
-          transaction: t,
-        });
+        /*         const freshes = await User.findAll({
+                  attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
+                  include: [
+                    { model: Role, attributes: ['name'] },
+                    { model: UserContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
+                    {
+                      model: UserAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
+                      include: [
+                        { model: Country, attributes: ['id', 'name'] },
+                        { model: Region, attributes: ['id', 'shortName', 'name'] },
+                        { model: District, attributes: ['id', 'shortName', 'name'] },
+                        { model: Locality, attributes: ['id', 'shortName', 'name'] },
+                      ]
+                    },
+                    { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
+                  ],
+                  transaction: t,
+                });
 
-        freshes.forEach(async (fresh) => {
-          const search = ctrl.createSearchString(fresh);
+                freshes.forEach(async (fresh) => {
+                  const search = ctrl.createSearchString(fresh);
 
-          const [row1, created1] = await UserSearch.findOrCreate({
-            where: { userId: fresh.id, isRestricted: false },
-            defaults: { content: search },
-            transaction: t
-          });
-          if (!created1)
-            await row1.update(
-              { content: search },
-              { individualHooks: true, transaction: t }
-            );
+                  const [row1, created1] = await UserSearch.findOrCreate({
+                    where: { userId: fresh.id, isRestricted: false },
+                    defaults: { content: search },
+                    transaction: t
+                  });
+                  if (!created1)
+                    await row1.update(
+                      { content: search },
+                      { individualHooks: true, transaction: t }
+                    );
 
-          const outdatedSearch = ctrl.createOutdatedSearchString(fresh);
-          if (outdatedSearch) {
+                  const outdatedSearch = ctrl.createOutdatedSearchString(fresh);
+                  if (outdatedSearch) {
 
-            const [row, created] = await UserSearch.findOrCreate({
-              where: { userId: fresh.id, isRestricted: true },
-              defaults: { content: outdatedSearch },
-              transaction: t
-            });
-            if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
-          }
-        });
- */
+                    const [row, created] = await UserSearch.findOrCreate({
+                      where: { userId: fresh.id, isRestricted: true },
+                      defaults: { content: outdatedSearch },
+                      transaction: t
+                    });
+                    if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
+                  }
+                });
+         */
 
         // UPDATED USER
         const fresh = await User.findOne({
@@ -498,15 +498,26 @@ router.post(
         whereUser.roleId = { [Op.in]: filters.general.roles };
       }
 
-      if (filters?.general?.comment !== undefined) {
-        whereUser.comment = !filters.general.comment ? null : { [Op.not]: null };
-      }
+      /*       if (filters?.general?.comment !== undefined) {
+              whereUser.comment = !filters.general.comment ? null : { [Op.not]: null };
+            } */
 
       if (filters?.general?.dateBeginningRange) {
         whereUser.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
       }
       if (filters?.general?.dateRestrictionRange) {
         whereUser.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
+      }
+
+      const details = filters?.general?.details || [];
+      if (details.length > 0) {
+        const strict = !!filters?.mode?.strictDetail;
+        if (strict) whereUser[Op.and] = details.map(detail => ({
+          [detail]: { [Op.not]: null }
+        }));
+        if (!strict) whereUser[Op.or] = details.map(detail => ({
+          [detail]: { [Op.not]: null }
+        }));
       }
 
       // contact types filter (weak/strong)
@@ -554,7 +565,7 @@ router.post(
           model: UserOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'],
-         // separate: true,
+          // separate: true,
         }
       ];
 
@@ -580,7 +591,7 @@ router.post(
       });
 
       console.log('whereUser', whereUser);
-       console.log('ORDER USER', order);
+      console.log('ORDER USER', order);
       /*  console.log('includes', includes);
      console.log('whereUser', whereUser); */
 
@@ -595,7 +606,7 @@ router.post(
         // subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-   //  console.log('users', users);
+      //  console.log('users', users);
 
       const items = users.map(u => transformOwnerData('user', u.toJSON()));
 
@@ -661,6 +672,31 @@ router.get("/get-user-by-id/:id",
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.USER.NOT_FOUND';
+      next(error);
+    }
+  });
+
+
+router.get("/get-list-of-users",
+  requireAuth,
+  requireAny('VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST'),
+  async (req, res, next) => {
+    try {
+      const users = await User.findAll({
+        attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'],
+        //where: { isRestricted: false },
+        order: [['firstName', 'ASC']]
+      });
+
+      const data = users.map(u => ({
+        id: u.id,
+        name: (fullName(u) + ' - ' + u.userName),
+        isRestricted: u.isRestricted
+      }));
+      //  console.log('PARTNERS', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.USER.LIST_FAILED';
       next(error);
     }
   });

@@ -64,6 +64,11 @@ export class UsersListComponent {
     addTitle: 'USER.ADD_USER',
     searchPlaceholder: 'USER.SEARCH_PLACEHOLDER',
     addIcon: 'person_add_alt',
+     labels: {
+      blockLabel: 'NAV.FILTER.BLOCK_COMMENT_USERS',
+      closeLabel: '',
+      notActiveLabel: ''
+    }
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [

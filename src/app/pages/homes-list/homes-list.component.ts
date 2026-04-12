@@ -53,6 +53,16 @@ export class HomesListComponent {
       name: 'HOME.VIEW_OPTIONS.ONLY_BLOCKED',
       initiallySelected: false,
     },
+    {
+      id: 'only-closed',
+      name: 'HOME.VIEW_OPTIONS.ONLY_CLOSED',
+      initiallySelected: false,
+    },
+      {
+      id: 'exclude-closed',
+      name: 'HOME.VIEW_OPTIONS.EXCLUDE_CLOSED',
+      initiallySelected: false,
+    },
   ];
 
   componentType: FilterComponentSource = 'homeList';
@@ -62,6 +72,11 @@ export class HomesListComponent {
     addTitle: 'HOME.ADD_HOME',
     searchPlaceholder: 'HOME.SEARCH_PLACEHOLDER',
     addIcon: 'add_home',
+     labels: {
+      blockLabel: 'NAV.FILTER.BLOCK_COMMENT_HOMES',
+      closeLabel: 'NAV.FILTER.CLOSE_COMMENT_HOMES',
+      notActiveLabel: 'NAV.FILTER.NOT_ACTIVE_COMMENT_HOMES'
+    }
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [

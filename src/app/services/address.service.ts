@@ -27,7 +27,7 @@ import {
   ToponymNamesList,
   toponymNamesListSchema,
   toponymsSchema,
-} from '@shared/schemas/toponym.schema';
+} from '../../../shared/schemas/toponym.schema';
 @Injectable({
   providedIn: 'root',
 })

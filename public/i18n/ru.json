@@ -209,7 +209,9 @@
       "BIRTH_DATE": "Дата рождения",
       "SENIOR_DETAILS": "Подробности",
       "CONSENT_DATE": "Дата согласия",
-      "SENIOR_HOME_NAME": "Название интерната"
+      "SENIOR_HOME_NAME": "Название интерната",
+      "EXIT_DATE": "Дата выбытия",
+      "LAST_ORDER_DATE": "Дата посл.заявки"
     },
     "NOTES": {
       "CLOSE": "закрыт",
@@ -217,11 +219,17 @@
       "OUTDATED_DATA": "прежние данные:",
       "BLOCKED_FROM": "заблокирован с ",
       "CLOSE_FROM": "закрыт с ",
+      "LEFT": "выбыл",
+      "HOME_BLOCKED_FROM": "интернат не поздравляем с ",
+      "HOME_CLOSE_FROM": "интернат закрыт с ",
       "ACTIVE": "активен",
+      "ACCESSIBLE": "доступен",
       "SUBSCRIPTION": "подписка",
-      "MALE":"муж.",
-      "FEMALE":"жен.",
+      "COOPERATION": "сотрудничество",
+      "MALE": "муж.",
+      "FEMALE": "жен.",
       "NO_ADDRESS_LABEL": "БОА",
+      "PERSONAL_NO_ADDRESS_LABEL": "персонально БОА",
       "SPECIAL_HOME_LABEL": "проживает в специнтернате",
       "ACC_SCHOOL_LABEL": "можно поздравлять школьникам",
       "SPOUSE": "супруг(а) - "
@@ -263,7 +271,10 @@
       "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
       "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
       "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
-      "OUTDATED_COORDINATIONS_TITLE": "Прежняя координация:",
+      "OUTDATED_COORDINATIONS_TITLE": "Прежние координации:",
+      "OUTDATED_SUBSCRIPTIONS_TITLE": "Прежние подписки:",
+      "OUTDATED_COOPERATIONS_TITLE": "Прежние координаторы:",
+      "OUTDATED_INSTITUTES_TITLE": "Бывшие организации:",
       "ADD_INSTITUTE_BUTTON": "Добавить организацию",
       "COOPERATIONS": "Взаимодействует с:",
       "COORDINATION_NAME_LABEL": "Имя/название",
@@ -271,8 +282,8 @@
       "COORDINATION_PLACEHOLDER": "начните печатать и выберите значение",
       "COORDINATION_HINT": "Если значение не найдено, перейдите в соответствующий раздел и создайте карточку.",
       "CHOOSE_HOME_LABEL": "Название интерната",
-      "CHOOSE_PARTNER_LABEL":"Имя координатора",
-      "CHOOSE_SPOUSE_LABEL":"Имя супруг(а)",
+      "CHOOSE_PARTNER_LABEL": "Имя координатора",
+      "CHOOSE_SPOUSE_LABEL": "Имя супруг(а)",
       "SENIOR_DETAILS_LABEL": "Доп.информация"
     }
   },
@@ -291,9 +302,9 @@
     "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
 
     "VIEW_OPTIONS": {
-      "ALL": "Все пользователи",
-      "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только заблокированные"
+      "ALL": "все пользователи",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только бывшие"
     },
 
     "CONTACTS": {
@@ -361,9 +372,9 @@
     "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
 
     "VIEW_OPTIONS": {
-      "ALL": "Все координаторы",
-      "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только бывшие"
+      "ALL": "все координаторы",
+      "ONLY_ACTIVE": "только действующие",
+      "ONLY_BLOCKED": "только бывшие"
     },
     "AFF": {
       "VOLUNTEER_COORDINATOR": "Координатор",
@@ -410,9 +421,11 @@
     "ADD_PARTNER": "Добавить интернат",
     "SEARCH_PLACEHOLDER": "КАБАНОВО",
     "VIEW_OPTIONS": {
-      "ALL": "Все интернаты",
-      "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только неактивные"
+      "ALL": "все интернаты",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только неактивные",
+      "ONLY_CLOSED": "только закрытые",
+      "EXCLUDE_CLOSED": "искл. закрытые"
     },
 
     "CARD": {
@@ -462,14 +475,18 @@
     "ADD_PARTNER": "Добавить жителя интерната",
     "SEARCH_PLACEHOLDER": "Волкова Анна Петровна",
     "VIEW_OPTIONS": {
-      "ALL": "Все жители",
-      "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только неактивные"
+      "ALL": "все жители",
+      "ONLY_ACTIVE": "только доступные",
+      "ONLY_BLOCKED": "только заблок.",
+      "ONLY_QUITTED": "только выбывшие",
+      "EXCLUDE_BLOCKED_AND_QUITTED": "искл. заблок. и выбывших",
+      "EXCLUDE_QUITTED": "искл. выбывших"
     },
     "CARD": {
-      "CREATION_TITLE": "Новый житель интерната",
-      "VIEW_TITLE": "Житель интерната",
-
+      "CREATION_TITLE": "Новый резидент",
+      "VIEW_TITLE": "Резидент",
+      "HOME_BLOCKED_LABEL": " - интернат не участвует!",
+      "HOME_CLOSED_LABEL": " - интернат закрыт!",
       "FIRST_NAME_LABEL": "Имя*",
       "PATRONYMIC_LABEL": "Отчество",
       "LAST_NAME_LABEL": "Фамилия",
@@ -506,7 +523,7 @@
       "PHOTO_LINK_LABEL": "Ссылка на фото",
       "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
       "SPOUSE_LABEL": "Супруг(а)",
-      "DATE_HINT":"ДД-ММ-ГГГГ"
+      "DATE_HINT": "ДД-ММ-ГГГГ"
     }
   },
 
@@ -516,9 +533,9 @@
     "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
 
     "VIEW_OPTIONS": {
-      "ALL": "Все волонтеры",
-      "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только заблокированные"
+      "ALL": "все волонтеры",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только заблок."
     },
 
     "CARD": {
@@ -584,8 +601,17 @@
     "SET_FILTER": "Настроить фильтр",
     "RESET_FILTER": "Сбросить фильтр",
     "SET_COLUMNS": "Настроить отображение колонок",
+    "UPDATE_LABEL": "обн.",
     "START_LABEL": "нач.",
-    "BLOCK_LABEL": "блок."
+    "BLOCK_LABEL": "блок.",
+    "EXIT_LABEL": "выб.",
+    "CLOSE_LABEL": "закр.",
+    "LAST_ORDER_LABEL": "посл.заявка",
+    "DAY_LABEL": "даты рожд.: ",
+    "MONTH_LABEL": "месяцы рожд.: ",
+    "YEAR_LABEL": "годы рожд.: ",
+    "FROM_LABEL": "из ",
+    "HOMES_LABEL": " интернаты"
   },
   "NAV": {
     "COLUMNS_HEADER": "Настройте отображение колонок",
@@ -595,12 +621,31 @@
       "STRONG_FILTER": "все выбранные значения должны присутствовать одновременно",
       "ROLE_LABEL": "роль",
       "AFFILIATION_LABEL": "позиция",
+      "INSTITUTE_LABEL": "категория организации",
+      "SUBSCRIPTIONS_LABEL": "подписка",
+      "COOPERATIONS_LABEL": "сотрудничество",
       "CHOOSE_VALUE_LABEL": "выберите значение(я)",
+      "CHOOSE_REGION_VALUE_LABEL": "выберите регион(ы)",
+      "CHOOSE_HOME_VALUE_LABEL": "выберите интернат(ы)",
       "START_DATE_LABEL": "дата присоединения",
       "CHOOSE_RANGE_LABEL": "Введите диапазон",
       "DATE_PLACEHOLDER": "дд.мм.гггг",
       "BLOCK_DATE_LABEL": "дата блокировки",
-      "BLOCK_COMMENT": "результат поиска будет иметь смысл, если выбраны/n 'Все' или 'Только заблокированные'",
+      "EXIT_DATE_LABEL": "дата выбытия",
+      "CLOSE_DATE_LABEL": "дата закрытия",
+      "UPDATE_DATE_LABEL": "дата обновления",
+      "LAST_ORDER_DATE_LABEL": "дата посл.заказа",
+      "BLOCK_COMMENT_USERS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только заблок.'",
+      "BLOCK_COMMENT_VOLUNTEERS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только заблок.'",
+      "BLOCK_COMMENT_PARTNERS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только бывшие.'",
+      "BLOCK_COMMENT_HOMES": "результат поиска будет иметь смысл, если выбраны 'все', 'только неактивные' или 'искл. закрытые'",
+      "BLOCK_COMMENT_SENIORS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только заблок.' или 'искл. выбывших'",
+      "CLOSE_COMMENT_HOMES": "результат поиска будет иметь смысл, если выбраны 'все' или 'только закрытые'",
+      "CLOSE_COMMENT_SENIORS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только выбывшие'",
+      "NOT_ACTIVE_COMMENT_PARTNERS": "для выбора закрытых интернатов включите неактуальные данные",
+      "NOT_ACTIVE_COMMENT_SENIORS": "для выбора неактивных интернатов выберите 'все', 'только неактивные' или 'искл. закрытые', для закрытых - 'все' или 'только закрытые'",
+      "NOT_ACTIVE_COMMENT_HOMES": "для выбора бывших координаторов включите неактуальные данные",
+      "NOT_ACTIVE_COMMENT_VOLUNTEERS": "для выбора бывших пользователей включите неактуальные данные",
       "CONTACT_TYPE_LABEL": "тип контакта",
       "COMMENT_LABEL": "комментарий",
       "WITH_COMMENT_OPT": "с комментарием",
@@ -614,7 +659,62 @@
       "VKONTAKTE_OPT": "Вконтакте",
       "INSTAGRAM_OPT": "Instagram",
       "FACEBOOK_OPT": "Facebook",
-      "OTHER_CONTACT_OPT": "Другой контакт"
+      "OTHER_CONTACT_OPT": "Другой контакт",
+      "GENDER_LABEL": "пол",
+      "ONLY_MALE": "женщины",
+      "ONLY_FEMALE": "мужчины",
+      "PECULIARITIES_LABEL": "особенности",
+      "ONLY_NO_ADDRESS": "только БОА",
+      "WITHOUT_NO_ADDRESS": "без БОА",
+      "ONLY_SPECIAL": "только специнтернаты",
+      "WITHOUT_SPECIAL": "без специнтернатов",
+      "ONLY_ACC_FOR_SCHOOL": "только подходящие для школ",
+      "WITHOUT_ACC_FOR_SCHOOL": "без подходящих для школ",
+      "ONLY_WITH_COORDINATION": "с координацией",
+      "ONLY_WITHOUT_COORDINATION": "без координации",
+      "ONLY_WITH_INSTITUTE": "предст.организацию",
+      "ONLY_WITHOUT_INSTITUTE": "предст.частное лицо",
+      "ONLY_WITH_SUBSCRIPTION": "с подпиской",
+      "ONLY_WITHOUT_SUBSCRIPTION": "без подписки",
+      "ONLY_WITH_COOPERATION": "с сотрудничеством",
+      "ONLY_WITHOUT_COOPERATION": "без сотрудничества",
+      "PARTNERS_LABEL": "координаторы",
+      "HOMES_LABEL": "интернаты",
+      "REGIONS_LABEL": "регионы интернатов",
+      "DETAILS_LABEL": "детали",
+      "PERSONAL_NO_ADDRESS_LABEL": "персональным БОА",
+      "COMMENT_OPT": "с комментарием",
+      "PHOTO_LINK_OPT": "с фото",
+      "CONSENT_OPT": "подписано согласие",
+      "TEACHER_OPT": "учитель",
+      "KINDERGARTEN_OPT": "дошкольный работник",
+      "HONORARY_OPT": "имеет заслуги",
+      "VETERAN_OPT": "ветеран",
+      "CHILD_OF_WAR_OPT": "дети войны",
+      "BELIEVER_OPT": "верующий",
+      "PROFESSION_OPT": "указана профессия",
+      "INTERESTS_OPT": "указаны интересы",
+      "SPOUSE_OPT": "женат(а)",
+      "BIRTHDAY_LABEL": "дата рождения",
+      "DAY_LABEL": "дата",
+      "MONTH_LABEL": "месяц",
+      "YEAR_LABEL": "год",
+      "FROM_LABEL": "с",
+      "TO_LABEL": "по",
+      "JANUARY": "Январь",
+      "FEBRUARY": "Февраль",
+      "MARCH": "Март",
+      "APRIL": "Апрель",
+      "MAY": "Май",
+      "JUNE": "Июнь",
+      "JULY": "Июль",
+      "AUGUST": "Август",
+      "SEPTEMBER": "Сентябрь",
+      "OCTOBER": "Октябрь",
+      "NOVEMBER": "Ноябрь",
+      "DECEMBER": "Декабрь",
+      "WITHOUT_YEAR": "скрыть записи без года рождения",
+      "WITHOUT_BIRTHDAY": "скрыть записи без даты рождения"
     }
   },
   "ERRORS": {
@@ -701,7 +801,7 @@
     "TOO_LONG_20": "Максимум 20 символов",
     "TOO_SHORT_7": "Минимум 5 символов",
     "NOT_FOUND": "Поле пустое или введенное значение не найдено",
-
+    "INVALID_ISO_DATE": "Неверный формат даты",
     "ROLE": {
       "NAME_MIN": "Имя должно содержать минимум 2 символа",
       "NAME_MAX": "Имя не должно быть длиннее 50 символов",

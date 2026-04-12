@@ -19,8 +19,8 @@
         <app-address-filter [params]="params" [defaultAddressParams]="defaultAddressParams()"
           (addressFilter)="onAddressFilterChange($event)" (addressString)="onAddressStringChange($event)"
           (addressFilterBadgeValue)="onAddressFilterBadgeValueChange($event)"></app-address-filter>
-        <mat-checkbox formControlName="strongAddressFilter" (change)="emitSelectedFilters()">
-          {{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
+        @if(source() !== 'seniorList'){ <mat-checkbox formControlName="strongAddressFilter">
+          {{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>}
       </p>
     </p-fieldset>
 
@@ -41,7 +41,7 @@
       <p class="m-0">
         <mat-form-field>
           <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
-          <mat-select formControlName="roles" multiple (selectionChange)="emitSelectedFilters()">
+          <mat-select formControlName="roles" multiple>
             @for (role of rolesList; track $index) {
             <mat-option [value]="role">{{role.name}}</mat-option>
             }
@@ -67,7 +67,7 @@
       <p class="m-0">
         <mat-form-field>
           <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
-          <mat-select formControlName="affiliations" multiple (selectionChange)="emitSelectedFilters()">
+          <mat-select formControlName="affiliations" multiple>
             @for (aff of affiliations; track $index) {
             <mat-option [value]="translate.instant(aff)">{{aff | translate}}</mat-option>
             }
@@ -76,8 +76,442 @@
       </p>
     </p-fieldset>}
 
-    <!-- StartDate -->
+    <!-- Institute category -->
+    @if(source() == 'volunteerList'){
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.categories.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.INSTITUTE_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.INSTITUTE_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="categories" multiple>
+            @for (c of categories; track $index) {
+            <mat-option [value]="translate.instant(c)">{{c | translate}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </p>
+    </p-fieldset>}
+
+
+    <!-- Homes -->
+    @if(source() === 'seniorList' || source() === 'partnerList' ){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.homes.value.length > 0 || form.controls.homeRegions.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.HOMES_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.HOMES_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      @if(source() === 'partnerList' ){
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_REGION_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="homeRegions" multiple>
+            @for (region of regionsList; track $index) {
+            <mat-option [value]="region">{{region.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </p>
+      }
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_HOME_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="homes" multiple>
+            @for (home of accessibleHomesList; track $index) {
+            <mat-option [value]="home">{{home.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <span class="comment">{{labels().notActiveLabel | translate}}</span>
+      </p>
+
+
+    </p-fieldset>
+    }
+
+    @if(source() === 'seniorList'){
+
+    <!-- Birthday -->
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (hasBirthday()) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.BIRTHDAY_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.BIRTHDAY_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-label>{{'NAV.FILTER.DAY_LABEL' | translate}}</mat-label>
+        <mat-slider min="1" max="31" step="1" discrete>
+          <input matSliderStartThumb formControlName="minBirthDay">
+          <input matSliderEndThumb formControlName="maxBirthDay">
+        </mat-slider>
+
+        <mat-label>{{'NAV.FILTER.MONTH_LABEL' | translate}}</mat-label>
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.FROM_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="minBirthMonth">
+            <!--           <mat-option></mat-option> -->
+            @for (month of monthsOptions; track $index) {
+            <mat-option [value]="month.value">{{month.label | translate}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.TO_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="maxBirthMonth">
+            <!--    <mat-option></mat-option> -->
+            @for (month of monthsOptions; track $index) {
+            <mat-option [value]="month.value">{{month.label | translate}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-label>{{'NAV.FILTER.YEAR_LABEL' | translate}}</mat-label>
+        <mat-slider min="1917" [max]="currentYear" step="1" discrete>
+          <input matSliderStartThumb formControlName="minBirthYear">
+          <input matSliderEndThumb formControlName="maxBirthYear">
+        </mat-slider>
+        <mat-checkbox formControlName="hideWithoutYear">
+          {{'NAV.FILTER.WITHOUT_YEAR' | translate}}</mat-checkbox>
+        <mat-checkbox formControlName="hideWithoutBirthday">
+          {{'NAV.FILTER.WITHOUT_BIRTHDAY' | translate}}</mat-checkbox>
+      </p>
+    </p-fieldset>
+
+    <!-- Gender -->
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.gender.value) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.GENDER_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.GENDER_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-chip-listbox formControlName="gender">
+          <mat-chip-option [value]="'male'">{{'NAV.FILTER.ONLY_MALE' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="'female'">{{'NAV.FILTER.ONLY_FEMALE' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+      </p>
+    </p-fieldset>
+    }
+
+    <!-- Home regions -->
+    <!--     @if(source() === 'partnerList' ){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.homeRegions.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.REGIONS_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.REGIONS_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="homeRegions" multiple>
+            @for (region of regionsList; track $index) {
+            <mat-option [value]="region">{{region.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </p>
+    </p-fieldset>
+    } -->
+
+    <!-- Peculiarities -->
+    @if(source() === 'seniorList' || source() === 'homeList'){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (hasPeculiarities()) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.PECULIARITIES_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.PECULIARITIES_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-chip-listbox [multiple]="false" formControlName="noAddress" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_NO_ADDRESS' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_NO_ADDRESS' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+      </p>
+      <p class="m-0">
+        <mat-chip-listbox [multiple]="false" formControlName="specialHome" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_SPECIAL' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_SPECIAL' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+      </p>
+      <p class="m-0">
+        <mat-chip-listbox [multiple]="false" formControlName="acceptableForSchool" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_ACC_FOR_SCHOOL' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_ACC_FOR_SCHOOL' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+      </p>
+      @if(source() === 'homeList'){
+      <!--       <p class="m-0">
+        <mat-chip-listbox [multiple]="false" formControlName="isClosed" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_ACC_FOR_SCHOOL' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_ACC_FOR_SCHOOL' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+      </p>
+      <p class="m-0">
+        <mat-chip-listbox [multiple]="false" formControlName="isRestricted" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_ACC_FOR_SCHOOL' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_ACC_FOR_SCHOOL' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+      </p> -->
+      }
+    </p-fieldset>
+    }
+
+    <!-- Partners -->
+    @if(source() === 'homeList' ){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.partners.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.PARTNERS_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.PARTNERS_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="partners" multiple>
+            @for (partner of accessiblePartnersList; track $index) {
+            <mat-option [value]="partner">{{partner.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <span class="comment">{{labels().notActiveLabel | translate}}</span>
+      </p>
+    </p-fieldset>
+    }
+
+    <!-- Subscriptions -->
+    @if(source() === 'volunteerList' ){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.subscriptions.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.SUBSCRIPTIONS_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.SUBSCRIPTIONS_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="subscriptions" multiple>
+            @for (user of accessibleUsersList; track $index) {
+            <mat-option [value]="user">{{user.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <span class="comment">{{labels().notActiveLabel | translate}}</span>
+      </p>
+    </p-fieldset>
+    }
+
+    <!-- Cooperations -->
+    @if(source() === 'volunteerList' ){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.cooperations.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.COOPERATIONS_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.COOPERATIONS_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="cooperations" multiple>
+            @for (user of accessibleUsersList; track $index) {
+            <mat-option [value]="user">{{user.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <span class="comment">{{labels().notActiveLabel | translate}}</span>
+      </p>
+    </p-fieldset>
+    }
+
+    <!-- Only With -->
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (hasDetails()) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.DETAILS_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.DETAILS_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        @if(detailsOptions.length > 1 || source() === 'homeList' || source() === 'partnerList' || source() ===
+        'volunteerList'){
+        <mat-checkbox formControlName="strongDetailFilter">
+          {{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
+        }
+        <mat-chip-listbox formControlName="details" multiple class="mat-mdc-chip-set-stacked">
+          @for (d of detailsOptions; track d) {
+          <mat-chip-option [value]="d">{{d.label |
+            translate}}</mat-chip-option>
+          }
+        </mat-chip-listbox>
+        @if(source() === 'homeList' || source() === 'partnerList'){
+        <mat-chip-listbox [multiple]="false" formControlName="hasCoordination" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_WITH_COORDINATION' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.ONLY_WITHOUT_COORDINATION' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+        }
+        @if(source() === 'volunteerList'){
+        <mat-chip-listbox [multiple]="false" formControlName="hasInstitute" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_WITH_INSTITUTE' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.ONLY_WITHOUT_INSTITUTE' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+        <mat-chip-listbox [multiple]="false" formControlName="hasSubscription" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_WITH_SUBSCRIPTION' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.ONLY_WITHOUT_SUBSCRIPTION' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+        <mat-chip-listbox [multiple]="false" formControlName="hasCooperation" class="mat-mdc-chip-set-stacked">
+          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_WITH_COOPERATION' |
+            translate}}</mat-chip-option>
+          <mat-chip-option [value]="false">{{'NAV.FILTER.ONLY_WITHOUT_COOPERATION' |
+            translate}}</mat-chip-option>
+        </mat-chip-listbox>
+        }
+
+      </p>
+    </p-fieldset>
+
+
+    <!-- ContactType -->
+    @if(source() !== 'seniorList'){
+    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.contactTypes.value.length > 0) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.CONTACT_TYPE_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.CONTACT_TYPE_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
+          <mat-select formControlName="contactTypes" multiple>
+            @for (contact of contactTypesList; track $index) {
+            <mat-option [value]="contact">{{contact.label | translate}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-checkbox formControlName="strongContactFilter">{{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
+      </p>
+    </p-fieldset>
+    }
+
+
+    <!-- UpdateDate -->
+    @if(source() === 'homeList'){
+    <p-fieldset class=" fieldset" [toggleable]="true" [collapsed]="true">
+      <ng-template #header>
+        <div class="flex items-center">
+          @if (form.controls.startUpdateDate.value || form.controls.endUpdateDate.value) {
+          <p-overlaybadge severity="info">
+            <span class="font-bold">{{'NAV.FILTER.UPDATE_DATE_LABEL' | translate}}</span>
+          </p-overlaybadge>
+          } @else {
+          <span class="font-bold">{{'NAV.FILTER.UPDATE_DATE_LABEL' | translate}}</span>
+          }
+        </div>
+      </ng-template>
+      <p class="m-0">
+        <mat-form-field>
+          <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
+          <mat-date-range-input [rangePicker]="picker0">
+            <input formControlName="startUpdateDate" matStartDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
+            <input formControlName="endUpdateDate" matEndDate [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker0"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker0></mat-date-range-picker>
+        </mat-form-field>
+      </p>
+    </p-fieldset>
+    }
+
+
+    <!-- StartDate -->
+    <p-fieldset class=" fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
           @if (form.controls.startBeginningDate.value || form.controls.endBeginningDate.value) {
@@ -94,15 +528,16 @@
           <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
           <mat-date-range-input [rangePicker]="picker1">
             <input formControlName="startBeginningDate" matStartDate
-              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
             <input formControlName="endBeginningDate" matEndDate
-              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
           <mat-date-range-picker #picker1></mat-date-range-picker>
         </mat-form-field>
       </p>
     </p-fieldset>
+
     <!-- BlockDate -->
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
@@ -121,69 +556,77 @@
           <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
           <mat-date-range-input [rangePicker]="picker2">
             <input formControlName="startRestrictionDate" matStartDate
-              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
             <input formControlName="endRestrictionDate" matEndDate
-              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate" (dateChange)="emitSelectedFilters()">
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
           <mat-date-range-picker #picker2></mat-date-range-picker>
         </mat-form-field>
-        <span class="comment">{{'NAV.FILTER.BLOCK_COMMENT' | translate}}</span>
+        <span class="comment">{{labels().blockLabel | translate}}</span>
       </p>
     </p-fieldset>
-    <!-- ContactType -->
+
+    <!-- ExitDate -->
+    @if(source() === 'seniorList' || source() === 'homeList'){
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls.contactTypes.value.length > 0) {
+          @if (form.controls.startExitDate.value || form.controls.endExitDate.value) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">{{'NAV.FILTER.CONTACT_TYPE_LABEL' | translate}}</span>
+            <span class="font-bold">{{(source() === 'seniorList' ? 'NAV.FILTER.EXIT_DATE_LABEL' :
+              'NAV.FILTER.CLOSE_DATE_LABEL') | translate }}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">{{'NAV.FILTER.CONTACT_TYPE_LABEL' | translate}}</span>
+          <span class="font-bold">{{(source() === 'seniorList' ? 'NAV.FILTER.EXIT_DATE_LABEL' :
+            'NAV.FILTER.CLOSE_DATE_LABEL') | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
-          <mat-select formControlName="contactTypes" multiple (selectionChange)="emitSelectedFilters()">
-            @for (contact of contactTypesList; track $index) {
-            <mat-option [value]="contact">{{contact.label | translate}}</mat-option>
-            }
-          </mat-select>
+          <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
+          <mat-date-range-input [rangePicker]="picker3">
+            <input formControlName="startExitDate" matStartDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
+            <input formControlName="endExitDate" matEndDate [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker3"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker3></mat-date-range-picker>
         </mat-form-field>
-        <mat-checkbox formControlName="strongContactFilter"
-          (change)="emitSelectedFilters()">{{'NAV.FILTER.STRONG_FILTER' | translate}}</mat-checkbox>
+        <span class="comment">{{labels().closeLabel | translate}}</span>
       </p>
     </p-fieldset>
-    <!-- Comment -->
+    }
+
+    <!-- LastOrderDate -->
+    @if(source() === 'volunteerList'){
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
       <ng-template #header>
         <div class="flex items-center">
-          @if (form.controls.comment.value.length > 0) {
+          @if (form.controls.startLastOrderDate.value || form.controls.endLastOrderDate.value) {
           <p-overlaybadge severity="info">
-            <span class="font-bold">{{'NAV.FILTER.COMMENT_LABEL' | translate}}</span>
+            <span class="font-bold">{{'NAV.FILTER.LAST_ORDER_DATE_LABEL' | translate}}</span>
           </p-overlaybadge>
           } @else {
-          <span class="font-bold">{{'NAV.FILTER.COMMENT_LABEL' | translate}}</span>
+          <span class="font-bold">{{'NAV.FILTER.LAST_ORDER_DATE_LABEL' | translate}}</span>
           }
         </div>
       </ng-template>
       <p class="m-0">
         <mat-form-field>
-          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
-          <mat-select formControlName="comment" multiple (selectionChange)="emitSelectedFilters()">
-            <mat-option [value]="'NAV.FILTER.WITH_COMMENT_OPT' | translate">{{'NAV.FILTER.WITH_COMMENT_OPT' |
-              translate}}</mat-option>
-            <mat-option [value]="'NAV.FILTER.WITHOUT_COMMENT_OPT' | translate">{{'NAV.FILTER.WITHOUT_COMMENT_OPT' |
-              translate}}</mat-option>
-          </mat-select>
+          <mat-label>{{'NAV.FILTER.CHOOSE_RANGE_LABEL' | translate}}</mat-label>
+          <mat-date-range-input [rangePicker]="picker4">
+            <input formControlName="startLastOrderDate" matStartDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
+            <input formControlName="endLastOrderDate" matEndDate
+              [placeholder]="'NAV.FILTER.DATE_PLACEHOLDER' | translate">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker4"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker4></mat-date-range-picker>
         </mat-form-field>
       </p>
     </p-fieldset>
-
-  <!--   TODO: homes -->
-
+    }
   </form>
 </div>

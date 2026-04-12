@@ -20,7 +20,7 @@ import {
   RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
-import { GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -46,6 +46,8 @@ export interface HomeMainService extends OwnerMainService<
 > {
   checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>>;
   checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>>;
+  getActiveHomesPickList(): Observable<RelationPick[]>;
+  getPotentialHomesPickList(): Observable<RelationPick[]>;
   getHomesPickList(): Observable<RelationPick[]>;
 }
 
@@ -137,20 +139,7 @@ export class HomeService implements HomeMainService {
   }
 
   getList(
-    allFilterParameters: {
-      viewOption: string;
-      includeOutdated: boolean;
-      searchValue: string;
-      exactMatch: boolean;
-      sortParameters: {
-        active: string;
-        direction: 'asc' | 'desc' | '';
-      };
-      filter: GeneralFilter;
-      addressFilter: AddressFilter;
-      strongAddressFilter: boolean;
-      strongContactFilter: boolean;
-    },
+    allFilterParameters: AllFilterParameters,
     pageSize: number,
     currentPage: number,
   ): Observable<ApiResponse<{ list: Home[]; length: number }>> {
@@ -175,13 +164,18 @@ export class HomeService implements HomeMainService {
         includeOutdated: p.includeOutdated,
       }),
       filters: ctrl.omitEmpty({
-        //TODO: добавить фильтров
         general: ctrl.omitEmpty({
-          //affiliations: p.filter.affiliations,
-          comment: this.formCommentFilterValue(p.filter.comment),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
+          dateExitRange: ctrl.toIsoRange(p.filter.dateExitRange),
+          dateUpdateRange: ctrl.toIsoRange(p.filter.dateUpdateRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
+          details: p.filter.details.map((d) => d.value),
+          noAddress: p.filter.noAddress,
+          specialHome: p.filter.specialHome,
+          acceptableForSchool: p.filter.acceptableForSchool,
+          hasCoordination: p.filter.hasCoordination,
+          partners: p.filter.partners.map((p) => p.id),
         }),
         address: ctrl.omitEmpty({
           countries: p.addressFilter.countries,
@@ -192,6 +186,7 @@ export class HomeService implements HomeMainService {
         mode: ctrl.omitEmpty({
           strictAddress: p.strongAddressFilter,
           strictContact: p.strongContactFilter,
+          strictDetail: p.strongDetailFilter,
         }),
       }),
     };
@@ -207,7 +202,7 @@ export class HomeService implements HomeMainService {
       .pipe(validateResponse(homeSchema), catchError(this.handleError));
   }
 
-  /*   getHomesPickList(): Observable<ApiResponse<RelationPick[]>> {
+  /*   getActiveHomesPickList(): Observable<ApiResponse<RelationPick[]>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
       .pipe(
@@ -220,6 +215,56 @@ export class HomeService implements HomeMainService {
       );
   }
  */
+  getActiveHomesPickList(): Observable<RelationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-active-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+              fullPostalAddress: z.string().optional(),
+              countryId: z.number().int().positive().optional(),
+              regionId: z.number().int().positive().optional(),
+              districtId: z.number().int().positive().optional(),
+              localityId: z.number().int().positive().optional(),
+              noAddress: z.boolean().optional(),
+              specialHome: z.boolean().optional(),
+              acceptableForSchool: z.boolean().optional(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
+
+    getPotentialHomesPickList(): Observable<RelationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-potential-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+              fullPostalAddress: z.string().optional(),
+              countryId: z.number().int().positive().optional(),
+              regionId: z.number().int().positive().optional(),
+              districtId: z.number().int().positive().optional(),
+              localityId: z.number().int().positive().optional(),
+              isRestricted: z.boolean().optional(),
+              isClose: z.boolean().optional(),
+              homeStatus: z.string().optional(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
+
   getHomesPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
@@ -234,6 +279,8 @@ export class HomeService implements HomeMainService {
               regionId: z.number().int().positive().optional(),
               districtId: z.number().int().positive().optional(),
               localityId: z.number().int().positive().optional(),
+              isRestricted: z.boolean().optional(),
+              isClose: z.boolean().optional(),
             }),
           ),
         ),

@@ -9,7 +9,7 @@ export declare const nonEmptyTrim: z.ZodPipe<z.ZodTransform<string, unknown>, z.
 export declare const nonEmptyTrimMax: (max: number, msgMax: string) => z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const positiveInt: z.ZodNumber;
 export declare const nullableInt: z.ZodNullable<z.ZodNumber>;
-export declare const nullableIsoDate: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodNullable<z.ZodDate>>;
+export declare const nullableIsoDate: z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>;
 export declare const intOptArray: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
 export declare const emailSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>;
 export declare const phoneNumberSchema: z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>;

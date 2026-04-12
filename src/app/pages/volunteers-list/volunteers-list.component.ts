@@ -9,10 +9,10 @@ import {
   telegramNicknameControlSchema,
   vKontakteControlSchema,
   whatsAppControlSchema,
-  websiteControlSchema
-} from '@shared/schemas/volunteer.schema';
+  websiteControlSchema,
+} from '../../../../shared/schemas/volunteer.schema';
 
-import { volunteerDraftSchema } from '@shared/schemas/volunteer.schema';
+import { volunteerDraftSchema } from '../../../../shared/schemas/volunteer.schema';
 import { TranslateModule } from '@ngx-translate/core';
 import { TableComponent } from '../../shared/table/table.component';
 
@@ -26,7 +26,7 @@ import {
 
 import { zodValidator } from '../../utils/zod-validator';
 import * as Validator from '../../utils/custom.validator';
-import { Kind, Volunteer } from 'src/app/interfaces/advanced-model';
+import { Kind, Volunteer } from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-volunteers-list',
@@ -61,6 +61,11 @@ export class VolunteersListComponent {
     addTitle: 'VOLUNTEER.ADD_VOLUNTEER',
     searchPlaceholder: 'VOLUNTEER.SEARCH_PLACEHOLDER',
     addIcon: 'person_add_alt',
+    labels: {
+      blockLabel: 'NAV.FILTER.BLOCK_COMMENT_VOLUNTEERS',
+      closeLabel: '',
+      notActiveLabel: 'NAV.FILTER.NOT_ACTIVE_COMMENT_VOLUNTEERS',
+    },
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
@@ -112,8 +117,14 @@ export class VolunteersListComponent {
       columnFullName: 'TABLE.COLUMNS.STATUS',
       isUnchangeable: false,
     },
-    {
+     {
       id: 9,
+      columnName: 'dateOfLastOrder',
+      columnFullName: 'TABLE.COLUMNS.LAST_ORDER_DATE',
+      isUnchangeable: false,
+    },
+    {
+      id: 10,
       columnName: 'actions',
       columnFullName: 'TABLE.COLUMNS.ACTIONS',
       isUnchangeable: false,
@@ -336,7 +347,7 @@ export class VolunteersListComponent {
         colspan: 3,
         rowspan: 1,
       },
-/*        {
+      /*        {
         controlName: 'institutes',
         value: null,
         type: 'group',
@@ -349,8 +360,6 @@ export class VolunteersListComponent {
         colspan: 6,
         rowspan: 1,
       }, */
-
-
     ],
     mainContactsValidator: [Validator.mainPartnerContactsValidator],
     object: null,

@@ -16,7 +16,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import {MatDatepickerModule} from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { AddressFilterComponent } from '../../shared/address-filter/address-filter.component';
 import { OutdatedItemMenuComponent } from '../../shared/dialogs/details-dialogs/details-dialog/outdated-item-menu/outdated-item-menu.component';
 import { AdvancedDetailsComponent } from '../../shared/dialogs/details-dialogs/advanced-details/advanced-details.component';
@@ -62,7 +62,7 @@ import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user
     ContactUrlPipe,
     MatAutocompleteModule,
     AutocompleteRowComponent,
-    MatDatepickerModule
+    MatDatepickerModule,
   ],
   templateUrl:
     '../../shared/dialogs/details-dialogs/advanced-details/owner-details.component.html',
@@ -75,7 +75,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
   override ngOnInit(): void {
     super.ngOnInit();
     this.relationPickList$ = this.partnerService
-      .getPartnersPickList()
+      .getActivePartnersPickList()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
 
     this.mainProps = [
@@ -96,10 +96,10 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       'postalCode', */
     ];
     this.hasOutdatedOfficialNames.set(
-      this.outdatedDataDraft.officialNames.length > 0
+      this.outdatedDataDraft.officialNames.length > 0,
     );
     this.hasOutdatedCoordinations.set(
-      this.outdatedDataDraft.coordinations.length > 0
+      this.outdatedDataDraft.coordinations.length > 0,
     );
     this.hasPostalAddress.set(true);
     this.hasStatus.set(true);
@@ -120,10 +120,10 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
         new FormControl<RelationPick | null>(
           { value: null, disabled: true },
           {
-            nonNullable: true,
+            // nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
-          }
-        )
+          },
+        ),
       );
       diff--;
     }
@@ -142,13 +142,13 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
 
     //postal address
     this.mainForm.controls['postalAddressPart'].setValue(
-      this.existingOwner?.address.postalAddressPart
+      this.existingOwner?.address.postalAddressPart,
     );
     this.mainForm.controls['postalName'].setValue(
-      this.existingOwner?.address.postalName
+      this.existingOwner?.address.postalName,
     );
     this.mainForm.controls['postalCode'].setValue(
-      this.existingOwner?.address.postalCode
+      this.existingOwner?.address.postalCode,
     );
   }
 
@@ -194,13 +194,13 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     };
   }
 
-  override setHomeOpen(){
-     this.homeOpen.set(!this.existingOwner?.isClose);
+  override setHomeOpen() {
+    this.homeOpen.set(!this.existingOwner?.isClose);
   }
 
   // View-mode: disable institutes controls
   protected override changeToViewMode(
-    addressParams: DefaultAddressParams | null
+    addressParams: DefaultAddressParams | null,
   ) {
     super.changeToViewMode(addressParams);
     this.updateCoordinationsControlsValidity(false);
@@ -220,7 +220,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       fa.controls.forEach((control) =>
         enable
           ? control.enable({ emitEvent: false })
-          : control.disable({ emitEvent: false })
+          : control.disable({ emitEvent: false }),
       );
     }
     this.checkIsSaveDisabled();
@@ -251,14 +251,19 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
 
   private coordinationsChangeValidation(): boolean {
     const original = this.existingOwner!['coordinations'].map(
-      (c: HomeCoordination) => c.partnerId
+      (c: HomeCoordination) => c.partnerId,
     ).sort();
     const current = this.mainForm
       .get('coordinations')!
       .getRawValue()
+      .filter((i: RelationPick | null | undefined) => i != null)
       .map((c: RelationPick) => c.id)
       .sort();
 
+    /*     let current = this.mainForm.get('coordinations')!.getRawValue() ?? [];
+    console.log('CURRENT',current)
+    if (current.length && current[0]) current = current.map((c: RelationPick) => c.id).sort();
+ */
     // lengths differ -> changed
     if (original.length !== current.length) return true;
 
@@ -278,7 +283,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
         'officialNames'
       ].find(
         (item: OutdatedOfficialName) =>
-          item.id === this.restoringDataDraft['officialNames']![0]
+          item.id === this.restoringDataDraft['officialNames']![0],
       );
       if (restoredValue)
         this.outdatedDataDraft['officialNames'].push(restoredValue);
@@ -286,9 +291,11 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     }
     this.restoringDataDraft['officialNames'] = [data.id];
     this.mainForm.controls['officialNames'].setValue(data.officialName);
+    this.deleteFromOutdatedDataDraft('officialNames', data.id);
+    this.onChangeValidation();
   }
 
-/*   override async correctRestoringData() {
+  /*   override async correctRestoringData() {
     super.correctRestoringData();
 
     // Addresses
@@ -319,7 +326,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     );
   } */
 
-/*   override async checkOutdatedDataDuplicates() {
+  /*   override async checkOutdatedDataDuplicates() {
     const address = await this.ownerDiffService.checkHomeAddress(
       this.outdatedDataDraft.addresses,
       this.ownerDraft
@@ -358,8 +365,8 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
           {
             nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
-          }
-        )
+          },
+        ),
       );
       fa.at(fa.length - 1).patchValue({
         id: data.partnerId,
@@ -368,11 +375,11 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     }
 
     this.deleteFromOutdatedDataDraft('coordinations', data.id);
-    this.updateControlsValidity(this.controlsNames, true);
+    // this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
 
-/*   override async checkAllChanges() {
+  /*   override async checkAllChanges() {
     const address = await this.ownerDiffService.diffHomeAddress(
       this.existingOwner!,
       this.ownerDraft,
@@ -428,7 +435,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
 
   override setHasOutdatedOfficialNames() {
     this.hasOutdatedOfficialNames.set(
-      this.outdatedDataDraft.officialNames.length > 0
+      this.outdatedDataDraft.officialNames.length > 0,
     );
   }
 
@@ -440,7 +447,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     ) {
       this.mainForm.removeControl('causeOfRestriction');
       const idx = this.controlsNames.findIndex(
-        (n) => n === 'causeOfRestriction'
+        (n) => n === 'causeOfRestriction',
       );
       if (idx !== -1) this.controlsNames.splice(idx, 1);
     }
@@ -450,7 +457,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     ) {
       this.mainForm.addControl(
         'causeOfRestriction',
-        new FormControl(null, [zodValidator(causeOfRestrictionControlSchema)])
+        new FormControl(null, [zodValidator(causeOfRestrictionControlSchema)]),
       );
       this.controlsNames.push('causeOfRestriction');
     }

@@ -50,7 +50,7 @@ import {
 export const emailControlSchema = z
   .preprocess(
     emptyToNull,
-    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable()
+    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable(),
   )
   .superRefine((v, ctx) => {
     if (v) {
@@ -100,7 +100,7 @@ export const telegramIdControlSchema = z.preprocess(
   z
     .string()
     .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const whatsAppControlSchema = z
@@ -135,7 +135,7 @@ export const telegramNicknameControlSchema = z.preprocess(
   z
     .string()
     .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const vKontakteControlSchema = z.preprocess(
@@ -144,9 +144,9 @@ export const vKontakteControlSchema = z.preprocess(
     .string()
     .regex(
       /^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
+      'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const instagramControlSchema = z.preprocess(
@@ -155,9 +155,9 @@ export const instagramControlSchema = z.preprocess(
     .string()
     .regex(
       /^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
+      'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const facebookControlSchema = z.preprocess(
@@ -165,7 +165,7 @@ export const facebookControlSchema = z.preprocess(
   z
     .string()
     .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const websiteControlSchema = z.preprocess(
@@ -174,14 +174,14 @@ export const websiteControlSchema = z.preprocess(
     .string()
     .regex(
       /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
-      'Invalid website URL'
+      'Invalid website URL',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const otherContactControlSchema = z.preprocess(
   emptyToNull,
-  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
+  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable(),
 );
 
 /* ===================== Contacts (draft / ordered / optional) ===================== */
@@ -204,7 +204,7 @@ export const draftContactsSchema = z
   .strict()
   .superRefine((o, ctx) => {
     const hasAny = Object.values(o).some(
-      (arr) => Array.isArray(arr) && arr.length > 0
+      (arr) => Array.isArray(arr) && arr.length > 0,
     );
     if (!hasAny) {
       ctx.addIssue({
@@ -223,7 +223,7 @@ export const checkPartnerDataSchema = z
     lastName: z
       .preprocess(
         toTrim,
-        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
+        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }),
       )
       .nullable(),
     contacts: draftContactsSchema,
@@ -249,11 +249,11 @@ export const partnerDraftSchema = z
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     patronymic: z.preprocess(
       emptyToNull,
-      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()
+      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable(),
     ),
     lastName: z.preprocess(
       emptyToNull,
-      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()
+      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable(),
     ),
     affiliation: nonEmpty,
     position: z.preprocess(
@@ -262,7 +262,7 @@ export const partnerDraftSchema = z
         .string()
         .trim()
         .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
-        .nullable()
+        .nullable(),
     ),
 
     draftAddress: draftAddressSchema,
@@ -271,7 +271,7 @@ export const partnerDraftSchema = z
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
 
     isRestricted: z.boolean(),
@@ -280,11 +280,11 @@ export const partnerDraftSchema = z
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
-    draftCoordinations: z.array(positiveInt)
+    draftCoordinations: z.array(positiveInt),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -333,7 +333,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
     lastName: z
@@ -342,7 +342,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
 
@@ -354,7 +354,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
 
@@ -364,7 +364,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
 
@@ -375,7 +375,7 @@ export const changingMainSchema = z
         z
           .string()
           .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
+          .nullable(),
       )
       .optional(),
     dateOfRestriction: nullableIsoDate.optional(),
@@ -504,8 +504,6 @@ export const partnersQueryDTOSchema = z
         general: z
           .object({
             affiliations: z.array(nonEmpty).min(1).optional(),
-            comment: z.boolean().optional(),
-            hasHomes: z.boolean().optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -513,6 +511,8 @@ export const partnersQueryDTOSchema = z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
+            details: z.array(z.string()).optional(),
+            hasCoordination: z.boolean().optional(),
             homes: intOptArray,
             homeRegions: intOptArray,
           })
@@ -532,6 +532,7 @@ export const partnersQueryDTOSchema = z
           .object({
             strictAddress: z.boolean().optional(),
             strictContact: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
           })
           .partial()
           .optional(),
@@ -553,6 +554,7 @@ const coordinationItemSchema = z.object({
   homeId: positiveInt,
   isRecoverable: z.boolean(),
   id: positiveInt,
+  homeStatus: z.string().optional(),
 });
 
 export const outdatedDataSchema = z

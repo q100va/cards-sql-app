@@ -20,7 +20,7 @@ import {
   RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
-import { GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -28,23 +28,26 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { partnerSchema, partnersSchema } from '../../../shared/schemas/partner.schema';
+import {
+  partnerSchema,
+  partnersSchema,
+} from '../../../shared/schemas/partner.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
-export interface PartnerMainService
-  extends OwnerMainService<
-    Partner,
-    PartnerDraft,
-    PartnerChangingData,
-    PartnerRestoringData,
-    PartnerOutdatingData,
-    PartnerDeletingData,
-    { list: Partner[]; length: number }
-  > {
+export interface PartnerMainService extends OwnerMainService<
+  Partner,
+  PartnerDraft,
+  PartnerChangingData,
+  PartnerRestoringData,
+  PartnerOutdatingData,
+  PartnerDeletingData,
+  { list: Partner[]; length: number }
+> {
   checkPossibilityToBlockPartner(id: number): Observable<ApiResponse<number>>;
   getPartnersPickList(): Observable<RelationPick[]>;
+  getActivePartnersPickList(): Observable<RelationPick[]>;
 }
 
 @Injectable({
@@ -57,7 +60,7 @@ export class PartnerService implements PartnerMainService {
 
   constructor(
     private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
   ) {}
 
   getOwnerName(owner: Partner) {
@@ -68,7 +71,7 @@ export class PartnerService implements PartnerMainService {
   }
 
   checkOwnerData(
-    ownerDraft: PartnerDraft
+    ownerDraft: PartnerDraft,
   ): Observable<ApiResponse<Duplicates>> {
     let body = {
       id: ownerDraft.id,
@@ -89,7 +92,7 @@ export class PartnerService implements PartnerMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           partnerFullName: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -100,7 +103,7 @@ export class PartnerService implements PartnerMainService {
       PartnerRestoringData,
       PartnerOutdatingData,
       PartnerDeletingData
-    >
+    >,
   ): Observable<ApiResponse<Partner>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-partner`, {
@@ -112,12 +115,12 @@ export class PartnerService implements PartnerMainService {
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           partnerData: res.data,
         })),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   formCommentFilterValue(
-    commentFilter: string[] | undefined
+    commentFilter: string[] | undefined,
   ): boolean | undefined {
     if (commentFilter && commentFilter.length === 1) {
       return (
@@ -129,22 +132,9 @@ export class PartnerService implements PartnerMainService {
   }
 
   getList(
-    allFilterParameters: {
-      viewOption: string;
-      includeOutdated: boolean;
-      searchValue: string;
-      exactMatch: boolean;
-      sortParameters: {
-        active: string;
-        direction: 'asc' | 'desc' | '';
-      };
-      filter: GeneralFilter;
-      addressFilter: AddressFilter;
-      strongAddressFilter: boolean;
-      strongContactFilter: boolean;
-    },
+    allFilterParameters: AllFilterParameters,
     pageSize: number,
-    currentPage: number
+    currentPage: number,
   ): Observable<ApiResponse<{ list: Partner[]; length: number }>> {
     const p = { ...allFilterParameters };
     const dto = {
@@ -169,13 +159,13 @@ export class PartnerService implements PartnerMainService {
       filters: ctrl.omitEmpty({
         general: ctrl.omitEmpty({
           affiliations: p.filter.affiliations,
-          comment: this.formCommentFilterValue(p.filter.comment),
-          hasHomes: this.formCommentFilterValue(p.filter.hasHomes),
+          details: p.filter.details.map((d) => d.value),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
-          homes: p.filter.homes,
-          homeRegions: p.filter.homeRegions,
+          hasCoordination: p.filter.hasCoordination,
+          homes: p.filter.homes.map((h) => h.id),
+          homeRegions: p.filter.homeRegions.map((r) => r.id),
         }),
         address: ctrl.omitEmpty({
           countries: p.addressFilter.countries,
@@ -187,6 +177,7 @@ export class PartnerService implements PartnerMainService {
         mode: ctrl.omitEmpty({
           strictAddress: p.strongAddressFilter,
           strictContact: p.strongContactFilter,
+          strictDetail: p.strongDetailFilter,
         }),
       }),
     };
@@ -202,6 +193,22 @@ export class PartnerService implements PartnerMainService {
       .pipe(validateResponse(partnerSchema), catchError(this.handleError));
   }
 
+  getActivePartnersPickList(): Observable<RelationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-active-partners`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
   getPartnersPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-partners`)
@@ -211,11 +218,12 @@ export class PartnerService implements PartnerMainService {
             z.object({
               id: z.number().int().positive(),
               name: z.string(),
-            })
-          )
+              isRestricted: z.boolean(),
+            }),
+          ),
         ),
         map((res: ApiResponse<RelationPick[]>) => res.data),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -232,9 +240,9 @@ export class PartnerService implements PartnerMainService {
             partnerId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -244,7 +252,7 @@ export class PartnerService implements PartnerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -261,15 +269,15 @@ export class PartnerService implements PartnerMainService {
             partnerId: id,
             amountOfDependencies: res.data,
           }),
-          (res) => ({ count: res.data })
+          (res) => ({ count: res.data }),
         ),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   blockOwner(
     id: number,
-    causeOfRestriction: string
+    causeOfRestriction: string,
   ): Observable<ApiResponse<null>> {
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/block-partner/`, {
@@ -279,7 +287,7 @@ export class PartnerService implements PartnerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
@@ -289,7 +297,7 @@ export class PartnerService implements PartnerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 }

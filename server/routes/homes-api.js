@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import {
   Country, Region, District, Locality,
   HomeAddress, Home, HomeContact, HomeSearch, HomeOutdatedName,
@@ -14,7 +14,7 @@ import { withTransaction } from "../controllers/with-transaction.js";
 import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
-import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
+import { setHomeStatusValue, transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 
 const router = Router();
@@ -76,9 +76,11 @@ const includes = [
     model: HomeUpdateDate,
     as: 'updateDates',
     attributes: ['date'],
-    separate: true,
-    limit: 1,
-    order: [['date', 'DESC']]
+    where: { isLatest: true },
+    required: false,
+    // separate: true,
+    // limit: 1,
+    //order: [['date', 'DESC']]
   },
 
 ];
@@ -129,13 +131,12 @@ router.post(
       //  console.log('creatingHOME', creatingHome)
 
       const result = await withTransaction(async (t) => {
-        //TODO: check that in creation home cant be close
+        //TODO: check that in creation home cant be close - ПОЧЕМУ?
 
         const home = await Home.create(
           {
             homeName: creatingHome.homeName,
             officialName: creatingHome.officialName,
-            // postalName: creatingHome.postalName,
             noAddress: creatingHome.noAddress,
             specialHome: creatingHome.specialHome,
             acceptableForSchool: creatingHome.acceptableForSchool,
@@ -144,6 +145,8 @@ router.post(
             isRestricted: creatingHome.isRestricted,
             causeOfRestriction: creatingHome.causeOfRestriction,
             dateOfRestriction: creatingHome.dateOfRestriction,
+            isClose: creatingHome.isClose,
+            dateOfClose: creatingHome.dateOfClose,
           },
           { transaction: t }
         );
@@ -162,12 +165,13 @@ router.post(
           t
         );
 
-
         if ((creatingHome.draftCoordinations ?? []).length) {
           await HomeCoordination.bulkCreate(
             creatingHome.draftCoordinations.map((id) => ({
               homeId: home.id,
-              partnerId: id
+              partnerId: id,
+              isRestricted: creatingHome.isClose,
+              isRecoverable: !creatingHome.isClose,
             })),
             {
               transaction: t,
@@ -231,21 +235,48 @@ router.post(
                 individualHooks: true
               });
           }
-          if (changingData.main.isClose === true) {
-            await HomeCoordination.update(
-              { isRestricted: true, isRecoverable: false },
+        }
+        //addresses, contacts, coordinations, outdated
+        await applyOwnerUpdates(
+          'home',
+          id,
+          { changingData, restoringData, outdatingData, deletingData },
+          t
+        );
+
+        if (changingData.main?.isClose === true) {
+          await HomeCoordination.update(
+            { isRestricted: true, isRecoverable: false },
+            {
+              where: { homeId: id },
+              individualHooks: true,
+              transaction: t,
+            }
+          );
+        }
+        if (changingData.main?.isClose === false) {
+          const coordinations = await HomeCoordination.findAll({
+            where: { homeId: id },
+            include: [
               {
-                where: { homeId: id },
-                individualHooks: true,
-                transaction: t,
-              }
-            );
-          }
-          if (changingData.main.isClose === false) {
+                model: Partner,
+                as: 'partner',
+                where: { isRestricted: false },
+                attributes: [],
+                required: true,
+              },
+            ],
+            attributes: ['id'],
+            transaction: t,
+          });
+
+          const coordinationIds = coordinations.map(c => c.id);
+
+          if (coordinationIds.length > 0) {
             await HomeCoordination.update(
               { isRecoverable: true },
               {
-                where: { homeId: id },
+                where: { id: coordinationIds },
                 individualHooks: true,
                 transaction: t,
               }
@@ -253,13 +284,6 @@ router.post(
           }
         }
 
-        //addresses, contacts, outdated
-        await applyOwnerUpdates(
-          'home',
-          id,
-          { changingData, restoringData, outdatingData, deletingData },
-          t
-        );
 
         // UPDATED HOME
         const fresh = await Home.findOne({
@@ -320,40 +344,44 @@ router.post(
       const whereHome = {};
       const whereAddress = {};
       const whereContact = {};
-      const wherePartner = {};
-      const whereUpdateDate = {};
+      // const wherePartner = {};
+      const whereCoordination = !includeOutdated ? { isRestricted: false } : {};
+      const whereUpdateDate = { isLatest: true };
 
 
       // view option (if you still use it)
       switch (view?.option) {
         case 'only-active': whereHome.isRestricted = false; break;
-        case 'only-blocked': whereHome.isRestricted = true; break;
-        default:              /* 'all' or undefined */        break;
+        case 'only-blocked': whereHome.isRestricted = true; whereHome.isClose = false; break;
+        case 'only-closed': whereHome.isClose = true; break;
+        case 'exclude-closed': whereHome.isClose = false; break;
+        default:      /* 'all' or undefined */    break;
       }
+      /*       const options = view?.option ?? [];
+            if (options.includes('all')) { }
+            if (options.includes('active') && options.length == 1) { whereHome.isRestricted = false; }
+            if (options.includes('blocked') && options.length == 1) { whereHome.isRestricted = true; whereHome.isClose = false; }
+            if (options.includes('quitted') && options.length == 1) { whereHome.isClose = true; }
+            if (options.includes('active') && options.includes('blocked')) { whereHome.isClose = false; }
+            if (options.includes('active') && options.includes('quitted')) { whereHome[Op.or] = [{ isClose: true }, { isRestricted: false }]; }
+            if (options.includes('blocked') && options.includes('quitted')) { whereHome.isRestricted = true; }
+       */
+
 
       // general filters
 
-      if (filters?.general?.comment !== undefined) {
-        whereHome.comment = !filters.general.comment ? null : { [Op.not]: null };
-      }
-      if (filters?.general?.infoNote !== undefined) {
-        whereHome.infoNote = !filters.general.infoNote ? null : { [Op.not]: null };
-      }
-      if (filters?.general?.noAddress !== undefined) {
+      if (filters?.general?.noAddress === true || filters?.general?.noAddress === false) {
         whereHome.noAddress = filters.general.noAddress;
+
       }
-      if (filters?.general?.specialHome !== undefined) {
+      if (filters?.general?.specialHome === true || filters?.general?.specialHome === false) {
         whereHome.specialHome = filters.general.specialHome;
+
       }
-      if (filters?.general?.acceptableForSchool !== undefined) {
+      if (filters?.general?.acceptableForSchool === true || filters?.general?.acceptableForSchool === false) {
         whereHome.acceptableForSchool = filters.general.acceptableForSchool;
       }
-      if (filters?.general?.isClose !== undefined) {
-        whereHome.isClose = filters.general.isClose;;
-      }
-      if (filters?.general?.hasCoordinators !== undefined) {
-        whereHome.hasCoordinators = !filters.general.hasCoordinators ? null : { [Op.not]: null };
-      }
+
 
       if (filters?.general?.dateBeginningRange) {
         whereHome.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
@@ -361,11 +389,78 @@ router.post(
       if (filters?.general?.dateRestrictionRange) {
         whereHome.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
-      //TODO: проверить правильно ли выставлены эти параметры. м.б. вообще всегда достаточно false
-      const coordRequired = filters?.general?.hasPartners == undefined || filters?.general?.hasPartners == false ? false : true;
+      if (filters?.general?.dateExitRange) {
+        whereHome.dateOfClose = betweenDatesInclusive(filters.general.dateExitRange);
+      }
 
+      // coordination filter
 
-      //TODO: noAddress specialHome acceptableForSchool infoNote dateUpdateRange, hasCoordinators, status, dateOfClose
+      const buildPartnerLiteral = (partnerList, includeOutdated) => {
+        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+
+        return Sequelize.literal(`
+          EXISTS (
+            SELECT 1
+              FROM "home-coordinations" c
+              WHERE c."homeId" = "home"."id"
+              AND c."partnerId" IN (${partnerList})
+              ${restrictedClause}
+          )
+        `);
+      };
+
+      const buildCoordinationLiteral = (has, includeOutdated) => {
+        const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
+        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+
+        return Sequelize.literal(`
+          ${existsKeyword} (
+            SELECT 1
+            FROM "home-coordinations" c
+            WHERE c."homeId" = "home"."id"
+            ${restrictedClause}
+          )
+        `);
+      };
+
+      // details && hasCoordination filter
+      const hasCoordinationValue = filters?.general?.hasCoordination;
+      const coordinationCondition = hasCoordinationValue !== undefined && hasCoordinationValue !== null;
+
+      const hasCoordination = coordinationCondition
+        ? buildCoordinationLiteral(!!hasCoordinationValue, !!includeOutdated)
+        : undefined;
+
+      const details = filters?.general?.details ?? [];
+      if (details.length > 0) {
+        const strict = !!filters?.mode?.strictDetail;
+        const op = strict ? Op.and : Op.or;
+
+        whereHome[op] = [
+          ...details.map(detail => ({ [detail]: { [Op.not]: null } })),
+          ...(hasCoordination ? [hasCoordination] : []),
+        ];
+      } else if (hasCoordination) {
+        whereHome[Op.and] = [hasCoordination];
+      }
+
+      // partners filter
+      const partners = filters?.general?.partners || [];
+      const partnerRequired = (partners.length ?? 0) > 0;
+      if (partnerRequired) {
+        const partnerList = partners.map(Number).join(',');
+
+        whereHome[Op.and] = [
+          ...(whereHome[Op.and] ?? []),
+          buildPartnerLiteral(partnerList, !!includeOutdated),
+        ];
+      }
+
+      const coordinationRequired =
+        partnerRequired ? true : (
+          coordinationCondition ? (!!hasCoordinationValue && !!filters?.mode?.strictDetail) :
+            false
+        );
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
@@ -385,19 +480,12 @@ router.post(
         if (sub) whereAddress.homeId = { [Op.in]: sub };
       }
 
-      // partners filter
-      const partners = filters?.general?.partners || [];
-      const partnersRequired = (partners.length ?? 0) > 0;
-      if (partnersRequired) {
-        if (!includeOutdated) wherePartner.isRestricted = false;
-        wherePartner.partnerId = { [Op.in]: partners };
-      }
-
       // dateOfLastUpdate filter
       const dates = filters?.general?.dateUpdateRange || [];
       const datesRequired = (dates.length ?? 0) > 0;
       if (datesRequired) {
         whereUpdateDate.date = betweenDatesInclusive(filters.general.dateUpdateRange);
+        console.log('whereUpdateDate.date', whereUpdateDate.date);
       }
 
 
@@ -435,22 +523,22 @@ router.post(
           model: HomeCoordination,
           as: 'coordinations',
           attributes: ['id', 'partnerId', 'homeId', 'isRecoverable', 'isRestricted'],
-          required: coordRequired,
-          where: !includeOutdated ? { isRestricted: false } : {},
+          required: coordinationRequired,
+          where: whereCoordination,
           include: [
             {
               model: Partner,
               as: 'partner',
-              where: wherePartner,
-              required: partnersRequired,
-              attributes: ['firstName', 'patronymic', 'lastName'],
+              //where: wherePartner,
+              //required: partnersRequired,
+              attributes: ['firstName', 'patronymic', 'lastName', 'affiliation', 'position'],
               include: [
                 {
                   model: PartnerContact,
                   as: 'contacts',
                   where: { isRestricted: false },
                   attributes: ['id', 'type', 'content', 'isRestricted'],
-                  required: false,//TODO: partnersRequired???
+                  required: false,
                 },
               ]
             }
@@ -460,11 +548,16 @@ router.post(
           model: HomeUpdateDate,
           as: 'updateDates',
           attributes: ['date'],
-          where: whereUpdateDate,
           required: datesRequired,
-          separate: true,
-          order: [['date', 'DESC']],
-          limit: 1,
+          // separate: true,
+          where: whereUpdateDate,
+          //  where: { date :  {[Op.between]: [new Date('2026-01-01'), new Date('2026-01-16')]},
+          /* {
+            [Op.gte]: new Date('2026-01-01'),
+            [Op.lt]: new Date('2026-02-01'),
+          } },
+      order: [['date', 'DESC']],
+        limit: 1,*/
         },
       ];
       //order by region.shortName
@@ -501,8 +594,13 @@ router.post(
 
       //console.log('whereHome', whereHome);
       //console.log('ORDER', order);
-      /*  console.log('includes', includes);
-       console.log('whereHome', whereHome); */
+      /*  console.log('includes', includes);*/
+
+
+      console.log('whereHome');
+      console.log(JSON.stringify(whereHome, null, 2));
+      console.log('INCLUDES');
+      console.log(JSON.stringify(includes, null, 2));
 
       // ---- page ----
       const homes = await Home.findAll({
@@ -549,13 +647,28 @@ router.get("/get-home-by-id/:id",
     }
   });
 
-router.get("/get-list-of-homes",
+router.get("/get-list-of-active-homes",
   requireAuth,
-  requireAny('VIEW_PARTNER', 'EDIT_PARTNER', 'ADD_PARTNER'),
+  requireAny('VIEW_PARTNER',
+    'EDIT_PARTNER',
+    'ADD_PARTNER',
+    'VIEW_SENIOR',
+    'EDIT_SENIOR',
+    'ADD_SENIOR',
+    'VIEW_LIMITED_PARTNERS_LIST',
+    'VIEW_FULL_PARTNERS_LIST',
+    'VIEW_LIMITED_SENIORS_LIST',
+    'VIEW_FULL_SENIORS_LIST'),
   async (req, res, next) => {
     try {
       const homes = await Home.findAll({
-        attributes: ['id', 'homeName'],
+        attributes: [
+          'id',
+          'homeName',
+          'noAddress',
+          'specialHome',
+          'acceptableForSchool'
+        ],
         where: { isRestricted: false, isClose: false },
         include: [{
           model: HomeAddress,
@@ -566,9 +679,10 @@ router.get("/get-list-of-homes",
             { model: Region, attributes: ['shortName'] }
           ]
         },],
+        order: [['homeName', 'ASC']]
       });
 
-    //  console.log('HOMEs', JSON.stringify(homes));
+      //  console.log('HOMEs', JSON.stringify(homes));
 
       const data = homes.map(h => ({
         id: h.id,
@@ -578,8 +692,127 @@ router.get("/get-list-of-homes",
         regionId: h.addresses[0].regionId,
         districtId: h.addresses[0].districtId,
         localityId: h.addresses[0].localityId,
+        noAddress: h.noAddress,
+        specialHome: h.specialHome,
+        acceptableForSchool: h.acceptableForSchool
       }));
-       console.log('HOMES', data);
+      console.log('HOMES', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      next(error);
+    }
+  });
+
+router.get("/get-list-of-potential-homes",
+  requireAuth,
+  requireAny('VIEW_PARTNER',
+    'EDIT_PARTNER',
+    'ADD_PARTNER',
+    'VIEW_SENIOR',
+    'EDIT_SENIOR',
+    'ADD_SENIOR',
+    'VIEW_LIMITED_PARTNERS_LIST',
+    'VIEW_FULL_PARTNERS_LIST',
+    'VIEW_LIMITED_SENIORS_LIST',
+    'VIEW_FULL_SENIORS_LIST'),
+  async (req, res, next) => {
+    try {
+      const homes = await Home.findAll({
+        attributes: [
+          'id',
+          'homeName',
+          'isRestricted',
+          'isClose'
+        ],
+        where: { isClose: false },
+        include: [{
+          model: HomeAddress,
+          as: 'addresses',
+          attributes: ['id', 'fullPostalAddress', 'countryId', 'regionId', 'districtId', 'localityId'],
+          where: { isRestricted: false },
+          include: [
+            { model: Region, attributes: ['shortName'] }
+          ]
+        },],
+        order: [['homeName', 'ASC']]
+      });
+
+      //  console.log('HOMEs', JSON.stringify(homes));
+
+      const data = homes.map(h => ({
+        id: h.id,
+        name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
+        fullPostalAddress: h.addresses[0].fullPostalAddress,
+        countryId: h.addresses[0].countryId,
+        regionId: h.addresses[0].regionId,
+        districtId: h.addresses[0].districtId,
+        localityId: h.addresses[0].localityId,
+        isRestricted: h.isRestricted,
+        isClose: h.isClose,
+        homeStatus: setHomeStatusValue(h)
+      }));
+      console.log('HOMES', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      next(error);
+    }
+  });
+
+router.get("/get-list-of-homes",
+  requireAuth,
+  requireAny('VIEW_PARTNER',
+    'EDIT_PARTNER',
+    'ADD_PARTNER',
+    'VIEW_SENIOR',
+    'EDIT_SENIOR',
+    'ADD_SENIOR',
+    'VIEW_LIMITED_PARTNERS_LIST',
+    'VIEW_FULL_PARTNERS_LIST',
+    'VIEW_LIMITED_SENIORS_LIST',
+    'VIEW_FULL_SENIORS_LIST'),
+  async (req, res, next) => {
+    try {
+      const homes = await Home.findAll({
+        attributes: [
+          'id',
+          'homeName',
+          'isRestricted',
+          'isClose',
+          'noAddress',
+          'specialHome',
+          'acceptableForSchool'],
+        // where: { isRestricted: false, isClose: false },
+        include: [{
+          model: HomeAddress,
+          as: 'addresses',
+          attributes: ['id', 'fullPostalAddress', 'countryId', 'regionId', 'districtId', 'localityId'],
+          where: { isRestricted: false },
+          include: [
+            { model: Region, attributes: ['shortName'] }
+          ]
+        },],
+        order: [['homeName', 'ASC']]
+      });
+
+      //  console.log('HOMEs', JSON.stringify(homes));
+
+      const data = homes.map(h => ({
+        id: h.id,
+        name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
+        fullPostalAddress: h.addresses[0].fullPostalAddress,
+        countryId: h.addresses[0].countryId,
+        regionId: h.addresses[0].regionId,
+        districtId: h.addresses[0].districtId,
+        localityId: h.addresses[0].localityId,
+        isRestricted: h.isRestricted,
+        isClose: h.isClose,
+        /* noAddress: h.noAddress,
+        specialHome: h.specialHome,
+        acceptableForSchool: h.acceptableForSchool */
+      }));
+      console.log('HOMES', data);
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';

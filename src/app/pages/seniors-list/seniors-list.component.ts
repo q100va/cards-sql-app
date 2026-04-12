@@ -20,6 +20,7 @@ import { TableComponent } from '../../shared/table/table.component';
 import * as Validator from '../../utils/custom.validator';
 import { Kind, Senior } from '../../interfaces/advanced-model';
 import { readonly } from 'zod';
+import { nullableIsoDate } from '../../../../shared/schemas/common.schema';
 
 @Component({
   selector: 'app-seniors-list',
@@ -45,6 +46,22 @@ export class SeniorsListComponent {
       name: 'SENIOR.VIEW_OPTIONS.ONLY_BLOCKED',
       initiallySelected: false,
     },
+    {
+      id: 'only-discharged',
+      name: 'SENIOR.VIEW_OPTIONS.ONLY_QUITTED',
+      initiallySelected: false,
+    },
+    {
+      id: 'exclude-discharged',
+      name: 'SENIOR.VIEW_OPTIONS.EXCLUDE_QUITTED',
+      initiallySelected: false,
+    },
+/*         {
+      id: 'exclude-blocked-quitted',
+      name: 'SENIOR.VIEW_OPTIONS.EXCLUDE_BLOCKED_AND_QUITTED',
+      initiallySelected: false,
+    }, */
+
   ];
 
   componentType: FilterComponentSource = 'seniorList';
@@ -54,6 +71,11 @@ export class SeniorsListComponent {
     addTitle: 'SENIOR.ADD_SENIOR',
     searchPlaceholder: 'SENIOR.SEARCH_PLACEHOLDER',
     addIcon: 'person_add_alt',
+    labels: {
+      blockLabel: 'NAV.FILTER.BLOCK_COMMENT_SENIORS',
+      closeLabel: 'NAV.FILTER.CLOSE_COMMENT_SENIORS',
+      notActiveLabel: 'NAV.FILTER.NOT_ACTIVE_COMMENT_SENIORS'
+    }
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
@@ -123,8 +145,14 @@ export class SeniorsListComponent {
       columnFullName: 'TABLE.COLUMNS.STATUS',
       isUnchangeable: false,
     },
-    {
+     {
       id: 12,
+      columnName: 'dateOfExit',
+      columnFullName: 'TABLE.COLUMNS.EXIT_DATE',
+      isUnchangeable: false,
+    },
+    {
+      id: 13,
       columnName: 'actions',
       columnFullName: 'TABLE.COLUMNS.ACTIONS',
       isUnchangeable: false,
@@ -211,7 +239,7 @@ export class SeniorsListComponent {
       {
         controlName: 'birthDate',
         value: null,
-        validators: [zodValidator(seniorDraftSchema.shape.birthDate)],
+        validators: [zodValidator(nullableIsoDate)],
         type: 'datePicker',
         label: 'SENIOR.CARD.BIRTH_DATE_LABEL',
         category: 'mainData',
@@ -233,7 +261,7 @@ export class SeniorsListComponent {
       {
         controlName: 'dateOfConsent',
         value: null,
-        validators: [zodValidator(seniorDraftSchema.shape.dateOfConsent)],
+        validators: [zodValidator(nullableIsoDate)],
         type: 'datePicker',
         label: 'SENIOR.CARD.CONCENT_DATE_LABEL',
         category: 'mainData',
@@ -461,6 +489,6 @@ export class SeniorsListComponent {
     columns: this.IMPLICITLY_DISPLAYED_COLUMNS,
     viewOptions: this.viewOptions,
     componentType: this.componentType,
-    tableParams: this.tableParams
+    tableParams: this.tableParams,
   };
 }

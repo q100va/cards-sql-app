@@ -28,8 +28,6 @@ import {
 } from './common.schema.js';
 import { contactType } from './common.schema.js';
 
-//TODO:
-
 export const optionalContactsSchema = z
   .object({
     email: nonEmptyContacts.optional(),
@@ -50,12 +48,14 @@ export const optionalContactsSchema = z
 const coordinationItemSchema = z.object({
   partnerContacts: optionalContactsSchema.optional(),
   partnerName: nonEmpty.optional(),
+  partnerOccupation: nonEmpty.optional(),
   homeName: nonEmpty.optional(),
   regionName: nonEmpty.optional(),
   partnerId: positiveInt,
   homeId: positiveInt,
   isRecoverable: z.boolean(),
   id: positiveInt,
+  homeStatus: z.string().optional()
 });
 
 /* ===================== Some Schemas for form validation ===================== */
@@ -541,12 +541,12 @@ export const homesQueryDTOSchema = z
       .object({
         general: z
           .object({
-            //  coordinations: z.array(positiveInt).min(1).optional(),
             noAddress: z.boolean().optional(),
             specialHome: z.boolean().optional(),
             acceptableForSchool: z.boolean().optional(),
-            comment: z.boolean().optional(),
-            infoNote: z.boolean().optional(), //TODO: delete???
+            hasCoordination: z.boolean().optional(),
+            partners: z.array(positiveInt).min(1).optional(),
+            details: z.array(z.string()).optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -554,6 +554,9 @@ export const homesQueryDTOSchema = z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             dateUpdateRange: z
+              .tuple([z.coerce.date(), z.coerce.date()])
+              .optional(),
+            dateCloseRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
@@ -573,6 +576,7 @@ export const homesQueryDTOSchema = z
           .object({
             strictAddress: z.boolean().optional(),
             strictContact: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
           })
           .partial()
           .optional(),

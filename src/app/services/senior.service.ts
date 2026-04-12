@@ -20,7 +20,7 @@ import {
   RelationPick,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
-import { GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -130,20 +130,7 @@ export class SeniorService implements SeniorMainService {
   }
 
   getList(
-    allFilterParameters: {
-      viewOption: string;
-      includeOutdated: boolean;
-      searchValue: string;
-      exactMatch: boolean;
-      sortParameters: {
-        active: string;
-        direction: 'asc' | 'desc' | '';
-      };
-      filter: GeneralFilter;
-      addressFilter: AddressFilter;
-      strongAddressFilter: boolean;
-      strongContactFilter: boolean;
-    },
+    allFilterParameters: AllFilterParameters,
     pageSize: number,
     currentPage: number,
   ): Observable<ApiResponse<{ list: Senior[]; length: number }>> {
@@ -165,18 +152,26 @@ export class SeniorService implements SeniorMainService {
       }),
       view: ctrl.omitEmpty({
         option: p.viewOption,
+        homeOption: p.viewHomeOption,
         includeOutdated: p.includeOutdated,
       }),
+
       filters: ctrl.omitEmpty({
         general: ctrl.omitEmpty({
-          affiliations: p.filter.affiliations,
-          comment: this.formCommentFilterValue(p.filter.comment),
-          hasHomes: this.formCommentFilterValue(p.filter.hasHomes),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
-          contactTypes: p.filter.contactTypes.map((c) => c.type),
-          homes: p.filter.homes,
-          homeRegions: p.filter.homeRegions,
+          dateExitRange: ctrl.toIsoRange(p.filter.dateExitRange),
+          homes: p.filter.homes.map((h) => h.id),
+          gender: p.filter.gender,
+          details: p.filter.details.map((d) => d.value),
+          noAddress: p.filter.noAddress,
+          specialHome: p.filter.specialHome,
+          acceptableForSchool: p.filter.acceptableForSchool,
+          dayRange: p.filter.birthDate.dayRange,
+          monthRange: p.filter.birthDate.monthRange,
+          yearRange: p.filter.birthDate.yearRange,
+          hideWithoutYear: p.filter.hideWithoutYear ? true : null,
+          hideWithoutBirthday: p.filter.hideWithoutBirthday ? true : null,
         }),
         address: ctrl.omitEmpty({
           countries: p.addressFilter.countries,
@@ -186,8 +181,9 @@ export class SeniorService implements SeniorMainService {
         }),
 
         mode: ctrl.omitEmpty({
-          strictAddress: p.strongAddressFilter,
-          strictContact: p.strongContactFilter,
+          //strictAddress: p.strongAddressFilter,
+          //strictContact: p.strongContactFilter,
+          strictDetail: p.strongDetailFilter,
         }),
       }),
     };

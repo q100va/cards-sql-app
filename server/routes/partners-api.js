@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { Op } from 'sequelize';
-import { z } from 'zod';
+import { Op, Sequelize } from 'sequelize';
 import {
   Country, Region, District, Locality, Home,
-  Role, PartnerAddress, Partner, PartnerContact, PartnerSearch, PartnerOutdatedName, HomeCoordination,
+  PartnerAddress, Partner, PartnerContact, PartnerSearch, PartnerOutdatedName, HomeCoordination,
   HomeAddress
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
@@ -16,7 +15,7 @@ import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContacts
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
-import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
+import { applyOwnerUpdates, updateCoordinationByPartner } from "../controllers/ctrl-apply-owner-updates.js";
 
 const router = Router();
 const includes = [
@@ -57,7 +56,7 @@ const includes = [
       {
         model: Home,
         as: 'home',
-        attributes: ['homeName'],
+        attributes: ['homeName', 'isRestricted', 'isClose'],
         include: [
           {
             model: HomeAddress,
@@ -81,6 +80,8 @@ const includes = [
     attributes: ['id', 'firstName', 'patronymic', 'lastName']
   },
 ];
+
+
 
 // API create partner
 
@@ -159,9 +160,15 @@ router.post(
           { PartnerContact, PartnerAddress },
           t
         );
+
         if (creatingPartner.draftCoordinations.length) {
           const coordinationRows = creatingPartner.draftCoordinations.map(
-            id => ({ partnerId: partner.id, homeId: id })
+            id => ({
+              partnerId: partner.id,
+              homeId: id,
+              isRestricted: creatingPartner.isRestricted,
+              isRecoverable: !creatingPartner.isRestricted,
+            })
           )
           await HomeCoordination.bulkCreate(coordinationRows, {
             validate: true,
@@ -224,13 +231,16 @@ router.post(
           }
         }
 
-        //addresses, contacts, outdated
+        //addresses, contacts, coordinations, outdated
         await applyOwnerUpdates(
           'partner',
           id,
           { changingData, restoringData, outdatingData, deletingData },
           t
         );
+
+        if (changingData.main?.isRestricted === true || changingData.main?.isRestricted === false)
+          await updateCoordinationByPartner(changingData.main.isRestricted, id, t);
 
         // UPDATED PARTNER
         const fresh = await Partner.findOne({
@@ -289,45 +299,148 @@ router.post(
 
       // ---- base where (Partner) ----
       const wherePartner = {};
-      const whereAddress = {};
-      const whereContact = {};
-      const whereHome = {};
-      const whereHomeAddress = {};
-      whereHomeAddress.isRestricted = false;
+      const whereAddress = !includeOutdated ? { isRestricted: false } : {};
+      const whereContact = !includeOutdated ? { isRestricted: false } : {};
+      //const whereHomeAddress = { isRestricted: false };
+      const whereCoordination = !includeOutdated ? { isRestricted: false } : {};
 
-      // view option (if you still use it)
+
+      // view option
       switch (view?.option) {
         case 'only-active': wherePartner.isRestricted = false; break;
         case 'only-blocked': wherePartner.isRestricted = true; break;
-        default:              /* 'all' or undefined */        break;
+        default: break;
       }
+
+      /*       const options = view?.option ?? [];
+            if (options.includes('all')) { }
+            if (options.includes('active') && options.length == 1) { wherePartner.isRestricted = false; }
+            if (options.includes('blocked') && options.length == 1) { wherePartner.isRestricted = true; }
+       */
+
       console.log('filters?.general?.affiliations', filters?.general?.affiliations);
 
       // general filters
       if (filters?.general?.affiliations?.length) {
         wherePartner.affiliation = { [Op.in]: filters.general.affiliations };
       }
-      if (filters?.general?.comment !== undefined) {
-        wherePartner.comment = !filters.general.comment ? null : { [Op.not]: null };
-      }
+
       if (filters?.general?.dateBeginningRange) {
         wherePartner.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
       }
       if (filters?.general?.dateRestrictionRange) {
         wherePartner.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
-      if (filters?.general?.hasHomes !== undefined) {
-        wherePartner['$coordinations.id$'] = !filters.general.hasHomes ? null : { [Op.not]: null };
+
+      // coordination filter
+
+      const buildHomeLiteral = (homeList, includeOutdated) => {
+        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+
+        return Sequelize.literal(`
+          EXISTS (
+            SELECT 1
+              FROM "home-coordinations" c
+              WHERE c."partnerId" = "partner"."id"
+              AND c."homeId" IN (${homeList})
+              ${restrictedClause}
+          )
+        `);
+      };
+
+      const buildCoordinationLiteral = (has, includeOutdated) => {
+        const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
+        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+
+        return Sequelize.literal(`
+          ${existsKeyword} (
+            SELECT 1
+            FROM "home-coordinations" c
+            WHERE c."partnerId" = "partner"."id"
+            ${restrictedClause}
+          )
+        `);
+      };
+
+      const buildHomeRegionLiteral = (regionList, includeOutdated) => {
+        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+
+        return Sequelize.literal(`
+          EXISTS (
+            SELECT 1
+              FROM "home-coordinations" c
+              JOIN "home-addresses" a
+              ON a."homeId" = c."homeId"
+              AND a."isRestricted" = false
+              WHERE c."partnerId" = "partner"."id"
+              ${restrictedClause}
+              AND a."regionId" IN (${regionList})
+          )
+        `);
+      };
+
+      // details && hasCoordination filter
+      const hasCoordinationValue = filters?.general?.hasCoordination;
+      const coordinationCondition = hasCoordinationValue !== undefined && hasCoordinationValue !== null;
+
+      const hasCoordination = coordinationCondition
+        ? buildCoordinationLiteral(!!hasCoordinationValue, !!includeOutdated)
+        : undefined;
+
+
+      const details = filters?.general?.details ?? [];
+      if (details.length > 0) {
+        const strict = !!filters?.mode?.strictDetail;
+        const op = strict ? Op.and : Op.or;
+
+        wherePartner[op] = [
+          ...details.map(detail => ({ [detail]: { [Op.not]: null } })),
+          ...(hasCoordination ? [hasCoordination] : []),
+        ];
+      } else if (hasCoordination) {
+        wherePartner[Op.and] = [hasCoordination];
       }
-      //TODO: проверить правильно ли выставлены эти параметры. м.б. вообще всегда достаточно false
-      const coordRequired = filters?.general?.hasHomes == undefined || filters?.general?.hasHomes == false ? false : true;
+
+      // homeRegions filter
+      const homeRegions = filters?.general?.homeRegions || [];
+      const homeAddressRequired = (homeRegions.length ?? 0) > 0;
+      if (homeAddressRequired) {
+        const regionList = homeRegions.map(Number).join(',');
+
+        wherePartner[Op.and] = [
+          ...(wherePartner[Op.and] ?? []),
+          buildHomeRegionLiteral(regionList, !!includeOutdated),
+        ];
+      }
+
+      // homes filter
+      const homes = filters?.general?.homes || [];
+      const homeRequired = (homes.length ?? 0) > 0;
+      if (homeRequired && (homeRegions.length ?? 0) <= 1) {
+        const homeList = homes.map(Number).join(',');
+
+        wherePartner[Op.and] = [
+          ...(wherePartner[Op.and] ?? []),
+          buildHomeLiteral(homeList, !!includeOutdated),
+        ];
+      }
+
+
+
+      const coordinationRequired =
+        homeRequired ? true : (
+          homeAddressRequired ? true : (
+            coordinationCondition ? (!!hasCoordinationValue && !!filters?.mode?.strictDetail) :
+              false
+          )
+        );
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
       const contRequired = contactTypes.length > 0;
       if (contRequired) {
         const sub = buildContactOwnerIdSubquery('partner', contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
-        if (!includeOutdated) whereContact.isRestricted = false;
+
         if (sub) whereContact.partnerId = { [Op.in]: sub };
       }
 
@@ -336,24 +449,11 @@ router.post(
       const addrRequired = (addresses.countries?.length ?? 0) > 0;
       if (addrRequired) {
         const sub = await buildAddressOwnerIdSubquery('partner', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
-        if (!includeOutdated) whereAddress.isRestricted = false;
+
         if (sub) whereAddress.partnerId = { [Op.in]: sub };
       }
 
-      // homes filter
-      const homes = filters?.general?.homes || [];
-      const homesRequired = (homes.length ?? 0) > 0;
-      if (homesRequired) {
-        if (!includeOutdated) whereHome.isRestricted = false;
-        whereHome.homeId = { [Op.in]: homes };
-      }
 
-      // homeRegions filter
-      const homeRegions = filters?.general?.homeRegions || [];
-      const homeAddressRequired = (homeRegions.length ?? 0) > 0;
-      if (homeAddressRequired) {
-        whereHomeAddress['$region.id$'] = { [Op.in]: homeRegions };
-      }
 
       // ---- includes (contacts / addresses / coordinations / outdated names / search) ----
       const includes = [
@@ -388,22 +488,22 @@ router.post(
           model: HomeCoordination,
           as: 'coordinations',
           attributes: ['id', 'homeId', 'partnerId', 'isRecoverable', 'isRestricted'],
-          required: coordRequired,
-          where: !includeOutdated ? { isRestricted: false } : {},
+          required: coordinationRequired,
+          where: whereCoordination,
           include: [
             {
               model: Home,
               as: 'home',
-              attributes: ['homeName'],
-              where: whereHome,
-              required: homesRequired,
+              attributes: ['homeName', 'isClose', 'isRestricted'],
+              // where: whereHome,
+              // required: homesRequired,
               include: [
                 {
                   model: HomeAddress,
                   as: 'addresses',
                   attributes: ['id'],
-                  where: whereHomeAddress,
-                  required: homeAddressRequired,
+                  where: { isRestricted: false },//whereHomeAddress,
+                  required: false, //homeAddressRequired,
                   include: [
                     {
                       model: Region,
@@ -430,8 +530,8 @@ router.post(
           }
         });
       }
-    //  console.log('INCLUDES', includes);
-    //  console.log(JSON.stringify(includes, null, 2));
+      //  console.log('INCLUDES', includes);
+      //  console.log(JSON.stringify(includes, null, 2));
 
 
 
@@ -442,8 +542,8 @@ router.post(
         distinct: true,
       });
 
-     // console.log('wherePartner', wherePartner);
-     // console.log('ORDER', order);
+      // console.log('wherePartner', wherePartner);
+      // console.log('ORDER', order);
       /*  console.log('includes', includes);
        console.log('wherePartner', wherePartner); */
 
@@ -458,8 +558,8 @@ router.post(
         //subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-    //  console.log('partners', partners);
-
+      console.log('PARTNERS', partners);
+      console.log(JSON.stringify(partners, null, 2));
       const items = partners.map(p => transformOwnerData('partner', p.toJSON()));
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
@@ -490,18 +590,39 @@ router.get("/get-partner-by-id/:id",
     }
   });
 
-router.get("/get-list-of-partners",
+router.get("/get-list-of-active-partners",
   requireAuth,
-  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME'),
+  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME', 'VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST'),
   async (req, res, next) => {
     try {
       const partners = await Partner.findAll({
         attributes: { exclude: ['createdAt', 'updatedAt'] },
         where: { isRestricted: false },
+        order: [['firstName', 'ASC']]
       });
 
       const data = partners.map(p => ({ id: p.id, name: fullName(p) }));
-      console.log('PARTNERS', data);
+      //  console.log('PARTNERS', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
+      next(error);
+    }
+  });
+
+router.get("/get-list-of-partners",
+  requireAuth,
+  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME', 'VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST'),
+  async (req, res, next) => {
+    try {
+      const partners = await Partner.findAll({
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        //where: { isRestricted: false },
+        order: [['firstName', 'ASC']]
+      });
+
+      const data = partners.map(p => ({ id: p.id, name: fullName(p), isRestricted: p.isRestricted }));
+      //  console.log('PARTNERS', data);
       res.status(200).send({ data });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
@@ -578,13 +699,14 @@ router.get(
       const partner = await Partner.findByPk(id);
       if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
 
-      //TODO: find does this partner has actual houses
-      const [countHouses] = await Promise.all([
-        HomeCoordination.count({
-          where: { partnerId: id, isRestricted: false }
-        }),
-      ]);
-      const count = (countHouses ?? 0);
+      //TODO: find does this partner has actual houses -we blocked coordinations after blocking partner
+      /*       const [countHouses] = await Promise.all([
+              HomeCoordination.count({
+                where: { partnerId: id, isRestricted: false }
+              }),
+            ]);
+            const count = (countHouses ?? 0); */
+      const count = 0;
       const response = {
         data: count,
         ...(count ? { code: 'PARTNER.HAS_DEPENDENCIES' } : null),
@@ -623,6 +745,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
         }
+        await updateCoordinationByPartner(true, id, t);
       });
 
       res.status(200).send({ code: 'PARTNER.BLOCKED', data: null });
@@ -641,20 +764,23 @@ router.patch(
   async (req, res, next) => {
     try {
       let id = req.body.id;
-      const [affected] = await Partner.update(
-        {
-          isRestricted: false,
-          causeOfRestriction: null,
-          dateOfRestriction: null
-        },
-        {
-          where: { id },
-          individualHooks: true,
-        },
-      );
-      if (affected !== 1) {
-        throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
-      }
+      await withTransaction(async (t) => {
+        const [affected] = await Partner.update(
+          {
+            isRestricted: false,
+            causeOfRestriction: null,
+            dateOfRestriction: null
+          },
+          {
+            where: { id },
+            individualHooks: true,
+          },
+        );
+        if (affected !== 1) {
+          throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+        }
+        await updateCoordinationByPartner(false, id, t);
+      });
       res.status(200).send({ code: 'PARTNER.UNBLOCKED', data: null });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.PARTNER.NOT_UNBLOCKED';

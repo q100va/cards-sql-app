@@ -12,6 +12,7 @@ import { DetailsComponentType } from '../shared/dialogs/details-dialogs/details-
 export interface DialogData<T extends BaseModel> {
   creationTitle: string;
   viewTitle: string;
+  extraTitle?: string;
   controls: Control[];
   mainContactsValidator?: ((
     control: AbstractControl<any, any>
