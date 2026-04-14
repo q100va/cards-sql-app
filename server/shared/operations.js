@@ -662,5 +662,50 @@ export const OPERATIONS = [
     objectName: 'OBJECT.ORDERS',
     flag: 'FULL',
   },
+
+  // --- Occasions ---
+  {
+    operation: 'ALL_OPS_OCCASIONS',
+    object: 'occasions',
+    accessToAllOps: true,
+    operationName: 'OPS.ALL_OPS.NAME',
+    description: 'Full access to all occasion operations',
+    objectName: 'OBJECT.OCCASIONS',
+  },
+  {
+    operation: 'ADD_NEW_OCCASION',
+    object: 'occasions',
+    accessToAllOps: false,
+    operationName: 'OPS.ADD.NAME',
+    description: 'Create a new occasion',
+    objectName: 'OBJECT.OCCASIONS',
+  },
+  {
+    operation: 'DELETE_OCCASION',
+    object: 'occasions',
+    accessToAllOps: false,
+    operationName: 'OPS.DELETE.NAME',
+    description: 'Permanently delete a occasion',
+    objectName: 'OBJECT.OCCASIONS',
+  },
+  {
+    operation: 'VIEW_LIMITED_OCCASIONS_LIST',
+    object: 'occasions',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
+    description: 'View occasion list with limited access',
+    objectName: 'OBJECT.OCCASIONS',
+    flag: 'LIMITED',
+  },
+  {
+    operation: 'VIEW_FULL_OCCASIONS_LIST',
+    object: 'occasions',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_FULL_LIST.NAME',
+    description: 'View occasion list with full access',
+    objectName: 'OBJECT.OCCASIONS',
+    flag: 'FULL',
+  },
+
 ];
 

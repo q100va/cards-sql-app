@@ -40,9 +40,12 @@ export default function OccasionModel(sequelize) {
           notEmpty: true,
         }
       },
-      isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
+      status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        }
       },
       isDeletable: {
         type: DataTypes.BOOLEAN,
