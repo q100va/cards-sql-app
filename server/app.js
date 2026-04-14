@@ -36,7 +36,8 @@ import {
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
   VolunteerSubscription, VolunteerCooperation, Institute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
-  Senior, SeniorOutdatedName, SeniorSearch
+  Senior, SeniorOutdatedName, SeniorSearch,
+  Occasion
 } from './models/index.js';
 import { corsMiddleware } from './cors.js';
 
@@ -157,6 +158,7 @@ export async function initInfrastructure() {
   await Senior.sync(syncOpts);
   await SeniorOutdatedName.sync(syncOpts);
   await SeniorSearch.sync(syncOpts);
+  await Occasion.sync(syncOpts);
 
   initAuditHooks(sequelize);
 
