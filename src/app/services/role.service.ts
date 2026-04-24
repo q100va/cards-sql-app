@@ -13,7 +13,7 @@ import {
   roleAccessesSchema,
   rolesListSchema,
   rolesNamesListSchema,
-} from '@shared/schemas/role.schema';
+} from '../../../shared/schemas/role.schema';
 import {
   validateNoSchemaResponse,
   validateResponse,

@@ -16,6 +16,7 @@ import { requireAnyOp, requireOp } from './guards/route-perms.guard';
 import { VolunteersListComponent } from './pages/volunteers-list/volunteers-list.component';
 import { HomesListComponent } from './pages/homes-list/homes-list.component';
 import { SeniorsListComponent } from './pages/seniors-list/seniors-list.component';
+import { OccasionsListComponent } from './pages/occasions-list/occasions-list.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -78,6 +79,11 @@ export const routes: Routes = [
         path: 'roles',
         canMatch: [requireOp('ALL_OPS_ROLES')],
         component: RolesListComponent,
+      },
+         {
+        path: 'occasions',
+        canMatch: [requireOp('ALL_OPS_OCCASIONS')],
+        component: OccasionsListComponent,
       },
       {
         path: 'countries',

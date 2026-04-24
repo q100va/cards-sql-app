@@ -10,7 +10,7 @@ import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
-import * as volunteerSchemas from "../../shared/dist/volunteer.schema.js";
+import * as volunteerSchemas from "../../shared/dist/schemas/volunteer.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";

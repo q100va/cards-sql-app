@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import requireAuth from '../middlewares/check-auth.js';
 import { validateRequest } from '../middlewares/validate-request.js';
-import { downloadQuery } from '../../shared/dist/file.schema.js';
+import { downloadQuery } from '../../shared/dist/schemas/file.schema.js';
 import CustomError from '../shared/customError.js';
 import { requireOperation } from '../middlewares/require-permission.js';
 

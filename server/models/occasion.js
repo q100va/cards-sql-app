@@ -11,46 +11,49 @@ export default function OccasionModel(sequelize) {
         allowNull: false,
         primaryKey: true,
       },
-      name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          notEmpty: true,
-        }
-      },
-      date: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
+      /*  name: {
+         type: DataTypes.STRING,
+         allowNull: false,
+         validate: {
+           notEmpty: true,
+         }
+       },
+       date: {
+         type: DataTypes.STRING,
+         allowNull: true,
+       }, */
       month: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: true,
+        validate: {
+          min: 1,
+          max: 12,
+        },
       },
       year: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          notEmpty: true,
-        }
+          min: 2022
+        },
       },
       type: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          notEmpty: true,
+          min: 1,
+          max: 6,
         }
       },
       status: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
-        validate: {
-          notEmpty: true,
-        }
+        defaultValue: 2
       },
-      isDeletable: {
+  /*     isDeletable: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
-      },
+      }, */
 
     },
     {

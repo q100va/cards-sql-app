@@ -1,7 +1,7 @@
 import { Router } from "express";
 import Sequelize from "sequelize";
 import { validateRequest } from "../middlewares/validate-request.js";
-import { auditQuerySchema } from "../../shared/dist/audit.schema.js";
+import { auditQuerySchema } from "../../shared/dist/schemas/audit.schema.js";
 import { AuditLog } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireAny, requireOperation } from "../middlewares/require-permission.js";

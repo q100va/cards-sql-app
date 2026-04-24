@@ -73,7 +73,7 @@ export const OPERATIONS = [
     description: 'Unblock access to data of a country, region, district, or locality',
     objectName: 'OBJECT.TOPONYMS',
   },
-    {
+  {
     operation: 'DOWNLOAD_TEMPLATE_FOR_TOPONYM',
     object: 'toponyms',
     accessToAllOps: false,
@@ -627,22 +627,22 @@ export const OPERATIONS = [
     description: 'Permanently delete order',
     objectName: 'OBJECT.ORDERS',
   },
-/*   {
-    operation: 'BLOCK_VOLUNTEER',
-    object: 'orders',
-    accessToAllOps: false,
-    operationName: 'OPS.BLOCK.NAME',
-    description: 'Block a volunteer (temporary absence, refusal, or other reasons)',
-    objectName: 'OBJECT.ORDERS',
-  },
-  {
-    operation: 'UNBLOCK_VOLUNTEER',
-    object: 'orders',
-    accessToAllOps: false,
-    operationName: 'OPS.UNBLOCK.NAME',
-    description: 'Unblock a volunteer',
-    objectName: 'OBJECT.ORDERS',
-  }, */
+  /*   {
+      operation: 'BLOCK_VOLUNTEER',
+      object: 'orders',
+      accessToAllOps: false,
+      operationName: 'OPS.BLOCK.NAME',
+      description: 'Block a volunteer (temporary absence, refusal, or other reasons)',
+      objectName: 'OBJECT.ORDERS',
+    },
+    {
+      operation: 'UNBLOCK_VOLUNTEER',
+      object: 'orders',
+      accessToAllOps: false,
+      operationName: 'OPS.UNBLOCK.NAME',
+      description: 'Unblock a volunteer',
+      objectName: 'OBJECT.ORDERS',
+    }, */
 
   {
     operation: 'VIEW_LIMITED_ORDERS_LIST',
@@ -685,7 +685,23 @@ export const OPERATIONS = [
     object: 'occasions',
     accessToAllOps: false,
     operationName: 'OPS.DELETE.NAME',
-    description: 'Permanently delete a occasion',
+    description: 'Permanently delete an occasion',
+    objectName: 'OBJECT.OCCASIONS',
+  },
+  {
+    operation: 'BLOCK_OCCASION',
+    object: 'occasions',
+    accessToAllOps: false,
+    operationName: 'OPS.BLOCK.NAME',
+    description: 'Close an occasion',
+    objectName: 'OBJECT.OCCASIONS',
+  },
+  {
+    operation: 'UNBLOCK_OCCASION',
+    object: 'occasions',
+    accessToAllOps: false,
+    operationName: 'OPS.UNBLOCK.NAME',
+    description: 'Activate an occasion',
     objectName: 'OBJECT.OCCASIONS',
   },
   {
@@ -706,6 +722,94 @@ export const OPERATIONS = [
     objectName: 'OBJECT.OCCASIONS',
     flag: 'FULL',
   },
+
+  // --- Celebrators ---
+  {
+    operation: 'ALL_OPS_CELEBRATORS',
+    object: 'celebrators',
+    accessToAllOps: true,
+    operationName: 'OPS.ALL_OPS.NAME',
+    description: 'Full access to all celebrator operations',
+    objectName: 'OBJECT.CELEBRATORS',
+  },
+  {
+    operation: 'ADD_NEW_CELEBRATOR',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.ADD.NAME',
+    description: 'Create a new celebrator',
+    objectName: 'OBJECT.CELEBRATORS',
+  },
+  {
+    operation: 'DELETE_CELEBRATOR',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.DELETE.NAME',
+    description: 'Permanently delete an celebrator',
+    objectName: 'OBJECT.CELEBRATORS',
+  },
+  /*     {
+      operation: 'BLOCK_OCCASION',
+      object: 'occasions',
+      accessToAllOps: false,
+      operationName: 'OPS.BLOCK.NAME',
+      description: 'Close an occasion',
+      objectName: 'OBJECT.OCCASIONS',
+    },
+    {
+      operation: 'UNBLOCK_OCCASION',
+      object: 'occasions',
+      accessToAllOps: false,
+      operationName: 'OPS.UNBLOCK.NAME',
+      description: 'Activate an occasion',
+      objectName: 'OBJECT.OCCASIONS',
+    }, */
+  {
+    operation: 'CREATE_CELEBRATORS_LIST',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.BULK_CREATE.NAME',
+    description: 'Bulk create celebrators list',
+    objectName: 'OBJECT.CELEBRATORS',
+  },
+  {
+    operation: 'EDIT_CELEBRATORS_LIST',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.BULK_EDIT.NAME',
+    description: 'Bulk edit celebrators list',
+    objectName: 'OBJECT.CELEBRATORS',
+  },
+    {
+    operation: 'CLEAR_CELEBRATORS_LIST',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.BULK_CLEAR.NAME',
+    description: 'Bulk edit celebrators list',
+    objectName: 'OBJECT.CELEBRATORS',
+  },
+
+  {
+    operation: 'VIEW_LIMITED_CELEBRATORS_LIST',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
+    description: 'View celebrators list with limited access',
+    objectName: 'OBJECT.CELEBRATORS',
+    flag: 'LIMITED',
+  },
+  {
+    operation: 'VIEW_FULL_CELEBRATORS_LIST',
+    object: 'celebrators',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_FULL_LIST.NAME',
+    description: 'View celebrators list with full access',
+    objectName: 'OBJECT.CELEBRATORS',
+    flag: 'FULL',
+  },
+
+
+
 
 ];
 

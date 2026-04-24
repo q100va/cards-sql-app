@@ -5,7 +5,7 @@ import requireAuth from "../middlewares/check-auth.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import CustomError from "../shared/customError.js";
-import * as toponymSchemas from "../../shared/dist/toponym.schema.js";
+import * as toponymSchemas from "../../shared/dist/schemas/toponym.schema.js";
 import {
   findDuplicate,
   postProcessor,

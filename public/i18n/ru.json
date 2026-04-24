@@ -37,7 +37,8 @@
     "AUDIT": "Аудит",
     "PARTNERS": "Координаторы",
     "HOMES": "Интернаты",
-    "SENIORS": "Жители интернатов"
+    "SENIORS": "Жители интернатов",
+    "OCCASIONS": "Праздники и ДР"
   },
   "LANG": {
     "SWITCH": "Язык",
@@ -100,6 +101,137 @@
     "TABLE_OPERATION": "Операция",
     "TABLE_NAME_PLACEHOLDER": "2–50 символов",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 символов"
+  },
+  "OCCASION": {
+    "TABLE_TITLE": "Список поводов",
+    "TABLE_ADD_OCCASION": "Добавить повод",
+    "TABLE_EMPTY": "Поводы не найдены",
+    "TABLE_NAME": "Название",
+    "TABLE_DATE": "Дата",
+    "TABLE_MONTH": "Месяц",
+    "TABLE_YEAR": "Год",
+    "TABLE_TYPE": "Тип",
+    "TABLE_STATUS": "Статус",
+    "TABLE_ACTIONS": "Действия",
+    "TABLE_CLEAR": "Очистить",
+    "TABLE_SEARCH_PLACEHOLDER": "Поиск...",
+    "TABLE_SELECT_PLACEHOLDER": "Выберите...",
+    "TABLE_PAGE_REPORT": "Показаны записи с {first} по {last} из {totalRecords}",
+    "CARD_TITLE": "Новый повод",
+    "CARD_CLOSE": "Закрыть",
+    "CARD_LABEL_YEAR": "Год*",
+    "CARD_LABEL_TYPE": "Тип*",
+    "CARD_LABEL_MONTH": "Месяц*",
+    "CARD_LABEL_STATUS": "Статус*",
+    "CARD_SAVE_AND_EXIT": "Сохранить и выйти",
+
+    "MENU": {
+      "OPEN_OCCASION": "открыть",
+      "CLOSE_OCCASION": "закрыть",
+      "DELETE_OCCASION": "удалить",
+      "CREATE_LIST": "создать список",
+      "VIEW_LIST": "просмотреть список",
+      "CHECK_LIST": "проверить список",
+      "CLEAR_LIST": "очистить список"
+    },
+
+    "BIRTHDAY": {
+      "NAME": "Дни рождения"
+    },
+    "NEW_YEAR": {
+      "NAME": "Новый год",
+      "DATE": "1 января"
+    },
+    "23_FEBRUARY": {
+      "NAME": "23 февраля",
+      "DATE": "23 февраля"
+    },
+    "8_MARCH": {
+      "NAME": "8 марта",
+      "DATE": "8 марта"
+    },
+    "9_MAY": {
+      "NAME": "День Победы",
+      "DATE": "9 мая"
+    },
+    "EASTER": {
+      "NAME": "Easter",
+      "DATE": {
+        "2022": "24 апреля",
+        "2023": "16 апреля",
+        "2024": "5 мая",
+        "2025": "20 апреля",
+        "2026": "12 апреля",
+        "2027": "2 мая",
+        "2028": "16 апреля",
+        "2029": "8 апреля",
+        "2030": "28 апреля",
+        "2031": "13 апреля",
+        "2032": "2 мая",
+        "2033": "24 апреля",
+        "2034": "9 апреля",
+        "2035": "29 апреля",
+        "2036": "13 апреля",
+        "2037": "3 мая",
+        "2038": "25 апреля",
+        "2039": "10 апреля",
+        "2040": "29 апреля"
+      }
+    },
+    "MONTH": {
+      "JANUARY": {
+        "OPT": "Январь",
+        "NAME": "января"
+      },
+      "FEBRUARY": {
+        "OPT": "Февраль",
+        "NAME": "февраля"
+      },
+      "MARCH": {
+        "OPT": "Март",
+        "NAME": "марта"
+      },
+      "APRIL": {
+        "OPT": "Апрель",
+        "NAME": "апреля"
+      },
+      "MAY": {
+        "OPT": "Май",
+        "NAME": "мая"
+      },
+      "JUNE": {
+        "OPT": "Июнь",
+        "NAME": "июня"
+      },
+      "JULY": {
+        "OPT": "Июль",
+        "NAME": "июля"
+      },
+      "AUGUST": {
+        "OPT": "Август",
+        "NAME": "августа"
+      },
+      "SEPTEMBER": {
+        "OPT": "Сентябрь",
+        "NAME": "сентября"
+      },
+      "OCTOBER": {
+        "OPT": "Октябрь",
+        "NAME": "октября"
+      },
+      "NOVEMBER": {
+        "OPT": "Ноябрь",
+        "NAME": "ноября"
+      },
+      "DECEMBER": {
+        "OPT": "Декабрь",
+        "NAME": "декабря"
+      }
+    },
+    "STATUS": {
+      "OPEN": "открыт",
+      "CLOSED": "закрыт"
+    }
   },
   "ADDRESS_FILTER": {
     "LABEL_COUNTRY": "Страна",
@@ -835,7 +967,8 @@
     "PARTNERS": "Представители\nинтернатов",
     "SENIORS": "Жители\nинтернатов",
     "VOLUNTEERS": "Поздравляющие",
-    "ORDERS": "Заявки"
+    "ORDERS": "Заявки",
+    "OCCASIONS": "Праздники и ДР"
   },
   "OPS": {
     "ALL_OPS": {

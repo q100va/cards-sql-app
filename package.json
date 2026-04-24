@@ -69,6 +69,7 @@
     "pg-hstore": "^2.3.4",
     "pino": "^9.9.0",
     "pino-http": "^10.5.0",
+    "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primeng": "^19.0.10",
     "rate-limiter-flexible": "^7.3.0",

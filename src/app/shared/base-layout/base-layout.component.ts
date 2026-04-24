@@ -81,6 +81,16 @@ export class BaseLayoutComponent {
     },
     {
       params: {
+        codes: ['ALL_OPS_OCCASIONS'],
+        mode: 'all',
+      },
+      dataCy: 'nav-occasions',
+      icon: 'cake',
+      text: 'MENU.OCCASIONS',
+      link: '/occasions',
+    },
+    {
+      params: {
         codes: ['VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST'],
         mode: 'any',
       },
@@ -109,7 +119,7 @@ export class BaseLayoutComponent {
       text: 'MENU.HOMES',
       link: '/homes',
     },
-      {
+    {
       params: {
         codes: ['VIEW_LIMITED_SENIORS_LIST', 'VIEW_FULL_SENIORS_LIST'],
         mode: 'any',
