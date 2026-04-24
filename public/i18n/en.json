@@ -37,7 +37,8 @@
     "AUDIT": "Audit",
     "PARTNERS": "Partners",
     "HOMES": "Homes",
-    "SENIORS": "Residents"
+    "SENIORS": "Residents",
+    "OCCASIONS": "Occasions"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -100,6 +101,137 @@
     "TABLE_OPERATION": "Operation",
     "TABLE_NAME_PLACEHOLDER": "2–50 characters",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 characters"
+  },
+  "OCCASION": {
+    "TABLE_TITLE": "Occasions",
+    "TABLE_ADD_OCCASION": "Add occasion",
+    "TABLE_EMPTY": "No occasions found.",
+    "TABLE_NAME": "Name",
+    "TABLE_DATE": "Date",
+    "TABLE_MONTH": "Month",
+    "TABLE_YEAR": "Year",
+    "TABLE_TYPE": "Type",
+    "TABLE_STATUS": "Status",
+    "TABLE_ACTIONS": "Actions",
+    "TABLE_CLEAR": "Clear",
+    "TABLE_SEARCH_PLACEHOLDER": "Keyboard Search",
+    "TABLE_SELECT_PLACEHOLDER": "Any",
+    "TABLE_PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
+    "CARD_TITLE": "New occasion",
+    "CARD_CLOSE": "Close",
+    "CARD_LABEL_YEAR": "Year*",
+    "CARD_LABEL_TYPE": "Type*",
+    "CARD_LABEL_MONTH": "Month*",
+    "CARD_LABEL_STATUS": "Status*",
+    "CARD_SAVE_AND_EXIT": "Save and exit",
+
+    "MENU": {
+      "OPEN_OCCASION": "close",
+      "CLOSE_OCCASION": "open",
+      "DELETE_OCCASION": "delete",
+      "CREATE_LIST": "create list",
+      "VIEW_LIST": "view list",
+      "CHECK_LIST": "check list",
+      "CLEAR_LIST": "clear list"
+    },
+
+    "BIRTHDAY": {
+      "NAME": "Birthdays"
+    },
+    "NEW_YEAR": {
+      "NAME": "New Year",
+      "DATE": "January 1"
+    },
+    "23_FEBRUARY": {
+      "NAME": "Defender of the Fatherland Day",
+      "DATE": "February 23"
+    },
+    "8_MARCH": {
+      "NAME": "International Women's Day",
+      "DATE": "March 8"
+    },
+    "9_MAY": {
+      "NAME": "Victory Day",
+      "DATE": "May 8"
+    },
+    "EASTER": {
+      "NAME": "Easter",
+      "DATE": {
+        "2022": "April 17",
+        "2023": "April 9",
+        "2024": "March 31",
+        "2025": "April 20",
+        "2026": "April 5",
+        "2027": "March 28",
+        "2028": "April 16",
+        "2029": "April 1",
+        "2030": "April 21",
+        "2031": "April 13",
+        "2032": "March 28",
+        "2033": "April 17",
+        "2034": "April 9",
+        "2035": "March 25",
+        "2036": "April 13",
+        "2037": "April 5",
+        "2038": "April 25",
+        "2039": "April 10",
+        "2040": "April 1"
+      }
+    },
+    "MONTH": {
+      "JANUARY": {
+        "OPT": "January",
+        "NAME": "in January"
+      },
+      "FEBRUARY": {
+        "OPT": "February",
+        "NAME": "in February"
+      },
+      "MARCH": {
+        "OPT": "March",
+        "NAME": "in March"
+      },
+      "APRIL": {
+        "OPT": "April",
+        "NAME": "in April"
+      },
+      "MAY": {
+        "OPT": "May",
+        "NAME": "in May"
+      },
+      "JUNE": {
+        "OPT": "June",
+        "NAME": "in June"
+      },
+      "JULY": {
+        "OPT": "July",
+        "NAME": "in July"
+      },
+      "AUGUST": {
+        "OPT": "August",
+        "NAME": "in August"
+      },
+      "SEPTEMBER": {
+        "OPT": "September",
+        "NAME": "in September"
+      },
+      "OCTOBER": {
+        "OPT": "October",
+        "NAME": "in October"
+      },
+      "NOVEMBER": {
+        "OPT": "November",
+        "NAME": "in November"
+      },
+      "DECEMBER": {
+        "OPT": "December",
+        "NAME": "in December"
+      }
+    },
+    "STATUS": {
+      "OPEN": "open",
+      "CLOSED": "closed"
+    }
   },
   "ADDRESS_FILTER": {
     "LABEL_COUNTRY": "Country",
@@ -835,7 +967,8 @@
     "PARTNERS": "Institution\nrepresentatives",
     "SENIORS": "Residents",
     "VOLUNTEERS": "Volunteers",
-    "ORDERS": "Orders"
+    "ORDERS": "Orders",
+    "OCCASIONS": "Occasions"
   },
   "OPS": {
     "ALL_OPS": {

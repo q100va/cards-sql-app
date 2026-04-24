@@ -21,6 +21,7 @@ import SeniorsApi from './routes/seniors-api.js';
 import PartnersApi from './routes/partners-api.js';
 import VolunteersApi from './routes/volunteers-api.js';
 import RolesApi from './routes/roles-api.js';
+import OccasionsApi from './routes/occasions-api.js';
 import AuditApi from './routes/audit-api.js';
 import ClientLogsApi from './routes/client-logs.js';
 import AuthApi from './routes/auth-api.js';
@@ -36,7 +37,8 @@ import {
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
   VolunteerSubscription, VolunteerCooperation, Institute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
-  Senior, SeniorOutdatedName, SeniorSearch
+  Senior, SeniorOutdatedName, SeniorSearch,
+  Occasion
 } from './models/index.js';
 import { corsMiddleware } from './cors.js';
 
@@ -95,6 +97,7 @@ app.use('/api/seniors', SeniorsApi);
 app.use('/api/partners', PartnersApi);
 app.use('/api/volunteers', VolunteersApi);
 app.use('/api/roles', RolesApi);
+app.use('/api/occasions', OccasionsApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/client-logs', ClientLogsApi);
 app.use('/api/auth', AuthApi);
@@ -157,6 +160,7 @@ export async function initInfrastructure() {
   await Senior.sync(syncOpts);
   await SeniorOutdatedName.sync(syncOpts);
   await SeniorSearch.sync(syncOpts);
+  await Occasion.sync(syncOpts);
 
   initAuditHooks(sequelize);
 

@@ -9,7 +9,7 @@ export default {
   testMatch: ['**/?(*.)+(spec|test).[jt]s?(x)'],
   testPathIgnorePatterns: [
     '/node_modules/',
-    '/shared/dist/',
+    '/shared/dist/schemas/',
     '/src/',
   ],
   moduleFileExtensions: ['js', 'mjs', 'cjs', 'ts'],

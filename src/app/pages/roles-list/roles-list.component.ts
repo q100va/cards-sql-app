@@ -23,12 +23,12 @@ import { ConfirmationService } from 'primeng/api';
 // App services, utils, schemas
 import { CreateRoleDialogComponent } from './create-role-dialog/create-role-dialog.component';
 import { RoleService } from '../../services/role.service';
-import { Operation, Role, roleDraftSchema } from '@shared/schemas/role.schema';
+import { Operation, Role, roleDraftSchema } from '../../../../shared/schemas/role.schema';
 import { sanitizeText } from '../../utils/sanitize-text';
 import { MessageWrapperService } from '../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
-import { RoleAccess } from '../../../../shared/dist/role.schema';
+import { RoleAccess } from '../../../../shared/schemas/role.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
 
 @Component({

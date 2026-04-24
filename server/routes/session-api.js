@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { requireAccess } from '../middlewares/require-access.js';
 import { validateRequest } from '../middlewares/validate-request.js';
-import { signInReqSchema } from '../../shared/dist/auth.schema.js';
+import { signInReqSchema } from '../../shared/dist/schemas/auth.schema.js';
 import { auditAuthFail } from '../logging/audit-auth.js';
 import { verify, DUMMY_ARGON2_HASH } from '../controllers/passwords.mjs';
 import { signInIpLimiter, signInUserLimiter, resetKey, loginKey, signInUaLimiter, signInGlobalLimiter } from '../controllers/rate-limit.js';

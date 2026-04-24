@@ -209,7 +209,7 @@ async function loadApp({
     process.env.JWT_REFRESH_SECRET = REFRESH_SECRET;
 
     jest.unstable_mockModule('../../middlewares/validate-request.js', () => validateRequestMock);
-    jest.unstable_mockModule('../../../shared/dist/auth.schema.js', () => signInSchemaMock);
+    jest.unstable_mockModule('../../../shared/dist/schemas/auth.schema.js', () => signInSchemaMock);
     jest.unstable_mockModule('../../logging/audit-auth.js', () => auditAuthMock);
     jest.unstable_mockModule('../../controllers/passwords.mjs', () => passwords);
     jest.unstable_mockModule('../../controllers/rate-limit.js', () => rateLimiter);

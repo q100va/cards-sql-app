@@ -1,0 +1,279 @@
+<mat-card class="occasions-list-card" appearance="outlined">
+  <!-- Header -->
+  <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
+    <mat-grid-tile colspan="4"></mat-grid-tile>
+
+    <!-- Title -->
+    <mat-grid-tile colspan="2">
+      <mat-card-header>
+        <mat-card-title>{{ 'OCCASION.TABLE_TITLE' | translate }}</mat-card-title>
+      </mat-card-header>
+    </mat-grid-tile>
+
+    <mat-grid-tile colspan="3"></mat-grid-tile>
+
+    <!-- Add occasion -->
+    <mat-grid-tile colspan="1">
+      <mat-card-actions>
+        <div class="bottom-right">
+          <button data-cy="add-occasion-btn" mat-icon-button [title]="'OCCASION.TABLE_ADD_OCCASION' | translate"
+            (click)="onAddOccasionClick()" *hasOp="{codes:['ADD_NEW_OCCASION'], mode:'all'}">
+            <mat-icon fontSet="material-symbols-outlined">cake_add</mat-icon>
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-grid-tile>
+  </mat-grid-list>
+
+  <!-- Content -->
+  <mat-card-content>
+
+    <p-table #dt showGridlines [value]="filteredOccasions" dataKey="id" [rowHover]="true" [rows]="10"
+      [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 25, 50]" [loading]="isLoading()" [paginator]="true"
+      [currentPageReportTemplate]="translateService.instant('OCCASION.TABLE_PAGE_REPORT')" [filterDelay]="0"
+      [globalFilterFields]="['name', 'date', 'month', 'year', 'type', 'status']" [customSort]="true"
+      (sortFunction)="customSort($event)">
+      <ng-template #caption>
+        <div class="caption">
+          <p-button [outlined]="true" icon="pi pi-filter-slash"
+            [label]="translateService.instant('OCCASION.TABLE_CLEAR')" (click)="clear(dt)" />
+          <p-iconField iconPosition="left">
+            <p-inputIcon>
+              <i class="pi pi-search"></i>
+            </p-inputIcon>
+            <input pInputText type="text" [(ngModel)]="searchValue" (input)="onSearch(searchValue || '')"
+              [placeholder]="translateService.instant('OCCASION.TABLE_SEARCH_PLACEHOLDER')" />
+          </p-iconField>
+        </div>
+      </ng-template>
+      <ng-template #header>
+        <tr>
+          <!--         <th style="width: 4rem">
+          <p-tableHeaderCheckbox />
+        </th> -->
+
+          <th pSortableColumn="name" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_NAME' | translate }}
+                <p-sortIcon field="name" />
+              </div>
+
+              <!--      <p-columnFilter matchMode="translatedContains" type="text" field="id" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto" placeholder="Type to search and enter" filterOn="enter">
+              </p-columnFilter> -->
+
+              <p-columnFilter matchMode="translatedContains" type="text" field="id" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" [class.active-filter]="nameFilterValue().length > 0" class="ml-auto">
+                <ng-template #filter let-filter="filterCallback">
+                  <input pInputText type="text" [ngModel]="nameFilterValue()"
+                    (ngModelChange)="onNameFilterChange($event, filter)"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SEARCH_PLACEHOLDER')" />
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="date" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_DATE' | translate }}
+                <p-sortIcon field="date" />
+              </div>
+              <p-columnFilter [class.active-filter]="selectedDates().length > 0" field="date" matchMode="in"
+                display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"
+                [showApplyButton]="false" [showClearButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedDates" [options]="(dateOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedDates, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label}}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="month" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_MONTH' | translate }}
+                <p-sortIcon field="month" />
+              </div>
+              <p-columnFilter [class.active-filter]="selectedMonths().length > 0" field="month" matchMode="in"
+                display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"
+                [showApplyButton]="false" [showClearButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedMonths" [options]="(monthOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedMonths, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="year" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_YEAR' | translate }}
+                <p-sortIcon field="year" />
+              </div>
+              <p-columnFilter [class.active-filter]="selectedYears().length > 0" field="year" matchMode="in"
+                display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"
+                [showApplyButton]="false" [showClearButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedYears" [options]="yearOptions"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedYears, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="type" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_TYPE' | translate }}
+                <p-sortIcon field="type" />
+              </div>
+              <p-columnFilter [class.active-filter]="selectedTypes().length > 0" field="type" matchMode="in"
+                display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"
+                [showApplyButton]="false" [showClearButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedTypes" [options]="(typeOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedTypes, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="status" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_STATUS' | translate }}
+                <p-sortIcon field="status" />
+              </div>
+              <p-columnFilter [class.active-filter]="selectedStatuses().length > 0" field="status" matchMode="in"
+                display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"
+                [showApplyButton]="false" [showClearButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedStatuses" [options]="(statusOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedStatuses, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th style="min-width: 3rem">
+            <div class="header-cell">
+              {{ 'OCCASION.TABLE_ACTIONS' | translate }}
+            </div>
+          </th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-occasion>
+        <tr class="p-selectable-row">
+          <!--     <td>
+          <p-tableCheckbox [value]="customer" />
+        </td> -->
+          <td>
+            {{ getOccasionName(occasion.id) }}
+          </td>
+          <td>
+            {{ occasion.date | translate}}
+          </td>
+          <td>
+            {{ occasion.month | translate}}
+          </td>
+          <td>
+            {{ occasion.year | translate}}
+          </td>
+          <td>
+            {{ occasion.type | translate}}
+          </td>
+          <td>
+            {{ occasion.status | translate}}
+          </td>
+          <td>
+            <div class="center">
+              <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'TABLE.MENU.OPEN_LIST_TITLE'  | translate"
+                appBlurOnClick>
+                <mat-icon>
+                  keyboard_double_arrow_down
+                </mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+
+                <button mat-menu-item [disabled]="occasion.status === 'OCCASION.STATUS.OPEN'"
+                  (click)="onOpenOccasionClick(occasion.id)" *hasOp="{codes:['UNBLOCK_OCCASION'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">lock_open</mat-icon>
+                  <span>{{'OCCASION.MENU.OPEN_OCCASION' | translate}}</span>
+                </button>
+                <button mat-menu-item [disabled]="occasion.status === 'OCCASION.STATUS.CLOSED'"
+                  (click)="onCloseOccasionClick(occasion.id)" *hasOp="{codes:['BLOCK_OCCASION'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">lock</mat-icon>
+                  <span>{{'OCCASION.MENU.CLOSE_OCCASION' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onDeleteOccasionClick(occasion)"
+                  *hasOp="{codes:['DELETE_OCCASION'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">delete_outlined</mat-icon>
+                  <span>{{'OCCASION.MENU.DELETE_OCCASION' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onCreateListClick(occasion.id)"
+                  *hasOp="{codes:['CREATE_CELEBRATORS_LIST'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">list_alt_add</mat-icon>
+                  <span>{{'OCCASION.MENU.CREATE_LIST' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onOpenListClick(occasion.id)"
+                  *hasOp="{codes:['VIEW_LIMITED_CELEBRATORS_LIST', 'VIEW_FULL_CELEBRATORS_LIST'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">list_alt</mat-icon>
+                  <span>{{'OCCASION.MENU.VIEW_LIST' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onCheckListClick(occasion.id)"
+                  *hasOp="{codes:['EDIT_CELEBRATORS_LIST'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">list_alt_check</mat-icon>
+                  <span>{{'OCCASION.MENU.CHECK_LIST' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onClearListClick(occasion.id)"
+                  *hasOp="{codes:['CLEAR_CELEBRATORS_LIST'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">text_ad_off</mat-icon>
+                  <span>{{'OCCASION.MENU.CLEAR_LIST' | translate}}</span>
+                </button>
+
+              </mat-menu>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">{{ "OCCASION.TABLE_EMPTY" | translate }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </mat-card-content>
+</mat-card>

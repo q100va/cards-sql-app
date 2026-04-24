@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import logger from '../logging/logger.js';
 import { validateRequest } from '../middlewares/validate-request.js';
-import { clientLogBatchSchema } from '../../shared/dist/client-log.schema.js';
+import { clientLogBatchSchema } from '../../shared/dist/schemas/client-log.schema.js';
 
 const router = Router();
 

@@ -6,7 +6,7 @@ import {RolePermission} from "../models/index.js";
 import { OPERATIONS } from "../shared/operations.js";
 import CustomError from "../shared/customError.js";
 import { validateRequest } from "../middlewares/validate-request.js";
-import * as roleSchemas from "../../shared/dist/role.schema.js";
+import * as roleSchemas from "../../shared/dist/schemas/role.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import requireAuth from '../middlewares/check-auth.js';
 import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';

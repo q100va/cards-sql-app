@@ -10,7 +10,7 @@ import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
-import * as userSchemas from "../../shared/dist/user.schema.js";
+import * as userSchemas from "../../shared/dist/schemas/user.schema.js";
 import { hashPassword } from "../controllers/passwords.mjs";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { verify } from '../controllers/passwords.mjs';
