@@ -36,6 +36,7 @@ import SeniorModel from './senior.js';
 import SeniorOutdatedNameModel from './senior-outdated-name.js';
 import SeniorSearchModel from './senior-search.js';
 import OccasionModel from './occasion.js';
+import RecipientModel from './recipient.js';
 
 const AuditLog = AuditLogModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
@@ -71,6 +72,7 @@ const Senior = SeniorModel(sequelize);
 const SeniorOutdatedName = SeniorOutdatedNameModel(sequelize);
 const SeniorSearch = SeniorSearchModel(sequelize);
 const Occasion = OccasionModel(sequelize);
+const Recipient = RecipientModel(sequelize);
 
 User.hasMany(UserContact, {
   as: 'contacts',
@@ -471,7 +473,25 @@ Senior.hasMany(SeniorSearch, {
 SeniorSearch.belongsTo(Senior, {
   foreignKey: 'seniorId',
 });
-//TODO: Occasion - Orders, Occasion - List
+//TODO: Recipients - Orders
+
+Occasion.hasMany(Recipient, {
+  foreignKey: 'occasionId',
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE'
+});
+Recipient.belongsTo(Occasion, {
+  foreignKey: 'occasionId',
+});
+
+Senior.hasMany(Recipient, {
+  foreignKey: 'seniorId',
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE'
+});
+Recipient.belongsTo(Senior, {
+  foreignKey: 'seniorId',
+});
 
 export {
   AuditLog, RefreshToken,
@@ -482,6 +502,6 @@ export {
   VolunteerSubscription, VolunteerCooperation, Institute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
   Senior, SeniorOutdatedName, SeniorSearch,
-  Occasion
+  Occasion, Recipient
 };
 
