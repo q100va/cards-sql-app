@@ -33,6 +33,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatListModule, MatListOption } from '@angular/material/list';
 
 // Services
 import { OccasionService } from '../../../services/occasion.service';
@@ -46,21 +47,16 @@ import { switchMap, finalize } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Validation
-import {
-  monthIdSchema,
-  occasionDraftSchema,
-} from '../../../../../shared/schemas/occasion.schema';
+import { Occasion } from '../../../../../shared/schemas/occasion.schema';
 import { zodValidator } from '../../../utils/zod-validator';
-
-import {
-  MONTHS,
-  STATUSES,
-  TYPES,
-  YEARS,
-} from '../../../../../shared/constants/occasions';
 
 //Directives
 import { HasOpDirective } from '../../../directives/has-op.directive';
+import { RecipientService } from '../../../services/recipient.service';
+import { HomeService } from '../../../services/home.service';
+import { RegionWithHomes } from '../../../../../shared/schemas/home.schema';
+import { SeniorService } from '../../../services/senior.service';
+import { RecipientsShortList } from '../../../../../shared/schemas/recipient.schema';
 
 export function occasionMonthByTypeValidator(
   birthdayTypeId: number,
@@ -102,119 +98,92 @@ export type OccasionFormControls = {
     MatIconModule,
     MatSelectModule,
     MatRadioModule,
+    MatListModule,
     // Angular forms
     FormsModule,
     ReactiveFormsModule,
     TranslateModule,
     HasOpDirective,
   ],
-  templateUrl: './create-occasion-dialog.component.html',
-  styleUrls: ['./create-occasion-dialog.component.css'],
+  templateUrl: './create-recipient-dialog.component.html',
+  styleUrls: ['./create-recipient-dialog.component.css'],
   encapsulation: ViewEncapsulation.None,
 })
-export class CreateOccasionDialogComponent {
+export class CreateRecipientDialogComponent {
   // Dependencies
   private readonly destroyRef = inject(DestroyRef);
-  readonly dialogRef = inject(MatDialogRef<CreateOccasionDialogComponent>);
-  readonly data = inject(MAT_DIALOG_DATA);
+  readonly dialogRef = inject(MatDialogRef<CreateRecipientDialogComponent>);
+  readonly data = inject<Occasion>(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly occasionService = inject(OccasionService);
+  private readonly homeService = inject(HomeService);
+  private readonly recipientService = inject(RecipientService);
+  private readonly seniorService = inject(SeniorService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translateService = inject(TranslateService);
 
   // UI state
   isLoading = false;
-  occasionName = '';
-  MONTHS = MONTHS;
-  TYPES = TYPES;
-  YEARS = YEARS;
-  STATUSES = STATUSES;
-
-  // Form controls
-
-  occasionForm = new FormGroup<OccasionFormControls>({
-    occasionYear: new FormControl<number | null>(null, {
-      nonNullable: true,
-      validators: [zodValidator(occasionDraftSchema.shape.year)],
-    }),
-    occasionType: new FormControl<number | null>(null, [
-      zodValidator(occasionDraftSchema.shape.type),
-    ]),
-    occasionStatus: new FormControl<number>(1, {
-      nonNullable: true,
-      validators: [zodValidator(occasionDraftSchema.shape.status)],
-    }),
-  });
-
-  get occasionMonth(): FormControl<number | null> | null {
-    return this.occasionForm.get('occasionMonth') as FormControl<
-      number | null
-    > | null;
-  }
-
-  private createOccasionMonthControl(): FormControl<number | null> {
-    return new FormControl<number | null>(null, [zodValidator(monthIdSchema)]);
-  }
-
-  private addOccasionMonthControl(): void {
-    if (!this.occasionForm.contains('occasionMonth')) {
-      this.occasionForm.addControl(
-        'occasionMonth',
-        this.createOccasionMonthControl(),
-      );
-    }
-  }
-
-  private removeOccasionMonthControl(): void {
-    if (this.occasionForm.contains('occasionMonth')) {
-      this.occasionForm.removeControl('occasionMonth');
-    }
-  }
+  nursingHomeControl = new FormControl<number | null>(null);
+  homeGroups: RegionWithHomes = [];
+  seniors: RecipientsShortList = [];
 
   ngOnInit(): void {
-    const birthdayTypeId = 1;
+    this.isLoading = true;
+    this.homeService
+      .getHomeGroups()
+      .pipe(
+        finalize(() => (this.isLoading = false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.homeGroups = res.data;
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'CreateRecipientDialog',
+            stage: 'getHomeGroups',
+            occasionId: this.data.id,
+          }),
+      });
+  }
 
-    this.occasionForm.controls.occasionType.valueChanges.subscribe((type) => {
-      if (type === birthdayTypeId) {
-        this.addOccasionMonthControl();
-      } else {
-        this.removeOccasionMonthControl();
-      }
-    });
+  onHomeSelected(homeId: number) {
+    this.seniors = [];
+    if (homeId === null || homeId === undefined) return;
+    this.isLoading = true;
+    this.seniorService
+      .getSeniorsForOccasion(this.data.id, homeId)
+      .pipe(
+        finalize(() => (this.isLoading = false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.seniors = res.data;
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'CreateRecipientDialog',
+            stage: 'onHomeSelected',
+            occasionId: this.data.id,
+            homeId,
+          }),
+      });
   }
 
   // Handle submit
-  public onCreateOccasionClick(): void {
-    if (
-      this.occasionForm.controls.occasionType.value == null ||
-      this.occasionForm.controls.occasionYear.value == null
-    )
-      return;
-
-    const type = this.occasionForm.controls.occasionType.value;
-    const year = this.occasionForm.controls.occasionYear.value;
-    const month = this.occasionForm.controls.occasionMonth
-      ? this.occasionForm.controls.occasionMonth.value
-      : null;
-    const status = this.occasionForm.controls.occasionStatus.value;
+  public onCreateRecipientsClick(options: MatListOption[]): void {
+    if (this.nursingHomeControl.value == null || options.length === 0) return;
 
     this.isLoading = true;
 
-    this.occasionService
-      .checkOccasionData({ type, year, month })
+   const recipientsIds = options.map(o => o.value);
+console.log('recipientsIds', recipientsIds);
+    this.recipientService
+      .createRecipients(recipientsIds, this.data.id)
       .pipe(
-        switchMap((res) => {
-          if (res.data) {
-            return EMPTY;
-          } else {
-            return this.occasionService.createOccasion({
-              type,
-              month,
-              year,
-              status,
-            });
-          }
-        }),
         finalize(() => (this.isLoading = false)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -226,13 +195,11 @@ export class CreateOccasionDialogComponent {
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
-            source: 'CreateOccasionDialog',
-            stage: 'createOccasion',
-            object: {
-              type,
-              month,
-              year,
-              status,
+            source: 'CreateRecipientDialog',
+            stage: 'createRecipient',
+            data: {
+              occasion: this.data,
+              home: this.nursingHomeControl.value,
             },
           }),
       });

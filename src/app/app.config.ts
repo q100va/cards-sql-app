@@ -78,7 +78,8 @@ export const appConfig: ApplicationConfig = {
 
       const saved = localStorage.getItem('lang') as 'ru' | 'en' | null;
       const browser = t.getBrowserLang() as 'ru' | 'en' | undefined;
-      const lang = saved ?? (browser === 'ru' ? 'ru' : 'en');
+      //const lang = saved ?? (browser === 'ru' ? 'ru' : 'en');
+      const lang = saved ?? 'ru';
 
       t.setFallbackLang('ru');
       await firstValueFrom(t.use(lang));

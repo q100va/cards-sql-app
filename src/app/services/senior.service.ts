@@ -35,6 +35,7 @@ import {
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
+import { recipientsShortSchema } from '../../../shared/schemas/recipient.schema';
 
 export interface SeniorMainService extends OwnerMainService<
   Senior,
@@ -267,6 +268,22 @@ export class SeniorService implements SeniorMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  getSeniorsForOccasion(
+    occasionId: number,
+    homeId: number,
+  ): Observable<ApiResponse<{ id: number; fullData: string }[]>> {
+    return this.http
+      .get<RawApiResponse>(
+        `${this.BASE_URL}/get-seniors-for-occasion/${occasionId}/${homeId}`,
+      )
+      .pipe(
+        validateResponse(
+          recipientsShortSchema
+        ),
         catchError(this.handleError),
       );
   }

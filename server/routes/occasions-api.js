@@ -143,6 +143,33 @@ router.get(
   }
 );
 
+router.get(
+  "/get-occasion-by-id/:id",
+  requireAuth,
+  requireAny('VIEW_LIMITED_RECIPIENTS_LIST', 'VIEW_FULL_RECIPIENTS_LIST'),
+  validateRequest(occasionSchemas.occasionIdSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      // Occasions
+       console.log('id', req.params.id);
+      const draft = await Occasion.findByPk(req.params.id, {
+        attributes: {
+          exclude: [
+            'createdAt',
+            'updatedAt']
+        },
+      });
+      const occasion = transformOccasionDisplayParts(draft);
+      res
+        .status(200)
+        .send({ data:  occasion });
+    } catch (error) {
+      error.code = 'ERRORS.OCCASION.NOT_FOUND';
+      next(error);
+    }
+  }
+);
+
 router.delete(
   "/delete-occasion/:id",
   requireAuth,

@@ -74,7 +74,7 @@ export class OccasionService {
       );
   }
 
-  // Get occasions and options (for the table).
+  // Get occasions.
   getOccasions(): Observable<
     ApiResponse<{ occasions: Occasion[]; options: Options }>
   > {
@@ -86,42 +86,11 @@ export class OccasionService {
       );
   }
 
-  /*   // Get id/name pairs for dropdowns.
-  getOccasionsNamesList(): Observable<ApiResponse<{ id: number; name: string }[]>> {
+  getOccasionById(id: number): Observable<ApiResponse<Occasion>> {
     return this.http
-      .get<RawApiResponse>(
-        `${this.BASE_URL}/get-occasions-names-list`
-      )
-      .pipe(
-        validateResponse(occasionsNamesListSchema),
-        catchError(this.handleError)
-      );
-  } */
-  /*
-  // Check if a occasion can be deleted (returns usernames string or empty).
-  checkPossibilityToDeleteOccasion(id: number): Observable<ApiResponse<number>> {
-    return this.http
-      .get<RawApiResponse>(
-        `${this.BASE_URL}/check-occasion-before-delete/${encodeURIComponent(
-          String(id)
-        )}`
-      )
-      .pipe(
-        // validateResponse(z.number().int().positive()),
-        validateNoSchemaResponse<number>('isNumber'),
-        this.msgWrapper.messageTap(
-          'warn',
-          (res) => ({
-            source: 'OccasionsList',
-            stage: 'checkPossibilityToDeleteOccasion',
-            roleId: id,
-            amountOfUsers: res.data,
-          }),
-          (res) => ({ count: res.data })
-        ),
-        catchError(this.handleError)
-      );
-  } */
+      .get<RawApiResponse>(`${this.BASE_URL}/get-occasion-by-id/${id}`)
+      .pipe(validateResponse(occasionSchema), catchError(this.handleError));
+  }
 
   // Delete occasion by id.
   deleteOccasion(id: number): Observable<ApiResponse<null>> {
@@ -136,17 +105,17 @@ export class OccasionService {
         catchError(this.handleError),
       );
   }
-  // Delete occasion by id.
-  editOccasionStatus(id: number, status: number): Observable<ApiResponse<null>> {
+  // Edit occasion by id.
+  editOccasionStatus(
+    id: number,
+    status: number,
+  ): Observable<ApiResponse<null>> {
     console.log('id', id);
     return this.http
-      .patch<RawApiResponse>(
-        `${this.BASE_URL}/edit-occasion/`,
-        {
+      .patch<RawApiResponse>(`${this.BASE_URL}/edit-occasion/`, {
         id,
         status,
-      }
-      )
+      })
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),

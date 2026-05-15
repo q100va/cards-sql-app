@@ -1289,6 +1289,13 @@ export declare const homesSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
+export declare const regionWithHomesSchema: z.ZodArray<z.ZodObject<{
+    regionName: z.ZodString;
+    homes: z.ZodArray<z.ZodObject<{
+        id: z.ZodNumber;
+        homeName: z.ZodString;
+    }, z.core.$strip>>;
+}, z.core.$strip>>;
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
 export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
@@ -1300,4 +1307,5 @@ export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;
+export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
 export {};

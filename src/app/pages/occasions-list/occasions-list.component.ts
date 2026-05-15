@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -36,6 +37,8 @@ import { OccasionService } from '../../services/occasion.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, finalize, map, Observable, switchMap } from 'rxjs';
 import { Occasion } from '../../../../shared/schemas/occasion.schema';
+import { RecipientService } from '../../services/recipient.service';
+import { CheckResultDialogComponent } from './check-result-dialog/check-result-dialog.component';
 
 @Component({
   selector: 'app-occasions-list',
@@ -69,10 +72,12 @@ export class OccasionsListComponent implements OnInit {
   // Dependencies
   private readonly destroyRef = inject(DestroyRef);
   private readonly occasionService = inject(OccasionService);
+  private readonly recipientService = inject(RecipientService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly filterService = inject(FilterService);
   private readonly dialog = inject(MatDialog);
   private readonly msgWrapper = inject(MessageWrapperService);
+  private readonly router = inject(Router);
   readonly translateService = inject(TranslateService);
 
   isLoading = signal<boolean>(false);
@@ -247,7 +252,7 @@ export class OccasionsListComponent implements OnInit {
       let value1;
       let value2;
 
-      if (event.field === 'year') {
+      if (event.field === 'year' || event.field === 'amount') {
         value1 = a[event.field!];
         value2 = b[event.field!];
         return ((value1 ?? 0) - (value2 ?? 0)) * (event.order ?? 1);
@@ -406,9 +411,95 @@ export class OccasionsListComponent implements OnInit {
           }),
       });
   }
-  //TODO:
-  onOpenListClick(id: number): void {}
-  onCreateListClick(id: number): void {}
-  onCheckListClick(id: number): void {}
-  onClearListClick(id: number): void {}
+
+  onOpenListClick(id: number): void {
+    console.log('occasionId:', id);
+    this.router.navigate(['/recipients', id]);
+  }
+  onCreateListClick(id: number): void {
+    this.recipientService
+      .createList(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadOccasions();
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OccasionsList',
+            stage: 'onCreateListClick',
+            occasionId: id,
+          }),
+      });
+  }
+
+  onClearListClick(id: number): void {
+    this.confirmationService.confirm({
+      message: this.translateService.instant(
+        'PRIME_CONFIRM.CLEAR_LIST_MESSAGE',
+        {
+          name: this.getOccasionName(id),
+        },
+      ),
+      header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+      },
+      acceptButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => this.clearList(id),
+    });
+  }
+  private clearList(id: number): void {
+    this.recipientService
+      .clearList(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadOccasions();
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OccasionsList',
+            stage: 'clearList',
+            occasionId: id,
+          }),
+      });
+  }
+
+  onCheckListClick(id: number): void {
+    this.recipientService
+      .checkList(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          console.log('res.data', res.data);
+          const dialogRef = this.dialog.open(CheckResultDialogComponent, {
+            disableClose: true,
+            minWidth: '400px',
+            height: 'auto',
+            data: res.data
+          });
+
+          dialogRef
+            .afterClosed()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+              this.loadOccasions();
+            });
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OccasionsList',
+            stage: 'clearList',
+            occasionId: id,
+          }),
+      });
+  }
 }

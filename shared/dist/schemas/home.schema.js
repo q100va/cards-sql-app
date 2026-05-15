@@ -550,3 +550,10 @@ export const homesSchema = z
     length: z.coerce.number().int().min(0),
 })
     .strict();
+export const regionWithHomesSchema = z.array(z.object({
+    regionName: z.string(),
+    homes: z.array(z.object({
+        id: z.number().int(),
+        homeName: z.string(),
+    })),
+}));

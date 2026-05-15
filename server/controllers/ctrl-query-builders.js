@@ -254,3 +254,189 @@ export async function buildAddressOwnerIdSubquery(kind, addresses, includeOutdat
     )`
   );
 }
+
+
+//for recipients
+
+const orderKeys = {
+  fullName: () => "fullNameSnapshot",
+  birthDay: () => "daySnapshot",
+  birthMonth: () => "monthSnapshot",
+  birthYear: () => "yearSnapshot",
+  plusAmount: () => "plusAmount",
+  category: () => "category",
+  specialComment: () => "specialComment",
+  regionName: () => ([
+    { model: Senior, as: 'senior' },
+    { model: Home, as: 'home' },
+    { model: HomeAddress, as: 'activeAddress' },
+    { model: Region, as: 'region' },
+    'name',
+  ]),
+  homeName: () => ([
+    { model: Senior, as: 'senior' },
+    { model: Home, as: 'home' },
+    'homeName',
+  ])
+};
+
+const whereKeys = {
+  fullName: () => "fullNameSnapshot",
+  birthDay: () => "daySnapshot",
+  birthMonth: () => "monthSnapshot",
+  birthYear: () => "yearSnapshot",
+  plusAmount: () => "plusAmount",
+  category: () => "category",
+  specialComment: () => "specialComment",
+  regionName: () => "name",
+  homeName: () => "homeName",
+};
+
+export function buildOrderField(field) {
+  if (!field) return "homeIdSnapshot";
+  const keyFn = orderKeys[field];
+  if (keyFn)
+    return keyFn();
+  /*
+      specialComment
+      category
+      acceptableForSchool
+      isAbsent
+ */
+  return field;
+}
+
+const OPERATIONS = {
+  equals: Op.eq,
+  notEquals: Op.ne,
+  lt: Op.lt,
+  lte: Op.lte,
+  gt: Op.gt,
+  gte: Op.gte,
+};
+
+
+export function applyNumericFilter(where, filters, field) {
+  const fieldFilters = filters[field];
+  if (!fieldFilters || !fieldFilters.length) return;
+  const keyFn = whereKeys[field];
+  // 1 условие
+  if (fieldFilters.length === 1) {
+    const op = OPERATIONS[fieldFilters[0].matchMode];
+    const value = Number(fieldFilters[0].value);
+
+    if (!op) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
+    }
+
+    where[keyFn()] = { [op]: value };
+    return;
+  }
+
+  // 2 условия (AND / OR)
+  const operator =
+    fieldFilters[0].operator === 'and' ? Op.and : Op.or;
+
+  const conditions = fieldFilters.map((f) => {
+    const op = OPERATIONS[f.matchMode];
+    const value = Number(f.value);
+    if (!op) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
+    }
+    return { [op]: value };
+  });
+
+  where[keyFn()] = {
+    [operator]: conditions,
+  };
+}
+
+
+
+function escapeLikeValue(value) {
+  return String(value).replace(/([_%\\])/g, '\\$1');
+}
+
+export function applyStringFilter(where, filters, field) {
+  const OPERATIONS = {
+    contains: Op.iLike,
+    notContains: Op.notILike,
+    equals: Op.eq,
+    notEquals: Op.ne,
+    startsWith: Op.iLike,
+    endsWith: Op.iLike,
+  };
+
+  const fieldFilters = filters[field];
+
+  if (!fieldFilters?.length) return;
+
+  const buildCondition = (f) => {
+    const op = OPERATIONS[f.matchMode];
+
+    if (!op) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
+    }
+
+    const rawValue = String(f.value ?? '').trim();
+
+    if (!rawValue) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_VALUE', 400);
+    }
+
+    const escaped = escapeLikeValue(rawValue);
+
+    switch (f.matchMode) {
+      case 'contains':
+      case 'notContains':
+        return { [op]: `%${escaped}%` };
+
+      case 'startsWith':
+        return { [op]: `${escaped}%` };
+
+      case 'endsWith':
+        return { [op]: `%${escaped}` };
+
+      case 'equals':
+      case 'notEquals':
+        return { [op]: rawValue };
+
+      default:
+        throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
+    }
+  };
+  const keyFn = whereKeys[field];
+
+  if (fieldFilters.length === 1) {
+    where[keyFn()] = buildCondition(fieldFilters[0]);
+    return;
+  }
+
+  const operator = fieldFilters[0].operator === 'and' ? Op.and : Op.or;
+
+  where[keyFn()] = {
+    [operator]: fieldFilters.map(buildCondition),
+  };
+}
+
+export function buildGlobalSearchWhere(search) {
+  const raw = String(search ?? '').trim();
+
+  if (!raw) return null;
+
+  const value = `%${escapeLikeValue(raw)}%`;
+
+  return {
+    [Op.or]: [
+      // поля основной таблицы Recipient
+      { fullNameSnapshot: { [Op.iLike]: value } },
+      { addressSnapshot: { [Op.iLike]: value } },
+      { specialComment: { [Op.iLike]: value } },
+      { category: { [Op.iLike]: value } },
+
+      // связанные таблицы
+      { '$senior.home.homeName$': { [Op.iLike]: value } },
+      { '$senior.home.activeAddress.region.name$': { [Op.iLike]: value } },
+    ],
+  };
+}

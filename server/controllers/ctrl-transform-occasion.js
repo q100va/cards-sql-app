@@ -12,6 +12,7 @@ export function transformOccasionDisplayParts(occasion) {
     monthNameKey: monthMeta ? monthMeta.nameKey : null,
     month: monthMeta ? monthMeta.optionKey : null,
     year: occasion.year,
+    amount: occasion.amount,
     status: statusMeta.nameKey,
    // isDeletable: occasion.isDeletable
   };

@@ -112,6 +112,7 @@
     "TABLE_YEAR": "Year",
     "TABLE_TYPE": "Type",
     "TABLE_STATUS": "Status",
+    "TABLE_AMOUNT": "Amount",
     "TABLE_ACTIONS": "Actions",
     "TABLE_CLEAR": "Clear",
     "TABLE_SEARCH_PLACEHOLDER": "Keyboard Search",
@@ -124,7 +125,7 @@
     "CARD_LABEL_MONTH": "Month*",
     "CARD_LABEL_STATUS": "Status*",
     "CARD_SAVE_AND_EXIT": "Save and exit",
-
+    "CHECK_RESULT": "The list's been checked",
     "MENU": {
       "OPEN_OCCASION": "close",
       "CLOSE_OCCASION": "open",
@@ -232,6 +233,48 @@
       "OPEN": "open",
       "CLOSED": "closed"
     }
+  },
+  "RECIPIENT": {
+    "TABLE_ADD_RECIPIENT": "Add recipient",
+    "TABLE_DELETE_RECIPIENT": "Delete recipient(s)",
+    "TABLE_SEND_RECIPIENT": "Send recipient(s) to order",
+    "TABLE_EMPTY": "No recipients found.",
+
+    "TABLE_NAME": "Name",
+    "TABLE_DAY": "Day of birth",
+    "TABLE_MONTH": "Month of birth",
+    "TABLE_YEAR": "Year of birth",
+    "TABLE_COMMENT": "Comment",
+    "TABLE_NOTE": "Note",
+    "TABLE_CATEGORY": "Category",
+    "TABLE_PLUS_AMOUNT": "Cards amount",
+    "TABLE_REGION": "Region",
+    "TABLE_HOME": "Nursing home",
+    "TABLE_STATUS": "Status",
+    "TABLE_ACTIONS": "Actions",
+    "TABLE_FOR_SCHOOL": "school-safe",
+    "TABLE_NOT_FOR_SCHOOL": "not-school-safe",
+    "TABLE_ABSENT_STATUS": "absent",
+    "TABLE_EMPTY_STATUS": "(empty)",
+    "TABLE_CLEAR": "Clear",
+    "TABLE_SEARCH_PLACEHOLDER": "Keyboard Search (min 3 symbols)",
+    "TABLE_SEARCH_TOOLTIP": "Search name, comment, category, region, home",
+    "TABLE_SELECT_PLACEHOLDER": "Any",
+    "TABLE_CHECKBOX_TOOLTIP": "Current page selection",
+    "TABLE_CATEGORY_TOOLTIP": "'old'- >70; 'middle'- 40-69; 'young'- <40;",
+    "TABLE_PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
+    "MENU": {
+      "DELETE_RECIPIENT": "delete",
+      "SEND_RECIPIENT": "send to order",
+      "VIEW_ORDERS": "view orders list"
+    },
+    "CARD_TITLE": "Add recipients",
+    "CARD_CLOSE": "Close",
+    "CARD_LABEL_HOME": "Select home",
+    "CARD_SAVE_AND_EXIT": "Save and exit",
+    "ADDED": "Added:",
+    "RETURNED": "Restored:",
+    "ABSENT": "Marked as absent:"
   },
   "ADDRESS_FILTER": {
     "LABEL_COUNTRY": "Country",

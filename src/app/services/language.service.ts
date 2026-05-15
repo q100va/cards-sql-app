@@ -125,7 +125,6 @@ export const ruPrime: PrimeTranslation = {
     'дек',
   ],
   today: 'Сегодня',
-  clear: 'Очистить',
   weekHeader: 'Нед',
   firstDayOfWeek: 1,
   aria: {
@@ -144,6 +143,32 @@ export const ruPrime: PrimeTranslation = {
     pageLabel: 'Страница {page}', // <-- критично, иначе .replace падает
     rowsPerPageLabel: 'Строк на странице', // некоторые компоненты тоже читают
   },
+  startsWith: 'Начинается с',
+  contains: 'Содержит',
+  notContains: 'Не содержит',
+  endsWith: 'Заканчивается на',
+  equals: 'Равно',
+  notEquals: 'Не равно',
+  noFilter: 'Без фильтра',
+
+  lt: 'Меньше',
+  lte: 'Меньше или равно',
+  gt: 'Больше',
+  gte: 'Больше или равно',
+
+  dateIs: 'Дата равна',
+  dateIsNot: 'Дата не равна',
+  dateBefore: 'До',
+  dateAfter: 'После',
+
+  clear: 'Очистить',
+  apply: 'Применить',
+
+  matchAll: 'Совпадают все',
+  matchAny: 'Совпадает любой',
+
+  addRule: 'Добавить условие',
+  removeRule: 'Удалить условие',
 };
 
 @Injectable({ providedIn: 'root' })

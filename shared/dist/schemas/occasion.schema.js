@@ -18,6 +18,7 @@ export const occasionSchema = z
     monthNameKey: z.string().nullable(),
     month: z.string().nullable(),
     year: z.number().int().min(2022),
+    amount: z.number().int().min(0),
     status: z.string(),
     // isDeletable: z.boolean(),
 })

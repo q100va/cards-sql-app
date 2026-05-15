@@ -3,7 +3,8 @@ import { Op, fn, col, where } from 'sequelize';
 import {
   Country, Region, District, Locality, Home,
   Senior, SeniorSearch, SeniorOutdatedName,
-  HomeAddress
+  HomeAddress,
+  Occasion
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -18,6 +19,9 @@ import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerId
 import { applyBirthDatePartsFilters } from "../controllers/ctrl-birth-date-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
+import { z } from 'zod';
+import { getPotentialRecipients } from "../controllers/ctrl-generate-recipients.js";
+import { editActiveRecipient } from "../controllers/ctrl-edit-recipient.js";
 
 const router = Router();
 const includes = [
@@ -328,6 +332,7 @@ router.post(
                 transaction: t,
                 individualHooks: true
               });
+            await editActiveRecipient(id, payload, t);
           }
         }
 
@@ -680,10 +685,10 @@ router.get("/get-senior-by-id/:id",
     }
   });
 
-//TODO: исключать самого сеньора (при редактировании)
+//TODO: исключать самого сеньора (из списка для выбора супруга)
 router.get("/get-list-of-seniors/:id",
   requireAuth,
-  requireAny('VIEW_SENIOR', 'EDIT_SENIOR', 'ADD_SENIOR'),
+  requireAny('VIEW_SENIOR', 'EDIT_SENIOR', 'ADD_NEW_SENIOR'),
   validateRequest(homeSchemas.homeIdSchema, 'params'),
   async (req, res, next) => {
     try {
@@ -712,16 +717,16 @@ router.get(
       const senior = await Senior.findByPk(id);
       if (!senior) throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
 
-      //TODO: find does this senior has orders
-      const [countOrders, countSpouse] = await Promise.all([
-        /*         Order.count({
-                  where: { seniorId: id }
-                }),
-                Senior.count({
-                  where: { spouseId: id }
-                }),*/
+      //TODO: find does this senior has recipients
+      const [countRecipients, countSpouse] = await Promise.all([
+        Recipient.count({
+          where: { seniorId: id }
+        }),
+        Senior.count({
+          where: { spouseId: id }
+        }),
       ]);
-      const count = (countOrders ?? 0) + (countSpouse ?? 0);
+      const count = (countRecipients ?? 0) + (countSpouse ?? 0);
       const response = {
         data: count,
         ...(count ? { code: 'SENIOR.HAS_DEPENDENCIES' } : null),
@@ -817,6 +822,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
         }
+        await editActiveRecipient(id, { isRestricted: true }, t);
       });
 
       res.status(200).send({ code: 'SENIOR.BLOCKED', data: null });
@@ -835,24 +841,54 @@ router.patch(
   async (req, res, next) => {
     try {
       let id = req.body.id;
-      const [affected] = await Senior.update(
-        {
-          isRestricted: false,
-          causeOfRestriction: null,
-          dateOfRestriction: null
-        },
-        {
-          where: { id },
-          individualHooks: true,
-        },
-      );
-      if (affected !== 1) {
-        throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
-      }
+      await withTransaction(async (t) => {
+        const [affected] = await Senior.update(
+          {
+            isRestricted: false,
+            causeOfRestriction: null,
+            dateOfRestriction: null
+          },
+          {
+            where: { id },
+            individualHooks: true,
+          },
+        );
+        if (affected !== 1) {
+          throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
+        }
+        await editActiveRecipient(id, { isRestricted: false }, t);
+      });
+
       res.status(200).send({ code: 'SENIOR.UNBLOCKED', data: null });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.SENIOR.NOT_UNBLOCKED';
       next(error);
     }
   });
+
+router.get("/get-seniors-for-occasion/:occasionId/:homeId",
+  requireAuth,
+  requireAny('ADD_NEW_RECIPIENT'),
+  validateRequest(z.object({
+    occasionId: z.coerce.number().int().positive(),
+    homeId: z.coerce.number().int().positive(),
+  }), 'params'),
+  async (req, res, next) => {
+    try {
+
+      const occasionId = req.params.occasionId;
+      const occasion = await Occasion.findByPk(occasionId);
+      if (!occasion) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
+
+      const homeId = req.params.homeId;
+      const data = await getPotentialRecipients(occasion, homeId);
+      console.log('SENIORS', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.SENIOR.LIST_FAILED';
+      next(error);
+    }
+  });
+
+
 export default router;

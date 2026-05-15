@@ -111,6 +111,7 @@
     "TABLE_MONTH": "Месяц",
     "TABLE_YEAR": "Год",
     "TABLE_TYPE": "Тип",
+    "TABLE_AMOUNT": "Кол-во",
     "TABLE_STATUS": "Статус",
     "TABLE_ACTIONS": "Действия",
     "TABLE_CLEAR": "Очистить",
@@ -124,7 +125,7 @@
     "CARD_LABEL_MONTH": "Месяц*",
     "CARD_LABEL_STATUS": "Статус*",
     "CARD_SAVE_AND_EXIT": "Сохранить и выйти",
-
+    "CHECK_RESULT": "Список проверен",
     "MENU": {
       "OPEN_OCCASION": "открыть",
       "CLOSE_OCCASION": "закрыть",
@@ -232,6 +233,48 @@
       "OPEN": "открыт",
       "CLOSED": "закрыт"
     }
+  },
+  "RECIPIENT": {
+    "TABLE_ADD_RECIPIENT": "Добавить получателя",
+    "TABLE_DELETE_RECIPIENT": "Удалить получателей",
+    "TABLE_SEND_RECIPIENT": "Добавить получателей в заяку",
+    "TABLE_EMPTY": "Получатели не найдены",
+
+    "TABLE_NAME": "ФИО",
+    "TABLE_DAY": "День рожд.",
+    "TABLE_MONTH": "Месяц рожд.",
+    "TABLE_YEAR": "Год рожд.",
+    "TABLE_COMMENT": "Комментарий",
+    "TABLE_NOTE": "Примечание",
+    "TABLE_CATEGORY": "Категория",
+    "TABLE_PLUS_AMOUNT": "Кол-во откр.",
+    "TABLE_REGION": "Регион",
+    "TABLE_HOME": "Интернат",
+    "TABLE_STATUS": "Статус",
+    "TABLE_ACTIONS": "Действия",
+    "TABLE_FOR_SCHOOL": "для школ",
+    "TABLE_NOT_FOR_SCHOOL": "только д/взрослых",
+    "TABLE_ABSENT_STATUS": "выбыл(а)",
+    "TABLE_EMPTY_STATUS": "(пустое)",
+    "TABLE_CLEAR": "Очистить",
+    "TABLE_SEARCH_PLACEHOLDER": "Введите мин. 3 знака...",
+    "TABLE_SEARCH_TOOLTIP": "Поиск по колонкам ФИО, комментарий, категория, район, интернат",
+    "TABLE_CHECKBOX_TOOLTIP": "Выбрать все записи на странице",
+    "TABLE_SELECT_PLACEHOLDER": "Выберите...",
+    "TABLE_CATEGORY_TOOLTIP": "'gen'-ДИПИ;\n'ment'-ПНИ;\n'spec'-специнтернат;\n'old'-70 и старше;\n'middle'-от 40 до 69;\n'young'-младше 40;\n'male'-муж.;\n'female'-жен.;",
+    "TABLE_PAGE_REPORT": "Показаны записи с {first} по {last} из {totalRecords}",
+    "MENU": {
+      "DELETE_RECIPIENT": "удалить",
+      "SEND_RECIPIENT": "добавить в заявку",
+      "VIEW_ORDERS": "к списку заявок"
+    },
+    "CARD_TITLE": "Добавить получателей",
+    "CARD_CLOSE": "Закрыть",
+    "CARD_LABEL_HOME": "Выберите интернат",
+    "CARD_SAVE_AND_EXIT": "Сохранить и выйти",
+    "ADDED": "Добавлены:",
+    "RETURNED": "Восстановлены:",
+    "ABSENT": "Помечены выбывшими:"
   },
   "ADDRESS_FILTER": {
     "LABEL_COUNTRY": "Страна",

@@ -1,0 +1,256 @@
+<mat-card class="recipients-list-card" appearance="outlined">
+  <!-- Header -->
+  <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
+    <mat-grid-tile colspan="4"></mat-grid-tile>
+
+    <!-- Title -->
+    <mat-grid-tile colspan="2">
+      <mat-card-header>
+        <mat-card-title>{{ occasion ? getOccasionName(occasion) : '' }}</mat-card-title>
+      </mat-card-header>
+    </mat-grid-tile>
+
+    <mat-grid-tile colspan="3"></mat-grid-tile>
+
+    <!-- Actions -->
+    <mat-grid-tile colspan="1">
+      <mat-card-actions>
+        <div class="bottom-right">
+          <button data-cy="add-recipient-btn" mat-icon-button [title]="'RECIPIENT.TABLE_ADD_RECIPIENT' | translate"
+            (click)="onAddRecipientClick(dt)" *hasOp="{codes:['ADD_NEW_RECIPIENT'], mode:'all'}"
+            [disabled]="!occasion?.status || occasion.status === 'OCCASION.STATUS.CLOSED'">
+            <mat-icon fontSet="material-symbols-outlined">sticker_add</mat-icon>
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-grid-tile>
+  </mat-grid-list>
+
+  <!-- Content -->
+  <mat-card-content>
+    <p-table #dt showGridlines [value]="recipients" [(selection)]="selectedRecipients" dataKey="id" [rowHover]="true"
+      [rows]="10" [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 25, 50]" [totalRecords]="totalRecords"
+      [loading]="isLoading()" [paginator]="true"
+      [currentPageReportTemplate]="translateService.instant('RECIPIENT.TABLE_PAGE_REPORT')" [filterDelay]="0"
+      [lazy]="true" (onLazyLoad)="loadRecipients($event)">
+      HTML
+      <ng-template #caption>
+        <div class="caption">
+
+          <div class="caption-left">
+            <button data-cy="delete-recipient-btn" mat-icon-button [disabled]="cannotDeleteRecipients()"
+              [title]="'RECIPIENT.TABLE_DELETE_RECIPIENT' | translate"
+              (click)="onDeleteRecipientsClick(selectedRecipients, dt)"
+              *hasOp="{codes:['DELETE_RECIPIENT'], mode:'all'}">
+              <mat-icon fontSet="material-symbols-outlined">delete_forever</mat-icon>
+            </button>
+
+            <button data-cy="send-recipient-btn" mat-icon-button [disabled]="cannotSendRecipients()"
+              [title]="'RECIPIENT.TABLE_SEND_RECIPIENT' | translate" (click)="onSendRecipientClick(selectedRecipients)">
+              <mat-icon fontSet="material-symbols-outlined">send</mat-icon>
+            </button>
+          </div>
+
+          <div class="caption-right">
+            <p-button [outlined]="true" icon="pi pi-filter-slash"
+              [label]="translateService.instant('RECIPIENT.TABLE_CLEAR')" (click)="clear(dt)" />
+
+            <p-iconField iconPosition="left">
+              <p-inputIcon>
+                <i class="pi pi-search"></i>
+              </p-inputIcon>
+
+              <input pInputText type="text" [(ngModel)]="searchValue"
+                [placeholder]="translateService.instant('RECIPIENT.TABLE_SEARCH_PLACEHOLDER')"
+                (keydown.enter)="onSearchEnter(dt)"
+                [pTooltip]="translateService.instant('RECIPIENT.TABLE_SEARCH_TOOLTIP')" tooltipPosition="left" />
+            </p-iconField>
+          </div>
+
+        </div>
+      </ng-template>
+      <ng-template #header>
+        <tr>
+          <th style="width: 8rem; text-align: center;">
+            <p-tableHeaderCheckbox [pTooltip]="translateService.instant('RECIPIENT.TABLE_CHECKBOX_TOOLTIP')"
+              tooltipPosition="right" />
+          </th>
+          <th pSortableColumn="plusAmount" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_PLUS_AMOUNT' | translate }}
+              <p-sortIcon field="plusAmount" />
+              <p-columnFilter type="numeric" field="plusAmount" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="fullName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_NAME' | translate }}
+              <p-sortIcon field="fullName" />
+              <p-columnFilter type="text" field="fullName" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="birthDay" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_DAY' | translate }}
+              <p-sortIcon field="birthDay" />
+              <p-columnFilter type="numeric" field="birthDay" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="birthMonth" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_MONTH' | translate }}
+              <p-sortIcon field="birthMonth" />
+              <p-columnFilter type="numeric" field="birthMonth" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="birthYear" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_YEAR' | translate }}
+              <p-sortIcon field="birthYear" />
+              <p-columnFilter type="numeric" field="birthYear" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="specialComment" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_COMMENT' | translate }}
+              <p-sortIcon field="specialComment" />
+              <p-columnFilter type="text" field="specialComment" display="menu" class="ml-auto" />
+            </div>
+          </th>
+
+          <th pSortableColumn="category" style="min-width: 14rem"
+            [pTooltip]="translateService.instant('RECIPIENT.TABLE_CATEGORY_TOOLTIP')" tooltipPosition="right">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_CATEGORY' | translate }}
+              <p-sortIcon field="category" />
+              <p-columnFilter type="text" field="category" display="menu" class="ml-auto" />
+
+            </div>
+          </th>
+          <th pSortableColumn="acceptableForSchool" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_NOTE' | translate }}
+              <p-sortIcon field="acceptableForSchool" />
+
+              <p-columnFilter field="acceptableForSchool" matchMode="equals" display="menu" [showMatchModes]="false"
+                [showOperator]="false" [showAddButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select [ngModel]="value" [options]="acceptableForSchoolOptions" optionLabel="label"
+                    optionValue="value" [placeholder]="translateService.instant('RECIPIENT.TABLE_SELECT_PLACEHOLDER')"
+                    class="w-full" (onChange)="filter($event.value)" />
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="regionName" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_REGION' | translate }}
+              <p-sortIcon field="regionName" />
+              <p-columnFilter type="text" field="regionName" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="homeName" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_HOME' | translate }}
+              <p-sortIcon field="homeName" />
+              <p-columnFilter type="text" field="homeName" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="isAbsent" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_STATUS' | translate }}
+              <p-sortIcon field="isAbsent" />
+              <!--               <p-columnFilter type="text" field="isAbsent" display="menu" class="ml-auto" />-->
+              <p-columnFilter field="isAbsent" matchMode="equals" display="menu" [showMatchModes]="false"
+                [showOperator]="false" [showAddButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select [ngModel]="value" [options]="statusOptions" optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('RECIPIENT.TABLE_SELECT_PLACEHOLDER')" class="w-full"
+                    (onChange)="filter($event.value)" />
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th style="width: 5rem">
+            <div class="header-cell">
+              {{ 'RECIPIENT.TABLE_ACTIONS' | translate }}
+            </div>
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-recipient>
+        <tr class="p-selectable-row">
+          <td style="text-align: center;">
+            <p-tableCheckbox [value]="recipient" />
+          </td>
+          <td>
+            {{ recipient.plusAmount }}
+          </td>
+          <td>
+            {{ recipient.fullName }}
+          </td>
+          <td>
+            {{ recipient.birthDay }}
+          </td>
+          <td>
+            {{ recipient.birthMonth }}
+          </td>
+          <td>
+            {{ recipient.birthYear }}
+          </td>
+          <td>
+            {{ recipient.specialComment }}
+          </td>
+          <td>
+            {{ recipient.category }}
+          </td>
+          <td>
+            {{ recipient.acceptableForSchool ? ('RECIPIENT.TABLE_FOR_SCHOOL' | translate) :
+            ('RECIPIENT.TABLE_NOT_FOR_SCHOOL' | translate) }}
+          </td>
+          <td>
+            {{ recipient.regionName }}
+          </td>
+          <td>
+            {{ recipient.homeName }}
+          </td>
+          <td>
+            {{ recipient.isAbsent ? ('RECIPIENT.TABLE_ABSENT_STATUS' | translate) : ''}}
+          </td>
+          <td style="text-align: center">
+            <div class="center">
+              <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'TABLE.MENU.OPEN_LIST_TITLE'  | translate"
+                appBlurOnClick>
+                <mat-icon>
+                  keyboard_double_arrow_down
+                </mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+
+                <button mat-menu-item [disabled]="recipient.plusAmount !== 0"
+                  (click)="onDeleteRecipientsClick([recipient], dt)" *hasOp="{codes:['DELETE_RECIPIENT'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">delete_outlined</mat-icon>
+                  <span>{{'RECIPIENT.MENU.DELETE_RECIPIENT' | translate}}</span>
+                </button>
+                <button mat-menu-item [disabled]="recipient.isAbsent" (click)="onSendRecipientClick([recipient.id])">
+                  <mat-icon fontSet="material-symbols-outlined">send</mat-icon>
+                  <span>{{'RECIPIENT.MENU.SEND_RECIPIENT' | translate}}</span>
+                </button>
+                <button mat-menu-item [disabled]="recipient.plusAmount === 0" (click)="onShowOrdersClick(recipient.id)">
+                  <mat-icon fontSet="material-symbols-outlined">mail</mat-icon>
+                  <span>{{'RECIPIENT.MENU.VIEW_ORDERS' | translate}}</span>
+                </button>
+              </mat-menu>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">{{ "RECIPIENT.TABLE_EMPTY" | translate }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </mat-card-content>
+</mat-card>

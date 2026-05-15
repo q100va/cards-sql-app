@@ -32,7 +32,7 @@ import z from 'zod';
 //import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
-import { homeSchema, homesSchema } from '../../../shared/schemas/home.schema';
+import { homeSchema, homesSchema, RegionWithHomes, regionWithHomesSchema } from '../../../shared/schemas/home.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 
 export interface HomeMainService extends OwnerMainService<
@@ -240,7 +240,7 @@ export class HomeService implements HomeMainService {
       );
   }
 
-    getPotentialHomesPickList(): Observable<RelationPick[]> {
+  getPotentialHomesPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-potential-homes`)
       .pipe(
@@ -361,5 +361,13 @@ export class HomeService implements HomeMainService {
         this.msgWrapper.messageTap('success'),
         catchError(this.handleError),
       );
+  }
+
+  getHomeGroups(): Observable<
+    ApiResponse<RegionWithHomes>
+  > {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-home-groups/`)
+      .pipe(validateResponse(regionWithHomesSchema), catchError(this.handleError));
   }
 }

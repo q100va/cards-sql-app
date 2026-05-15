@@ -685,6 +685,21 @@ export const homesSchema = z
   })
   .strict();
 
+  export const regionWithHomesSchema = z.array(
+  z.object({
+    regionName: z.string(),
+
+    homes: z.array(
+      z.object({
+        id: z.number().int(),
+        homeName: z.string(),
+      })
+    ),
+  })
+);
+
+
+
 /* ===================== Types ===================== */
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
@@ -699,3 +714,4 @@ export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;
+export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;

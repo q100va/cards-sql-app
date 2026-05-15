@@ -45,15 +45,23 @@ export default function OccasionModel(sequelize) {
           max: 6,
         }
       },
+      amount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+          min: 0,
+        },
+        defaultValue: 0
+      },
       status: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 2
       },
-  /*     isDeletable: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-      }, */
+      /*     isDeletable: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
+          }, */
 
     },
     {

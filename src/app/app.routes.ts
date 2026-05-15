@@ -17,6 +17,7 @@ import { VolunteersListComponent } from './pages/volunteers-list/volunteers-list
 import { HomesListComponent } from './pages/homes-list/homes-list.component';
 import { SeniorsListComponent } from './pages/seniors-list/seniors-list.component';
 import { OccasionsListComponent } from './pages/occasions-list/occasions-list.component';
+import { RecipientsListComponent } from './pages/recipients-list/recipients-list.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -51,7 +52,7 @@ export const routes: Routes = [
         ],
         component: PartnersListComponent,
       },
-       {
+      {
         path: 'homes',
         canMatch: [
           requireAnyOp('VIEW_FULL_HOMES_LIST', 'VIEW_LIMITED_HOMES_LIST'),
@@ -70,7 +71,7 @@ export const routes: Routes = [
         canMatch: [
           requireAnyOp(
             'VIEW_FULL_VOLUNTEERS_LIST',
-            'VIEW_LIMITED_VOLUNTEERS_LIST'
+            'VIEW_LIMITED_VOLUNTEERS_LIST',
           ),
         ],
         component: VolunteersListComponent,
@@ -80,10 +81,15 @@ export const routes: Routes = [
         canMatch: [requireOp('ALL_OPS_ROLES')],
         component: RolesListComponent,
       },
-         {
+      {
         path: 'occasions',
         canMatch: [requireOp('ALL_OPS_OCCASIONS')],
         component: OccasionsListComponent,
+      },
+      {
+        path: 'recipients/:occasionId',
+        canMatch: [requireAnyOp('VIEW_LIMITED_RECIPIENTS_LIST', 'VIEW_FULL_RECIPIENTS_LIST')],
+        component: RecipientsListComponent,
       },
       {
         path: 'countries',

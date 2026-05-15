@@ -165,6 +165,13 @@
               </p-columnFilter>
             </div>
           </th>
+          <th pSortableColumn="amount" style="min-width: 14rem">
+            <div class="header-cell">
+              <div> {{ 'OCCASION.TABLE_AMOUNT' | translate }}
+                <p-sortIcon field="amount" />
+              </div>
+            </div>
+          </th>
           <th pSortableColumn="status" style="min-width: 14rem">
             <div class="header-cell">
               <div> {{ 'OCCASION.TABLE_STATUS' | translate }}
@@ -216,6 +223,9 @@
             {{ occasion.type | translate}}
           </td>
           <td>
+            {{ occasion.amount }}
+          </td>
+          <td>
             {{ occasion.status | translate}}
           </td>
           <td>
@@ -238,28 +248,28 @@
                   <mat-icon fontSet="material-symbols-outlined">lock</mat-icon>
                   <span>{{'OCCASION.MENU.CLOSE_OCCASION' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onDeleteOccasionClick(occasion)"
+                <button mat-menu-item [disabled]="occasion.amount !== 0" (click)="onDeleteOccasionClick(occasion)"
                   *hasOp="{codes:['DELETE_OCCASION'], mode:'any'}">
                   <mat-icon fontSet="material-symbols-outlined">delete_outlined</mat-icon>
                   <span>{{'OCCASION.MENU.DELETE_OCCASION' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onCreateListClick(occasion.id)"
-                  *hasOp="{codes:['CREATE_CELEBRATORS_LIST'], mode:'any'}">
+                <button mat-menu-item [disabled]="occasion.amount !== 0 || occasion.status === 'OCCASION.STATUS.CLOSED'"
+                  (click)="onCreateListClick(occasion.id)" *hasOp="{codes:['CREATE_RECIPIENTS_LIST'], mode:'any'}">
                   <mat-icon fontSet="material-symbols-outlined">list_alt_add</mat-icon>
                   <span>{{'OCCASION.MENU.CREATE_LIST' | translate}}</span>
                 </button>
                 <button mat-menu-item (click)="onOpenListClick(occasion.id)"
-                  *hasOp="{codes:['VIEW_LIMITED_CELEBRATORS_LIST', 'VIEW_FULL_CELEBRATORS_LIST'], mode:'any'}">
+                  *hasOp="{codes:['VIEW_LIMITED_RECIPIENTS_LIST', 'VIEW_FULL_RECIPIENTS_LIST'], mode:'any'}">
                   <mat-icon fontSet="material-symbols-outlined">list_alt</mat-icon>
                   <span>{{'OCCASION.MENU.VIEW_LIST' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onCheckListClick(occasion.id)"
-                  *hasOp="{codes:['EDIT_CELEBRATORS_LIST'], mode:'any'}">
+                <button mat-menu-item [disabled]="occasion.amount === 0 || occasion.status === 'OCCASION.STATUS.CLOSED'" (click)="onCheckListClick(occasion.id)"
+                  *hasOp="{codes:['EDIT_RECIPIENTS_LIST'], mode:'any'}">
                   <mat-icon fontSet="material-symbols-outlined">list_alt_check</mat-icon>
                   <span>{{'OCCASION.MENU.CHECK_LIST' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onClearListClick(occasion.id)"
-                  *hasOp="{codes:['CLEAR_CELEBRATORS_LIST'], mode:'any'}">
+                <button mat-menu-item [disabled]="occasion.amount === 0 || occasion.status === 'OCCASION.STATUS.CLOSED'"(click)="onClearListClick(occasion.id)"
+                  *hasOp="{codes:['CLEAR_RECIPIENTS_LIST'], mode:'any'}">
                   <mat-icon fontSet="material-symbols-outlined">text_ad_off</mat-icon>
                   <span>{{'OCCASION.MENU.CLEAR_LIST' | translate}}</span>
                 </button>

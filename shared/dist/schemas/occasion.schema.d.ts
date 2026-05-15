@@ -7,6 +7,7 @@ export declare const occasionSchema: z.ZodObject<{
     monthNameKey: z.ZodNullable<z.ZodString>;
     month: z.ZodNullable<z.ZodString>;
     year: z.ZodNumber;
+    amount: z.ZodNumber;
     status: z.ZodString;
 }, z.core.$strict>;
 export declare const occasionDataSchema: z.ZodObject<{
@@ -42,6 +43,7 @@ export declare const occasionsListSchema: z.ZodObject<{
         monthNameKey: z.ZodNullable<z.ZodString>;
         month: z.ZodNullable<z.ZodString>;
         year: z.ZodNumber;
+        amount: z.ZodNumber;
         status: z.ZodString;
     }, z.core.$strict>>;
     options: z.ZodObject<{

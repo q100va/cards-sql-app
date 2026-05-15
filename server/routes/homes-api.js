@@ -16,6 +16,7 @@ import { createSearchStringFor, createOutdatedSearchStringFor } from "../control
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { setHomeStatusValue, transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
+import { editHomeActiveRecipients } from "../controllers/ctrl-edit-recipient.js";
 
 const router = Router();
 const includes = [
@@ -308,6 +309,7 @@ router.post(
           });
           if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
         }
+        await editHomeActiveRecipients(id, changingData?.main ?? {}, t);
         return transformOwnerData('home', fresh.toJSON());
       });
       console.log('HOME');
@@ -351,7 +353,7 @@ router.post(
 
       // view option (if you still use it)
       switch (view?.option) {
-        case 'only-active': whereHome.isRestricted = false; break;
+        case 'only-active': whereHome.isRestricted = false; whereHome.isClose = false; break;
         case 'only-blocked': whereHome.isRestricted = true; whereHome.isClose = false; break;
         case 'only-closed': whereHome.isClose = true; break;
         case 'exclude-closed': whereHome.isClose = false; break;
@@ -654,7 +656,7 @@ router.get("/get-list-of-active-homes",
     'ADD_PARTNER',
     'VIEW_SENIOR',
     'EDIT_SENIOR',
-    'ADD_SENIOR',
+    'ADD_NEW_SENIOR',
     'VIEW_LIMITED_PARTNERS_LIST',
     'VIEW_FULL_PARTNERS_LIST',
     'VIEW_LIMITED_SENIORS_LIST',
@@ -711,7 +713,7 @@ router.get("/get-list-of-potential-homes",
     'ADD_PARTNER',
     'VIEW_SENIOR',
     'EDIT_SENIOR',
-    'ADD_SENIOR',
+    'ADD_NEW_SENIOR',
     'VIEW_LIMITED_PARTNERS_LIST',
     'VIEW_FULL_PARTNERS_LIST',
     'VIEW_LIMITED_SENIORS_LIST',
@@ -767,7 +769,7 @@ router.get("/get-list-of-homes",
     'ADD_PARTNER',
     'VIEW_SENIOR',
     'EDIT_SENIOR',
-    'ADD_SENIOR',
+    'ADD_NEW_SENIOR',
     'VIEW_LIMITED_PARTNERS_LIST',
     'VIEW_FULL_PARTNERS_LIST',
     'VIEW_LIMITED_SENIORS_LIST',
@@ -833,9 +835,9 @@ router.get(
 
       //TODO: find does this home has seniors, partners
       const [countSeniors, countPartners] = await Promise.all([
-        /*     Senior.count({
-              where: { homeId: id }
-            }), */
+        Senior.count({
+          where: { homeId: id }
+        }),
         Partner.count({
           where: { homeId: id }
         })
@@ -933,6 +935,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
         }
+        await editHomeActiveRecipients(id, { isRestricted: true }, t);
       });
 
       res.status(200).send({ code: 'HOME.BLOCKED', data: null });
@@ -950,25 +953,89 @@ router.patch(
   validateRequest(homeSchemas.homeIdSchema, 'body'),
   async (req, res, next) => {
     try {
-      let id = req.body.id;
-      const [affected] = await Home.update(
-        {
-          isRestricted: false,
-          causeOfRestriction: null,
-          dateOfRestriction: null
-        },
-        {
-          where: { id },
-          individualHooks: true,
-        },
-      );
-      if (affected !== 1) {
-        throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
-      }
+      const id = req.body.id;
+      await withTransaction(async (t) => {
+        const [affected] = await Home.update(
+          {
+            isRestricted: false,
+            causeOfRestriction: null,
+            dateOfRestriction: null
+          },
+          {
+            where: { id },
+            individualHooks: true,
+          },
+        );
+        if (affected !== 1) {
+          throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+        }
+        await editHomeActiveRecipients(id, { isRestricted: false }, t);
+      });
       res.status(200).send({ code: 'HOME.UNBLOCKED', data: null });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.HOME.NOT_UNBLOCKED';
       next(error);
     }
   });
+
+router.get("/get-home-groups/",
+  requireAuth,
+  requireAny(
+    'ADD_NEW_RECIPIENT'),
+  async (req, res, next) => {
+    try {
+      const homes = await Home.findAll({
+        attributes: [
+          'id',
+          'homeName',
+        ],
+        where: { isClose: false, isRestricted: false },
+        include: [{
+          model: HomeAddress,
+          as: 'activeAddress',
+          attributes: ['id'],
+          include: [
+            { model: Region, attributes: ['name'] }
+          ]
+        },],
+      });
+
+      const groupsMap = new Map();
+
+      for (const home of homes) {
+        const regionName = home.activeAddress?.region?.name;
+
+        if (!regionName) continue;
+
+        if (!groupsMap.has(regionName)) {
+          groupsMap.set(regionName, {
+            regionName,
+            homes: [],
+          });
+        }
+
+        groupsMap.get(regionName).homes.push({
+          id: home.id,
+          homeName: home.homeName,
+        });
+      }
+
+      const data = [...groupsMap.values()].sort((a, b) =>
+        a.regionName.localeCompare(b.regionName, 'ru'),
+      );
+
+      for (const group of data) {
+        group.homes.sort((a, b) =>
+          a.homeName.localeCompare(b.homeName, 'ru'),
+        );
+      }
+
+      console.log('HOMES', data);
+      res.status(200).send({ data });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      next(error);
+    }
+  });
+
 export default router;

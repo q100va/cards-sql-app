@@ -18,7 +18,7 @@ export default function RecipientModel(sequelize) {
           notEmpty: true,
         }
       },
-      dateSnapshot: {
+      daySnapshot: {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
@@ -30,12 +30,24 @@ export default function RecipientModel(sequelize) {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
+      regionIdSnapshot: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      homeIdSnapshot: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
       addressSnapshot: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: true,
         }
+      },
+      acceptableForSchool: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
       },
       category: {
         type: DataTypes.STRING,
@@ -46,11 +58,24 @@ export default function RecipientModel(sequelize) {
       },
       specialComment: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
+      },
+      plusAmount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
       },
       isAbsent: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+      },
+      occasionId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+
+      seniorId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
       },
     },
     {
@@ -60,6 +85,12 @@ export default function RecipientModel(sequelize) {
       underscored: false,
       timestamps: true, // createdAt
       updatedAt: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ['occasionId', 'seniorId'],
+        },
+      ]
     }
   );
   return Recipient;
