@@ -55,45 +55,57 @@ export default function SeniorModel(sequelize) {
         allowNull: false,
       },
       infoNote: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       photoLink: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       dateOfConsent: {
         type: DataTypes.DATE,
         allowNull: true,
+        defaultValue: null
       },
       personalNoAddr: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
       },
       kindergarten: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       teacher: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       veteran: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       childOfWar: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       profession: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       honoraryStatus: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       interests: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       orthodoxBeliever: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       comment: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       dateOfStart: {
         type: DataTypes.DATE,
@@ -104,10 +116,12 @@ export default function SeniorModel(sequelize) {
         defaultValue: false
       },
       causeOfRestriction: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        defaultValue: null
       },
       dateOfRestriction: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        defaultValue: null
       },
       dateOfExit: {
         type: DataTypes.DATE,

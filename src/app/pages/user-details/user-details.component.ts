@@ -35,6 +35,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   UserOutdatingData,
 } from '../../interfaces/advanced-model'; */
 import { UserMainService, UserService } from '../../services/user.service';
+import { DateUtilsService } from '../../services/date-utils.service';
 import { of } from 'rxjs';
 @Component({
   selector: 'app-user-details',

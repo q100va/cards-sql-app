@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>{{ 'SENIOR.DIALOG.CHECK_GENDER.TITLE' | translate }}</h2>
+<mat-dialog-content>
+  <p>{{ data.error }}</p>
+  <br />
+
+  <form>
+    <h3 mat-label>{{'SENIOR.DIALOG.CHECK_GENDER.CORRECT_GENDER' | translate}}</h3>
+    <mat-radio-group [formControl]="gender" class="dialog-radio-group">
+      <mat-radio-button value="male" class="dialog-radio-button">
+        {{'SENIOR.DIALOG.CHECK_GENDER.MALE'| translate}}
+      </mat-radio-button>
+
+      <mat-radio-button value="female" class="dialog-radio-button">
+        {{'SENIOR.DIALOG.CHECK_GENDER.FEMALE'| translate}}
+      </mat-radio-button>
+    </mat-radio-group>
+    <!--     @if(gender.hasError('zodError')){
+      <mat-error class="error">{{gender.errors!['zodError'] |
+        translate}}</mat-error>
+      } -->
+
+    <mat-form-field class="ml-2">
+      <mat-label>{{'SENIOR.DIALOG.CHECK_GENDER.LAST_NAME_LABEL' | translate}}</mat-label>
+      <input type="text" matInput [formControl]="lastName" />
+      @if(lastName.hasError('zodError')){
+      <mat-error class="error">{{lastName.errors!['zodError'] |
+        translate}}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field class="ml-2">
+      <mat-label>{{'SENIOR.DIALOG.CHECK_GENDER.FIRST_NAME_LABEL' | translate}}</mat-label>
+      <input type="text" matInput [formControl]="firstName" />
+      @if(firstName.hasError('zodError')){
+      <mat-error class="error">{{firstName.errors!['zodError'] |
+        translate}}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field class="ml-2">
+      <mat-label>{{'SENIOR.DIALOG.CHECK_GENDER.PATRONYMIC_LABEL' | translate}}</mat-label>
+      <input type="text" matInput [formControl]="patronymic" />
+      @if(patronymic.hasError('zodError')){
+      <mat-error class="error">{{patronymic.errors!['zodError'] |
+        translate}}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button class="dialog-cancel-button" (click)="onCancelClick()">{{'SENIOR.DIALOG.BUTTON_CANCEL' |
+    translate}}</button>
+
+  <button mat-button class="dialog-submit-button" [disabled]="form.invalid"
+    (click)="onApplyClick()">{{'SENIOR.DIALOG.BUTTON_APPLY'|
+    translate}}</button>
+</mat-dialog-actions>

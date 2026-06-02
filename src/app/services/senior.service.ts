@@ -29,6 +29,11 @@ import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
+  AcceptedChanges,
+  Differences,
+  differencesResponseSchema,
+  SeniorRaw,
+  SeniorRow,
   seniorSchema,
   seniorsSchema,
 } from '../../../shared/schemas/senior.schema';
@@ -36,6 +41,7 @@ import { duplicatesSchema } from '../../../shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 import { recipientsShortSchema } from '../../../shared/schemas/recipient.schema';
+//import { SeniorRow } from '../pages/seniors-bulk-update/seniors-bulk-update.component';
 
 export interface SeniorMainService extends OwnerMainService<
   Senior,
@@ -281,9 +287,62 @@ export class SeniorService implements SeniorMainService {
         `${this.BASE_URL}/get-seniors-for-occasion/${occasionId}/${homeId}`,
       )
       .pipe(
+        validateResponse(recipientsShortSchema),
+        catchError(this.handleError),
+      );
+  }
+
+  compareLists(
+    newList: SeniorRow[],
+    homeName: string,
+    commentsMode: boolean,
+    chosenMonths: number[],
+  ): Observable<ApiResponse<Differences>> {
+    return this.http
+      .post<RawApiResponse>(`${this.BASE_URL}/compare-seniors-lists/`, {
+        newList,
+        homeName,
+        commentsMode,
+        chosenMonths,
+      })
+      .pipe(
+        validateResponse(differencesResponseSchema),
+        catchError(this.handleError),
+      );
+  }
+
+  updateList(
+    admitted: SeniorRaw[],
+    removed: SeniorRaw[],
+    updated: { seniorId: number; changes: AcceptedChanges }[],
+    homeId: number,
+    dateOfUpdate: Date
+  ): Observable<
+    ApiResponse<{
+      createdCount: number;
+      removedCount: number;
+      updatedCount: number;
+    }>
+  > {
+    console.log('updateList');
+    return this.http
+      .post<RawApiResponse>(`${this.BASE_URL}/update-seniors-list/`, {
+        admitted,
+        removed,
+        updated,
+        homeId,
+        dateOfUpdate
+      })
+      .pipe(
+        //validateNoSchemaResponse<null>('isNull'),
         validateResponse(
-          recipientsShortSchema
+          z.object({
+            createdCount: z.number(),
+            removedCount: z.number(),
+            updatedCount: z.number(),
+          }),
         ),
+        this.msgWrapper.messageTap('success', undefined, (res) => res.data),
         catchError(this.handleError),
       );
   }

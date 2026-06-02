@@ -55,7 +55,7 @@ const coordinationItemSchema = z.object({
   homeId: positiveInt,
   isRecoverable: z.boolean(),
   id: positiveInt,
-  homeStatus: z.string().optional()
+  homeStatus: z.string().optional(),
 });
 
 /* ===================== Some Schemas for form validation ===================== */
@@ -297,6 +297,8 @@ export const homeDraftSchema = z
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
     draftCoordinations: z.array(positiveInt),
+    isClose: z.boolean(),
+    dateOfClose: nullableIsoDate,
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -685,7 +687,7 @@ export const homesSchema = z
   })
   .strict();
 
-  export const regionWithHomesSchema = z.array(
+export const regionWithHomesSchema = z.array(
   z.object({
     regionName: z.string(),
 
@@ -693,12 +695,10 @@ export const homesSchema = z
       z.object({
         id: z.number().int(),
         homeName: z.string(),
-      })
+      }),
     ),
-  })
+  }),
 );
-
-
 
 /* ===================== Types ===================== */
 export type HomeDraft = z.infer<typeof homeDraftSchema>;

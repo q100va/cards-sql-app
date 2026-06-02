@@ -1,0 +1,96 @@
+<p-table [value]="seniors()" [tableStyle]="{ 'width': '80rem' }">
+  <ng-template #header>
+    <tr>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-senior let-rowIndex="rowIndex">
+<!--     <tr style="background-color: rgba(214, 205, 140, 0.234);"> -->
+       <tr style="background-color: rgba(174, 199, 129, 0.307);">
+      <td colspan="3">
+        <button mat-mini-fab (click)="moveToAdmitted.emit(rowIndex)" class="move"
+          [matTooltip]="translateService.instant('SENIOR.BULK_UPDATE.MOVE_TO_ADMITTED')" matTooltipPosition="above">
+          <mat-icon fontSet="material-symbols-outlined">move_up</mat-icon>
+        </button>
+        <span style="margin-left: 10px;">
+          {{ fullName(senior.newSenior) }}
+          {{ dateUtils.transformDate(senior.newSenior.birthDate) }}
+          @if(
+          senior.changes['firstName'] ||
+          senior.changes['lastName'] ||
+          senior.changes['patronymic'] ||
+          senior.changes['birthDate']
+          ){
+          / {{ fullName(senior.oldSenior) }}
+          {{ dateUtils.transformDate(senior.oldSenior.birthDate) }}
+
+          }
+        </span>
+      </td>
+
+      <td>
+        <!--        <button mat-raised-button (click)="moveToAdmitted.emit(rowIndex)">
+          {{ 'SENIOR.BULK_UPDATE.MOVE_TO_ADMITTED' | translate }}
+        </button>
+ -->
+
+      </td>
+    </tr>
+
+    <tr>
+      <td></td>
+
+      <td>
+        <p-table [value]="senior.changeRows" [tableStyle]="{ 'width': '60rem' }">
+          <ng-template #header>
+    <tr><!-- TODO: i18 -->
+      <th>Name</th>
+      <th style="width: 20rem;">Old Value</th>
+      <th style="width: 20rem;">New Value</th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-row>
+    <tr>
+      <td>{{ 'SENIOR.BULK_UPDATE.FIELD.' + row.label | translate }}</td>
+
+      <td colspan="2">
+
+        <mat-radio-group (change)="onValueSelected(senior.oldSenior.id, row.field, $event.value)" [value]="''">
+          <div style="width: 20rem; display: table-cell;">
+            <mat-radio-button [value]="row.oldValue">
+              {{ row.label === 'dateOfExit' ? dateUtils.transformDate(row.oldValue) : row.oldValue}}
+            </mat-radio-button>
+          </div>
+          <div style="width: 20rem; display: table-cell;">
+            <mat-radio-button [value]="row.newValue">
+              {{ row.newValue }}
+            </mat-radio-button>
+          </div>
+        </mat-radio-group>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+</td>
+
+<td>
+  <!--   <button mat-raised-button
+    (click)="acceptChanges.emit({ seniorId: senior.oldSenior.id, rowIndex, accepted: accepted[senior.oldSenior.id]})"
+    [disabled]="senior.changeRows.length !== getObjectSize(senior.oldSenior.id)">
+    {{ 'SENIOR.BULK_UPDATE.ACCEPT_CHANGES' | translate }}
+  </button> -->
+
+  <button mat-mini-fab
+    (click)="acceptChanges.emit({ seniorId: senior.oldSenior.id, rowIndex, accepted: accepted[senior.oldSenior.id]})"
+    [disabled]="senior.changeRows.length !== getObjectSize(senior.oldSenior.id)" class="move"
+    [matTooltip]="translateService.instant('SENIOR.BULK_UPDATE.ACCEPT_CHANGES')" matTooltipPosition="above">
+    <mat-icon fontSet="material-symbols-outlined">data_check</mat-icon>
+  </button>
+</td>
+</tr>
+</ng-template>
+</p-table>

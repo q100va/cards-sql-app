@@ -74,11 +74,40 @@ html {
   ));
 }
 
-:root {
+.small-toggle-label {
   @include mat.slide-toggle-overrides((
-    label-text-size: 24px
+     label-text-size: 16px,
   ));
 }
+
+:root {
+  @include mat.slide-toggle-overrides((
+    label-text-size: 24px,
+  ));
+}
+
+.white-and-green {
+  @include mat.fab-overrides((
+     container-color: #f9faf4,
+     foreground-color: #006D33,
+  ));
+}
+
+.apply {
+  @include mat.fab-overrides((
+     container-color:#006D33,
+     foreground-color: #f9faf4,
+  ));
+}
+
+.move {
+  @include mat.fab-overrides((
+     small-container-color: #f9faf4,
+     small-foreground-color: #006D33,
+  ));
+}
+
+
 
 
 

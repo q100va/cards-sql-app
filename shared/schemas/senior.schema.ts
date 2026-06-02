@@ -14,36 +14,11 @@ import {
   intOptArray,
 } from './common.schema.js';
 import {
-  emailSchema,
-  facebookSchema,
-  instagramSchema,
-  otherContactSchema,
-  phoneNumberSchema,
-  telegramIdSchema,
-  telegramNicknameSchema,
-  vKontakteSchema,
-  websiteSchema,
-} from './common.schema.js';
-import {
-  draftAddressSchema,
-  addressSchema,
   addressRefFullSchema,
   addressRefShortSchema,
 } from './common.schema.js';
-import {
-  contactType,
-  contactSchema,
-  nonEmptyContacts,
-  optionalContactsSchema,
-} from './common.schema.js';
-import {
-  //changingAddressSchema,
-  changingContactsSchema,
-} from './common.schema.js';
-import {
-  outdatedNameItemSchema,
-  outdatedAddressItemSchema,
-} from './common.schema.js';
+
+import { outdatedNameItemSchema } from './common.schema.js';
 
 export const nullableDateOnly = z.preprocess(
   (v: unknown) => {
@@ -145,7 +120,9 @@ export const seniorDraftSchema = z
     confirmedPatronymic: z.boolean(),
     confirmedLastName: z.boolean(),
     confirmedBirthDate: z.boolean(),
-    gender: z.enum(['male', 'female']),
+    gender: z.enum(['male', 'female'], {
+      message: 'FORM_VALIDATION.REQUIRED_SELECTION',
+    }),
     comment: nullableString,
     infoNote: nullableString,
     photoLink: nullableString,
@@ -500,6 +477,208 @@ export const seniorsSchema = z
   })
   .strict();
 
+export const seniorRowSchema = z.object({
+  nursingHome: z.string().trim().min(1),
+  lastName: z.string().trim().nullable().optional(),
+  firstName: z.string().trim().min(1),
+  patronymic: z.string().trim().nullable().optional(),
+  dateOfConsent: z.string().trim().nullable().optional(),
+  dayBirthday: z.coerce.number().int().min(1).max(31).nullable().optional(),
+  monthBirthday: z.coerce.number().int().min(1).max(12).nullable().optional(),
+  yearBirthday: z.coerce.number().int().min(1800).nullable().optional(),
+  birthDate: nullableDateOnly.optional(),
+  gender: z.enum(['male', 'female']).nullable().optional(),
+  comment: nullableString.optional(),
+  infoNote: nullableString.optional(),
+  photoLink: nullableString.optional(),
+  kindergarten: nullableString.optional(),
+  teacher: nullableString.optional(),
+  veteran: nullableString.optional(),
+  childOfWar: nullableString.optional(),
+  profession: nullableString.optional(),
+  honoraryStatus: nullableString.optional(),
+  interests: nullableString.optional(),
+  orthodoxBeliever: nullableString.optional(),
+});
+export const seniorPreSchema = z.object({
+  nursingHome: z.string().trim().min(1),
+  lastName: z.string().trim().nullable(),
+  firstName: z.string().trim().min(1),
+  patronymic: z.string().trim().nullable(),
+  dateOfConsent: z.string().trim().nullable(),
+  dayBirthday: z.coerce.number().int().min(1).max(31).nullable(),
+  monthBirthday: z.coerce.number().int().min(1).max(12).nullable(),
+  yearBirthday: z.coerce.number().int().min(1800).nullable(),
+  birthDate: nullableDateOnly.optional(),
+  gender: z.enum(['male', 'female']),
+  comment: nullableString.optional(),
+  infoNote: nullableString.optional(),
+  photoLink: nullableString.optional(),
+  kindergarten: nullableString.optional(),
+  teacher: nullableString.optional(),
+  veteran: nullableString.optional(),
+  childOfWar: nullableString.optional(),
+  profession: nullableString.optional(),
+  honoraryStatus: nullableString.optional(),
+  interests: nullableString.optional(),
+  orthodoxBeliever: nullableString.optional(),
+});
+
+export const seniorRawSchema = z.object({
+  id: positiveInt.optional(),
+  homeId: positiveInt,
+  nursingHome: z.string().trim().min(1).optional(),
+  lastName: z.string().trim().nullable(),
+  firstName: z.string().trim().min(1),
+  patronymic: z.string().trim().nullable(),
+  dateOfConsent: nullableDateOnly,
+  dayBirthday: z.coerce.number().int().min(1).max(31).nullable().optional(),
+  monthBirthday: z.coerce.number().int().min(1).max(12).nullable().optional(),
+  yearBirthday: z.coerce.number().int().min(1800).nullable().optional(),
+  birthDate: nullableDateOnly,
+  gender: z.enum(['male', 'female']),
+  dateOfExit: nullableDateOnly,
+  comment: nullableString,
+  infoNote: nullableString,
+  photoLink: nullableString,
+  kindergarten: nullableString,
+  teacher: nullableString,
+  veteran: nullableString,
+  childOfWar: nullableString,
+  profession: nullableString,
+  honoraryStatus: nullableString,
+  interests: nullableString,
+  orthodoxBeliever: nullableString,
+});
+
+const changesSchema = z.object({
+  lastName: z
+    .object({
+      newValue: z.string().nullable(),
+      oldValue: z.string().nullable(),
+    })
+    .optional(),
+  firstName: z
+    .object({ newValue: z.string(), oldValue: z.string() })
+    .optional(),
+  patronymic: z
+    .object({
+      newValue: z.string().nullable(),
+      oldValue: z.string().nullable(),
+    })
+    .optional(),
+  gender: z
+    .object({
+      newValue: z.enum(['male', 'female']),
+      oldValue: z.enum(['male', 'female']),
+    })
+    .optional(),
+  birthDate: z
+    .object({ newValue: nullableDateOnly, oldValue: nullableDateOnly })
+    .optional(),
+  dateOfExit: z
+    .object({ newValue: nullableDateOnly, oldValue: nullableDateOnly })
+    .optional(),
+  dateOfConsent: z
+    .object({ newValue: nullableDateOnly, oldValue: nullableDateOnly })
+    .optional(),
+  comment: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  infoNote: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  photoLink: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  kindergarten: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  teacher: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  veteran: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  childOfWar: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  profession: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  honoraryStatus: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  interests: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+  orthodoxBeliever: z
+    .object({ newValue: nullableString, oldValue: nullableString })
+    .optional(),
+});
+
+const acceptedChangesSchema = z.object({
+  lastName: z.string().nullable().optional(),
+  firstName: z.string().optional(),
+  patronymic: z.string().nullable().optional(),
+  gender: z.enum(['male', 'female']).optional(),
+  birthDate: nullableDateOnly.optional(),
+  dateOfExit: nullableDateOnly.optional(),
+  dateOfConsent: nullableDateOnly.optional(),
+  comment: nullableString.optional(),
+  infoNote: nullableString.optional(),
+  photoLink: nullableString.optional(),
+  kindergarten: nullableString.optional(),
+  teacher: nullableString.optional(),
+  veteran: nullableString.optional(),
+  childOfWar: nullableString.optional(),
+  profession: nullableString.optional(),
+  honoraryStatus: nullableString.optional(),
+  interests: nullableString.optional(),
+  orthodoxBeliever: nullableString.optional(),
+});
+
+const seniorDiffSchema = z.object({
+  newSenior: seniorRawSchema,
+  oldSenior: seniorRawSchema,
+  changes: changesSchema, //TODO: delete it?
+  changeRows: z.array(
+    z.object({
+      field: z.string().nonempty(),
+      label: z.string().nonempty(),
+      newValue: z.any(),
+      oldValue: z.any(),
+    }),
+  ),
+});
+
+const differencesSchema = z.object({
+  newSeniors: z.array(seniorRawSchema),
+  removedSeniors: z.array(seniorRawSchema),
+  updatedSeniors: z.array(seniorDiffSchema),
+  possibleDuplicates: z.array(seniorDiffSchema),
+  returnedSeniors: z.array(seniorDiffSchema),
+});
+
+export const differencesResponseSchema = z.object({
+  differences: differencesSchema,
+  homeId: positiveInt,
+});
+
+export const bulkUpdateSchema = z.object({
+  admitted: z.array(seniorRawSchema),
+  removed: z.array(seniorRawSchema),
+  updated: z.array(
+    z.object({
+      seniorId: positiveInt,
+      changes: acceptedChangesSchema,
+    }),
+  ),
+  homeId: positiveInt,
+  dateOfUpdate: z.coerce.date()
+
+});
+
 /* ===================== Types ===================== */
 //export type SeniorDuplicates = z.infer<typeof duplicatesSchema>;
 //export type SeniorDraft = z.infer<typeof seniorDraftSchema>;
@@ -512,3 +691,9 @@ export type SeniorChangingData = z.infer<typeof changingDataSchema>;
 //export type SeniorDeletingData = z.infer<typeof deletingDataSchema>;
 //export type OutdatedHome = z.infer<typeof coordinationItemSchema>;
 export type SeniorAddress = z.infer<typeof seniorAddressSchema>;
+export type SeniorRow = z.infer<typeof seniorRowSchema>;
+export type Differences = z.infer<typeof differencesResponseSchema>;
+export type SeniorRaw = z.infer<typeof seniorRawSchema>;
+export type SeniorChanges = z.infer<typeof changesSchema>;
+export type SeniorDiff = z.infer<typeof seniorDiffSchema>;
+export type AcceptedChanges = z.infer<typeof acceptedChangesSchema>;

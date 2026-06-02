@@ -488,4 +488,25 @@ export class ToponymsListComponent {
         }
       });
   }
+
+    saveData(rows: any[]) {
+    return this.addressService
+      .createListOfToponyms(rows, this.type())
+      .pipe(
+        finalize(() => this.showSpinner.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: () => {
+          this.resetTable();
+        },
+        error: (err) => {
+          this.msgWrapper.handle(err, {
+            source: 'UploadFileComponent',
+            stage: 'saveData',
+            type: this.type(),
+          });
+        },
+      });
+  }
 }

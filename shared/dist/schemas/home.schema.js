@@ -28,7 +28,7 @@ const coordinationItemSchema = z.object({
     homeId: positiveInt,
     isRecoverable: z.boolean(),
     id: positiveInt,
-    homeStatus: z.string().optional()
+    homeStatus: z.string().optional(),
 });
 /* ===================== Some Schemas for form validation ===================== */
 export const emailControlSchema = z
@@ -203,6 +203,8 @@ export const homeDraftSchema = z
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
     draftCoordinations: z.array(positiveInt),
+    isClose: z.boolean(),
+    dateOfClose: nullableIsoDate,
 })
     .strict()
     .superRefine((data, ctx) => {

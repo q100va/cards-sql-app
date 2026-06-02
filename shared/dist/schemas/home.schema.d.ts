@@ -185,6 +185,8 @@ export declare const homeDraftSchema: z.ZodObject<{
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
     draftCoordinations: z.ZodArray<z.ZodNumber>;
+    isClose: z.ZodBoolean;
+    dateOfClose: z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>;
 }, z.core.$strict>;
 export declare const changingAddressSchema: z.ZodObject<{
     postalCode: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;

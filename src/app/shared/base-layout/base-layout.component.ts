@@ -129,6 +129,16 @@ export class BaseLayoutComponent {
       text: 'MENU.SENIORS',
       link: '/seniors',
     },
+       {
+      params: {
+        codes: ['UPLOAD_LIST_OF_SENIORS'],
+        mode: 'any',
+      },
+      dataCy: 'nav-seniors-bulk-update',
+      icon: 'cloud_upload',
+      text: 'MENU.SENIORS_BULK_UPDATE',
+      link: '/seniors-bulk-upload',
+    },
 
     {
       params: {

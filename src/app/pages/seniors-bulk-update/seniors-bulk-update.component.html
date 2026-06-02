@@ -1,0 +1,196 @@
+<mat-card class="update-card" appearance="outlined">
+  @if(showSpinner()){
+  <div class="overlay">
+    <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+      [style]="{ width: '150px', height: '150px' }" />
+  </div>
+  }
+  <mat-card-header style="width: 100%;">
+    <mat-grid-list cols="24" rowHeight="42px">
+      <mat-grid-tile colspan="12" rowspan="2" class="left">
+        <mat-slide-toggle [formControl]="commentsMode" class="small-toggle-label">{{'SENIOR.BULK_UPDATE.COMMENTS_MODE' |
+          translate}}</mat-slide-toggle>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="6" rowspan="2">
+      </mat-grid-tile>
+      <mat-grid-tile colspan="6" rowspan="2" class="right">
+        <mat-card-actions>
+          <button mat-fab extended (click)="applyChanges()" [disabled]="isFormInvalid()" class="apply">
+            <mat-icon>cloud_upload</mat-icon>{{'SENIOR.BULK_UPDATE.APPLY_CHANGES' | translate}}</button>
+        </mat-card-actions> </mat-grid-tile>
+
+      <mat-grid-tile colspan="24" rowspan="1">
+        <mat-card-title data-cy="card-title">{{'SENIOR.BULK_UPDATE.TITLE' | translate}}</mat-card-title>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="24" rowspan="3">
+        <mat-card-actions>
+          <app-upload-file [typeOfData]="'seniors'" [isCompleted]="isCompleted" (showSpinner)="showSpinner.set($event);"
+            (result)="parseRows($event)" *hasOp="{codes:['UPLOAD_LIST_OF_SENIORS'], mode:'all'}"></app-upload-file>
+        </mat-card-actions>
+      </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card-header>
+  <mat-card-content>
+
+    @if(currentHomeName){
+    <mat-card appearance="outlined"
+      style="background-color: rgba(174, 199, 129, 0.943); padding: 16px; margin-bottom: 16px;">
+      <mat-grid-list cols="36" gutterSize="6px" rowHeight="42px">
+
+        <mat-grid-tile colspan="36" rowspan="1" class="left">
+          <h4>{{'SENIOR.BULK_UPDATE.HOME_NAME' | translate}}: '{{currentHomeName}}'</h4>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="12" rowspan="2">
+          <mat-form-field>
+            <mat-label>{{ 'SENIOR.BULK_UPDATE.DATE_OF_UPDATE' | translate }}</mat-label>
+            <input matInput [matDatepicker]="picker" [formControl]="dateOfUpdate"
+              [placeholder]="'SENIOR.CARD.DATE_HINT' | translate" />
+            <mat-datepicker-toggle matIconSuffix [for]="picker" />
+            <mat-datepicker #picker />
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="24" rowspan="2">
+          <div class="months-selection">
+            <p>
+              {{ 'SENIOR.BULK_UPDATE.MONTHS_NOTE_1' | translate }}
+            </p>
+            <p>
+              {{ 'SENIOR.BULK_UPDATE.MONTHS_NOTE_2' | translate }}
+            </p>
+          </div>
+        </mat-grid-tile>
+
+        <mat-grid-tile colspan="12" rowspan="1">
+          @if (dateOfUpdate.hasError('required') && dateOfUpdate.touched) {
+          <mat-error>
+            {{ 'FORM_VALIDATION.SENIOR.DATE_REQUIRED' | translate }}
+          </mat-error>
+          }
+        </mat-grid-tile>
+        <mat-grid-tile colspan="24" rowspan="2">
+          <mat-form-field style="width: 70%;">
+            <mat-label>
+              {{ 'SENIOR.BULK_UPDATE.CHOOSE_MONTHS' | translate }}
+            </mat-label>
+            <mat-select [formControl]="chosenMonths" multiple style="width: 100%;">
+              @for (month of MONTHS; track month.id) {
+              <mat-option [value]="month.id">
+                {{ month.optionKey | translate }}
+              </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="12" rowspan="1"></mat-grid-tile>
+
+        <mat-grid-tile colspan="36" rowspan="2" class="right">
+          @if(showStart){
+          <p style="padding-right: 6px;">Предварительная проверка завершена. При необходимости выберите месяц(ы) и
+            нажмите</p>
+          <mat-icon fontIcon="start" style="margin-right: 6px;"></mat-icon>
+          <button mat-fab extended (click)="onStartClick()" class="white-and-green">
+            <mat-icon>rocket</mat-icon>{{'SENIOR.BULK_UPDATE.START' | translate}}</button>
+          }
+        </mat-grid-tile>
+      </mat-grid-list>
+      <br>
+
+      @if(noChanges){
+      <p>{{'SENIOR.BULK_UPDATE.NO_CHANGES' | translate}}</p>
+      }
+      @if(removedSeniors.length || newSeniors.length){
+      <mat-card appearance="outlined" style="background-color: white; padding: 16px; margin-bottom: 16px;">
+        <mat-grid-list cols="36" gutterSize="6px" rowHeight="42px">
+          <mat-grid-tile colspan="18" rowspan="1">
+            <h4>{{'SENIOR.BULK_UPDATE.REMOVED' | translate}}</h4>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="18" rowspan="1">
+            <h4>{{'SENIOR.BULK_UPDATE.ADMITTED' | translate}}</h4>
+          </mat-grid-tile>
+
+          <mat-grid-tile colspan="17" [rowspan]="getRowHeight('main')">
+            <div class="table-container">
+
+              <p-table selectionMode="single" [value]="removedSeniors" [(selection)]="selectedRemovedSenior"
+                [tableStyle]="{'min-width': 'auto'}" [scrollable]="true" scrollHeight="490"
+                (onRowSelect)="onSelectRemovedRow($event)" (onRowUnselect)="onUnselectRemovedRow($event)">
+                <ng-template #header>
+                  <tr>
+                    <th>{{'SENIOR.BULK_UPDATE.NAMES' | translate}}</th>
+                    <th>{{'SENIOR.BULK_UPDATE.BIRTH_DATE' | translate}}</th>
+                  </tr>
+                </ng-template>
+                <ng-template #body let-senior let-rowIndex="rowIndex">
+                  <tr [pSelectableRow]="senior" [pSelectableRowIndex]="rowIndex">
+                    <td>{{fullName(senior)}}</td>
+                    <td>{{dateUtils.transformDate(senior.birthDate)}}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="2" [rowspan]="getRowHeight('main')"></mat-grid-tile>
+
+          <mat-grid-tile colspan="17" [rowspan]="getRowHeight('main')">
+            <div class="table-container">
+              <p-table selectionMode="single" [value]="newSeniors" [(selection)]="selectedNewSenior"
+                [tableStyle]="{'min-width': 'auto'}" [scrollable]="true" scrollHeight="490px"
+                (onRowSelect)="onSelectNewRow($event)" (onRowUnselect)="onUnselectNewRow($event)">
+                <ng-template #header>
+                  <tr>
+                    <th>{{'SENIOR.BULK_UPDATE.NAMES' | translate}}</th>
+                    <th>{{'SENIOR.BULK_UPDATE.BIRTH_DATE' | translate}}</th>
+                  </tr>
+                </ng-template>
+                <ng-template #body let-senior let-rowIndex="rowIndex">
+                  <tr [pSelectableRow]="senior" [pSelectableRowIndex]="rowIndex">
+                    <td>{{fullName(senior)}}</td>
+                    <td>{{dateUtils.transformDate(senior.birthDate)}}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="32" rowspan="1"></mat-grid-tile>
+          <mat-grid-tile colspan="3" rowspan="2">
+            <button mat-mini-fab (click)="moveToUpdated()" class="move"
+              [disabled]="selectedNewSenior === null || selectedRemovedSenior === null"
+              [matTooltip]="translateService.instant('SENIOR.BULK_UPDATE.MOVE_TO_UPDATED')" matTooltipPosition="above">
+              <mat-icon>move_down</mat-icon>
+            </button>
+            <!--         <button mat-raised-button (click)="moveToUpdated()">{{'SENIOR.BULK_UPDATE.MOVE_TO_UPDATED'|
+            translate}}</button> -->
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="2" class="right"></mat-grid-tile>
+        </mat-grid-list>
+      </mat-card>
+      }
+
+      @if(returnedSeniors.length){
+      <mat-card appearance="outlined" class="small-card">
+        <h3>{{'SENIOR.BULK_UPDATE.RETURNED' | translate}}</h3>
+
+        <app-senior-changes-table [seniors]="returnedSeniors" (moveToAdmitted)="moveFromReturned($event)"
+          (acceptChanges)="acceptChanges('returned', $event.seniorId, $event.rowIndex, $event.accepted)" />
+      </mat-card>
+      }
+
+      @if(possibleDuplicates.length){
+      <mat-card appearance="outlined" class="small-card">
+        <h3>{{'SENIOR.BULK_UPDATE.POSSIBLE_DUPLICATES' | translate}}</h3>
+        <app-senior-changes-table [seniors]="possibleDuplicates" (moveToAdmitted)="moveFromPossibleDuplicates($event)"
+          (acceptChanges)="acceptChanges('duplicates', $event.seniorId, $event.rowIndex, $event.accepted)" />
+      </mat-card>
+      }
+
+      @if(updatedSeniors.length){
+      <mat-card appearance="outlined" class="small-card">
+        <h3>{{'SENIOR.BULK_UPDATE.UPDATED' | translate}}</h3>
+        <app-senior-changes-table [seniors]="updatedSeniors" (moveToAdmitted)="moveFromUpdated($event)"
+          (acceptChanges)="acceptChanges('updated', $event.seniorId, $event.rowIndex, $event.accepted)" />
+      </mat-card>
+      }
+    </mat-card>
+    }
+  </mat-card-content>
+</mat-card>

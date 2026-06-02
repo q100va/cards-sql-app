@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { Op, fn, col, where } from 'sequelize';
+import { Op, fn, col, where, literal } from 'sequelize';
 import {
   Country, Region, District, Locality, Home,
   Senior, SeniorSearch, SeniorOutdatedName,
   HomeAddress,
-  Occasion
+  Occasion,
+  HomeUpdateDate
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -21,10 +22,13 @@ import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 import { z } from 'zod';
 import { getPotentialRecipients } from "../controllers/ctrl-generate-recipients.js";
-import { editActiveRecipient } from "../controllers/ctrl-edit-recipient.js";
+import { editActiveRecipient, editHomeActiveRecipients } from "../controllers/ctrl-edit-recipient.js";
+import { compareSeniorLists } from "../controllers/ctrl-compare-seniors-lists.js";
+import { addNewSeniors, removeSeniors, updateSeniors } from "../controllers/ctrl-update-seniors-list.js";
+import { addRecipients, markAbsentRecipients } from "../controllers/ctrl-check-recipients.js";
 
 const router = Router();
-const includes = [
+export const INCLUDES = [
   {
     model: Home,
     as: 'home',
@@ -156,7 +160,7 @@ router.post(
               'createdAt',
               'updatedAt']
           },
-          include: includes,
+          include: INCLUDES,
           transaction: t,
         });
         //TODO: упростить кор-ку бывших и определяемых супругов
@@ -183,7 +187,7 @@ router.post(
                   'createdAt',
                   'updatedAt']
               },
-              include: includes,
+              include: INCLUDES,
               transaction: t,
             });
             const searchString = createSearchStringFor('senior', freshExSpouse);
@@ -204,7 +208,7 @@ router.post(
                 'createdAt',
                 'updatedAt']
             },
-            include: includes,
+            include: INCLUDES,
             transaction: t,
           });
           const searchString = createSearchStringFor('senior', freshNewSpouse);
@@ -262,7 +266,7 @@ router.post(
                     'createdAt',
                     'updatedAt']
                 },
-                include: includes,
+                include: INCLUDES,
                 transaction: t,
               });
               const searchString = createSearchStringFor('senior', freshExSpouse);
@@ -292,7 +296,7 @@ router.post(
                       'createdAt',
                       'updatedAt']
                   },
-                  include: includes,
+                  include: INCLUDES,
                   transaction: t,
                 });
                 const searchString = createSearchStringFor('senior', freshExSpouse);
@@ -314,7 +318,7 @@ router.post(
                     'createdAt',
                     'updatedAt']
                 },
-                include: includes,
+                include: INCLUDES,
                 transaction: t,
               });
               const searchString = createSearchStringFor('senior', freshNewSpouse);
@@ -348,7 +352,7 @@ router.post(
         const fresh = await Senior.findOne({
           where: { id },
           attributes: { exclude: ['createdAt', 'updatedAt'] },
-          include: includes,
+          include: INCLUDES,
           transaction: t,
         });
 
@@ -545,8 +549,8 @@ router.post(
         homesRequired = true;
       }
 
-      // ---- includes (contacts / addresses / coordinations / outdated names / search) ----
-      const includes =
+      // ---- INCLUDES (contacts / addresses / coordinations / outdated names / search) ----
+      const INCLUDES =
 
         [
           {
@@ -604,7 +608,7 @@ router.post(
       // search by SeniorSearch.content (words; exact → AND; else OR)
       if (search?.value?.trim()) {
         const contentWhere = buildSearchContentWhere(search.value, search.exact);
-        includes.push({
+        INCLUDES.push({
           model: SeniorSearch,
           required: true,
           attributes: [],
@@ -615,11 +619,11 @@ router.post(
         });
       }
       /*       console.log('INCLUDES');
-            console.log(JSON.stringify(includes, null, 2)); */
+            console.log(JSON.stringify(INCLUDES, null, 2)); */
 
       //order by region.shortName
       /*      if (sort?.[0]?.field === 'regionName') {
-             includes.push({
+             INCLUDES.push({
                model: HomeAddress,
                as: 'activeAddress',
                attributes: [],
@@ -632,13 +636,13 @@ router.post(
       // ---- count (distinct) ----
       const total = await Senior.count({
         where: whereSenior,
-        include: includes,
+        include: INCLUDES,
         distinct: true,
       });
 
       // console.log('whereSenior', whereSenior);
       // console.log('ORDER', order);
-      /*  console.log('includes', includes);
+      /*  console.log('INCLUDES', INCLUDES);
        console.log('whereSenior', whereSenior); */
 
       // ---- page ----
@@ -646,10 +650,10 @@ router.post(
         where: whereSenior,
         attributes: { exclude: ['createdAt', 'updatedAt'] },
         order,
-        include: includes,
+        include: INCLUDES,
         offset: pageSize * pageNumber,
         limit: pageSize,
-        //  subQuery: false, // avoid subquery limits in includes
+        //  subQuery: false, // avoid subquery limits in INCLUDES
         //  distinct: true,
       });
       // console.log('seniors', seniors);
@@ -673,7 +677,7 @@ router.get("/get-senior-by-id/:id",
       const id = req.params.id;
       const senior = await Senior.findByPk(id, {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: includes,
+        include: INCLUDES,
       });
       if (!senior) throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
       const data = transformOwnerData('senior', senior.toJSON());
@@ -890,5 +894,123 @@ router.get("/get-seniors-for-occasion/:occasionId/:homeId",
     }
   });
 
+router.post(
+  "/compare-seniors-lists",
+  requireAuth,
+  requireAny('UPLOAD_LIST_OF_SENIORS',),
+  validateRequest(z.object(
+    {
+      newList: z.array(seniorSchemas.seniorPreSchema),
+      homeName: z.string().trim().min(1),
+      commentsMode: z.boolean(),
+      chosenMonths: z.array(z.number()),
+    }
+  ), "body"),
+  async (req, res, next) => {
+    try {
+      const { newList, homeName, commentsMode, chosenMonths } = req.body;
+      const home = await Home.findOne({
+        where: { homeName }
+      });
+      if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+      const seniorWhere = {
+        homeId: home.id,
+      };
+
+      if (chosenMonths.length) {
+        seniorWhere[Op.and] = [
+          where(fn('EXTRACT', literal('MONTH FROM "birthDate"')), {
+            [Op.in]: chosenMonths,
+          }),
+        ];
+      }
+      const oldList = await Senior.findAll({
+        where: seniorWhere
+      });
+      const differences = compareSeniorLists(newList, oldList, home.id, commentsMode);
+      console.log('differences', differences);
+      res
+        .status(200)
+        .send({ code: 'SENIOR.COMPARED', data: { differences, homeId: home.id } });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.SENIOR.LISTS_NOT_COMPARED';
+      next(error);
+    }
+  });
+
+router.post(
+  '/update-seniors-list/',
+  requireAuth,
+  requireOperation('UPLOAD_LIST_OF_SENIORS'),
+  validateRequest(seniorSchemas.bulkUpdateSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      console.log('/update-seniors-list/');
+      const { admitted, removed, updated, homeId, dateOfUpdate, userId } = req.body;
+
+      //console.log('creatingSenior', creatingSenior)
+
+
+      const result = await withTransaction(async (t) => {
+        const createdCount = await addNewSeniors(admitted, dateOfUpdate, t);
+        const removedCount = await removeSeniors(removed, dateOfUpdate, t);
+        const updatedCount = await updateSeniors(updated, t);
+        const activeOccasions = await Occasion.findAll({
+          where: { status: 1 },
+          attributes: {
+            exclude: [
+              'createdAt',
+              'updatedAt']
+          },
+          transaction: t,
+        });
+        for (let occ of activeOccasions) {
+          await addRecipients(occ, t, homeId);
+          await markAbsentRecipients(occ, t, homeId);
+        }
+        for (let s of updated) {
+          if (s.changes.lastName !== undefined ||
+            s.changes.firstName !== undefined ||
+            s.changes.patronymic !== undefined ||
+            s.changes.gender !== undefined ||
+            s.changes.birthDate !== undefined
+          ) {
+            await editActiveRecipient(s.seniorId, s.changes, t);
+          }
+        }
+        await HomeUpdateDate.update(
+          {
+            isLatest: false
+          },
+          {
+            where: {
+              homeId,
+              isLatest: true
+            }
+          }
+        )
+
+        await HomeUpdateDate.create(
+          {
+            date: dateOfUpdate,
+            homeId,
+            userId: req.user.id,
+            isLatest: true
+          }
+        )
+        return { createdCount, removedCount, updatedCount }
+
+      });
+
+      res.status(201).send({ code: 'SENIOR.BULK_UPDATE.LIST_UPDATED', data: result });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.SENIOR.LIST_NOT_UPDATED';
+      next(error);
+    }
+  }
+);
+
 
 export default router;
+
+//TODO: задвоение сеньоров в разных домах

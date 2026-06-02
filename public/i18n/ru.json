@@ -38,7 +38,8 @@
     "PARTNERS": "Координаторы",
     "HOMES": "Интернаты",
     "SENIORS": "Жители интернатов",
-    "OCCASIONS": "Праздники и ДР"
+    "OCCASIONS": "Праздники и ДР",
+    "SENIORS_BULK_UPDATE": "Обновление списков"
   },
   "LANG": {
     "SWITCH": "Язык",
@@ -613,6 +614,7 @@
       "SPECIAL_HOME_LABEL": "специнтернат",
       "NO_ADDRESS_LABEL": "БОА",
       "ACC_SCHOOL_LABEL": "подходит для школ",
+      "UPDATE_DATE_LABEL":"Дата обновления",
       "POSTAL_CODE_LABEL": "Индекс",
       "POSTAL_NAME_LABEL": "Интернат-получатель",
       "POSTAL_ADDR_LABEL": "Улица, номер дома",
@@ -699,6 +701,86 @@
       "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
       "SPOUSE_LABEL": "Супруг(а)",
       "DATE_HINT": "ДД-ММ-ГГГГ"
+    },
+    "BULK_UPDATE": {
+      "TITLE": "Обновление списков жителей интернатов",
+      "DELETED_DUPLICATES": "Удалены дубли:\n {{duplicates}}",
+      "LIST_UPDATED": "Список обновлен:\nдобавлено {{createdCount}} зап.\nисключено {{removedCount}} зап.\nизменено {{updatedCount}} зап.",
+      "COMMENTS_MODE": "не учитывать по неосновным данным изменения на пустое значение",
+      "HOME_NAME": "Обновляется интернат",
+      "APPLY_CHANGES": "Сохранить изменения",
+      "DATE_OF_UPDATE": "Дата обновления",
+      "MONTHS_NOTE_1": "Если вы обновляете список именинников определенного месяца\nили нескольких, выберите нужные месяцы ниже.",
+      "MONTHS_NOTE_2": "Если обновляется полный список, оставьте поле пустым.",
+      "CHOOSE_MONTHS": "Выберите месяц(ы)",
+      "REMOVED": "ВЫБЫВШИЕ",
+      "ADMITTED": "ПОСТУПИВШИЕ",
+      "RETURNED": "ВОССТАНОВЛЕННЫЕ (если это разные люди, перенести в поступившие/выбывшие)",
+      "POSSIBLE_DUPLICATES": "ВОЗМОЖНО ИЗМЕНЕННЫЕ (если это разные люди, перенести в поступившие/выбывшие)",
+      "UPDATED": "ИЗМЕНЕННЫЕ (если это разные люди, перенести в поступившие/выбывшие)",
+      "NAMES": "ФИО",
+      "BIRTH_DATE": "Дата рождения",
+      "NO_CHANGES": "Список не изменился.",
+      "MOVE_TO_UPDATED": "Перенести в измененные",
+      "MOVE_TO_ADMITTED": "Перенести в поступившие/выбывшие",
+      "ACCEPT_CHANGES": "Принять изменения",
+      "START": "Старт",
+      "FIELD": {
+        "lastName": "фамилия",
+        "firstName": "имя",
+        "patronymic": "отчество",
+        "gender": "пол",
+        "birthDate": "дата рождения",
+        "dateOfExit": "дата выбытия",
+        "dateOfConsent": "дата согласия",
+        "comment": "комментарий",
+        "infoNote": "дополнительная информация",
+        "photoLink": "ссылка на фото",
+        "kindergarten": "детский сад",
+        "teacher": "учитель",
+        "veteran": "ветеран",
+        "childOfWar": "ребёнок войны",
+        "profession": "профессия",
+        "honoraryStatus": "почётный статус",
+        "interests": "интересы",
+        "orthodoxBeliever": "православный верующий"
+      }
+    },
+    "DIALOG": {
+      "BUTTON_APPLY": "Применить",
+      "BUTTON_CANCEL": "Oтменить обновление",
+      "CHECK_DATE": {
+        "TITLE": "Уточнение данных",
+        "CORRECT_DATE": "Выберите вариант корректировки*:",
+        "ACTION_DEFAULT_DAY": "проставить 15 число",
+        "ACTION_DEFAULT_MONTH": "проставить 7 месяц 'июль'",
+        "ACTION_DEFAULT_YEAR": "не указывать г.р.",
+        "ACTION_RETAIN_YEAR": "не менять г.р.",
+        "ACTION_CUSTOM": "указать полную дату",
+        "ACTION_EMPTY": "не указывать дату рождения",
+
+        "ERROR": {
+          "NO_MONTH": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' не указан месяц в дате рождения.",
+          "NO_DAY": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' не указано число в дате рождения.",
+          "WRONG_MONTH": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' неверно указан месяц в дате рождения.",
+          "WRONG_DAY": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' неверно указано число в дате рождения.",
+          "WRONG_YEAR": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' неверно указан год в дате рождения.",
+          "STRANGE_YEAR": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' указан странный год в дате рождения."
+        }
+      },
+      "CHECK_GENDER": {
+        "TITLE": "Уточнение пола",
+        "CORRECT_GENDER": "Укажите пол* и при необходимости исправьте ошибки в ФИО:",
+        "MALE": "муж.",
+        "FEMALE": "жен.",
+        "LAST_NAME_LABEL": "фамилия",
+        "FIRST_NAME_LABEL": "имя",
+        "PATRONYMIC_LABEL": "отчество",
+
+        "ERROR": {
+          "NO_GENDER": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' невозможно автоматически определить пол."
+        }
+      }
     }
   },
 
@@ -995,6 +1077,10 @@
       "LETTER_PASSWORD": "Только латиница (мин. 1)",
       "DIGIT_PASSWORD": "Минимум 1 цифра",
       "MISMATCH_PASSWORDS": "Пароли не совпадают"
+    },
+    "SENIOR": {
+      "MODE_REQUIRED": "Необходимо выбрать вариант",
+      "DATE_REQUIRED": "Укажите дату в правильном формате"
     }
   },
   "INTERNAL_VALIDATION": {

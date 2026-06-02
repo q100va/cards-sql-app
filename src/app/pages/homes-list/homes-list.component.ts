@@ -58,7 +58,7 @@ export class HomesListComponent {
       name: 'HOME.VIEW_OPTIONS.ONLY_CLOSED',
       initiallySelected: false,
     },
-      {
+    {
       id: 'exclude-closed',
       name: 'HOME.VIEW_OPTIONS.EXCLUDE_CLOSED',
       initiallySelected: false,
@@ -72,11 +72,11 @@ export class HomesListComponent {
     addTitle: 'HOME.ADD_HOME',
     searchPlaceholder: 'HOME.SEARCH_PLACEHOLDER',
     addIcon: 'add_home',
-     labels: {
+    labels: {
       blockLabel: 'NAV.FILTER.BLOCK_COMMENT_HOMES',
       closeLabel: 'NAV.FILTER.CLOSE_COMMENT_HOMES',
-      notActiveLabel: 'NAV.FILTER.NOT_ACTIVE_COMMENT_HOMES'
-    }
+      notActiveLabel: 'NAV.FILTER.NOT_ACTIVE_COMMENT_HOMES',
+    },
   };
 
   IMPLICITLY_DISPLAYED_COLUMNS: ColumnDefinition[] = [
@@ -209,6 +209,17 @@ export class HomesListComponent {
         colspan: 2,
         rowspan: 1,
       },
+/*       {
+        controlName: 'dateOfLastUpdate',
+        value: null,
+        validators: [zodValidator(nullableIsoDate)],
+        type: 'datePicker',
+        label: 'SENIOR.CARD.CONCENT_DATE_LABEL',
+        category: 'mainData',
+        formType: 'formControl',
+        colspan: 4,
+        rowspan: 1,
+      }, */
       {
         controlName: 'comment',
         value: null,

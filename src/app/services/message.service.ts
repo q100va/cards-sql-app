@@ -98,7 +98,7 @@ export class MessageWrapperService {
         : 'error'
       : severityHint;
     const params = parsed.data;
-    console.log('params', params);
+    //console.log('params', params);
     if (severity === 'warn') this.logService.warn(parsed.devMessage, mergedCtx);
     else this.logService.error(parsed.devMessage, mergedCtx);
 

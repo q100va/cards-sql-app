@@ -21,7 +21,7 @@ import {
   AuthUser,
   Permission,
   permissionRespSchema,
-} from '@shared/schemas/auth.schema';
+} from '../../../shared/schemas/auth.schema';
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { validateResponse } from '../utils/validate-response';
 

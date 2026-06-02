@@ -18,6 +18,7 @@ import { HomesListComponent } from './pages/homes-list/homes-list.component';
 import { SeniorsListComponent } from './pages/seniors-list/seniors-list.component';
 import { OccasionsListComponent } from './pages/occasions-list/occasions-list.component';
 import { RecipientsListComponent } from './pages/recipients-list/recipients-list.component';
+import { SeniorsBulkUpdateComponent } from './pages/seniors-bulk-update/seniors-bulk-update.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -67,6 +68,11 @@ export const routes: Routes = [
         component: SeniorsListComponent,
       },
       {
+        path: 'seniors-bulk-upload',
+        canMatch: [requireAnyOp('UPLOAD_LIST_OF_SENIORS')],
+        component: SeniorsBulkUpdateComponent,
+      },
+      {
         path: 'volunteers',
         canMatch: [
           requireAnyOp(
@@ -88,7 +94,12 @@ export const routes: Routes = [
       },
       {
         path: 'recipients/:occasionId',
-        canMatch: [requireAnyOp('VIEW_LIMITED_RECIPIENTS_LIST', 'VIEW_FULL_RECIPIENTS_LIST')],
+        canMatch: [
+          requireAnyOp(
+            'VIEW_LIMITED_RECIPIENTS_LIST',
+            'VIEW_FULL_RECIPIENTS_LIST',
+          ),
+        ],
         component: RecipientsListComponent,
       },
       {

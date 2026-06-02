@@ -425,6 +425,932 @@ export declare const seniorsSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
+export declare const seniorRowSchema: z.ZodObject<{
+    nursingHome: z.ZodString;
+    lastName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    firstName: z.ZodString;
+    patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    dateOfConsent: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    birthDate: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    gender: z.ZodOptional<z.ZodNullable<z.ZodEnum<{
+        male: "male";
+        female: "female";
+    }>>>;
+    comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    infoNote: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    photoLink: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    kindergarten: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    teacher: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    veteran: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    childOfWar: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    profession: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    honoraryStatus: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    interests: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    orthodoxBeliever: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+}, z.core.$strip>;
+export declare const seniorPreSchema: z.ZodObject<{
+    nursingHome: z.ZodString;
+    lastName: z.ZodNullable<z.ZodString>;
+    firstName: z.ZodString;
+    patronymic: z.ZodNullable<z.ZodString>;
+    dateOfConsent: z.ZodNullable<z.ZodString>;
+    dayBirthday: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
+    monthBirthday: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
+    yearBirthday: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
+    birthDate: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    gender: z.ZodEnum<{
+        male: "male";
+        female: "female";
+    }>;
+    comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    infoNote: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    photoLink: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    kindergarten: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    teacher: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    veteran: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    childOfWar: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    profession: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    honoraryStatus: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    interests: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    orthodoxBeliever: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+}, z.core.$strip>;
+export declare const seniorRawSchema: z.ZodObject<{
+    id: z.ZodOptional<z.ZodNumber>;
+    homeId: z.ZodNumber;
+    nursingHome: z.ZodOptional<z.ZodString>;
+    lastName: z.ZodNullable<z.ZodString>;
+    firstName: z.ZodString;
+    patronymic: z.ZodNullable<z.ZodString>;
+    dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    gender: z.ZodEnum<{
+        male: "male";
+        female: "female";
+    }>;
+    dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+}, z.core.$strip>;
+declare const changesSchema: z.ZodObject<{
+    lastName: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodNullable<z.ZodString>;
+        oldValue: z.ZodNullable<z.ZodString>;
+    }, z.core.$strip>>;
+    firstName: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodString;
+        oldValue: z.ZodString;
+    }, z.core.$strip>>;
+    patronymic: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodNullable<z.ZodString>;
+        oldValue: z.ZodNullable<z.ZodString>;
+    }, z.core.$strip>>;
+    gender: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+        oldValue: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+    }, z.core.$strip>>;
+    birthDate: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    dateOfExit: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    dateOfConsent: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    comment: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    infoNote: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    photoLink: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    kindergarten: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    teacher: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    veteran: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    childOfWar: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    profession: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    honoraryStatus: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    interests: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    orthodoxBeliever: z.ZodOptional<z.ZodObject<{
+        newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+declare const acceptedChangesSchema: z.ZodObject<{
+    lastName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    firstName: z.ZodOptional<z.ZodString>;
+    patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    gender: z.ZodOptional<z.ZodEnum<{
+        male: "male";
+        female: "female";
+    }>>;
+    birthDate: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    dateOfExit: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    dateOfConsent: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    infoNote: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    photoLink: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    kindergarten: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    teacher: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    veteran: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    childOfWar: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    profession: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    honoraryStatus: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    interests: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    orthodoxBeliever: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+}, z.core.$strip>;
+declare const seniorDiffSchema: z.ZodObject<{
+    newSenior: z.ZodObject<{
+        id: z.ZodOptional<z.ZodNumber>;
+        homeId: z.ZodNumber;
+        nursingHome: z.ZodOptional<z.ZodString>;
+        lastName: z.ZodNullable<z.ZodString>;
+        firstName: z.ZodString;
+        patronymic: z.ZodNullable<z.ZodString>;
+        dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        gender: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+        dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>;
+    oldSenior: z.ZodObject<{
+        id: z.ZodOptional<z.ZodNumber>;
+        homeId: z.ZodNumber;
+        nursingHome: z.ZodOptional<z.ZodString>;
+        lastName: z.ZodNullable<z.ZodString>;
+        firstName: z.ZodString;
+        patronymic: z.ZodNullable<z.ZodString>;
+        dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        gender: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+        dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>;
+    changes: z.ZodObject<{
+        lastName: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodNullable<z.ZodString>;
+            oldValue: z.ZodNullable<z.ZodString>;
+        }, z.core.$strip>>;
+        firstName: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodString;
+            oldValue: z.ZodString;
+        }, z.core.$strip>>;
+        patronymic: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodNullable<z.ZodString>;
+            oldValue: z.ZodNullable<z.ZodString>;
+        }, z.core.$strip>>;
+        gender: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodEnum<{
+                male: "male";
+                female: "female";
+            }>;
+            oldValue: z.ZodEnum<{
+                male: "male";
+                female: "female";
+            }>;
+        }, z.core.$strip>>;
+        birthDate: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        dateOfExit: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        dateOfConsent: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        comment: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        infoNote: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        photoLink: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        kindergarten: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        teacher: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        veteran: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        childOfWar: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        profession: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        honoraryStatus: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        interests: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        orthodoxBeliever: z.ZodOptional<z.ZodObject<{
+            newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>;
+    changeRows: z.ZodArray<z.ZodObject<{
+        field: z.ZodString;
+        label: z.ZodString;
+        newValue: z.ZodAny;
+        oldValue: z.ZodAny;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const differencesResponseSchema: z.ZodObject<{
+    differences: z.ZodObject<{
+        newSeniors: z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodNumber>;
+            homeId: z.ZodNumber;
+            nursingHome: z.ZodOptional<z.ZodString>;
+            lastName: z.ZodNullable<z.ZodString>;
+            firstName: z.ZodString;
+            patronymic: z.ZodNullable<z.ZodString>;
+            dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+            monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+            yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+            birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            gender: z.ZodEnum<{
+                male: "male";
+                female: "female";
+            }>;
+            dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        removedSeniors: z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodNumber>;
+            homeId: z.ZodNumber;
+            nursingHome: z.ZodOptional<z.ZodString>;
+            lastName: z.ZodNullable<z.ZodString>;
+            firstName: z.ZodString;
+            patronymic: z.ZodNullable<z.ZodString>;
+            dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+            monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+            yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+            birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            gender: z.ZodEnum<{
+                male: "male";
+                female: "female";
+            }>;
+            dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+        updatedSeniors: z.ZodArray<z.ZodObject<{
+            newSenior: z.ZodObject<{
+                id: z.ZodOptional<z.ZodNumber>;
+                homeId: z.ZodNumber;
+                nursingHome: z.ZodOptional<z.ZodString>;
+                lastName: z.ZodNullable<z.ZodString>;
+                firstName: z.ZodString;
+                patronymic: z.ZodNullable<z.ZodString>;
+                dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                gender: z.ZodEnum<{
+                    male: "male";
+                    female: "female";
+                }>;
+                dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            }, z.core.$strip>;
+            oldSenior: z.ZodObject<{
+                id: z.ZodOptional<z.ZodNumber>;
+                homeId: z.ZodNumber;
+                nursingHome: z.ZodOptional<z.ZodString>;
+                lastName: z.ZodNullable<z.ZodString>;
+                firstName: z.ZodString;
+                patronymic: z.ZodNullable<z.ZodString>;
+                dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                gender: z.ZodEnum<{
+                    male: "male";
+                    female: "female";
+                }>;
+                dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            }, z.core.$strip>;
+            changes: z.ZodObject<{
+                lastName: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodNullable<z.ZodString>;
+                    oldValue: z.ZodNullable<z.ZodString>;
+                }, z.core.$strip>>;
+                firstName: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodString;
+                    oldValue: z.ZodString;
+                }, z.core.$strip>>;
+                patronymic: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodNullable<z.ZodString>;
+                    oldValue: z.ZodNullable<z.ZodString>;
+                }, z.core.$strip>>;
+                gender: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodEnum<{
+                        male: "male";
+                        female: "female";
+                    }>;
+                    oldValue: z.ZodEnum<{
+                        male: "male";
+                        female: "female";
+                    }>;
+                }, z.core.$strip>>;
+                birthDate: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                dateOfExit: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                dateOfConsent: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                comment: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                infoNote: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                photoLink: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                kindergarten: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                teacher: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                veteran: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                childOfWar: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                profession: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                honoraryStatus: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                interests: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                orthodoxBeliever: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+            }, z.core.$strip>;
+            changeRows: z.ZodArray<z.ZodObject<{
+                field: z.ZodString;
+                label: z.ZodString;
+                newValue: z.ZodAny;
+                oldValue: z.ZodAny;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+        possibleDuplicates: z.ZodArray<z.ZodObject<{
+            newSenior: z.ZodObject<{
+                id: z.ZodOptional<z.ZodNumber>;
+                homeId: z.ZodNumber;
+                nursingHome: z.ZodOptional<z.ZodString>;
+                lastName: z.ZodNullable<z.ZodString>;
+                firstName: z.ZodString;
+                patronymic: z.ZodNullable<z.ZodString>;
+                dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                gender: z.ZodEnum<{
+                    male: "male";
+                    female: "female";
+                }>;
+                dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            }, z.core.$strip>;
+            oldSenior: z.ZodObject<{
+                id: z.ZodOptional<z.ZodNumber>;
+                homeId: z.ZodNumber;
+                nursingHome: z.ZodOptional<z.ZodString>;
+                lastName: z.ZodNullable<z.ZodString>;
+                firstName: z.ZodString;
+                patronymic: z.ZodNullable<z.ZodString>;
+                dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                gender: z.ZodEnum<{
+                    male: "male";
+                    female: "female";
+                }>;
+                dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            }, z.core.$strip>;
+            changes: z.ZodObject<{
+                lastName: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodNullable<z.ZodString>;
+                    oldValue: z.ZodNullable<z.ZodString>;
+                }, z.core.$strip>>;
+                firstName: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodString;
+                    oldValue: z.ZodString;
+                }, z.core.$strip>>;
+                patronymic: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodNullable<z.ZodString>;
+                    oldValue: z.ZodNullable<z.ZodString>;
+                }, z.core.$strip>>;
+                gender: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodEnum<{
+                        male: "male";
+                        female: "female";
+                    }>;
+                    oldValue: z.ZodEnum<{
+                        male: "male";
+                        female: "female";
+                    }>;
+                }, z.core.$strip>>;
+                birthDate: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                dateOfExit: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                dateOfConsent: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                comment: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                infoNote: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                photoLink: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                kindergarten: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                teacher: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                veteran: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                childOfWar: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                profession: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                honoraryStatus: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                interests: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                orthodoxBeliever: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+            }, z.core.$strip>;
+            changeRows: z.ZodArray<z.ZodObject<{
+                field: z.ZodString;
+                label: z.ZodString;
+                newValue: z.ZodAny;
+                oldValue: z.ZodAny;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+        returnedSeniors: z.ZodArray<z.ZodObject<{
+            newSenior: z.ZodObject<{
+                id: z.ZodOptional<z.ZodNumber>;
+                homeId: z.ZodNumber;
+                nursingHome: z.ZodOptional<z.ZodString>;
+                lastName: z.ZodNullable<z.ZodString>;
+                firstName: z.ZodString;
+                patronymic: z.ZodNullable<z.ZodString>;
+                dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                gender: z.ZodEnum<{
+                    male: "male";
+                    female: "female";
+                }>;
+                dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            }, z.core.$strip>;
+            oldSenior: z.ZodObject<{
+                id: z.ZodOptional<z.ZodNumber>;
+                homeId: z.ZodNumber;
+                nursingHome: z.ZodOptional<z.ZodString>;
+                lastName: z.ZodNullable<z.ZodString>;
+                firstName: z.ZodString;
+                patronymic: z.ZodNullable<z.ZodString>;
+                dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+                birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                gender: z.ZodEnum<{
+                    male: "male";
+                    female: "female";
+                }>;
+                dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+            }, z.core.$strip>;
+            changes: z.ZodObject<{
+                lastName: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodNullable<z.ZodString>;
+                    oldValue: z.ZodNullable<z.ZodString>;
+                }, z.core.$strip>>;
+                firstName: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodString;
+                    oldValue: z.ZodString;
+                }, z.core.$strip>>;
+                patronymic: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodNullable<z.ZodString>;
+                    oldValue: z.ZodNullable<z.ZodString>;
+                }, z.core.$strip>>;
+                gender: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodEnum<{
+                        male: "male";
+                        female: "female";
+                    }>;
+                    oldValue: z.ZodEnum<{
+                        male: "male";
+                        female: "female";
+                    }>;
+                }, z.core.$strip>>;
+                birthDate: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                dateOfExit: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                dateOfConsent: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                comment: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                infoNote: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                photoLink: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                kindergarten: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                teacher: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                veteran: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                childOfWar: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                profession: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                honoraryStatus: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                interests: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+                orthodoxBeliever: z.ZodOptional<z.ZodObject<{
+                    newValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                    oldValue: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+                }, z.core.$strip>>;
+            }, z.core.$strip>;
+            changeRows: z.ZodArray<z.ZodObject<{
+                field: z.ZodString;
+                label: z.ZodString;
+                newValue: z.ZodAny;
+                oldValue: z.ZodAny;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>;
+    homeId: z.ZodNumber;
+}, z.core.$strip>;
+export declare const bulkUpdateSchema: z.ZodObject<{
+    admitted: z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodNumber>;
+        homeId: z.ZodNumber;
+        nursingHome: z.ZodOptional<z.ZodString>;
+        lastName: z.ZodNullable<z.ZodString>;
+        firstName: z.ZodString;
+        patronymic: z.ZodNullable<z.ZodString>;
+        dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        gender: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+        dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    removed: z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodNumber>;
+        homeId: z.ZodNumber;
+        nursingHome: z.ZodOptional<z.ZodString>;
+        lastName: z.ZodNullable<z.ZodString>;
+        firstName: z.ZodString;
+        patronymic: z.ZodNullable<z.ZodString>;
+        dateOfConsent: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        dayBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        monthBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        yearBirthday: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+        birthDate: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        gender: z.ZodEnum<{
+            male: "male";
+            female: "female";
+        }>;
+        dateOfExit: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        comment: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        infoNote: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        photoLink: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        kindergarten: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        teacher: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        veteran: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        childOfWar: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        profession: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        honoraryStatus: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        interests: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+        orthodoxBeliever: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
+    }, z.core.$strip>>;
+    updated: z.ZodArray<z.ZodObject<{
+        seniorId: z.ZodNumber;
+        changes: z.ZodObject<{
+            lastName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            firstName: z.ZodOptional<z.ZodString>;
+            patronymic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            gender: z.ZodOptional<z.ZodEnum<{
+                male: "male";
+                female: "female";
+            }>>;
+            birthDate: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            dateOfExit: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            dateOfConsent: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            infoNote: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            photoLink: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            kindergarten: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            teacher: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            veteran: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            childOfWar: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            profession: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            honoraryStatus: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            interests: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            orthodoxBeliever: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+        }, z.core.$strip>;
+    }, z.core.$strip>>;
+    homeId: z.ZodNumber;
+    dateOfUpdate: z.ZodCoercedDate<unknown>;
+}, z.core.$strip>;
 export type SeniorOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type SeniorChangingData = z.infer<typeof changingDataSchema>;
 export type SeniorAddress = z.infer<typeof seniorAddressSchema>;
+export type SeniorRow = z.infer<typeof seniorRowSchema>;
+export type Differences = z.infer<typeof differencesResponseSchema>;
+export type SeniorRaw = z.infer<typeof seniorRawSchema>;
+export type SeniorChanges = z.infer<typeof changesSchema>;
+export type SeniorDiff = z.infer<typeof seniorDiffSchema>;
+export type AcceptedChanges = z.infer<typeof acceptedChangesSchema>;
+export {};

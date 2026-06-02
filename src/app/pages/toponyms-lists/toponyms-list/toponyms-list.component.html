@@ -34,7 +34,7 @@
         <mat-grid-tile colspan="1" rowspan="1">
           <div class="bottom-right">
             <app-upload-file [typeOfData]="type()" (showSpinner)="showSpinner.set($event);"
-              (resetRequested)="resetTable()"
+              (result)="saveData($event)"
               *hasOp="{codes:['UPLOAD_LIST_OF_TOPONYMS'], mode:'all'}"></app-upload-file>
           </div>
         </mat-grid-tile>

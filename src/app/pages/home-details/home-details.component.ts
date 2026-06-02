@@ -36,6 +36,7 @@ import {
   PartnerService,
   PartnerMainService,
 } from '../../services/partner.service';
+import { DateUtilsService } from '../../services/date-utils.service';
 import { combineLatest, shareReplay } from 'rxjs';
 import { zodValidator } from '../../utils/zod-validator';
 import { coordinationNameControlSchema } from '../../../../shared/schemas/common.schema';
@@ -431,6 +432,10 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     const data = this.outdatedDataDraft;
     const list = data?.officialNames;
     return Array.isArray(list) ? list : [];
+  }
+
+  override get lastDateOfUpdate(): Date | null {
+    return this.existingOwner?.dateOfLastUpdate ?? null;
   }
 
   override setHasOutdatedOfficialNames() {

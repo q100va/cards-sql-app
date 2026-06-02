@@ -1,4 +1,13 @@
-import { Component, DestroyRef, ElementRef, inject, input, output, ViewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  output,
+  ViewChild,
+} from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -34,9 +43,19 @@ export class UploadFileComponent {
   @ViewChild('hiddenfileinput') hiddenfileinput!: ElementRef<HTMLInputElement>;
 
   file?: File;
-  typeOfData = input.required<ToponymType>();
+  fileName = '';
+  typeOfData = input.required<ToponymType | 'seniors'>();
+  isCompleted = input<boolean>();
+
   showSpinner = output<boolean>();
   resetRequested = output<void>();
+  result = output<any[]>();
+
+  constructor() {
+    effect(() => {
+      if (this.isCompleted()) this.fileName = '';
+    });
+  }
 
   // --- utils ---
   private isExcelFile(f: File) {
@@ -58,12 +77,13 @@ export class UploadFileComponent {
       /invalid/i.test(msg);
 
     return new CustomError(
-      knownBad ? 'ERRORS.FILE.INVALID_FORMAT_XLSX' : 'ERRORS.FILE.NOT_UPLOADED'
+      knownBad ? 'ERRORS.FILE.INVALID_FORMAT_XLSX' : 'ERRORS.FILE.NOT_UPLOADED',
     );
   }
 
   addFile(event: Event) {
     this.showSpinner.emit(true);
+    this.fileName = '';
     const inputEl = event.target as HTMLInputElement;
     const file = inputEl.files?.[0];
 
@@ -84,23 +104,26 @@ export class UploadFileComponent {
           source: 'UploadFileComponent',
           stage: 'pre-validate',
           type: this.typeOfData(),
-        }
+        },
       );
     }
+    this.fileName = file.name;
 
     const schema = schemas[this.typeOfData()];
 
+    console.log('file', file);
     readXlsxFile(file, { schema })
       .then(({ rows, errors }) => {
         console.log('errors');
         console.log(errors);
+        console.log('rows', rows);
         if (!rows?.length) throw new CustomError('ERRORS.FILE.EMPTY');
-        if (
+        /*         if (
           schema &&
           Object.keys(rows[0]).length < Object.keys(schema).length
         ) {
           throw new CustomError('ERRORS.FILE.INVALID_STRUCTURE');
-        }
+        } */
         if (errors.length) {
           throw new CustomError('ERRORS.FILE.VALIDATION', {
             row: errors[0].row,
@@ -108,10 +131,9 @@ export class UploadFileComponent {
             error: errors[0].error,
           });
         }
-        return this.saveData(rows);
+        this.result.emit(rows);
       })
       .catch((e) => {
-        this.showSpinner.emit(false);
         const err = this.normalizeXlsxError(e);
         this.msgWrapper.handle(err, {
           source: 'UploadFileComponent',
@@ -120,12 +142,18 @@ export class UploadFileComponent {
         });
       })
       .finally(() => {
-        this.hiddenfileinput.nativeElement.value = '';
         this.showSpinner.emit(false);
+        this.hiddenfileinput.nativeElement.value = '';
+        //this.fileName='';
+        //this.showSpinner.emit(false);
       });
   }
 
-  private saveData(rows: any[]) {
+  clear() {
+    this.fileName = '';
+  }
+
+  /*   private saveData(rows: any[]) {
     return this.addressService
       .createListOfToponyms(rows, this.typeOfData())
       .pipe(
@@ -144,5 +172,5 @@ export class UploadFileComponent {
           });
         },
       });
-  }
+  } */
 }

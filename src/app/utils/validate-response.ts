@@ -18,24 +18,30 @@ export class ValidationError extends Error {
  * RxJS operator that validates `response.data` using a Zod schema.
  */
 export function validateResponse<TSchema extends ZodType<any, any>>(
-  schema: TSchema
+  schema: TSchema,
 ): (
-  source$: Observable<RawApiResponse>
+  source$: Observable<RawApiResponse>,
 ) => Observable<ApiResponse<z.infer<TSchema>>> {
+  //console.log('validateResponse');
   return (source$) =>
     source$.pipe(
       map((response) => {
+        // console.log('response', response);
         const parseResult = schema.safeParse(response.data);
+        // console.log('parseResult', parseResult);
         if (!parseResult.success) {
+         //  console.log('if (!parseResult.success) parseResult.data', parseResult.data);
           console.error('Schema validation failed:', parseResult);
           console.error('response.data:', response.data);
           throw new ValidationError('ERRORS.INVALID_SCHEMA');
         }
+        console.log('parseResult.data', parseResult.data);
+
         return {
           data: parseResult.data,
           code: response.code,
         };
-      })
+      }),
     );
 }
 
@@ -43,11 +49,11 @@ export function validateResponse<TSchema extends ZodType<any, any>>(
  * RxJS operator that validates `response.data` using a simple type guard.
  */
 export function validateNoSchemaResponse<T>(
-  validatorName: keyof typeof validators
+  validatorName: keyof typeof validators,
 ) {
   return (source: Observable<RawApiResponse>): Observable<ApiResponse<T>> =>
     source.pipe(
-      map((response) => validateResponseOperator<T>(response, validatorName))
+      map((response) => validateResponseOperator<T>(response, validatorName)),
     );
 }
 
@@ -56,7 +62,7 @@ export function validateNoSchemaResponse<T>(
  */
 function validateResponseOperator<T>(
   response: RawApiResponse,
-  validatorName: keyof typeof validators
+  validatorName: keyof typeof validators,
 ): ApiResponse<T> {
   console.log('response.data:', response.data);
   const validator = validators[validatorName];

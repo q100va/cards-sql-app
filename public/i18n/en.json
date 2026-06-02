@@ -38,7 +38,8 @@
     "PARTNERS": "Partners",
     "HOMES": "Homes",
     "SENIORS": "Residents",
-    "OCCASIONS": "Occasions"
+    "OCCASIONS": "Occasions",
+    "SENIORS_BULK_UPDATE": "Update List"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -614,6 +615,7 @@
       "SPECIAL_HOME_LABEL": "special home",
       "NO_ADDRESS_LABEL": "no return address",
       "ACC_SCHOOL_LABEL": "suitable for schools",
+      "UPDATE_DATE_LABEL": "Update date",
       "POSTAL_CODE_LABEL": "Postal code",
       "POSTAL_NAME_LABEL": "Postal name",
       "POSTAL_ADDR_LABEL": "Street, house number",
@@ -700,6 +702,93 @@
       "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
       "SPOUSE_LABEL": "Spouse",
       "DATE_HINT": "mm/dd/yyyy"
+    },
+    "BULK_UPDATE": {
+      "TITLE": "Nursing Home Residents List Update",
+      "DELETED_DUPLICATES": "Duplicate records removed:\n{{duplicates}}",
+      "LIST_UPDATED": "List updated:\nAdded: {{createdCount}}\nRemoved: {{removedCount}}\nUpdated: {{updatedCount}}",
+      "COMMENTS_MODE": "Ignore changes to empty values in non-essential fields",
+      "HOME_NAME": "Nursing Home",
+      "APPLY_CHANGES": "Apply Changes",
+      "DATE_OF_UPDATE": "Update Date",
+      "MONTHS_NOTE_1": "If you are updating birthday recipients for one or more specific months,\nselect the desired months below.",
+      "MONTHS_NOTE_2": "If you are updating the entire list, leave this field empty.",
+      "CHOOSE_MONTHS": "Select Month(s)",
+      "REMOVED": "REMOVED",
+      "ADMITTED": "ADMITTED",
+      "RETURNED": "RETURNED (if these are different people, move them to Admitted/Removed)",
+      "POSSIBLE_DUPLICATES": "POSSIBLY UPDATED (if these are different people, move them to Admitted/Removed)",
+      "UPDATED": "UPDATED (if these are different people, move them to Admitted/Removed)",
+      "NAMES": "Full Name",
+      "BIRTH_DATE": "Date of Birth",
+      "NO_CHANGES": "The list has not changed.",
+      "MOVE_TO_UPDATED": "Move to Updated",
+      "MOVE_TO_ADMITTED": "Move to Admitted/Removed",
+      "ACCEPT_CHANGES": "Accept Changes",
+      "START": "Start",
+
+      "FIELD": {
+        "lastName": "last name",
+        "firstName": "first name",
+        "patronymic": "patronymic",
+        "gender": "gender",
+        "birthDate": "date of birth",
+        "dateOfExit": "date of departure",
+        "dateOfConsent": "consent date",
+        "comment": "comment",
+        "infoNote": "additional information",
+        "photoLink": "photo link",
+        "kindergarten": "kindergarten",
+        "teacher": "teacher",
+        "veteran": "veteran",
+        "childOfWar": "child of war",
+        "profession": "profession",
+        "honoraryStatus": "honorary status",
+        "interests": "interests",
+        "orthodoxBeliever": "Orthodox believer"
+      }
+    },
+
+    "DIALOG": {
+      "BUTTON_APPLY": "Apply",
+      "BUTTON_CANCEL": "Cancel Update",
+
+      "CHECK_DATE": {
+        "TITLE": "Data Verification",
+        "CORRECT_DATE": "Choose a correction option*:",
+
+        "ACTION_DEFAULT_DAY": "set day to 15",
+        "ACTION_DEFAULT_MONTH": "set month to July",
+        "ACTION_DEFAULT_YEAR": "do not specify year of birth",
+        "ACTION_RETAIN_YEAR": "keep existing year of birth",
+        "ACTION_CUSTOM": "specify full date",
+        "ACTION_EMPTY": "do not specify date of birth",
+
+        "ERROR": {
+          "NO_MONTH": "Month is missing in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "NO_DAY": "Day is missing in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "WRONG_MONTH": "Invalid month in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "WRONG_DAY": "Invalid day in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "WRONG_YEAR": "Invalid year in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "STRANGE_YEAR": "Unusual year in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'."
+        }
+      },
+
+      "CHECK_GENDER": {
+        "TITLE": "Gender Verification",
+        "CORRECT_GENDER": "Specify the gender* and correct the name fields if necessary:",
+
+        "MALE": "Male",
+        "FEMALE": "Female",
+
+        "LAST_NAME_LABEL": "Last Name",
+        "FIRST_NAME_LABEL": "First Name",
+        "PATRONYMIC_LABEL": "Patronymic",
+
+        "ERROR": {
+          "NO_GENDER": "Unable to determine the gender automatically for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'."
+        }
+      }
     }
   },
 
@@ -996,6 +1085,10 @@
       "LETTER_PASSWORD": "At least 1 Latin letter",
       "DIGIT_PASSWORD": "At least 1 digit",
       "MISMATCH_PASSWORDS": "Passwords mismatch"
+    },
+    "SENIOR": {
+      "MODE_REQUIRED": "Selection is required",
+      "DATE_REQUIRED": "Please select a date in right format"
     }
   },
   "INTERNAL_VALIDATION": {

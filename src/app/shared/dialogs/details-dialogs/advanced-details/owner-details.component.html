@@ -142,12 +142,16 @@
           </mat-form-field>
         </mat-grid-tile>
         }
-
-        <!--      TODO:  автоматически блокировать при выбытии, прятать заблокирован, если выбыл -->
-
-
-
         }
+        }
+
+        <!--dateOfLastUpdate-->
+        <!--    TODO: all list+edit+new -->
+        @if(isHomeContext()&&data().operation == 'view-edit'){
+        <mat-grid-tile colspan="6" rowspan="1">
+          <div style="text-align: left; width: 100%;">{{'HOME.CARD.UPDATE_DATE_LABEL' | translate}}: {{lastDateOfUpdate
+            ? dateUtils.transformDate(lastDateOfUpdate) : '---'}}</div>
+        </mat-grid-tile>
         }
 
         <!-- Blocking -->
@@ -169,9 +173,6 @@
           </mat-form-field>
         </mat-grid-tile> }
         }
-
-        <!-- TODO: для домов и сеньоров доработать сочетание блок-закрытие/выход -->
-
         <!-- Close -->
         @if(hasStatus()){
         <mat-grid-tile colspan="2" rowspan="1">
@@ -215,8 +216,6 @@
             <br />
             <div>
               {{ homeCtrl.value.fullPostalAddress ?? '' }}
-
-              <!--  TODO: -->
               @if (homeCtrl.value.noAddress){ <br /><span> {{'HOME.CARD.NO_ADDRESS_LABEL' | translate}}
                 <!--    @else { {{'TABLE.HOME_CATEGORIES.WITH_ADDRESS' | translate}} } -->
               </span>}

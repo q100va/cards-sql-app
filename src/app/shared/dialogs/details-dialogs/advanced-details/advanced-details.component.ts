@@ -97,6 +97,7 @@ import { RoleService } from '../../../../services/role.service';
 import { UserService } from '../../../../services/user.service';
 import { PartnerService } from '../../../../services/partner.service';
 import { VolunteerService } from '../../../../services/volunteer.service';
+import { DateUtilsService } from '../../../../services/date-utils.service';
 
 import {
   buildDuplicateInfoMessage,
@@ -187,6 +188,7 @@ export class AdvancedDetailsComponent<
   readonly ownerChangesPlannerService = inject(OwnerChangesPlannerService);
   readonly translate = inject(TranslateService);
   readonly auth = inject(AuthService);
+  readonly dateUtils = inject(DateUtilsService);
 
   // Текущий пользователь
   readonly user = toSignal<AuthUser | null>(this.auth.currentUser$, {
@@ -1765,6 +1767,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   /*  get coordinationsArray(): FormArray<FormControl<RelationPick | string>> {
     return new FormArray<FormControl<RelationPick | string>>([]);
   } */
+
+  get lastDateOfUpdate(): Date | null {
+    return null;
+  }
   get subscriptions(): Subscription[] {
     return [];
   }

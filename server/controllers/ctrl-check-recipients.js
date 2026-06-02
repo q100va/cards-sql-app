@@ -69,14 +69,14 @@ export async function addRecipients(occasion, t, homeId = null) {
   const whereAbs = { occasionId: occasion.id, isAbsent: true };
   if (homeId !== null) whereAbs.homeIdSnapshot = homeId;
 
-  const absents = await Recipient.findAll({
+  const absent = await Recipient.findAll({
     where: whereAbs,
     attributes: ['seniorId'],
     transaction: t,
   });
-  const absentsIds = absents.map(r => r.seniorId);
+  const absentIds = absent.map(r => r.seniorId);
 
-  const resultToMark = absentsIds.filter(id => (new Set(result)).has(id));
+  const resultToMark = absentIds.filter(id => (new Set(result)).has(id));
   const resultToAdd = result.filter(id => !(new Set(resultToMark)).has(id));
 
   console.log('resultToMark', resultToMark);
@@ -121,27 +121,32 @@ export async function addRecipients(occasion, t, homeId = null) {
   };
 }
 
-export async function markAbsentRecipients(occasion, t) {
-  const seniors = await getSeniors(occasion, t);
+export async function markAbsentRecipients(occasion, t, homeId = null) {
+  let seniors = await getSeniors(occasion, t);
+  if (homeId !== null) seniors = seniors.filter(s => s.homeId === homeId);
   const seniorsSet = new Set(seniors.map(s => s.id));
 
+  const whereRes = { occasionId: occasion.id, isAbsent: false };
+  if (homeId !== null) whereRes.homeIdSnapshot = homeId;
+
   const recipients = await Recipient.findAll({
-    where: { occasionId: occasion.id, isAbsent: false },
+    where: whereRes,
     attributes: ['seniorId'],
     transaction: t,
   });
+
   const recipientsIds = recipients.map(r => r.seniorId);
 
-  const result = recipientsIds.filter(id => !seniorsSet.has(id));
-  console.log('absent', result);
+  const absent = recipientsIds.filter(id => !seniorsSet.has(id));
+  console.log('absent', absent);
   let updated = [];
-  if (result.length) {
+  if (absent.length) {
     const [_count, rows] = await Recipient.update(
       {
         isAbsent: true
       },
       {
-        where: { occasionId: occasion.id, seniorId: { [Op.in]: result } },
+        where: { occasionId: occasion.id, seniorId: { [Op.in]: absent } },
         transaction: t,
         individualHooks: true, // ensure per-row hooks/audit
         returning: true,

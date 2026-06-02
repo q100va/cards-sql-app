@@ -27,6 +27,7 @@ import { HomeService, HomeMainService } from '../../services/home.service';
 import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
 import { BehaviorSubject, of, shareReplay, switchMap } from 'rxjs';
 import { RelationPick } from '../../interfaces/advanced-model';
+import { DateUtilsService } from '../../services/date-utils.service';
 
 @Component({
   selector: 'app-senior-details',
