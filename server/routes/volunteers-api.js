@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { Op, Sequelize } from 'sequelize';
+import { z } from 'zod';
 import {
   Country, Region, District, Locality,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
@@ -218,7 +219,7 @@ router.post(
         const searchString = createSearchStringFor('volunteer', freshVolunteer);
         await VolunteerSearch.create({ volunteerId: volunteer.id, content: searchString }, { transaction: t });
 
-        return fullName(volunteer);
+        return {name: fullName(volunteer), id: volunteer.id};
       });
 
       res.status(201).send({ code: 'VOLUNTEER.CREATED', data: result });
@@ -939,4 +940,30 @@ router.patch(
       next(error);
     }
   });
+
+router.get("/search-contacts/:q",
+  requireAuth,
+  requireAny('ADD_NEW_ORDER', 'EDIT_ORDER'),
+  validateRequest(z.object({q: z.string().trim().min(3)}), 'params'),
+  async (req, res, next) => {
+    try {
+      const q = req.params.q;
+      const contacts = await VolunteerContact.findAll({
+        where: {
+          content: {
+            [Op.iLike]: `%${q}%`,
+          },
+        },
+        attributes: ['id', 'content', 'type', 'volunteerId'],
+        limit: 20,
+        order: [['content', 'ASC']],
+        raw: true,
+      })
+      res.status(200).send({ data: contacts });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.VOLUNTEER.CONTACT_NOT_FOUND';
+      next(error);
+    }
+  });
+
 export default router;

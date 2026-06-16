@@ -23,7 +23,7 @@ export default function OrderModel(sequelize) {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      institutesId: {
+      instituteId: {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
