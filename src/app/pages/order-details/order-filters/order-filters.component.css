@@ -1,0 +1,9 @@
+:host ::ng-deep .right .mat-grid-tile-content{
+ justify-content: end !important;
+ align-items: self-start;
+}
+
+:host ::ng-deep .left .mat-grid-tile-content{
+ justify-content: start !important;
+ /* align-items: self-start; */
+}

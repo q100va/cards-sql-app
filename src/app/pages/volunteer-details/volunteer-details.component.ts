@@ -333,15 +333,16 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   } */
 
   override get subscriptions(): Subscription[] {
-    let list = structuredClone(this.existingOwner!.subscriptions) ?? [];
+    let list = structuredClone(this.existingOwner?.subscriptions) ?? [];
     /*     const idx = list.findIndex((s) => s.userId === this.user()!.id);
     if (idx !== -1) list.splice(idx, 1);
     return list;*/
+    console.log('list', list);
     return Array.isArray(list) ? list : [];
   }
 
   override get cooperations(): Cooperation[] {
-    const list = this.existingOwner!.cooperations;
+    const list = this.existingOwner?.cooperations;
     return Array.isArray(list) ? list : [];
   }
 

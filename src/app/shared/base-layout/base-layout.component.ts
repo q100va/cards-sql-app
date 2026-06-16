@@ -1,6 +1,6 @@
 // src/app/shared/base-layout/base-layout.component.ts
 import { Component, computed, inject } from '@angular/core';
-import { RouterModule, RouterOutlet } from '@angular/router';
+import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { MatIconModule } from '@angular/material/icon';
@@ -53,6 +53,7 @@ import { HasOpDirective } from '../../directives/has-op.directive';
 export class BaseLayoutComponent {
   readonly auth = inject(AuthService);
   readonly lang = inject(LanguageService);
+  private readonly router = inject(Router);
   countdown = 60;
 
   readonly idle = inject(IdleService);
@@ -129,7 +130,7 @@ export class BaseLayoutComponent {
       text: 'MENU.SENIORS',
       link: '/seniors',
     },
-       {
+    {
       params: {
         codes: ['UPLOAD_LIST_OF_SENIORS'],
         mode: 'any',
@@ -231,5 +232,9 @@ export class BaseLayoutComponent {
 
   setLanguage(code: 'en' | 'ru') {
     this.lang.set(code);
+  }
+
+  openNewOrder(typeId: string) {
+    this.router.navigate(['/orders/new-order', typeId]);
   }
 }

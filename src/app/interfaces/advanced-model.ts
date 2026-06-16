@@ -664,7 +664,10 @@ export interface OwnerMainService<
 > {
   checkOwnerData(ownerDraft: TOwnerDraft): Observable<ApiResponse<Duplicates>>;
   getById(id: number): Observable<ApiResponse<TOwner>>;
-  saveOwner(ownerDraft: TOwnerDraft): Observable<ApiResponse<string>>;
+  saveOwner(ownerDraft: TOwnerDraft): Observable<ApiResponse<string | {
+      name: string;
+      id: number;
+    }>>;
   saveUpdatedOwner(
     id: number,
     updatedOwnerData: UpdatedOwnerData<

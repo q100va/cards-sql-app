@@ -46,9 +46,9 @@ import { HasOpDirective } from '../../../../directives/has-op.directive';
   templateUrl: './details-dialog.component.html',
   styleUrl: './details-dialog.component.css',
 })
-export class DetailsDialogComponent<T extends BaseModel>
-  implements AfterViewInit
-{
+export class DetailsDialogComponent<
+  T extends BaseModel,
+> implements AfterViewInit {
   @ViewChild('container', { read: ViewContainerRef })
   container!: ViewContainerRef;
 
@@ -101,10 +101,10 @@ export class DetailsDialogComponent<T extends BaseModel>
     // Bridge child signals → dialog signals
     runInInjectionContext(this.injector, () => {
       effect(() => this.showSpinner.set(this.instance.showSpinner()));
-      effect(() => this.changes.set(this.instance.changesSignal()));//TODO: delete?
+      effect(() => this.changes.set(this.instance.changesSignal())); //TODO: delete?
       effect(() => this.isEditMode.set(this.instance.isEditModeSignal()));
       effect(() =>
-        this.isSaveDisabled.set(this.instance.IsSaveDisabledSignal())
+        this.isSaveDisabled.set(this.instance.IsSaveDisabledSignal()),
       );
       effect(() => {
         const closing = this.instance.closeDialogDataSignal();
@@ -132,7 +132,18 @@ export class DetailsDialogComponent<T extends BaseModel>
   }
 
   // Close dialog; map true → null name per current semantics
-  private closeDialog(data: string | boolean) {
-    this.dialogRef.close({ refresh: !!data });
+  private closeDialog(
+    data:
+      | string
+      | boolean
+      | {
+          name: string;
+          id: number;
+        },
+  ) {
+    this.dialogRef.close({
+      refresh: !!data,
+      id: typeof data === 'object' && data !== null ? data.id : null,
+    });
   }
 }

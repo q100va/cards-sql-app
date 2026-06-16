@@ -70,14 +70,20 @@ export class BaseDetailsComponent<T extends BaseModel> {
   readonly emittedIsEditMode = output<boolean>();
   readonly emittedChanges = output<boolean>();
   readonly emittedIsSaveDisabled = output<boolean>();
-  readonly emittedCloseDialogData = output<string | false | null>();
+  readonly emittedCloseDialogData = output<string | false | null | {
+      name: string;
+      id: number;
+    }>();
   readonly emittedShowSpinner = output<boolean>();
 
   // Local UI state signals
   isEditModeSignal = signal(false);
   changesSignal = signal(false);
   IsSaveDisabledSignal = signal(true);
-  closeDialogDataSignal = signal<string | false | null>(null);
+  closeDialogDataSignal = signal<string | false | null | {
+      name: string;
+      id: number;
+    }>(null);
   showSpinner = signal(true);
   deletingSignal = signal(false);
 

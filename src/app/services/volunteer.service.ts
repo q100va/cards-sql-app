@@ -28,6 +28,8 @@ import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
+  ContactOption,
+  contactOptionSchema,
   volunteerSchema,
   volunteersSchema,
 } from '../../../shared/schemas/volunteer.schema';
@@ -44,6 +46,7 @@ export interface VolunteerMainService extends OwnerMainService<
   VolunteerDeletingData,
   { list: Volunteer[]; length: number }
 > {
+
   checkPossibilityToBlockVolunteer(id: number): Observable<ApiResponse<number>>;
 }
 
@@ -81,13 +84,20 @@ export class VolunteerService implements VolunteerMainService {
       .pipe(validateResponse(duplicatesSchema), catchError(this.handleError));
   }
 
-  saveOwner(ownerDraft: VolunteerDraft): Observable<ApiResponse<string>> {
+  saveOwner(ownerDraft: VolunteerDraft): Observable<
+    ApiResponse<{
+      name: string;
+      id: number;
+    }>
+  > {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/create-volunteer`, ownerDraft)
       .pipe(
-        validateResponse(z.string()),
+        validateResponse(
+          z.object({ name: z.string(), id: z.number().int().positive() }),
+        ),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
-          volunteerFullName: res.data,
+          volunteerFullName: res.data.name,
         })),
         catchError(this.handleError),
       );
@@ -266,6 +276,15 @@ export class VolunteerService implements VolunteerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  searchContacts(query: string): Observable<ApiResponse<ContactOption[]>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/search-contacts/${query}`)
+      .pipe(
+        validateResponse(z.array(contactOptionSchema)),
         catchError(this.handleError),
       );
   }

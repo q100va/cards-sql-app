@@ -19,6 +19,7 @@ import { SeniorsListComponent } from './pages/seniors-list/seniors-list.componen
 import { OccasionsListComponent } from './pages/occasions-list/occasions-list.component';
 import { RecipientsListComponent } from './pages/recipients-list/recipients-list.component';
 import { SeniorsBulkUpdateComponent } from './pages/seniors-bulk-update/seniors-bulk-update.component';
+import { OrderDetailsComponent } from './pages/order-details/order-details/order-details.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -39,6 +40,14 @@ export const routes: Routes = [
     canMatch: [waitAuthReady],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'users' }, // дефолт
+
+      {
+        path: 'orders/new-order/:typeId',
+        canMatch: [
+          requireAnyOp('ADD_NEW_ORDER'),
+        ],
+        component: OrderDetailsComponent,
+      },
       {
         path: 'users',
         canMatch: [

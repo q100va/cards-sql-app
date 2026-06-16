@@ -7,7 +7,7 @@
         @for (control of data().controls; track $index) {
         <!-- Subscription -->
         @if (control.category=='subscription') {
-        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
+        <mat-grid-tile colspan="2" rowspan="1">
           <mat-slide-toggle [formControlName]="control.controlName"
             class="small-toggle">{{'TABLE.CARD.SUBSCRIPTION_LABEL' | translate}}
           </mat-slide-toggle>

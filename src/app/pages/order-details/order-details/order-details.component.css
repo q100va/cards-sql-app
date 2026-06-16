@@ -1,0 +1,50 @@
+.cards-row {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+}
+
+.cards-row mat-card {
+  flex: 1;
+}
+
+.order-card {
+  margin: auto;
+  text-align: left;
+  padding: 16px;
+}
+
+:host ::ng-deep .right .mat-grid-tile-content {
+  justify-content: end !important;
+}
+
+:host ::ng-deep .left .mat-grid-tile-content {
+  justify-content: start !important;
+}
+
+:host ::ng-deep .start .mat-grid-tile-content {
+  align-items: self-start;
+}
+
+:host ::ng-deep .start .mat-grid-tile-content {
+  align-items: self-start;
+}
+
+.header {
+  color: #e91e63;
+  font-size: 1.2em;
+}
+
+.occasion-icon {
+  font-size: 60px;
+  width: 60px;
+  height: 60px;
+  color: #e91e63;
+}
+ul {
+  list-style-type: none;
+}
+.contact-autocomplete .p-autocomplete-input{
+  height: '56px';
+  --p-form-field-border-color: #2e7d32;
+}

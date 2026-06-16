@@ -46,29 +46,6 @@ import { DateUtilsService } from '../../services/date-utils.service';
 import { SeniorChangesTableComponent } from './senior-changes-table/senior-changes-table.component';
 import { MONTHS } from '../../../../shared/constants/occasions';
 
-/* export interface SeniorRow {
-  nursingHome: string;
-  lastName?: string | null;
-  firstName: string;
-  patronymic?: string | null;
-  dateOfConsent?: string | null;
-  dayBirthday?: number | null;
-  monthBirthday?: number | null;
-  yearBirthday?: number | null;
-  gender?: 'male' | 'female' | null;
-  birthDate?: string | null;
-  comment?: string | null;
-  infoNote?: string | null;
-  photoLink?: string | null;
-  kindergarten?: string | null;
-  teacher?: string | null;
-  veteran?: string | null;
-  childOfWar?: string | null;
-  profession?: string | null;
-  honoraryStatus?: string | null;
-  interests?: string | null;
-  orthodoxBeliever?: string | null;
-} */
 export type ErrorType =
   | 'NO_DAY'
   | 'NO_MONTH'
@@ -977,4 +954,4 @@ export class SeniorsBulkUpdateComponent {
   } */
 }
 
-//TODO: запрос на сохранение измененных ФИО
+//TODO: запрос на сохранение измененных ФИО, текст письма в интернат на уточнение
