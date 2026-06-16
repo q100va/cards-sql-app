@@ -915,6 +915,12 @@ export declare const volunteersSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
+export declare const contactOptionSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    volunteerId: z.ZodNumber;
+    type: z.ZodString;
+    content: z.ZodString;
+}, z.core.$strict>;
 export type VolunteerDraft = z.infer<typeof volunteerDraftSchema>;
 export type VolunteerDraftContacts = z.infer<typeof draftContactsSchema>;
 export type VolunteerOutdatedData = z.infer<typeof outdatedDataSchema>;
@@ -924,4 +930,5 @@ export type Institute = z.infer<typeof instituteItemSchema>;
 export type OutdatedInstitute = z.infer<typeof instituteItemSchema>;
 export type Cooperation = z.infer<typeof coopItemSchema>;
 export type Subscription = z.infer<typeof subsItemSchema>;
+export type ContactOption = z.infer<typeof contactOptionSchema>;
 export {};

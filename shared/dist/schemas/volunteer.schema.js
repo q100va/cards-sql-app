@@ -477,3 +477,11 @@ export const volunteersSchema = z
     length: z.coerce.number().int().min(0),
 })
     .strict();
+export const contactOptionSchema = z
+    .object({
+    id: positiveInt,
+    volunteerId: positiveInt,
+    type: z.string(),
+    content: z.string(),
+})
+    .strict();
