@@ -9,7 +9,7 @@
       <mat-grid-tile colspan="4" rowspan="2" class="left">
         <div style=" display: flex; flex-direction: column; ">
           <mat-card-title> {{title | translate}} </mat-card-title>
-          <mat-card-subtitle> Новая заявка </mat-card-subtitle>
+          <mat-card-subtitle> {{'ORDER.CARD.CREATION_TITLE' | translate}} </mat-card-subtitle>
         </div>
         @if(orderTypeId==='1'){
 
@@ -30,9 +30,12 @@
 
       <mat-grid-tile colspan="5" rowspan="2" class="right">
         <mat-card-actions>
-          <button mat-raised-button (click)="clear()" style="margin-right: 16px;">Очистить</button>
-          <button [disabled]="orderForm.invalid || filterForm.invalid || volunteer?.isRestricted" (click)="createOrder()" mat-raised-button
-            color="primary">Сформировать</button>
+          <button mat-raised-button (click)="clear()" style="margin-right: 16px; color:#ffaa00;">
+            {{'ORDER.CARD.CLEAR_BUTTON' | translate}}
+          </button>
+          <button [disabled]="orderForm.invalid || filterForm.invalid || volunteer?.isRestricted"
+            (click)="onCreateOrderClick()" mat-raised-button color="primary">
+            {{'ORDER.CARD.CREATE_BUTTON' | translate}} </button>
         </mat-card-actions>
       </mat-grid-tile>
     </mat-grid-list>
@@ -43,9 +46,8 @@
 
           <mat-grid-tile colspan="5" class="right">
             <mat-slide-toggle style="width:100%;" class="small-toggle-label"
-              [formControl]="orderForm.controls.noConfirmationRequired">Не
-              требует
-              подтверждения
+              [formControl]="orderForm.controls.noConfirmationRequired">
+              {{'ORDER.CARD.NO_CONF_REQUIRED_LABEL' | translate}}
             </mat-slide-toggle>
           </mat-grid-tile>
 
@@ -53,22 +55,26 @@
           <mat-grid-tile colspan="5" rowspan="2" class="right">
             <div style=" display: flex; flex-direction: column; width:100%;">
               <mat-form-field style="width:100%;" appearance="outline">
-                <mat-label>Источник</mat-label>
+                <mat-label>
+                  {{'ORDER.CARD.SOURCE_LABEL' | translate}}
+                </mat-label>
                 <mat-select [formControl]="orderForm.controls.source">
                   @for(source of SOURCES; track source.id){
-                  <mat-option [value]="source.id">{{source.optionKey}}</mat-option>
+                  <mat-option [value]="source.id">{{source.optionKey | translate}}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
               @if(orderForm.controls.source.hasError('required') && orderForm.controls.source.touched){
-              <mat-error class="error" style="width:100%;">
+              <mat-error style="width:100%;">
                 {{'FORM_VALIDATION.REQUIRED' | translate}}
               </mat-error>
               }
             </div>
           </mat-grid-tile>
         </mat-grid-list>
-        <app-order-filters [filterForm]="filterForm"></app-order-filters>
+
+        <app-order-filters [filterForm]="filterForm" [amountControl]="orderForm.controls.amount"></app-order-filters>
+
         <mat-grid-list cols="10" gutterSize="0px" rowHeight="36px">
           <mat-grid-tile colspan="10"></mat-grid-tile>
           <mat-grid-tile colspan="10" rowspan="2" class="left">
@@ -94,17 +100,17 @@
                       <div> - {{ contact.type }}</div>
                     </div>
                   </ng-template></p-autocomplete>
-                <label for="contact">Email/аккаунт/номер*</label>
+                <label for="contact">{{'ORDER.CARD.CONTACT_LABEL' | translate}}*</label>
               </p-floatlabel>
-              <!--               <mat-label>Email/аккаунт/номер</mat-label>
-              <input matInput type="text" [formControl]="orderForm.controls.contact" placeholder="ocean@yandex.ru" /> -->
             </div>
-            <div style="width: 10%;"> <button mat-icon-button title="создать пользователя"
-                (click)="onAddVolunteerClick()">
+            <div style="width: 10%;"> <button mat-icon-button
+                [title]="translateService.instant('ORDER.CARD.ADD_VOLUNTEER')" (click)="onAddVolunteerClick()">
                 <mat-icon>person_add_alt</mat-icon>
               </button> </div>
             <mat-form-field style="width: 40%; padding-top: 19px;" appearance="outline">
-              <mat-label>Количество</mat-label>
+              <mat-label>
+                {{'ORDER.CARD.AMOUNT_LABEL' | translate}}
+              </mat-label>
               <input matInput type="number" [formControl]="orderForm.controls.amount" placeholder="1" />
             </mat-form-field>
           </mat-grid-tile>
@@ -112,15 +118,20 @@
 
           <mat-grid-tile colspan="6" class="left start">
             @if(orderForm.controls.contact.hasError('required') && orderForm.controls.contact.touched){
-            <mat-error class="error" style="width: 60%; margin-right: 12px;">
+            <mat-error style="width: 60%; margin-right: 12px;">
               {{'FORM_VALIDATION.REQUIRED' | translate}}
             </mat-error>
             }
           </mat-grid-tile>
           <mat-grid-tile colspan="4" class="left start">
-            @if(orderForm.controls.amount.hasError('zodError') && orderForm.controls.amount.touched){
-            <mat-error class="error" style="width: 60%; margin-right: 12px;">
-              {{'FORM_VALIDATION.INT_MIN_1' | translate}}
+
+            @if(orderForm.controls.amount.hasError('required') && orderForm.controls.amount.touched){
+            <mat-error style="width: 60%; margin-right: 12px;">
+              {{'FORM_VALIDATION.REQUIRED' | translate}}
+            </mat-error>
+            }@else if(orderForm.controls.amount.hasError('zodError') && orderForm.controls.amount.touched){
+            <mat-error style="width: 60%; margin-right: 12px;">
+              {{'FORM_VALIDATION.ORDER.INT_MIN_1' | translate}}
             </mat-error>
             }
           </mat-grid-tile>
@@ -129,8 +140,11 @@
 
           <mat-grid-tile colspan="10" rowspan="2" class="left ">
             <mat-form-field style="width: 100%; padding-top: 19px;" appearance="outline">
-              <mat-label>Комментарий</mat-label>
-              <input matInput type="text" [formControl]="orderForm.controls.comment" placeholder="поздравляют семьей" />
+              <mat-label>
+                {{'ORDER.CARD.COMMENT_LABEL' | translate}}
+              </mat-label>
+              <input matInput type="text" [formControl]="orderForm.controls.comment"
+                [placeholder]="translateService.instant('ORDER.CARD.COMMENT_PLACEHOLDER')" />
             </mat-form-field>
           </mat-grid-tile>
           <mat-grid-tile colspan="10" class="left start">
@@ -143,15 +157,15 @@
 
           @if(volunteer){
           <mat-grid-tile colspan="3" rowspan="3" class="left start">
-            <p>Информация о волонтере:</p>
+            <p>{{'ORDER.CARD.VOLUNTEER_INFO' | translate}}:</p>
           </mat-grid-tile>
           <mat-grid-tile colspan="7" rowspan="3" class="left start">
 
             <div style=" display: flex; flex-direction: column;">
               <ul>
                 <li>{{ fullName(volunteer)}}
-                  <button mat-icon-button (click)="onOpenCardClick()" matTooltip="Открыть карточку волонтера"
-                    matTooltipPosition="right">
+                  <button mat-icon-button (click)="onOpenCardClick()"
+                    [matTooltip]="translateService.instant('ORDER.CARD.OPEN_CARD_TOOLTIP')" matTooltipPosition="right">
                     <mat-icon fontSet="material-icons-outlined">open_in_new</mat-icon>
                   </button>
                 </li>
@@ -166,18 +180,16 @@
           <mat-grid-tile colspan="7" rowspan="3" class="left start">
             <div style=" display: flex; flex-direction: column;">
               <div style="color: orangered;">
-                ВНИМАНИЕ! Волонтер заблокирован. Ему нельзя выдавать адреса.
+                {{'ORDER.CARD.WARNING_NOTE' | translate}}
               </div>
               <div>{{dateUtils.transformDate(volunteer.dateOfRestriction)}}: {{volunteer.causeOfRestriction}}</div>
             </div>
           </mat-grid-tile>
           }
 
-
-
           @if(volunteer.institutes.length){
           <mat-grid-tile colspan="3" [rowspan]="volunteer.institutes.length" class="left start">
-            <p>Отметьте, если адреса для организации:</p>
+            <p> {{'ORDER.CARD.INSTITUTES_NOTE' | translate}}:</p>
           </mat-grid-tile>
 
           <mat-grid-tile colspan="7" [rowspan]="volunteer.institutes.length*2" class="left start">
@@ -189,20 +201,6 @@
               </ng-template>
 
             </p-listbox>
-
-
-
-
-            <!--             <section formArrayName="institutes">
-              <ul>
-                @for(institute of volunteer.institutes; track institute.id; let i = $index){
-                <li>
-                  <mat-checkbox [formControlName]="i">{{institute.instituteName}} - {{institute.category}}
-                  </mat-checkbox>
-                </li>
-                }
-              </ul>
-            </section> -->
           </mat-grid-tile>
           }}
         </mat-grid-list>

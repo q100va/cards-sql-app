@@ -5,7 +5,7 @@
       <mat-icon>filter_alt_off</mat-icon>
     </button>
     <p-accordion-header>
-      Фильтры</p-accordion-header>
+      {{'ORDER.CARD.FILTERS.HEADER' | translate}}</p-accordion-header>
 
     <p-accordion-content>
       <form [formGroup]="filterForm()">
@@ -13,7 +13,7 @@
 
           <mat-grid-tile colspan="5" rowspan="6" class="left">
             <div style=" display: flex; flex-direction: column;">
-              <label>Адреса</label>
+              <label>{{'ORDER.CARD.FILTERS.ADDRESS_LABEL' | translate}}</label>
               <mat-radio-group formControlName="addressCategory">
                 @for(option of ADDRESS_FILTER; track option.id){
                 <mat-radio-button [value]="option.id" (change)="correctMaxNoAddress(option.id)"
@@ -27,18 +27,17 @@
 
           <mat-grid-tile colspan="5" rowspan="4" class="left">
             <div style="width: 100%; display: flex; flex-direction: column;">
-              <p matTooltipPosition="above"
-                matTooltip="Можно указать только одно значение: до или после которого должны быть даты.">
-                Даты</p>
+              <p matTooltipPosition="above" [matTooltip]="translateService.instant('ORDER.CARD.FILTERS.DATE_TOOLTIP')">
+                {{'ORDER.CARD.FILTERS.DATE_LABEL' | translate}}</p>
 
               <div style="width: 100%;">
-                <mat-form-field style="width: 49%; margin-right: 12px;" appearance="outline">
-                  <mat-label>с</mat-label>
+                <mat-form-field style="width: 40%; margin-right: 12px;" appearance="outline">
+                  <mat-label>{{'ORDER.CARD.FILTERS.FROM_LABEL' | translate}}</mat-label>
                   <input matInput type="number" formControlName="date1" placeholder="6" />
                 </mat-form-field>
 
-                <mat-form-field style="width: 49%; " appearance="outline">
-                  <mat-label>по</mat-label>
+                <mat-form-field style="width: 40%; " appearance="outline">
+                  <mat-label>{{'ORDER.CARD.FILTERS.TO_LABEL' | translate}}</mat-label>
                   <input matInput type="number" formControlName="date2" placeholder="15" />
                 </mat-form-field>
               </div>
@@ -48,24 +47,27 @@
               <mat-error>
                 {{'FORM_VALIDATION.ORDER.WRONG_DAY' | translate}}
               </mat-error>
+              } @else if (filterForm().hasError('invalidDateRange')) {
+              <mat-error>
+                {{'FORM_VALIDATION.ORDER.DATE_FROM_GREATER_THAN_TO' | translate}}
+              </mat-error>
               }
             </div>
           </mat-grid-tile>
 
           <mat-grid-tile colspan="5" rowspan="4" class="left">
             <div style="width: 100%;  display: flex; flex-direction: column;">
-              <p matTooltipPosition="above"
-                matTooltip="Можно указать только одно значение: до или после которого должен быть год рождения.">
-                Год рождения</p>
+              <p matTooltipPosition="above" [matTooltip]="translateService.instant('ORDER.CARD.FILTERS.YEAR_TOOLTIP')">
+                {{'ORDER.CARD.FILTERS.YEAR_LABEL' | translate}}</p>
 
               <div style="width: 100%;">
-                <mat-form-field style="width: 49%; margin-right: 12px;" appearance="outline">
-                  <mat-label>с</mat-label>
+                <mat-form-field style="width: 40%; margin-right: 12px;" appearance="outline">
+                  <mat-label>{{'ORDER.CARD.FILTERS.FROM_LABEL' | translate}}</mat-label>
                   <input matInput type="number" formControlName="year1" placeholder="1935" />
                 </mat-form-field>
 
-                <mat-form-field style="width: 49%; " appearance="outline">
-                  <mat-label>по</mat-label>
+                <mat-form-field style="width: 40%; " appearance="outline">
+                  <mat-label>{{'ORDER.CARD.FILTERS.TO_LABEL' | translate}}</mat-label>
                   <input matInput type="number" formControlName="year2" placeholder="1981" />
                 </mat-form-field>
               </div>
@@ -75,6 +77,10 @@
               <mat-error>
                 {{'FORM_VALIDATION.ORDER.WRONG_YEAR' | translate}}
               </mat-error>
+              } @else if(filterForm().hasError('invalidYearRange')){
+              <mat-error>
+                {{'FORM_VALIDATION.ORDER.YEAR_FROM_GREATER_THAN_TO' | translate}}
+              </mat-error>
               }
             </div>
           </mat-grid-tile>
@@ -82,8 +88,7 @@
           <mat-grid-tile colspan="5" rowspan="7" class="left">
             <div style=" display: flex; flex-direction: column;">
               <label>Пол</label>
-              <mat-radio-group formControlName="gender"
-                style=" display: flex; flex-direction: column;">
+              <mat-radio-group formControlName="gender" style=" display: flex; flex-direction: column;">
                 @for(option of GENDER_FILTER; track option.id){
                 <mat-radio-button [value]="option.id" (change)="correctProportion(option.id)">
                   {{option.optionKey | translate}}
@@ -93,19 +98,24 @@
                 @if(filterForm().controls['gender'].value===4){
                 <div>
                   <mat-form-field style="width: 40%; margin-right: 12px;" appearance="outline">
-                    <mat-label>ж</mat-label>
+                    <mat-label>{{'ORDER.CARD.FILTERS.FEMALE_LABEL' | translate}}</mat-label>
                     <input matInput type="number" formControlName="femaleAmount" placeholder="1" />
                   </mat-form-field>
 
                   <mat-form-field style="width: 40%;" appearance="outline">
-                    <mat-label>м</mat-label>
+                    <mat-label>{{'ORDER.CARD.FILTERS.MALE_LABEL' | translate}}</mat-label>
                     <input matInput type="number" formControlName="maleAmount" placeholder="1" />
                   </mat-form-field>
                   @if((filterForm().controls['femaleAmount'].hasError('zodError') &&
                   filterForm().controls['femaleAmount'].touched) ||
-                  (filterForm().controls['maleAmount'].hasError('zodError')&& filterForm().controls['femaleAmount'].touched)){
+                  (filterForm().controls['maleAmount'].hasError('zodError')&&
+                  filterForm().controls['femaleAmount'].touched)){
                   <mat-error>
                     {{'FORM_VALIDATION.ORDER.INT_MIN_1' | translate}}
+                  </mat-error>
+                  } @else if (filterForm().hasError('genderAmountSum')) {
+                  <mat-error>
+                    {{'FORM_VALIDATION.ORDER.WRONG_SUM' | translate}}
                   </mat-error>
                   }
                 </div>
@@ -116,8 +126,8 @@
           </mat-grid-tile>
           <mat-grid-tile colspan="5" rowspan="4" class="left">
             <div style="width: 100%;  display: flex; flex-direction: column;">
-              <p matTooltipPosition="above" matTooltip="Если
-                не работает, введите больший диапазон дат">Регион
+              <p matTooltipPosition="above" [matTooltip]="translateService.instant('ORDER.CARD.FILTERS.PLACE_TOOLTIP')">
+                {{'ORDER.CARD.FILTERS.REGION_LABEL' | translate}}
               </p>
 
               <mat-form-field appearance="outline">
@@ -130,15 +140,16 @@
                   }
                 </mat-select>
               </mat-form-field>
-              <mat-checkbox formControlName="addSpareRegions">включая
-                ближайшие регионы</mat-checkbox>
+              <mat-checkbox formControlName="addSpareRegions">
+                {{'ORDER.CARD.FILTERS.ADD_SPARE_REGIONS_LABEL' | translate}}
+              </mat-checkbox>
 
             </div>
           </mat-grid-tile>
           <mat-grid-tile colspan="5" rowspan="4" class="left">
             <div style="width: 100%;  display: flex; flex-direction: column;">
-              <p matTooltipPosition="above" matTooltip="Если
-                не работает, введите больший диапазон дат">Интернат
+              <p matTooltipPosition="above" [matTooltip]="translateService.instant('ORDER.CARD.FILTERS.PLACE_TOOLTIP')">
+                {{'ORDER.CARD.FILTERS.HOME_LABEL' | translate}}
               </p>
 
               <mat-form-field appearance="outline">
@@ -156,16 +167,16 @@
 
           <mat-grid-tile colspan="5" rowspan="1" class="left">
             <mat-slide-toggle formControlName="onlyWithPicture" class="small-toggle">
-              Только с фото</mat-slide-toggle>
+              {{'ORDER.CARD.FILTERS.ONLY_PHOTO_LABEL' | translate}}</mat-slide-toggle>
           </mat-grid-tile>
           <mat-grid-tile colspan="5" rowspan="2" class="left">
             <div style=" display: flex; flex-direction: column;">
               <mat-slide-toggle formControlName="onlyAnniversaries" class="small-toggle"
                 (change)="onSlideToggleChange('onlyAnniversaries')" style="margin-bottom: 4px;">
-                Только юбиляры</mat-slide-toggle>
+                {{'ORDER.CARD.FILTERS.ONLY_ANNIVERSARY_LABEL' | translate}}</mat-slide-toggle>
               <mat-slide-toggle formControlName="onlyAnniversariesAndOldest" class="small-toggle"
                 (change)="onSlideToggleChange('onlyAnniversariesAndOldest')">
-                Только юбиляры и 80+</mat-slide-toggle>
+                {{'ORDER.CARD.FILTERS.ONLY_OLDEST' | translate}}</mat-slide-toggle>
             </div>
           </mat-grid-tile>
 
@@ -173,20 +184,20 @@
           <mat-grid-tile colspan="5" rowspan="1" class="left">
             <mat-slide-toggle formControlName="onlyWithConcents" class="small-toggle"
               (change)="onSlideToggleChange('onlyWithConcents')">
-              Только с согласиями</mat-slide-toggle>
+              {{'ORDER.CARD.FILTERS.ONLY_CONCENT' | translate}}</mat-slide-toggle>
           </mat-grid-tile>
 
           <mat-grid-tile colspan="5" rowspan="2" class="left">
             <mat-form-field style="width: 32%; margin-right: 12px;" appearance="outline">
-              <mat-label>max БОА</mat-label>
+              <mat-label>{{'ORDER.CARD.FILTERS.MAX_NO_ADDRESS_LABEL' | translate}}</mat-label>
               <input matInput type="number" formControlName="maxNoAddress" placeholder="1" />
             </mat-form-field>
             <mat-form-field style="width: 32%; margin-right: 12px;" appearance="outline">
-              <mat-label>min из 1 дома</mat-label>
+              <mat-label>{{'ORDER.CARD.FILTERS.MIN_ONE_HOME_LABEL' | translate}}</mat-label>
               <input matInput type="number" formControlName="minFromOneHouse" placeholder="1" />
             </mat-form-field>
             <mat-form-field style="width: 33%;" appearance="outline">
-              <mat-label>max из 1 дома</mat-label>
+              <mat-label>{{'ORDER.CARD.FILTERS.MAX_ONE_HOME_LABEL' | translate}}</mat-label>
               <input matInput type="number" formControlName="maxFromOneHouse" placeholder="1" />
             </mat-form-field>
           </mat-grid-tile>
@@ -195,12 +206,35 @@
           </mat-grid-tile>
 
           <mat-grid-tile colspan="5" rowspan="1" class="left">
-            @if((filterForm().controls['maxNoAddress'].hasError('zodError') && filterForm().controls['maxNoAddress'].touched) ||
-            (filterForm().controls['minFromOneHouse'].hasError('zodError') && filterForm().controls['minFromOneHouse'].touched) ||
-            (filterForm().controls['maxFromOneHouse'].hasError('zodError') && filterForm().controls['maxFromOneHouse'].touched)){
+            @if((filterForm().controls['maxNoAddress'].hasError('zodError') &&
+            filterForm().controls['maxNoAddress'].touched) ||
+            (filterForm().controls['minFromOneHouse'].hasError('zodError') &&
+            filterForm().controls['minFromOneHouse'].touched) ||
+            (filterForm().controls['maxFromOneHouse'].hasError('zodError') &&
+            filterForm().controls['maxFromOneHouse'].touched)){
             <mat-error>
               {{'FORM_VALIDATION.ORDER.INT_MIN_1' | translate}}
             </mat-error>
+            } @else {
+            @if (filterForm().hasError('maxNoAddressTooBig')) {
+            <mat-error>{{'FORM_VALIDATION.ORDER.WRONG_NO_ADDRESS' | translate}}</mat-error>
+            }
+
+            @if (filterForm().hasError('minFromOneHouseTooBig')) {
+            <mat-error>{{'FORM_VALIDATION.ORDER.WRONG_MIN' | translate}}</mat-error>
+            }
+
+            @if (filterForm().hasError('maxFromOneHouseTooBig')) {
+            <mat-error>{{'FORM_VALIDATION.ORDER.WRONG_MAX' | translate}}</mat-error>
+            }
+
+            @if (filterForm().hasError('minGreaterThanMax')) {
+            <mat-error>{{'FORM_VALIDATION.ORDER.MIN_GRATE_THAN_MAX' | translate}}</mat-error>
+            }
+
+            @if (filterForm().hasError('impossibleHouseDistribution')) {
+            <mat-error>{{'FORM_VALIDATION.ORDER.WRONG_PROPORTION' | translate}}</mat-error>
+            }
             }
 
 

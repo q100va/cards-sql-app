@@ -49,6 +49,12 @@ import { causeOfRestrictionControlSchema } from '../../../../../shared/schemas/u
 import { DialogData } from '../../../interfaces/dialog-props';
 import { MatDialog } from '@angular/material/dialog';
 import { DetailsDialogComponent } from '../../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
+import { AuthService } from '../../../services/auth.service';
+import { getRegionsWithNearby } from '../../../../../shared/constants/nearby-regions';
+import { OrderService } from '../../../services/order.service';
+import * as ctrl from '../../../utils/common-ctrls';
+import { ConfirmationService } from 'primeng/api';
+import { buildDuplicateInfoMessage } from '../../../utils/order-ctrls';
 
 @Component({
   selector: 'app-order-details',
@@ -80,6 +86,10 @@ export class OrderDetailsComponent {
   readonly dateUtils = inject(DateUtilsService);
   private readonly occasionService = inject(OccasionService);
   private readonly volunteerService = inject(VolunteerService);
+  private readonly orderService = inject(OrderService);
+  private readonly authService = inject(AuthService);
+  readonly translateService = inject(TranslateService);
+  readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly SOURCES = SOURCES;
@@ -97,16 +107,21 @@ export class OrderDetailsComponent {
   } as const;
 
   volunteer: Volunteer | null = null;
-  //TODO: добавление нового волонтера и открытие карточки существующего
   orderForm = new FormGroup({
     noConfirmationRequired: new FormControl<boolean>(false, {
       nonNullable: true,
     }),
-    source: new FormControl<string | null>(null, [Validators.required]),
-    contact: new FormControl<ContactOption | null>(null, [Validators.required]),
+    source: new FormControl<number | null>(null, {
+      validators: [Validators.required],
+    }),
+    contact: new FormControl<ContactOption | null>(null, {
+      validators: [Validators.required],
+    }),
     amount: new FormControl<number | null>(null, {
-      nonNullable: true,
-      validators: [zodValidator(orderDraftSchema.shape.amount)],
+      validators: [
+        zodValidator(orderDraftSchema.shape.amount),
+        Validators.required,
+      ],
     }),
     comment: new FormControl<string | null>(null, {
       validators: [zodValidator(orderDraftSchema.shape.comment)],
@@ -130,10 +145,18 @@ export class OrderDetailsComponent {
     femaleAmount: new FormControl<number | null>(null, {
       validators: [zodValidator(orderFilterSchema.shape.femaleAmount)],
     }),
-    onlyWithPicture: new FormControl<boolean>(false),
-    onlyAnniversaries: new FormControl<boolean>(false),
-    onlyAnniversariesAndOldest: new FormControl<boolean>(false),
-    onlyWithConcents: new FormControl<boolean>(false),
+    onlyWithPicture: new FormControl<boolean>(false, {
+      nonNullable: true,
+    }),
+    onlyAnniversaries: new FormControl<boolean>(false, {
+      nonNullable: true,
+    }),
+    onlyAnniversariesAndOldest: new FormControl<boolean>(false, {
+      nonNullable: true,
+    }),
+    onlyWithConcents: new FormControl<boolean>(false, {
+      nonNullable: true,
+    }),
     year1: new FormControl<number | null>(null, {
       validators: [zodValidator(orderFilterSchema.shape.year1)],
     }),
@@ -217,15 +240,27 @@ export class OrderDetailsComponent {
   initOrderByType(type: string) {
     switch (type) {
       case '1':
-        this.title = 'Дни рождения';
+        this.title = 'OCCASION.BIRTHDAY.NAME';
         break;
 
       case '2':
-        this.title = 'Новый год';
+        this.title = 'OCCASION.NEW_YEAR.NAME';
+        break;
+
+      case '3':
+        this.title = 'OCCASION.23_FEBRUARY.NAME';
         break;
 
       case '4':
-        this.title = '8 марта';
+        this.title = 'OCCASION.8_MARCH.NAME';
+        break;
+
+      case '5':
+        this.title = 'OCCASION.9_MAY.NAME';
+        break;
+
+      case '6':
+        this.title = 'OCCASION.EASTER.NAME';
         break;
 
       default:
@@ -245,8 +280,152 @@ export class OrderDetailsComponent {
       this.index + 1 < this.actualOccasions.length ? this.index + 1 : 0;
     this.month = this.actualOccasions[this.index].month;
   }
+  //Проверка на дубли
+  onCreateOrderClick() {
+    this.orderService
+      .checkOrder(this.volunteer!.id, this.actualOccasions[this.index].id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const duplicates = res.data;
 
-  createOrder() {}
+          if (duplicates.length > 0) {
+            const occasionName =
+              this.translateService.instant(
+                this.actualOccasions[this.index].type,
+              ) +
+              ' ' +
+              (this.actualOccasions[this.index].monthNameKey
+                ? this.translateService.instant(
+                    this.actualOccasions[this.index].monthNameKey!,
+                  )
+                : '') +
+              ' ' +
+              this.actualOccasions[this.index].year;
+            const info = buildDuplicateInfoMessage(
+              this.dateUtils.transformDate,
+              duplicates,
+            );
+            this.confirmationService.confirm({
+              header: this.translateService.instant(
+                'PRIME_CONFIRM.WARNING_HEADER',
+                {
+                  occasion: occasionName,
+                },
+              ),
+              message:
+                this.translateService.instant(
+                  'PRIME_CONFIRM.ORDER_DUPLICATES_1',
+                ) +
+                info +
+                this.translateService.instant(
+                  'PRIME_CONFIRM.ORDER_DUPLICATES_2',
+                ),
+              closable: true,
+              closeOnEscape: true,
+              icon: 'pi pi-exclamation-triangle',
+              rejectButtonProps: {
+                label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+              },
+              acceptButtonProps: {
+                label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+                severity: 'secondary',
+                outlined: true,
+              },
+              accept: () => {
+                this.createOrder();
+              },
+              reject: () => {},
+            });
+          } else {
+            this.createOrder();
+          }
+        },
+        error: (err) => {
+          this.filteredContacts = [];
+          this.msgWrapper.handle(err, {
+            source: 'OrderDetailsComponent',
+            stage: 'checkOrder',
+            type: this.orderTypeId,
+            occasionId: this.actualOccasions[this.index].id,
+            volunteerId: this.volunteer!.id,
+          });
+        },
+      });
+  }
+  createOrder() {
+    if (this.orderForm.invalid) {
+      this.orderForm.markAllAsTouched();
+      return;
+    }
+    const source = this.orderForm.controls.source.value;
+    const amount = this.orderForm.controls.amount.value;
+    const contact = this.orderForm.controls.contact.value;
+    const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
+
+    if (
+      source === null ||
+      amount === null ||
+      contact === null ||
+      userId === null
+    ) {
+      return;
+    }
+    const params = {
+      userId,
+      volunteerId: this.volunteer!.id,
+      occasionId: this.actualOccasions[this.index].id,
+      status: this.orderForm.controls.noConfirmationRequired.value ? 2 : 1,
+      source,
+      contactId: contact.id,
+      amount,
+      comment: this.orderForm.controls.comment.value,
+      instituteId: this.orderForm.controls.instituteId.value,
+    };
+
+    const filtersDraft = {
+      addressCategory: this.filterForm.controls.addressCategory.value,
+      gender: this.filterForm.controls.gender.value,
+      maleAmount: this.filterForm.controls.maleAmount.value,
+      femaleAmount: this.filterForm.controls.femaleAmount.value,
+      onlyWithPicture: this.filterForm.controls.onlyWithPicture.value,
+      onlyAnniversaries: this.filterForm.controls.onlyAnniversaries.value,
+      onlyAnniversariesAndOldest:
+        this.filterForm.controls.onlyAnniversariesAndOldest.value,
+      onlyWithConcents: this.filterForm.controls.onlyWithConcents.value,
+      year1: this.filterForm.controls.year1.value,
+      year2: this.filterForm.controls.year2.value,
+      date1: this.filterForm.controls.date1.value,
+      date2: this.filterForm.controls.date2.value,
+      regions:
+        this.filterForm.controls.homes.value.length > 0
+          ? []
+          : this.filterForm.controls.addSpareRegions.value
+            ? getRegionsWithNearby(this.filterForm.controls.regions.value)
+            : this.filterForm.controls.regions.value,
+      homes: this.filterForm.controls.homes.value,
+      //addSpareRegions: this.filterForm.controls.addSpareRegions.value,
+      minFromOneHouse: this.filterForm.controls.minFromOneHouse.value,
+      maxFromOneHouse: this.filterForm.controls.maxFromOneHouse.value,
+      maxNoAddress: this.filterForm.controls.maxNoAddress.value,
+    };
+
+    this.orderService
+      .createOrder(params, filtersDraft)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {},
+        error: (err) => {
+          this.filteredContacts = [];
+          this.msgWrapper.handle(err, {
+            source: 'OrderDetailsComponent',
+            stage: 'createOrder',
+            type: this.orderTypeId,
+            occasionId: this.actualOccasions[this.index].id,
+          });
+        },
+      });
+  }
 
   clear() {
     if (this.actualOccasions.length > 1) {
@@ -316,13 +495,12 @@ export class OrderDetailsComponent {
             const firstContact = Object.values(
               this.volunteer.orderedContacts,
             )[0][0];
-            this.orderForm.controls.contact
-              .setValue({
-                id: firstContact.id,
-                volunteerId: this.volunteer.id,
-                type: firstKey,
-                content: firstContact.content,
-              });
+            this.orderForm.controls.contact.setValue({
+              id: firstContact.id,
+              volunteerId: this.volunteer.id,
+              type: firstKey,
+              content: firstContact.content,
+            });
           }
           //this.addCheckboxes();
           //  console.log(this.filteredContacts);

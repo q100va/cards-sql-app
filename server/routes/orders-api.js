@@ -55,5 +55,44 @@ router.get("/get-filters-data",
     }
   });
 
+router.get("/check-order",
+  requireAuth,
+  requireAny('ADD_NEW_ORDER'),
+  validateRequest(z.object({
+    volunteerId: z.coerce.number().int().positive(),
+    occasionId: z.coerce.number().int().positive()
+  }), "query"),
+  async (req, res, next) => {
+    try {
+
+      const { volunteerId, occasionId } = req.query;
+
+      const duplicates = await Order.findAll({
+        where: {
+          volunteerId,
+          occasionId
+        },
+        attributes: ['createdAt', 'amount',],
+        include: {
+          model: User,
+          as: 'user',
+          attributes: ['userName'],
+        },
+      })
+
+      const result = duplicates.map(d => ({
+        date: d.createdAt,
+        userName: d.user.userName,
+        amount: d.amount
+      }));
+
+
+      res.status(200).send({ data: result });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.ORDER.CHECKING_FAILED';
+      next(error);
+    }
+  });
+
 export default router;
 

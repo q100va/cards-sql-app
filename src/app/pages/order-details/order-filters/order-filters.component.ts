@@ -16,6 +16,7 @@ import {
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
+  ValidationErrors,
   Validators,
 } from '@angular/forms';
 
@@ -26,6 +27,11 @@ import { getRegionsWithNearby } from '../../../../../shared/constants/nearby-reg
 import { OrderService } from '../../../services/order.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MessageWrapperService } from '../../../services/message.service';
+import {
+  dateYearRangeValidator,
+  genderAmountSumValidator,
+  houseAmountValidator,
+} from '../../../utils/custom.validator';
 
 @Component({
   selector: 'app-order-filters',
@@ -52,20 +58,27 @@ export class OrderFiltersComponent {
   private readonly orderService = inject(OrderService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly msgWrapper = inject(MessageWrapperService);
+  readonly translateService = inject(TranslateService);
 
   ADDRESS_FILTER = [
-    { id: 1, optionKey: 'ORDER.FILTER.ADDRESS_CATEGORY.ANY' },
-    { id: 2, optionKey: 'ORDER.FILTER.ADDRESS_CATEGORY.FOR_SCHOOLS' },
-    { id: 3, optionKey: 'ORDER.FILTER.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS' },
-    { id: 4, optionKey: 'ORDER.FILTER.ADDRESS_CATEGORY.NO_RELEASED' },
-    { id: 5, optionKey: 'ORDER.FILTER.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY' },
+    { id: 1, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY' },
+    { id: 2, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.FOR_SCHOOLS' },
+    {
+      id: 3,
+      optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS',
+    },
+    { id: 4, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.NO_RELEASED' },
+    {
+      id: 5,
+      optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY',
+    },
   ] as const;
 
   GENDER_FILTER = [
-    { id: 1, optionKey: 'ORDER.FILTER.GENDER.ANY' },
-    { id: 2, optionKey: 'ORDER.FILTER.GENDER.MALE' },
-    { id: 3, optionKey: 'ORDER.FILTER.GENDER.FEMALE' },
-    { id: 4, optionKey: 'ORDER.FILTER.GENDER.PROPORTION' },
+    { id: 1, optionKey: 'ORDER.CARD.FILTERS.GENDER.ANY' },
+    { id: 2, optionKey: 'ORDER.CARD.FILTERS.GENDER.MALE' },
+    { id: 3, optionKey: 'ORDER.CARD.FILTERS.GENDER.FEMALE' },
+    { id: 4, optionKey: 'ORDER.CARD.FILTERS.GENDER.PROPORTION' },
   ] as const;
 
   actualYear = new Date().getFullYear();
@@ -107,10 +120,27 @@ export class OrderFiltersComponent {
   };
 
   filterForm = input.required<FormGroup>();
-
-
+  amountControl = input.required<FormControl<number | null>>();
 
   ngOnInit() {
+    this.filterForm().addValidators([
+      genderAmountSumValidator(this.amountControl()),
+      houseAmountValidator(this.amountControl()),
+      dateYearRangeValidator(),
+    ]);
+
+    this.amountControl()
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.filterForm().updateValueAndValidity();
+      });
+
+    this.filterForm()
+      .controls['gender'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.filterForm().updateValueAndValidity();
+      });
+
     this.orderService
       .getOrderFiltersData()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -127,8 +157,10 @@ export class OrderFiltersComponent {
           }),
       });
 
-    this.filterForm().controls['regions'].valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.filterForm()
+      .controls['regions'].valueChanges.pipe(
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((regionIds) => {
         if ((regionIds ?? []).length !== 1) {
           this.filterForm().controls['addSpareRegions'].disable();
@@ -142,8 +174,10 @@ export class OrderFiltersComponent {
         this.updateHomesByRegions(regionIds);
       });
 
-    this.filterForm().controls['addSpareRegions'].valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.filterForm()
+      .controls['addSpareRegions'].valueChanges.pipe(
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((addSpareRegions) => {
         let regionIds = this.filterForm().controls['regions'].value ?? [];
         if (addSpareRegions) regionIds = getRegionsWithNearby(regionIds);
@@ -201,7 +235,9 @@ export class OrderFiltersComponent {
         this.filterForm().controls['onlyAnniversariesAndOldest'].value &&
         this.filterForm().controls['onlyAnniversaries'].value
       ) {
-        this.filterForm().controls['onlyAnniversariesAndOldest'].setValue(false);
+        this.filterForm().controls['onlyAnniversariesAndOldest'].setValue(
+          false,
+        );
       }
     }
     if (reason == 'onlyAnniversariesAndOldest') {

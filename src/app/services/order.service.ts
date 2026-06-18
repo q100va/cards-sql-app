@@ -7,12 +7,6 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import {
-  Toponym,
-  ToponymFormControlsValues,
-  AddressFilter,
-  ToponymType,
-} from '../interfaces/toponym';
 
 import {
   validateNoSchemaResponse,
@@ -22,15 +16,15 @@ import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
-  toponymSchema,
-  SaveToponym,
-  ToponymNamesList,
-  toponymNamesListSchema,
-  toponymsSchema,
-} from '../../../shared/schemas/toponym.schema';
-import { OrderFiltersData, orderFiltersDataSchema } from '../../../shared/schemas/order.schema';
-
-
+  Filter,
+  Order,
+  OrderDraft,
+  OrderFilter,
+  OrderFiltersData,
+  orderFiltersDataSchema,
+  orderSchema,
+} from '../../../shared/schemas/order.schema';
+import * as ctrl from '../utils/common-ctrls';
 
 @Injectable({
   providedIn: 'root',
@@ -50,5 +44,57 @@ export class OrderService {
         validateResponse(orderFiltersDataSchema),
         catchError(this.handleError),
       );
+  }
+
+  checkOrder(
+    volunteerId: number,
+    occasionId: number,
+  ): Observable<
+    ApiResponse<
+      {
+        date: Date;
+        userName: string;
+        amount: number;
+      }[]
+    >
+  > {
+    const params = new HttpParams()
+      .set('volunteerId', volunteerId)
+      .set('occasionId', occasionId);
+
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/check-order`, { params })
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              date: z.coerce.date(),
+              userName: z.string(),
+              amount: z.number(),
+            }),
+          ),
+        ),
+        catchError(this.handleError),
+      );
+  }
+
+  createOrder(
+    params: OrderDraft,
+    filtersDraft: OrderFilter,
+  ): Observable<ApiResponse<Order>> {
+    const filters = ctrl.omitEmptyAndFalse({
+      ...filtersDraft,
+      addressCategory:
+        filtersDraft.addressCategory === 1
+          ? null
+          : filtersDraft.addressCategory,
+      gender: filtersDraft.gender === 1 ? null : filtersDraft.gender,
+    });
+    return this.http
+      .post<RawApiResponse>(`${this.BASE_URL}/create-order`, {
+        params,
+        filters,
+      })
+      .pipe(validateResponse(orderSchema), catchError(this.handleError));
   }
 }

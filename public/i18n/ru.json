@@ -72,7 +72,9 @@
       "INSTITUTES": "организация(ии)",
       "COORDINATIONS": "координацию",
       "OFFICIAL_NAME": "официальное название"
-    }
+    },
+    "ORDER_DUPLICATES_1": "Данный волонтер уже получил адреса для поздравления с '{{occasion}}': <br />",
+    "ORDER_DUPLICATES_2": "<br />Вы уверены, что это не дубль?"
   },
   "TOAST": {
     "INFO": "Информация",
@@ -614,7 +616,7 @@
       "SPECIAL_HOME_LABEL": "специнтернат",
       "NO_ADDRESS_LABEL": "БОА",
       "ACC_SCHOOL_LABEL": "подходит для школ",
-      "UPDATE_DATE_LABEL":"Дата обновления",
+      "UPDATE_DATE_LABEL": "Дата обновления",
       "POSTAL_CODE_LABEL": "Индекс",
       "POSTAL_NAME_LABEL": "Интернат-получатель",
       "POSTAL_ADDR_LABEL": "Улица, номер дома",
@@ -846,6 +848,81 @@
       "YOUTH": "юношеский коллектив",
       "ADULTS": "взрослые волонтеры",
       "OTHER": "другое"
+    }
+  },
+
+  "ORDER": {
+    "TABLE_TITLE": "Заявки",
+    "SEARCH_PLACEHOLDER": "Например, oblako@mail.ru",
+
+    "VIEW_OPTIONS": {
+      "ALL": "все заявки",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только заблок."
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "Новая заявка",
+      "VIEW_TITLE": "Заявка",
+      "CREATE_BUTTON": "Сформировать",
+      "CLEAR_BUTTON": "Очистить",
+      "NO_CONF_REQUIRED_LABEL": "Не требует подтверждения",
+      "SOURCE_LABEL": "Источник",
+      "CONTACT_LABEL": "Email/аккаунт/номер",
+      "ADD_VOLUNTEER": "добавить волонтера",
+      "AMOUNT_LABEL": "Количество",
+      "COMMENT_LABEL": "Комментарий",
+      "COMMENT_PLACEHOLDER": "поздравляют семьей",
+      "VOLUNTEER_INFO": "Информация о волонтере",
+      "OPEN_CARD_TOOLTIP": "Открыть карточку волонтера",
+      "WARNING_NOTE": "ВНИМАНИЕ! Волонтер заблокирован. Ему нельзя выдавать адреса.",
+      "INSTITUTES_NOTE": "Отметьте, если адреса для организации",
+      "SOURCE": {
+        "SUBS": "постоянные",
+        "SITE": "сайт",
+        "VK": "вконтакте",
+        "TELEGRAM": "телеграм",
+        "INSTA": "инста",
+        "DOBRORU": "добро ру",
+        "INFLUENCER": "инфлюенсер",
+        "OTHER": "другое"
+      },
+      "FILTERS": {
+        "HEADER": "Фильтры",
+        "ADDRESS_LABEL": "Адреса",
+        "DATE_LABEL": "Даты",
+        "DATE_TOOLTIP": "Можно указать только одно значение: до или после которого должны быть даты",
+        "YEAR_LABEL": "Год рождения",
+        "YEAR_TOOLTIP": "Можно указать только одно значение: до или после которого должен быть год рождения",
+        "FROM_LABEL": "с",
+        "TO_LABEL": "по",
+        "FEMALE_LABEL": "м",
+        "MALE_LABEL": "ж",
+        "REGION_LABEL": "Регион",
+        "HOME_LABEL": "Интернат",
+        "ADD_SPARE_REGIONS_LABEL": "включая ближайшие регионы",
+        "PLACE_TOOLTIP": "Если результат пуст, введите больший диапазон дат",
+        "ONLY_PHOTO_LABEL": "Только с фото",
+        "ONLY_ANNIVERSARY_LABEL": "Только юбиляры",
+        "ONLY_OLDEST": "Только юбиляры и 80+",
+        "ONLY_CONCENT": "Только с согласиями",
+        "MAX_NO_ADDRESS_LABEL": "max БОА",
+        "MIN_ONE_HOME_LABEL": "min из 1 дома",
+        "MAX_ONE_HOME_LABEL": "max из 1 дома",
+        "ADDRESS_CATEGORY": {
+          "ANY": "любые",
+          "FOR_SCHOOLS": "для школ",
+          "ONLY_WITH_ADDRESS": "без БОА",
+          "NO_RELEASED": "без бывших з/к",
+          "ONLY_MENT_CATEGORY": "только БОА"
+        },
+        "GENDER": {
+          "ANY": "любые",
+          "MALE": "только мужчины",
+          "FEMALE": "только женщины",
+          "PROPORTION": "в пропорции"
+        }
+      }
     }
   },
 
@@ -1081,6 +1158,19 @@
     "SENIOR": {
       "MODE_REQUIRED": "Необходимо выбрать вариант",
       "DATE_REQUIRED": "Укажите дату в правильном формате"
+    },
+    "ORDER": {
+      "WRONG_DAY": "Допустимые значения: от 1 до 31",
+      "WRONG_YEAR": "Допустимые значения: от 1900 до текущего года",
+      "INT_MIN_1": "Допустимы только целые числа > 0",
+      "DATE_FROM_GREATER_THAN_TO": "Дата 'c' не может быть больше 'по'",
+      "YEAR_FROM_GREATER_THAN_TO": "Год 'c' не может быть больше 'по'",
+      "WRONG_SUM": "Сумма значений должна быть равна количеству в заявке",
+      "WRONG_NO_ADDRESS": "max БОА не может быть больше количества в заявке",
+      "WRONG_MIN": "min из 1 дома не может быть больше количества в заявке",
+      "WRONG_MAX": "max из 1 дома не может быть больше количества в заявке",
+      "MIN_GRATE_THAN_MAX": "min из 1 дома не может быть больше max из 1 дома",
+      "WRONG_PROPORTION": "Такое распределение по домам невозможно для указанного количества"
     }
   },
   "INTERNAL_VALIDATION": {

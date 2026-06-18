@@ -4,43 +4,34 @@
 export const SOURCES = [
   {
     id: 1,
-    optionKey: 'ORDER.SOURCE.SUBS',
+    optionKey: 'ORDER.CARD.SOURCE.SUBS',
   },
   {
     id: 2,
-    optionKey: 'ORDER.SOURCE.SITE',
+    optionKey: 'ORDER.CARD.SOURCE.SITE',
   },
   {
     id: 3,
-    optionKey: 'ORDER.SOURCE.SITE',
+    optionKey: 'ORDER.CARD.SOURCE.VK',
   },
   {
     id: 4,
-    optionKey: 'ORDER.SOURCE.VK',
+    optionKey: 'ORDER.CARD.SOURCE.TELEGRAM',
   },
   {
     id: 5,
-    optionKey: 'ORDER.SOURCE.TELEGRAM',
+    optionKey: 'ORDER.CARD.SOURCE.INSTA',
   },
   {
     id: 6,
-    optionKey: 'ORDER.SOURCE.INSTA',
+    optionKey: 'ORDER.CARD.SOURCE.DOBRORU',
   },
   {
     id: 7,
-    optionKey: 'ORDER.SOURCE.FB',
+    optionKey: 'ORDER.CARD.SOURCE.INFLUENCER',
   },
-
   {
     id: 8,
-    optionKey: 'ORDER.SOURCE.DOBRORU',
-  },
-  {
-    id: 9,
-    optionKey: 'ORDER.SOURCE.INFLUENCER',
-  },
-  {
-    id: 10,
-    optionKey: 'ORDER.SOURCE.OTHER',
+    optionKey: 'ORDER.CARD.SOURCE.OTHER',
   },
 ];

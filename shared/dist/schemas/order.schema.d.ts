@@ -6,7 +6,7 @@ export declare const orderDraftSchema: z.ZodObject<{
     instituteId: z.ZodNullable<z.ZodNumber>;
     status: z.ZodNumber;
     source: z.ZodNumber;
-    contactSnapshot: z.ZodString;
+    contactId: z.ZodNumber;
     amount: z.ZodNumber;
     comment: z.ZodNullable<z.ZodString>;
 }, z.core.$strict>;
@@ -25,11 +25,29 @@ export declare const orderFilterSchema: z.ZodObject<{
     date2: z.ZodNullable<z.ZodNumber>;
     regions: z.ZodArray<z.ZodNumber>;
     homes: z.ZodArray<z.ZodNumber>;
-    addSpareRegions: z.ZodBoolean;
     minFromOneHouse: z.ZodNullable<z.ZodNumber>;
     maxFromOneHouse: z.ZodNullable<z.ZodNumber>;
     maxNoAddress: z.ZodNullable<z.ZodNumber>;
 }, z.core.$strict>;
+export declare const filterSchema: z.ZodOptional<z.ZodObject<{
+    addressCategory: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    gender: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    maleAmount: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    femaleAmount: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    onlyWithPicture: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
+    onlyAnniversaries: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
+    onlyAnniversariesAndOldest: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
+    onlyWithConcents: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
+    year1: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    year2: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    date1: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    date2: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    regions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
+    homes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
+    minFromOneHouse: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    maxFromOneHouse: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    maxNoAddress: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+}, z.core.$strip>>;
 export declare const orderFiltersDataSchema: z.ZodObject<{
     regions: z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
@@ -41,4 +59,11 @@ export declare const orderFiltersDataSchema: z.ZodObject<{
         regionId: z.ZodNumber;
     }, z.core.$strip>>;
 }, z.core.$strict>;
+export declare const orderSchema: z.ZodObject<{
+    id: z.ZodNumber;
+}, z.core.$strict>;
 export type OrderFiltersData = z.infer<typeof orderFiltersDataSchema>;
+export type OrderDraft = z.infer<typeof orderDraftSchema>;
+export type OrderFilter = z.infer<typeof orderFilterSchema>;
+export type Filter = z.infer<typeof filterSchema>;
+export type Order = z.infer<typeof orderSchema>;
