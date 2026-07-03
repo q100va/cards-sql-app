@@ -1,0 +1,111 @@
+<div style="display: flex; justify-content: space-between; align-items: center;">
+  <div style="width: 80%;">
+    <form [formGroup]="settingsForm" style="margin-bottom: 48px;">
+      <mat-slide-toggle formControlName="showIndexes" class="small-toggle">
+        {{'ORDER.CARD.INDEX_LABEL' | translate}}
+      </mat-slide-toggle>
+      <br />
+
+      <mat-slide-toggle formControlName="newerInstruction" class="small-toggle">
+        {{'ORDER.CARD.NEWER_LABEL' | translate}}
+      </mat-slide-toggle>
+
+      <mat-slide-toggle formControlName="subscriberInstruction" class="small-toggle">
+        {{'ORDER.CARD.SUBS_LABEL' | translate}}
+      </mat-slide-toggle>
+    </form>
+  </div>
+  <div style="width: 20%;">
+    <button mat-fab matTooltip="translateService.instant('ORDER.CARD.COPY_BUTTON_TOOLTIP')" color="primary"
+      [disabled]="list().length == 0" (click)="copyAddressesToClipboard()">
+      <mat-icon>file_copy</mat-icon>
+    </button>
+  </div>
+</div>
+
+<div style="font-family: 'Times New Roman', Times, serif">
+
+  @if(showShortInstruction || showFullInstruction){
+  @for(p of topParts; track $index){
+  @if(p.className === 'list-item' || p.className === 'list-item-bold'){
+  <p [ngClass]="p.className">
+    <span> {{ p.prefix}} </span>
+    <span>{{ p.text }}</span>
+  </p>
+  }
+  @else {
+  <p [ngClass]="p.className">
+    {{ p.text }}
+  </p>
+  }
+  }
+  }
+
+  <h2>{{occasionName()}}</h2>
+
+  @for(home of list(); track home.homeId){
+  <p style="font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    {{home.postAddress}}</p>
+  <!--   @if((home.infoNote && flag) || (home.infoNote && !flag && !forInstitute())){
+  <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    ({{home.infoNote}})
+  </p>} -->
+  @if(!flag && forInstitute()){
+  <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    ({{('ORDER.CARD.ADDRESS_NOTE_SCHOOL' | translate) + (home.infoNote ? (' ' + home.infoNote) : '')}})
+  </p>
+  }
+  @else {
+  @if(home.infoNote){
+  <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    ({{home.infoNote}})
+  </p>
+  }
+  }
+
+  @if(home.noAddressNote){
+  <p style="color: red; font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    <!-- {{home.noAddressNote | translate}}</p> -->
+    {{forInstitute() && !flag ? ('ORDER.CARD.NO_ADDRESS_NOTE_SCHOOL' | translate) : (home.noAddressNote | translate)}}
+  </p>
+  }
+
+  @for(recipient of home.homeRecipients; track recipient.recipientId){
+  <div style="font-family: 'Times New Roman', Times, serif;">
+    {{showIndexes ? recipient.index+'.' : ''}}
+    {{recipient.fullNameSnapshot}}
+    {{fullDayBirthday(recipient)}}
+    {{recipient.infoNote}}
+    {{recipient.photoLink}}
+    <span style="font-weight: bold; color: rgb(175, 19, 175); ">
+      {{recipient.specialComment}}
+    </span>
+  </div>
+<!--   <br /> -->
+  }
+  }
+
+
+  @if(showShortInstruction || showFullInstruction){
+  @for(p of bottomParts; track $index){
+  @if(p.className === 'list-item'){
+  <p [ngClass]="p.className">
+    <span> {{ p.prefix }} </span>
+    <span>{{ p.text }}</span>
+  </p>
+  }
+  @else{
+  @if(p.className === 'hr'){
+  <hr>
+  }
+  @else{
+  <p [ngClass]="p.className">
+    {{ p.text }}
+  </p>
+  }
+  }
+  }
+  }
+
+
+</div>

@@ -19,6 +19,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { zodValidator } from '../../../utils/zod-validator';
@@ -32,6 +33,9 @@ import {
   genderAmountSumValidator,
   houseAmountValidator,
 } from '../../../utils/custom.validator';
+
+import { HasOpDirective } from '../../../directives/has-op.directive';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-order-filters',
@@ -50,6 +54,8 @@ import {
     FormsModule,
     ReactiveFormsModule,
     MatTooltipModule,
+    HasOpDirective,
+    SelectButtonModule,
   ],
   templateUrl: './order-filters.component.html',
   styleUrl: './order-filters.component.css',
@@ -59,20 +65,33 @@ export class OrderFiltersComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly translateService = inject(TranslateService);
+  readonly authService = inject(AuthService);
 
-  ADDRESS_FILTER = [
-    { id: 1, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY' },
-    { id: 2, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.FOR_SCHOOLS' },
-    {
-      id: 3,
-      optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS',
-    },
-    { id: 4, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.NO_RELEASED' },
-    {
-      id: 5,
-      optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY',
-    },
-  ] as const;
+  ADDRESS_FILTER = this.authService.has('FULL_FILTER_NEW_ORDER')
+    ? ([
+        { id: 1, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY' },
+        { id: 2, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.FOR_SCHOOLS' },
+        {
+          id: 3,
+          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS',
+        },
+        { id: 4, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.NO_RELEASED' },
+        {
+          id: 5,
+          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY',
+        },
+      ] as const)
+    : ([
+        { id: 2, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY' },
+        {
+          id: 3,
+          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS',
+        },
+        {
+          id: 5,
+          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY',
+        },
+      ] as const);
 
   GENDER_FILTER = [
     { id: 1, optionKey: 'ORDER.CARD.FILTERS.GENDER.ANY' },
@@ -80,6 +99,11 @@ export class OrderFiltersComponent {
     { id: 3, optionKey: 'ORDER.CARD.FILTERS.GENDER.FEMALE' },
     { id: 4, optionKey: 'ORDER.CARD.FILTERS.GENDER.PROPORTION' },
   ] as const;
+
+  periodOptions = [
+    { label: '1-15', value: 1 },
+    { label: '16-31', value: 2 },
+  ];
 
   actualYear = new Date().getFullYear();
   regions: {
@@ -225,8 +249,12 @@ export class OrderFiltersComponent {
   }
   correctProportion(value: number) {
     if (value !== 4) {
-      (this.filterForm().controls['femaleAmount'].setValue(null),
-        this.filterForm().controls['maleAmount'].setValue(null));
+      this.filterForm().controls['femaleAmount'].setValue(null);
+      this.filterForm().controls['maleAmount'].setValue(null);
+      this.filterForm().controls['minFromOneHouse'].enable();
+    } else {
+      this.filterForm().controls['minFromOneHouse'].disable();
+      this.filterForm().controls['minFromOneHouse'].setValue(null);
     }
   }
   onSlideToggleChange(reason: string) {
@@ -247,6 +275,27 @@ export class OrderFiltersComponent {
       ) {
         this.filterForm().controls['onlyAnniversaries'].setValue(false);
       }
+    }
+  }
+
+  onPeriodChange(period: 1 | 2 | null) {
+    if (period === 1) {
+      this.filterForm().controls['date1'].setValue(1);
+      this.filterForm().controls['date2'].setValue(15);
+      this.filterForm().controls['date1'].disable();
+      this.filterForm().controls['date2'].disable();
+    }
+    if (period === 2) {
+      this.filterForm().controls['date1'].setValue(16);
+      this.filterForm().controls['date2'].setValue(31);
+      this.filterForm().controls['date1'].disable();
+      this.filterForm().controls['date2'].disable();
+    }
+    if (period === null) {
+      this.filterForm().controls['date1'].setValue(null);
+      this.filterForm().controls['date2'].setValue(null);
+      this.filterForm().controls['date1'].enable();
+      this.filterForm().controls['date2'].enable();
     }
   }
 }

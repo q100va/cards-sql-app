@@ -27,6 +27,10 @@ export default function OrderModel(sequelize) {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
+      contactId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
       amount: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -49,20 +53,21 @@ export default function OrderModel(sequelize) {
           max: 9,
         }
       },
-      contactSnapshot: {
+
+/*       contactSnapshot: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: true,
         }
-      },
+      }, */
       comment: {
         type: DataTypes.STRING,
       },
-      orderRecipientsId: {
+/*       orderRecipientsId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-      }
+      } */
     },
     {
       sequelize,

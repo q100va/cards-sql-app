@@ -1,4 +1,3 @@
-
 //1 - 'SUBS' 2 - 'SITE' 3 - 'VK' 4 - 'TELEGRAM' 5 - 'INSTA' 6 - 'FB' 7 - 'DOBRORU' 8 - 'INFLUENCER' 9 - 'OTHER'
 
 export const SOURCES = [
@@ -35,3 +34,9 @@ export const SOURCES = [
     optionKey: 'ORDER.CARD.SOURCE.OTHER',
   },
 ];
+
+export const RECIPIENT_STATUS = {
+  1: 'ORDER.CARD.RECIPIENT_STATUS.PRESENT',
+  2: 'ORDER.CARD.RECIPIENT_STATUS.ABSENT',
+  3: 'ORDER.CARD.RECIPIENT_STATUS.DELETED',
+};

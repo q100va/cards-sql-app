@@ -72,7 +72,10 @@
       "INSTITUTES": "institute(s)",
       "COORDINATIONS": "coordination",
       "OFFICIAL_NAME": "official name"
-    }
+    },
+    "ORDER_DUPLICATES_1": "This volunteer has already received addresses for '{{occasion}}':<br />",
+    "ORDER_DUPLICATES_2": "<br />Are you sure this isn't a duplicate?",
+    "ORDER_NOT_FOR_INSTITUTES": "Are you sure this request isn't for an organization?"
   },
   "TOAST": {
     "INFO": "Information",

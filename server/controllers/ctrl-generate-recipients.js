@@ -9,12 +9,70 @@ function getByBirthMonth(month) {
   );
 }
 
+function getGender(senior) {
+  if (senior.patronymic && senior.lastName) {
+    if (
+      (senior.patronymic.endsWith('ич') ||
+        senior.patronymic.endsWith('оглы') ||
+        senior.patronymic.endsWith('Оглы')) &&
+      (senior.lastName.endsWith('ова') ||
+        senior.lastName.endsWith('ева') ||
+        senior.lastName.endsWith('ина'))
+    )
+      return null;
+    if (
+      (senior.patronymic.endsWith('на') ||
+        senior.patronymic.endsWith('кызы') ||
+        senior.patronymic.endsWith('Кызы')) &&
+      (senior.lastName.endsWith('ов') ||
+        senior.lastName.endsWith('ев') ||
+        senior.lastName.endsWith('ин'))
+    )
+      return null;
+  }
+  if (
+    senior.patronymic &&
+    (senior.patronymic.endsWith('ич') ||
+      senior.patronymic.endsWith('оглы') ||
+      senior.patronymic.endsWith('Оглы'))
+  )
+    return 'male';
+
+  if (
+    senior.patronymic &&
+    (senior.patronymic.endsWith('на') ||
+      senior.patronymic.endsWith('кызы') ||
+      senior.patronymic.endsWith('Кызы'))
+  )
+    return 'female';
+  if (
+    senior.lastName &&
+    (senior.lastName.endsWith('ов') ||
+      senior.lastName.endsWith('ев') ||
+      senior.lastName.endsWith('ин'))
+  )
+    return 'male';
+  if (
+    senior.lastName &&
+    (senior.lastName.endsWith('ова') ||
+      senior.lastName.endsWith('ева') ||
+      senior.lastName.endsWith('ина'))
+  )
+    return 'female';
+  return null;
+}
+
 export function fullName(row) {
+  const ln = row['lastName'] ?? '';
   const fn = row['firstName'] ?? '';
   const pn = row['patronymic'] ?? '';
-  const ln = row['lastName'] ?? '';
-  return [fn, pn, ln].filter(Boolean).join(' ').trim();
+  const gender = getGender(row);
+  const gc = gender === null ? (row.gender === 'female' ? '/жен./' : '/муж./') : '';//gender === 'female' ? '/жен./' : '/муж./';
+
+  return [ln, fn, pn, gc].filter(Boolean).join(' ').trim();
 }
+
+
 
 function getAge(y, m) {
   const today = new Date();

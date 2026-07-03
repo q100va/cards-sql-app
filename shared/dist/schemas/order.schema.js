@@ -4,6 +4,7 @@ const currentYear = new Date().getFullYear();
 export const orderDraftSchema = z
     .object({
     occasionId: positiveInt,
+    //occasionType: z.number().int().min(1).max(6),
     volunteerId: positiveInt,
     userId: positiveInt,
     instituteId: positiveInt.nullable(),
@@ -82,3 +83,22 @@ export const orderSchema = z
     id: positiveInt,
 })
     .strict();
+const orderRecipientSchema = z.object({
+    index: positiveInt,
+    recipientId: positiveInt,
+    fullNameSnapshot: z.string(),
+    specialComment: z.string().nullable(),
+    birthDay: positiveInt,
+    birthMonth: positiveInt,
+    birthYear: positiveInt,
+    infoNote: z.string().nullable(),
+    photoLink: z.string().nullable(),
+    recipientStatus: z.string(),
+});
+export const orderRecipientsSchema = z.array(z.object({
+    homeId: positiveInt,
+    postAddress: z.string(),
+    infoNote: z.string().nullable(),
+    noAddressNote: z.string().nullable(),
+    homeRecipients: z.array(orderRecipientSchema),
+}));

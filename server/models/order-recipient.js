@@ -37,7 +37,7 @@ export default function OrderRecipientModel(sequelize) {
         },
         defaultValue: 1
       },
-      //1 - 'DRAFT' 2 - 'COMPLETED'
+/*       //1 - 'DRAFT' 2 - 'COMPLETED'
       status: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -46,7 +46,7 @@ export default function OrderRecipientModel(sequelize) {
           max: 2,
         },
         defaultValue: 1
-      },
+      }, */
     },
     {
       sequelize,

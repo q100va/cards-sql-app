@@ -603,6 +603,14 @@ export const OPERATIONS = [
     description: 'Create a new order',
     objectName: 'OBJECT.ORDERS',
   },
+    {
+    operation: 'FULL_FILTER_NEW_ORDER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.FULL_FILTER.NAME',
+    description: 'Access to full filters',
+    objectName: 'OBJECT.ORDERS',
+  },
   {
     operation: 'VIEW_ORDER',
     object: 'orders',

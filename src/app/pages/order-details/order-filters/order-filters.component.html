@@ -27,11 +27,15 @@
 
           <mat-grid-tile colspan="5" rowspan="4" class="left">
             <div style="width: 100%; display: flex; flex-direction: column;">
-              <p matTooltipPosition="above" [matTooltip]="translateService.instant('ORDER.CARD.FILTERS.DATE_TOOLTIP')">
-                {{'ORDER.CARD.FILTERS.DATE_LABEL' | translate}}</p>
-
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 82%; margin-bottom: 16px; ">
+                <span style="margin-right: 24px; " matTooltipPosition="above"
+                  [matTooltip]="translateService.instant('ORDER.CARD.FILTERS.DATE_TOOLTIP')">
+                  {{'ORDER.CARD.FILTERS.DATE_LABEL' | translate}}</span>
+                <p-selectbutton [options]="periodOptions" formControlName="period" optionLabel="label"
+                  optionValue="value" (onChange)="onPeriodChange($event.value)" />
+              </div>
               <div style="width: 100%;">
-                <mat-form-field style="width: 40%; margin-right: 12px;" appearance="outline">
+                <mat-form-field style="width: 42%; padding-right: 12px;" appearance="outline">
                   <mat-label>{{'ORDER.CARD.FILTERS.FROM_LABEL' | translate}}</mat-label>
                   <input matInput type="number" formControlName="date1" placeholder="6" />
                 </mat-form-field>
@@ -166,11 +170,12 @@
           </mat-grid-tile>
 
           <mat-grid-tile colspan="5" rowspan="1" class="left">
-            <mat-slide-toggle formControlName="onlyWithPicture" class="small-toggle">
+            <mat-slide-toggle formControlName="onlyWithPicture" class="small-toggle"
+              *hasOp="{codes:['FULL_FILTER_NEW_ORDER'], mode:'any'}">
               {{'ORDER.CARD.FILTERS.ONLY_PHOTO_LABEL' | translate}}</mat-slide-toggle>
           </mat-grid-tile>
           <mat-grid-tile colspan="5" rowspan="2" class="left">
-            <div style=" display: flex; flex-direction: column;">
+            <div style=" display: flex; flex-direction: column;" *hasOp="{codes:['FULL_FILTER_NEW_ORDER'], mode:'any'}">
               <mat-slide-toggle formControlName="onlyAnniversaries" class="small-toggle"
                 (change)="onSlideToggleChange('onlyAnniversaries')" style="margin-bottom: 4px;">
                 {{'ORDER.CARD.FILTERS.ONLY_ANNIVERSARY_LABEL' | translate}}</mat-slide-toggle>
@@ -183,7 +188,7 @@
 
           <mat-grid-tile colspan="5" rowspan="1" class="left">
             <mat-slide-toggle formControlName="onlyWithConcents" class="small-toggle"
-              (change)="onSlideToggleChange('onlyWithConcents')">
+              (change)="onSlideToggleChange('onlyWithConcents')" *hasOp="{codes:['FULL_FILTER_NEW_ORDER'], mode:'any'}">
               {{'ORDER.CARD.FILTERS.ONLY_CONCENT' | translate}}</mat-slide-toggle>
           </mat-grid-tile>
 

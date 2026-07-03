@@ -18,6 +18,7 @@ const currentYear = new Date().getFullYear();
 export const orderDraftSchema = z
   .object({
     occasionId: positiveInt,
+    //occasionType: z.number().int().min(1).max(6),
     volunteerId: positiveInt,
     userId: positiveInt,
     instituteId: positiveInt.nullable(),
@@ -97,14 +98,39 @@ export const orderFiltersDataSchema = z
     ),
   })
   .strict();
-  export const orderSchema =  z
+export const orderSchema = z
   .object({
-   id: positiveInt,
+    id: positiveInt,
   })
   .strict();
+
+const orderRecipientSchema = z.object({
+  index: positiveInt,
+  recipientId: positiveInt,
+  fullNameSnapshot: z.string(),
+  specialComment: z.string().nullable(),
+  birthDay: positiveInt,
+  birthMonth: positiveInt,
+  birthYear: positiveInt,
+  infoNote: z.string().nullable(),
+  photoLink: z.string().nullable(),
+  recipientStatus: z.string(),
+});
+
+export const orderRecipientsSchema = z.array(
+  z.object({
+    homeId: positiveInt,
+    postAddress: z.string(),
+    infoNote: z.string().nullable(),
+    noAddressNote: z.string().nullable(),
+    homeRecipients: z.array(orderRecipientSchema),
+  }),
+);
 
 export type OrderFiltersData = z.infer<typeof orderFiltersDataSchema>;
 export type OrderDraft = z.infer<typeof orderDraftSchema>;
 export type OrderFilter = z.infer<typeof orderFilterSchema>;
 export type Filter = z.infer<typeof filterSchema>;
 export type Order = z.infer<typeof orderSchema>;
+export type OrderRecipients = z.infer<typeof orderRecipientsSchema>;
+export type OrderRecipient = z.infer<typeof orderRecipientSchema>;

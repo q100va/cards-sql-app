@@ -506,6 +506,12 @@ Order.hasMany(OrderRecipient, {
 OrderRecipient.belongsTo(Order, {
   foreignKey: 'orderId', as: 'order'
 });
+OrderRecipient.belongsTo(Home, {
+  foreignKey: 'homeId', as: 'home'
+});
+OrderRecipient.belongsTo(Senior, {
+  foreignKey: 'seniorId', as: 'senior'
+});
 
 Recipient.hasMany(OrderRecipient, {
   as: 'orderRecipients',

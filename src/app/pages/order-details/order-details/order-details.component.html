@@ -33,7 +33,7 @@
           <button mat-raised-button (click)="clear()" style="margin-right: 16px; color:#ffaa00;">
             {{'ORDER.CARD.CLEAR_BUTTON' | translate}}
           </button>
-          <button [disabled]="orderForm.invalid || filterForm.invalid || volunteer?.isRestricted"
+          <button [disabled]="orderForm.invalid || filterForm.invalid || volunteer?.isRestricted || blockCreateButton"
             (click)="onCreateOrderClick()" mat-raised-button color="primary">
             {{'ORDER.CARD.CREATE_BUTTON' | translate}} </button>
         </mat-card-actions>
@@ -204,26 +204,6 @@
           </mat-grid-tile>
           }}
         </mat-grid-list>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       </form>
     </mat-card-content>
 
@@ -231,8 +211,31 @@
   </mat-card>
   <mat-card class="order-card" appearance="outlined">
 
-    <mat-card-title> Список </mat-card-title>
-    gfghwrtwhwrtwrty
+    <mat-card-title> {{'ORDER.CARD.LIST_TITLE' | translate}}{{contactReminder}} </mat-card-title>
+    @if(showSpinner){
+    <div class="mat-elevation-z8">
+      <div class="overlay">
+        <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+          [style]="{ width: '150px', height: '150px' }" />
+      </div>
+    </div> }
+    <mat-grid-list cols="10" gutterSize="6px" rowHeight="54px">
+
+      @if(message){
+      <mat-grid-tile colspan="10" rowspan="2" class="left">
+        <p style="color: rgb(255, 0, 0); font-weight: bold; ">{{message | translate}}</p>
+      </mat-grid-tile>
+      }
+      @if(list.length){
+      <mat-grid-tile colspan="10" rowspan="2" class="left">
+        <p style="color: rgb(101, 80, 219); font-weight: bold; ">{{'ORDER.CARD.SUCCESS_MESSAGE' | translate}}</p>
+      </mat-grid-tile>
+      }
+    </mat-grid-list>
+    @if(list.length){
+    <app-order-recipients [list]="list" [volunteerName]="volunteer?.firstName ?? ''" [occasionName]="occasionName"
+      [forInstitute]="!!orderForm.controls.instituteId.value"></app-order-recipients>
+    }
 
 
   </mat-card>

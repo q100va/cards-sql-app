@@ -22,6 +22,8 @@ import {
   OrderFilter,
   OrderFiltersData,
   orderFiltersDataSchema,
+  OrderRecipients,
+  orderRecipientsSchema,
   orderSchema,
 } from '../../../shared/schemas/order.schema';
 import * as ctrl from '../utils/common-ctrls';
@@ -79,22 +81,28 @@ export class OrderService {
   }
 
   createOrder(
-    params: OrderDraft,
+    orderDraft: OrderDraft,
     filtersDraft: OrderFilter,
-  ): Observable<ApiResponse<Order>> {
-    const filters = ctrl.omitEmptyAndFalse({
-      ...filtersDraft,
-      addressCategory:
-        filtersDraft.addressCategory === 1
-          ? null
-          : filtersDraft.addressCategory,
-      gender: filtersDraft.gender === 1 ? null : filtersDraft.gender,
-    });
+  ): Observable<ApiResponse<{ contact: string; recipients: OrderRecipients }>> {
+    const filters =
+      ctrl.omitEmptyAndFalse({
+        ...filtersDraft,
+        addressCategory:
+          filtersDraft.addressCategory === 1
+            ? null
+            : filtersDraft.addressCategory,
+        gender: filtersDraft.gender === 1 ? null : filtersDraft.gender,
+      }) ?? {};
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/create-order`, {
-        params,
+        orderDraft,
         filters,
       })
-      .pipe(validateResponse(orderSchema), catchError(this.handleError));
+      .pipe(
+        validateResponse(
+          z.object({ contact: z.string(), recipients: orderRecipientsSchema }),
+        ),
+        catchError(this.handleError),
+      );
   }
 }

@@ -62,8 +62,41 @@ export declare const orderFiltersDataSchema: z.ZodObject<{
 export declare const orderSchema: z.ZodObject<{
     id: z.ZodNumber;
 }, z.core.$strict>;
+declare const orderRecipientSchema: z.ZodObject<{
+    index: z.ZodNumber;
+    recipientId: z.ZodNumber;
+    fullNameSnapshot: z.ZodString;
+    specialComment: z.ZodNullable<z.ZodString>;
+    birthDay: z.ZodNumber;
+    birthMonth: z.ZodNumber;
+    birthYear: z.ZodNumber;
+    infoNote: z.ZodNullable<z.ZodString>;
+    photoLink: z.ZodNullable<z.ZodString>;
+    recipientStatus: z.ZodString;
+}, z.core.$strip>;
+export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
+    homeId: z.ZodNumber;
+    postAddress: z.ZodString;
+    infoNote: z.ZodNullable<z.ZodString>;
+    noAddressNote: z.ZodNullable<z.ZodString>;
+    homeRecipients: z.ZodArray<z.ZodObject<{
+        index: z.ZodNumber;
+        recipientId: z.ZodNumber;
+        fullNameSnapshot: z.ZodString;
+        specialComment: z.ZodNullable<z.ZodString>;
+        birthDay: z.ZodNumber;
+        birthMonth: z.ZodNumber;
+        birthYear: z.ZodNumber;
+        infoNote: z.ZodNullable<z.ZodString>;
+        photoLink: z.ZodNullable<z.ZodString>;
+        recipientStatus: z.ZodString;
+    }, z.core.$strip>>;
+}, z.core.$strip>>;
 export type OrderFiltersData = z.infer<typeof orderFiltersDataSchema>;
 export type OrderDraft = z.infer<typeof orderDraftSchema>;
 export type OrderFilter = z.infer<typeof orderFilterSchema>;
 export type Filter = z.infer<typeof filterSchema>;
 export type Order = z.infer<typeof orderSchema>;
+export type OrderRecipients = z.infer<typeof orderRecipientsSchema>;
+export type OrderRecipient = z.infer<typeof orderRecipientSchema>;
+export {};

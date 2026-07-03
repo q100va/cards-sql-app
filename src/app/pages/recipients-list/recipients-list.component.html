@@ -18,7 +18,7 @@
         <div class="bottom-right">
           <button data-cy="add-recipient-btn" mat-icon-button [title]="'RECIPIENT.TABLE_ADD_RECIPIENT' | translate"
             (click)="onAddRecipientClick(dt)" *hasOp="{codes:['ADD_NEW_RECIPIENT'], mode:'all'}"
-            [disabled]="!occasion?.status || occasion.status === 'OCCASION.STATUS.CLOSED'">
+            [disabled]="!occasion.status || occasion.status === 'OCCASION.STATUS.CLOSED'">
             <mat-icon fontSet="material-symbols-outlined">sticker_add</mat-icon>
           </button>
         </div>
