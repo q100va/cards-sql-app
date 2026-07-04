@@ -28,38 +28,37 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { DateUtilsService } from '../../../services/date-utils.service';
-import { SOURCES } from '../../../../../shared/constants/orders';
-import { OrderFiltersComponent } from '../order-filters/order-filters.component';
+import { DateUtilsService } from '../../services/date-utils.service';
+import { SOURCES } from '../../../../shared/constants/orders';
+import { OrderFiltersComponent } from './order-filters/order-filters.component';
 
-import { OrderRecipientsComponent } from '../order-recipients/order-recipients.component';
-import { Volunteer } from '../../../interfaces/advanced-model';
-import { OccasionService } from '../../../services/occasion.service';
+import { OrderRecipientsComponent } from './order-recipients/order-recipients.component';
+import { Volunteer } from '../../interfaces/advanced-model';
+import { OccasionService } from '../../services/occasion.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MessageWrapperService } from '../../../services/message.service';
-import { Occasion } from '../../../../../shared/schemas/occasion.schema';
+import { MessageWrapperService } from '../../services/message.service';
+import { Occasion } from '../../../../shared/schemas/occasion.schema';
 import {
   orderDraftSchema,
   orderFilterSchema,
   OrderRecipients,
-} from '../../../../../shared/schemas/order.schema';
-import { VolunteerService } from '../../../services/volunteer.service';
-import { ContactOption } from '../../../../../shared/schemas/volunteer.schema';
-import { zodValidator } from '../../../utils/zod-validator';
-import { volunteerDialogConfig } from '../../volunteers-list/volunteer-dialog-config';
-import { causeOfRestrictionControlSchema } from '../../../../../shared/schemas/user.schema';
-import { DialogData } from '../../../interfaces/dialog-props';
+} from '../../../../shared/schemas/order.schema';
+import { VolunteerService } from '../../services/volunteer.service';
+import { ContactOption } from '../../../../shared/schemas/volunteer.schema';
+import { zodValidator } from '../../utils/zod-validator';
+import { volunteerDialogConfig } from '../volunteers-list/volunteer-dialog-config';
+import { causeOfRestrictionControlSchema } from '../../../../shared/schemas/user.schema';
+import { DialogData } from '../../interfaces/dialog-props';
 import { MatDialog } from '@angular/material/dialog';
-import { DetailsDialogComponent } from '../../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
-import { AuthService } from '../../../services/auth.service';
-import { getRegionsWithNearby } from '../../../../../shared/constants/nearby-regions';
-import { OrderService } from '../../../services/order.service';
-import * as ctrl from '../../../utils/common-ctrls';
+import { DetailsDialogComponent } from '../../shared/dialogs/details-dialogs/details-dialog/details-dialog.component';
+import { AuthService } from '../../services/auth.service';
+import { getRegionsWithNearby } from '../../../../shared/constants/nearby-regions';
+import { OrderService } from '../../services/order.service';
 import { ConfirmationService } from 'primeng/api';
 import { finalize } from 'rxjs';
 
 @Component({
-  selector: 'app-order-details',
+  selector: 'app-order-card',
   imports: [
     MatGridListModule,
     MatCardModule,
@@ -82,10 +81,10 @@ import { finalize } from 'rxjs';
     ListboxModule,
     ProgressSpinner,
   ],
-  templateUrl: './order-details.component.html',
-  styleUrl: './order-details.component.css',
+  templateUrl: './order-card.component.html',
+  styleUrl: './order-card.component.css',
 })
-export class OrderDetailsComponent {
+export class OrderCardComponent {
   readonly route = inject(ActivatedRoute);
   readonly dateUtils = inject(DateUtilsService);
   private readonly occasionService = inject(OccasionService);
@@ -239,7 +238,7 @@ export class OrderDetailsComponent {
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
+            source: 'OrderCardComponent',
             stage: 'getActualOccasions',
             type: this.orderTypeId,
           }),
@@ -411,7 +410,7 @@ export class OrderDetailsComponent {
         error: (err) => {
           this.filteredContacts = [];
           this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
+            source: 'OrderCardComponent',
             stage: 'checkOrder',
             type: this.orderTypeId,
             occasionId: this.actualOccasions[this.index].id,
@@ -505,7 +504,7 @@ export class OrderDetailsComponent {
         error: (err) => {
           this.filteredContacts = [];
           this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
+            source: 'OrderCardComponent',
             stage: 'createOrder',
             type: this.orderTypeId,
             occasionId: this.actualOccasions[this.index].id,
@@ -570,7 +569,7 @@ export class OrderDetailsComponent {
         error: (err) => {
           this.filteredContacts = [];
           this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
+            source: 'OrderCardComponent',
             stage: 'getActualOccasions',
             type: this.orderTypeId,
           });
@@ -607,7 +606,7 @@ export class OrderDetailsComponent {
         error: (err) => {
           //this.filteredContacts = [];
           this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
+            source: 'OrderCardComponent',
             stage: 'getActualOccasions',
             type: this.orderTypeId,
           });
@@ -698,7 +697,7 @@ export class OrderDetailsComponent {
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
+            source: 'OrderCardComponent',
             stage: 'openVolunteerCard',
             volunteerId: this.volunteer?.id,
           }),
