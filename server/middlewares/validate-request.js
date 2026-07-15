@@ -1,11 +1,9 @@
 // validate-request.js
 import { z } from 'zod';
 
-export function validateRequest(schema, part = 'body'/* , opts = {} */) {
+export function validateRequest(schema, part = 'body') {
   return (req, _res, next) => {
     try {
-      console.log('part', req[part]);
-      console.log(JSON.stringify(req.body.changingData?.contacts, null, 2));
       const parsed = schema.safeParse(req[part]);
 
       if (!parsed.success) {
@@ -17,14 +15,12 @@ export function validateRequest(schema, part = 'body'/* , opts = {} */) {
         err.details = details;
         return next(err);
       }
-       console.log('parsed.data', parsed.data);
 
       req[part] = parsed.data;
       next();
     } catch (error) {
-      // ← здесь добавляем код и статус для рантайм-исключений в валидаторе
       const err = error instanceof Error ? error : new Error('Request validation failed');
-      if (err.status == null) err.status = 422;               // считаем это тоже ошибкой валидации
+      if (err.status == null) err.status = 422;
       if (err.code == null)   err.code   = 'ERRORS.VALIDATION';
       return next(err);
     }
