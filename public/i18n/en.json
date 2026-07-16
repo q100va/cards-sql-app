@@ -72,7 +72,10 @@
       "INSTITUTES": "institute(s)",
       "COORDINATIONS": "coordination",
       "OFFICIAL_NAME": "official name"
-    }
+    },
+    "ORDER_DUPLICATES_1": "This volunteer has already received addresses for '{{occasion}}':<br />",
+    "ORDER_DUPLICATES_2": "<br />Are you sure this isn't a duplicate?",
+    "ORDER_NOT_FOR_INSTITUTES": "Are you sure this request isn't for an organization?"
   },
   "TOAST": {
     "INFO": "Information",
@@ -144,15 +147,15 @@
       "NAME": "New Year",
       "DATE": "January 1"
     },
-    "23_FEBRUARY": {
+    "FEBRUARY_23": {
       "NAME": "Defender of the Fatherland Day",
       "DATE": "February 23"
     },
-    "8_MARCH": {
+    "MARCH_8": {
       "NAME": "International Women's Day",
       "DATE": "March 8"
     },
-    "9_MAY": {
+    "MAY_9": {
       "NAME": "Victory Day",
       "DATE": "May 8"
     },
