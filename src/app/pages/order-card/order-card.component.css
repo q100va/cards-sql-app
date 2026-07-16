@@ -1,0 +1,72 @@
+.cards-row {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  align-items: flex-start;
+}
+
+.cards-row mat-card {
+  flex: 1;
+}
+
+.order-card {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 24px;
+  text-align: left;
+  padding: 16px;
+  min-height: 80vh;
+}
+
+:host ::ng-deep .right .mat-grid-tile-content {
+  justify-content: end !important;
+}
+
+:host ::ng-deep .left .mat-grid-tile-content {
+  justify-content: start !important;
+}
+
+:host ::ng-deep .start .mat-grid-tile-content {
+  align-items: self-start;
+}
+
+:host ::ng-deep .start .mat-grid-tile-content {
+  align-items: self-start;
+}
+
+.header {
+  color: #e91e63;
+  font-size: 1.2em;
+}
+
+.occasion-icon {
+  font-size: 60px;
+  width: 60px;
+  height: 60px;
+  color: #e91e63;
+}
+ul {
+  list-style-type: none;
+}
+.contact-autocomplete .p-autocomplete-input {
+  height: "56px";
+  --p-form-field-border-color: #2e7d32;
+}
+
+p-progress-spinner {
+  --p-progressspinner-color-1: #fbc02d;
+  --p-progressspinner-color-2: #d6c616;
+  --p-progressspinner-color-3: #45d233;
+  --p-progressspinner-color-4: #66bb6a;
+}
+
+/* spinner overlay */
+.overlay {
+  z-index: 100;
+  position: fixed;
+  width: 70%;
+  height: 80vh;
+  padding-top: 20%;
+  background-color: #dddfd081;
+  border-radius: 12px;
+}

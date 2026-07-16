@@ -1,0 +1,242 @@
+<div class="cards-row">
+  <mat-card class="order-card" appearance="outlined">
+
+
+    <mat-grid-list cols="10" gutterSize="6px" rowHeight="54px" style="background-color: #F8E4EA;">
+      <mat-grid-tile colspan="1" rowspan="2">
+        <mat-icon class="occasion-icon" fontSet="material-icons-outlined">cake</mat-icon>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="4" rowspan="2" class="left">
+        <div style=" display: flex; flex-direction: column; ">
+          <mat-card-title> {{title | translate}} </mat-card-title>
+          <mat-card-subtitle> {{'ORDER.CARD.CREATION_TITLE' | translate}} </mat-card-subtitle>
+        </div>
+        @if(orderTypeId==='1'){
+
+        <span>
+          <button mat-icon-button (click)=goBack($event)>
+            <mat-icon>navigate_before</mat-icon>
+          </button>
+        </span>
+        <span class="header">{{month | translate}}</span>
+        <span>
+          <button mat-icon-button (click)=goForward($event)>
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </span>
+
+        }
+      </mat-grid-tile>
+
+      <mat-grid-tile colspan="5" rowspan="2" class="right">
+        <mat-card-actions>
+          <button mat-raised-button (click)="clear()" style="margin-right: 16px; color:#ffaa00;">
+            {{'ORDER.CARD.CLEAR_BUTTON' | translate}}
+          </button>
+          <button [disabled]="orderForm.invalid || filterForm.invalid || volunteer?.isRestricted || blockCreateButton"
+            (click)="onCreateOrderClick()" mat-raised-button color="primary">
+            {{'ORDER.CARD.CREATE_BUTTON' | translate}} </button>
+        </mat-card-actions>
+      </mat-grid-tile>
+    </mat-grid-list>
+
+    <mat-card-content>
+      <form [formGroup]="orderForm">
+        <mat-grid-list cols="10" gutterSize="0px" rowHeight="74px">
+
+          <mat-grid-tile colspan="5" class="right">
+            <mat-slide-toggle style="width:100%;" class="small-toggle-label"
+              [formControl]="orderForm.controls.noConfirmationRequired">
+              {{'ORDER.CARD.NO_CONF_REQUIRED_LABEL' | translate}}
+            </mat-slide-toggle>
+          </mat-grid-tile>
+
+
+          <mat-grid-tile colspan="5" rowspan="2" class="right">
+            <div style=" display: flex; flex-direction: column; width:100%;">
+              <mat-form-field style="width:100%;" appearance="outline">
+                <mat-label>
+                  {{'ORDER.CARD.SOURCE_LABEL' | translate}}
+                </mat-label>
+                <mat-select [formControl]="orderForm.controls.source">
+                  @for(source of SOURCES; track source.id){
+                  <mat-option [value]="source.id">{{source.optionKey | translate}}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              @if(orderForm.controls.source.hasError('required') && orderForm.controls.source.touched){
+              <mat-error style="width:100%;">
+                {{'FORM_VALIDATION.REQUIRED' | translate}}
+              </mat-error>
+              }
+            </div>
+          </mat-grid-tile>
+        </mat-grid-list>
+
+        <app-order-filters [filterForm]="filterForm" [amountControl]="orderForm.controls.amount"></app-order-filters>
+
+        <mat-grid-list cols="10" gutterSize="0px" rowHeight="36px">
+          <mat-grid-tile colspan="10"></mat-grid-tile>
+          <mat-grid-tile colspan="10" rowspan="2" class="left">
+            <div style="width: 50%; margin-right: 12px;">
+              <p-floatlabel variant="on" [style]="{'--p-floatlabel-color': '#414941'}">
+                <p-autocomplete [fluid]=" true" appendTo="body" [style]="{ height: '56px',
+                          '--p-inputtext-border-color': '#414941',
+                          '--p-inputtext-focus-border-color': '#006d33',
+                          '--p-autocomplete-focus-border-color': '#006d33',
+                          '--p-autocomplete-invalid-border-color':'#ba1a1a',
+                          '--p-inputtext-border-radius': '4px',
+                          '--p-inputtext-hover-border-color': '#414941',
+                          '--p-autocomplete-overlay-border-radius':'4px',
+                          '--p-autocomplete-invalid-placeholder-color':'#ba1a1a',
+                          '--p-autocomplete-overlay-border-color': '#006d33'
+                        }" formControlName="contact" [showClear]="true" [forceSelection]="true"
+                  [suggestions]="filteredContacts" (completeMethod)="filterContact($event)" inputId="contact"
+                  optionLabel="content" [minLength]="3" [delay]="300"
+                  (onSelect)="getVolunteer($event.value.volunteerId)">
+                  <ng-template let-contact #item>
+                    <div class="flex items-center gap-2">
+                      <div>{{ contact.content }}</div>
+                      <div> - {{ contact.type }}</div>
+                    </div>
+                  </ng-template></p-autocomplete>
+                <label for="contact">{{'ORDER.CARD.CONTACT_LABEL' | translate}}*</label>
+              </p-floatlabel>
+            </div>
+            <div style="width: 10%;"> <button mat-icon-button
+                [title]="translateService.instant('ORDER.CARD.ADD_VOLUNTEER')" (click)="onAddVolunteerClick()">
+                <mat-icon>person_add_alt</mat-icon>
+              </button> </div>
+            <mat-form-field style="width: 40%; padding-top: 19px;" appearance="outline">
+              <mat-label>
+                {{'ORDER.CARD.AMOUNT_LABEL' | translate}}
+              </mat-label>
+              <input matInput type="number" [formControl]="orderForm.controls.amount" placeholder="1" />
+            </mat-form-field>
+          </mat-grid-tile>
+
+
+          <mat-grid-tile colspan="6" class="left start">
+            @if(orderForm.controls.contact.hasError('required') && orderForm.controls.contact.touched){
+            <mat-error style="width: 60%; margin-right: 12px;">
+              {{'FORM_VALIDATION.REQUIRED' | translate}}
+            </mat-error>
+            }
+          </mat-grid-tile>
+          <mat-grid-tile colspan="4" class="left start">
+
+            @if(orderForm.controls.amount.hasError('required') && orderForm.controls.amount.touched){
+            <mat-error style="width: 60%; margin-right: 12px;">
+              {{'FORM_VALIDATION.REQUIRED' | translate}}
+            </mat-error>
+            }@else if(orderForm.controls.amount.hasError('zodError') && orderForm.controls.amount.touched){
+            <mat-error style="width: 60%; margin-right: 12px;">
+              {{'FORM_VALIDATION.ORDER.INT_MIN_1' | translate}}
+            </mat-error>
+            }
+          </mat-grid-tile>
+
+
+
+          <mat-grid-tile colspan="10" rowspan="2" class="left ">
+            <mat-form-field style="width: 100%; padding-top: 19px;" appearance="outline">
+              <mat-label>
+                {{'ORDER.CARD.COMMENT_LABEL' | translate}}
+              </mat-label>
+              <input matInput type="text" [formControl]="orderForm.controls.comment"
+                [placeholder]="translateService.instant('ORDER.CARD.COMMENT_PLACEHOLDER')" />
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="10" class="left start">
+            @if(orderForm.controls.comment.hasError('zodError')){
+            <mat-error class="error" style="width: 60%; margin-right: 12px;">
+              {{orderForm.controls.comment.errors!['zodError'] | translate}}
+            </mat-error>
+            }
+          </mat-grid-tile>
+
+          @if(volunteer){
+          <mat-grid-tile colspan="3" rowspan="3" class="left start">
+            <p>{{'ORDER.CARD.VOLUNTEER_INFO' | translate}}:</p>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="7" rowspan="3" class="left start">
+
+            <div style=" display: flex; flex-direction: column;">
+              <ul>
+                <li>{{ fullName(volunteer)}}
+                  <button mat-icon-button (click)="onOpenCardClick()"
+                    [matTooltip]="translateService.instant('ORDER.CARD.OPEN_CARD_TOOLTIP')" matTooltipPosition="right">
+                    <mat-icon fontSet="material-icons-outlined">open_in_new</mat-icon>
+                  </button>
+                </li>
+                <li> {{ getAddress(volunteer) }} </li>
+                <li>{{volunteer.comment ? volunteer.comment : ""}}</li>
+              </ul>
+            </div>
+          </mat-grid-tile>
+          @if(volunteer.isRestricted){
+          <mat-grid-tile colspan="3" rowspan="3" class="left start">
+          </mat-grid-tile>
+          <mat-grid-tile colspan="7" rowspan="3" class="left start">
+            <div style=" display: flex; flex-direction: column;">
+              <div style="color: orangered;">
+                {{'ORDER.CARD.WARNING_NOTE' | translate}}
+              </div>
+              <div>{{dateUtils.transformDate(volunteer.dateOfRestriction)}}: {{volunteer.causeOfRestriction}}</div>
+            </div>
+          </mat-grid-tile>
+          }
+
+          @if(volunteer.institutes.length){
+          <mat-grid-tile colspan="3" [rowspan]="volunteer.institutes.length" class="left start">
+            <p> {{'ORDER.CARD.INSTITUTES_NOTE' | translate}}:</p>
+          </mat-grid-tile>
+
+          <mat-grid-tile colspan="7" [rowspan]="volunteer.institutes.length*2" class="left start">
+            <p-listbox formControlName="instituteId" [options]="volunteer.institutes" optionLabel="instituteName"
+              optionValue="id" [checkmark]="true" [highlightOnSelect]="false" class="w-full">
+
+              <ng-template let-institute #item>
+                {{ institute.instituteName }} - {{ institute.category }}
+              </ng-template>
+
+            </p-listbox>
+          </mat-grid-tile>
+          }}
+        </mat-grid-list>
+      </form>
+    </mat-card-content>
+
+
+  </mat-card>
+  <mat-card class="order-card" appearance="outlined">
+
+    <mat-card-title> {{'ORDER.CARD.LIST_TITLE' | translate}}{{contactReminder}} </mat-card-title>
+    @if(showSpinner){
+    <div class="mat-elevation-z8">
+      <div class="overlay">
+        <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+          [style]="{ width: '150px', height: '150px' }" />
+      </div>
+    </div> }
+    <mat-grid-list cols="10" gutterSize="6px" rowHeight="54px">
+
+      @if(message){
+      <mat-grid-tile colspan="10" rowspan="2" class="left">
+        <p style="color: rgb(255, 0, 0); font-weight: bold; ">{{message | translate}}</p>
+      </mat-grid-tile>
+      }
+      @if(list.length){
+      <mat-grid-tile colspan="10" rowspan="2" class="left">
+        <p style="color: rgb(101, 80, 219); font-weight: bold; ">{{'ORDER.CARD.SUCCESS_MESSAGE' | translate}}</p>
+      </mat-grid-tile>
+      }
+    </mat-grid-list>
+    @if(list.length){
+    <app-order-recipients [list]="list" [volunteerName]="volunteer?.firstName ?? ''" [occasionName]="occasionName"
+      [forInstitute]="!!orderForm.controls.instituteId.value"></app-order-recipients>
+    }
+
+
+  </mat-card>
+</div>

@@ -1,0 +1,318 @@
+<mat-card class="orders-list-card" appearance="outlined">
+  <!-- Header -->
+  <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
+    <mat-grid-tile colspan="4"></mat-grid-tile>
+
+    <!-- Title -->
+    <mat-grid-tile colspan="2">
+      <mat-card-header>
+        <mat-card-title>{{ 'ORDER.TABLE.TITLE' | translate }}</mat-card-title>
+      </mat-card-header>
+    </mat-grid-tile>
+
+    <mat-grid-tile colspan="3"></mat-grid-tile>
+
+    <!-- Actions
+    <mat-grid-tile colspan="1">
+      <mat-card-actions>
+        <div class="bottom-right">
+          <button data-cy="add-ORDER-btn" mat-icon-button [title]="'ORDER.TABLE.ADD_ORDER' | translate"
+            (click)="onAddORDERClick(dt)" *hasOp="{codes:['ADD_NEW_ORDER'], mode:'all'}"
+            [disabled]="!occasion || !occasion.status || occasion.status === 'OCCASION.STATUS.CLOSED'">
+            <mat-icon fontSet="material-symbols-outlined">sticker_add</mat-icon>
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-grid-tile>-->
+  </mat-grid-list>
+
+  <!-- Content -->
+  <mat-card-content>
+    <p-table #dt showGridlines [value]="orders" dataKey="id" [rowHover]="true" [rows]="10"
+      [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 25, 50]" [totalRecords]="totalRecords"
+      [loading]="isLoading()" [paginator]="true"
+      [currentPageReportTemplate]="translateService.instant('ORDER.TABLE.PAGE_REPORT')" [filterDelay]="0" [lazy]="true"
+      (onLazyLoad)="loadOrders($event)">
+      <ng-template #caption>
+        <div class="caption">
+
+          <div class="caption-left">
+          </div>
+
+          <div class="caption-right">
+            <p-button [outlined]="true" icon="pi pi-filter-slash"
+              [label]="translateService.instant('ORDER.TABLE.CLEAR')" (click)="clear(dt)" />
+
+            <p-iconField iconPosition="left">
+              <p-inputIcon>
+                <i class="pi pi-search"></i>
+              </p-inputIcon>
+
+              <input pInputText type="text" [(ngModel)]="searchValue"
+                [placeholder]="translateService.instant('ORDER.TABLE.SEARCH_PLACEHOLDER')"
+                (keydown.enter)="onSearchEnter(dt)" [pTooltip]="translateService.instant('ORDER.TABLE.SEARCH_TOOLTIP')"
+                tooltipPosition="left" />
+            </p-iconField>
+          </div>
+
+        </div>
+      </ng-template>
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="userName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.USER_NAME' | translate }}
+              <p-sortIcon field="userName" />
+              <p-columnFilter type="text" field="userName" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="date" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.DATE' | translate }}
+              <p-sortIcon field="date" />
+              <p-columnFilter type="Date" field="date" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="amount" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.AMOUNT' | translate }}
+              <p-sortIcon field="amount" />
+              <p-columnFilter type="numeric" field="amount" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="volunteerName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}
+              <p-sortIcon field="volunteerName" />
+              <p-columnFilter type="text" field="volunteerName" display="menu" showAddButton="false"
+                showOperator="false" showMatchModes="false" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="instituteName" style="max-width: 146rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.INSTITUTE_NAME' | translate }}
+              <p-sortIcon field="instituteName" />
+              <p-columnFilter type="text" field="instituteName" display="menu" showAddButton="false"
+                showOperator="false" showMatchModes="false" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="contact" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.CONTACT' | translate }}
+              <p-sortIcon field="contact" />
+              <p-columnFilter type="text" field="contact" display="menu" showAddButton="false" showOperator="false"
+                showMatchModes="false" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="status" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.STATUS' | translate }}
+              <p-sortIcon field="status" />
+              <p-columnFilter type="text" field="status" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.CONFIRM' | translate }}
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.ACTION' | translate }}
+            </div>
+          </th>
+          <!--   <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.CANCEL' | translate }}
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.VIEW' | translate }}
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.DELETE' | translate }}
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.RESTORE' | translate }}
+            </div>
+          </th> -->
+          <th pSortableColumn="source" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.SOURCE' | translate }}
+              <p-sortIcon field="source" />
+              <p-columnFilter type="text" field="source" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="occasionName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.OCCASION_NAME' | translate }}
+              <p-sortIcon field="occasionName" />
+              <p-columnFilter type="text" field="occasionName" display="menu" class="ml-auto" />
+            </div>
+          </th>
+          <th pSortableColumn="comment" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.COMMENT' | translate }}
+              <p-sortIcon field="comment" />
+              <p-columnFilter type="text" field="comment" display="menu" class="ml-auto" />
+            </div>
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-order>
+        <tr>
+          <td>
+            {{ order.userName }}
+          </td>
+          <td>
+            {{ dateUtils.transformDate(order.date) }}
+          </td>
+          <td>
+            {{ order.amount }}
+          </td>
+          <td>
+            {{ order.volunteerName }}
+          </td>
+          <td>
+            {{ order.instituteName }}
+          </td>
+          <td>
+            {{ order.contact }}
+          </td>
+
+          <td>
+            {{ order.status | translate }}
+          </td>
+          <td>
+            <div class="center">
+              <button mat-icon-button [title]="'ORDER.TABLE.CONFIRM_BUTTON'  | translate"
+                (click)="onConfirmOrderClick(order.id)" *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                <mat-icon>
+                  check_circle
+                </mat-icon>
+              </button>
+            </div>
+          </td>
+
+          <td style="text-align: center">
+            <div class="center">
+              <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'TABLE.MENU.OPEN_LIST_TITLE'  | translate"
+                appBlurOnClick>
+                <mat-icon>
+                  keyboard_double_arrow_down
+                </mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="onCancelOrderClick(order.id)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">cancel</mat-icon>
+                  <span>{{'ORDER.TABLE.CANCEL' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onViewOrderClick(order.id)"
+                  *hasOp="{codes:['VIEW_ORDER','EDIT_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">open_in_new</mat-icon>
+                  <span>{{'ORDER.TABLE.VIEW' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onMoveToOverdueOrderClick(order.id)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">timer</mat-icon>
+                  <span>{{'ORDER.TABLE.DELETE_OVERDUE' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onMoveToReturnedOrderClick(order.id)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">assignment_returned</mat-icon>
+                  <span>{{'ORDER.TABLE.DELETE_RETURNED' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onDeleteOrderClick(order.id)"
+                  *hasOp="{codes:['DELETE_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">error</mat-icon>
+                  <span>{{'ORDER.TABLE.DELETE_MISTAKE' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onRestoreOrderClick(order.id)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">restore_from_trash</mat-icon>
+                  <span>{{'ORDER.TABLE.RESTORE' | translate}}</span>
+                </button>
+
+              </mat-menu>
+            </div>
+          </td>
+          <!--   <td>
+            <div class="center">
+              <button mat-icon-button [title]="'ORDER.TABLE.CANCEL_BUTTON'  | translate">
+                <mat-icon>
+                  cancel
+                </mat-icon>
+              </button>
+            </div>
+          </td>
+          <td>
+            <div class="center">
+              <button mat-icon-button [title]="'ORDER.TABLE.VIEW_BUTTON'  | translate"
+                (click)="onViewOrderClick(order)">
+                <mat-icon>
+                  open_in_new
+                </mat-icon>
+              </button>
+            </div>
+          </td>
+          <td>
+            <div class="center">
+              <button mat-icon-button [matMenuTriggerFor]="deleteMenu"
+                [title]="'ORDER.TABLE.DELETE_BUTTON'  | translate">
+                <mat-icon>
+                  delete
+                </mat-icon>
+              </button>
+              <mat-menu #deleteMenu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="moveToOverdue()">
+                  <mat-icon>timer</mat-icon>
+                  <span>{{ "ORDER.TABLE.DELETE_OVERDUE" | translate }}</span>
+                </button>
+                <button mat-menu-item (click)="moveToReturned()">
+                  <mat-icon>assignment_returned</mat-icon>
+                  <span>{{ "ORDER.TABLE.DELETE_RETURNED" | translate }}</span>
+                </button>
+                <button mat-menu-item (click)="deletePermanently()">
+                  <mat-icon>error</mat-icon>
+                  <span>{{ "ORDER.TABLE.DELETE_MISTAKE" | translate }}</span>
+                </button>
+              </mat-menu>
+            </div>
+          </td>
+          <td>
+            <div class="center">
+              <button mat-icon-button [title]="'ORDER.TABLE.RESTORE_BUTTON'  | translate"
+                (click)="onRestoreOrderClick()">
+                <mat-icon>
+                  restore_from_trash
+                </mat-icon>
+              </button>
+            </div>
+          </td> -->
+          <td>
+            {{ order.source | translate }}
+          </td>
+          <td>
+            {{ getOrderOccasionName(order) }}
+          </td>
+          <td>
+            {{ order.comment }}
+          </td>
+
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="12">{{ "ORDER.TABLE.EMPTY" | translate }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </mat-card-content>
+</mat-card>

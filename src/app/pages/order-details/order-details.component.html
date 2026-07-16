@@ -1,0 +1,107 @@
+<mat-card class="order-details-card" appearance="outlined">
+  <mat-card-header>
+    <div class="header-row">
+      <button mat-icon-button type="button" (click)="onBackClick()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <mat-card-title>{{ 'ORDER.CARD.VIEW_TITLE' | translate }}</mat-card-title>
+        @if (order(); as currentOrder) {
+        <mat-card-subtitle>
+          #{{ currentOrder.id }} - {{ translatedOccasionName(currentOrder.occasion) }}
+        </mat-card-subtitle>
+        }
+      </div>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (isLoading()) {
+    <div class="loading">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+    } @else {@if(order(); as currentOrder) {
+    <div class="toolbar">
+      @if (!isEditMode()) {
+      <button mat-raised-button color="primary" type="button" (click)="onEditClick()">
+        <mat-icon>edit</mat-icon>
+        {{ 'ORDER.DETAILS.EDIT_BUTTON' | translate }}
+      </button>
+      } @else {
+      <button mat-button type="button" (click)="onCancelClick()" [disabled]="isSaving()">
+        {{ 'ORDER.DETAILS.CANCEL_BUTTON' | translate }}
+      </button>
+      <button mat-raised-button color="primary" type="button" (click)="onSaveClick()"
+        [disabled]="form.invalid || isSaving()">
+        <mat-icon>save</mat-icon>
+        {{ 'ORDER.DETAILS.SAVE_BUTTON' | translate }}
+      </button>
+      }
+    </div>
+
+    <section class="summary-grid">
+      <div class="summary-item">
+        <span>{{ 'ORDER.TABLE.DATE' | translate }}</span>
+        <strong>{{ dateUtils.transformDate(currentOrder.date) }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>{{ 'ORDER.TABLE.AMOUNT' | translate }}</span>
+        <strong>{{ currentOrder.amount }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>{{ 'ORDER.TABLE.USER_NAME' | translate }}</span>
+        <strong>{{ currentOrder.userName }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>{{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}</span>
+        <strong>{{ currentOrder.volunteerName }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>{{ 'ORDER.TABLE.CONTACT' | translate }}</span>
+        <strong>{{ currentOrder.contact || '-' }}</strong>
+      </div>
+      @if (currentOrder.instituteName) {
+      <div class="summary-item">
+        <span>{{ 'ORDER.DETAILS.INSTITUTE' | translate }}</span>
+        <strong>{{ currentOrder.instituteName }}</strong>
+      </div>
+      }
+    </section>
+
+    <form class="order-form" [formGroup]="form">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ORDER.TABLE.STATUS' | translate }}</mat-label>
+        <mat-select formControlName="status" [disabled]="!isEditMode()">
+          @for (status of statusOptions; track status.id) {
+          <mat-option [value]="status.id">{{ status.label | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ORDER.TABLE.SOURCE' | translate }}</mat-label>
+        <mat-select formControlName="source" [disabled]="!isEditMode()">
+          @for (source of SOURCES; track source.id) {
+          <mat-option [value]="source.id">{{ source.optionKey | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="comment-field" appearance="outline">
+        <mat-label>{{ 'ORDER.CARD.COMMENT_LABEL' | translate }}</mat-label>
+        <textarea matInput rows="3" formControlName="comment" [readonly]="!isEditMode()"></textarea>
+        @if (form.controls.comment.hasError('zodError')) {
+        <mat-error>{{ form.controls.comment.errors!['zodError'] | translate }}</mat-error>
+        }
+      </mat-form-field>
+    </form>
+
+    <section class="recipients-section">
+      <h2>{{ 'ORDER.CARD.LIST_TITLE' | translate }}</h2>
+      <app-order-recipients [list]="currentOrder.recipients" [volunteerName]="currentOrder.volunteerName"
+        [occasionName]="translatedOccasionName(currentOrder.occasion)"
+        [forInstitute]="!!currentOrder.instituteId"></app-order-recipients>
+    </section>
+    }}
+  </mat-card-content>
+</mat-card>

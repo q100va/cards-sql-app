@@ -1,0 +1,80 @@
+.red-and-bold {
+  color: red;
+  font-weight: bold;
+}
+
+.italic-600 {
+  font-style: italic;
+  /*  font-size: 0.9em; */
+  line-height: 1.2em;
+  font-weight: 600;
+}
+
+.italic {
+  font-style: italic;
+  /*  font-size: 0.9em; */
+  line-height: 1.2em;
+}
+.bold {
+  font-weight: bold;
+}
+
+.blue-bold-underlined {
+  font-weight: bold;
+  text-decoration: underline;
+  text-decoration-color: rgb(31, 86, 168);
+  color: rgb(31, 86, 168);
+  margin-bottom: 32px;
+}
+
+.blue-bold-header {
+  font-weight: bold;
+  color: rgb(31, 86, 168);
+  font-size: 1.2em;
+  margin-bottom: 16px;
+}
+
+.list-item {
+  /*   font-size: 1em;
+  line-height: 1.5em; */
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+  margin-inline-start: 1em;
+  margin-inline-end: 0px;
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  column-gap: 6px;
+  line-height: 1.5em;
+}
+.list-item-bold {
+  /*   font-size: 1em;
+  line-height: 1.5em; */
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+  margin-inline-start: 1em;
+  margin-inline-end: 0px;
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  column-gap: 6px;
+  line-height: 1.5em;
+  font-weight: 600;
+}
+/* .list-item-row {
+ display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 0px;
+  align-items: start;
+  margin-bottom: 4px;
+  margin-left: 4px;
+  line-height: 1.2m;
+}
+.list-item-icon {
+  font-size: medium;
+}
+ .list-item-row {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  column-gap: 6px;
+  margin: 0;
+  line-height: 1.2m;
+} */
