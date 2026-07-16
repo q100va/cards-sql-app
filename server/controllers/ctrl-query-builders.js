@@ -290,6 +290,11 @@ const whereKeys = {
   specialComment: () => "specialComment",
   regionName: () => "name",
   homeName: () => "homeName",
+  date: () => "createdAt",
+  userId: () => "userId",
+  amount: () => "amount",
+  status: () => "status",
+  source: () => "userId",
 };
 
 export function buildOrderField(field) {
@@ -416,6 +421,51 @@ export function applyStringFilter(where, filters, field) {
 
   where[keyFn()] = {
     [operator]: fieldFilters.map(buildCondition),
+  };
+}
+
+export function applyDateFilter(where, filters, field) {
+  const fieldFilters = filters[field];
+
+  if (!fieldFilters || !fieldFilters.length) return;
+
+  const keyFn = whereKeys[field];
+
+  if (fieldFilters.length === 1) {
+    const op = OPERATIONS[fieldFilters[0].matchMode];
+    const value = new Date(fieldFilters[0].value);
+
+    if (!op) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
+    }
+
+    if (Number.isNaN(value.getTime())) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_VALUE', 400);
+    }
+
+    where[keyFn()] = { [op]: value };
+    return;
+  }
+
+  const operator = fieldFilters[0].operator === 'and' ? Op.and : Op.or;
+
+  const conditions = fieldFilters.map((f) => {
+    const op = OPERATIONS[f.matchMode];
+    const value = new Date(f.value);
+
+    if (!op) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
+    }
+
+    if (Number.isNaN(value.getTime())) {
+      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_VALUE', 400);
+    }
+
+    return { [op]: value };
+  });
+
+  where[keyFn()] = {
+    [operator]: conditions,
   };
 }
 
