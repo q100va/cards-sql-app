@@ -39,7 +39,8 @@
     "HOMES": "Homes",
     "SENIORS": "Residents",
     "OCCASIONS": "Occasions",
-    "SENIORS_BULK_UPDATE": "Update List"
+    "SENIORS_BULK_UPDATE": "Update List",
+    "ALL_ORDERS": "All Requests"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -269,8 +270,8 @@
     "TABLE_PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
     "MENU": {
       "DELETE_RECIPIENT": "delete",
-      "SEND_RECIPIENT": "send to order",
-      "VIEW_ORDERS": "view orders list"
+      "SEND_RECIPIENT": "send to request",
+      "VIEW_ORDERS": "view requests list"
     },
     "CARD_TITLE": "Add recipients",
     "CARD_CLOSE": "Close",
@@ -416,7 +417,7 @@
     "MENU": {
       "OPEN_LIST_TITLE": "Open list",
       "OPEN_CARD": "open card",
-      "OPEN_ORDERS": "open orders",
+      "OPEN_ORDERS": "open requests",
       "OPEN_SUBSCRIBERS": "open subscribers",
       "OPEN_VOLUNTEERS": "open volunteers list",
       "OPEN_COOPERATIONS": "open collaborating users",
@@ -1106,7 +1107,7 @@
     "PARTNERS": "Institution\nrepresentatives",
     "SENIORS": "Residents",
     "VOLUNTEERS": "Volunteers",
-    "ORDERS": "Orders",
+    "ORDERS": "Requests",
     "OCCASIONS": "Occasions"
   },
   "OPS": {
