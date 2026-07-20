@@ -63,7 +63,22 @@
             <div class="header-cell">
               {{ 'ORDER.TABLE.USER_NAME' | translate }}
               <p-sortIcon field="userName" />
-              <p-columnFilter type="text" field="userName" display="menu" class="ml-auto" />
+              <p-columnFilter type="text" field="userName" display="menu" matchMode="in" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedUsers" [options]="(userOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedUsers, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
             </div>
           </th>
           <th pSortableColumn="date" style="min-width: 10rem">

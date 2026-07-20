@@ -54,10 +54,13 @@
     <span class="logo">&nbsp;{{'TOOLBAR.TITLE' | translate}}</span>
 
     <span class="spacer"></span>
-<!--     <button mat-button class="navbar-link">
+    <button mat-button class="navbar-link" [routerLink]="`/orders/${userId()}`" *hasOp="{
+        codes: ['VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'],
+        mode: 'any',
+      }">
       {{'TOOLBAR.MY_ORDERS' | translate}}
     </button>
- -->
+
     <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu">
       <mat-icon>flutter_dash</mat-icon>
     </button>
@@ -68,18 +71,21 @@
       @for (item of menuItems; track $index) {
       <ng-container>
         @if(!item.subMenuItems){
-        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy" *hasOp="item.params">
+        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy"
+          *hasOp="item.params">
           <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         } @else {
-        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy" *hasOp="item.params">
+        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy"
+          *hasOp="item.params">
           <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         <mat-menu #submenu="matMenu" xPosition="before">
           @for(subItem of item.subMenuItems; track $index){
-          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy" *hasOp="subItem.params">
+          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy"
+            *hasOp="subItem.params">
             <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
             <span>{{subItem.text | translate}}</span>
           </button>

@@ -1,4 +1,12 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  WritableSignal,
+} from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -22,7 +30,7 @@ import { OrderService } from '../../services/order.service';
 import { ConfirmationService } from 'primeng/api';
 import { MessageWrapperService } from '../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { finalize, map, switchMap } from 'rxjs';
+import { BehaviorSubject, finalize, map, switchMap } from 'rxjs';
 import { Occasion } from '../../../../shared/schemas/occasion.schema';
 import { Order } from '../../../../shared/schemas/order.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
@@ -52,7 +60,8 @@ import { DateUtilsService } from '../../services/date-utils.service';
     DropdownModule,
     TooltipModule,
     TranslateModule,
-    HasOpDirective
+    HasOpDirective,
+    AsyncPipe,
   ],
   templateUrl: './orders-list.component.html',
   styleUrl: './orders-list.component.css',
@@ -70,12 +79,15 @@ export class OrdersListComponent {
   private readonly dialog = inject(MatDialog);
   readonly dateUtils = inject(DateUtilsService);
 
+  userId: number | null = null;
+
   isLoading = signal<boolean>(false);
   totalRecords = 0;
   occasionId!: number;
   occasion!: Occasion;
   orders!: Order[];
   searchValue: string | undefined;
+  selectedUsers = signal<number[]>([]);
   selectedStatuses = signal<string[]>([]);
 
   statusOptions = [
@@ -89,7 +101,24 @@ export class OrdersListComponent {
     },
   ];
 
+  private rawUserOptions$ = new BehaviorSubject<
+    { id: number; userName: string }[]
+  >([]);
+
+  readonly userOptions$ = this.rawUserOptions$.pipe(
+    map((users) =>
+      users.map((user) => ({
+        label: user.userName,
+        value: user.id,
+      })),
+    ),
+  );
+
   ngOnInit() {
+    const userIdParam = this.route.snapshot.paramMap.get('userId');
+    this.userId = userIdParam ? Number(userIdParam) : null;
+    console.log('userIdParam', userIdParam);
+
     /* TODO:     this.route.paramMap
       .pipe(
         map((params) => Number(params.get('occasionId'))),
@@ -115,8 +144,8 @@ export class OrdersListComponent {
   }
 
   loadOrders(event: TableLazyLoadEvent): void {
-    const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
-    if (!userId) return;
+    //const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
+    if (!this.userId) return;
     console.log('event:', event);
     const query = {
       //userId: userId,
@@ -125,7 +154,7 @@ export class OrdersListComponent {
       sortField: event.sortField,
       sortOrder: event.sortOrder,
       searchValue: this.searchValue,
-      filters: this.normalizePrimeFilters(event.filters, userId),
+      filters: this.normalizePrimeFilters(event.filters, this.userId),
     };
     this.isLoading.set(true);
     //console.log('FILTERS:', query.filters);
@@ -139,6 +168,7 @@ export class OrdersListComponent {
         next: (res) => {
           this.orders = res.data.list;
           this.totalRecords = res.data.length;
+          this.rawUserOptions$.next(res.data.options.user);//TODO: API
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
@@ -157,6 +187,17 @@ export class OrdersListComponent {
       sortOrder: dt.sortOrder,
       filters: dt.filters,
     });
+  }
+
+  onMultiFilterChange(
+    value: string[] | null,
+    selectedSignal: WritableSignal<string[]>,
+    filter: (value: string[] | null) => void,
+  ): void {
+    console.log('selectedSignal', selectedSignal);
+    const next = value ?? [];
+    selectedSignal.set(next);
+    filter(next.length ? next : null);
   }
 
   private normalizePrimeFilters(filters: any, userId: number) {
@@ -207,7 +248,7 @@ export class OrdersListComponent {
 
   cannotDeleteOrders() {}
 
-/*   getOccasionName(occasion: Occasion) {
+  /*   getOccasionName(occasion: Occasion) {
     return (
       this.translateService.instant(occasion!.type) +
       ' ' +

@@ -67,6 +67,7 @@ export class BaseLayoutComponent {
     return u ? `${u.firstName} ${u.lastName}` : '';
   });
   readonly userName = computed(() => this.user()?.userName ?? '');
+  readonly userId = computed(() => this.user()?.id ?? '');
 
   menu: Menu = [
     {
@@ -129,7 +130,7 @@ export class BaseLayoutComponent {
       text: 'MENU.SENIORS',
       link: '/seniors',
     },
-       {
+    {
       params: {
         codes: ['UPLOAD_LIST_OF_SENIORS'],
         mode: 'any',
@@ -149,6 +150,16 @@ export class BaseLayoutComponent {
       icon: 'handshake',
       text: 'MENU.PARTNERS',
       link: '/partners',
+    },
+    {
+      params: {
+        codes: ['VIEW_FULL_ORDERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-all-orders',
+      icon: 'mail',
+      text: 'MENU.ALL_ORDERS',
+      link: '/orders',
     },
 
     {
@@ -218,6 +229,7 @@ export class BaseLayoutComponent {
   menuItems: Menu = [];
 
   ngOnInit(): void {
+    console.log('userId', this.userId);
     this.menuItems = [...this.menu];
   }
 
