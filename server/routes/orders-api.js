@@ -242,52 +242,85 @@ router.post(
       const whereVolunteer = {};
       const whereVolunteerContact = {};
 
-      if (filters.userId !== undefined) {
-        applyNumericFilter(where, filters, 'userId');
-      }
-      if (filters.date !== undefined) {
-        applyDateFilter(where, filters, 'date');
-      }
       if (filters.amount !== undefined) {
         applyNumericFilter(where, filters, 'amount');
-      }
-      if (filters.status !== undefined) {
-        applyNumericFilter(where, filters, 'status');
-      }
-      if (filters.source !== undefined) {
-        applyNumericFilter(where, filters, 'source');
       }
       if (filters.comment !== undefined) {
         applyStringFilter(where, filters, 'comment');
       }
 
+      if (filters.userId !== undefined) {//TODO:
+        applyNumericFilter(where, filters, 'userId');
+      }
+      if (filters.date !== undefined) {//TODO:
+        applyDateFilter(where, filters, 'date');
+      }
+
+      if (filters.status !== undefined) {//TODO:
+        applyNumericFilter(where, filters, 'status');
+      }
+      if (filters.source !== undefined) {//TODO:
+        applyNumericFilter(where, filters, 'source');
+      }
+
+      where[Op.and] ??= [];
+
+      if (filters.volunteerName?.[0]?.value) {
+        const words = filters.volunteerName[0].value
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        where[Op.and].push(
+          ...words.map((word) => ({
+            [Op.or]: [
+              { '$volunteer.firstName$': { [Op.iLike]: `%${word}%` } },
+              { '$volunteer.lastName$': { [Op.iLike]: `%${word}%` } },
+              { '$volunteer.patronymic$': { [Op.iLike]: `%${word}%` } },
+            ],
+          })),
+        );
+      }
+
+      if (filters.instituteName?.[0]?.value) {
+        const words = filters.instituteName[0].value
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        where[Op.and].push(
+          ...words.map((word) => ({
+            [Op.or]: [
+              { '$institute.instituteName$': { [Op.iLike]: `%${word}%` } },
+              { '$institute.category$': { [Op.iLike]: `%${word}%` } },
+            ],
+          })),
+        );
+      }
+
+
+      if (filters.contact?.[0]?.value) {
+        const words = filters.contact[0].value
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        where[Op.and].push(
+          ...words.map((word) => ({
+            [Op.or]: [
+              { '$contact.content$': { [Op.iLike]: `%${word}%` } },
+              { '$contact.type$': { [Op.iLike]: `%${word}%` } },
+            ],
+          })),
+        );
+      }
+
+
+
+
       //TODO: volunteerName, instituteName+category, contact+type
       /*
-            if (filters.volunteerName !== undefined) {
-              const words = filters.volunteerName
-                .trim()
-                .split(/\s+/);
 
-              where[Op.and] = words.map((word) => ({
-                [Op.or]: [
-                  { '$volunteer.firstName$': { [Op.iLike]: `%${word}%` } },
-                  { '$volunteer.lastName$': { [Op.iLike]: `%${word}%` } },
-                  { '$volunteer.patronymic$': { [Op.iLike]: `%${word}%` } },
-                ],
-              }));
-            }
-            if (filters.instituteName !== undefined) {
-              const words = filters.instituteName
-                .trim()
-                .split(/\s+/);
-
-              where[Op.and] = words.map((word) => ({
-                [Op.or]: [
-                  { '$volunteer.institute.instituteName$': { [Op.iLike]: `%${word}%` } },
-                  { '$volunteer.institute.category$': { [Op.iLike]: `%${word}%` } },
-                ],
-              }));
-            }
 
             const search = String(searchValue ?? '').trim();
             if (search) {

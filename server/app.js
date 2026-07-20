@@ -22,6 +22,7 @@ import PartnersApi from './routes/partners-api.js';
 import VolunteersApi from './routes/volunteers-api.js';
 import RolesApi from './routes/roles-api.js';
 import OccasionsApi from './routes/occasions-api.js';
+import OrdersApi from './routes/orders-api.js';
 import RecipientsApi from './routes/recipients-api.js';
 import AuditApi from './routes/audit-api.js';
 import ClientLogsApi from './routes/client-logs.js';
@@ -39,7 +40,7 @@ import {
   VolunteerSubscription, VolunteerCooperation, Institute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
   Senior, SeniorOutdatedName, SeniorSearch,
-  Occasion, Recipient
+  Occasion, Recipient, Order, OrderRecipient
 } from './models/index.js';
 import { corsMiddleware } from './cors.js';
 
@@ -100,6 +101,7 @@ app.use('/api/volunteers', VolunteersApi);
 app.use('/api/roles', RolesApi);
 app.use('/api/occasions', OccasionsApi);
 app.use('/api/recipients', RecipientsApi);
+app.use('/api/orders', OrdersApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/client-logs', ClientLogsApi);
 app.use('/api/auth', AuthApi);
@@ -164,6 +166,8 @@ export async function initInfrastructure() {
   await SeniorSearch.sync(syncOpts);
   await Occasion.sync(syncOpts);
   await Recipient.sync(syncOpts);
+  await Order.sync(syncOpts);
+  await OrderRecipient.sync(syncOpts);
 
   initAuditHooks(sequelize);
 

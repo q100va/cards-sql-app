@@ -37,6 +37,8 @@ import SeniorOutdatedNameModel from './senior-outdated-name.js';
 import SeniorSearchModel from './senior-search.js';
 import OccasionModel from './occasion.js';
 import RecipientModel from './recipient.js';
+import OrderModel from './order.js';
+import OrderRecipientModel from './order-recipient.js'
 
 const AuditLog = AuditLogModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
@@ -73,6 +75,8 @@ const SeniorOutdatedName = SeniorOutdatedNameModel(sequelize);
 const SeniorSearch = SeniorSearchModel(sequelize);
 const Occasion = OccasionModel(sequelize);
 const Recipient = RecipientModel(sequelize);
+const Order = OrderModel(sequelize);
+const OrderRecipient = OrderRecipientModel(sequelize);
 
 User.hasMany(UserContact, {
   as: 'contacts',
@@ -473,7 +477,6 @@ Senior.hasMany(SeniorSearch, {
 SeniorSearch.belongsTo(Senior, {
   foreignKey: 'seniorId',
 });
-//TODO: Recipients - Orders
 
 Occasion.hasMany(Recipient, {
   foreignKey: 'occasionId',
@@ -493,6 +496,76 @@ Recipient.belongsTo(Senior, {
   foreignKey: 'seniorId',
 });
 
+Order.belongsTo(Occasion, {
+  foreignKey: 'occasionId',
+  as: 'occasion',
+});
+
+Occasion.hasMany(Order, {
+  foreignKey: 'occasionId',
+  as: 'orders',
+});
+
+Order.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
+User.hasMany(Order, {
+  foreignKey: 'userId',
+  as: 'orders',
+});
+
+Order.belongsTo(Volunteer, {
+  foreignKey: 'volunteerId',
+  as: 'volunteer',
+});
+
+Volunteer.hasMany(Order, {
+  foreignKey: 'volunteerId',
+  as: 'orders',
+});
+
+Order.belongsTo(Institute, {
+  foreignKey: 'instituteId',
+  as: 'institute',
+});
+
+Institute.hasMany(Order, {
+  foreignKey: 'instituteId',
+  as: 'orders',
+});
+
+Order.belongsTo(VolunteerContact, {
+  foreignKey: 'contactId',
+  as: 'contact',
+});
+
+VolunteerContact.hasMany(Order, {
+  foreignKey: 'contactId',
+  as: 'orders',
+});
+
+Order.hasMany(OrderRecipient, {
+  foreignKey: 'orderId',
+  as: 'orderRecipients',
+});
+
+OrderRecipient.belongsTo(Order, {
+  foreignKey: 'orderId',
+  as: 'order',
+});
+
+OrderRecipient.belongsTo(Recipient, {
+  foreignKey: 'recipientId',
+  as: 'recipient',
+});
+
+Recipient.hasMany(OrderRecipient, {
+  foreignKey: 'recipientId',
+  as: 'orderRecipients',
+});
+
 export {
   AuditLog, RefreshToken,
   Locality, District, Region, Country,
@@ -502,6 +575,6 @@ export {
   VolunteerSubscription, VolunteerCooperation, Institute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
   Senior, SeniorOutdatedName, SeniorSearch,
-  Occasion, Recipient
+  Occasion, Recipient, Order, OrderRecipient
 };
 

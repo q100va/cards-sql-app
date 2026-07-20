@@ -619,6 +619,14 @@ export const OPERATIONS = [
     description: 'Edit order',
     objectName: 'OBJECT.ORDERS',
   },
+    {
+    operation: 'EDIT_ORDER_RECIPIENTS',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.EDIT_RECIPIENTS.NAME',
+    description: 'Edit order recipients list',
+    objectName: 'OBJECT.ORDERS',
+  },
   {
     operation: 'DELETE_ORDER',
     object: 'orders',
@@ -780,7 +788,7 @@ export const OPERATIONS = [
     description: 'Bulk edit recipients list',
     objectName: 'OBJECT.RECIPIENTS',
   },
-    {
+  {
     operation: 'CLEAR_RECIPIENTS_LIST',
     object: 'recipients',
     accessToAllOps: false,
@@ -807,6 +815,7 @@ export const OPERATIONS = [
     objectName: 'OBJECT.RECIPIENTS',
     flag: 'FULL',
   },
+
 
 
 
