@@ -211,12 +211,12 @@ export const OCCASION_TYPES = {
     ru: '8 Марта',
     en: "International Women's Day",
   },
-   5: {
+  5: {
     key: 'OCCASION.TYPE.MAY_9.NAME',
     ru: 'День Победы',
     en: "Victory Day",
   },
-   6: {
+  6: {
     key: 'OCCASION.TYPE.EASTER.NAME',
     ru: 'Пасха',
     en: "Easter",
@@ -287,4 +287,11 @@ export function getOccasionMonthSortExpression(lang = 'en') {
   `);
 }
 
-
+export function dictToOptions(dict, lang) {
+  return Object.entries(dict)
+    .map(([value, item]) => ({
+      label: item[lang],
+      value: Number(value),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, lang));
+}

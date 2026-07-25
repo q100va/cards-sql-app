@@ -96,7 +96,7 @@ export declare const orderQueryDTOSchema: z.ZodObject<{
     sortOrder: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     searchValue: z.ZodOptional<z.ZodString>;
     filters: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodArray<z.ZodObject<{
-        value: z.ZodUnion<readonly [z.ZodString, z.ZodBoolean, z.ZodNumber]>;
+        value: z.ZodUnion<readonly [z.ZodString, z.ZodBoolean, z.ZodNumber, z.ZodArray<z.ZodNumber>]>;
         matchMode: z.ZodString;
         operator: z.ZodString;
     }, z.core.$strip>>>>;
@@ -129,6 +129,20 @@ export declare const ordersListSchema: z.ZodObject<{
         comment: z.ZodNullable<z.ZodString>;
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
+    options: z.ZodObject<{
+        users: z.ZodArray<z.ZodObject<{
+            id: z.ZodNumber;
+            userName: z.ZodString;
+        }, z.core.$strip>>;
+        statuses: z.ZodArray<z.ZodObject<{
+            value: z.ZodNumber;
+            label: z.ZodString;
+        }, z.core.$strip>>;
+        sources: z.ZodArray<z.ZodObject<{
+            value: z.ZodNumber;
+            label: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>;
 }, z.core.$strict>;
 export declare const orderDetailsSchema: z.ZodObject<{
     id: z.ZodNumber;

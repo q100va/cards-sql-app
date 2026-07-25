@@ -1,6 +1,7 @@
 // utils/query-builders.js
 import { Op, literal } from 'sequelize';
 import { Region, District, Locality, HomeAddress, Home } from '../models/index.js';
+import CustomError from '../shared/customError.js';
 
 // ── CONFIG per owner ───────────────────────────────────────────────────────────
 const OWNER = {
@@ -294,7 +295,8 @@ const whereKeys = {
   userId: () => "userId",
   amount: () => "amount",
   status: () => "status",
-  source: () => "userId",
+  source: () => "source",
+  comment: () => "comment"
 };
 
 export function buildOrderField(field) {
@@ -369,7 +371,7 @@ export function applyStringFilter(where, filters, field) {
     equals: Op.eq,
     notEquals: Op.ne,
     startsWith: Op.iLike,
-    endsWith: Op.iLike,
+    endsWith: Op.iLike
   };
 
   const fieldFilters = filters[field];
@@ -427,45 +429,73 @@ export function applyStringFilter(where, filters, field) {
 export function applyDateFilter(where, filters, field) {
   const fieldFilters = filters[field];
 
-  if (!fieldFilters || !fieldFilters.length) return;
+  if (!fieldFilters?.length) return;
 
   const keyFn = whereKeys[field];
 
+  const buildCondition = (filter) => {
+    const date = new Date(filter.value);
+
+    if (Number.isNaN(date.getTime())) {
+      throw new CustomError(
+        'ERRORS.RECIPIENT.INVALID_FILTER_VALUE',
+        400,
+      );
+    }
+
+    switch (filter.matchMode) {
+      case 'dateIs': {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+
+        return {
+          [Op.between]: [start, end],
+        };
+      }
+
+      case 'dateIsNot': {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+
+        return {
+          [Op.notBetween]: [start, end],
+        };
+      }
+
+      case 'dateBefore':
+        return {
+          [Op.lt]: date,
+        };
+
+      case 'dateAfter':
+        return {
+          [Op.gt]: date,
+        };
+
+      default:
+        throw new CustomError(
+          'ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE',
+          400,
+        );
+    }
+  };
+
   if (fieldFilters.length === 1) {
-    const op = OPERATIONS[fieldFilters[0].matchMode];
-    const value = new Date(fieldFilters[0].value);
-
-    if (!op) {
-      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
-    }
-
-    if (Number.isNaN(value.getTime())) {
-      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_VALUE', 400);
-    }
-
-    where[keyFn()] = { [op]: value };
+    where[keyFn()] = buildCondition(fieldFilters[0]);
     return;
   }
 
-  const operator = fieldFilters[0].operator === 'and' ? Op.and : Op.or;
-
-  const conditions = fieldFilters.map((f) => {
-    const op = OPERATIONS[f.matchMode];
-    const value = new Date(f.value);
-
-    if (!op) {
-      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);
-    }
-
-    if (Number.isNaN(value.getTime())) {
-      throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_VALUE', 400);
-    }
-
-    return { [op]: value };
-  });
+  const operator =
+    fieldFilters[0].operator === 'and' ? Op.and : Op.or;
 
   where[keyFn()] = {
-    [operator]: conditions,
+    [operator]: fieldFilters.map(buildCondition),
   };
 }
 

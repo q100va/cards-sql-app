@@ -16,7 +16,7 @@ import { withTransaction } from "../controllers/with-transaction.js";
 import { createSpecialRecipientsList } from "../controllers/ctrl-create-special-order.js";
 import { transformOrderDetails, transformOrderDisplayParts, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
 import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-query-builders.js";
-import { getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
+import { dictToOptions, getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
 
 const router = Router();
 const orderIdParamsSchema = z.object({
@@ -239,8 +239,6 @@ router.post(
                 : [[field, dir], ['id', 'ASC']];
 
       const where = {};
-      const whereVolunteer = {};
-      const whereVolunteerContact = {};
 
       if (filters.amount !== undefined) {
         applyNumericFilter(where, filters, 'amount');
@@ -248,19 +246,17 @@ router.post(
       if (filters.comment !== undefined) {
         applyStringFilter(where, filters, 'comment');
       }
-
-      if (filters.userId !== undefined) {//TODO:
+      if (filters.userId !== undefined) {
         applyNumericFilter(where, filters, 'userId');
       }
-      if (filters.date !== undefined) {//TODO:
-        applyDateFilter(where, filters, 'date');
-      }
-
-      if (filters.status !== undefined) {//TODO:
+      if (filters.status !== undefined) {
         applyNumericFilter(where, filters, 'status');
       }
-      if (filters.source !== undefined) {//TODO:
+      if (filters.source !== undefined) {
         applyNumericFilter(where, filters, 'source');
+      }
+      if (filters.date !== undefined) {
+        applyDateFilter(where, filters, 'date');
       }
 
       where[Op.and] ??= [];
@@ -317,36 +313,32 @@ router.post(
 
 
 
-
-      //TODO: volunteerName, instituteName+category, contact+type
-      /*
-
-
-            const search = String(searchValue ?? '').trim();
-            if (search) {
-              const value = `%${search.replace(/([_%\\])/g, '\\$1')}%`;
-              where[Op.or] = [
-                { comment: { [Op.iLike]: value } },
-                { '$user.userName$': { [Op.iLike]: value } },
-                { '$volunteer.firstName$': { [Op.iLike]: value } },
-                { '$volunteer.lastName$': { [Op.iLike]: value } },
-                { '$volunteer.patronymic$': { [Op.iLike]: value } },
-                { '$volunteer.institute.instituteName$': { [Op.iLike]: value } },
-                { '$volunteer.institute.category$': { [Op.iLike]: value } },
-              ];
-            } */
+      const search = String(searchValue ?? '').trim();
+      if (search) {
+        where[Op.or] ??= [];
+        const value = `%${search.replace(/([_%\\])/g, '\\$1')}%`;
+        where[Op.or] = [...where[Op.or],
+        { comment: { [Op.iLike]: value } },
+        { '$user.userName$': { [Op.iLike]: value } },
+        { '$volunteer.firstName$': { [Op.iLike]: value } },
+        { '$volunteer.lastName$': { [Op.iLike]: value } },
+        { '$volunteer.patronymic$': { [Op.iLike]: value } },
+        { '$institute.instituteName$': { [Op.iLike]: value } },
+        { '$institute.category$': { [Op.iLike]: value } },
+        { '$contact.content$': { [Op.iLike]: value } },
+        { '$contact.type$': { [Op.iLike]: value } },
+        ];
+      }
 
       const include = [
         {
           model: User,
           as: 'user',
-          //where: whereUser,
           attributes: ['id', 'userName'],
         },
         {
           model: Volunteer,
           as: 'volunteer',
-          //where: whereVolunteer,
           attributes: ['id', 'firstName', 'patronymic', 'lastName'],
         },
         {
@@ -388,11 +380,24 @@ router.post(
         draft.map(o => transformOrderDisplayParts(o.id))
       )).filter(Boolean);
 
+      const users = await User.findAll({
+        attributes: ['id', 'userName'],
+        order: [["userName", "ASC"]],
+        raw: true,
+      });
 
+      const statuses = dictToOptions(ORDER_STATUSES, lang);
+      const sources = dictToOptions(ORDER_SOURCES, lang);
 
       res
         .status(200)
-        .send({ data: { list: orders, length: total } });
+        .send({
+          data: {
+            list: orders, length: total, options: {
+              users, statuses, sources
+            }
+          }
+        });
     } catch (error) {
       error.code = 'ERRORS.ORDER.LIST_FAILED';
       next(error);

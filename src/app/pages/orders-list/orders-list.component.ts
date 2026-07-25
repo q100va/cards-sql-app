@@ -86,23 +86,27 @@ export class OrdersListComponent {
   occasionId!: number;
   occasion!: Occasion;
   orders!: Order[];
+  filters: Record<
+    string,
+    {
+      value: string | boolean | number;
+      matchMode: string;
+      operator: string;
+    }[]
+  > = {};
   searchValue: string | undefined;
   selectedUsers = signal<number[]>([]);
-  selectedStatuses = signal<string[]>([]);
-
-  statusOptions = [
-    {
-      label: this.translateService.instant('RECIPIENT.TABLE_ABSENT_STATUS'),
-      value: true,
-    },
-    {
-      label: this.translateService.instant('RECIPIENT.TABLE_EMPTY_STATUS'),
-      value: false,
-    },
-  ];
+  selectedStatuses = signal<number[]>([]);
+  selectedSources = signal<number[]>([]);
 
   private rawUserOptions$ = new BehaviorSubject<
     { id: number; userName: string }[]
+  >([]);
+  private rawStatusOptions$ = new BehaviorSubject<
+    { value: number; label: string }[]
+  >([]);
+  private rawSourceOptions$ = new BehaviorSubject<
+    { value: number; label: string }[]
   >([]);
 
   readonly userOptions$ = this.rawUserOptions$.pipe(
@@ -113,6 +117,8 @@ export class OrdersListComponent {
       })),
     ),
   );
+  readonly statusOptions$ = this.rawStatusOptions$.pipe();
+  readonly sourceOptions$ = this.rawSourceOptions$.pipe();
 
   ngOnInit() {
     const userIdParam = this.route.snapshot.paramMap.get('userId');
@@ -145,8 +151,10 @@ export class OrdersListComponent {
 
   loadOrders(event: TableLazyLoadEvent): void {
     //const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
-    if (!this.userId) return;
+    //if (!this.userId) return;
     console.log('event:', event);
+    this.filters = this.normalizePrimeFilters(event.filters);
+
     const query = {
       //userId: userId,
       offset: event.first ?? 0,
@@ -154,12 +162,12 @@ export class OrdersListComponent {
       sortField: event.sortField,
       sortOrder: event.sortOrder,
       searchValue: this.searchValue,
-      filters: this.normalizePrimeFilters(event.filters, this.userId),
+      filters: this.filters,
     };
     this.isLoading.set(true);
     //console.log('FILTERS:', query.filters);
     this.orderService
-      .getOrdersByUserId(query)
+      .getOrders(query)
       .pipe(
         finalize(() => this.isLoading.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -168,7 +176,9 @@ export class OrdersListComponent {
         next: (res) => {
           this.orders = res.data.list;
           this.totalRecords = res.data.length;
-          this.rawUserOptions$.next(res.data.options.user);//TODO: API
+          this.rawUserOptions$.next(res.data.options.users);
+          this.rawStatusOptions$.next(res.data.options.statuses);
+          this.rawSourceOptions$.next(res.data.options.sources);
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
@@ -190,9 +200,9 @@ export class OrdersListComponent {
   }
 
   onMultiFilterChange(
-    value: string[] | null,
-    selectedSignal: WritableSignal<string[]>,
-    filter: (value: string[] | null) => void,
+    value: number[] | null,
+    selectedSignal: WritableSignal<number[]>,
+    filter: (value: number[] | null) => void,
   ): void {
     console.log('selectedSignal', selectedSignal);
     const next = value ?? [];
@@ -200,7 +210,7 @@ export class OrdersListComponent {
     filter(next.length ? next : null);
   }
 
-  private normalizePrimeFilters(filters: any, userId: number) {
+  private normalizePrimeFilters(filters: any) {
     //console.log('normalizePrimeFilters');
     const result: Record<
       string,
@@ -211,18 +221,55 @@ export class OrdersListComponent {
       }[]
     > = {};
     const normalizedFilters = { ...(filters ?? {}) };
-    if (!normalizedFilters.userId) {
-      normalizedFilters.userId = [];
-    }
-    if (Array.isArray(normalizedFilters.userId)) {
-      normalizedFilters.userId = [
-        ...normalizedFilters.userId,
-        {
-          value: userId,
+
+    if (this.selectedUsers().length) {
+      const selectedUserIds = this.selectedUsers().map((id) => {
+        return {
+          value: id,
           matchMode: 'equals',
-          operator: 'and',
-        },
-      ];
+          operator: 'or',
+        };
+      });
+      normalizedFilters.userId = this.userId
+        ? [
+            ...selectedUserIds,
+            {
+              value: this.userId,
+              matchMode: 'equals',
+              operator: 'or',
+            },
+          ]
+        : [...selectedUserIds];
+    } else {
+      normalizedFilters.userId = this.userId
+        ? [
+            {
+              value: this.userId,
+              matchMode: 'equals',
+              operator: 'and',
+            },
+          ]
+        : undefined;
+    }
+
+    if (this.selectedStatuses().length) {
+      normalizedFilters.status = this.selectedStatuses().map((id) => {
+        return {
+          value: id,
+          matchMode: 'equals',
+          operator: 'or',
+        };
+      });
+    }
+
+    if (this.selectedSources().length) {
+      normalizedFilters.source = this.selectedSources().map((id) => {
+        return {
+          value: id,
+          matchMode: 'equals',
+          operator: 'or',
+        };
+      });
     }
 
     for (const [field, meta] of Object.entries(normalizedFilters)) {
@@ -243,6 +290,9 @@ export class OrdersListComponent {
 
   clear(dt: Table) {
     this.searchValue = '';
+    this.selectedUsers.set([]);
+    this.selectedStatuses.set([]);
+    this.selectedSources.set([]);
     dt.reset();
   }
 

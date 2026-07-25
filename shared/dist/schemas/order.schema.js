@@ -113,7 +113,12 @@ export const orderQueryDTOSchema = z.object({
         .record(z.string(), 
     //   z.union([
     z.array(z.object({
-        value: z.union([z.string(), z.boolean(), z.number().int()]),
+        value: z.union([
+            z.string(),
+            z.boolean(),
+            z.number().int(),
+            z.array(positiveInt),
+        ]),
         matchMode: z.string(),
         operator: z.string(),
     })))
@@ -138,6 +143,20 @@ export const ordersListSchema = z
     .object({
     list: z.array(orderSchema),
     length: z.coerce.number().int().min(0),
+    options: z.object({
+        users: z.array(z.object({
+            id: positiveInt,
+            userName: z.string(),
+        })),
+        statuses: z.array(z.object({
+            value: positiveInt,
+            label: z.string(),
+        })),
+        sources: z.array(z.object({
+            value: positiveInt,
+            label: z.string(),
+        })),
+    }),
 })
     .strict();
 export const orderDetailsSchema = z

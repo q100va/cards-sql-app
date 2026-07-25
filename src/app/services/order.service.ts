@@ -8,9 +8,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-import {
-  validateResponse,
-} from '../utils/validate-response';
+import { validateResponse } from '../utils/validate-response';
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
@@ -105,12 +103,20 @@ export class OrderService {
           z.object({ contact: z.string(), recipients: orderRecipientsSchema }),
         ),
         catchError(this.handleError),
-    );
+      );
   }
 
-  getOrdersByUserId(
-    query: OrderQuery,
-  ): Observable<ApiResponse<{ list: Order[]; length: number }>> {
+  getOrders(query: OrderQuery): Observable<
+    ApiResponse<{
+      list: Order[];
+      length: number;
+      options: {
+        users: { id: number; userName: string }[];
+        statuses: { value: number; label: string }[];
+        sources: { value: number; label: string }[];
+      };
+    }>
+  > {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-orders`, query)
       .pipe(validateResponse(ordersListSchema), catchError(this.handleError));
@@ -119,10 +125,7 @@ export class OrderService {
   getOrderById(id: number): Observable<ApiResponse<OrderDetails>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/${id}`)
-      .pipe(
-        validateResponse(orderDetailsSchema),
-        catchError(this.handleError),
-      );
+      .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));
   }
 
   updateOrder(
@@ -131,10 +134,6 @@ export class OrderService {
   ): Observable<ApiResponse<OrderDetails>> {
     return this.http
       .put<RawApiResponse>(`${this.BASE_URL}/${id}`, draft)
-      .pipe(
-        validateResponse(orderDetailsSchema),
-        catchError(this.handleError),
-      );
+      .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));
   }
-
 }

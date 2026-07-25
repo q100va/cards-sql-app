@@ -69,11 +69,11 @@ export const TYPES = [
     },
     {
         id: 3,
-        nameKey: 'OCCASION.23_FEBRUARY.NAME',
-        dateKey: 'OCCASION.23_FEBRUARY.DATE',
+        nameKey: 'OCCASION.FEBRUARY_23.NAME',
+        dateKey: 'OCCASION.FEBRUARY_23.DATE',
     },
-    { id: 4, nameKey: 'OCCASION.8_MARCH.NAME', dateKey: 'OCCASION.8_MARCH.DATE' },
-    { id: 5, nameKey: 'OCCASION.9_MAY.NAME', dateKey: 'OCCASION.9_MAY.DATE' },
+    { id: 4, nameKey: 'OCCASION.MARCH_8.NAME', dateKey: 'OCCASION.MARCH_8.DATE' },
+    { id: 5, nameKey: 'OCCASION.MAY_9.NAME', dateKey: 'OCCASION.MAY_9.DATE' },
     { id: 6, nameKey: 'OCCASION.EASTER.NAME', dateKey: 'OCCASION.EASTER.DATE.' },
 ];
 export const YEARS = [

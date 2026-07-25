@@ -63,9 +63,9 @@
             <div class="header-cell">
               {{ 'ORDER.TABLE.USER_NAME' | translate }}
               <p-sortIcon field="userName" />
-              <p-columnFilter type="text" field="userName" display="menu" matchMode="in" display="menu"
+              <p-columnFilter type="text" field="userId" display="menu" matchMode="equals" operator="or" display="menu"
                 [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
-                [showClearButton]="false" class="ml-auto">
+                [showClearButton]="false" class="ml-auto" [class.active-filter]="(filters['userId'] ?? []).length > 0">
                 <ng-template #filter let-value let-filter="filterCallback">
                   <p-multiselect [(ngModel)]="selectedUsers" [options]="(userOptions$ | async) ?? []"
                     optionLabel="label" optionValue="value"
@@ -85,14 +85,16 @@
             <div class="header-cell">
               {{ 'ORDER.TABLE.DATE' | translate }}
               <p-sortIcon field="date" />
-              <p-columnFilter type="Date" field="date" display="menu" class="ml-auto" />
+              <p-columnFilter type="date" field="date" display="menu" class="ml-auto"
+                [class.active-filter]="(filters['date'] ?? []).length > 0" />
             </div>
           </th>
           <th pSortableColumn="amount" style="min-width: 10rem">
             <div class="header-cell">
               {{ 'ORDER.TABLE.AMOUNT' | translate }}
               <p-sortIcon field="amount" />
-              <p-columnFilter type="numeric" field="amount" display="menu" class="ml-auto" />
+              <p-columnFilter type="numeric" field="amount" display="menu" class="ml-auto"
+                [class.active-filter]="(filters['amount'] ?? []).length > 0" />
             </div>
           </th>
           <th pSortableColumn="volunteerName" style="min-width: 14rem">
@@ -100,7 +102,8 @@
               {{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}
               <p-sortIcon field="volunteerName" />
               <p-columnFilter type="text" field="volunteerName" display="menu" showAddButton="false"
-                showOperator="false" showMatchModes="false" class="ml-auto" />
+                showOperator="false" showMatchModes="false" class="ml-auto"
+                [class.active-filter]="(filters['volunteerName'] ?? []).length > 0" />
             </div>
           </th>
           <th pSortableColumn="instituteName" style="max-width: 146rem">
@@ -108,7 +111,8 @@
               {{ 'ORDER.TABLE.INSTITUTE_NAME' | translate }}
               <p-sortIcon field="instituteName" />
               <p-columnFilter type="text" field="instituteName" display="menu" showAddButton="false"
-                showOperator="false" showMatchModes="false" class="ml-auto" />
+                showOperator="false" showMatchModes="false" class="ml-auto"
+                [class.active-filter]="(filters['instituteName'] ?? []).length > 0" />
             </div>
           </th>
           <th pSortableColumn="contact" style="min-width: 14rem">
@@ -116,14 +120,29 @@
               {{ 'ORDER.TABLE.CONTACT' | translate }}
               <p-sortIcon field="contact" />
               <p-columnFilter type="text" field="contact" display="menu" showAddButton="false" showOperator="false"
-                showMatchModes="false" class="ml-auto" />
+                showMatchModes="false" class="ml-auto" [class.active-filter]="(filters['contact'] ?? []).length > 0" />
             </div>
           </th>
           <th pSortableColumn="status" style="min-width: 14rem">
             <div class="header-cell">
               {{ 'ORDER.TABLE.STATUS' | translate }}
               <p-sortIcon field="status" />
-              <p-columnFilter type="text" field="status" display="menu" class="ml-auto" />
+              <p-columnFilter type="text" field="status" display="menu" matchMode="equals" operator="or" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto" [class.active-filter]="(filters['status'] ?? []).length > 0">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedStatuses" [options]="(statusOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedStatuses, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
             </div>
           </th>
           <th style="min-width: 10rem">
@@ -136,45 +155,43 @@
               {{ 'ORDER.TABLE.ACTION' | translate }}
             </div>
           </th>
-          <!--   <th style="min-width: 10rem">
-            <div class="header-cell">
-              {{ 'ORDER.TABLE.CANCEL' | translate }}
-            </div>
-          </th>
-          <th style="min-width: 10rem">
-            <div class="header-cell">
-              {{ 'ORDER.TABLE.VIEW' | translate }}
-            </div>
-          </th>
-          <th style="min-width: 10rem">
-            <div class="header-cell">
-              {{ 'ORDER.TABLE.DELETE' | translate }}
-            </div>
-          </th>
-          <th style="min-width: 10rem">
-            <div class="header-cell">
-              {{ 'ORDER.TABLE.RESTORE' | translate }}
-            </div>
-          </th> -->
           <th pSortableColumn="source" style="min-width: 10rem">
             <div class="header-cell">
               {{ 'ORDER.TABLE.SOURCE' | translate }}
               <p-sortIcon field="source" />
-              <p-columnFilter type="text" field="source" display="menu" class="ml-auto" />
+              <p-columnFilter type="text" field="source" display="menu" matchMode="equals" operator="or" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto" [class.active-filter]="(filters['source'] ?? []).length > 0">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedSources" [options]="(sourceOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedSources, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
             </div>
           </th>
           <th pSortableColumn="occasionName" style="min-width: 14rem">
             <div class="header-cell">
               {{ 'ORDER.TABLE.OCCASION_NAME' | translate }}
               <p-sortIcon field="occasionName" />
-              <p-columnFilter type="text" field="occasionName" display="menu" class="ml-auto" />
+              <p-columnFilter type="text" field="occasionName" display="menu" showAddButton="false" showOperator="false"
+                showMatchModes="false" class="ml-auto"
+                [class.active-filter]="(filters['occasionName'] ?? []).length > 0" />
             </div>
           </th>
           <th pSortableColumn="comment" style="min-width: 14rem">
             <div class="header-cell">
               {{ 'ORDER.TABLE.COMMENT' | translate }}
               <p-sortIcon field="comment" />
-              <p-columnFilter type="text" field="comment" display="menu" class="ml-auto" />
+              <p-columnFilter type="text" field="comment" display="menu" class="ml-auto"
+                [class.active-filter]="(filters['comment'] ?? []).length > 0" />
             </div>
           </th>
         </tr>

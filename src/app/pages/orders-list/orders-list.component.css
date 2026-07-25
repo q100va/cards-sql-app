@@ -142,3 +142,9 @@
   width: 100%;
   text-align: center;
 }
+
+:host ::ng-deep .active-filter .p-button-text.p-button-secondary {
+  background: #00000000;
+  border-color: #00000000;
+  color: #10b981;
+}
