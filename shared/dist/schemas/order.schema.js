@@ -97,6 +97,33 @@ export const orderRecipientsSchema = z.array(z.object({
     noAddressNote: z.string().nullable(),
     homeRecipients: z.array(orderRecipientSchema),
 }));
+export const orderSchema = z
+    .object({
+    id: positiveInt,
+    date: z.coerce.date(),
+    amount: positiveInt,
+    userName: z.string(),
+    volunteerName: z.string(),
+    instituteName: z.string().nullable(),
+    contact: z.string(),
+    status: z.string(),
+    source: z.string(),
+    occasion: z.string(),
+    comment: z.string().nullable(),
+})
+    .strict();
+const occasionNodeDataSchema = z.object({
+    type: z.number().int().positive(),
+    month: z.number().int().min(1).max(12).nullable(),
+    year: z.number().int().nullable(),
+});
+export const occasionNodeSchema = z.lazy(() => z.object({
+    key: z.string(),
+    label: z.string(),
+    data: occasionNodeDataSchema,
+    children: z.array(occasionNodeSchema).optional(),
+}));
+export const occasionNodesSchema = z.array(occasionNodeSchema);
 export const orderQueryDTOSchema = z.object({
     //userId: z.number().int().positive(),
     offset: z.number().int().min(0),
@@ -118,27 +145,13 @@ export const orderQueryDTOSchema = z.object({
             z.boolean(),
             z.number().int(),
             z.array(positiveInt),
+            z.array(occasionNodeDataSchema),
         ]),
         matchMode: z.string(),
         operator: z.string(),
     })))
         .default({}),
 });
-export const orderSchema = z
-    .object({
-    id: positiveInt,
-    date: z.coerce.date(),
-    amount: positiveInt,
-    userName: z.string(),
-    volunteerName: z.string(),
-    instituteName: z.string().nullable(),
-    contact: z.string(),
-    status: z.string(),
-    source: z.string(),
-    occasion: z.string(),
-    comment: z.string().nullable(),
-})
-    .strict();
 export const ordersListSchema = z
     .object({
     list: z.array(orderSchema),
@@ -156,6 +169,7 @@ export const ordersListSchema = z
             value: positiveInt,
             label: z.string(),
         })),
+        nodes: occasionNodesSchema,
     }),
 })
     .strict();

@@ -25,6 +25,7 @@ import {
   OrderRecipients,
   orderRecipientsSchema,
   ordersListSchema,
+  OrdersList,
 } from '../../../shared/schemas/order.schema';
 import * as ctrl from '../utils/common-ctrls';
 
@@ -107,15 +108,7 @@ export class OrderService {
   }
 
   getOrders(query: OrderQuery): Observable<
-    ApiResponse<{
-      list: Order[];
-      length: number;
-      options: {
-        users: { id: number; userName: string }[];
-        statuses: { value: number; label: string }[];
-        sources: { value: number; label: string }[];
-      };
-    }>
+    ApiResponse<OrdersList>
   > {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-orders`, query)

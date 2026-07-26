@@ -17,6 +17,7 @@ import { createSpecialRecipientsList } from "../controllers/ctrl-create-special-
 import { transformOrderDetails, transformOrderDisplayParts, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
 import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-query-builders.js";
 import { dictToOptions, getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
+import { buildOccasionNodes } from "../controllers/ctrl-transform-occasion.js";
 
 const router = Router();
 const orderIdParamsSchema = z.object({
@@ -311,7 +312,35 @@ router.post(
         );
       }
 
+      if (filters.occasionName?.[0]?.value) {
 
+        const filtered = filters.occasionName[0].value.filter(item => {
+          const REQUIRED_FIELDS = {
+            1: ['month', 'year'],
+            2: ['year'],
+            3: ['year'],
+            4: ['year'],
+            5: ['year'],
+            6: ['year'],
+          };
+          const required = REQUIRED_FIELDS[item.type];
+          if (!required) return false;
+
+          return required.every(field => item[field] != null);
+        });
+
+        where[Op.or] ??= [];
+
+        where[Op.or].push(
+          ...filtered.map((node) => ({
+            [Op.and]: [
+              { '$occasion.type$':  node.type},
+              { '$occasion.month$': node.month },
+              { '$occasion.year$': node.year },
+            ],
+          })),
+        );
+      }
 
       const search = String(searchValue ?? '').trim();
       if (search) {
@@ -389,12 +418,31 @@ router.post(
       const statuses = dictToOptions(ORDER_STATUSES, lang);
       const sources = dictToOptions(ORDER_SOURCES, lang);
 
+      const occasions = await Occasion.findAll(
+        {
+          attributes: ['id', 'month', 'year', 'type'],
+          order: [
+            ['type', 'ASC'],
+            ['month', 'ASC'],
+            ['year', 'ASC'],
+          ],
+          raw: true,
+        }
+      );
+      const nodes = buildOccasionNodes(
+        occasions,
+        req.language ?? 'ru',
+      );
+
+
+
+
       res
         .status(200)
         .send({
           data: {
             list: orders, length: total, options: {
-              users, statuses, sources
+              users, statuses, sources, nodes
             }
           }
         });

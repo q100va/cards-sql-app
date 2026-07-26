@@ -122,6 +122,48 @@ export const orderRecipientsSchema = z.array(
   }),
 );
 
+export const orderSchema = z
+  .object({
+    id: positiveInt,
+    date: z.coerce.date(),
+    amount: positiveInt,
+    userName: z.string(),
+    volunteerName: z.string(),
+    instituteName: z.string().nullable(),
+    contact: z.string(),
+    status: z.string(),
+    source: z.string(),
+    occasion: z.string(),
+    comment: z.string().nullable(),
+  })
+  .strict();
+
+const occasionNodeDataSchema = z.object({
+  type: z.number().int().positive(),
+  month: z.number().int().min(1).max(12).nullable(),
+  year: z.number().int().nullable(),
+});
+
+export type OccasionNodeData = z.infer<typeof occasionNodeDataSchema>;
+
+export interface OccasionNode {
+  key: string;
+  label: string;
+  data: OccasionNodeData;
+  children?: OccasionNode[];
+}
+
+export const occasionNodeSchema: z.ZodType<OccasionNode> = z.lazy(() =>
+  z.object({
+    key: z.string(),
+    label: z.string(),
+    data: occasionNodeDataSchema,
+    children: z.array(occasionNodeSchema).optional(),
+  }),
+);
+
+export const occasionNodesSchema = z.array(occasionNodeSchema);
+
 export const orderQueryDTOSchema = z.object({
   //userId: z.number().int().positive(),
   offset: z.number().int().min(0),
@@ -145,6 +187,7 @@ export const orderQueryDTOSchema = z.object({
             z.boolean(),
             z.number().int(),
             z.array(positiveInt),
+            z.array(occasionNodeDataSchema),
           ]),
           matchMode: z.string(),
           operator: z.string(),
@@ -155,22 +198,6 @@ export const orderQueryDTOSchema = z.object({
     )
     .default({}),
 });
-
-export const orderSchema = z
-  .object({
-    id: positiveInt,
-    date: z.coerce.date(),
-    amount: positiveInt,
-    userName: z.string(),
-    volunteerName: z.string(),
-    instituteName: z.string().nullable(),
-    contact: z.string(),
-    status: z.string(),
-    source: z.string(),
-    occasion: z.string(),
-    comment: z.string().nullable(),
-  })
-  .strict();
 
 export const ordersListSchema = z
   .object({
@@ -195,6 +222,7 @@ export const ordersListSchema = z
           label: z.string(),
         }),
       ),
+      nodes: occasionNodesSchema,
     }),
   })
   .strict();
@@ -243,3 +271,4 @@ export type OrderEdit = z.infer<typeof orderEditSchema>;
 export type OrderRecipients = z.infer<typeof orderRecipientsSchema>;
 export type OrderRecipient = z.infer<typeof orderRecipientSchema>;
 export type OrderQuery = z.infer<typeof orderQueryDTOSchema>;
+export type OrdersList = z.infer<typeof ordersListSchema>;

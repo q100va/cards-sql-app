@@ -320,6 +320,7 @@ const OPERATIONS = {
   lte: Op.lte,
   gt: Op.gt,
   gte: Op.gte,
+  in: Op.in
 };
 
 
@@ -330,7 +331,7 @@ export function applyNumericFilter(where, filters, field) {
   // 1 условие
   if (fieldFilters.length === 1) {
     const op = OPERATIONS[fieldFilters[0].matchMode];
-    const value = Number(fieldFilters[0].value);
+    const value = Array.isArray(fieldFilters[0].value)? fieldFilters[0].value : Number(fieldFilters[0].value);
 
     if (!op) {
       throw new CustomError('ERRORS.RECIPIENT.INVALID_FILTER_MATCH_MODE', 400);

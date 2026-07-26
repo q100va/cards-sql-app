@@ -12,6 +12,7 @@ import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputIcon } from 'primeng/inputicon';
 import { IconField } from 'primeng/iconfield';
+import { TreeSelect } from 'primeng/treeselect';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -27,7 +28,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 import { OccasionService } from '../../services/occasion.service';
 import { OrderService } from '../../services/order.service';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, TreeNode } from 'primeng/api';
 import { MessageWrapperService } from '../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BehaviorSubject, finalize, map, switchMap } from 'rxjs';
@@ -51,6 +52,7 @@ import { DateUtilsService } from '../../services/date-utils.service';
     MatMenuModule,
     TableModule,
     ButtonModule,
+    TreeSelect,
     IconField,
     InputIcon,
     CommonModule,
@@ -98,6 +100,7 @@ export class OrdersListComponent {
   selectedUsers = signal<number[]>([]);
   selectedStatuses = signal<number[]>([]);
   selectedSources = signal<number[]>([]);
+  selectedNodes = signal<TreeNode[]>([]);
 
   private rawUserOptions$ = new BehaviorSubject<
     { id: number; userName: string }[]
@@ -108,6 +111,7 @@ export class OrdersListComponent {
   private rawSourceOptions$ = new BehaviorSubject<
     { value: number; label: string }[]
   >([]);
+  private rawOccasionNodes$ = new BehaviorSubject<TreeNode[]>([]);
 
   readonly userOptions$ = this.rawUserOptions$.pipe(
     map((users) =>
@@ -119,6 +123,7 @@ export class OrdersListComponent {
   );
   readonly statusOptions$ = this.rawStatusOptions$.pipe();
   readonly sourceOptions$ = this.rawSourceOptions$.pipe();
+  readonly nodes$ = this.rawOccasionNodes$.pipe();
 
   ngOnInit() {
     const userIdParam = this.route.snapshot.paramMap.get('userId');
@@ -179,6 +184,8 @@ export class OrdersListComponent {
           this.rawUserOptions$.next(res.data.options.users);
           this.rawStatusOptions$.next(res.data.options.statuses);
           this.rawSourceOptions$.next(res.data.options.sources);
+          this.rawOccasionNodes$.next(res.data.options.nodes);
+          console.log('res.data.options.nodes', res.data.options.nodes);
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
@@ -204,14 +211,32 @@ export class OrdersListComponent {
     selectedSignal: WritableSignal<number[]>,
     filter: (value: number[] | null) => void,
   ): void {
-    console.log('selectedSignal', selectedSignal);
+    //console.log('value', value);
+    //console.log('selectedSignal', selectedSignal);
+    //console.log('filter', filter);
     const next = value ?? [];
     selectedSignal.set(next);
+    //next.forEach(item => filter(item))
     filter(next.length ? next : null);
   }
 
+  onOccasionFilterChange(
+    value: TreeNode[] | null,
+    selectedNodes: WritableSignal<TreeNode[]>,
+    filter: (value: TreeNode[] | null) => void,
+  ): void {
+    const next = value ?? [];
+    console.log('value', value);
+    selectedNodes.set(next);
+    const selectedOccasions = value?.map((node) => node.data) ?? [];
+    console.log('selectedOccasions', selectedOccasions);
+
+    filter(selectedOccasions.length ? selectedOccasions : null);
+    console.log('this.selectedNodes', this.selectedNodes);
+  }
+
   private normalizePrimeFilters(filters: any) {
-    //console.log('normalizePrimeFilters');
+    console.log('filters', filters);
     const result: Record<
       string,
       {
@@ -222,54 +247,14 @@ export class OrdersListComponent {
     > = {};
     const normalizedFilters = { ...(filters ?? {}) };
 
-    if (this.selectedUsers().length) {
-      const selectedUserIds = this.selectedUsers().map((id) => {
-        return {
-          value: id,
+    if (this.userId) {
+      normalizedFilters.userId = [
+        {
+          value: this.userId,
           matchMode: 'equals',
-          operator: 'or',
-        };
-      });
-      normalizedFilters.userId = this.userId
-        ? [
-            ...selectedUserIds,
-            {
-              value: this.userId,
-              matchMode: 'equals',
-              operator: 'or',
-            },
-          ]
-        : [...selectedUserIds];
-    } else {
-      normalizedFilters.userId = this.userId
-        ? [
-            {
-              value: this.userId,
-              matchMode: 'equals',
-              operator: 'and',
-            },
-          ]
-        : undefined;
-    }
-
-    if (this.selectedStatuses().length) {
-      normalizedFilters.status = this.selectedStatuses().map((id) => {
-        return {
-          value: id,
-          matchMode: 'equals',
-          operator: 'or',
-        };
-      });
-    }
-
-    if (this.selectedSources().length) {
-      normalizedFilters.source = this.selectedSources().map((id) => {
-        return {
-          value: id,
-          matchMode: 'equals',
-          operator: 'or',
-        };
-      });
+          operator: 'and',
+        },
+      ];
     }
 
     for (const [field, meta] of Object.entries(normalizedFilters)) {
@@ -279,12 +264,12 @@ export class OrdersListComponent {
             (m) => m.value !== null && m.value !== undefined && m.value !== '',
           )
         : [];
-      //console.log('metaArray:', metaArray);
+
       if (metaArray.length) {
         result[field] = [...metaArray];
       }
     }
-
+    console.log('result:', result);
     return result;
   }
 
@@ -293,6 +278,7 @@ export class OrdersListComponent {
     this.selectedUsers.set([]);
     this.selectedStatuses.set([]);
     this.selectedSources.set([]);
+    this.selectedNodes.set([]);
     dt.reset();
   }
 

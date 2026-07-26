@@ -89,18 +89,6 @@ export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
         recipientStatus: z.ZodString;
     }, z.core.$strip>>;
 }, z.core.$strip>>;
-export declare const orderQueryDTOSchema: z.ZodObject<{
-    offset: z.ZodNumber;
-    limit: z.ZodNumber;
-    sortField: z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>, z.ZodNull, z.ZodUndefined]>;
-    sortOrder: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-    searchValue: z.ZodOptional<z.ZodString>;
-    filters: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodArray<z.ZodObject<{
-        value: z.ZodUnion<readonly [z.ZodString, z.ZodBoolean, z.ZodNumber, z.ZodArray<z.ZodNumber>]>;
-        matchMode: z.ZodString;
-        operator: z.ZodString;
-    }, z.core.$strip>>>>;
-}, z.core.$strip>;
 export declare const orderSchema: z.ZodObject<{
     id: z.ZodNumber;
     date: z.ZodCoercedDate<unknown>;
@@ -114,6 +102,36 @@ export declare const orderSchema: z.ZodObject<{
     occasion: z.ZodString;
     comment: z.ZodNullable<z.ZodString>;
 }, z.core.$strict>;
+declare const occasionNodeDataSchema: z.ZodObject<{
+    type: z.ZodNumber;
+    month: z.ZodNullable<z.ZodNumber>;
+    year: z.ZodNullable<z.ZodNumber>;
+}, z.core.$strip>;
+export type OccasionNodeData = z.infer<typeof occasionNodeDataSchema>;
+export interface OccasionNode {
+    key: string;
+    label: string;
+    data: OccasionNodeData;
+    children?: OccasionNode[];
+}
+export declare const occasionNodeSchema: z.ZodType<OccasionNode>;
+export declare const occasionNodesSchema: z.ZodArray<z.ZodType<OccasionNode, unknown, z.core.$ZodTypeInternals<OccasionNode, unknown>>>;
+export declare const orderQueryDTOSchema: z.ZodObject<{
+    offset: z.ZodNumber;
+    limit: z.ZodNumber;
+    sortField: z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>, z.ZodNull, z.ZodUndefined]>;
+    sortOrder: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    searchValue: z.ZodOptional<z.ZodString>;
+    filters: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodArray<z.ZodObject<{
+        value: z.ZodUnion<readonly [z.ZodString, z.ZodBoolean, z.ZodNumber, z.ZodArray<z.ZodNumber>, z.ZodArray<z.ZodObject<{
+            type: z.ZodNumber;
+            month: z.ZodNullable<z.ZodNumber>;
+            year: z.ZodNullable<z.ZodNumber>;
+        }, z.core.$strip>>]>;
+        matchMode: z.ZodString;
+        operator: z.ZodString;
+    }, z.core.$strip>>>>;
+}, z.core.$strip>;
 export declare const ordersListSchema: z.ZodObject<{
     list: z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
@@ -142,6 +160,7 @@ export declare const ordersListSchema: z.ZodObject<{
             value: z.ZodNumber;
             label: z.ZodString;
         }, z.core.$strip>>;
+        nodes: z.ZodArray<z.ZodType<OccasionNode, unknown, z.core.$ZodTypeInternals<OccasionNode, unknown>>>;
     }, z.core.$strip>;
 }, z.core.$strict>;
 export declare const orderDetailsSchema: z.ZodObject<{
@@ -195,4 +214,5 @@ export type OrderEdit = z.infer<typeof orderEditSchema>;
 export type OrderRecipients = z.infer<typeof orderRecipientsSchema>;
 export type OrderRecipient = z.infer<typeof orderRecipientSchema>;
 export type OrderQuery = z.infer<typeof orderQueryDTOSchema>;
+export type OrdersList = z.infer<typeof ordersListSchema>;
 export {};
