@@ -8,24 +8,28 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-import { validateResponse } from '../utils/validate-response';
+import {
+  validateNoSchemaResponse,
+  validateResponse,
+} from '../utils/validate-response';
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
   Order,
-  OrderDetails,
   OrderDraft,
   OrderEdit,
   OrderFilter,
   OrderFiltersData,
-  orderDetailsSchema,
+  orderSchema,
   orderFiltersDataSchema,
   OrderQuery,
   OrderRecipients,
   orderRecipientsSchema,
   ordersListSchema,
   OrdersList,
+  OrderDetails,
+  orderDetailsSchema,
 } from '../../../shared/schemas/order.schema';
 import * as ctrl from '../utils/common-ctrls';
 
@@ -107,26 +111,61 @@ export class OrderService {
       );
   }
 
-  getOrders(query: OrderQuery): Observable<
-    ApiResponse<OrdersList>
-  > {
+  getOrders(query: OrderQuery): Observable<ApiResponse<OrdersList>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-orders`, query)
       .pipe(validateResponse(ordersListSchema), catchError(this.handleError));
   }
 
   getOrderById(id: number): Observable<ApiResponse<OrderDetails>> {
+    console.log('id', id);
     return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/${id}`)
+      .get<RawApiResponse>(`${this.BASE_URL}/order/${id}`)
       .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));
   }
 
-  updateOrder(
+  editOrderRecipientsList(
+    orderId: number,
+    deletingIds: number[],
+  ): Observable<ApiResponse<OrderDetails>> {
+    return this.http
+      .patch<RawApiResponse>(`${this.BASE_URL}/edit-recipients`, {
+        id: orderId,
+        deletingIds,
+      })
+      .pipe(
+        validateResponse(orderDetailsSchema),
+        this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  updateOrderStatus(id: number, status: number): Observable<ApiResponse<null>> {
+    return this.http
+      .patch<RawApiResponse>(`${this.BASE_URL}/update-status`, { id, status })
+      .pipe(
+        validateNoSchemaResponse<null>('isNull'),
+        this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  deleteOrder(id: number): Observable<ApiResponse<null>> {
+    return this.http
+      .delete<RawApiResponse>(`${this.BASE_URL}/delete-order/${id}`)
+      .pipe(
+        validateNoSchemaResponse<null>('isNull'),
+        this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  /*   editOrder(
     id: number,
     draft: OrderEdit,
   ): Observable<ApiResponse<OrderDetails>> {
     return this.http
       .put<RawApiResponse>(`${this.BASE_URL}/${id}`, draft)
       .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));
-  }
+  } */
 }

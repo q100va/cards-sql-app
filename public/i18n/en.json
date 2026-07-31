@@ -20,6 +20,7 @@
   },
   "TOOLBAR": {
     "TITLE": "Project “Grandchildren by Correspondence: Send a Greeting Card”",
+    "BIRTHDAY": "Birthdays",
     "MY_ORDERS": "My Requests",
     "SIGNED_IN_AS": "Signed in as {{ name }}",
     "EXIT": "Exit"
@@ -391,7 +392,8 @@
       "CONSENT_DATE": "Consent date",
       "SENIOR_HOME_NAME": "Home name",
       "EXIT_DATE": "Date of exit",
-      "LAST_ORDER_DATE": "Date of last order"
+      "LAST_ORDER_DATE": "Date of last order",
+      "LAST_UPDATE_DATE": "Last update date"
     },
     "NOTES": {
       "CLOSE": "closed",
@@ -985,6 +987,137 @@
       "WITHOUT_BIRTHDAY": "hide entries without DOB"
     }
   },
+  "ORDER": {
+    "VIEW_OPTIONS": {
+      "ALL": "all requests",
+      "ONLY_ACTIVE": "active only",
+      "ONLY_BLOCKED": "cancelled only"
+    },
+    "TABLE": {
+      "TITLE": "Requests",
+      "PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
+      "CLEAR": "Clear",
+      "SEARCH_PLACEHOLDER": "Enter at least 3 characters...",
+      "USER_NAME": "Coordinator",
+      "DATE": "Date",
+      "AMOUNT": "Amount",
+      "VOLUNTEER_NAME": "Volunteer",
+      "INSTITUTE_NAME": "Organization",
+      "CONTACT": "Contact",
+      "SOURCE": "Source",
+      "STATUS": "Status",
+      "CONFIRM": "Confirm",
+      "ACTION": "Actions",
+      "CANCEL": "Cancel confirmation",
+      "VIEW": "Open",
+      "DELETE": "Cancel",
+      "RESTORE": "Restore",
+      "DELETE_OVERDUE": "Cancel: expired",
+      "DELETE_RETURNED": "Cancel: declined",
+      "DELETE_MISTAKE": "Delete: created by mistake",
+      "OCCASION_NAME": "Occasion",
+      "COMMENT": "Comment",
+      "CONFIRM_BUTTON": "Confirm",
+      "CANCEL_BUTTON": "Cancel confirmation",
+      "VIEW_BUTTON": "Open",
+      "DELETE_BUTTON": "Cancel",
+      "RESTORE_BUTTON": "Restore",
+      "EMPTY": "No records found.",
+      "SEARCH_TOOLTIP": "Search the coordinator, volunteer, organization, contact, and comment columns"
+    },
+    "STATUS": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Confirmed",
+      "RETURNED": "Declined",
+      "OVERDUE": "Expired"
+    },
+    "DETAILS": {
+      "EDIT_BUTTON": "Edit",
+      "SAVE_BUTTON": "Save",
+      "CANCEL_BUTTON": "Cancel",
+      "INSTITUTE": "Organization"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New request",
+      "VIEW_TITLE": "Request",
+      "CREATE_BUTTON": "Create",
+      "CLEAR_BUTTON": "Clear",
+      "NO_CONF_REQUIRED_LABEL": "No confirmation required",
+      "SOURCE_LABEL": "Source",
+      "CONTACT_LABEL": "Email/account/phone number",
+      "ADD_VOLUNTEER": "add volunteer",
+      "AMOUNT_LABEL": "Amount",
+      "COMMENT_LABEL": "Comment",
+      "COMMENT_PLACEHOLDER": "sending greetings as a family",
+      "VOLUNTEER_INFO": "Volunteer information",
+      "OPEN_CARD_TOOLTIP": "Open volunteer card",
+      "WARNING_NOTE": "WARNING! This volunteer is blocked and must not be given addresses.",
+      "INSTITUTES_NOTE": "Check if the addresses are for an organization",
+      "SOURCE": {
+        "SUBS": "regular volunteers",
+        "SITE": "website",
+        "VK": "VKontakte",
+        "TELEGRAM": "Telegram",
+        "INSTA": "Instagram",
+        "DOBRORU": "Dobro.ru",
+        "INFLUENCER": "influencer",
+        "OTHER": "other"
+      },
+      "LIST_TITLE": "Recipient list",
+      "SUCCESS_MESSAGE": "Your request has been created and saved. Please copy the list and send it to the volunteer. If the list does not meet your needs, delete this request and adjust the filters or contact an administrator.",
+      "FAILED_MESSAGE": "The request could not be created because there are not enough matching addresses. Try adjusting the filters or contact an administrator.",
+      "NO_ADDRESS_NOTE": "(The administration strongly asks that you not put your personal address on mail sent to this nursing home. In the sender address field, enter your post office address; in the sender name field, enter ‘Volunteer’ and your name.)",
+      "NO_ADDRESS_NOTE_SCHOOL": "(The administration strongly asks that you not put your personal address or other personal information on mail sent to this nursing home. In the sender address field, enter the educational institution’s address; in the sender name field, enter the institution’s name.)",
+      "ADDRESS_NOTE_SCHOOL": "In the sender address field, enter the educational institution’s address; in the sender name field, enter the institution’s name.",
+      "INDEX_LABEL": "number the entries",
+      "SUBS_LABEL": "include the regular-volunteer message",
+      "NEWER_LABEL": "include the new-volunteer instructions",
+      "COPY_BUTTON_TOOLTIP": "Copy",
+      "FOR_NOTE": "for",
+      "FILTERS": {
+        "HEADER": "Filters",
+        "ADDRESS_LABEL": "Addresses",
+        "DATE_LABEL": "Dates",
+        "DATE_TOOLTIP": "Only one boundary may be specified: dates must be either before or after it",
+        "YEAR_LABEL": "Year of birth",
+        "YEAR_TOOLTIP": "Only one boundary may be specified: the year of birth must be either before or after it",
+        "FROM_LABEL": "from",
+        "TO_LABEL": "to",
+        "FEMALE_LABEL": "M",
+        "MALE_LABEL": "F",
+        "REGION_LABEL": "Region",
+        "HOME_LABEL": "Nursing home",
+        "ADD_SPARE_REGIONS_LABEL": "include nearby regions",
+        "PLACE_TOOLTIP": "If no results are returned, enter a wider date range",
+        "ONLY_PHOTO_LABEL": "With photos only",
+        "ONLY_ANNIVERSARY_LABEL": "Anniversaries only",
+        "ONLY_OLDEST": "Anniversaries and ages 80+ only",
+        "ONLY_CONCENT": "With consent only",
+        "MAX_NO_ADDRESS_LABEL": "max no-return-address",
+        "MIN_ONE_HOME_LABEL": "min from one home",
+        "MAX_ONE_HOME_LABEL": "max from one home",
+        "ADDRESS_CATEGORY": {
+          "ANY": "any",
+          "FOR_SCHOOLS": "for schools",
+          "ONLY_WITH_ADDRESS": "with return addresses only",
+          "NO_RELEASED": "exclude former prisoners",
+          "ONLY_MENT_CATEGORY": "no-return-address only"
+        },
+        "GENDER": {
+          "ANY": "any",
+          "MALE": "men only",
+          "FEMALE": "women only",
+          "PROPORTION": "proportionally"
+        }
+      },
+      "RECIPIENT_STATUS": {
+        "PRESENT": "",
+        "ABSENT": "ABSENT",
+        "DELETED": "DELETED",
+        "DELETING": "DELETING"
+      }
+    }
+  },
   "ERRORS": {
     "VALIDATION": "Validation error",
     "FORBIDDEN": "Not enough permissions",
@@ -1069,6 +1202,7 @@
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",
+    "TOO_SHORT_7": "Minimum 5 characters",
     "NOT_FOUND": "The field is empty or the entered value was not found",
     "INVALID_ISO_DATE": "Invalid date",
     "ROLE": {
@@ -1093,6 +1227,19 @@
     "SENIOR": {
       "MODE_REQUIRED": "Selection is required",
       "DATE_REQUIRED": "Please select a date in right format"
+    },
+    "ORDER": {
+      "WRONG_DAY": "Allowed values: 1 through 31",
+      "WRONG_YEAR": "Allowed values: 1900 through the current year",
+      "INT_MIN_1": "Only integers greater than 0 are allowed",
+      "DATE_FROM_GREATER_THAN_TO": "The ‘from’ date cannot be later than the ‘to’ date",
+      "YEAR_FROM_GREATER_THAN_TO": "The ‘from’ year cannot be later than the ‘to’ year",
+      "WRONG_SUM": "The sum of the values must equal the requested amount",
+      "WRONG_NO_ADDRESS": "The maximum number of no-return-address entries cannot exceed the requested amount",
+      "WRONG_MIN": "The minimum from one home cannot exceed the requested amount",
+      "WRONG_MAX": "The maximum from one home cannot exceed the requested amount",
+      "MIN_GRATE_THAN_MAX": "The minimum from one home cannot exceed the maximum from one home",
+      "WRONG_PROPORTION": "This distribution across homes is not possible for the specified amount"
     }
   },
   "INTERNAL_VALIDATION": {

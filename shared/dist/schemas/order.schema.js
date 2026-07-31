@@ -80,7 +80,7 @@ export const orderFiltersDataSchema = z
     .strict();
 const orderRecipientSchema = z.object({
     index: positiveInt,
-    recipientId: positiveInt,
+    id: positiveInt,
     fullNameSnapshot: z.string(),
     specialComment: z.string().nullable(),
     birthDay: positiveInt,
@@ -88,7 +88,8 @@ const orderRecipientSchema = z.object({
     birthYear: positiveInt,
     infoNote: z.string().nullable(),
     photoLink: z.string().nullable(),
-    recipientStatus: z.string(),
+    status: z.string(),
+    statusId: positiveInt,
 });
 export const orderRecipientsSchema = z.array(z.object({
     homeId: positiveInt,
@@ -107,8 +108,10 @@ export const orderSchema = z
     instituteName: z.string().nullable(),
     contact: z.string(),
     status: z.string(),
+    statusId: positiveInt,
     source: z.string(),
     occasion: z.string(),
+    occasionStatus: positiveInt,
     comment: z.string().nullable(),
 })
     .strict();
@@ -176,21 +179,23 @@ export const ordersListSchema = z
 export const orderDetailsSchema = z
     .object({
     id: positiveInt,
-    occasionId: positiveInt,
+    date: z.coerce.date(),
+    amount: positiveInt,
+    userName: z.string(),
+    volunteerName: z.string(),
+    instituteName: z.string().nullable(),
+    contact: z.string(),
+    status: z.string(),
+    statusId: positiveInt,
+    source: z.string(),
+    occasion: z.string(),
+    occasionStatus: positiveInt,
+    comment: z.string().nullable(),
+    /*    occasionId: positiveInt,
     volunteerId: positiveInt,
     userId: positiveInt,
     contactId: positiveInt,
-    instituteId: positiveInt.nullable(),
-    date: z.coerce.date(),
-    amount: positiveInt,
-    status: z.number().int().min(1).max(4),
-    source: z.number().int().min(1).max(9),
-    comment: z.string().nullable(),
-    userName: z.string(),
-    volunteerName: z.string(),
-    contact: z.string(),
-    instituteName: z.string().nullable(),
-    occasion: z.string(),
+    instituteId: positiveInt.nullable(), */
     recipients: orderRecipientsSchema,
 })
     .strict();

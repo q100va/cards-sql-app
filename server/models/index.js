@@ -551,6 +551,21 @@ Order.hasMany(OrderRecipient, {
   as: 'orderRecipients',
 });
 
+Recipient.hasMany(OrderRecipient, {
+  foreignKey: 'recipientId',
+  as: 'orderRecipients',
+});
+
+Senior.hasMany(OrderRecipient, {
+  foreignKey: 'seniorId',
+  as: 'orderRecipients',
+});
+
+Home.hasMany(OrderRecipient, {
+  foreignKey: 'homeId',
+  as: 'orderRecipients',
+});
+
 OrderRecipient.belongsTo(Order, {
   foreignKey: 'orderId',
   as: 'order',
@@ -561,10 +576,17 @@ OrderRecipient.belongsTo(Recipient, {
   as: 'recipient',
 });
 
-Recipient.hasMany(OrderRecipient, {
-  foreignKey: 'recipientId',
-  as: 'orderRecipients',
+OrderRecipient.belongsTo(Senior, {
+  foreignKey: 'seniorId',
+  as: 'senior',
 });
+
+OrderRecipient.belongsTo(Home, {
+  foreignKey: 'homeId',
+  as: 'home',
+});
+
+
 
 export {
   AuditLog, RefreshToken,

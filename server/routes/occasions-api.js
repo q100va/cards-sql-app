@@ -151,7 +151,7 @@ router.get(
   async (req, res, next) => {
     try {
       // Occasions
-       console.log('id', req.params.id);
+      console.log('id', req.params.id);
       const draft = await Occasion.findByPk(req.params.id, {
         attributes: {
           exclude: [
@@ -162,7 +162,7 @@ router.get(
       const occasion = transformOccasionDisplayParts(draft);
       res
         .status(200)
-        .send({ data:  occasion });
+        .send({ data: occasion });
     } catch (error) {
       error.code = 'ERRORS.OCCASION.NOT_FOUND';
       next(error);
@@ -236,6 +236,41 @@ router.patch(
       res.status(200).send({ code: 'OCCASION.EDITED', data: null });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.OCCASION.NOT_EDITED';
+      next(error);
+    }
+  }
+);
+
+router.get(
+  "/get-actual-occasions/:typeId",
+  requireAuth,
+  requireOperation('ADD_NEW_ORDER'),
+  async (req, res, next) => {
+    try {
+      // Occasions
+      const draft = await Occasion.findAll({
+        where: {
+          status: 1,
+          type: req.params.typeId
+        },
+        attributes: {
+          exclude: [
+            'createdAt',
+            'updatedAt']
+        },
+        order: [
+          ['year', 'DESC'],
+          ['month', 'DESC'],
+        ],
+        raw: true,
+      });
+      const occasions = draft.map(o => transformOccasionDisplayParts(o));
+
+      res
+        .status(200)
+        .send({ data: occasions });
+    } catch (error) {
+      error.code = 'ERRORS.OCCASION.LIST_FAILED';
       next(error);
     }
   }

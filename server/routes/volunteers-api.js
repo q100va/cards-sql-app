@@ -17,6 +17,7 @@ import { createSearchStringFor, createOutdatedSearchStringFor } from "../control
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
+import z from "zod";
 
 const router = Router();
 
@@ -936,6 +937,31 @@ router.patch(
       res.status(200).send({ code: 'VOLUNTEER.UNBLOCKED', data: null });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_UNBLOCKED';
+      next(error);
+    }
+  });
+
+router.get("/search-contacts/:q",
+  requireAuth,
+  requireAny('ADD_NEW_ORDER', 'EDIT_ORDER'),
+  validateRequest(z.object({ q: z.string().trim().min(3) }), 'params'),
+  async (req, res, next) => {
+    try {
+      const q = req.params.q;
+      const contacts = await VolunteerContact.findAll({
+        where: {
+          content: {
+            [Op.iLike]: `%${q}%`,
+          },
+        },
+        attributes: ['id', 'content', 'type', 'volunteerId'],
+        limit: 20,
+        order: [['content', 'ASC']],
+        raw: true,
+      })
+      res.status(200).send({ data: contacts });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.VOLUNTEER.CONTACT_NOT_FOUND';
       next(error);
     }
   });

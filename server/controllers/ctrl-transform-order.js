@@ -12,6 +12,7 @@ import {
   VolunteerContact,
 } from "../models/index.js";
 import { ORDER_STATUSES, RECIPIENT_STATUS, ORDER_SOURCES } from "./ctrl-order-query-builders.js";
+import { Op } from "sequelize";
 
 /* const ORDER_STATUS = {
   1: "ORDER.STATUS.PENDING",
@@ -43,8 +44,8 @@ function sourceKey(sourceId) {
 export async function transformOrderRecipientsPart(orderId, t) {
   const recipients = await OrderRecipient.findAll(
     {
-      where: { orderId },
-      attributes: ["recipientStatus", "homeId"],
+      where: { orderId, recipientStatus: {[Op.not]: 3} },
+      attributes: ["id", "recipientStatus", "homeId"],
       include: [
         {
           model: Recipient,
@@ -120,7 +121,7 @@ export async function transformOrderRecipientsPart(orderId, t) {
     }
     const homeRecipient = {
       index: i++,
-      recipientId: r.recipient.id,
+      id: r.id,
       fullNameSnapshot: r.recipient.fullNameSnapshot,
       specialComment: r.recipient.specialComment,
       birthDay: r.recipient.daySnapshot,
@@ -128,7 +129,8 @@ export async function transformOrderRecipientsPart(orderId, t) {
       birthYear: r.recipient.yearSnapshot,
       infoNote: r.senior.infoNote ? '(' + r.senior.infoNote + ')' : r.senior.infoNote,
       photoLink: r.senior.photoLink,
-      recipientStatus: RECIPIENT_STATUS[r.recipientStatus]
+      status: RECIPIENT_STATUS[r.recipientStatus],
+      statusId: r.recipientStatus
       //dateOfBirthday: recipient.yearSnapshot + '-' + recipient.monthSnapshot + '-' + recipient.daySnapshot
     }
     list[index].homeRecipients.push(homeRecipient);
@@ -137,7 +139,7 @@ export async function transformOrderRecipientsPart(orderId, t) {
   return list;
 }
 
-export async function transformOrderDisplayParts(orderId, t) {
+export async function transformOrderDisplayPart(orderId, t) {
   const order = await Order.findByPk(orderId, {
     attributes: {
       exclude: ["updatedAt"],
@@ -165,7 +167,7 @@ export async function transformOrderDisplayParts(orderId, t) {
       },
       {
         association: "occasion",
-        attributes: ["id", "type", "month", "year", "amount", "status"],
+        attributes: ["id", "type", "month", "year", "status"],
       },
     ],
     transaction: t,
@@ -192,71 +194,20 @@ export async function transformOrderDisplayParts(orderId, t) {
     instituteName: order.instituteId ? (order.institute.instituteName + ' - ' + order.institute.category) : null,
     contact: order.contact.content + ' - ' + order.contact.type,
     status: ORDER_STATUSES[order.status].key ?? "",
+    statusId: order.status,
     source: sourceKey(order.source),
     occasion: occasionName(order.occasion),
+    occasionStatus: order.occasion.status,
     comment: order.comment
   };
 }
 
-export async function transformOrderDetails(orderId, t) {
-  const order = await Order.findByPk(orderId, {
-    attributes: {
-      exclude: ["updatedAt"],
-    },
-    include: [
-      {
-        model: User,
-        as: "user",
-        attributes: ["id", "userName"],
-      },
-      {
-        model: Volunteer,
-        as: "volunteer",
-        attributes: ["id", "firstName", "patronymic", "lastName"],
-      },
-      {
-        association: "occasion",
-        attributes: ["id", "type", "month", "year", "amount", "status"],
-      },
-    ],
-    transaction: t,
-  });
-
-  if (!order) return null;
-
-  const [contact, institute, recipients] = await Promise.all([
-    order.contactId
-      ? VolunteerContact.findByPk(order.contactId, {
-        attributes: ["id", "content"],
-        transaction: t,
-      })
-      : null,
-    order.instituteId
-      ? Institute.findByPk(order.instituteId, {
-        attributes: ["id", "instituteName"],
-        transaction: t,
-      })
-      : null,
-    transformOrderRecipientsPart(order.id, t),
-  ]);
+export async function transformOrder(orderId, t) {
+  const displayPart = await transformOrderDisplayPart(orderId, t);
+  const recipients = await transformOrderRecipientsPart(orderId, t);
 
   return {
-    id: order.id,
-    occasionId: order.occasionId,
-    volunteerId: order.volunteerId,
-    userId: order.userId,
-    contactId: order.contactId,
-    instituteId: order.instituteId,
-    date: order.createdAt,
-    amount: order.amount,
-    status: order.status,
-    source: order.source,
-    comment: order.comment,
-    userName: order.user?.userName ?? "",
-    volunteerName: fullName(order.volunteer),
-    contact: contact?.content ?? null,
-    instituteName: institute?.instituteName ?? null,
-    occasion: occasionName(order.occasion),
-    recipients,
+    ...displayPart,
+    recipients: recipients,
   };
 }

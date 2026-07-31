@@ -78,3 +78,11 @@
   margin: 0;
   line-height: 1.2m;
 } */
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 20px;
+}

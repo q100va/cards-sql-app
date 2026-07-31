@@ -17,91 +17,44 @@
 
   <mat-card-content>
     @if (isLoading()) {
+    <!--  @if (false) { -->
     <div class="loading">
       <mat-spinner diameter="48"></mat-spinner>
     </div>
-    } @else {@if(order(); as currentOrder) {
-    <div class="toolbar">
-      @if (!isEditMode()) {
-      <button mat-raised-button color="primary" type="button" (click)="onEditClick()">
-        <mat-icon>edit</mat-icon>
-        {{ 'ORDER.DETAILS.EDIT_BUTTON' | translate }}
-      </button>
-      } @else {
-      <button mat-button type="button" (click)="onCancelClick()" [disabled]="isSaving()">
-        {{ 'ORDER.DETAILS.CANCEL_BUTTON' | translate }}
-      </button>
-      <button mat-raised-button color="primary" type="button" (click)="onSaveClick()"
-        [disabled]="form.invalid || isSaving()">
-        <mat-icon>save</mat-icon>
-        {{ 'ORDER.DETAILS.SAVE_BUTTON' | translate }}
-      </button>
-      }
+    } @else {
+    @if(order(); as currentOrder) {
+    <br />
+    <br />
+    <div fxLayout="column" fxLayoutGap="10px">
+      <mat-card-subtitle>{{ 'ORDER.TABLE.DATE' | translate }}: <strong>{{ dateUtils.transformDate(currentOrder.date)
+        }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.USER_NAME' | translate }}: <strong>{{ currentOrder.userName }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.AMOUNT' | translate }}: <strong>{{ currentOrder.amount }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}: <strong>{{ currentOrder.volunteerName }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.CONTACT' | translate }}: <strong>{{ currentOrder.contact || '-' }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.INSTITUTE_NAME' | translate }}: <strong>{{ currentOrder.instituteName || '-' }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.SOURCE' | translate }}: <strong>{{ currentOrder.source | translate }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.STATUS' | translate }}: <strong>{{ currentOrder.status | translate }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.COMMENT' | translate }}: <strong>{{ currentOrder.comment || '-' }}</strong></mat-card-subtitle>
     </div>
-
-    <section class="summary-grid">
-      <div class="summary-item">
-        <span>{{ 'ORDER.TABLE.DATE' | translate }}</span>
-        <strong>{{ dateUtils.transformDate(currentOrder.date) }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>{{ 'ORDER.TABLE.AMOUNT' | translate }}</span>
-        <strong>{{ currentOrder.amount }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>{{ 'ORDER.TABLE.USER_NAME' | translate }}</span>
-        <strong>{{ currentOrder.userName }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>{{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}</span>
-        <strong>{{ currentOrder.volunteerName }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>{{ 'ORDER.TABLE.CONTACT' | translate }}</span>
-        <strong>{{ currentOrder.contact || '-' }}</strong>
-      </div>
-      @if (currentOrder.instituteName) {
-      <div class="summary-item">
-        <span>{{ 'ORDER.DETAILS.INSTITUTE' | translate }}</span>
-        <strong>{{ currentOrder.instituteName }}</strong>
-      </div>
-      }
-    </section>
-
-    <form class="order-form" [formGroup]="form">
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'ORDER.TABLE.STATUS' | translate }}</mat-label>
-        <mat-select formControlName="status" [disabled]="!isEditMode()">
-          @for (status of statusOptions; track status.id) {
-          <mat-option [value]="status.id">{{ status.label | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'ORDER.TABLE.SOURCE' | translate }}</mat-label>
-        <mat-select formControlName="source" [disabled]="!isEditMode()">
-          @for (source of SOURCES; track source.id) {
-          <mat-option [value]="source.id">{{ source.optionKey | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="comment-field" appearance="outline">
-        <mat-label>{{ 'ORDER.CARD.COMMENT_LABEL' | translate }}</mat-label>
-        <textarea matInput rows="3" formControlName="comment" [readonly]="!isEditMode()"></textarea>
-        @if (form.controls.comment.hasError('zodError')) {
-        <mat-error>{{ form.controls.comment.errors!['zodError'] | translate }}</mat-error>
-        }
-      </mat-form-field>
-    </form>
-
+    <br />
+    <br />
     <section class="recipients-section">
       <h2>{{ 'ORDER.CARD.LIST_TITLE' | translate }}</h2>
-      <app-order-recipients [list]="currentOrder.recipients" [volunteerName]="currentOrder.volunteerName"
-        [occasionName]="translatedOccasionName(currentOrder.occasion)"
-        [forInstitute]="!!currentOrder.instituteId"></app-order-recipients>
+      <app-order-recipients [list]="currentOrder.recipients" [orderDetails]="{
+        volunteerName: currentOrder.volunteerName,
+        occasionName: translatedOccasionName(currentOrder.occasion),
+        forInstitute: !!currentOrder.instituteName,
+        amount: currentOrder.amount
+      }" [isEditAllowed]="(currentOrder.statusId===1 || currentOrder.statusId===2) && currentOrder.occasionStatus===1"
+        (deletingRecipientIds)="changeRecipientsList($event)">
+      </app-order-recipients>
     </section>
-    }}
+    }
+    }
   </mat-card-content>
 </mat-card>

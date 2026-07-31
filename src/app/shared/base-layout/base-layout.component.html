@@ -54,6 +54,12 @@
     <span class="logo">&nbsp;{{'TOOLBAR.TITLE' | translate}}</span>
 
     <span class="spacer"></span>
+    <button mat-button class="navbar-link" [routerLink]="`/orders/new-order/1`" *hasOp="{
+        codes: ['ADD_NEW_ORDER'],
+        mode: 'any',
+      }">
+      {{'TOOLBAR.BIRTHDAY' | translate}}
+    </button>
     <button mat-button class="navbar-link" [routerLink]="`/orders/${userId()}`" *hasOp="{
         codes: ['VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'],
         mode: 'any',

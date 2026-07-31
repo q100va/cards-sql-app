@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
@@ -47,10 +47,19 @@ export class OrderRecipientsComponent {
   readonly translateService = inject(TranslateService);
   readonly authService = inject(AuthService);
   private readonly clipboard = inject(Clipboard);
+
   list = input.required<OrderRecipients>();
-  volunteerName = input.required<string>();
-  occasionName = input.required<string>();
-  forInstitute = input.required<boolean>();
+  orderDetails = input.required<{
+    volunteerName: string;
+    occasionName: string;
+    forInstitute: boolean;
+    amount: number
+  }>();
+  isEditAllowed = input<boolean>(false);
+  deletingRecipientIds = output<number[]>();
+
+  readonly isSaving = signal(false);
+  readonly isEditMode = signal(false);
 
   showIndexes = false;
   showFullInstruction = false;
@@ -79,6 +88,8 @@ export class OrderRecipientsComponent {
     prefix?: string;
   }[] = [];
 
+  deletingIds: Set<number> = new Set();
+
   settingsForm = new FormGroup({
     showIndexes: new FormControl(false, { nonNullable: true }),
     newerInstruction: new FormControl(false, { nonNullable: true }),
@@ -88,11 +99,11 @@ export class OrderRecipientsComponent {
   ngOnInit() {
     this.flag = this.authService.has('FULL_FILTER_NEW_ORDER');
     this.fullInstruction = this.flag
-      ? getFullInstruction(this.volunteerName())
-      : this.forInstitute()
-        ? getSchoolInstruction(this.volunteerName())
-        : getDobroruInstruction(this.volunteerName());
-    this.shortInstruction = getShortInstruction(this.volunteerName());
+      ? getFullInstruction(this.orderDetails().volunteerName)
+      : this.orderDetails().forInstitute
+        ? getSchoolInstruction(this.orderDetails().volunteerName)
+        : getDobroruInstruction(this.orderDetails().volunteerName);
+    this.shortInstruction = getShortInstruction(this.orderDetails().volunteerName);
     this.settingsForm.controls['showIndexes'].valueChanges.subscribe(
       (value) => (this.showIndexes = value),
     );
@@ -173,14 +184,14 @@ export class OrderRecipientsComponent {
     let addresses = '';
     for (let home of this.list()) {
       const infoNote =
-        !this.flag && this.forInstitute()
+        !this.flag && this.orderDetails().forInstitute
           ? `(${this.translateService.instant('ORDER.CARD.ADDRESS_NOTE_SCHOOL')}
           ${home.infoNote ? ' ' + home.infoNote : ''})`
           : home.infoNote
             ? `(${home.infoNote})`
             : '';
       const noAddressNote = home.noAddressNote
-        ? this.forInstitute() && !this.flag
+        ? this.orderDetails().forInstitute && !this.flag
           ? this.translateService.instant('ORDER.CARD.NO_ADDRESS_NOTE_SCHOOL')
           : this.translateService.instant(home.noAddressNote)
         : '';
@@ -209,5 +220,26 @@ export class OrderRecipientsComponent {
       addresses = addresses + '\n';
     }
     return addresses;
+  }
+
+  onEditClick(): void {
+    this.isSaving.set(false);
+    this.isEditMode.set(true);
+  }
+
+  onCancelClick(): void {
+    this.isEditMode.set(false);
+    this.deletingIds = new Set();
+  }
+
+  onSaveClick(): void {
+    this.isEditMode.set(false);
+    this.isSaving.set(true);
+    this.deletingRecipientIds.emit([...this.deletingIds]);
+    this.deletingIds = new Set();
+  }
+
+  deleteRecipient(id: number) {
+    this.deletingIds.add(id);
   }
 }

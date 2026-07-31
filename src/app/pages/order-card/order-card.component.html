@@ -233,8 +233,12 @@
       }
     </mat-grid-list>
     @if(list.length){
-    <app-order-recipients [list]="list" [volunteerName]="volunteer?.firstName ?? ''" [occasionName]="occasionName"
-      [forInstitute]="!!orderForm.controls.instituteId.value"></app-order-recipients>
+    <app-order-recipients [list]="list" [orderDetails]="{
+        volunteerName: volunteer?.firstName ?? '',
+        occasionName: occasionName,
+        forInstitute: !!orderForm.controls.instituteId.value,
+        amount: orderForm.controls.amount.value ?? 0
+      }"></app-order-recipients>
     }
 
 

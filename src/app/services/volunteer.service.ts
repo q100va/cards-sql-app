@@ -28,6 +28,8 @@ import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
+  ContactOption,
+  contactOptionSchema,
   volunteerSchema,
   volunteersSchema,
 } from '../../../shared/schemas/volunteer.schema';
@@ -266,6 +268,15 @@ export class VolunteerService implements VolunteerMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+    searchContacts(query: string): Observable<ApiResponse<ContactOption[]>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/search-contacts/${query}`)
+      .pipe(
+        validateResponse(z.array(contactOptionSchema)),
         catchError(this.handleError),
       );
   }

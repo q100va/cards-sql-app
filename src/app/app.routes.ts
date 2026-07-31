@@ -20,6 +20,8 @@ import { OccasionsListComponent } from './pages/occasions-list/occasions-list.co
 import { RecipientsListComponent } from './pages/recipients-list/recipients-list.component';
 import { SeniorsBulkUpdateComponent } from './pages/seniors-bulk-update/seniors-bulk-update.component';
 import { OrdersListComponent } from './pages/orders-list/orders-list.component';
+import { OrderDetailsComponent } from './pages/order-details/order-details.component';
+import { OrderCardComponent } from './pages/order-card/order-card.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -114,6 +116,20 @@ export const routes: Routes = [
           requireAnyOp('VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'),
         ],
         component: OrdersListComponent,
+      },
+      {
+        path: 'orders/new-order/:typeId',
+        canMatch: [requireAnyOp('ADD_NEW_ORDER')],
+        component: OrderCardComponent,
+      },
+      {
+        path: 'orders/order/:orderId',
+        canMatch: [requireAnyOp('VIEW_ORDER')],
+        component: OrderDetailsComponent,
+      },
+      {
+        path: 'orders/order/:orderId/:userId',
+        component: OrderDetailsComponent,
       },
       {
         path: 'countries',

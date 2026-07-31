@@ -61,7 +61,7 @@ export declare const orderFiltersDataSchema: z.ZodObject<{
 }, z.core.$strict>;
 declare const orderRecipientSchema: z.ZodObject<{
     index: z.ZodNumber;
-    recipientId: z.ZodNumber;
+    id: z.ZodNumber;
     fullNameSnapshot: z.ZodString;
     specialComment: z.ZodNullable<z.ZodString>;
     birthDay: z.ZodNumber;
@@ -69,7 +69,8 @@ declare const orderRecipientSchema: z.ZodObject<{
     birthYear: z.ZodNumber;
     infoNote: z.ZodNullable<z.ZodString>;
     photoLink: z.ZodNullable<z.ZodString>;
-    recipientStatus: z.ZodString;
+    status: z.ZodString;
+    statusId: z.ZodNumber;
 }, z.core.$strip>;
 export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
     homeId: z.ZodNumber;
@@ -78,7 +79,7 @@ export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
     noAddressNote: z.ZodNullable<z.ZodString>;
     homeRecipients: z.ZodArray<z.ZodObject<{
         index: z.ZodNumber;
-        recipientId: z.ZodNumber;
+        id: z.ZodNumber;
         fullNameSnapshot: z.ZodString;
         specialComment: z.ZodNullable<z.ZodString>;
         birthDay: z.ZodNumber;
@@ -86,7 +87,8 @@ export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
         birthYear: z.ZodNumber;
         infoNote: z.ZodNullable<z.ZodString>;
         photoLink: z.ZodNullable<z.ZodString>;
-        recipientStatus: z.ZodString;
+        status: z.ZodString;
+        statusId: z.ZodNumber;
     }, z.core.$strip>>;
 }, z.core.$strip>>;
 export declare const orderSchema: z.ZodObject<{
@@ -98,8 +100,10 @@ export declare const orderSchema: z.ZodObject<{
     instituteName: z.ZodNullable<z.ZodString>;
     contact: z.ZodString;
     status: z.ZodString;
+    statusId: z.ZodNumber;
     source: z.ZodString;
     occasion: z.ZodString;
+    occasionStatus: z.ZodNumber;
     comment: z.ZodNullable<z.ZodString>;
 }, z.core.$strict>;
 declare const occasionNodeDataSchema: z.ZodObject<{
@@ -142,8 +146,10 @@ export declare const ordersListSchema: z.ZodObject<{
         instituteName: z.ZodNullable<z.ZodString>;
         contact: z.ZodString;
         status: z.ZodString;
+        statusId: z.ZodNumber;
         source: z.ZodString;
         occasion: z.ZodString;
+        occasionStatus: z.ZodNumber;
         comment: z.ZodNullable<z.ZodString>;
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
@@ -165,21 +171,18 @@ export declare const ordersListSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const orderDetailsSchema: z.ZodObject<{
     id: z.ZodNumber;
-    occasionId: z.ZodNumber;
-    volunteerId: z.ZodNumber;
-    userId: z.ZodNumber;
-    contactId: z.ZodNumber;
-    instituteId: z.ZodNullable<z.ZodNumber>;
     date: z.ZodCoercedDate<unknown>;
     amount: z.ZodNumber;
-    status: z.ZodNumber;
-    source: z.ZodNumber;
-    comment: z.ZodNullable<z.ZodString>;
     userName: z.ZodString;
     volunteerName: z.ZodString;
-    contact: z.ZodString;
     instituteName: z.ZodNullable<z.ZodString>;
+    contact: z.ZodString;
+    status: z.ZodString;
+    statusId: z.ZodNumber;
+    source: z.ZodString;
     occasion: z.ZodString;
+    occasionStatus: z.ZodNumber;
+    comment: z.ZodNullable<z.ZodString>;
     recipients: z.ZodArray<z.ZodObject<{
         homeId: z.ZodNumber;
         postAddress: z.ZodString;
@@ -187,7 +190,7 @@ export declare const orderDetailsSchema: z.ZodObject<{
         noAddressNote: z.ZodNullable<z.ZodString>;
         homeRecipients: z.ZodArray<z.ZodObject<{
             index: z.ZodNumber;
-            recipientId: z.ZodNumber;
+            id: z.ZodNumber;
             fullNameSnapshot: z.ZodString;
             specialComment: z.ZodNullable<z.ZodString>;
             birthDay: z.ZodNumber;
@@ -195,7 +198,8 @@ export declare const orderDetailsSchema: z.ZodObject<{
             birthYear: z.ZodNumber;
             infoNote: z.ZodNullable<z.ZodString>;
             photoLink: z.ZodNullable<z.ZodString>;
-            recipientStatus: z.ZodString;
+            status: z.ZodString;
+            statusId: z.ZodNumber;
         }, z.core.$strip>>;
     }, z.core.$strip>>;
 }, z.core.$strict>;

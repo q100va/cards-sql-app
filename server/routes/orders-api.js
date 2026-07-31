@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { literal, Op } from 'sequelize';
-import { z } from 'zod';
+import { number, z } from 'zod';
 import {
   Order, Region, Home, HomeAddress, OrderRecipient,
   Volunteer, VolunteerContact,
-  User, Institute, Occasion
+  User, Institute, Occasion,
+  Recipient
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -14,7 +15,7 @@ import { createRecipientsList } from "../controllers/ctrl-create-order.js";
 import * as orderSchemas from "../../shared/dist/schemas/order.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { createSpecialRecipientsList } from "../controllers/ctrl-create-special-order.js";
-import { transformOrderDetails, transformOrderDisplayParts, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
+import { transformOrder, transformOrderDisplayPart, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
 import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-query-builders.js";
 import { dictToOptions, getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
 import { buildOccasionNodes } from "../controllers/ctrl-transform-occasion.js";
@@ -182,7 +183,6 @@ router.post(
         });
 
         const recipients = await transformOrderRecipientsPart(order.id, t);
-
         return { contact: contact.content, recipients };
       });
 
@@ -334,7 +334,7 @@ router.post(
         where[Op.or].push(
           ...filtered.map((node) => ({
             [Op.and]: [
-              { '$occasion.type$':  node.type},
+              { '$occasion.type$': node.type },
               { '$occasion.month$': node.month },
               { '$occasion.year$': node.year },
             ],
@@ -406,7 +406,7 @@ router.post(
         distinct: true,
       });
       const orders = (await Promise.all(
-        draft.map(o => transformOrderDisplayParts(o.id))
+        draft.map(o => transformOrderDisplayPart(o.id))
       )).filter(Boolean);
 
       const users = await User.findAll({
@@ -433,10 +433,6 @@ router.post(
         occasions,
         req.language ?? 'ru',
       );
-
-
-
-
       res
         .status(200)
         .send({
@@ -453,27 +449,223 @@ router.post(
   }
 );
 
+router.patch(
+  "/update-status",
+  requireAuth,
+  requireAny('EDIT_ORDER'),
+  validateRequest(z.object({ id: z.number().int().min(1), status: z.number().int().min(1).max(4) }), 'body'),
+
+  async (req, res, next) => {
+    try {
+      const { id } = req.body;
+      const { status } = req.body;
+      await withTransaction(async (t) => {
+        const existingOrder = await Order.findByPk(id, { transaction: t });
+
+        if (!existingOrder) {
+          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
+        }
+
+        if (
+          (existingOrder.status === 1 || existingOrder.status === 2)
+          && (status === 3 || status === 4)
+        ) {
+          const recipients = await OrderRecipient.findAll({
+            where: {
+              orderId: existingOrder.id,
+              recipientStatus: { [Op.not]: 3 }
+            },
+            attributes: ['recipientId'],
+            transaction: t,
+          });
+          const recipientIds = recipients.map((i) => i.recipientId);
+          await Recipient.decrement('plusAmount', {
+            by: 1,
+            where: { id: { [Op.in]: recipientIds } },
+            transaction: t,
+          });
+        }
+
+        if (
+          (existingOrder.status === 3 || existingOrder.status === 4)
+          && (status === 1)
+        ) {
+          const recipients = await OrderRecipient.findAll({
+            where: {
+              orderId: existingOrder.id,
+              recipientStatus: { [Op.not]: 3 }
+            },
+            attributes: ['recipientId'],
+            transaction: t,
+          });
+          const recipientIds = recipients.map((i) => i.recipientId);
+          await Recipient.increment('plusAmount', {
+            by: 1,
+            where: { id: { [Op.in]: recipientIds } },
+            transaction: t,
+          });
+        }
+
+        await existingOrder.update({ status }, { transaction: t });
+      }
+      );
+
+
+      res.status(200).send({ code: 'ORDER.UPDATED', data: null });
+    } catch (error) {
+      error.code = 'ERRORS.ORDER.UPDATE_FAILED';
+      next(error);
+    }
+  });
+
+router.delete(
+  "/delete-order/:id",
+  requireAuth,
+  requireAny('DELETE_ORDER'),
+  validateRequest(orderIdParamsSchema, 'params'),
+
+  async (req, res, next) => {
+    try {
+      const id = req.params.id;
+
+      await withTransaction(async (t) => {
+        const existingOrder = await Order.findByPk(id, { transaction: t });
+
+        if (!existingOrder) {
+          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
+        }
+
+        if (existingOrder.status === 1 || existingOrder.status === 2) {
+          const recipients = await OrderRecipient.findAll({
+            where: {
+              orderId: existingOrder.id,
+              recipientStatus: { [Op.not]: 3 }
+            },
+            attributes: ['recipientId'],
+            transaction: t,
+          });
+          const recipientIds = recipients.map((i) => i.recipientId);
+          await Recipient.decrement('plusAmount', {
+            by: 1,
+            where: { id: { [Op.in]: recipientIds } },
+            transaction: t,
+          });
+        }
+
+        if (existingOrder.status === 3 || existingOrder.status === 4) {
+          const recipients = await OrderRecipient.findAll({
+            where: {
+              orderId: existingOrder.id,
+              recipientStatus: { [Op.not]: 3 }
+            },
+            attributes: ['recipientId'],
+            transaction: t,
+          });
+          const recipientIds = recipients.map((i) => i.recipientId);
+          await Recipient.increment('plusAmount', {
+            by: 1,
+            where: { id: { [Op.in]: recipientIds } },
+            transaction: t,
+          });
+        }
+        await existingOrder.destroy({ transaction: t });
+      }
+      );
+
+
+      res.status(200).send({ code: 'ORDER.UPDATED', data: null });
+    } catch (error) {
+      error.code = 'ERRORS.ORDER.LIST_FAILED';
+      next(error);
+    }
+  });
+
 router.get(
-  "/:id",
+  "/order/:id",
   requireAuth,
   requireAny('VIEW_ORDER', 'EDIT_ORDER'),
   validateRequest(orderIdParamsSchema, 'params'),
   async (req, res, next) => {
     try {
-      const order = await transformOrderDetails(req.params.id);
+      const order = await transformOrder(req.params.id);
       if (!order) {
         throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
       }
 
       res.status(200).send({ data: order });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.GET_FAILED';
+      error.code = error.code ?? 'ERRORS.ORDER.UPDATE_FAILED';
       next(error);
     }
   }
 );
 
-router.put(
+router.patch(
+  "/edit-recipients",
+  requireAuth,
+  requireAny('EDIT_ORDER'),
+  validateRequest(z.object({
+    id: z.number().int().min(1),
+    deletingIds: z.array(z.number().int().min(1))
+  }), 'body'),
+
+  async (req, res, next) => {
+    try {
+      const { id, deletingIds } = req.body;
+      console.log('deletingIds', deletingIds);
+
+      await withTransaction(async (t) => {
+        const existingOrder = await Order.findByPk(id, {
+          transaction: t,
+        });
+
+        if (!existingOrder) {
+          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
+        }
+
+        const recipients = await OrderRecipient.findAll({
+          where: {
+            id: { [Op.in]: deletingIds }
+          },
+          attributes: ['recipientId'],
+          transaction: t,
+        });
+        if (recipients.length === 0) throw new CustomError('ERRORS.RECIPIENTS.NOT_FOUND', 404);
+
+        await OrderRecipient.update(
+          { recipientStatus: 3 }, {
+          where: {
+            id: { [Op.in]: deletingIds }
+          },
+          transaction: t
+        }
+        );
+
+        const recipientIds = recipients.map((i) => i.recipientId);
+        await Recipient.decrement('plusAmount', {
+          by: 1,
+          where: { id: { [Op.in]: recipientIds } },
+          transaction: t,
+        });
+
+        await existingOrder.update(
+          { amount: existingOrder.amount - recipientIds.length },
+          { transaction: t }
+        );
+
+
+      }
+      );
+      const order = await transformOrder(id);
+
+      res.status(200).send({ code: 'ORDER.UPDATED', data: order });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.ORDER.GET_FAILED';
+      next(error);
+    }
+  });
+
+/* router.put(
   "/:id",
   requireAuth,
   requireOperation('EDIT_ORDER'),
@@ -491,7 +683,7 @@ router.put(
         }
 
         await existingOrder.update(req.body, { transaction: t });
-        return transformOrderDetails(existingOrder.id, t);
+        return transformOrder(existingOrder.id, t);
       });
 
       res.status(200).send({ code: 'ORDER.UPDATED', data: order });
@@ -500,6 +692,6 @@ router.put(
       next(error);
     }
   }
-);
+); */
 
 export default router;

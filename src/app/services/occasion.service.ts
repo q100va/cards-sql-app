@@ -122,4 +122,16 @@ export class OccasionService {
         catchError(this.handleError),
       );
   }
+
+  // Get occasions.
+  getActualOccasions(typeId: string): Observable<ApiResponse<Occasion[]>> {
+    return this.http
+      .get<RawApiResponse>(
+        `${this.BASE_URL}/get-actual-occasions/${encodeURIComponent(typeId)}`,
+      )
+      .pipe(
+        validateResponse(z.array(occasionSchema)),
+        catchError(this.handleError),
+      );
+  }
 }

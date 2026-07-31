@@ -609,6 +609,15 @@ export const volunteersSchema = z
   })
   .strict();
 
+export const contactOptionSchema = z
+  .object({
+    id: positiveInt,
+    volunteerId: positiveInt,
+    type: z.string(),
+    content: z.string(),
+  })
+  .strict();
+
 /* ===================== Types ===================== */
 export type VolunteerDraft = z.infer<typeof volunteerDraftSchema>;
 export type VolunteerDraftContacts = z.infer<typeof draftContactsSchema>;
@@ -621,3 +630,4 @@ export type Institute = z.infer<typeof instituteItemSchema>;
 export type OutdatedInstitute = z.infer<typeof instituteItemSchema>;
 export type Cooperation = z.infer<typeof coopItemSchema>;
 export type Subscription = z.infer<typeof subsItemSchema>;
+export type ContactOption = z.infer<typeof contactOptionSchema>;

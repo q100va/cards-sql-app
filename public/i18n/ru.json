@@ -976,6 +976,12 @@
           "FEMALE": "только женщины",
           "PROPORTION": "в пропорции"
         }
+      },
+      "RECIPIENT_STATUS":{
+        "PRESENT": "",
+        "ABSENT": "ВЫБЫЛ(а)",
+        "DELETED": "УДАЛЕН(а)",
+        "DELETING": "УДАЛЕНИЕ"
       }
     }
   },

@@ -60,9 +60,10 @@ export class OrderDetailsComponent {
   readonly SOURCES = SOURCES;
 
   readonly isLoading = signal(false);
-  readonly isSaving = signal(false);
-  readonly isEditMode = signal(false);
+
   order = signal<OrderDetails | null>(null);
+  orderId!: number;
+  userId!: number | null;
 
   readonly statusOptions = [
     { id: 1, label: 'ORDER.STATUS.PENDING' },
@@ -71,7 +72,7 @@ export class OrderDetailsComponent {
     { id: 4, label: 'ORDER.STATUS.OVERDUE' },
   ];
 
-  readonly form = new FormGroup({
+  /*   readonly form = new FormGroup({
     status: new FormControl<number>(1, {
       nonNullable: true,
       validators: [
@@ -89,71 +90,49 @@ export class OrderDetailsComponent {
     comment: new FormControl<string | null>(null, {
       validators: [zodValidator(orderEditSchema.shape.comment)],
     }),
-  });
+  }); */
 
   ngOnInit(): void {
     this.isLoading.set(true);
     this.route.paramMap
       .pipe(
-        map((params) => Number(params.get('id'))),
-        switchMap((id) => this.orderService.getOrderById(id)),
-        finalize(() => this.isLoading.set(false)),
+        map((params) => ({
+          orderId: Number(params.get('orderId')),
+          userId: Number(params.get('userId')) || null,
+        })),
+
+        switchMap(({ orderId, userId }) => {
+          this.orderId = orderId;
+          this.userId = userId;
+
+          this.isLoading.set(true);
+
+          return this.orderService
+            .getOrderById(orderId)
+            .pipe(finalize(() => this.isLoading.set(false)));
+        }),
+
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (res) => this.setOrder(res.data),
+
         error: (err) =>
           this.msgWrapper.handle(err, {
             source: 'OrderDetailsComponent',
             stage: 'getOrderById',
+            orderId: this.orderId,
+            userId: this.userId,
           }),
       });
   }
-
+  //TODO:userId
   onBackClick(): void {
-    this.router.navigate(['/orders']);
-  }
-
-  onEditClick(): void {
-    this.isEditMode.set(true);
-  }
-
-  onCancelClick(): void {
-    const order = this.order();
-    if (order) {
-      this.patchForm(order);
+    if (this.userId) {
+      this.router.navigate([`/orders/${this.userId}`]);
+    } else {
+      this.router.navigate(['/orders']);
     }
-    this.isEditMode.set(false);
-  }
-
-  onSaveClick(): void {
-    const order = this.order();
-    if (!order) return;
-
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.isSaving.set(true);
-    this.orderService
-      .updateOrder(order.id, this.form.getRawValue())
-      .pipe(
-        finalize(() => this.isSaving.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (res) => {
-          this.setOrder(res.data);
-          this.isEditMode.set(false);
-        },
-        error: (err) =>
-          this.msgWrapper.handle(err, {
-            source: 'OrderDetailsComponent',
-            stage: 'updateOrder',
-            orderId: order.id,
-          }),
-      });
   }
 
   sourceLabel(sourceId: number): string {
@@ -178,14 +157,36 @@ export class OrderDetailsComponent {
 
   private setOrder(order: OrderDetails): void {
     this.order.set(order);
-    this.patchForm(order);
+    //this.patchForm(order);
+    console.log('this.order', this.order());
   }
 
-  private patchForm(order: OrderDetails): void {
+  changeRecipientsList(deletingIds: number[]) {
+    if (!this.order()) return;
+    this.isLoading.set(true);
+    console.log('deletingIds', deletingIds);
+    this.orderService
+      .editOrderRecipientsList(this.order()!.id, deletingIds)
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => this.setOrder(res.data),
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OrderDetailsComponent',
+            stage: 'changeRecipientsList',
+            orderId: this.order()!.id,
+          }),
+      });
+  }
+
+  /*   private patchForm(order: OrderDetails): void {
     this.form.patchValue({
       status: order.status,
       source: order.source,
       comment: order.comment,
     });
-  }
+  } */
 }

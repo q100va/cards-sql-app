@@ -35,7 +35,7 @@ export function validateResponse<TSchema extends ZodType<any, any>>(
           console.error('response.data:', response.data);
           throw new ValidationError('ERRORS.INVALID_SCHEMA');
         }
-        console.log('parseResult.data', parseResult.data);
+        //console.log('parseResult.data', parseResult.data);
 
         return {
           data: parseResult.data,

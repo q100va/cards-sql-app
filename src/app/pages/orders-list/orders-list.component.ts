@@ -129,29 +129,6 @@ export class OrdersListComponent {
     const userIdParam = this.route.snapshot.paramMap.get('userId');
     this.userId = userIdParam ? Number(userIdParam) : null;
     console.log('userIdParam', userIdParam);
-
-    /* TODO:     this.route.paramMap
-      .pipe(
-        map((params) => Number(params.get('occasionId'))),
-        switchMap((occasionId) => {
-          this.occasionId = occasionId;
-          console.log('this.occasionId:', occasionId);
-          return this.occasionService.getOccasionById(occasionId);
-        }),
-      )
-      .subscribe({
-        next: (res) => {
-          console.log('res.data:', res.data);
-          this.occasion = res.data;
-        },
-        error: (err) => {
-          this.msgWrapper.handle(err, {
-            source: 'OrdersListComponent',
-            stage: 'getOccasionById',
-            occasionId: this.occasionId,
-          });
-        },
-      }); */
   }
 
   loadOrders(event: TableLazyLoadEvent): void {
@@ -282,20 +259,6 @@ export class OrdersListComponent {
     dt.reset();
   }
 
-  cannotDeleteOrders() {}
-
-  /*   getOccasionName(occasion: Occasion) {
-    return (
-      this.translateService.instant(occasion!.type) +
-      ' ' +
-      (occasion!.monthNameKey
-        ? this.translateService.instant(occasion!.monthNameKey)
-        : '') +
-      ' ' +
-      occasion!.year
-    );
-  } */
-
   onAddOrderClick(dt: Table) {
     /*    const dialogRef = this.dialog.open(OrderDetailsDialogComponent, {
       disableClose: true,
@@ -326,22 +289,44 @@ export class OrdersListComponent {
       .join(' ');
   }
 
-  onConfirmOrderClick(orderId: number) {}
-  onCancelOrderClick(orderId: number) {}
-  onMoveToOverdueOrderClick(orderId: number) {}
-  onMoveToReturnedOrderClick(orderId: number) {}
-  onRestoreOrderClick(orderId: number) {}
-
-  onViewOrderClick(orderId: number) {
-    this.router.navigate(['/orders', orderId]);
+  onUpdateOrderStatusClick(orderId: number, dt: Table, status: 1 | 2 | 3 | 4) {
+    this.isLoading.set(true);
+    this.orderService
+      .updateOrderStatus(orderId, status)
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.loadOrders({
+            first: 0,
+            rows: dt.rows ?? 20,
+            sortField: dt.sortField,
+            sortOrder: dt.sortOrder,
+            filters: dt.filters,
+          });
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OrdersList',
+            stage: 'onUpdateOrderStatusClick',
+            orderId,
+            status,
+          }),
+      });
   }
 
-  onDeleteOrderClick(orderId: number) {
+  onViewOrderClick(orderId: number): void {
+    this.router.navigate(['/orders/order', orderId, this.userId ?? 0]);
+  }
+
+  onDeleteOrderClick(orderId: number, dt: Table) {
     this.confirmationService.confirm({
       message: this.translateService.instant(
         'PRIME_CONFIRM.DELETE_ITEM_MESSAGE',
         {
-          name: 'PRIME_CONFIRM.DELETE_ORDER', //TODO:
+          name: 'PRIME_CONFIRM.DELETE_ORDER',
         },
       ),
       header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
@@ -356,30 +341,37 @@ export class OrdersListComponent {
         severity: 'secondary',
         outlined: true,
       },
-      accept: () => this.deleteOrder(orderId),
+      accept: () => this.deleteOrder(orderId, dt),
     });
   }
 
-  deleteOrder(orderId: number) {
+  deleteOrder(orderId: number, dt: Table) {
     this.isLoading.set(true);
 
-    /*    this.orderService
-      .deleteOrders(selectedOrderIds, this.occasion.id)
+    this.orderService
+      .deleteOrder(orderId)
       .pipe(
-        finalize(() => this.isLoading.set(false)),
+        //finalize(() => this.isLoading.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (res) => {
-          this.clear(dt);
-          this.selectedOrders = [];
+          this.loadOrders({
+            first: 0,
+            rows: dt.rows ?? 20,
+            sortField: dt.sortField,
+            sortOrder: dt.sortOrder,
+            filters: dt.filters,
+          });
         },
-        error: (err) =>
+        error: (err) => {
+          this.isLoading.set(false);
           this.msgWrapper.handle(err, {
             source: 'OrdersList',
-            stage: 'deleteOrders',
-            selectedOrderIds,
-          }),
-      }); */
+            stage: 'deleteOrder',
+            orderId,
+          });
+        },
+      });
   }
 }

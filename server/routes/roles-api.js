@@ -68,6 +68,7 @@ router.post(
           access: false,
           disabled: operation.flag === "FULL",
         }));
+        console.log('rows', rows)
         await RolePermission.bulkCreate(rows, { transaction: t });
 
         return role.name;

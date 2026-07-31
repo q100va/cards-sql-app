@@ -619,14 +619,6 @@ export const OPERATIONS = [
     description: 'Edit order',
     objectName: 'OBJECT.ORDERS',
   },
-    {
-    operation: 'EDIT_ORDER_RECIPIENTS',
-    object: 'orders',
-    accessToAllOps: false,
-    operationName: 'OPS.EDIT_RECIPIENTS.NAME',
-    description: 'Edit order recipients list',
-    objectName: 'OBJECT.ORDERS',
-  },
   {
     operation: 'DELETE_ORDER',
     object: 'orders',
@@ -635,23 +627,22 @@ export const OPERATIONS = [
     description: 'Permanently delete order',
     objectName: 'OBJECT.ORDERS',
   },
-  /*   {
-      operation: 'BLOCK_VOLUNTEER',
-      object: 'orders',
-      accessToAllOps: false,
-      operationName: 'OPS.BLOCK.NAME',
-      description: 'Block a volunteer (temporary absence, refusal, or other reasons)',
-      objectName: 'OBJECT.ORDERS',
-    },
-    {
-      operation: 'UNBLOCK_VOLUNTEER',
-      object: 'orders',
-      accessToAllOps: false,
-      operationName: 'OPS.UNBLOCK.NAME',
-      description: 'Unblock a volunteer',
-      objectName: 'OBJECT.ORDERS',
-    }, */
-
+  {
+    operation: 'FULL_FILTER_NEW_ORDER',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.FULL_FILTER.NAME',
+    description: 'Access to full order filter',
+    objectName: 'OBJECT.ORDERS',
+  },
+  {
+    operation: 'EDIT_ORDER_RECIPIENTS',
+    object: 'orders',
+    accessToAllOps: false,
+    operationName: 'OPS.EDIT_RECIPIENTS.NAME',
+    description: 'Edit order recipients list',
+    objectName: 'OBJECT.ORDERS',
+  },
   {
     operation: 'VIEW_LIMITED_ORDERS_LIST',
     object: 'orders',

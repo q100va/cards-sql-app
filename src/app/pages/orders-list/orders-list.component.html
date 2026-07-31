@@ -243,12 +243,13 @@
           </td>
           <td>
             <div class="center">
+              @if(order.statusId === 1 && order.occasionStatus !== 2){
               <button mat-icon-button [title]="'ORDER.TABLE.CONFIRM_BUTTON'  | translate"
-                (click)="onConfirmOrderClick(order.id)" *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
-                <mat-icon>
+                (click)="onUpdateOrderStatusClick(order.id, dt, 2)" *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                <mat-icon fontSet="material-symbols-outlined">
                   check_circle
                 </mat-icon>
-              </button>
+              </button>}
             </div>
           </td>
 
@@ -261,33 +262,35 @@
                 </mat-icon>
               </button>
               <mat-menu #menu="matMenu" xPosition="before">
-                <button mat-menu-item (click)="onCancelOrderClick(order.id)"
-                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
-                  <mat-icon fontSet="material-symbols-outlined">cancel</mat-icon>
-                  <span>{{'ORDER.TABLE.CANCEL' | translate}}</span>
-                </button>
                 <button mat-menu-item (click)="onViewOrderClick(order.id)"
                   *hasOp="{codes:['VIEW_ORDER','EDIT_ORDER'], mode:'any'}">
                   <mat-icon fontSet="material-symbols-outlined">open_in_new</mat-icon>
                   <span>{{'ORDER.TABLE.VIEW' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onMoveToOverdueOrderClick(order.id)"
-                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 1)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}"
+                  [disabled]="order.statusId !== 2 || order.occasionStatus===2">
+                  <mat-icon fontSet="material-symbols-outlined">cancel</mat-icon>
+                  <span>{{'ORDER.TABLE.CANCEL' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 4)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}" [disabled]="order.occasionStatus===2">
                   <mat-icon fontSet="material-symbols-outlined">timer</mat-icon>
                   <span>{{'ORDER.TABLE.DELETE_OVERDUE' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onMoveToReturnedOrderClick(order.id)"
-                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 3)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}" [disabled]="order.occasionStatus===2">
                   <mat-icon fontSet="material-symbols-outlined">assignment_returned</mat-icon>
                   <span>{{'ORDER.TABLE.DELETE_RETURNED' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onDeleteOrderClick(order.id)"
-                  *hasOp="{codes:['DELETE_ORDER'], mode:'any'}">
+                <button mat-menu-item (click)="onDeleteOrderClick(order.id, dt)"
+                  *hasOp="{codes:['DELETE_ORDER'], mode:'any'}" [disabled]="order.occasionStatus===2">
                   <mat-icon fontSet="material-symbols-outlined">error</mat-icon>
                   <span>{{'ORDER.TABLE.DELETE_MISTAKE' | translate}}</span>
                 </button>
-                <button mat-menu-item (click)="onRestoreOrderClick(order.id)"
-                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 1)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}"
+                  [disabled]="(order.statusId !== 3 && order.statusId !== 4) || order.occasionStatus===2">
                   <mat-icon fontSet="material-symbols-outlined">restore_from_trash</mat-icon>
                   <span>{{'ORDER.TABLE.RESTORE' | translate}}</span>
                 </button>
