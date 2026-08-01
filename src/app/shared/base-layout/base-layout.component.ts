@@ -161,6 +161,16 @@ export class BaseLayoutComponent {
       text: 'MENU.ALL_ORDERS',
       link: '/orders',
     },
+    {
+      params: {
+        codes: ['VIEW_FULL_REPORTS', 'VIEW_LIMITED_REPORTS'],
+        mode: 'any',
+      },
+      dataCy: 'nav-all-reports',
+      icon: 'monitoring',
+      text: 'MENU.REPORTS',
+      link: '/reports',
+    },
 
     {
       params: {

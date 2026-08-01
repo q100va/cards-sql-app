@@ -1,0 +1,49 @@
+<mat-card class="reports-card" appearance="outlined">
+  @if(showSpinner()){
+  <div class="overlay">
+    <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+      [style]="{ width: '150px', height: '150px' }" />
+  </div>
+  }
+  <mat-card-header style="width: 100%;">
+    <mat-grid-list cols="24" rowHeight="42px" gutterSize="16px">
+      <mat-grid-tile colspan="24" rowspan="1">
+        <mat-card-title data-cy="card-title">{{'REPORTS.CARD_TITLE' | translate}}</mat-card-title>
+      </mat-grid-tile>
+      <form [formGroup]="formGroup" class="card flex justify-center">
+        <mat-grid-tile colspan="6" rowspan="5">
+          <p-listbox [options]="types" formControlName="selectedType" optionLabel="name" class="w-full md:w-56"
+            [checkmark]="true" [highlightOnSelect]="false" />
+        </mat-grid-tile>
+        <mat-grid-tile colspan="6" rowspan="5">
+          <p-listbox [options]="frequencies" formControlName="selectedFrequency" optionLabel="name"
+            class="w-full md:w-56" [checkmark]="true" [highlightOnSelect]="false" />
+        </mat-grid-tile>
+        <mat-grid-tile colspan="6" rowspan="5">
+          <p-listbox [options]="years" formControlName="selectedYears" optionLabel="name" class="w-full md:w-56"
+            [checkmark]="true" [highlightOnSelect]="false" [multiple]="true" [metaKeySelection]="false" />
+        </mat-grid-tile>
+        <mat-grid-tile colspan="6" rowspan="5">
+          @if(formGroup.controls['selectedFrequency'].value?.code==='QUARTERLY'){
+          <p-listbox [options]="quarters" formControlName="selectedQuarters" optionLabel="name" class="w-full md:w-56"
+            [checkmark]="true" [highlightOnSelect]="false" [multiple]="true" [metaKeySelection]="false" />
+          }
+          @if(formGroup.controls['selectedFrequency'].value?.code==='MONTHLY'){
+          <p-listbox [options]="months" formControlName="selectedMonths" optionLabel="name" class="w-full md:w-56"
+            [checkmark]="true" [highlightOnSelect]="false" [multiple]="true" [metaKeySelection]="false" />
+          }
+        </mat-grid-tile>
+      </form>
+      <mat-grid-tile colspan="24" rowspan="1">
+        <mat-card-actions>
+          <button mat-raised-button color="primary" (click)="onGenerateClick()" [disabled]="isFormInvalid()">
+            <mat-icon>cloud_upload</mat-icon>{{'REPORTS.BUTTON_GENERATE' | translate}}</button>
+        </mat-card-actions>
+      </mat-grid-tile>
+    </mat-grid-list>
+
+  </mat-card-header>
+  <mat-card-content>
+
+  </mat-card-content>
+</mat-card>

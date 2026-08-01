@@ -806,6 +806,33 @@ export const OPERATIONS = [
     objectName: 'OBJECT.RECIPIENTS',
     flag: 'FULL',
   },
+  {
+    operation: 'VIEW_CURRENT_STATISTIC',
+    object: 'reports',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_CURRENT_STATISTIC.NAME',
+    description: 'View current statistic',
+    objectName: 'OBJECT.REPORTS'
+  },
+
+  {
+    operation: 'VIEW_LIMITED_REPORTS',
+    object: 'reports',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_LIMITED_REPORTS.NAME',
+    description: 'View reports with limited access',
+    objectName: 'OBJECT.REPORTS',
+    flag: 'LIMITED',
+  },
+  {
+    operation: 'VIEW_FULL_REPORTS',
+    object: 'reports',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_FULL_REPORTS.NAME',
+    description: 'View reports list with full access',
+    objectName: 'OBJECT.REPORTS',
+    flag: 'FULL',
+  },
 
 
 

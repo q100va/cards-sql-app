@@ -22,6 +22,7 @@ import { SeniorsBulkUpdateComponent } from './pages/seniors-bulk-update/seniors-
 import { OrdersListComponent } from './pages/orders-list/orders-list.component';
 import { OrderDetailsComponent } from './pages/order-details/order-details.component';
 import { OrderCardComponent } from './pages/order-card/order-card.component';
+import { ReportsComponent } from './pages/reports/reports.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -130,6 +131,11 @@ export const routes: Routes = [
       {
         path: 'orders/order/:orderId/:userId',
         component: OrderDetailsComponent,
+      },
+      {
+        path: 'reports',
+        canMatch: [requireAnyOp('VIEW_FULL_REPORTS', 'VIEW_LIMITED_REPORTS')],
+        component: ReportsComponent,
       },
       {
         path: 'countries',
