@@ -4,6 +4,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { TableModule } from 'primeng/table';
 import { Listbox } from 'primeng/listbox';
 
 import {
@@ -21,6 +22,7 @@ import { AuthUser } from '../../../../shared/schemas/auth.schema';
 import { AuthService } from '../../services/auth.service';
 import { ReportsService } from '../../services/reports.service';
 import { finalize } from 'rxjs';
+import { ReportRow } from '../../../../shared/schemas/report.schema';
 
 type Option = { code: number | string; name: string };
 
@@ -37,6 +39,7 @@ type Option = { code: number | string; name: string };
     HasOpDirective,
     Listbox,
     MatIconModule,
+    TableModule,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
@@ -67,12 +70,18 @@ export class ReportsComponent {
   quarters!: Option[];
 
   formGroup!: FormGroup;
-  report: number[] | null = null;
+  report: ReportRow [] = [];
+
+  cols!: {
+    field: string;
+    header: string;
+  }[];
 
   ngOnInit() {
     this.types = [
-      { name: 'REPORTS.TYPES.PERSONAL', code: 1 },
+      { name: 'REPORTS.TYPES.SCHOOL_COORDINATION', code: 1 },
       { name: 'REPORTS.TYPES.GENERAL', code: 2 },
+      { name: 'REPORTS.TYPES.PERSONAL', code: 3 },
     ];
     this.frequencies = [
       { name: 'REPORTS.FREQUENCIES.MONTHLY', code: 'MONTHLY' },
@@ -131,11 +140,11 @@ export class ReportsComponent {
       return true;
     }
 
-    if (selectedFrequency.code === 1) {
+    if (selectedFrequency.code === 'MONTHLY') {
       return !selectedMonths?.length;
     }
 
-    if (selectedFrequency.code === 2) {
+    if (selectedFrequency.code === 'QUARTERLY') {
       return !selectedQuarters?.length;
     }
 
@@ -144,6 +153,7 @@ export class ReportsComponent {
 
   onGenerateClick() {
     this.showSpinner.set(true);
+    this.report = [];
     const {
       selectedType,
       selectedFrequency,
@@ -154,10 +164,10 @@ export class ReportsComponent {
     const type = selectedType.code;
     const frequency = selectedFrequency.code;
     const years = selectedYears.map((item: Option) => item.code);
-    const quarters = selectedQuarters.value
+    const quarters = selectedQuarters
       ? selectedQuarters.map((item: Option) => item.code)
       : null;
-    const months = selectedMonths.value
+    const months = selectedMonths
       ? selectedMonths.map((item: Option) => item.code)
       : null;
 
@@ -168,7 +178,11 @@ export class ReportsComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (res) => {},
+        next: (res) => {
+          this.report = res.data.report;
+          console.log('this.report', res.data);
+          this.cols = res.data.cols;
+        },
         error: (err) =>
           this.msgWrapper.handle(err, {
             source: 'ReportsComponent',
@@ -178,7 +192,21 @@ export class ReportsComponent {
       });
   }
 
-  /*   Для Яны:
+  getPeriod(periodData: { year: number; quarter: number; month: number }) {
+    const year = periodData['year'] ?? '';
+    const quarter = periodData['quarter']
+      ? this.translateService.instant(
+          this.quarters[periodData['quarter'] - 1].name,
+        )
+      : '';
+    const month = periodData['month']
+      ? this.translateService.instant(this.months[periodData['month'] - 1].name)
+      : '';
+    return [month, quarter, year].filter(Boolean).join(' ').trim();
+  }
+}
+
+/*   Для Яны:
 за 2 квартал
 обработано 703* заявки,
 в т.ч. 650* с dobroru
@@ -186,4 +214,14 @@ export class ReportsComponent {
 приняло участие 445 волонтеров, в т.ч. 26 ОУ, из них 7 впервые (плюс Навигаторы**)
 * - неподтвержденные и возвращенные заявки не вычитались.
 ** - во 2 квартале Навигаторы брали адреса для поздравления с 9 мая - 50 000 адресов. */
-}
+
+/* Для Татьяны:
+за 2 квартал
+
+отправлено открыток 39699* + 43848** + 6166*** => 89 713 штук
+поздравлено 18901 + 24947** + 6166***  => 50 014 человек
+из 324 (+66***) интернатов в 73 регионах
+участвовало 1753* волонтера, в т.ч. 219 организаций, из них 74 ОУ, плюс Навигаторы
+* - неподтвержденные и возвращенные заявки НЕ учитывались
+** - только Навигаторы с 9 мая
+*** - неактивные интернаты, которых поздравили Навигаторы с 9 мая */

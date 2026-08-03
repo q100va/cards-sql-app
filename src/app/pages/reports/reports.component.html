@@ -44,6 +44,30 @@
 
   </mat-card-header>
   <mat-card-content>
+    @if(report.length > 0){
+      <h2>HEADER</h2>
+    <div class="card">
+      <p-table [columns]="cols" [value]="report" [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template #header let-columns>
+          <tr>
+            @for(col of columns; track $index){
+            <th>
+              {{ col.header }}
+            </th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-rowData let-columns="columns">
+          <tr>
+            @for(col of columns; track $index){
+            <td>
+              {{ col.field==='periodData' ? getPeriod(rowData[col.field]) : rowData[col.field] }}
+            </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>}
 
   </mat-card-content>
 </mat-card>
