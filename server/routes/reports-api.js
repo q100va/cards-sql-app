@@ -14,6 +14,7 @@ import CustomError from "../shared/customError.js";
 import * as reportSchemas from "../../shared/dist/schemas/report.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { col, fn } from 'sequelize';
+import { COLUMNS, getSelectedDateRanges, groupOrdersByPeriod } from "../controllers/ctrl-generate-reports.js";
 
 
 const router = Router();
@@ -25,31 +26,65 @@ router.post("/get-report",
   async (req, res, next) => {
     try {
       const { userId, type, frequency, months, quarters, years } = req.body;
+      console.log('req.body', req.body);
       const where = {};
       if (userId) where.userId = userId;
 
 
       if (type === 2) where.status = { [Op.in]: [1, 2] };
 
+      const dateRanges = getSelectedDateRanges({ frequency, months, quarters, years });
+
+      if (dateRanges.length === 0) {
+        throw new CustomError('ERRORS.REPORTS.INVALID_REQUEST', 422);
+      }
+
+      const periodConditions = dateRanges.map(({ startDate, endDate }) => ({
+        createdAt: {
+          [Op.gte]: startDate,
+          [Op.lt]: endDate,
+        },
+      }));
+
+      let include = [];
+      if (type === 2) {
+        include = [
+          {
+            model: OrderRecipient,
+            as: 'orderRecipients',
+            attributes: ['homeId', 'seniorId'],
+            include: [
+              {
+                model: Recipient,
+                as: 'recipient',
+                attributes: [
+                  'regionIdSnapshot',
+                ],
+              },]
+          }
+        ];
+      }
+
       const orders = await Order.findAll({
-        where,
+        where: {
+          [Op.and]: [
+            where,
+            {
+              [Op.or]: periodConditions,
+            },
+          ],
+        },
+        include,
         order: [['createdAt', 'ASC']],
-        raw: true,
+        //raw: true,
       });
+      console.log('ORDERS', orders);
+      //console.dir(orders, { depth: null });
 
-      const report = [];
+      const report = groupOrdersByPeriod(type, orders, frequency);
+      const cols = COLUMNS[type]();
 
-
-
-
-
-
-
-
-
-
-
-      res.status(200).send({ data: report });
+      res.status(200).send({ data: { report, cols } });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.ORDER.FILTER_DATA_FAILED';
       next(error);
