@@ -8,6 +8,7 @@ export declare const reportDTOSchema: z.ZodObject<{
     years: z.ZodArray<z.ZodNumber>;
 }, z.core.$strict>;
 export declare const reportSchoolCoordinationRowSchema: z.ZodObject<{
+    key: z.ZodString;
     periodData: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
@@ -21,6 +22,7 @@ export declare const reportSchoolCoordinationRowSchema: z.ZodObject<{
     newSchoolsCount: z.ZodNumber;
 }, z.core.$strip>;
 export declare const reportGeneralRowSchema: z.ZodObject<{
+    key: z.ZodString;
     periodData: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
@@ -32,8 +34,39 @@ export declare const reportGeneralRowSchema: z.ZodObject<{
     seniorsCount: z.ZodNumber;
     homesCount: z.ZodNumber;
     regionsCount: z.ZodNumber;
+    occasions: z.ZodArray<z.ZodObject<{
+        occasionId: z.ZodNumber;
+        occasionName: z.ZodString;
+        recipientsCount: z.ZodNumber;
+        seniorsCount: z.ZodNumber;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const reportPersonalRowSchema: z.ZodObject<{
+    key: z.ZodString;
+    periodData: z.ZodObject<{
+        year: z.ZodNumber;
+        quarter: z.ZodOptional<z.ZodNumber>;
+        month: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>;
+    ordersCount: z.ZodNumber;
+    seniorsCount: z.ZodNumber;
+    recipientsCount: z.ZodNumber;
+    volunteersCount: z.ZodNumber;
+    institutesCount: z.ZodNumber;
+}, z.core.$strip>;
+export declare const reportByOccasionRowSchema: z.ZodObject<{
+    key: z.ZodNumber;
+    occasionName: z.ZodString;
+    ordersCount: z.ZodNumber;
+    seniorsCount: z.ZodNumber;
+    homesCount: z.ZodNumber;
+    regionsCount: z.ZodNumber;
+    recipientsCount: z.ZodNumber;
+    volunteersCount: z.ZodNumber;
+    institutesCount: z.ZodNumber;
 }, z.core.$strip>;
 export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
+    key: z.ZodString;
     periodData: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
@@ -46,6 +79,7 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
     schoolsCount: z.ZodNumber;
     newSchoolsCount: z.ZodNumber;
 }, z.core.$strip>, z.ZodObject<{
+    key: z.ZodString;
     periodData: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
@@ -57,9 +91,39 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
     seniorsCount: z.ZodNumber;
     homesCount: z.ZodNumber;
     regionsCount: z.ZodNumber;
+    occasions: z.ZodArray<z.ZodObject<{
+        occasionId: z.ZodNumber;
+        occasionName: z.ZodString;
+        recipientsCount: z.ZodNumber;
+        seniorsCount: z.ZodNumber;
+    }, z.core.$strip>>;
+}, z.core.$strip>, z.ZodObject<{
+    key: z.ZodString;
+    periodData: z.ZodObject<{
+        year: z.ZodNumber;
+        quarter: z.ZodOptional<z.ZodNumber>;
+        month: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>;
+    ordersCount: z.ZodNumber;
+    seniorsCount: z.ZodNumber;
+    recipientsCount: z.ZodNumber;
+    volunteersCount: z.ZodNumber;
+    institutesCount: z.ZodNumber;
+}, z.core.$strip>, z.ZodObject<{
+    key: z.ZodNumber;
+    occasionName: z.ZodString;
+    ordersCount: z.ZodNumber;
+    seniorsCount: z.ZodNumber;
+    homesCount: z.ZodNumber;
+    regionsCount: z.ZodNumber;
+    recipientsCount: z.ZodNumber;
+    volunteersCount: z.ZodNumber;
+    institutesCount: z.ZodNumber;
 }, z.core.$strip>]>;
 export declare const reportSchema: z.ZodObject<{
+    type: z.ZodNumber;
     report: z.ZodArray<z.ZodUnion<readonly [z.ZodObject<{
+        key: z.ZodString;
         periodData: z.ZodObject<{
             year: z.ZodNumber;
             quarter: z.ZodOptional<z.ZodNumber>;
@@ -72,6 +136,7 @@ export declare const reportSchema: z.ZodObject<{
         schoolsCount: z.ZodNumber;
         newSchoolsCount: z.ZodNumber;
     }, z.core.$strip>, z.ZodObject<{
+        key: z.ZodString;
         periodData: z.ZodObject<{
             year: z.ZodNumber;
             quarter: z.ZodOptional<z.ZodNumber>;
@@ -83,6 +148,34 @@ export declare const reportSchema: z.ZodObject<{
         seniorsCount: z.ZodNumber;
         homesCount: z.ZodNumber;
         regionsCount: z.ZodNumber;
+        occasions: z.ZodArray<z.ZodObject<{
+            occasionId: z.ZodNumber;
+            occasionName: z.ZodString;
+            recipientsCount: z.ZodNumber;
+            seniorsCount: z.ZodNumber;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, z.ZodObject<{
+        key: z.ZodString;
+        periodData: z.ZodObject<{
+            year: z.ZodNumber;
+            quarter: z.ZodOptional<z.ZodNumber>;
+            month: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strip>;
+        ordersCount: z.ZodNumber;
+        seniorsCount: z.ZodNumber;
+        recipientsCount: z.ZodNumber;
+        volunteersCount: z.ZodNumber;
+        institutesCount: z.ZodNumber;
+    }, z.core.$strip>, z.ZodObject<{
+        key: z.ZodNumber;
+        occasionName: z.ZodString;
+        ordersCount: z.ZodNumber;
+        seniorsCount: z.ZodNumber;
+        homesCount: z.ZodNumber;
+        regionsCount: z.ZodNumber;
+        recipientsCount: z.ZodNumber;
+        volunteersCount: z.ZodNumber;
+        institutesCount: z.ZodNumber;
     }, z.core.$strip>]>>;
     cols: z.ZodArray<z.ZodObject<{
         field: z.ZodString;

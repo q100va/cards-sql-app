@@ -4,6 +4,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { Listbox } from 'primeng/listbox';
 
@@ -40,6 +41,7 @@ type Option = { code: number | string; name: string };
     Listbox,
     MatIconModule,
     TableModule,
+    ButtonModule,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
@@ -68,9 +70,12 @@ export class ReportsComponent {
   years!: Option[];
   months!: Option[];
   quarters!: Option[];
+  frequenciesShortList!: Option[];
 
   formGroup!: FormGroup;
-  report: ReportRow [] = [];
+  report: ReportRow[] = [];
+  reportName: string = '';
+  reportType: number = 0;
 
   cols!: {
     field: string;
@@ -79,13 +84,18 @@ export class ReportsComponent {
 
   ngOnInit() {
     this.types = [
-      { name: 'REPORTS.TYPES.SCHOOL_COORDINATION', code: 1 },
-      { name: 'REPORTS.TYPES.GENERAL', code: 2 },
-      { name: 'REPORTS.TYPES.PERSONAL', code: 3 },
+      { name: 'REPORTS.TYPES.GENERAL', code: 1 }, //2
+      { name: 'REPORTS.TYPES.PERSONAL', code: 2 }, //3
+      { name: 'REPORTS.TYPES.SCHOOL_COORDINATION', code: 3 }, //1
+      { name: 'REPORTS.TYPES.BY_OCCASION', code: 4 },
     ];
     this.frequencies = [
       { name: 'REPORTS.FREQUENCIES.MONTHLY', code: 'MONTHLY' },
       { name: 'REPORTS.FREQUENCIES.QUARTERLY', code: 'QUARTERLY' },
+      { name: 'REPORTS.FREQUENCIES.ANNUAL', code: 'ANNUAL' },
+    ];
+
+    this.frequenciesShortList = [
       { name: 'REPORTS.FREQUENCIES.ANNUAL', code: 'ANNUAL' },
     ];
     this.years = [
@@ -151,9 +161,13 @@ export class ReportsComponent {
     return false;
   }
 
+  //TODO: check where data for req is correct after previous req
+
   onGenerateClick() {
     this.showSpinner.set(true);
     this.report = [];
+    this.reportName = '';
+    this.reportType = 0;
     const {
       selectedType,
       selectedFrequency,
@@ -172,7 +186,14 @@ export class ReportsComponent {
       : null;
 
     this.reportsService
-      .getReport(this.userId(), type, frequency, months, quarters, years)
+      .getReport(
+        type === 1 || type === 4 ? null : this.userId(),
+        type,
+        frequency,
+        months,
+        quarters,
+        years,
+      )
       .pipe(
         finalize(() => this.showSpinner.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -182,6 +203,8 @@ export class ReportsComponent {
           this.report = res.data.report;
           console.log('this.report', res.data);
           this.cols = res.data.cols;
+          this.reportName = this.types[res.data.type - 1].name;
+          this.reportType = res.data.type;
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
@@ -204,6 +227,16 @@ export class ReportsComponent {
       : '';
     return [month, quarter, year].filter(Boolean).join(' ').trim();
   }
+
+  getOccasionName(occasion: string) {
+    return String(occasion ?? '')
+      .split(' ')
+      .filter(Boolean)
+      .map((part) =>
+        /^\d+$/.test(part) ? part : this.translateService.instant(part),
+      )
+      .join(' ');
+  }
 }
 
 /*   Для Яны:
@@ -225,3 +258,18 @@ export class ReportsComponent {
 * - неподтвержденные и возвращенные заявки НЕ учитывались
 ** - только Навигаторы с 9 мая
 *** - неактивные интернаты, которых поздравили Навигаторы с 9 мая */
+
+/* В поздравлении открытками за Х квартал:
+- приняло участие ХХХ учреждения из ХХ регионов,
+ДИПИ-?  Регионы?
+Социальные дома (бывшие ПНИ)-? Регионы?
+КЦСОН,ЦСО(надомники)-? Регионы?
+- всего поздравили открытками ХХХ человек, отправили ХХХ открыток,
+- с ДР, с НГ, с 9 Мая, поздравили ХХХ человек, отправили ХХХ открыток,
+в поздравлениях приняли участие более ХХХ поздравляющих, в т.ч. ХХХ образовательных учреждения и ХХХ организаций
+
+1) Нужны данные в приложении
+2) Нужны данные с выгрузкой в Excel
+3) Нужны ежемесячные и квартальные отчёты
+4) Срок выгрузки отчтётов - на 1 число каждого месяца
+ */

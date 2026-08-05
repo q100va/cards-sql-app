@@ -14,7 +14,7 @@ import CustomError from "../shared/customError.js";
 import * as reportSchemas from "../../shared/dist/schemas/report.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { col, fn } from 'sequelize';
-import { COLUMNS, getSelectedDateRanges, groupOrdersByPeriod } from "../controllers/ctrl-generate-reports.js";
+import { COLUMNS, getSelectedDateRanges, getReportByPeriods, getReportByOccasion } from "../controllers/ctrl-generate-reports.js";
 
 
 const router = Router();
@@ -30,24 +30,10 @@ router.post("/get-report",
       const where = {};
       if (userId) where.userId = userId;
 
-
-      if (type === 2) where.status = { [Op.in]: [1, 2] };
-
-      const dateRanges = getSelectedDateRanges({ frequency, months, quarters, years });
-
-      if (dateRanges.length === 0) {
-        throw new CustomError('ERRORS.REPORTS.INVALID_REQUEST', 422);
-      }
-
-      const periodConditions = dateRanges.map(({ startDate, endDate }) => ({
-        createdAt: {
-          [Op.gte]: startDate,
-          [Op.lt]: endDate,
-        },
-      }));
+      if (type === 1 || type === 4) where.status = { [Op.in]: [1, 2] };
 
       let include = [];
-      if (type === 2) {
+      if (type === 1 || type === 4) {
         include = [
           {
             model: OrderRecipient,
@@ -61,30 +47,75 @@ router.post("/get-report",
                   'regionIdSnapshot',
                 ],
               },]
+          },
+          {
+            model: Occasion,
+            as: 'occasion',
+            attributes: [
+              'type', 'month', 'year',
+            ],
           }
         ];
       }
+      if (type === 2) {
+        include = [
+          {
+            model: OrderRecipient,
+            as: 'orderRecipients',
+            attributes: ['seniorId'],
+          },
+        ];
+      }
+      let fullWhere = {};
 
-      const orders = await Order.findAll({
-        where: {
+      if (type === 4) {
+        fullWhere = {
+          [Op.and]: [
+            where,
+            {
+              '$occasion.year$': { [Op.in]: years }
+            },
+          ],
+        };
+      } else {
+        const dateRanges = getSelectedDateRanges({ frequency, months, quarters, years });
+
+        if (dateRanges.length === 0) {
+          throw new CustomError('ERRORS.REPORTS.INVALID_REQUEST', 422);
+        }
+
+        const periodConditions = dateRanges.map(({ startDate, endDate }) => ({
+          createdAt: {
+            [Op.gte]: startDate,
+            [Op.lt]: endDate,
+          },
+        }));
+
+        fullWhere = {
           [Op.and]: [
             where,
             {
               [Op.or]: periodConditions,
             },
           ],
-        },
+        };
+      }
+
+
+
+      const orders = await Order.findAll({
+        where: fullWhere,
         include,
         order: [['createdAt', 'ASC']],
         //raw: true,
       });
-      console.log('ORDERS', orders);
+      //console.log('ORDERS', orders);
       //console.dir(orders, { depth: null });
 
-      const report = groupOrdersByPeriod(type, orders, frequency);
+      const report = type === 4 ? getReportByOccasion(orders) : getReportByPeriods(type, orders, frequency);
       const cols = COLUMNS[type]();
 
-      res.status(200).send({ data: { report, cols } });
+      res.status(200).send({ data: { type, report, cols } });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.ORDER.FILTER_DATA_FAILED';
       next(error);
