@@ -13,15 +13,19 @@
       <form [formGroup]="formGroup" class="card flex justify-center">
         <mat-grid-tile colspan="6" rowspan="5">
           <p-listbox [options]="types" formControlName="selectedType" optionLabel="name" class="w-full md:w-56"
-            [checkmark]="true" [highlightOnSelect]="false" />
+            [checkmark]="true" [highlightOnSelect]="false" (onChange)="onChangeTypeSelection($event)" />
         </mat-grid-tile>
         <mat-grid-tile colspan="6" rowspan="5">
           @if(formGroup.controls['selectedType'].value?.code===4){
-          <p-listbox [options]="frequenciesShortList" formControlName="selectedFrequency" optionLabel="name"
-            class="w-full md:w-56" [checkmark]="true" [highlightOnSelect]="false" />}
+          <p-listbox [options]="frequencies" formControlName="selectedFrequency" optionLabel="name"
+            class="w-full md:w-56" [checkmark]="true" [highlightOnSelect]="false"
+            optionDisabled="disabledForOccasion" />
+          }
           @else{
           <p-listbox [options]="frequencies" formControlName="selectedFrequency" optionLabel="name"
-            class="w-full md:w-56" [checkmark]="true" [highlightOnSelect]="false" />}
+            class="w-full md:w-56" [checkmark]="true" [highlightOnSelect]="false"
+            (onChange)="onChangeFrequenciesSelection($event)" />
+          }
         </mat-grid-tile>
         <mat-grid-tile colspan="6" rowspan="5">
           <p-listbox [options]="years" formControlName="selectedYears" optionLabel="name" class="w-full md:w-56"
@@ -50,8 +54,11 @@
 
   </mat-card-header>
   <mat-card-content>
+ @if(emptyMessage){
+  <p>{{emptyMessage | translate}}</p>
+ }
     @if(report.length > 0){
-    <h2>{{ reportName | translate }}</h2> <!-- TODO: form  title-->
+    <h2>{{ reportName | translate }}</h2>
     <div class="card">
       <p-table dataKey="key" [columns]="cols" [value]="report" [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template #header let-columns>
@@ -59,7 +66,7 @@
             @if(reportType===1) {<th style="width: 5rem"></th>}
             @for(col of columns; track $index){
             <th>
-              {{ col.header }}
+              {{ col.header | translate }}
             </th>
             }
           </tr>
@@ -83,12 +90,12 @@
           <tr>
             <td colspan="6" style="padding: 12px 16px 12px 76px;">
               <div class="p-4">
-                <h5> {{ 'REPORTS.OCCASIONS_TITLE' | translate }}</h5>
+                <h4> {{ 'REPORTS.TABLE.OCCASIONS_TITLE' | translate }}</h4>
                 <p-table [value]="rowData.occasions" dataKey="id" styleClass="p-datatable-gridlines">
                   <ng-template #header>
           <tr>
             <th>{{'REPORTS.TABLE.OCCASION' | translate }}</th>
-            <th>{{'REPORTS.TABLE.RECIPIENTS_COUNT' | translate }} </th>
+            <th>{{'REPORTS.TABLE.CARDS_COUNT' | translate }} </th>
             <th>{{'REPORTS.TABLE.SENIORS_COUNT' | translate }}</th>
           </tr>
         </ng-template>

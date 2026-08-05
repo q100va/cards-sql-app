@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
-import { Listbox } from 'primeng/listbox';
+import { Listbox, ListboxChangeEvent } from 'primeng/listbox';
 
 import {
   FormControl,
@@ -25,7 +25,11 @@ import { ReportsService } from '../../services/reports.service';
 import { finalize } from 'rxjs';
 import { ReportRow } from '../../../../shared/schemas/report.schema';
 
-type Option = { code: number | string; name: string };
+type Option = {
+  code: number | string;
+  name: string;
+  disabledForOccasion?: boolean;
+};
 
 @Component({
   selector: 'app-reports',
@@ -76,6 +80,7 @@ export class ReportsComponent {
   report: ReportRow[] = [];
   reportName: string = '';
   reportType: number = 0;
+  emptyMessage: string = '';
 
   cols!: {
     field: string;
@@ -83,21 +88,41 @@ export class ReportsComponent {
   }[];
 
   ngOnInit() {
+    //TODO: Dynamic translation
     this.types = [
       { name: 'REPORTS.TYPES.GENERAL', code: 1 }, //2
       { name: 'REPORTS.TYPES.PERSONAL', code: 2 }, //3
       { name: 'REPORTS.TYPES.SCHOOL_COORDINATION', code: 3 }, //1
       { name: 'REPORTS.TYPES.BY_OCCASION', code: 4 },
-    ];
+    ].map((i) => ({
+      name: this.translateService.instant(i.name),
+      code: i.code,
+    }));
     this.frequencies = [
-      { name: 'REPORTS.FREQUENCIES.MONTHLY', code: 'MONTHLY' },
-      { name: 'REPORTS.FREQUENCIES.QUARTERLY', code: 'QUARTERLY' },
-      { name: 'REPORTS.FREQUENCIES.ANNUAL', code: 'ANNUAL' },
-    ];
+      {
+        name: 'REPORTS.FREQUENCIES.MONTHLY',
+        code: 'MONTHLY',
+        disabledForOccasion: true,
+      },
+      {
+        name: 'REPORTS.FREQUENCIES.QUARTERLY',
+        code: 'QUARTERLY',
+        disabledForOccasion: true,
+      },
+      {
+        name: 'REPORTS.FREQUENCIES.ANNUAL',
+        code: 'ANNUAL',
+        disabledForOccasion: false,
+      },
+    ].map((i) => ({
+      name: this.translateService.instant(i.name),
+      code: i.code,
+      disabledForOccasion: i.disabledForOccasion,
+    }));
 
-    this.frequenciesShortList = [
+    /*     this.frequenciesShortList = [
       { name: 'REPORTS.FREQUENCIES.ANNUAL', code: 'ANNUAL' },
-    ];
+    ]; */
     this.years = [
       { name: '2026', code: 2026 },
       { name: '2025', code: 2025 },
@@ -110,7 +135,10 @@ export class ReportsComponent {
       { name: 'REPORTS.QUARTERS.SECOND', code: 2 },
       { name: 'REPORTS.QUARTERS.THIRD', code: 3 },
       { name: 'REPORTS.QUARTERS.FORTH', code: 4 },
-    ];
+    ].map((i) => ({
+      name: this.translateService.instant(i.name),
+      code: i.code,
+    }));
     this.months = [
       { name: 'REPORTS.MONTHS.JANUARY', code: 1 },
       { name: 'REPORTS.MONTHS.FEBRUARY', code: 2 },
@@ -124,7 +152,10 @@ export class ReportsComponent {
       { name: 'REPORTS.MONTHS.OCTOBER', code: 10 },
       { name: 'REPORTS.MONTHS.NOVEMBER', code: 11 },
       { name: 'REPORTS.MONTHS.DECEMBER', code: 12 },
-    ];
+    ].map((i) => ({
+      name: this.translateService.instant(i.name),
+      code: i.code,
+    }));
 
     this.formGroup = new FormGroup({
       selectedType: new FormControl<Option | null>(null),
@@ -161,10 +192,9 @@ export class ReportsComponent {
     return false;
   }
 
-  //TODO: check where data for req is correct after previous req
-
   onGenerateClick() {
     this.showSpinner.set(true);
+    this.emptyMessage = '';
     this.report = [];
     this.reportName = '';
     this.reportType = 0;
@@ -200,6 +230,7 @@ export class ReportsComponent {
       )
       .subscribe({
         next: (res) => {
+          this.emptyMessage = res.data.report.length ? '' : 'REPORTS.TABLE.EMPTY_MESSAGE';
           this.report = res.data.report;
           console.log('this.report', res.data);
           this.cols = res.data.cols;
@@ -236,6 +267,33 @@ export class ReportsComponent {
         /^\d+$/.test(part) ? part : this.translateService.instant(part),
       )
       .join(' ');
+  }
+
+  onChangeTypeSelection(event: ListboxChangeEvent) {
+    console.log('event', event);
+    if (event.value?.code === 4) {
+      this.formGroup.controls['selectedFrequency'].setValue({
+        name: 'REPORTS.FREQUENCIES.ANNUAL',
+        code: 'ANNUAL',
+        disabledForOccasion: false,
+      });
+      this.formGroup.controls['selectedMonths'].setValue([]);
+      this.formGroup.controls['selectedQuarters'].setValue([]);
+    }
+  }
+
+  onChangeFrequenciesSelection(event: ListboxChangeEvent) {
+    console.log('event', event);
+    if (event.value?.code === 'ANNUAL') {
+      this.formGroup.controls['selectedMonths'].setValue([]);
+      this.formGroup.controls['selectedQuarters'].setValue([]);
+    }
+    if (event.value?.code === 'QUARTERLY') {
+      this.formGroup.controls['selectedMonths'].setValue([]);
+    }
+    if (event.value?.code === 'MONTHLY') {
+      this.formGroup.controls['selectedQuarters'].setValue([]);
+    }
   }
 }
 
