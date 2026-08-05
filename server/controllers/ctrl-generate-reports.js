@@ -342,7 +342,7 @@ export const COLUMNS = {
     { field: 'periodData', header: 'REPORTS.TABLE.PERIOD' },
     {
       field: 'recipientsCount',
-      header: 'REPORTS.TABLE.RECIPIENTS_COUNT',
+      header: 'REPORTS.TABLE.CARDS_COUNT',
     },
     {
       field: 'seniorsCount',
@@ -368,7 +368,7 @@ export const COLUMNS = {
     { field: 'ordersCount', header: 'REPORTS.TABLE.ORDERS_COUNT' },
     {
       field: 'recipientsCount',
-      header: 'REPORTS.TABLE.RECIPIENTS_COUNT',
+      header: 'REPORTS.TABLE.CARDS_COUNT',
     },
     { field: 'seniorsCount', header: 'REPORTS.TABLE.SENIORS_COUNT' },
     {
@@ -384,7 +384,7 @@ export const COLUMNS = {
     { field: 'dobroruCount', header: 'REPORTS.TABLE.DOBRORU_COUNT' },
     {
       field: 'recipientsCount',
-      header: 'REPORTS.TABLE.RECIPIENTS_COUNT',
+      header: 'REPORTS.TABLE.CARDS_COUNT',
     },
     {
       field: 'volunteersCount',
@@ -402,7 +402,7 @@ export const COLUMNS = {
     { field: 'ordersCount', header: 'REPORTS.TABLE.ORDERS_COUNT' },
     {
       field: 'recipientsCount',
-      header: 'REPORTS.TABLE.RECIPIENTS_COUNT',
+      header: 'REPORTS.TABLE.CARDS_COUNT',
     },
     {
       field: 'seniorsCount',

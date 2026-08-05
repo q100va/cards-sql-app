@@ -1246,6 +1246,58 @@
     "FLAG_INVALID": "Flag is allowed only for VIEW_LIMITED_* or VIEW_FULL_* operations",
     "SUPER_OPS_WITH_FLAG": "Super-operations (accessToAllOps=true) must not have flag"
   },
+  "REPORTS": {
+    "CARD_TITLE": "Reports",
+    "BUTTON_GENERATE": "Generate report",
+    "TYPES": {
+      "GENERAL": "General report",
+      "PERSONAL": "Personal report",
+      "SCHOOL_COORDINATION": "School coordination",
+      "BY_OCCASION": "Report by occasion"
+    },
+    "FREQUENCIES": {
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "ANNUAL": "Annually"
+    },
+    "QUARTERS": {
+      "FIRST": "1st quarter",
+      "SECOND": "2nd quarter",
+      "THIRD": "3rd quarter",
+      "FORTH": "4th quarter"
+    },
+    "MONTHS": {
+      "JANUARY": "January",
+      "FEBRUARY": "February",
+      "MARCH": "March",
+      "APRIL": "April",
+      "MAY": "May",
+      "JUNE": "June",
+      "JULY": "July",
+      "AUGUST": "August",
+      "SEPTEMBER": "September",
+      "OCTOBER": "October",
+      "NOVEMBER": "November",
+      "DECEMBER": "December"
+    },
+    "TABLE": {
+      "PERIOD": "Period",
+      "OCCASION": "Occasion",
+      "ORDERS_COUNT": "Number of orders",
+      "DOBRORU_COUNT": "Dobro.ru orders",
+      "CARDS_COUNT": "Number of cards",
+      "SENIORS_COUNT": "Number of seniors",
+      "VOLUNTEERS_COUNT": "Number of volunteers",
+      "INSTITUTES_COUNT": "Number of organizations",
+      "SCHOOLS_COUNT": "Number of schools",
+      "NEW_SCHOOLS_COUNT": "Number of new schools",
+      "HOMES_COUNT": "Number of care homes",
+      "REGIONS_COUNT": "Number of regions",
+      "OCCASIONS_TITLE": "By occasion",
+      "EMPTY_MESSAGE": "No data"
+    }
+  },
+
   "OBJECT": {
     "TOPONYMS": "Countries\nRegions\nDistricts\nLocalities",
     "USERS": "Users",

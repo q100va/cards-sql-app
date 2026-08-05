@@ -869,7 +869,7 @@
       "DATE": "Дата",
       "AMOUNT": "Кол-во",
       "VOLUNTEER_NAME": "Волонтер",
-      "INSTITUTE_NAME":"Организация",
+      "INSTITUTE_NAME": "Организация",
       "CONTACT": "Контакт",
       "SOURCE": "Источник",
       "STATUS": "Статус",
@@ -977,7 +977,7 @@
           "PROPORTION": "в пропорции"
         }
       },
-      "RECIPIENT_STATUS":{
+      "RECIPIENT_STATUS": {
         "PRESENT": "",
         "ABSENT": "ВЫБЫЛ(а)",
         "DELETED": "УДАЛЕН(а)",
@@ -1236,6 +1236,59 @@
   "INTERNAL_VALIDATION": {
     "FLAG_INVALID": "flag допустим только для VIEW_LIMITED_* или VIEW_FULL_* операций",
     "SUPER_OPS_WITH_FLAG": "Супер-операции (accessToAllOps=true) не должны иметь flag"
+  },
+
+  "REPORTS": {
+    "CARD_TITLE": "Отчёты",
+    "BUTTON_GENERATE": "Сформировать отчёт",
+
+    "TYPES": {
+      "GENERAL": "Общий отчёт",
+      "PERSONAL": "Персональный отчёт",
+      "SCHOOL_COORDINATION": "Координация школ",
+      "BY_OCCASION": "Отчёт по праздникам"
+    },
+    "FREQUENCIES": {
+      "MONTHLY": "Ежемесячно",
+      "QUARTERLY": "Ежеквартально",
+      "ANNUAL": "Ежегодно"
+    },
+    "QUARTERS": {
+      "FIRST": "1-й квартал",
+      "SECOND": "2-й квартал",
+      "THIRD": "3-й квартал",
+      "FORTH": "4-й квартал"
+    },
+    "MONTHS": {
+      "JANUARY": "Январь",
+      "FEBRUARY": "Февраль",
+      "MARCH": "Март",
+      "APRIL": "Апрель",
+      "MAY": "Май",
+      "JUNE": "Июнь",
+      "JULY": "Июль",
+      "AUGUST": "Август",
+      "SEPTEMBER": "Сентябрь",
+      "OCTOBER": "Октябрь",
+      "NOVEMBER": "Ноябрь",
+      "DECEMBER": "Декабрь"
+    },
+    "TABLE": {
+      "PERIOD": "Период",
+      "OCCASION": "Праздник",
+      "ORDERS_COUNT": "Кол-во заявок",
+      "DOBRORU_COUNT": "Заявки с Добро.ру",
+      "CARDS_COUNT": "Кол-во открыток",
+      "SENIORS_COUNT": "Кол-во поздравленных",
+      "VOLUNTEERS_COUNT": "Кол-во волонтёров",
+      "INSTITUTES_COUNT": "Кол-во организаций",
+      "SCHOOLS_COUNT": "Кол-во ОУ",
+      "NEW_SCHOOLS_COUNT": "Кол-во новых ОУ",
+      "HOMES_COUNT": "Кол-во интернатов",
+      "REGIONS_COUNT": "Кол-во регионов",
+      "OCCASIONS_TITLE": "По праздникам",
+      "EMPTY_MESSAGE": "По выбранным периодам данные отсутствуют"
+    }
   },
 
   "OBJECT": {
