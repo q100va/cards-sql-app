@@ -367,8 +367,8 @@ export function getStatistic(recipients) {
         if (isParticular) existingGroup.threeTimesPart += 1;
       }
       if (plusAmount > 3) {
-        existingGroup.fourTimesOrMorePartAll += 1;
-        if (isParticular) existingGroup.fourTimesOrMorePartPart += 1;
+        existingGroup.fourTimesOrMoreAll += 1;
+        if (isParticular) existingGroup.fourTimesOrMorePart += 1;
       }
 
     } else {
@@ -386,7 +386,7 @@ export function getStatistic(recipients) {
         oncePart: isParticular && plusAmount === 1 ? 1 : 0,
         twicePart: isParticular && plusAmount === 2 ? 1 : 0,
         threeTimesPart: isParticular && plusAmount === 3 ? 1 : 0,
-        fourTimesOrMorePart: isParticular && plusAmount > 3 ? 1 : 0,
+        fourTimesOrMorePart: isParticular && (plusAmount > 3) ? 1 : 0,
       });
     }
   }

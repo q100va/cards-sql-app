@@ -41,7 +41,9 @@
     "SENIORS": "Residents",
     "OCCASIONS": "Occasions",
     "SENIORS_BULK_UPDATE": "Update List",
-    "ALL_ORDERS": "All Requests"
+    "ALL_ORDERS": "All Requests",
+    "REPORTS": "Reports",
+    "STATISTIC": "Statistic"
   },
   "LANG": {
     "SWITCH": "Language",
@@ -1246,6 +1248,22 @@
     "FLAG_INVALID": "Flag is allowed only for VIEW_LIMITED_* or VIEW_FULL_* operations",
     "SUPER_OPS_WITH_FLAG": "Super-operations (accessToAllOps=true) must not have flag"
   },
+  "STATISTIC": {
+    "CARD_TITLE": "Statistics",
+    "GENERAL_TITLE": "General statistics (only actual occasions)",
+    "TABLE": {
+      "OCCASION": "Occasion",
+      "ALL": "Total",
+      "ZERO": "Not yet covered",
+      "ONCE": "Once covered",
+      "TWICE": "Twice covered",
+      "THREE_TIMES": "Three times covered",
+      "FOUR_AND_MORE_TIMES": "Four or more times cov.",
+      "ALL_RECIPIENTS": "all rec.",
+      "PART_RECIPIENTS": "spec. cat."
+    }
+  },
+
   "REPORTS": {
     "CARD_TITLE": "Reports",
     "BUTTON_GENERATE": "Generate report",

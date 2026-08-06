@@ -41,7 +41,9 @@
     "SENIORS": "Жители интернатов",
     "OCCASIONS": "Праздники и ДР",
     "SENIORS_BULK_UPDATE": "Обновление списков",
-    "ALL_ORDERS": "Все заявки"
+    "ALL_ORDERS": "Все заявки",
+    "REPORTS":"Отчеты",
+    "STATISTIC": "Статистика"
   },
   "LANG": {
     "SWITCH": "Язык",
@@ -1236,6 +1238,22 @@
   "INTERNAL_VALIDATION": {
     "FLAG_INVALID": "flag допустим только для VIEW_LIMITED_* или VIEW_FULL_* операций",
     "SUPER_OPS_WITH_FLAG": "Супер-операции (accessToAllOps=true) не должны иметь flag"
+  },
+
+  "STATISTIC": {
+    "CARD_TITLE": "Статистика",
+    "GENERAL_TITLE": "Общая статистика по актуальным праздникам",
+    "TABLE": {
+      "OCCASION": "Праздник",
+      "ALL": "Всего поздравляемых",
+      "ZERO": "Ни разу не поздравлены",
+      "ONCE": "Один раз поздравлены",
+      "TWICE": "Два раза поздравлены",
+      "THREE_TIMES": "Три раза поздравлены",
+      "FOUR_AND_MORE_TIMES": "Четыре раза и более поздр.",
+      "ALL_RECIPIENTS": "Все",
+      "PART_RECIPIENTS": "БОА"
+    }
   },
 
   "REPORTS": {

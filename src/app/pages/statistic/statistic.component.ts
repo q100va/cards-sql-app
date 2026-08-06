@@ -44,8 +44,10 @@ export class StatisticComponent {
     'STATISTIC.TABLE.ONCE',
     'STATISTIC.TABLE.TWICE',
     'STATISTIC.TABLE.THREE_TIMES',
-    'STATISTIC.TABLE.FOUR_AND_MORE_TIMES'
+    'STATISTIC.TABLE.FOUR_AND_MORE_TIMES',
   ];
+
+  //TODO: Add statistic for each 5 days of month for HB.
 
   ngOnInit() {
     this.reportsService
@@ -66,5 +68,15 @@ export class StatisticComponent {
             stage: 'getReport',
           }),
       });
+  }
+
+  getOccasionName(occasion: string) {
+    return String(occasion ?? '')
+      .split(' ')
+      .filter(Boolean)
+      .map((part) =>
+        /^\d+$/.test(part) ? part : this.translateService.instant(part),
+      )
+      .join(' ');
   }
 }

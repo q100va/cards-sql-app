@@ -15,22 +15,23 @@
 
   <mat-card-content>
     @if(generalStatistic.length > 0){
-    <h2>{{ "STATISTIC.GENERAL_TITLE" | translate }}</h2>
+    <h2 style="margin-bottom: 36px;">{{ "STATISTIC.GENERAL_TITLE" | translate }}</h2>
+
     <div class="card">
-      <p-table showGridlines dataKey="key" [columns]="cols" [value]="generalStatistic"
-        [tableStyle]="{ 'min-width': '50rem' }">
+      <p-table showGridlines stripedRows dataKey="key" [columns]="cols" [value]="generalStatistic"
+        >
         <ng-template #header let-columns>
           <tr>
             <th></th>
             @for(header of headers; track $index){
-            <th colspan="2">
+            <th colspan="2" class = "left-bordered">
               {{ header | translate }}
             </th>
             }
           </tr>
           <tr>
-            @for(col of columns; track $index){
-            <th>
+            @for(col of columns; let index = $index; track $index){
+            <th [class.narrow]="index !== 0" [class.left-bordered]="index%2 !== 0"  style="border-bottom: 1px solid #575a5d;">
               {{ col.header | translate }}
             </th>
             }
@@ -38,9 +39,9 @@
         </ng-template>
         <ng-template #body let-rowData let-columns="columns">
           <tr>
-            @for(col of columns; track $index){
-            <td>
-              {{ rowData[col.field] }}
+            @for(col of columns; let index = $index; track $index){
+            <td [class.left-bordered]="index%2 !== 0" height="68rem">
+              {{ col.field==='occasionName' ? getOccasionName(rowData[col.field]) : rowData[col.field] }}
             </td>
             }
           </tr>

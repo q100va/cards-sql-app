@@ -7,3 +7,11 @@
   padding-left: 16px;
   padding-right: 16px;
 }
+
+.left-bordered {
+  border-left: 1px solid #575a5d;
+}
+
+.narrow {
+  width: 10rem;
+}
