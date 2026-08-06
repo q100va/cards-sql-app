@@ -182,5 +182,46 @@ export declare const reportSchema: z.ZodObject<{
         header: z.ZodString;
     }, z.core.$strip>>;
 }, z.core.$strip>;
+declare const statisticRowSchema: z.ZodObject<{
+    key: z.ZodNumber;
+    occasionName: z.ZodString;
+    allRecipients: z.ZodNumber;
+    partRecipients: z.ZodNumber;
+    zeroAll: z.ZodNumber;
+    onceAll: z.ZodNumber;
+    twiceAll: z.ZodNumber;
+    threeTimesAll: z.ZodNumber;
+    fourTimesOrMoreAll: z.ZodNumber;
+    zeroPart: z.ZodNumber;
+    oncePart: z.ZodNumber;
+    twicePart: z.ZodNumber;
+    threeTimesPart: z.ZodNumber;
+    fourTimesOrMorePart: z.ZodNumber;
+}, z.core.$strip>;
+export declare const statisticSchema: z.ZodObject<{
+    report: z.ZodArray<z.ZodObject<{
+        key: z.ZodNumber;
+        occasionName: z.ZodString;
+        allRecipients: z.ZodNumber;
+        partRecipients: z.ZodNumber;
+        zeroAll: z.ZodNumber;
+        onceAll: z.ZodNumber;
+        twiceAll: z.ZodNumber;
+        threeTimesAll: z.ZodNumber;
+        fourTimesOrMoreAll: z.ZodNumber;
+        zeroPart: z.ZodNumber;
+        oncePart: z.ZodNumber;
+        twicePart: z.ZodNumber;
+        threeTimesPart: z.ZodNumber;
+        fourTimesOrMorePart: z.ZodNumber;
+    }, z.core.$strip>>;
+    cols: z.ZodArray<z.ZodObject<{
+        field: z.ZodString;
+        header: z.ZodString;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export type ReportRow = z.infer<typeof reportRowSchema>;
 export type ReportResponse = z.infer<typeof reportSchema>;
+export type StatisticResponse = z.infer<typeof statisticSchema>;
+export type StatisticRow = z.infer<typeof statisticRowSchema>;
+export {};

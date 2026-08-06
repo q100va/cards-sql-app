@@ -12,41 +12,6 @@ export const reportDTOSchema = z
   })
   .strict();
 
-/* const reportSchoolCoordinationSchema = z.array(
-  z
-    .object({
-      periodData: z.object({
-        year: positiveInt,
-        quarter: positiveInt.optional(),
-        month: positiveInt.optional(),
-      }),
-      ordersCount: z.number(),
-      dobroruCount: z.number(),
-      recipientsCount: z.number(),
-      volunteersCount: z.number(),
-      schoolsCount: z.number(),
-      newSchoolsCount: z.number(),
-    })
-    .strict(),
-);
-
-const reportGeneralSchema = z.array(
-  z
-    .object({
-      periodData: z.object({
-        year: positiveInt,
-        quarter: positiveInt.optional(),
-        month: positiveInt.optional(),
-      }),
-      recipientsCount: z.number(),
-      volunteersCount: z.number(),
-      institutesCount: z.number(),
-      homesCount: z.number(),
-      regionsCount: z.number(),
-    })
-    .strict(),
-); */
-
 const periodDataSchema = z.object({
   year: positiveInt,
   quarter: positiveInt.optional(),
@@ -123,5 +88,34 @@ export const reportSchema = z.object({
   ),
 });
 
+const statisticRowSchema = z.object({
+  key: positiveInt,
+  occasionName: z.string(),
+  allRecipients: z.number(),
+  partRecipients: z.number(),
+  zeroAll: z.number(),
+  onceAll: z.number(),
+  twiceAll: z.number(),
+  threeTimesAll: z.number(),
+  fourTimesOrMoreAll: z.number(),
+  zeroPart: z.number(),
+  oncePart: z.number(),
+  twicePart: z.number(),
+  threeTimesPart: z.number(),
+  fourTimesOrMorePart: z.number(),
+});
+
+export const statisticSchema = z.object({
+  report: z.array(statisticRowSchema),
+  cols: z.array(
+    z.object({
+      field: z.string(),
+      header: z.string(),
+    }),
+  ),
+});
+
 export type ReportRow = z.infer<typeof reportRowSchema>;
 export type ReportResponse = z.infer<typeof reportSchema>;
+export type StatisticResponse = z.infer<typeof statisticSchema>;
+export type StatisticRow = z.infer<typeof statisticRowSchema>;

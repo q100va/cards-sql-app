@@ -14,7 +14,7 @@ import CustomError from "../shared/customError.js";
 import * as reportSchemas from "../../shared/dist/schemas/report.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { col, fn } from 'sequelize';
-import { COLUMNS, getSelectedDateRanges, getReportByPeriods, getReportByOccasion } from "../controllers/ctrl-generate-reports.js";
+import { COLUMNS, getSelectedDateRanges, getReportByPeriods, getReportByOccasion, getStatistic } from "../controllers/ctrl-generate-reports.js";
 
 
 const router = Router();
@@ -122,6 +122,38 @@ router.post("/get-report",
     }
   }
 );
+
+router.get("/get-statistic",
+  requireAuth,
+  requireAny('VIEW_CURRENT_STATISTIC'),
+  async (req, res, next) => {
+    try {
+      const recipients = await Recipient.findAll({
+        where:{
+          isAbsent: false,
+          '$occasion.status$': 1
+        },
+        include: [
+          {
+            model: Occasion,
+            as: 'occasion',
+            attributes: ['type', 'month', 'year', 'status']
+          }
+        ]
+      });
+
+      const report = getStatistic(recipients);
+
+      const cols = COLUMNS[5]();
+
+      res.status(200).send({ data: { report, cols } });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.ORDER.FILTER_DATA_FAILED';
+      next(error);
+    }
+  }
+);
+
 
 export default router;
 

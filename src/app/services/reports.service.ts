@@ -17,6 +17,8 @@ import { MessageWrapperService } from './message.service';
 import {
   reportSchema,
   ReportResponse,
+  StatisticResponse,
+  statisticSchema,
 } from '../../../shared/schemas/report.schema';
 
 @Injectable({
@@ -38,8 +40,8 @@ export class ReportsService {
     frequency: string,
     months: number[] | null,
     quarters: number[] | null,
-    years: number[]
-  ): Observable<ApiResponse<ReportResponse>>{
+    years: number[],
+  ): Observable<ApiResponse<ReportResponse>> {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-report/`, {
         userId,
@@ -47,11 +49,14 @@ export class ReportsService {
         frequency,
         months,
         quarters,
-        years
+        years,
       })
-      .pipe(
-        validateResponse(reportSchema),
-        catchError(this.handleError),
-      );
+      .pipe(validateResponse(reportSchema), catchError(this.handleError));
+  }
+
+  getStatistic(): Observable<ApiResponse<StatisticResponse>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-statistic/`)
+      .pipe(validateResponse(statisticSchema), catchError(this.handleError));
   }
 }

@@ -167,9 +167,19 @@ export class BaseLayoutComponent {
         mode: 'any',
       },
       dataCy: 'nav-all-reports',
-      icon: 'monitoring',
+      icon: 'analytics',
       text: 'MENU.REPORTS',
       link: '/reports',
+    },
+       {
+      params: {
+        codes: ['VIEW_CURRENT_STATISTIC'],
+        mode: 'any',
+      },
+      dataCy: 'nav-statistic',
+      icon: 'chart_data',
+      text: 'MENU.STATISTIC',
+      link: '/statistic',
     },
 
     {

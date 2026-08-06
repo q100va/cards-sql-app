@@ -1,0 +1,52 @@
+<mat-card class="statistic-card" appearance="outlined">
+  @if(showSpinner()){
+  <div class="overlay">
+    <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
+      [style]="{ width: '150px', height: '150px' }" />
+  </div>
+  }
+  <mat-card-header style="width: 100%;">
+    <mat-grid-list cols="24" rowHeight="42px" gutterSize="16px">
+      <mat-grid-tile colspan="24" rowspan="1">
+        <mat-card-title data-cy="card-title">{{'STATISTIC.CARD_TITLE' | translate}}</mat-card-title>
+      </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if(generalStatistic.length > 0){
+    <h2>{{ "STATISTIC.GENERAL_TITLE" | translate }}</h2>
+    <div class="card">
+      <p-table showGridlines dataKey="key" [columns]="cols" [value]="generalStatistic"
+        [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template #header let-columns>
+          <tr>
+            <th></th>
+            @for(header of headers; track $index){
+            <th colspan="2">
+              {{ header | translate }}
+            </th>
+            }
+          </tr>
+          <tr>
+            @for(col of columns; track $index){
+            <th>
+              {{ col.header | translate }}
+            </th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-rowData let-columns="columns">
+          <tr>
+            @for(col of columns; track $index){
+            <td>
+              {{ rowData[col.field] }}
+            </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>}
+
+  </mat-card-content>
+</mat-card>

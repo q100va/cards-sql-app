@@ -23,6 +23,7 @@ import { OrdersListComponent } from './pages/orders-list/orders-list.component';
 import { OrderDetailsComponent } from './pages/order-details/order-details.component';
 import { OrderCardComponent } from './pages/order-card/order-card.component';
 import { ReportsComponent } from './pages/reports/reports.component';
+import { StatisticComponent } from './pages/statistic/statistic.component';
 
 export const routes: Routes = [
   // Публичные маршруты (без гарда)
@@ -136,6 +137,11 @@ export const routes: Routes = [
         path: 'reports',
         canMatch: [requireAnyOp('VIEW_FULL_REPORTS', 'VIEW_LIMITED_REPORTS')],
         component: ReportsComponent,
+      },
+            {
+        path: 'statistic',
+        canMatch: [requireAnyOp('VIEW_CURRENT_STATISTIC')],
+        component: StatisticComponent,
       },
       {
         path: 'countries',

@@ -1,0 +1,9 @@
+.statistic-card {
+  margin: auto;
+  width: fit-content;
+  min-width: 70%;
+  min-height: 80vh;
+  text-align: center;
+  padding-left: 16px;
+  padding-right: 16px;
+}

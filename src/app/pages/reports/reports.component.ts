@@ -1,7 +1,6 @@
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +36,6 @@ type Option = {
     MatCardModule,
     TranslateModule,
     MatGridListModule,
-    MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
     ProgressSpinner,

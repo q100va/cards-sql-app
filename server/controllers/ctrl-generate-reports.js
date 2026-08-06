@@ -336,6 +336,63 @@ export function getReportByOccasion(orders) {
   return ALGORITHM[4](groups);
 }
 
+export function getStatistic(recipients) {
+  const groups = new Map();
+
+  for (const recipient of recipients) {
+
+    const isParticular = recipient.category.startsWith('ment') || recipient.category.startsWith('spec');
+    const plusAmount = recipient.plusAmount;
+
+    const existingGroup = groups.get(recipient.occasionId);
+
+    if (existingGroup) {
+      existingGroup.allRecipients += 1;
+      if (isParticular)
+        existingGroup.partRecipients += 1;
+      if (plusAmount === 0) {
+        existingGroup.zeroAll += 1;
+        if (isParticular) existingGroup.zeroPart += 1;
+      }
+      if (plusAmount === 1) {
+        existingGroup.onceAll += 1;
+        if (isParticular) existingGroup.oncePart += 1;
+      }
+      if (plusAmount === 2) {
+        existingGroup.twiceAll += 1;
+        if (isParticular) existingGroup.twicePart += 1;
+      }
+      if (plusAmount === 3) {
+        existingGroup.threeTimesAll += 1;
+        if (isParticular) existingGroup.threeTimesPart += 1;
+      }
+      if (plusAmount > 3) {
+        existingGroup.fourTimesOrMorePartAll += 1;
+        if (isParticular) existingGroup.fourTimesOrMorePartPart += 1;
+      }
+
+    } else {
+      groups.set(recipient.occasionId, {
+        key: recipient.occasionId,
+        occasionName: getOccasionName(recipient.occasion),
+        allRecipients: 1,
+        partRecipients: isParticular ? 1 : 0,
+        zeroAll: plusAmount === 0 ? 1 : 0,
+        onceAll: plusAmount === 1 ? 1 : 0,
+        twiceAll: plusAmount === 2 ? 1 : 0,
+        threeTimesAll: plusAmount === 3 ? 1 : 0,
+        fourTimesOrMoreAll: plusAmount > 3 ? 1 : 0,
+        zeroPart: isParticular && plusAmount === 0 ? 1 : 0,
+        oncePart: isParticular && plusAmount === 1 ? 1 : 0,
+        twicePart: isParticular && plusAmount === 2 ? 1 : 0,
+        threeTimesPart: isParticular && plusAmount === 3 ? 1 : 0,
+        fourTimesOrMorePart: isParticular && plusAmount > 3 ? 1 : 0,
+      });
+    }
+  }
+  return Array.from(groups.values());
+}
+
 export const COLUMNS = {
 
   1: () => [
@@ -421,6 +478,56 @@ export const COLUMNS = {
       header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
     },
     { field: 'institutesCount', header: 'REPORTS.TABLE.INSTITUTES_COUNT' },
+  ],
+
+  5: () => [
+    { field: 'occasionName', header: 'STATISTIC.TABLE.OCCASION' },
+    { field: 'allRecipients', header: 'STATISTIC.TABLE.ALL_RECIPIENTS' },
+    {
+      field: 'partRecipients',
+      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
+    },
+    {
+      field: 'zeroAll',
+      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
+    },
+    {
+      field: 'zeroPart',
+      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
+    },
+    {
+      field: 'onceAll',
+      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
+    },
+    {
+      field: 'oncePart',
+      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
+    },
+    {
+      field: 'twiceAll',
+      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
+    },
+    {
+      field: 'twicePart',
+      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
+    },
+    {
+      field: 'threeTimesAll',
+      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
+    },
+    {
+      field: 'threeTimesPart',
+      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
+    },
+    {
+      field: 'fourTimesOrMoreAll',
+      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
+    },
+    {
+      field: 'fourTimesOrMorePart',
+      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
+    },
+
   ],
 
 
