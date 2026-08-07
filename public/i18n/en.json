@@ -1261,7 +1261,18 @@
       "FOUR_AND_MORE_TIMES": "Four or more times cov.",
       "ALL_RECIPIENTS": "all rec.",
       "PART_RECIPIENTS": "spec. cat."
-    }
+    },
+    "EXPORT": {
+      "OCCASION": "Occasion",
+      "ALL": "Total recipients",
+      "INCL_PART": "incl. special categories",
+      "ZERO": "Not yet covered",
+      "ONCE": "Covered once",
+      "TWICE": "Covered twice",
+      "THREE_TIMES": "Covered three times",
+      "FOUR_AND_MORE_TIMES": "Covered four or more times"
+    },
+    "BUTTON_DOWNLOAD": "Export to Excel"
   },
 
   "REPORTS": {

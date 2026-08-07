@@ -54,11 +54,22 @@
 
   </mat-card-header>
   <mat-card-content>
- @if(emptyMessage){
-  <p>{{emptyMessage | translate}}</p>
- }
+    @if(emptyMessage){
+    <p>{{emptyMessage | translate}}</p>
+    }
     @if(report.length > 0){
-    <h2>{{ reportName | translate }}</h2>
+    <mat-grid-list cols="24" rowHeight="42px" gutterSize="16px">
+      <mat-grid-tile colspan="4" rowspan="1"></mat-grid-tile>
+      <mat-grid-tile colspan="16" rowspan="1">
+        <h2>{{ reportName | translate }}</h2>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="4" rowspan="1">
+        <button mat-raised-button color="primary" (click)="exportToExcel()"
+          [disabled]="!report.length || isExporting">
+          <mat-icon>download</mat-icon>{{'STATISTIC.BUTTON_DOWNLOAD' | translate}}</button>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="24" rowspan="1"></mat-grid-tile>
+    </mat-grid-list>
     <div class="card">
       <p-table dataKey="key" [columns]="cols" [value]="report" [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template #header let-columns>

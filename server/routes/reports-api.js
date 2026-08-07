@@ -38,6 +38,8 @@ router.post("/get-report",
           {
             model: OrderRecipient,
             as: 'orderRecipients',
+            where: { recipientStatus: { [Op.in]: [1, 2] } },
+            require: true,
             attributes: ['homeId', 'seniorId'],
             include: [
               {
@@ -62,6 +64,8 @@ router.post("/get-report",
           {
             model: OrderRecipient,
             as: 'orderRecipients',
+            where: { recipientStatus: { [Op.in]: [1, 2] } },
+             require: true,
             attributes: ['seniorId'],
           },
         ];
@@ -129,7 +133,7 @@ router.get("/get-statistic",
   async (req, res, next) => {
     try {
       const recipients = await Recipient.findAll({
-        where:{
+        where: {
           isAbsent: false,
           '$occasion.status$': 1
         },

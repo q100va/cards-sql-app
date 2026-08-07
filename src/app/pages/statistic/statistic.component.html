@@ -6,32 +6,39 @@
   </div>
   }
   <mat-card-header style="width: 100%;">
-    <mat-grid-list cols="24" rowHeight="42px" gutterSize="16px">
-      <mat-grid-tile colspan="24" rowspan="1">
-        <mat-card-title data-cy="card-title">{{'STATISTIC.CARD_TITLE' | translate}}</mat-card-title>
-      </mat-grid-tile>
-    </mat-grid-list>
+    <mat-card-title data-cy="card-title">{{'STATISTIC.CARD_TITLE' | translate}}</mat-card-title>
   </mat-card-header>
 
   <mat-card-content>
     @if(generalStatistic.length > 0){
-    <h2 style="margin-bottom: 36px;">{{ "STATISTIC.GENERAL_TITLE" | translate }}</h2>
-
+    <mat-grid-list cols="24" rowHeight="42px" gutterSize="16px">
+      <mat-grid-tile colspan="8" rowspan="1"></mat-grid-tile>
+      <mat-grid-tile colspan="8" rowspan="1">
+        <h2>{{ "STATISTIC.GENERAL_TITLE" | translate }}</h2>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="4" rowspan="1"></mat-grid-tile>
+      <mat-grid-tile colspan="4" rowspan="1">
+        <button mat-raised-button color="primary" (click)="exportToExcel()"
+          [disabled]="!generalStatistic.length || isExporting">
+          <mat-icon>download</mat-icon>{{'STATISTIC.BUTTON_DOWNLOAD' | translate}}</button>
+      </mat-grid-tile>
+       <mat-grid-tile colspan="24" rowspan="1"></mat-grid-tile>
+    </mat-grid-list>
     <div class="card">
-      <p-table showGridlines stripedRows dataKey="key" [columns]="cols" [value]="generalStatistic"
-        >
+      <p-table showGridlines stripedRows dataKey="key" [columns]="cols" [value]="generalStatistic">
         <ng-template #header let-columns>
           <tr>
             <th></th>
             @for(header of headers; track $index){
-            <th colspan="2" class = "left-bordered">
+            <th colspan="2" class="left-bordered">
               {{ header | translate }}
             </th>
             }
           </tr>
           <tr>
             @for(col of columns; let index = $index; track $index){
-            <th [class.narrow]="index !== 0" [class.left-bordered]="index%2 !== 0"  style="border-bottom: 1px solid #575a5d;">
+            <th [class.narrow]="index !== 0" [class.left-bordered]="index%2 !== 0"
+              style="border-bottom: 1px solid #575a5d;">
               {{ col.header | translate }}
             </th>
             }

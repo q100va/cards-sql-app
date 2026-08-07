@@ -170,7 +170,9 @@ export function getReportByPeriods(
           occasions.set(order.occasionId, occasion);
         }
         occasion.recipientsCount += Number(order.amount);
-        for (const seniorId of seniors) occasion.seniorsCount.add(seniorId);
+        for (const seniorId of seniors) {
+          occasion.seniorsCount.add(seniorId);
+        }
       };
 
       if (existingGroup) {
@@ -179,9 +181,15 @@ export function getReportByPeriods(
         if (order.instituteId) {
           existingGroup.institutesCount.add(order.instituteId);
         }
-        existingGroup.seniorsCount.add(...seniors);
-        existingGroup.homesCount.add(...homes);
-        existingGroup.regionsCount.add(...regions);
+        for (const seniorId of seniors) {
+          existingGroup.seniorsCount.add(seniorId);
+        }
+        for (const homeId of homes) {
+          existingGroup.homesCount.add(homeId);
+        }
+        for (const regionId of regions) {
+          existingGroup.regionsCount.add(regionId);
+        }
         updateOccasion(existingGroup.occasions);
       } else {
         const occasions = new Map();
@@ -199,6 +207,9 @@ export function getReportByPeriods(
 
         });
       }
+
+      console.log('SENIORS', seniors);
+
     }
 
     //for type 2
@@ -212,7 +223,9 @@ export function getReportByPeriods(
       if (existingGroup) {
         existingGroup.ordersCount += 1;
         existingGroup.recipientsCount += Number(order.amount);
-        existingGroup.seniorsCount.add(...seniors);
+        for (const seniorId of seniors) {
+          existingGroup.seniorsCount.add(seniorId);
+        }
         existingGroup.volunteersCount.add(order.volunteerId);
         if (order.instituteId) {
           existingGroup.institutesCount.add(order.instituteId);
@@ -261,7 +274,7 @@ export function getReportByPeriods(
     }
   }
 
-  //console.log('seniorsCount', groups.values());
+  console.log('seniorsCount', groups.values());
 
   const groupedOrders = ALGORITHM[type](groups);
   //console.log('groupedOrders', groupedOrders);
@@ -315,9 +328,15 @@ export function getReportByOccasion(orders) {
       if (order.instituteId) {
         existingGroup.institutesCount.add(order.instituteId);
       }
-      existingGroup.seniorsCount.add(...seniors);
-      existingGroup.homesCount.add(...homes);
-      existingGroup.regionsCount.add(...regions);
+      for (const seniorId of seniors) {
+        existingGroup.seniorsCount.add(seniorId);
+      }
+      for (const homeId of homes) {
+        existingGroup.homesCount.add(homeId);
+      }
+      for (const regionId of regions) {
+        existingGroup.regionsCount.add(regionId);
+      }
     } else {
       groups.set(order.occasionId, {
         key: order.occasionId,

@@ -119,3 +119,5 @@ export type ReportRow = z.infer<typeof reportRowSchema>;
 export type ReportResponse = z.infer<typeof reportSchema>;
 export type StatisticResponse = z.infer<typeof statisticSchema>;
 export type StatisticRow = z.infer<typeof statisticRowSchema>;
+
+export type ReportGeneralRow = z.infer<typeof reportGeneralRowSchema>;

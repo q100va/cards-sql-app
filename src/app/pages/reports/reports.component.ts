@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -22,7 +23,11 @@ import { AuthUser } from '../../../../shared/schemas/auth.schema';
 import { AuthService } from '../../services/auth.service';
 import { ReportsService } from '../../services/reports.service';
 import { finalize } from 'rxjs';
-import { ReportRow } from '../../../../shared/schemas/report.schema';
+import {
+  ReportGeneralRow,
+  ReportRow,
+} from '../../../../shared/schemas/report.schema';
+import { FileService } from '../../services/file.service';
 
 type Option = {
   code: number | string;
@@ -44,6 +49,7 @@ type Option = {
     MatIconModule,
     TableModule,
     ButtonModule,
+    MatButtonModule,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
@@ -64,7 +70,9 @@ export class ReportsComponent {
   //readonly userName = computed(() => this.user()?.userName ?? null);
   readonly userId = computed(() => this.user()?.id ?? null);
   readonly flag = this.auth.has('VIEW_FULL_REPORTS');
+  private readonly fileService = inject(FileService);
 
+  isExporting = false;
   showSpinner = signal(false);
 
   frequencies!: Option[];
@@ -228,7 +236,9 @@ export class ReportsComponent {
       )
       .subscribe({
         next: (res) => {
-          this.emptyMessage = res.data.report.length ? '' : 'REPORTS.TABLE.EMPTY_MESSAGE';
+          this.emptyMessage = res.data.report.length
+            ? ''
+            : 'REPORTS.TABLE.EMPTY_MESSAGE';
           this.report = res.data.report;
           console.log('this.report', res.data);
           this.cols = res.data.cols;
@@ -244,7 +254,7 @@ export class ReportsComponent {
       });
   }
 
-  getPeriod(periodData: { year: number; quarter: number; month: number }) {
+  getPeriod(periodData: { year: number; quarter?: number; month?: number }) {
     const year = periodData['year'] ?? '';
     const quarter = periodData['quarter']
       ? this.translateService.instant(
@@ -270,11 +280,15 @@ export class ReportsComponent {
   onChangeTypeSelection(event: ListboxChangeEvent) {
     console.log('event', event);
     if (event.value?.code === 4) {
-      this.formGroup.controls['selectedFrequency'].setValue({
+      /*
+TODO: absent check mark
+this.formGroup.controls['selectedFrequency'].setValue({
         name: 'REPORTS.FREQUENCIES.ANNUAL',
         code: 'ANNUAL',
         disabledForOccasion: false,
-      });
+      }); */
+      this.formGroup.controls['selectedFrequency'].setValue(null);
+
       this.formGroup.controls['selectedMonths'].setValue([]);
       this.formGroup.controls['selectedQuarters'].setValue([]);
     }
@@ -291,6 +305,57 @@ export class ReportsComponent {
     }
     if (event.value?.code === 'MONTHLY') {
       this.formGroup.controls['selectedQuarters'].setValue([]);
+    }
+  }
+
+  async exportToExcel(): Promise<void> {
+    if (!this.report.length || !this.cols.length || this.isExporting) {
+      return;
+    }
+
+    this.isExporting = true;
+
+    let data;
+    if (this.reportType !== 1) {
+      data = this.report.map((i) => ({
+        ...i,
+        periodData: 'periodData' in i ? this.getPeriod(i.periodData) : null,
+        occasionName:
+          'occasionName' in i ? this.getOccasionName(i.occasionName) : null,
+      }));
+    } else {
+      data = (this.report as ReportGeneralRow[]).flatMap(
+        (item) => {
+          const { occasions, ...parent } = item;
+
+          return [
+            {
+              ...parent,
+              rowType: 'period' as const,
+              periodData: this.getPeriod(item.periodData),
+            },
+            ...occasions.map((occasion) => ({
+              ...occasion,
+              rowType: 'occasion' as const,
+              periodData: this.getOccasionName(occasion.occasionName)
+            })),
+          ];
+        },
+      );
+    }
+
+    const columns = this.cols.map((i) => ({
+      field: i.field,
+      header: this.translateService.instant(i.header),
+    }));
+
+    try {
+      await this.fileService.export(data, columns, {
+        fileName: `${this.translateService.instant(this.reportName)}-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        sheetName: 'Report',
+      });
+    } finally {
+      this.isExporting = false;
     }
   }
 }
