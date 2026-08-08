@@ -109,21 +109,6 @@ export class FileService {
         row,
         rowType: item.rowType,
       });
-      /*
-      if (item.rowType === 'period') {
-        row.font = {
-          bold: true,
-        };
-      }
-
-      if (item.rowType === 'occasion') {
-        const occasionNameCell = row.getCell(1);
-
-        occasionNameCell.alignment = {
-          horizontal: 'left',
-          indent: 2,
-        };
-      } */
     }
 
     // First apply common styles.

@@ -173,14 +173,14 @@ export const OPERATIONS = [
     description: 'Unblock a user',
     objectName: 'OBJECT.USERS',
   },
-  {
+/*   {
     operation: 'DOWNLOAD_USERS_TABLE',
     object: 'users',
     accessToAllOps: false,
     operationName: 'OPS.DOWNLOAD_TABLE.NAME',
     description: 'Download list of users',
     objectName: 'OBJECT.USERS',
-  },
+  }, */
   {
     operation: 'VIEW_LIMITED_USERS_LIST',
     object: 'users',
@@ -561,14 +561,14 @@ export const OPERATIONS = [
     description: 'Unblock a volunteer',
     objectName: 'OBJECT.VOLUNTEERS',
   },
-  {
+/*   {
     operation: 'DOWNLOAD_TEMPLATE_FOR_VOLUNTEER',
     object: 'volunteers',
     accessToAllOps: false,
     operationName: 'OPS.DOWNLOAD_TEMPLATE.NAME',
     description: 'Download template for volunteers',
     objectName: 'OBJECT.VOLUNTEERS',
-  },
+  }, */
   {
     operation: 'UPLOAD_LIST_OF_VOLUNTEERS',
     object: 'volunteers',

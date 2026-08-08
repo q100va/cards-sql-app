@@ -89,6 +89,33 @@ export const CONTACT_PARAMS_FOR_LIST: ContactParamsForList[] = [
   },
 ];
 
+function formatContacts(
+  partnerContacts: Record<string, { content: string }[]>,
+): string {
+  const excludedTypes = [
+    'telegramPhoneNumber',
+    'telegramId',
+    'telegramNickname',
+  ];
+  return Object.entries(partnerContacts)
+    .filter(
+      ([type, contacts]) =>
+        contacts.length > 0 && !excludedTypes.includes(type),
+    )
+    .map(([type, contacts]) => {
+      const values = contacts
+        .map((contact) =>
+          type === 'vKontakte'
+            ? `https://vk.com/${contact.content}`
+            : contact.content,
+        )
+        .join(', ');
+
+      return `${type}: ${values}`;
+    })
+    .join('\n');
+}
+
 export const COLUMNS = {
   regionName: {
     header: 'TABLE.COLUMNS.REGION_NAME',
@@ -124,25 +151,28 @@ export const COLUMNS = {
         .join(', ');
     },
   },
-//TODO: check
   contacts: {
     header: 'TABLE.COLUMNS.CONTACTS',
     fieldValue: (
       row: {
         officialName?: string;
-        orderedContacts: Record<string, { content: string }[] | undefined>;
+        orderedContacts: Record<string, { content: string }[]>;
       },
       translate: TranslateService,
       dateUtils: DateUtilsService,
-    ) =>
-      [
-        row.officialName,
-        ...Object.values(row.orderedContacts).flatMap(
+    ) => {
+      const contacts = formatContacts(row.orderedContacts);
+
+      return [
+        `${row.officialName}\n`,
+        /* ...Object.values(row.orderedContacts).flatMap(
           (contacts) => contacts?.map(({ content }) => content) ?? [],
-        ),
+        ), */
+        ...contacts,
       ]
         .filter(Boolean)
-        .join(', '),
+        .join('');
+    },
   },
   address: {
     header: 'TABLE.COLUMNS.ADDRESS',
@@ -189,7 +219,7 @@ export const COLUMNS = {
         coordinations: {
           partnerName: string;
           partnerOccupation: string;
-          partnerContacts: Record<string, { content: string }[] | undefined>;
+          partnerContacts: Record<string, { content: string }[]>;
         }[];
       },
       translate: TranslateService,
@@ -197,15 +227,16 @@ export const COLUMNS = {
     ) =>
       row.coordinations
         .map((partner) => {
-          const contacts = Object.values(partner.partnerContacts).flatMap(
+          /*           const contacts = Object.values(partner.partnerContacts).flatMap(
             (items) => items?.map(({ content }) => content) ?? [],
-          );
+          ); */
+          const contacts = formatContacts(partner.partnerContacts);
           return [
-            `${partner.partnerName} - ${partner.partnerOccupation}`,
+            `${partner.partnerName} - ${partner.partnerOccupation}\n`,
             ...contacts,
-          ].join(', ');
+          ].join('');
         })
-        .join('; '),
+        .join('\n'),
   },
   dateOfStart: {
     header: 'TABLE.COLUMNS.START_DATE',
