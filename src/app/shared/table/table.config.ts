@@ -1,4 +1,6 @@
 import { ContactParamsForList } from '../../interfaces/base-list';
+import { TranslateService } from '@ngx-translate/core';
+import { DateUtilsService } from '../../services/date-utils.service';
 
 export const CONTACT_PARAMS_FOR_LIST: ContactParamsForList[] = [
   {
@@ -86,3 +88,165 @@ export const CONTACT_PARAMS_FOR_LIST: ContactParamsForList[] = [
     </svg>`,
   },
 ];
+
+export const COLUMNS = {
+  regionName: {
+    header: 'TABLE.COLUMNS.REGION_NAME',
+    fieldValue: (row: { address: { region: { shortName: string } } }) => {
+      return row.address.region.shortName;
+    },
+  },
+  homeName: {
+    header: 'TABLE.COLUMNS.HOME_NAME',
+    fieldValue: (row: { homeName: any }, translate: TranslateService) => {
+      return row.homeName;
+    },
+  },
+  categories: {
+    header: 'TABLE.COLUMNS.HOME_CATEGORIES',
+    fieldValue: (
+      row: {
+        noAddress: boolean;
+        specialHome: boolean;
+        acceptableForSchool: boolean;
+      },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) => {
+      const categories = row.noAddress ? ['HOME.CARD.NO_ADDRESS_LABEL'] : [];
+
+      if (row.specialHome) categories.push('HOME.CARD.SPECIAL_HOME_LABEL');
+      if (row.acceptableForSchool)
+        categories.push('HOME.CARD.ACC_SCHOOL_LABEL');
+
+      return categories
+        .map((category) => translate.instant(category))
+        .join(', ');
+    },
+  },
+//TODO: check
+  contacts: {
+    header: 'TABLE.COLUMNS.CONTACTS',
+    fieldValue: (
+      row: {
+        officialName?: string;
+        orderedContacts: Record<string, { content: string }[] | undefined>;
+      },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) =>
+      [
+        row.officialName,
+        ...Object.values(row.orderedContacts).flatMap(
+          (contacts) => contacts?.map(({ content }) => content) ?? [],
+        ),
+      ]
+        .filter(Boolean)
+        .join(', '),
+  },
+  address: {
+    header: 'TABLE.COLUMNS.ADDRESS',
+    fieldValue: (
+      row: {
+        address: {
+          fullPostalAddress?: string | null;
+          country?: { name: string } | null;
+          region?: { shortName: string } | null;
+          district?: { shortName: string } | null;
+          locality?: { shortName: string } | null;
+        };
+        infoNote?: string | null;
+      },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) => {
+      const address =
+        row.address.fullPostalAddress ||
+        [
+          row.address.country?.name,
+          row.address.region?.shortName,
+          row.address.district?.shortName,
+          row.address.locality?.shortName,
+        ]
+          .filter(Boolean)
+          .join(', ');
+
+      return row.infoNote ? `${address} (${row.infoNote})` : address;
+    },
+  },
+  dateOfLastUpdate: {
+    header: 'TABLE.COLUMNS.LAST_UPDATE_DATE',
+    fieldValue: (
+      row: { dateOfLastUpdate: Date | null },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) => dateUtils.transformDate(row.dateOfLastUpdate),
+  },
+  partners: {
+    header: 'TABLE.COLUMNS.PARTNERS',
+    fieldValue: (
+      row: {
+        coordinations: {
+          partnerName: string;
+          partnerOccupation: string;
+          partnerContacts: Record<string, { content: string }[] | undefined>;
+        }[];
+      },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) =>
+      row.coordinations
+        .map((partner) => {
+          const contacts = Object.values(partner.partnerContacts).flatMap(
+            (items) => items?.map(({ content }) => content) ?? [],
+          );
+          return [
+            `${partner.partnerName} - ${partner.partnerOccupation}`,
+            ...contacts,
+          ].join(', ');
+        })
+        .join('; '),
+  },
+  dateOfStart: {
+    header: 'TABLE.COLUMNS.START_DATE',
+    fieldValue: (
+      row: { dateOfStart: Date },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) => dateUtils.transformDate(row.dateOfStart),
+  },
+  comment: {
+    header: 'TABLE.COLUMNS.COMMENT',
+    fieldValue: (
+      row: { comment: string | null },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) => row.comment,
+  },
+  isRestricted: {
+    header: 'TABLE.COLUMNS.STATUS',
+    fieldValue: (
+      row: {
+        isRestricted: boolean;
+        isClose: boolean;
+        dateOfClose: Date | null;
+        dateOfRestriction: Date | null;
+        causeOfRestriction: string | null;
+      },
+      translate: TranslateService,
+      dateUtils: DateUtilsService,
+    ) => {
+      return row.isClose
+        ? translate.instant('TABLE.NOTES.CLOSE_FROM') +
+            ' ' +
+            dateUtils.transformDate(row.dateOfClose)
+        : row.isRestricted
+          ? translate.instant('TABLE.NOTES.BLOCKED_FROM') +
+            ' ' +
+            dateUtils.transformDate(row.dateOfRestriction) +
+            ' ' +
+            row.causeOfRestriction
+          : translate.instant('TABLE.NOTES.ACTIVE');
+    },
+  },
+} as const;

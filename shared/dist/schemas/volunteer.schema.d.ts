@@ -369,7 +369,6 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
-                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -378,6 +377,7 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
                 facebook: "facebook";
                 website: "website";
                 otherContact: "otherContact";
+                telegram: "telegram";
             }>>>>;
             hasInstitute: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             hasSubscription: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;

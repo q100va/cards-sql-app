@@ -103,6 +103,7 @@ export class BaseListComponent {
   // Outputs
   selectedColumns = output<string[]>();
   addWasClicked = output<void>();
+  downloadWasClicked = output<void>();
   allFilterParametersChange = output<{
     viewOption: string;
     searchValue: string;
@@ -529,9 +530,7 @@ export class BaseListComponent {
     this.tableFilterComponent.clearForm();
   }
 
-
-//TODO: implement function onDownloadTableClick
-  onDownloadTableClick(){
-
+  onDownloadTableClick(): void {
+    this.downloadWasClicked.emit();
   }
 }

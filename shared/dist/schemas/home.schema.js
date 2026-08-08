@@ -399,7 +399,7 @@ const sortDir = z.enum(['asc', 'desc']);
 export const homesQueryDTOSchema = z
     .object({
     page: z.object({
-        size: z.number().int().min(1),
+        size: z.number().int().min(0),
         number: z.number().int().min(0),
     }),
     sort: z

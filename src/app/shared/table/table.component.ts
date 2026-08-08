@@ -26,6 +26,7 @@ import {
   combineLatest,
   map,
   Observable,
+  firstValueFrom,
 } from 'rxjs';
 import {
   MatPaginator,
@@ -101,7 +102,10 @@ import {
   Senior,
 } from '../../interfaces/advanced-model';
 
-import { CONTACT_PARAMS_FOR_LIST } from '../../shared/table/table.config';
+import {
+  CONTACT_PARAMS_FOR_LIST,
+  COLUMNS,
+} from '../../shared/table/table.config';
 import {
   PERMISSIONS_COMPONENT_REGISTRY,
   PermissionSet,
@@ -112,6 +116,7 @@ import {
   SeniorMainService,
   SeniorService,
 } from '../../services/senior.service';
+import { ExcelExportRow, FileService } from '../../services/file.service';
 
 @Component({
   selector: 'app-table',
@@ -139,6 +144,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
+  private readonly fileService = inject(FileService);
   private readonly msg = inject(MessageWrapperService);
   readonly dialog = inject(MatDialog);
   readonly dateUtils = inject(DateUtilsService);
@@ -729,5 +735,52 @@ export class TableComponent<K extends Kind> implements OnChanges {
             kind: this.kind(),
           }),
       });
+  }
+
+  async exportToExcel(): Promise<void> {
+    try {
+      const service = this.getService();
+      const result = await firstValueFrom(
+        service.getList(this.query()?.filter, 0, 0),
+      );
+      const columns = this.displayedColumns.filter(
+        (item): item is keyof typeof COLUMNS =>
+          item !== 'actions' && item in COLUMNS,
+      );
+
+      const data: ExcelExportRow[] = result.data.list.map((row) =>
+        Object.fromEntries(
+          columns.map((column) => {
+            const fieldValue = COLUMNS[column].fieldValue as (
+              value: typeof row,
+              translate: TranslateService,
+              dateUtils: DateUtilsService,
+            ) => unknown;
+
+            return [column, fieldValue(row, this.translate, this.dateUtils)];
+          }),
+        ),
+      );
+
+      const cols = columns.map((item) => ({
+        header: this.translate.instant(
+          COLUMNS[item as keyof typeof COLUMNS].header,
+        ),
+        field: item,
+      }));
+
+      await this.fileService.export(data, cols, {
+        fileName: `${this.kind()}-${new Date()
+          .toISOString()
+          .slice(0, 10)}.xlsx`,
+        sheetName: `${this.kind()}`,
+      });
+    } catch (err) {
+      this.msg.handle(err, {
+        source: 'TableComponent',
+        stage: 'exportToExcel',
+        kind: this.kind(),
+      });
+    }
   }
 }

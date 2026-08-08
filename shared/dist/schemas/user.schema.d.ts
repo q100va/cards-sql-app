@@ -388,7 +388,6 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
-                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -397,6 +396,7 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 facebook: "facebook";
                 website: "website";
                 otherContact: "otherContact";
+                telegram: "telegram";
             }>>>>;
             details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
         }, z.core.$strip>>>;

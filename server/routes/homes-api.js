@@ -599,23 +599,32 @@ router.post(
       /*  console.log('includes', includes);*/
 
 
-      console.log('whereHome');
-      console.log(JSON.stringify(whereHome, null, 2));
-      console.log('INCLUDES');
-      console.log(JSON.stringify(includes, null, 2));
+      /*       console.log('whereHome');
+            console.log(JSON.stringify(whereHome, null, 2));
+            console.log('INCLUDES');
+            console.log(JSON.stringify(includes, null, 2)); */
+      console.log('pageSize && pageNumber');
+      console.log(pageSize, pageNumber);
+      const params = pageSize
+        ? {
+          where: whereHome,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          order,
+          include: includes,
+          offset: pageSize * pageNumber,
+          limit: pageSize,
+          distinct: true,
+        }
+        : {
+          where: whereHome,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          order,
+          include: includes,
+          distinct: true,
+        };
 
       // ---- page ----
-      const homes = await Home.findAll({
-        where: whereHome,
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
-        order,
-        include: includes,
-        offset: pageSize * pageNumber,
-        limit: pageSize,
-        // subQuery: false, // avoid subquery limits in includes
-        // subQuery: false,//TODO: delete????
-        distinct: true,
-      });
+      const homes = await Home.findAll(params);
       //console.log('HOMEs', JSON.stringify(homes));
       const items = homes.map(p => transformOwnerData('home', p.toJSON()));
       //console.log('HOMEs-2', JSON.stringify(items));

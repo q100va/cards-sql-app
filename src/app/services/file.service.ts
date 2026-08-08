@@ -18,7 +18,7 @@ export interface ExcelExportOptions {
 
 type ExcelRowType = 'period' | 'occasion';
 
-type ExcelExportRow = object & {
+export type ExcelExportRow = object & {
   rowType?: ExcelRowType;
 };
 

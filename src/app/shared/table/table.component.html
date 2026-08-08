@@ -1,7 +1,8 @@
 <div>
   <app-base-list [params]="params()" [showSpinner]="loading()"
     (defaultAddressFilterValue)="setDefaultAddrFilter($event)" (selectedColumns)="changeColumnsView($event)"
-    (allFilterParametersChange)="onAllFilterParametersChange($event)" (addWasClicked)="onAddOwnerClick()">
+    (allFilterParametersChange)="onAllFilterParametersChange($event)" (addWasClicked)="onAddOwnerClick()"
+    (downloadWasClicked)="exportToExcel()">
 
     <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
       <!-- User Name Column -->
