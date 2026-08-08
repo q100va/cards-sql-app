@@ -31,6 +31,7 @@ export declare const reportGeneralRowSchema: z.ZodObject<{
     recipientsCount: z.ZodNumber;
     volunteersCount: z.ZodNumber;
     institutesCount: z.ZodNumber;
+    schoolsCount: z.ZodNumber;
     seniorsCount: z.ZodNumber;
     homesCount: z.ZodNumber;
     regionsCount: z.ZodNumber;
@@ -64,6 +65,7 @@ export declare const reportByOccasionRowSchema: z.ZodObject<{
     recipientsCount: z.ZodNumber;
     volunteersCount: z.ZodNumber;
     institutesCount: z.ZodNumber;
+    schoolsCount: z.ZodNumber;
 }, z.core.$strip>;
 export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
     key: z.ZodString;
@@ -88,6 +90,7 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
     recipientsCount: z.ZodNumber;
     volunteersCount: z.ZodNumber;
     institutesCount: z.ZodNumber;
+    schoolsCount: z.ZodNumber;
     seniorsCount: z.ZodNumber;
     homesCount: z.ZodNumber;
     regionsCount: z.ZodNumber;
@@ -119,6 +122,7 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
     recipientsCount: z.ZodNumber;
     volunteersCount: z.ZodNumber;
     institutesCount: z.ZodNumber;
+    schoolsCount: z.ZodNumber;
 }, z.core.$strip>]>;
 export declare const reportSchema: z.ZodObject<{
     type: z.ZodNumber;
@@ -145,6 +149,7 @@ export declare const reportSchema: z.ZodObject<{
         recipientsCount: z.ZodNumber;
         volunteersCount: z.ZodNumber;
         institutesCount: z.ZodNumber;
+        schoolsCount: z.ZodNumber;
         seniorsCount: z.ZodNumber;
         homesCount: z.ZodNumber;
         regionsCount: z.ZodNumber;
@@ -176,6 +181,7 @@ export declare const reportSchema: z.ZodObject<{
         recipientsCount: z.ZodNumber;
         volunteersCount: z.ZodNumber;
         institutesCount: z.ZodNumber;
+        schoolsCount: z.ZodNumber;
     }, z.core.$strip>]>>;
     cols: z.ZodArray<z.ZodObject<{
         field: z.ZodString;

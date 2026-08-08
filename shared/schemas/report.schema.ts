@@ -35,6 +35,7 @@ export const reportGeneralRowSchema = z.object({
   recipientsCount: z.number(),
   volunteersCount: z.number(),
   institutesCount: z.number(),
+  schoolsCount: z.number(),
   seniorsCount: z.number(),
   homesCount: z.number(),
   regionsCount: z.number(),
@@ -68,6 +69,7 @@ export const reportByOccasionRowSchema = z.object({
   recipientsCount: z.number(),
   volunteersCount: z.number(),
   institutesCount: z.number(),
+  schoolsCount: z.number(),
 });
 
 export const reportRowSchema = z.union([

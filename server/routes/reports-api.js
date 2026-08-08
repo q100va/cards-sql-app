@@ -56,6 +56,13 @@ router.post("/get-report",
             attributes: [
               'type', 'month', 'year',
             ],
+          },
+          {
+            model: Institute,
+            as: 'institute',
+            attributes: [
+              'category'
+            ],
           }
         ];
       }
@@ -65,7 +72,7 @@ router.post("/get-report",
             model: OrderRecipient,
             as: 'orderRecipients',
             where: { recipientStatus: { [Op.in]: [1, 2] } },
-             require: true,
+            require: true,
             attributes: ['seniorId'],
           },
         ];

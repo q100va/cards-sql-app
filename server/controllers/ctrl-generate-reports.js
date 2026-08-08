@@ -36,6 +36,7 @@ const ALGORITHM = {
     ...group,
     volunteersCount: group.volunteersCount.size,
     institutesCount: group.institutesCount.size,
+    schoolsCount: group.schoolsCount.size,
     seniorsCount: group.seniorsCount.size,
     homesCount: group.homesCount.size,
     regionsCount: group.regionsCount.size,
@@ -61,6 +62,7 @@ const ALGORITHM = {
     volunteersCount: group.volunteersCount.size,
     seniorsCount: group.seniorsCount.size,
     institutesCount: group.institutesCount.size,
+    schoolsCount: group.schoolsCount.size,
     homesCount: group.homesCount.size,
     regionsCount: group.regionsCount.size,
   })),
@@ -151,6 +153,8 @@ export function getReportByPeriods(
       let seniors = [];
       let homes = [];
       let regions = [];
+      const categories = ['дошкольное ОУ', 'школа', 'профессиональное ОУ', 'ВУЗ',
+        'Preschool', 'School', 'College', 'University'];
 
       for (let recipient of order.orderRecipients) {
         seniors.push(recipient.seniorId);
@@ -180,6 +184,9 @@ export function getReportByPeriods(
         existingGroup.volunteersCount.add(order.volunteerId);
         if (order.instituteId) {
           existingGroup.institutesCount.add(order.instituteId);
+          if (categories.includes(order.institute.category)) {
+            existingGroup.schoolsCount.add(order.instituteId);
+          }
         }
         for (const seniorId of seniors) {
           existingGroup.seniorsCount.add(seniorId);
@@ -200,6 +207,7 @@ export function getReportByPeriods(
           recipientsCount: Number(order.amount),
           volunteersCount: new Set([order.volunteerId]),
           institutesCount: order.instituteId ? new Set([order.instituteId]) : new Set(),
+          schoolsCount: (order.instituteId && categories.includes(order.institute.category)) ? new Set([order.instituteId]) : new Set(),
           seniorsCount: new Set(seniors),
           homesCount: new Set(homes),
           regionsCount: new Set(regions),
@@ -307,6 +315,8 @@ export function getReportByPeriods(
 
 export function getReportByOccasion(orders) {
   const groups = new Map();
+  const categories = ['дошкольное ОУ', 'школа', 'профессиональное ОУ', 'ВУЗ',
+    'Preschool', 'School', 'College', 'University'];
 
   for (const order of orders) {
     let seniors = [];
@@ -327,6 +337,9 @@ export function getReportByOccasion(orders) {
       existingGroup.volunteersCount.add(order.volunteerId);
       if (order.instituteId) {
         existingGroup.institutesCount.add(order.instituteId);
+        if (categories.includes(order.institute.category)) {
+          existingGroup.schoolsCount.add(order.instituteId);
+        }
       }
       for (const seniorId of seniors) {
         existingGroup.seniorsCount.add(seniorId);
@@ -345,6 +358,7 @@ export function getReportByOccasion(orders) {
         recipientsCount: Number(order.amount),
         volunteersCount: new Set([order.volunteerId]),
         institutesCount: order.instituteId ? new Set([order.instituteId]) : new Set(),
+        schoolsCount: (order.instituteId && categories.includes(order.institute.category)) ? new Set([order.instituteId]) : new Set(),
         seniorsCount: new Set(seniors),
         homesCount: new Set(homes),
         regionsCount: new Set(regions),
@@ -437,6 +451,7 @@ export const COLUMNS = {
       header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
     },
     { field: 'institutesCount', header: 'REPORTS.TABLE.INSTITUTES_COUNT' },
+    { field: 'schoolsCount', header: 'REPORTS.TABLE.SCHOOLS_COUNT' },
   ],
 
   2: () => [
@@ -497,6 +512,7 @@ export const COLUMNS = {
       header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
     },
     { field: 'institutesCount', header: 'REPORTS.TABLE.INSTITUTES_COUNT' },
+    { field: 'schoolsCount', header: 'REPORTS.TABLE.SCHOOLS_COUNT' },
   ],
 
   5: () => [
