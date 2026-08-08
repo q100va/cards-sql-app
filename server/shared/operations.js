@@ -309,6 +309,15 @@ export const OPERATIONS = [
     description: 'Reinclude nursing home in the program',
     objectName: 'OBJECT.HOMES',
   },
+    {
+    operation: 'DOWNLOAD_HOMES_TABLE',
+    object: 'homes',
+    accessToAllOps: false,
+    operationName: 'OPS.DOWNLOAD.NAME',
+    description: 'Export homes data to Excel',
+    objectName: 'OBJECT.HOMES',
+  },
+
   {
     operation: 'VIEW_LIMITED_HOMES_LIST',
     object: 'homes',

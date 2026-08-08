@@ -70,7 +70,7 @@
             <mat-grid-tile colspan="1" rowspan="1">
               <div class="bottom-right">
                 <button mat-icon-button [title]="'BASE_LIST.DOWNLOAD_TABLE' | translate"
-                  *hasOp="permissions.downloadTable">
+                  *hasOp="permissions.downloadTable" (click)="onDownloadTableClick()">
                   <mat-icon>file_upload</mat-icon>
                 </button>
               </div>

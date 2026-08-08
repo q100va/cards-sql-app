@@ -528,4 +528,10 @@ export class BaseListComponent {
   onClearFilterClick(): void {
     this.tableFilterComponent.clearForm();
   }
+
+
+//TODO: implement function onDownloadTableClick
+  onDownloadTableClick(){
+
+  }
 }
