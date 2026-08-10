@@ -7,9 +7,10 @@
   }
   <mat-card-header style="width: 100%;">
     <mat-grid-list cols="24" rowHeight="42px">
-      <mat-grid-tile colspan="12" rowspan="2" class="left">
-        <mat-slide-toggle [formControl]="commentsMode" class="small-toggle-label">{{'SENIOR.BULK_UPDATE.COMMENTS_MODE' |
-          translate}}</mat-slide-toggle>
+      <mat-grid-tile colspan="12" rowspan="2" class="left" >
+        <button mat-fab extended (click)="onFileDownloadClick()" class="white-and-green" style="margin-left: 8px;"
+          *hasOp="{codes:['DOWNLOAD_TEMPLATE_FOR_SENIOR'], mode:'all'}">
+          <mat-icon fontSet="material-icons-outlined">file_download</mat-icon>{{'TOPONYM.DOWNLOAD_TEMPLATE' | translate}}</button>
       </mat-grid-tile>
       <mat-grid-tile colspan="6" rowspan="2">
       </mat-grid-tile>
@@ -21,6 +22,10 @@
 
       <mat-grid-tile colspan="24" rowspan="1">
         <mat-card-title data-cy="card-title">{{'SENIOR.BULK_UPDATE.TITLE' | translate}}</mat-card-title>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="24" rowspan="1" class="left">
+        <mat-slide-toggle [formControl]="commentsMode" class="small-toggle-label">{{'SENIOR.BULK_UPDATE.COMMENTS_MODE' |
+          translate}}</mat-slide-toggle>
       </mat-grid-tile>
       <mat-grid-tile colspan="24" rowspan="3">
         <mat-card-actions>

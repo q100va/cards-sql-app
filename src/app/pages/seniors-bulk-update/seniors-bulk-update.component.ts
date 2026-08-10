@@ -45,6 +45,8 @@ import {
 import { DateUtilsService } from '../../services/date-utils.service';
 import { SeniorChangesTableComponent } from './senior-changes-table/senior-changes-table.component';
 import { MONTHS } from '../../../../shared/constants/occasions';
+import { FileService } from '../../services/file.service';
+import { saveAs } from 'file-saver';
 
 /* export interface SeniorRow {
   nursingHome: string;
@@ -110,6 +112,7 @@ export class SeniorsBulkUpdateComponent {
   readonly translateService = inject(TranslateService);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly seniorService = inject(SeniorService);
+  private readonly fileService = inject(FileService);
   readonly dateUtils = inject(DateUtilsService);
   readonly dialog = inject(MatDialog);
   showSpinner = signal(false);
@@ -631,6 +634,7 @@ export class SeniorsBulkUpdateComponent {
     homeName: string,
   ): Promise<Differences> {
     try {
+      //TODO: unable save button if home isn't found
       this.showSpinner.set(true);
       const res = await firstValueFrom(
         this.seniorService
@@ -918,7 +922,7 @@ export class SeniorsBulkUpdateComponent {
         this.removed,
         this.updated,
         this.currentHomeId,
-        dateOfUpdate
+        dateOfUpdate,
       )
       .pipe(
         finalize(() => this.showSpinner.set(false)),
@@ -937,6 +941,23 @@ export class SeniorsBulkUpdateComponent {
             stage: 'makeChanges',
             homeId: this.currentHomeId,
           }),
+      });
+  }
+
+  /** File download handler. */
+  onFileDownloadClick() {
+    const name = 'template-seniors.xlsx';
+    this.fileService
+      .downloadFile(name)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => saveAs(blob, name),
+        error: (err) => {
+          this.msgWrapper.handle(err, {
+            source: 'SeniorsBulkUpdateComponent',
+            stage: 'onFileDownloadClick',
+          });
+        },
       });
   }
 
