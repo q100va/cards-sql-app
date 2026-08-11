@@ -330,6 +330,7 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
+                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -338,7 +339,6 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
                 facebook: "facebook";
                 website: "website";
                 otherContact: "otherContact";
-                telegram: "telegram";
             }>>>>;
             details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
             hasCoordination: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
