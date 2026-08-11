@@ -22,7 +22,7 @@ import { merge } from 'rxjs';
 
 import { UserService } from '../../../services/user.service';
 import { MessageWrapperService } from '../../../services/message.service';
-import { userDraftSchema } from '@shared/schemas/user.schema';
+import { userDraftSchema } from '../../../../../shared/schemas/user.schema';
 import { zodValidator } from 'src/app/utils/zod-validator';
 
 type DialogData = { userId: number };

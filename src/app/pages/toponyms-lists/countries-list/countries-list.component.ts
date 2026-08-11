@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps, ToponymType } from '../../../interfaces/toponym';
-import { toponymDraftSchema } from '@shared/schemas/toponym.schema';
+import { toponymDraftSchema } from '../../../../../shared/schemas/toponym.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({

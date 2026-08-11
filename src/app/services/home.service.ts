@@ -19,8 +19,7 @@ import {
   UpdatedOwnerData,
   RelationPick,
 } from '../interfaces/advanced-model';
-import { AddressFilter } from '../interfaces/toponym';
-import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -28,12 +27,14 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-//import { homeSchema, homesSchema } from '@shared/schemas/home.schema';
-//import { duplicatesSchema } from '@shared/schemas/common.schema';
 import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
-import { homeSchema, homesSchema, RegionWithHomes, regionWithHomesSchema } from '../../../shared/schemas/home.schema';
-import { duplicatesSchema } from '../../../shared/schemas/common.schema';
+import {
+  homeSchema,
+  homesSchema,
+  RegionWithHomes,
+  regionWithHomesSchema,
+} from '../../../shared/schemas/home.schema';
 
 export interface HomeMainService extends OwnerMainService<
   Home,
@@ -363,11 +364,12 @@ export class HomeService implements HomeMainService {
       );
   }
 
-  getHomeGroups(): Observable<
-    ApiResponse<RegionWithHomes>
-  > {
+  getHomeGroups(): Observable<ApiResponse<RegionWithHomes>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-home-groups/`)
-      .pipe(validateResponse(regionWithHomesSchema), catchError(this.handleError));
+      .pipe(
+        validateResponse(regionWithHomesSchema),
+        catchError(this.handleError),
+      );
   }
 }

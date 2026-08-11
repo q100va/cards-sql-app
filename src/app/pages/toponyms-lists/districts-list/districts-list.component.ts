@@ -7,7 +7,7 @@ import {
   QueryParams,
 } from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';
-import { toponymDraftSchema } from '@shared/schemas/toponym.schema';
+import { toponymDraftSchema } from '../../../../../shared/schemas/toponym.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({

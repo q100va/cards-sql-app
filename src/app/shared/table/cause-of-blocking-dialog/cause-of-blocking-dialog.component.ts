@@ -16,7 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { UserService } from '../../../services/user.service';
 import { MessageWrapperService } from '../../../services/message.service';
-import { causeOfRestrictionControlSchema } from '@shared/schemas/user.schema';
+import { causeOfRestrictionControlSchema } from '../../../../../shared/schemas/user.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 import { Kind, OwnerMainService } from 'src/app/interfaces/advanced-model';
 import { PartnerService } from 'src/app/services/partner.service';
