@@ -34,7 +34,6 @@ export const auditDiffUpdateSchema = z.object({
 export const auditDiffAuthSchema = z.object({
   event: z.string().trim(),
   reason: z.string().trim().optional(),
-  // ← объект с любыми полями, без кортежей
   details: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
@@ -55,7 +54,7 @@ export const auditItemSchema = z.object({
   correlationId: z.string().trim().nullable(),
   ip: z.string().trim().nullable(),
   userAgent: z.string().trim().nullable(),
-  createdAt: z.coerce.date(),                     // ← удобнее как Date
+  createdAt: z.coerce.date(),
 }).strict();
 
 export const auditPageSchema = z.object({

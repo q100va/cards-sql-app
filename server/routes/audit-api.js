@@ -1,24 +1,24 @@
 import { Router } from "express";
-import Sequelize from "sequelize";
-import { validateRequest } from "../middlewares/validate-request.js";
-import { auditQuerySchema } from "../../shared/dist/schemas/audit.schema.js";
+import { Op } from 'sequelize';
 import { AuditLog } from "../models/index.js";
+import { auditQuerySchema } from "../../shared/dist/schemas/audit.schema.js";
+import { validateRequest } from "../middlewares/validate-request.js";
+import { requireOperation } from "../middlewares/require-permission.js";
 import requireAuth from "../middlewares/check-auth.js";
-import { requireAny, requireOperation } from "../middlewares/require-permission.js";
-
-const Op = Sequelize.Op;
 const router = Router();
+
 router.get(
   '/',
   requireAuth,
-  requireOperation('VIEW_FULL_ROLES_LIST'),
+  requireOperation('VIEW_AUDIT_LOG'),
   validateRequest(auditQuerySchema, 'query'),
   async (req, res, next) => {
     try {
       const { model, action, entityId, userId, correlationId, from, to } = req.query;
-
       const limit = Math.min(Number(req.query.limit) || 10, 100);
       const offset = Number(req.query.offset) || 0;
+
+      // Build filters from provided query parameters.
       const where = {};
       if (model) where.model = String(model);
       if (entityId) where.entityId = String(entityId);
@@ -30,6 +30,7 @@ router.get(
         ...(to ? { [Op.lte]: new Date(String(to)) } : {}),
       };
 
+      // Fetch records and total count in parallel.
       const [rows, total] = await Promise.all([
         AuditLog.findAll({
           where,
@@ -43,9 +44,9 @@ router.get(
 
       res.status(200).send({ data: { rows, count: total } });
 
-    } catch (err) {
-      err.code = 'ERRORS.NO_DATA_RECEIVED';
-      next(err);
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
+      next(error);
     }
   });
 

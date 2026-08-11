@@ -7,9 +7,9 @@ export const objects = [
   'partners', // institution representatives (employees, coordinators)
   'seniors',   // residents of the nursing homes
   'volunteers', // volunteers who send cards
-  'holidays',  // holidays
+  'recipients', //card recipients
+  'occasions',  // holidays
   'reports', // reports
-  'statistics', // statistics
   'orders', // orders
 ];
 
@@ -64,15 +64,7 @@ export const OPERATIONS = [
     description: 'Block access to data of a country, region, district, or locality',
     objectName: 'OBJECT.TOPONYMS',
   },
-  //TODO: delete 'UNBLOCK_TOPONYM',
-  {
-    operation: 'UNBLOCK_TOPONYM',
-    object: 'toponyms',
-    accessToAllOps: false,
-    operationName: 'OPS.UNBLOCK.NAME',
-    description: 'Unblock access to data of a country, region, district, or locality',
-    objectName: 'OBJECT.TOPONYMS',
-  },
+/*  'UNBLOCK_TOPONYM' was deleted */
   {
     operation: 'DOWNLOAD_TEMPLATE_FOR_TOPONYM',
     object: 'toponyms',
@@ -107,7 +99,6 @@ export const OPERATIONS = [
     objectName: 'OBJECT.TOPONYMS',
     flag: 'FULL',
   },
-
   // --- Users ---
   {
     operation: 'ALL_OPS_USERS',
@@ -173,14 +164,6 @@ export const OPERATIONS = [
     description: 'Unblock a user',
     objectName: 'OBJECT.USERS',
   },
-/*   {
-    operation: 'DOWNLOAD_USERS_TABLE',
-    object: 'users',
-    accessToAllOps: false,
-    operationName: 'OPS.DOWNLOAD_TABLE.NAME',
-    description: 'Download list of users',
-    objectName: 'OBJECT.USERS',
-  }, */
   {
     operation: 'VIEW_LIMITED_USERS_LIST',
     object: 'users',
@@ -199,7 +182,6 @@ export const OPERATIONS = [
     objectName: 'OBJECT.USERS',
     flag: 'FULL',
   },
-
   // --- Roles ---
   {
     operation: 'ALL_OPS_ROLES',
@@ -234,6 +216,15 @@ export const OPERATIONS = [
     objectName: 'OBJECT.ROLES',
   },
   {
+    operation: 'VIEW_AUDIT_LOG',
+    object: 'roles',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_AUDIT_LOG.NAME',
+    description: 'View log list',
+    objectName: 'OBJECT.ROLES'
+  },
+
+  {
     operation: 'VIEW_LIMITED_ROLES_LIST',
     object: 'roles',
     accessToAllOps: false,
@@ -251,7 +242,6 @@ export const OPERATIONS = [
     objectName: 'OBJECT.ROLES',
     flag: 'FULL',
   },
-
   // --- Homes ---
   {
     operation: 'ALL_OPS_HOMES',
@@ -309,7 +299,7 @@ export const OPERATIONS = [
     description: 'Reinclude nursing home in the program',
     objectName: 'OBJECT.HOMES',
   },
-    {
+  {
     operation: 'DOWNLOAD_HOMES_TABLE',
     object: 'homes',
     accessToAllOps: false,
@@ -336,7 +326,6 @@ export const OPERATIONS = [
     objectName: 'OBJECT.HOMES',
     flag: 'FULL',
   },
-
   // --- Partners ---
   {
     operation: 'ALL_OPS_PARTNERS',
@@ -412,7 +401,6 @@ export const OPERATIONS = [
     objectName: 'OBJECT.PARTNERS',
     flag: 'FULL',
   },
-
   // --- Seniors ---
   {
     operation: 'ALL_OPS_SENIORS',
@@ -561,14 +549,6 @@ export const OPERATIONS = [
     description: 'Unblock a volunteer',
     objectName: 'OBJECT.VOLUNTEERS',
   },
-/*   {
-    operation: 'DOWNLOAD_TEMPLATE_FOR_VOLUNTEER',
-    object: 'volunteers',
-    accessToAllOps: false,
-    operationName: 'OPS.DOWNLOAD_TEMPLATE.NAME',
-    description: 'Download template for volunteers',
-    objectName: 'OBJECT.VOLUNTEERS',
-  }, */
   {
     operation: 'UPLOAD_LIST_OF_VOLUNTEERS',
     object: 'volunteers',
@@ -670,7 +650,6 @@ export const OPERATIONS = [
     objectName: 'OBJECT.ORDERS',
     flag: 'FULL',
   },
-
   // --- Occasions ---
   {
     operation: 'ALL_OPS_OCCASIONS',
@@ -730,8 +709,7 @@ export const OPERATIONS = [
     objectName: 'OBJECT.OCCASIONS',
     flag: 'FULL',
   },
-
-  // --- Celebrators ---
+  // --- Recipients ---
   {
     operation: 'ALL_OPS_RECIPIENTS',
     object: 'recipients',
@@ -756,22 +734,6 @@ export const OPERATIONS = [
     description: 'Permanently delete an recipient',
     objectName: 'OBJECT.RECIPIENTS',
   },
-  /*     {
-      operation: 'BLOCK_OCCASION',
-      object: 'occasions',
-      accessToAllOps: false,
-      operationName: 'OPS.BLOCK.NAME',
-      description: 'Close an occasion',
-      objectName: 'OBJECT.OCCASIONS',
-    },
-    {
-      operation: 'UNBLOCK_OCCASION',
-      object: 'occasions',
-      accessToAllOps: false,
-      operationName: 'OPS.UNBLOCK.NAME',
-      description: 'Activate an occasion',
-      objectName: 'OBJECT.OCCASIONS',
-    }, */
   {
     operation: 'CREATE_RECIPIENTS_LIST',
     object: 'recipients',
@@ -796,7 +758,6 @@ export const OPERATIONS = [
     description: 'Bulk edit recipients list',
     objectName: 'OBJECT.RECIPIENTS',
   },
-
   {
     operation: 'VIEW_LIMITED_RECIPIENTS_LIST',
     object: 'recipients',
@@ -815,6 +776,7 @@ export const OPERATIONS = [
     objectName: 'OBJECT.RECIPIENTS',
     flag: 'FULL',
   },
+  //Reports && statistic
   {
     operation: 'VIEW_CURRENT_STATISTIC',
     object: 'reports',
@@ -823,7 +785,6 @@ export const OPERATIONS = [
     description: 'View current statistic',
     objectName: 'OBJECT.REPORTS'
   },
-
   {
     operation: 'VIEW_LIMITED_REPORTS',
     object: 'reports',
@@ -842,10 +803,5 @@ export const OPERATIONS = [
     objectName: 'OBJECT.REPORTS',
     flag: 'FULL',
   },
-
-
-
-
-
 ];
 

@@ -1,7 +1,6 @@
-// server/routes/auth-api.js
 import { Router } from 'express';
+import { RolePermission } from '../models/index.js';
 import { requireAuth } from '../middlewares/check-auth.js';
-import {RolePermission} from '../models/index.js';
 
 const router = Router();
 router.get(
@@ -9,11 +8,12 @@ router.get(
   requireAuth,
   async (req, res, next) => {
     try {
-      // console.log('SERSER!!! req.user', req.user)
       const roleId = req.user?.roleId;
       if (!roleId) {
         return res.status(401).send({ code: 'ERRORS.UNAUTHORIZED', data: null });
       }
+
+      // Fetch permissions assigned to the current user's role.
       const rows = await RolePermission.findAll({
         where: { roleId },
         attributes: ['id', 'name', 'access', 'disabled', 'roleId'],
@@ -21,6 +21,7 @@ router.get(
         raw: true,
       });
 
+      // Map database fields to the API response format.
       const list = rows.map(r => ({
         id: r.id,
         operation: r.name,
@@ -29,12 +30,10 @@ router.get(
         roleId: r.roleId
       }));
 
-      // console.log('list', list);
       res.status(200).send({ data: list });
-    } catch (err) {
-      const e = err instanceof Error ? err : new Error('Permissions fetch failed');
-      return next(Object.assign(e, { code: 'ERRORS.NO_DATA_RECEIVED' }));
-
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
+      next(error);
     }
   }
 );
