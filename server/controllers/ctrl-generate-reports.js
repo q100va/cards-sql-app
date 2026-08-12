@@ -1,5 +1,5 @@
 import CustomError from "../shared/customError.js";
-import { MONTHS, TYPES } from "../../shared/dist/constants/occasions.js";
+import { MONTHS, OCCASION_TYPES_BY_ID } from "../../shared/dist/constants/occasions.js";
 
 export function getSelectedDateRanges(selection) {
   switch (selection.frequency) {
@@ -69,7 +69,7 @@ const ALGORITHM = {
 };
 
 function getOccasionName(occasion) {
-  const type = (TYPES.find(t => t.id === occasion.type)).nameKey;
+  const type = OCCASION_TYPES_BY_ID[occasion.type].nameKey;
   const monthNameKey = occasion.month ? (MONTHS.find(m => m.id === occasion.month)).nameKey : null;
   return [type, monthNameKey, occasion.year].filter(Boolean).join(" ");
 }

@@ -1,4 +1,7 @@
 import { z } from 'zod';
+export declare const positiveInt: z.ZodNumber;
+export declare const positiveIntParam: z.ZodCoercedNumber<unknown>;
+export declare const requiredNumber: () => z.ZodNumber;
 export declare const toTrim: (v: unknown) => string;
 export declare const emptyToNull: (v: unknown) => string | null;
 export declare const toLowerTrim: (v: unknown) => string;
@@ -7,7 +10,6 @@ export declare const keepE164CharsNullable: (v: unknown) => unknown;
 export declare const nonEmpty: z.ZodString;
 export declare const nonEmptyTrim: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 export declare const nonEmptyTrimMax: (max: number, msgMax: string) => z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
-export declare const positiveInt: z.ZodNumber;
 export declare const nullableInt: z.ZodNullable<z.ZodNumber>;
 export declare const nullableIsoDate: z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>;
 export declare const intOptArray: z.ZodOptional<z.ZodArray<z.ZodNumber>>;

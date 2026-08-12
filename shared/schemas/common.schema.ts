@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+export const positiveInt = z.number().int().positive();
+
+export const positiveIntParam = z.coerce.number().int().positive();
+
+export const requiredNumber = () =>
+  z.number({
+    error: (issue) =>
+      issue.input == null
+        ? 'FORM_VALIDATION.REQUIRED'
+        : undefined,
+  });
+
+
 /* ===================== Helpers ===================== */
 
 // Trim string (null/undefined → '')
@@ -34,7 +47,7 @@ export const nonEmptyTrimMax = (max: number, msgMax: string) =>
     z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax })
   );
 
-export const positiveInt = z.number().int().positive();
+
 export const nullableInt = positiveInt.nullable();
 
 const stringArray = z.array(nonEmptyTrim); // [] ok

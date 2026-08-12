@@ -1120,7 +1120,27 @@
       }
     }
   },
+  "SUCCESS": {
+    "CREATED": "Record created successfully.",
+    "UPDATED": "Record updated successfully.",
+    "DELETED": "Record deleted successfully.",
+    "SAVED": "Changes saved successfully."
+  },
+
   "ERRORS": {
+    "DATA_FETCH_FAILED": "Failed to load data.",
+    "DATA_SAVE_FAILED": "Failed to save data.",
+    "DATA_UPDATE_FAILED": "Failed to update data.",
+    "DATA_DELETE_FAILED": "Failed to delete data.",
+    "DATA_NOT_FOUND": "Data not found.",
+    "DATA_CREATE_FAILED": "Failed to create the record.",
+    "DATA_CHECK_FAILED": "Failed to verify data.",
+
+    "OCCASION": {
+      "ALREADY_EXISTS": "Occasion with this name already exists.",
+      "HAS_DEPENDENCIES": "The occasion cannot be deleted because it has related recipients."
+    },
+
     "VALIDATION": "Validation error.",
     "FORBIDDEN": "Not enough permissions.",
     "ACCESS": "Failed to check permissions.",
@@ -1145,61 +1165,60 @@
     "USER_WITHOUT_ROLE": "User without role.",
     "ADDRESS_NOT_RESTORED": "Failed to restore the address. Object not updated.",
 
-    "DATA_FETCH_FAILED": "Failed to load data.",
-    "DATA_SAVE_FAILED": "Failed to save data.",
-    "DATA_UPDATE_FAILED": "Failed to update data.",
-    "DATA_DELETE_FAILED": "Failed to delete data.",
-
     "ROLE": {
-      "NOT_FOUND": "Role not found",
-      "NAME_NOT_CHECKED": "Failed to check the role name",
-      "NOT_CREATED": "Failed to create the role",
-      "NOT_UPDATED": "Failed to update the role",
-      "NAME_LIST_FAILED": "Failed to get the list of role names",
-      "LIST_FAILED": "Failed to get the list of roles",
-      "NOT_CHECKED": "Failed to check the role dependencies",
-      "NOT_DELETED": "Failed to delete the role"
+      "NOT_FOUND": "Role not found.",
+      "NAME_NOT_CHECKED": "Failed to check the role name.",
+      "NOT_CREATED": "Failed to create the role.",
+      "NOT_UPDATED": "Failed to update the role.",
+      "NAME_LIST_FAILED": "Failed to get the list of role names.",
+      "LIST_FAILED": "Failed to get the list of roles.",
+      "NOT_CHECKED": "Failed to check the role dependencies.",
+      "NOT_DELETED": "Failed to delete the role."
     },
     "TOPONYM": {
-      "NOT_FOUND": "Toponym not found",
-      "NAME_NOT_CHECKED": "Failed to check the toponym name",
-      "NOT_CREATED": "Failed to create the toponym",
-      "NOT_UPDATED": "Failed to update the toponym",
-      "NAME_LIST_FAILED": "Failed to get the list of toponym names",
-      "LIST_FAILED": "Failed to get the list of toponyms",
-      "NOT_CHECKED": "Failed to check the toponym dependencies",
-      "NOT_DELETED": "Failed to delete the toponym",
-      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}",
+      "NOT_FOUND": "Toponym not found.",
+      "NAME_NOT_CHECKED": "Failed to check the toponym name.",
+      "NOT_CREATED": "Failed to create the toponym.",
+      "NOT_UPDATED": "Failed to update the toponym.",
+      "NAME_LIST_FAILED": "Failed to get the list of toponym names.",
+      "LIST_FAILED": "Failed to get the list of toponyms.",
+      "NOT_CHECKED": "Failed to check the toponym dependencies.",
+      "NOT_DELETED": "Failed to delete the toponym.",
+      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}.",
       "FROM_BULK_ALREADY_EXISTS": "These names: {{conflicts}} are already in use for this area. If this isn’t a mistake, please contact an administrator.",
-      "BULK_NOT_CREATED": "Toponyms were not created due to an error",
+      "BULK_NOT_CREATED": "Toponyms were not created due to an error.",
       "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling.",
-      "INVALID_TYPE": "Invalid type of the toponym: {{name}}"
+      "INVALID_TYPE": "Invalid type of the toponym: {{name}}."
     },
     "FILE": {
-      "EMPTY": "The file contains no data",
-      "INVALID_STRUCTURE": "Required columns are missing",
-      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx)",
-      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'",
-      "NOT_UPLOADED": "Failed to upload the file",
-      "NOT_CHOSEN": "The file isn't chosen"
+      "EMPTY": "The file contains no data.",
+      "INVALID_STRUCTURE": "Required columns are missing.",
+      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx).",
+      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'.",
+      "NOT_UPLOADED": "Failed to upload the file.",
+      "NOT_CHOSEN": "The file isn't chosen.",
+      "INVALID_PATH": "Invalid file path.",
+      "NOT_FOUND": "File not found.",
+      "DOWNLOAD_FAILED": "Failed to download the file."
     },
     "USER": {
-      "NOT_FOUND": "User not found",
-      "NAME_NOT_CHECKED": "Failed to check the user name",
-      "DUPLICATES_NOT_CHECKED": "Failed to check the user data",
+      "NOT_FOUND": "User not found.",
+      "NAME_NOT_CHECKED": "Failed to check the user name.",
+      "DUPLICATES_NOT_CHECKED": "Failed to check the user data.",
       "ROLE_REQUIRED": "User has no assigned role. Account not created.",
-      "NOT_CREATED": "Failed to create the user",
-      "NOT_UPDATED": "Failed to update the user",
-      "LIST_FAILED": "Failed to get the list of users",
-      "NOT_CHECKED": "Failed to check the user dependencies",
-      "NOT_DELETED": "Failed to delete the user",
+      "NOT_CREATED": "Failed to create the user.",
+      "NOT_UPDATED": "Failed to update the user.",
+      "LIST_FAILED": "Failed to get the list of users.",
+      "NOT_CHECKED": "Failed to check the user dependencies.",
+      "NOT_DELETED": "Failed to delete the user.",
       "CURRENT_PASSWORD_REQUIRED": "Current password is required to change your password.",
       "CURRENT_PASSWORD_INVALID": "The current password you entered is incorrect.",
       "PASSWORD_NOT_CHANGED": "The password could not be changed. Please try again.",
-      "NOT_BLOCKED": "Failed to block the user",
-      "NOT_UNBLOCKED": "Failed to unblock the user"
+      "NOT_BLOCKED": "Failed to block the user.",
+      "NOT_UNBLOCKED": "Failed to unblock the user."
     }
   },
+
   "FORM_VALIDATION": {
     "INVALID_FORM": "Invalid form",
     "INVALID_FORMAT": "Invalid data format",

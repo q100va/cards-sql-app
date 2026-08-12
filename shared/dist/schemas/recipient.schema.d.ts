@@ -1,5 +1,4 @@
 import { z } from 'zod';
-export declare const monthIdSchema: z.ZodNumber;
 export declare const recipientSchema: z.ZodObject<{
     id: z.ZodNumber;
     fullName: z.ZodString;

@@ -1,4 +1,11 @@
 import { z } from 'zod';
+export const positiveInt = z.number().int().positive();
+export const positiveIntParam = z.coerce.number().int().positive();
+export const requiredNumber = () => z.number({
+    error: (issue) => issue.input == null
+        ? 'FORM_VALIDATION.REQUIRED'
+        : undefined,
+});
 /* ===================== Helpers ===================== */
 // Trim string (null/undefined → '')
 export const toTrim = (v) => typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
@@ -15,7 +22,6 @@ export const keepE164CharsNullable = (v) => typeof v === 'string' ? v.replace(/[
 export const nonEmpty = z.string().min(1, 'FORM_VALIDATION.REQUIRED');
 export const nonEmptyTrim = z.preprocess(toTrim, nonEmpty);
 export const nonEmptyTrimMax = (max, msgMax) => z.preprocess(toTrim, z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax }));
-export const positiveInt = z.number().int().positive();
 export const nullableInt = positiveInt.nullable();
 const stringArray = z.array(nonEmptyTrim); // [] ok
 // null | '' | Date | ISO → Date|null

@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { emptyToNull } from './common.schema.js';
 
-export const monthIdSchema = z
+/* export const monthIdSchema = z
   .number({ message: 'FORM_VALIDATION.REQUIRED' })
   .int({ message: 'Must be an integer' })
   .min(1, { message: 'Must be >= 1' })
-  .max(12, { message: 'Must be <= 12' });
+  .max(12, { message: 'Must be <= 12' }); */
 
 export const recipientSchema = z
   .object({

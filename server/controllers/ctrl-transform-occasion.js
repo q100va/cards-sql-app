@@ -1,25 +1,35 @@
-import { TYPES, STATUSES, MONTHS } from "../../shared/dist/constants/occasions.js";
-import { OCCASION_TYPES, MONTHS as OCCASION_MONTHS } from "./ctrl-order-query-builders.js";
+import {
+  OCCASION_TYPE,
+  OCCASION_TYPES_BY_ID,
+  MONTHS_BY_ID,
+  STATUSES_BY_ID,
+} from '../../shared/dist/constants/occasions.js';
 
 export function transformOccasionDisplayParts(occasion) {
-  const typeMeta = TYPES.find(t => t.id === occasion.type);
-  const monthMeta = occasion.month ? MONTHS.find(m => m.id === occasion.month) : null;
-  const statusMeta = STATUSES.find(s => s.id === occasion.status);
+  const typeMeta = OCCASION_TYPES_BY_ID[occasion.type];
+  const monthMeta =
+    occasion.month != null
+      ? MONTHS_BY_ID[occasion.month]
+      : null;
+  const statusMeta = STATUSES_BY_ID[occasion.status];
 
   return {
     id: occasion.id,
     type: typeMeta.nameKey,
-    date: occasion.type === 6 ? typeMeta.dateKey + occasion.year : typeMeta.dateKey,
-    monthNameKey: monthMeta ? monthMeta.nameKey : null,
-    month: monthMeta ? monthMeta.optionKey : null,
+    date:
+      occasion.type === OCCASION_TYPE.EASTER
+        ? `${typeMeta.dateKey}${occasion.year}`
+        : typeMeta.dateKey,
+    monthNameKey: monthMeta?.nameKey ?? null,
+    month: monthMeta?.optionKey ?? null,
     year: occasion.year,
     amount: occasion.amount,
     status: statusMeta.nameKey,
-    // isDeletable: occasion.isDeletable
   };
 }
 
 export function buildOccasionNodes(occasions, lang = 'ru') {
+  const locale = lang === 'ru' ? 'ru' : 'en';
   const types = new Map();
 
   for (const occasion of occasions) {
@@ -35,7 +45,8 @@ export function buildOccasionNodes(occasions, lang = 'ru') {
       typeEntry = {
         node: {
           key: `${type}`,
-          label: OCCASION_TYPES[type]?.[lang] ?? String(type),
+          label:
+            OCCASION_TYPES_BY_ID[type]?.[locale] ?? String(type),
           data: {
             type,
             month: null,
@@ -57,7 +68,8 @@ export function buildOccasionNodes(occasions, lang = 'ru') {
         monthEntry = {
           node: {
             key: `${type}-${month}`,
-            label: OCCASION_MONTHS[month]?.[lang] ?? String(month),
+            label:
+              MONTHS_BY_ID[month]?.[locale] ?? String(month),
             data: {
               type,
               month,
@@ -85,18 +97,19 @@ export function buildOccasionNodes(occasions, lang = 'ru') {
           },
         });
       }
-    } else if (
-      year !== null &&
-      !typeEntry.years.has(year)
-    ) {
+
+      continue;
+    }
+
+    if (year !== null && !typeEntry.years.has(year)) {
       typeEntry.years.add(year);
 
       typeEntry.node.children.push({
-        key: `${type}-${month}-${year}`,
+        key: `${type}-${year}`,
         label: String(year),
         data: {
           type,
-          month,
+          month: null,
           year,
         },
       });

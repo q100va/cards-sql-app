@@ -1,8 +1,15 @@
-import { literal } from "sequelize";
+import { literal } from 'sequelize';
 import {
-  Volunteer, VolunteerContact,
-  User, Institute, Occasion
-} from "../models/index.js";
+  Volunteer,
+  VolunteerContact,
+  User,
+  Institute,
+} from '../models/index.js';
+
+import {
+  OCCASION_TYPES,
+  MONTHS,
+} from '../../shared/dist/constants/occasions.js';
 
 export const ORDER_STATUSES = {
   1: {
@@ -26,43 +33,6 @@ export const ORDER_STATUSES = {
     en: 'Overdue',
   },
 };
-
-//1 - 'SUBS' 2 - 'SITE' 3 - 'VK' 4 - 'TELEGRAM' 5 - 'INSTA' 6 - 'FB' 7 - 'DOBRORU' 8 - 'INFLUENCER' 9 - 'OTHER'
-
-/* export const SOURCES = [
-  {
-    id: 1,
-    optionKey: 'ORDER.CARD.SOURCE.SUBS',
-  },
-  {
-    id: 2,
-    optionKey: 'ORDER.CARD.SOURCE.SITE',
-  },
-  {
-    id: 3,
-    optionKey: 'ORDER.CARD.SOURCE.VK',
-  },
-  {
-    id: 4,
-    optionKey: 'ORDER.CARD.SOURCE.TELEGRAM',
-  },
-  {
-    id: 5,
-    optionKey: 'ORDER.CARD.SOURCE.INSTA',
-  },
-  {
-    id: 6,
-    optionKey: 'ORDER.CARD.SOURCE.DOBRORU',
-  },
-  {
-    id: 7,
-    optionKey: 'ORDER.CARD.SOURCE.INFLUENCER',
-  },
-  {
-    id: 8,
-    optionKey: 'ORDER.CARD.SOURCE.OTHER',
-  },
-]; */
 
 export const ORDER_SOURCES = {
   1: {
@@ -190,68 +160,26 @@ export function getOrderSortField(sortField) {
   return orderSortFields[field] ?? 'createdAt';
 }
 
-export const OCCASION_TYPES = {
-  1: {
-    key: 'OCCASION.TYPE.BIRTHDAY.NAME',
-    ru: 'Дни рождения',
-    en: 'Birthdays',
-  },
-  2: {
-    key: 'OCCASION.TYPE.NEW_YEAR.NAME',
-    ru: 'Новый год',
-    en: 'New Year',
-  },
-  3: {
-    key: 'OCCASION.TYPE.FEBRUARY_23.NAME',
-    ru: '23 февраля',
-    en: "Defender of the Fatherland Day",
-  },
-  4: {
-    key: 'OCCASION.TYPE.MARCH_8.NAME',
-    ru: '8 Марта',
-    en: "International Women's Day",
-  },
-  5: {
-    key: 'OCCASION.TYPE.MAY_9.NAME',
-    ru: 'День Победы',
-    en: "Victory Day",
-  },
-  6: {
-    key: 'OCCASION.TYPE.EASTER.NAME',
-    ru: 'Пасха',
-    en: "Easter",
-  },
-};
-
-export const MONTHS = {
-  1: { ru: 'Январь', en: 'January' },
-  2: { ru: 'Февраль', en: 'February' },
-  3: { ru: 'Март', en: 'March' },
-  4: { ru: 'Апрель', en: 'April' },
-  5: { ru: 'Май', en: 'May' },
-  6: { ru: 'Июнь', en: 'June' },
-  7: { ru: 'Июль', en: 'July' },
-  8: { ru: 'Август', en: 'August' },
-  9: { ru: 'Сентябрь', en: 'September' },
-  10: { ru: 'Октябрь', en: 'October' },
-  11: { ru: 'Ноябрь', en: 'November' },
-  12: { ru: 'Декабрь', en: 'December' },
-};
+export function dictToOptions(dict, lang) {
+  return Object.entries(dict)
+    .map(([value, item]) => ({
+      label: item[lang],
+      value: Number(value),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, lang));
+}
 
 export function getOccasionTypeSortExpression(lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
 
-  const sortedTypes = Object.keys(OCCASION_TYPES).sort((typeA, typeB) =>
-    OCCASION_TYPES[typeA][locale].localeCompare(
-      OCCASION_TYPES[typeB][locale],
-      locale,
-    ),
+  const sortedTypes = [...OCCASION_TYPES].sort((a, b) =>
+    a[locale].localeCompare(b[locale], locale),
   );
 
   const cases = sortedTypes
     .map(
       (type, index) =>
-        `WHEN ${type} THEN ${index}`,
+        `WHEN ${type.id} THEN ${index}`,
     )
     .join(' ');
 
@@ -266,17 +194,15 @@ export function getOccasionTypeSortExpression(lang = 'en') {
 export function getOccasionMonthSortExpression(lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
 
-  const sortedMonths = Object.keys(MONTHS)
-    .map(Number)
-    .sort((monthA, monthB) =>
-      MONTHS[monthA][locale].localeCompare(
-        MONTHS[monthB][locale],
-        locale,
-      ),
-    );
+  const sortedMonths = [...MONTHS].sort((a, b) =>
+    a[locale].localeCompare(b[locale], locale),
+  );
 
   const cases = sortedMonths
-    .map((month, index) => `WHEN ${month} THEN ${index}`)
+    .map(
+      (month, index) =>
+        `WHEN ${month.id} THEN ${index}`,
+    )
     .join(' ');
 
   return literal(`
@@ -285,13 +211,4 @@ export function getOccasionMonthSortExpression(lang = 'en') {
       ELSE 999
     END
   `);
-}
-
-export function dictToOptions(dict, lang) {
-  return Object.entries(dict)
-    .map(([value, item]) => ({
-      label: item[lang],
-      value: Number(value),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label, lang));
 }

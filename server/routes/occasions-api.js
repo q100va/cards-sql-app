@@ -1,21 +1,15 @@
 import { Router } from "express";
-import Sequelize from "sequelize";
-//import Occasion from "../models/index.js";
-import { validateRequest } from "../middlewares/validate-request.js";
+import { Occasion, Recipient } from "../models/index.js";
+import CustomError from '../shared/customError.js';
 import * as occasionSchemas from "../../shared/dist/schemas/occasion.schema.js";
-import { withTransaction } from "../controllers/with-transaction.js";
 import requireAuth from '../middlewares/check-auth.js';
-import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';
-import { Occasion } from "../models/index.js";
+import { validateRequest } from "../middlewares/validate-request.js";
+import { requireOperation, requireAny } from '../middlewares/require-permission.js';
+import { withTransaction } from "../controllers/with-transaction.js";
 import { transformOccasionDisplayParts } from "../controllers/ctrl-transform-occasion.js";
 
-const Op = Sequelize.Op;
 const router = Router();
 
-/**
- * GET /check-occasion-name/:name
- * Check if a occasion with the given name already exists (case-insensitive).
- */
 router.get(
   "/check-occasion-data",
   requireAuth,
@@ -29,28 +23,26 @@ router.get(
         year
       };
       if (month) whereParams.month = month;
+
       const duplicate = await Occasion.findOne({
         where: whereParams,
         attributes: ["id"],
         raw: true,
       });
-      let response = {};
-      response.data = duplicate !== null;
-      if (duplicate !== null) response.code = 'OCCASION.ALREADY_EXISTS';
-      res
-        .status(200)
-        .send(response);
+
+      const exists = duplicate !== null;
+
+      res.status(200).send({
+        data: exists,
+        ...(exists && { code: 'ERRORS.OCCASION.ALREADY_EXISTS' }),
+      });
     } catch (error) {
-      error.code = 'ERRORS.OCCASION.DATA_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  }
+  },
 );
 
-/**
- * POST /create-occasion
- * Create a new occasion and insert default operations for it.
- */
 router.post(
   "/create-occasion",
   requireAuth,
@@ -61,35 +53,31 @@ router.post(
       const { type, month, year, status } = req.body;
 
       const result = await withTransaction(async (t) => {
-        // Create occasion
-        const occasion = await Occasion.create({
-          type,
-          month,
-          year,
-          status
-        }, { transaction: t });
+        const occasion = await Occasion.create(
+          {
+            type,
+            month,
+            year,
+            status
+          },
+          { transaction: t });
         return transformOccasionDisplayParts(occasion);
       });
 
-      res.status(200).send({ code: 'OCCASION.CREATED', data: result.type });
+      res.status(200).send({ code: 'SUCCESS.CREATED', data: result.type });
     } catch (error) {
-      error.code = 'ERRORS.OCCASION.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * GET /get-occasions
- * Return occasions and their operations with access/disabled flags.
- */
 router.get(
   "/get-occasions",
   requireAuth,
   requireOperation('VIEW_LIMITED_OCCASIONS_LIST'),
   async (req, res, next) => {
     try {
-      // Occasions
       const draft = await Occasion.findAll({
         attributes: {
           exclude: [
@@ -101,17 +89,10 @@ router.get(
       });
       const occasions = draft.map(o => transformOccasionDisplayParts(o));
 
+      // Build unique filter options from occasion data.
       const buildOptions = (items, keys) => {
         const result = {};
-        /*
-                const MAP = {
-                  date: 'dateNameKey',
-                  month: 'monthOptionKey',
-                  year: 'year',
-                  type: 'typeNameKey',
-                  status: 'statusNameKey'
-                }
-         */
+
         for (const key of keys) {
           result[key] = [
             ...new Set(
@@ -119,7 +100,7 @@ router.get(
                 .map(item => item[key])
                 .filter(v => v !== null && v !== undefined)
             ),
-          ].sort();
+          ].sort((a, b) => a - b);
         }
 
         return result;
@@ -133,11 +114,9 @@ router.get(
         'status',
       ]);
 
-      res
-        .status(200)
-        .send({ data: { occasions, options } });
+      res.status(200).send({ data: { occasions, options } });
     } catch (error) {
-      error.code = 'ERRORS.OCCASION.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
@@ -150,8 +129,6 @@ router.get(
   validateRequest(occasionSchemas.occasionIdSchema, 'params'),
   async (req, res, next) => {
     try {
-      // Occasions
-      console.log('id', req.params.id);
       const draft = await Occasion.findByPk(req.params.id, {
         attributes: {
           exclude: [
@@ -159,12 +136,14 @@ router.get(
             'updatedAt']
         },
       });
+      if (!draft) {
+        throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+      }
+
       const occasion = transformOccasionDisplayParts(draft);
-      res
-        .status(200)
-        .send({ data: occasion });
+      res.status(200).send({ data: occasion });
     } catch (error) {
-      error.code = 'ERRORS.OCCASION.NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
@@ -180,28 +159,29 @@ router.delete(
       const id = req.params.id;
 
       await withTransaction(async (t) => {
-        // 1) Ensure the occasion exists
         const occasion = await Occasion.findByPk(id, { transaction: t });
-        if (!occasion) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
 
-        // 2) Check before delete
-        /*         const dependent = await Celebrator.findOne(
-                  { where: { occasionId: id } }
-                );
-                if (dependent) throw new CustomError('ERRORS.OCCASION.HAS_DEPENDENCIES', 409);
-         */
+        if (!occasion) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-        // 3) Delete the occasion
+        // Check for dependent recipients.
+        const dependent = await Recipient.findOne({
+          where: { occasionId: id },
+          transaction: t,
+        });
+
+        if (dependent) throw new CustomError('ERRORS.OCCASION_HAS_DEPENDENCIES', 409);
+
         const destroyed = await Occasion.destroy({
           where: { id },
           transaction: t,
-          individualHooks: true, // will run user-level hooks; children won't fire via DB cascade
+          individualHooks: true,
         });
-        if (destroyed !== 1) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
+        if (destroyed !== 1) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       });
-      res.status(200).send({ code: 'OCCASION.DELETED', data: null });
+
+      res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.OCCASION.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
   });
@@ -213,11 +193,9 @@ router.patch(
   validateRequest(occasionSchemas.occasionEditSchema, 'body'),
   async (req, res, next) => {
     try {
-      const id = req.body.id;
-      const status = req.body.status;
+      const { id, status } = req.body;
 
       await withTransaction(async (t) => {
-        // 1) Block the user
         const [affected] = await Occasion.update(
           {
             status
@@ -225,17 +203,17 @@ router.patch(
           {
             where: { id },
             transaction: t,
-            individualHooks: true, // ensure per-row hooks/audit
+            individualHooks: true,
           }
         );
         if (affected !== 1) {
-          throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
       });
 
-      res.status(200).send({ code: 'OCCASION.EDITED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.OCCASION.NOT_EDITED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
@@ -245,9 +223,9 @@ router.get(
   "/get-actual-occasions/:typeId",
   requireAuth,
   requireOperation('ADD_NEW_ORDER'),
+  validateRequest(occasionSchemas.occasionTypeIdSchema, 'params'),
   async (req, res, next) => {
     try {
-      // Occasions
       const draft = await Occasion.findAll({
         where: {
           status: 1,
@@ -264,13 +242,14 @@ router.get(
         ],
         raw: true,
       });
+
       const occasions = draft.map(o => transformOccasionDisplayParts(o));
 
       res
         .status(200)
         .send({ data: occasions });
     } catch (error) {
-      error.code = 'ERRORS.OCCASION.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
