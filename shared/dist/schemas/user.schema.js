@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { toTrim, emptyToNull, toLowerTrim, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
+import { toTrim, emptyToNull, toLowerTrim, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
 import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema } from './common.schema.js';
 import { draftAddressSchema, addressSchema, } from './common.schema.js';
 import { contactType, nonEmptyContacts, optionalContactsSchema, } from './common.schema.js';
@@ -430,7 +430,7 @@ export const usersQueryDTOSchema = z
 /* ===================== OutdatedData (view) ===================== */
 const outdatedUserNameItemSchema = z
     .object({
-    userName: nonEmpty,
+    userName: nonEmptyString,
     id: positiveInt,
 })
     .strict();
@@ -446,18 +446,18 @@ export const outdatedDataSchema = z
 export const userSchema = z
     .object({
     id: positiveInt,
-    userName: nonEmpty,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty,
+    userName: nonEmptyString,
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString,
     roleId: positiveInt,
-    roleName: nonEmpty,
+    roleName: nonEmptyString,
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: addressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     orderedContacts: contactsSchema,
     outdatedData: outdatedDataSchema,
 })

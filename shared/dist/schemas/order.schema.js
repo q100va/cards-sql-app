@@ -1,134 +1,84 @@
 import { z } from 'zod';
-import { positiveInt, } from './common.schema.js';
+import { positiveInt, positiveIntParam, emptyToNullMax, nonEmptyString, } from './common.schema.js';
 const currentYear = new Date().getFullYear();
+export const orderDataSchema = z
+    .object({
+    volunteerId: positiveIntParam,
+    occasionId: positiveIntParam,
+})
+    .strict();
 export const orderDraftSchema = z
     .object({
     occasionId: positiveInt,
-    //occasionType: z.number().int().min(1).max(6),
     volunteerId: positiveInt,
     userId: positiveInt,
     instituteId: positiveInt.nullable(),
-    status: z.number().int().min(1).max(2),
-    source: z.number().int().min(1).max(9),
+    status: positiveInt.max(2),
+    source: positiveInt.max(9),
     contactId: positiveInt,
     amount: positiveInt,
-    comment: z
-        .string()
-        .trim()
-        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable(),
-})
-    .strict();
-export const orderFilterSchema = z
-    .object({
-    addressCategory: z.number().int().min(1).max(5),
-    gender: z.number().int().min(1).max(4),
-    maleAmount: z.number().int().min(1).nullable(),
-    femaleAmount: z.number().int().min(1).nullable(),
-    onlyWithPicture: z.boolean(),
-    onlyAnniversaries: z.boolean(),
-    onlyAnniversariesAndOldest: z.boolean(),
-    onlyWithConcents: z.boolean(),
-    year1: z.number().int().min(1900).max(currentYear).nullable(),
-    year2: z.number().int().min(1900).max(currentYear).nullable(),
-    date1: z.number().int().min(1).max(31).nullable(),
-    date2: z.number().int().min(1).max(31).nullable(),
-    regions: z.array(positiveInt),
-    homes: z.array(positiveInt),
-    //addSpareRegions: z.boolean(),
-    minFromOneHouse: z.number().int().min(1).nullable(),
-    maxFromOneHouse: z.number().int().min(1).nullable(),
-    maxNoAddress: z.number().int().min(1).nullable(),
+    comment: emptyToNullMax(500),
 })
     .strict();
 export const filterSchema = z
     .object({
-    addressCategory: z.number().int().min(2).max(5).optional(),
-    gender: z.number().int().min(2).max(4).optional(),
-    maleAmount: z.number().int().min(1).optional(),
-    femaleAmount: z.number().int().min(1).optional(),
+    addressCategory: positiveInt.min(2).max(5).optional(),
+    gender: positiveInt.min(2).max(4).optional(),
+    maleAmount: positiveInt.optional(),
+    femaleAmount: positiveInt.optional(),
     onlyWithPicture: z.literal(true).optional(),
     onlyAnniversaries: z.literal(true).optional(),
     onlyAnniversariesAndOldest: z.literal(true).optional(),
     onlyWithConcents: z.literal(true).optional(),
-    year1: z.number().int().min(1900).max(currentYear).optional(),
-    year2: z.number().int().min(1900).max(currentYear).optional(),
-    date1: z.number().int().min(1).max(31).optional(),
-    date2: z.number().int().min(1).max(31).optional(),
+    year1: positiveInt.min(1900).max(currentYear).optional(),
+    year2: positiveInt.min(1900).max(currentYear).optional(),
+    date1: positiveInt.max(31).optional(),
+    date2: positiveInt.max(31).optional(),
     regions: z.array(positiveInt).optional(),
     homes: z.array(positiveInt).optional(),
-    //addSpareRegions: z.boolean(),
-    minFromOneHouse: z.number().int().min(1).optional(),
-    maxFromOneHouse: z.number().int().min(1).optional(),
-    maxNoAddress: z.number().int().min(1).optional(),
+    minFromOneHouse: positiveInt.optional(),
+    maxFromOneHouse: positiveInt.optional(),
+    maxNoAddress: positiveInt.optional(),
 })
-    .partial()
+    .strict()
     .optional();
-export const orderFiltersDataSchema = z
+export const orderCreateSchema = z
     .object({
-    regions: z.array(z.object({
-        id: positiveInt,
-        name: z.string().min(1),
-        //neighbors: z.array(positiveInt),
-    })),
-    homes: z.array(z.object({
-        id: positiveInt,
-        name: z.string().min(1),
-        regionId: positiveInt,
-    })),
+    orderDraft: orderDraftSchema,
+    filters: filterSchema,
 })
     .strict();
-const orderRecipientSchema = z.object({
-    index: positiveInt,
-    id: positiveInt,
-    fullNameSnapshot: z.string(),
-    specialComment: z.string().nullable(),
-    birthDay: positiveInt,
-    birthMonth: positiveInt,
-    birthYear: positiveInt.nullable(), //TODO: ?? .nullable()
-    infoNote: z.string().nullable(),
-    photoLink: z.string().nullable(),
-    status: z.string(),
-    statusId: positiveInt,
-});
-export const orderRecipientsSchema = z.array(z.object({
-    homeId: positiveInt,
-    postAddress: z.string(),
-    infoNote: z.string().nullable(),
-    noAddressNote: z.string().nullable(),
-    homeRecipients: z.array(orderRecipientSchema),
-}));
-export const orderSchema = z
+//for form validation
+export const orderFilterSchema = z
     .object({
-    id: positiveInt,
-    date: z.coerce.date(),
-    amount: positiveInt,
-    userName: z.string(),
-    volunteerName: z.string(),
-    instituteName: z.string().nullable(),
-    contact: z.string(),
-    status: z.string(),
-    statusId: positiveInt,
-    source: z.string(),
-    occasion: z.string(),
-    occasionStatus: positiveInt,
-    comment: z.string().nullable(),
+    addressCategory: positiveInt.max(5),
+    gender: positiveInt.max(4),
+    maleAmount: positiveInt.nullable(),
+    femaleAmount: positiveInt.nullable(),
+    onlyWithPicture: z.boolean(),
+    onlyAnniversaries: z.boolean(),
+    onlyAnniversariesAndOldest: z.boolean(),
+    onlyWithConcents: z.boolean(),
+    year1: positiveInt.min(1900).max(currentYear).nullable(),
+    year2: positiveInt.min(1900).max(currentYear).nullable(),
+    date1: positiveInt.max(31).nullable(),
+    date2: positiveInt.max(31).nullable(),
+    regions: z.array(positiveInt),
+    homes: z.array(positiveInt),
+    minFromOneHouse: positiveInt.nullable(),
+    maxFromOneHouse: positiveInt.nullable(),
+    maxNoAddress: positiveInt.nullable(),
 })
     .strict();
-const occasionNodeDataSchema = z.object({
-    type: z.number().int().positive(),
-    month: z.number().int().min(1).max(12).nullable(),
-    year: z.number().int().nullable(),
-});
-export const occasionNodeSchema = z.lazy(() => z.object({
-    key: z.string(),
-    label: z.string(),
-    data: occasionNodeDataSchema,
-    children: z.array(occasionNodeSchema).optional(),
-}));
-export const occasionNodesSchema = z.array(occasionNodeSchema);
-export const orderQueryDTOSchema = z.object({
-    //userId: z.number().int().positive(),
+const occasionNodeDataSchema = z
+    .object({
+    type: positiveInt.max(6),
+    month: positiveInt.max(12).nullable(),
+    year: positiveInt.min(2022).nullable(),
+})
+    .strict();
+export const orderQueryDTOSchema = z
+    .object({
     offset: z.number().int().min(0),
     limit: z.number().int().min(1).max(100),
     sortField: z.union([
@@ -137,12 +87,12 @@ export const orderQueryDTOSchema = z.object({
         z.null(),
         z.undefined(),
     ]),
-    sortOrder: z.number().nullable().optional(),
+    sortOrder: z.number().nullable().optional(), //.union([z.literal(1), z.literal(-1)])
     searchValue: z.string().optional(),
     filters: z
-        .record(z.string(), 
-    //   z.union([
-    z.array(z.object({
+        .record(z.string(), z
+        .array(z
+        .object({
         value: z.union([
             z.string(),
             z.boolean(),
@@ -151,62 +101,124 @@ export const orderQueryDTOSchema = z.object({
             z.array(occasionNodeDataSchema),
         ]),
         matchMode: z.string(),
-        operator: z.string(),
-    })))
+        operator: z.enum(['and', 'or']),
+    })
+        .strict())
+        .min(1))
         .default({}),
-});
-export const ordersListSchema = z
-    .object({
-    list: z.array(orderSchema),
-    length: z.coerce.number().int().min(0),
-    options: z.object({
-        users: z.array(z.object({
-            id: positiveInt,
-            userName: z.string(),
-        })),
-        statuses: z.array(z.object({
-            value: positiveInt,
-            label: z.string(),
-        })),
-        sources: z.array(z.object({
-            value: positiveInt,
-            label: z.string(),
-        })),
-        nodes: occasionNodesSchema,
-    }),
 })
     .strict();
-export const orderDetailsSchema = z
+export const orderStatusUpdateSchema = z
+    .object({
+    id: positiveInt,
+    status: positiveInt.max(4),
+})
+    .strict();
+export const orderIdParamsSchema = z
+    .object({
+    id: positiveIntParam,
+})
+    .strict();
+export const orderEditRecipientsSchema = z
+    .object({
+    id: positiveInt,
+    deletingIds: z.array(positiveInt),
+})
+    .strict();
+export const orderFilterRegionsAndHomesSchema = z
+    .object({
+    regions: z.array(z
+        .object({
+        id: positiveInt,
+        name: nonEmptyString,
+    })
+        .strict()),
+    homes: z.array(z
+        .object({
+        id: positiveInt,
+        name: nonEmptyString,
+        regionId: positiveInt,
+    })
+        .strict()),
+})
+    .strict();
+const orderRecipientSchema = z
+    .object({
+    index: positiveInt,
+    id: positiveInt,
+    fullNameSnapshot: nonEmptyString,
+    specialComment: z.string(),
+    birthDay: positiveInt.max(31),
+    birthMonth: positiveInt.max(12),
+    birthYear: positiveInt.nullable(),
+    infoNote: nonEmptyString.nullable(),
+    photoLink: nonEmptyString.nullable(),
+    status: nonEmptyString,
+    statusId: positiveInt,
+})
+    .strict();
+export const orderRecipientsSchema = z.array(z
+    .object({
+    homeId: positiveInt,
+    postAddress: nonEmptyString,
+    infoNote: nonEmptyString.nullable(),
+    noAddressNote: nonEmptyString.nullable(),
+    homeRecipients: z.array(orderRecipientSchema),
+})
+    .strict());
+export const orderSchema = z
     .object({
     id: positiveInt,
     date: z.coerce.date(),
     amount: positiveInt,
-    userName: z.string(),
-    volunteerName: z.string(),
-    instituteName: z.string().nullable(),
-    contact: z.string(),
-    status: z.string(),
-    statusId: positiveInt,
-    source: z.string(),
-    occasion: z.string(),
-    occasionStatus: positiveInt,
-    comment: z.string().nullable(),
-    /*    occasionId: positiveInt,
-    volunteerId: positiveInt,
-    userId: positiveInt,
-    contactId: positiveInt,
-    instituteId: positiveInt.nullable(), */
-    recipients: orderRecipientsSchema,
+    userName: nonEmptyString,
+    volunteerName: nonEmptyString,
+    instituteName: nonEmptyString.nullable(),
+    contact: nonEmptyString,
+    status: nonEmptyString,
+    statusId: positiveInt.max(4),
+    source: nonEmptyString,
+    occasion: nonEmptyString,
+    occasionStatus: positiveInt.max(2),
+    comment: nonEmptyString.nullable(),
 })
     .strict();
-export const orderEditSchema = z
+export const occasionNodeSchema = z.lazy(() => z
     .object({
-    status: z.number().int().min(1).max(4),
-    source: z.number().int().min(1).max(9),
-    comment: z
-        .string()
-        .trim()
-        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable(),
+    key: z.string(),
+    label: z.string(),
+    data: occasionNodeDataSchema,
+    children: z.array(occasionNodeSchema).optional(),
+})
+    .strict());
+export const occasionNodesSchema = z.array(occasionNodeSchema);
+export const ordersListSchema = z
+    .object({
+    list: z.array(orderSchema),
+    length: z.number().int().min(0),
+    options: z.object({
+        users: z.array(z
+            .object({
+            id: positiveInt,
+            userName: nonEmptyString,
+        })
+            .strict()),
+        statuses: z.array(z
+            .object({
+            value: positiveInt,
+            label: nonEmptyString,
+        })
+            .strict()),
+        sources: z.array(z
+            .object({
+            value: positiveInt,
+            label: nonEmptyString,
+        })
+            .strict()),
+        nodes: occasionNodesSchema,
+    }),
 })
     .strict();
+export const orderDetailsSchema = orderSchema.extend({
+    recipients: orderRecipientsSchema,
+});

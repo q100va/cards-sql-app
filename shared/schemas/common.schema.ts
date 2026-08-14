@@ -7,11 +7,25 @@ export const positiveIntParam = z.coerce.number().int().positive();
 export const requiredNumber = () =>
   z.number({
     error: (issue) =>
-      issue.input == null
-        ? 'FORM_VALIDATION.REQUIRED'
-        : undefined,
+      issue.input == null ? 'FORM_VALIDATION.REQUIRED' : undefined,
   });
 
+export const emptyToNull = (v: unknown) =>
+  v == null || String(v).trim() === '' ? null : String(v).trim();
+
+export const emptyToNullMax = (max: number) =>
+  z
+    .preprocess(
+      emptyToNull,
+      z.string().max(max, {
+        error: `FORM_VALIDATION.TOO_LONG_${max}`,
+      }),
+    )
+    .nullable();
+
+export const nonEmptyString = z
+  .string()
+  .min(1, { error: 'FORM_VALIDATION.REQUIRED' });
 
 /* ===================== Helpers ===================== */
 
@@ -19,16 +33,13 @@ export const requiredNumber = () =>
 export const toTrim = (v: unknown) =>
   typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
 
-export const emptyToNull = (v: unknown) =>
-  v == null || String(v).trim() === '' ? null : String(v).trim();
-
 // Lowercase+trim
 export const toLowerTrim = (v: unknown) =>
   typeof v === 'string'
     ? v.toLowerCase().trim()
     : v == null
-    ? ''
-    : String(v).toLowerCase().trim();
+      ? ''
+      : String(v).toLowerCase().trim();
 
 export const keepE164Chars = (v: unknown) =>
   typeof v === 'string' ? v.replace(/[^0-9+]/g, '') : v == null ? '' : v;
@@ -38,15 +49,13 @@ export const keepE164CharsNullable = (v: unknown) =>
 
 /* ===================== Reusable atoms ===================== */
 
-export const nonEmpty = z.string().min(1, 'FORM_VALIDATION.REQUIRED');
-export const nonEmptyTrim = z.preprocess(toTrim, nonEmpty);
+export const nonEmptyTrim = z.preprocess(toTrim, nonEmptyString);
 
 export const nonEmptyTrimMax = (max: number, msgMax: string) =>
   z.preprocess(
     toTrim,
-    z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax })
+    z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax }),
   );
-
 
 export const nullableInt = positiveInt.nullable();
 
@@ -60,21 +69,23 @@ const stringArray = z.array(nonEmptyTrim); // [] ok
   return Number.isNaN(+d) ? v : d;
 }, z.date().nullable()); */
 
-export const nullableIsoDate = z.preprocess((v: unknown) => {
-  if (v == null || v === '') return null;
-  if (v instanceof Date) return v;
+export const nullableIsoDate = z.preprocess(
+  (v: unknown) => {
+    if (v == null || v === '') return null;
+    if (v instanceof Date) return v;
 
-  const d = new Date(String(v));
-  if (Number.isNaN(+d)) return undefined;
+    const d = new Date(String(v));
+    if (Number.isNaN(+d)) return undefined;
 
-  return d;
-},
-z.date().nullable().refine(
-  (val) => val === null || !Number.isNaN(+val),
-  { message: 'FORM_VALIDATION.INVALID_ISO_DATE' }
-));
-
-
+    return d;
+  },
+  z
+    .date()
+    .nullable()
+    .refine((val) => val === null || !Number.isNaN(+val), {
+      message: 'FORM_VALIDATION.INVALID_ISO_DATE',
+    }),
+);
 
 export const intOptArray = z.array(positiveInt).min(1).optional();
 
@@ -127,31 +138,31 @@ export const telegramNicknameSchema = z.preprocess(
   toTrim,
   z
     .string()
-    .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT'),
 );
 
 export const telegramIdSchema = z.preprocess(
   toTrim,
-  z.string().regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+  z.string().regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT'),
 );
 
 export const vKontakteSchema = z.preprocess(
   toTrim,
   z
     .string()
-    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/)
+    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/),
 );
 
 export const instagramSchema = z.preprocess(
   toTrim,
   z
     .string()
-    .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/)
+    .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/),
 );
 
 export const facebookSchema = z.preprocess(
   toTrim,
-  z.string().regex(/^[A-Za-z0-9_.]{5,}$/)
+  z.string().regex(/^[A-Za-z0-9_.]{5,}$/),
 );
 
 export const websiteSchema = z.preprocess(
@@ -160,13 +171,13 @@ export const websiteSchema = z.preprocess(
     .string()
     .regex(
       /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
-      'Invalid website URL'
-    )
+      'Invalid website URL',
+    ),
 );
 
 export const otherContactSchema = z.preprocess(
   toTrim,
-  z.string().min(1).max(256)
+  z.string().min(1).max(256),
 );
 
 /* ===================== Address (draft + view) ===================== */
@@ -181,10 +192,10 @@ export const draftAddressSchema = z
   .strict();
 
 export const addressRefFullSchema = z
-  .object({ id: positiveInt, name: nonEmpty })
+  .object({ id: positiveInt, name: nonEmptyString })
   .strict();
 export const addressRefShortSchema = z
-  .object({ id: positiveInt, shortName: nonEmpty })
+  .object({ id: positiveInt, shortName: nonEmptyString })
   .strict();
 
 export const addressSchema = z
@@ -216,7 +227,7 @@ export const contactType = z.enum([
 
 // View: { id, content }[]
 export const contactSchema = z
-  .object({ id: positiveInt, content: nonEmpty })
+  .object({ id: positiveInt, content: nonEmptyString })
   .strict();
 export const nonEmptyContacts = z.array(contactSchema).nonempty();
 
@@ -270,7 +281,7 @@ export const changingContactsSchema = z
 
 export const outdatedNameItemSchema = z
   .object({
-    firstName: nonEmpty,
+    firstName: nonEmptyString,
     patronymic: z.string().nullable(),
     lastName: z.string().nullable(),
     id: positiveInt,
@@ -300,28 +311,28 @@ export const outdatedCommonSchema = z
 export const duplicatesSchema = z
   .object({
     duplicatesName: z.array(z.string()),
-    duplicatesContact: z.array(
-      z
-        .object({
-          type: z.string(),
-          content: z.string(),
-          owners: z.array(z.string()),
-        })
-        .strict()
-    ).optional(),
+    duplicatesContact: z
+      .array(
+        z
+          .object({
+            type: z.string(),
+            content: z.string(),
+            owners: z.array(z.string()),
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 
-export const coordinationNameControlSchema = z.object({
-  id: z
-    .number()
-    .int()
-    .positive(),
+export const coordinationNameControlSchema = z.object(
+  {
+    id: z.number().int().positive(),
 
-  name: z
-    .string()
-    .min(1),
-}, 'FORM_VALIDATION.REQUIRED');
+    name: z.string().min(1),
+  },
+  'FORM_VALIDATION.REQUIRED',
+);
 
 export type Contact = z.infer<typeof contactSchema>;
 export type OptionalContacts = z.infer<typeof optionalContactsSchema>;

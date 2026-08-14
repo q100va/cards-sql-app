@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { positiveInt } from './common.schema.js';
+import { nonEmptyString, positiveInt } from './common.schema.js';
 
 export const occasionIdSchema = z
   .object({
@@ -65,14 +65,14 @@ export const recipientQueryDTOSchema = z
 export const recipientSchema = z
   .object({
     id: positiveInt,
-    fullName: z.string(),
+    fullName: nonEmptyString,
     birthDay: positiveInt.max(31).nullable(),
     birthMonth: positiveInt.max(12).nullable(),
     birthYear: positiveInt.nullable(),
-    category: z.string(),
+    category: nonEmptyString,
     acceptableForSchool: z.boolean(),
-    regionName: z.string(),
-    homeName: z.string(),
+    regionName: nonEmptyString,
+    homeName: nonEmptyString,
     plusAmount: z.number().int().min(0),
     specialComment: z.string(),
     isAbsent: z.boolean(),

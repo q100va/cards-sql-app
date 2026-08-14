@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, nonEmptyContacts, addressRefFullSchema, addressRefShortSchema, } from './common.schema.js';
+import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, nonEmptyContacts, addressRefFullSchema, addressRefShortSchema, } from './common.schema.js';
 import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, } from './common.schema.js';
 import { contactType } from './common.schema.js';
 export const optionalContactsSchema = z
@@ -20,10 +20,10 @@ export const optionalContactsSchema = z
     .strict();
 const coordinationItemSchema = z.object({
     partnerContacts: optionalContactsSchema.optional(),
-    partnerName: nonEmpty.optional(),
-    partnerOccupation: nonEmpty.optional(),
-    homeName: nonEmpty.optional(),
-    regionName: nonEmpty.optional(),
+    partnerName: nonEmptyString.optional(),
+    partnerOccupation: nonEmptyString.optional(),
+    homeName: nonEmptyString.optional(),
+    regionName: nonEmptyString.optional(),
     partnerId: positiveInt,
     homeId: positiveInt,
     isRecoverable: z.boolean(),
@@ -465,20 +465,20 @@ export const homesQueryDTOSchema = z
 /* ===================== OutdatedData (view) ===================== */
 export const outdatedNameItemSchema = z
     .object({
-    officialName: nonEmpty,
+    officialName: nonEmptyString,
     id: positiveInt,
 })
     .strict();
 export const outdatedAddressItemSchema = z
     .object({
-    postalCode: nonEmpty,
-    postalName: nonEmpty,
+    postalCode: nonEmptyString,
+    postalName: nonEmptyString,
     country: addressRefFullSchema,
     region: addressRefShortSchema,
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
-    postalAddressPart: nonEmpty.nullable(),
-    fullPostalAddress: nonEmpty,
+    postalAddressPart: nonEmptyString.nullable(),
+    fullPostalAddress: nonEmptyString,
     id: positiveInt,
     isRecoverable: z.boolean(),
 })
@@ -502,42 +502,42 @@ const nonNullableAddressSchema = z
     .strict();
 export const homeAddressItemSchema = z
     .object({
-    postalCode: nonEmpty,
+    postalCode: nonEmptyString,
     country: addressRefFullSchema,
     region: addressRefShortSchema,
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
-    postalAddressPart: nonEmpty.nullable(),
-    postalName: nonEmpty,
-    fullPostalAddress: nonEmpty,
+    postalAddressPart: nonEmptyString.nullable(),
+    postalName: nonEmptyString,
+    fullPostalAddress: nonEmptyString,
     id: positiveInt,
     isRecoverable: z.boolean(),
 })
     .strict();
 /* export const postalAddressSchema = z
   .object({
-    postalCode: nonEmpty,
-    postalAddressPart: nonEmpty.nullable(),
-    fullPostalAddress: nonEmpty,
+    postalCode: nonEmptyString,
+    postalAddressPart: nonEmptyString.nullable(),
+    fullPostalAddress: nonEmptyString,
     id: positiveInt,
   })
   .strict(); */
 export const homeSchema = z
     .object({
     id: positiveInt,
-    homeName: nonEmpty,
-    officialName: nonEmpty,
+    homeName: nonEmptyString,
+    officialName: nonEmptyString,
     noAddress: z.boolean(),
     specialHome: z.boolean(),
     acceptableForSchool: z.boolean(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: homeAddressItemSchema,
     //postalAddress: postalAddressSchema,
-    comment: nonEmpty.nullable(),
-    infoNote: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
+    infoNote: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
     coordinations: z.array(coordinationItemSchema),

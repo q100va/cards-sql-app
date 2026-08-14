@@ -4,7 +4,7 @@ import {
   emptyToNull,
   keepE164Chars,
   keepE164CharsNullable,
-  nonEmpty,
+  nonEmptyString,
   nonEmptyTrim,
   nonEmptyTrimMax,
   positiveInt,
@@ -33,8 +33,8 @@ import {
 
 const instituteItemSchema = z
   .object({
-    category: nonEmpty,
-    instituteName: nonEmpty,
+    category: nonEmptyString,
+    instituteName: nonEmptyString,
     isDeletable: z.boolean(),
     id: positiveInt,
   })
@@ -42,17 +42,17 @@ const instituteItemSchema = z
 
 const draftInstituteItemSchema = z
   .object({
-    category: nonEmpty,
-    instituteName: nonEmpty,
+    category: nonEmptyString,
+    instituteName: nonEmptyString,
   })
   .strict();
 
 const subsItemSchema = z
   .object({
-    userName: nonEmpty,
+    userName: nonEmptyString,
     userId: positiveInt,
     id: positiveInt,
-    userFullName: nonEmpty,
+    userFullName: nonEmptyString,
     isRestricted: z.boolean().optional(),
     isRecoverable: z.boolean().optional(),
     isDeletable: z.boolean().optional(),
@@ -60,10 +60,10 @@ const subsItemSchema = z
   .strict();
 const coopItemSchema = z
   .object({
-    userName: nonEmpty,
+    userName: nonEmptyString,
     userId: positiveInt,
     id: positiveInt,
-    userFullName: nonEmpty,
+    userFullName: nonEmptyString,
     isRestricted: z.boolean().optional(),
     isRecoverable: z.boolean().optional(),
     isDeletable: z.boolean().optional(),
@@ -524,7 +524,7 @@ export const volunteersQueryDTOSchema = z
           .object({
             subscriptions: z.array(positiveInt).min(1).optional(),
             cooperations: z.array(positiveInt).min(1).optional(),
-            categories: z.array(nonEmpty).min(1).optional(),
+            categories: z.array(nonEmptyString).min(1).optional(),
             details: z.array(z.string()).optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
@@ -584,16 +584,16 @@ export const outdatedDataSchema = z
 export const volunteerSchema = z
   .object({
     id: positiveInt,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty.nullable(),
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     dateOfLastOrder: nullableIsoDate,
     address: addressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
     institutes: z.array(instituteItemSchema),

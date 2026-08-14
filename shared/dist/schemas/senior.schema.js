@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { toTrim, emptyToNull, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
+import { toTrim, emptyToNull, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
 import { addressRefFullSchema, addressRefShortSchema, } from './common.schema.js';
 import { outdatedNameItemSchema } from './common.schema.js';
 export const nullableDateOnly = z.preprocess((v) => {
@@ -341,22 +341,22 @@ export const seniorAddressSchema = z
     region: addressRefShortSchema,
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
-    fullPostalAddress: nonEmpty,
+    fullPostalAddress: nonEmptyString,
     // id: positiveInt
 })
     .strict();
 export const seniorSchema = z
     .object({
     id: positiveInt,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty.nullable(),
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: seniorAddressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     birthDate: nullableIsoDate,
     confirmedFirstName: z.boolean(),
     confirmedPatronymic: z.boolean(),
@@ -376,11 +376,11 @@ export const seniorSchema = z
     interests: nullableString,
     orthodoxBeliever: nullableString,
     dateOfExit: nullableIsoDate,
-    spouseFullName: nonEmpty.nullable(),
+    spouseFullName: nonEmptyString.nullable(),
     spouseId: positiveInt.nullable(),
     homeId: positiveInt,
     home: z.object({
-        homeName: nonEmpty,
+        homeName: nonEmptyString,
         noAddress: z.boolean(),
         specialHome: z.boolean(),
         acceptableForSchool: z.boolean(),
@@ -389,7 +389,7 @@ export const seniorSchema = z
         isClose: z.boolean(),
         dateOfClose: z.coerce.date(),
     }),
-    //homeName: nonEmpty,
+    //homeName: nonEmptyString,
     outdatedData: outdatedDataSchema,
 })
     .strict();

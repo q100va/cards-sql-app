@@ -5,7 +5,7 @@ import {
   toLowerTrim,
   keepE164Chars,
   keepE164CharsNullable,
-  nonEmpty,
+  nonEmptyString,
   nonEmptyTrim,
   nonEmptyTrimMax,
   positiveInt,
@@ -576,7 +576,7 @@ export const usersQueryDTOSchema = z
 
 const outdatedUserNameItemSchema = z
   .object({
-    userName: nonEmpty,
+    userName: nonEmptyString,
     id: positiveInt,
   })
   .strict();
@@ -595,18 +595,18 @@ export const outdatedDataSchema = z
 export const userSchema = z
   .object({
     id: positiveInt,
-    userName: nonEmpty,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty,
+    userName: nonEmptyString,
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString,
     roleId: positiveInt,
-    roleName: nonEmpty,
+    roleName: nonEmptyString,
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: addressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     orderedContacts: contactsSchema,
     outdatedData: outdatedDataSchema,
   })

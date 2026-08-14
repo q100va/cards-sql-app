@@ -5,7 +5,7 @@ import {
   toLowerTrim,
   keepE164Chars,
   keepE164CharsNullable,
-  nonEmpty,
+  nonEmptyString,
   nonEmptyTrim,
   nonEmptyTrimMax,
   positiveInt,
@@ -255,7 +255,7 @@ export const partnerDraftSchema = z
       emptyToNull,
       z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable(),
     ),
-    affiliation: nonEmpty,
+    affiliation: nonEmptyString,
     position: z.preprocess(
       emptyToNull,
       z
@@ -503,7 +503,7 @@ export const partnersQueryDTOSchema = z
       .object({
         general: z
           .object({
-            affiliations: z.array(nonEmpty).min(1).optional(),
+            affiliations: z.array(nonEmptyString).min(1).optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -547,9 +547,9 @@ export const partnersQueryDTOSchema = z
 
 const coordinationItemSchema = z.object({
   partnerContacts: optionalContactsSchema.optional(),
-  partnerName: nonEmpty.optional(),
-  homeName: nonEmpty.optional(),
-  regionName: nonEmpty.optional(),
+  partnerName: nonEmptyString.optional(),
+  homeName: nonEmptyString.optional(),
+  regionName: nonEmptyString.optional(),
   partnerId: positiveInt,
   homeId: positiveInt,
   isRecoverable: z.boolean(),
@@ -571,17 +571,17 @@ export const outdatedDataSchema = z
 export const partnerSchema = z
   .object({
     id: positiveInt,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty.nullable(),
-    affiliation: nonEmpty,
-    position: nonEmpty.nullable(),
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString.nullable(),
+    affiliation: nonEmptyString,
+    position: nonEmptyString.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: addressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
     coordinations: z.array(coordinationItemSchema),
