@@ -30,7 +30,7 @@ export async function editActiveRecipient(
     transaction: t,
   });
 
-  if (!senior) throw CustomError('ERRORS.DATA_NOT_FOUND', 404);
+  if (!senior) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
   const home = senior.home;
 
@@ -250,7 +250,7 @@ export async function editHomeActiveRecipients(
     transaction: t,
   });
 
-  if (!home) throw CustomError('ERRORS.DATA_NOT_FOUND', 404);
+  if (!home) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
   const activeRecipients = await Recipient.findAll({
     where: {
