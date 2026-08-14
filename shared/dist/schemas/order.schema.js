@@ -85,7 +85,7 @@ const orderRecipientSchema = z.object({
     specialComment: z.string().nullable(),
     birthDay: positiveInt,
     birthMonth: positiveInt,
-    birthYear: positiveInt,
+    birthYear: positiveInt.nullable(), //TODO: ?? .nullable()
     infoNote: z.string().nullable(),
     photoLink: z.string().nullable(),
     status: z.string(),

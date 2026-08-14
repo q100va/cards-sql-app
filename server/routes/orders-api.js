@@ -16,7 +16,7 @@ import * as orderSchemas from "../../shared/dist/schemas/order.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { createSpecialRecipientsList } from "../controllers/ctrl-create-special-order.js";
 import { transformOrder, transformOrderDisplayPart, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
-import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-query-builders.js";
+import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-apply-filter.js";
 import { dictToOptions, getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
 import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js";
 

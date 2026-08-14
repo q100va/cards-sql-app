@@ -586,6 +586,16 @@ OrderRecipient.belongsTo(Home, {
   as: 'home',
 });
 
+Recipient.belongsTo(Region, {
+  foreignKey: 'regionIdSnapshot',
+  as: 'snapshotRegion',
+});
+
+Recipient.belongsTo(Home, {
+  foreignKey: 'homeIdSnapshot',
+  as: 'snapshotHome',
+});
+
 
 
 export {

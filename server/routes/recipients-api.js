@@ -1,43 +1,40 @@
 import { Router } from "express";
-import Sequelize from "sequelize";
-//import Recipient from "../models/index.js";
-import { validateRequest } from "../middlewares/validate-request.js";
+import { Op } from 'sequelize';
+import { Occasion, Recipient, Senior, Home, HomeAddress, Region, Order, OrderRecipient, } from "../models/index.js";
+import CustomError from "../shared/customError.js";
 import * as recipientSchemas from "../../shared/dist/schemas/recipient.schema.js";
-import { withTransaction } from "../controllers/with-transaction.js";
 import requireAuth from '../middlewares/check-auth.js';
-import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';
-import { Occasion, Recipient, Senior, Home, HomeAddress, Region } from "../models/index.js";
+import { validateRequest } from "../middlewares/validate-request.js";
+import { requireOperation, requireAny } from '../middlewares/require-permission.js';
+import { withTransaction } from "../controllers/with-transaction.js";
 import { generateRecipients } from "../controllers/ctrl-generate-recipients.js";
 import { transformRecipient } from "../controllers/ctrl-transform-recipient.js";
-import { applyNumericFilter, applyStringFilter, buildGlobalSearchWhere, buildOrderField } from "../controllers/ctrl-query-builders.js";
-import { z } from 'zod';
-import CustomError from "../shared/customError.js";
 import { addRecipients, markAbsentRecipients } from "../controllers/ctrl-check-recipients.js";
+import { applyNumericFilter, applyStringFilter } from "../controllers/ctrl-apply-filter.js";
+import { buildGlobalSearchWhere, buildRecipientOrderField } from "../controllers/ctrl-recipient-query-builders.js";
 
-const Op = Sequelize.Op;
 const router = Router();
 
-/**
- * POST /create-list
- * Create a new recipients list.
- */
 router.post(
   "/create-list",
   requireAuth,
   requireOperation('CREATE_RECIPIENTS_LIST'),
-  validateRequest(recipientSchemas.recipientIdSchema, 'body'),
+  validateRequest(recipientSchemas.occasionIdSchema, 'body'),
   async (req, res, next) => {
     try {
-      const { id } = req.body;
-      const occasion = await Occasion.findByPk(id);
-      if (!occasion) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
-      //TODO: ??проверка дублей при создании (думаю излишне)
-      const controlRecipient = await Recipient.findOne({
-        where: { occasionId: id }
-      });
-      if (controlRecipient) throw new CustomError('ERRORS.RECIPIENT.LIST_ALREADY_EXISTS', 409);
-
       const result = await withTransaction(async (t) => {
+        const { occasionId } = req.body;
+        const occasion = await Occasion.findByPk(occasionId, {
+          transaction: t,
+        });
+        if (!occasion) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+
+        const controlRecipient = await Recipient.findOne({
+          where: { occasionId },
+          transaction: t,
+        });
+        if (controlRecipient) throw new CustomError('ERRORS.RECIPIENT.LIST_ALREADY_EXISTS', 409);
+
         const rows = await generateRecipients(occasion, t);
         const created = await Recipient.bulkCreate(rows, { transaction: t, individualHooks: true, });
 
@@ -52,36 +49,36 @@ router.post(
         return created;
       });
 
-      res.status(200).send({ code: 'RECIPIENT.RECIPIENTS_LIST_CREATED', data: result.length });
+      res.status(200).send({ code: 'SUCCESS.DATA_ADDED', data: result.length });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.RECIPIENT.RECIPIENTS_LIST_NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_ADD_FAILED';
       next(error);
     }
-  }
-);
+  });
+// TODO: Check for duplicate recipients across homes.
 
 router.patch(
   "/clear-list",
   requireAuth,
   requireOperation('CLEAR_RECIPIENTS_LIST'),
-  validateRequest(z.object({
-    occasionId: z.coerce.number().int().positive(),
-  }), 'body'),
+  validateRequest(recipientSchemas.occasionIdSchema, 'body'),
   async (req, res, next) => {
     try {
       const { occasionId } = req.body;
       await withTransaction(async (t) => {
-        const occasion = await Occasion.findByPk(occasionId);
-        if (!occasion) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
+        const occasion = await Occasion.findByPk(occasionId, {
+          transaction: t,
+        });
+        if (!occasion) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-        /*    const dependent = await Order.findOne({
-             where: { occasionId },
-             transaction: t,
-           });
-
-           if (dependent) {
-             throw new CustomError('ERRORS.RECIPIENT.HAS_DEPENDENCIES', 409);
-           } */
+        // Prevent deletion of recipients used in orders.
+        const dependent = await Order.findOne({
+          where: { occasionId },
+          transaction: t,
+        });
+        if (dependent) {
+          throw new CustomError('ERRORS.RECIPIENT.LIST_HAS_DEPENDENCIES', 409);
+        }
 
         await Recipient.destroy({
           where: { occasionId },
@@ -89,23 +86,23 @@ router.patch(
           individualHooks: true,
         });
 
+        const finalControl = await Recipient.count({
+          where: { occasionId },
+          transaction: t,
+        });
+        await Occasion.update(
+          { amount: finalControl },
+          {
+            where: { id: occasionId },
+            transaction: t,
+          }
+        );
+
+        if (finalControl > 0) throw new CustomError('ERRORS.DATA_DELETE_FAILED', 500);
       });
-
-      const finalControl = await Recipient.count({
-        where: { occasionId }
-      });
-      await Occasion.update(
-        { amount: finalControl },
-        {
-          where: { id: occasionId },
-        }
-      );
-
-      if (finalControl > 0) throw new CustomError('ERRORS.RECIPIENT.RECIPIENTS_LIST_NOT_CLEARED', 500);
-
-      res.status(200).send({ code: 'RECIPIENT.RECIPIENTS_LIST_CLEARED', data: null });
+      res.status(200).send({ code: 'SUCCESS.DATA_DELETED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.RECIPIENT.RECIPIENTS_LIST_NOT_CLEARED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
   }
@@ -115,17 +112,16 @@ router.post(
   "/create-recipients",
   requireAuth,
   requireOperation('ADD_NEW_RECIPIENT'),
-  validateRequest(z.object({
-    seniorsIds: z.array(z.number().int().positive()),
-    occasionId: z.coerce.number().int().positive(),
-  }), 'body'),
+  validateRequest(recipientSchemas.recipientListDataSchema, 'body'),
   async (req, res, next) => {
     try {
-      const { seniorsIds, occasionId } = req.body;
-      const occasion = await Occasion.findByPk(occasionId);
-      if (!occasion) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
-
       const result = await withTransaction(async (t) => {
+        const { seniorsIds, occasionId } = req.body;
+        const occasion = await Occasion.findByPk(occasionId, {
+          transaction: t,
+        });
+        if (!occasion) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+
         const rows = await generateRecipients(occasion, t, seniorsIds);
         const created = await Recipient.bulkCreate(rows, { transaction: t, individualHooks: true, });
         await Occasion.increment(
@@ -139,19 +135,14 @@ router.post(
         return created;
       });
 
-      res.status(200).send({ code: 'RECIPIENT.RECIPIENTS_LIST_CREATED', data: result.length });
+      res.status(200).send({ code: 'SUCCESS.DATA_ADDED', data: result.length });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.RECIPIENT.RECIPIENTS_LIST_NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_ADD_FAILED';
       next(error);
     }
   }
 );
 
-
-/**
- * GET /get-recipients
- * Return recipients.
- */
 router.post(
   "/get-recipients",
   requireAuth,
@@ -159,7 +150,6 @@ router.post(
   validateRequest(recipientSchemas.recipientQueryDTOSchema, 'body'),
   async (req, res, next) => {
     try {
-      // Recipients
       const {
         occasionId,
         offset,
@@ -170,9 +160,9 @@ router.post(
         filters
       } = req.body;
       const dir = sortOrder === -1 ? 'DESC' : 'ASC';
+      const field = buildRecipientOrderField(sortField);
 
-      const field = buildOrderField(sortField);
-
+      // Build filters for recipients and related entities.
       const where = { occasionId };
       const whereHome = {};
       const whereRegion = {};
@@ -211,6 +201,7 @@ router.post(
         applyStringFilter(whereRegion, filters, 'regionName');
       }
 
+      // Require joins only when related filters or search are used.
       const requiredHome = filters.homeName !== undefined;
       const requiredRegion = filters.regionName !== undefined;
 
@@ -220,39 +211,20 @@ router.post(
         where[Op.and] = searchWhere;
       }
 
-
       const include = [
         {
-          model: Senior,
-          as: 'senior',
-          attributes: ['id'],
-          required: requiredHome || requiredRegion || Boolean(searchValue),
-          include: [
-            {
-              model: Home,
-              as: 'home',
-              where: whereHome,
-              required: requiredHome || requiredRegion || Boolean(searchValue),
-              attributes: ['homeName'],
-              include: [
-                {
-                  model: HomeAddress,
-                  as: 'activeAddress',
-                  attributes: ['id'],
-                  where: { isRestricted: false },
-                  required: requiredRegion || Boolean(searchValue),
-                  include: [
-                    {
-                      model: Region,
-                      where: whereRegion,
-                      required: requiredRegion || Boolean(searchValue),
-                      attributes: ['id', 'name']
-                    },
-                  ]
-                }
-              ]
-            },
-          ]
+          model: Region,
+          as: 'snapshotRegion',
+          where: whereRegion,
+          required: requiredRegion || Boolean(searchValue),
+          attributes: ['name'],
+        },
+        {
+          model: Home,
+          as: 'snapshotHome',
+          where: whereHome,
+          required: requiredHome || Boolean(searchValue),
+          attributes: ['homeName'],
         },
       ];
 
@@ -277,13 +249,11 @@ router.post(
       });
       const recipients = draft.map(r => transformRecipient(r));
 
-
-
       res
         .status(200)
         .send({ data: { list: recipients, length: total } });
     } catch (error) {
-      error.code = 'ERRORS.RECIPIENT.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
@@ -293,30 +263,26 @@ router.delete(
   '/delete-recipients',
   requireAuth,
   requireOperation('DELETE_RECIPIENT'),
-  validateRequest(
-    z.object({
-      recipientIds: z.array(z.coerce.number().int().positive()).min(1),
-      occasionId: z.coerce.number().int().positive(),
-    }),
-    'body',
-  ),
+  validateRequest(recipientSchemas.recipientDestroySchema, 'body'),
   async (req, res, next) => {
     try {
       const { recipientIds, occasionId } = req.body;
 
       await withTransaction(async (t) => {
         const recipients = await Recipient.findAll({
-          where: { id: { [Op.in]: recipientIds } },
+          where: {
+            id: { [Op.in]: recipientIds },
+            occasionId,
+          },
           attributes: ['id'],
           transaction: t,
         });
 
         if (recipients.length !== recipientIds.length) {
-          throw new CustomError('ERRORS.RECIPIENT.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
 
-        // Если потом будут зависимости — проверяй тут:
-        /*
+        // Prevent deletion of recipients used in orders.
         const dependent = await OrderRecipient.findOne({
           where: { recipientId: { [Op.in]: recipientIds } },
           transaction: t,
@@ -325,10 +291,12 @@ router.delete(
         if (dependent) {
           throw new CustomError('ERRORS.RECIPIENT.HAS_DEPENDENCIES', 409);
         }
-        */
 
         const destroyed = await Recipient.destroy({
-          where: { id: { [Op.in]: recipientIds } },
+          where: {
+            id: { [Op.in]: recipientIds },
+            occasionId,
+          },
           transaction: t,
           individualHooks: true,
         });
@@ -339,16 +307,16 @@ router.delete(
         );
 
         if (destroyed !== recipientIds.length) {
-          throw new CustomError('ERRORS.RECIPIENT.NOT_DELETED', 500);
+          throw new CustomError('ERRORS.DATA_DELETE_FAILED', 500);
         }
       });
 
       res.status(200).send({
-        code: 'RECIPIENT.DELETED',
+        code: 'SUCCESS.DATA_DELETED',
         data: null,
       });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.RECIPIENT.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
   },
@@ -357,69 +325,33 @@ router.delete(
 router.patch(
   '/check-list',
   requireAuth,
-  requireAny('EDIT_RECIPIENTS_LIST'),
-  validateRequest(z.object({
-    occasionId: z.coerce.number().int().positive(),
-  }), 'body'),
+  requireOperation('EDIT_RECIPIENTS_LIST'),
+  validateRequest(recipientSchemas.occasionIdSchema, 'body'),
   async (req, res, next) => {
     try {
-      const occasionId = req.body.occasionId;
-      const occasion = await Occasion.findByPk(occasionId);
-      if (!occasion) throw new CustomError('ERRORS.OCCASION.NOT_FOUND', 404);
+      const result = await withTransaction(async (t) => {
+        const occasionId = req.body.occasionId;
+        const occasion = await Occasion.findByPk(occasionId, {
+          transaction: t,
+        });
+        if (!occasion) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-      await withTransaction(async (t) => {
-        // const duplicates = await findDuplicatesRecipients(occasionId, t);
-        const {added, returned} = await addRecipients(occasion, t);
-        //const deleted = await deleteRecipients(occasionId, t);
+        const { added, returned } = await addRecipients(occasion, t);
         const absent = await markAbsentRecipients(occasion, t);
 
-        res.status(200).send({
-          code: 'RECIPIENT.CHECKED',
-          data: { added, returned, absent,/* deleted, duplicates */ }
-        });
+        return { added, returned, absent };
       });
+
+      res.status(200).send({
+        code: 'SUCCESS.DATA_CHECKED',
+        data: result
+      });
+
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.RECIPIENT.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   }
 );
-
-/* router.patch(
-  '/edit-recipient',
-  requireAuth,
-  requireAny('UNBLOCK_RECIPIENT', 'BLOCK_RECIPIENT'),
-  validateRequest(z.object({
-    id: z.coerce.number().int().positive(),
-    status: z.boolean()
-  }), 'body'),
-  async (req, res, next) => {
-    try {
-      const id = req.body.id;
-      const status = req.body.status;
-
-      await withTransaction(async (t) => {
-        const [affected] = await Recipient.update(
-          {
-            status
-          },
-          {
-            where: { id },
-            transaction: t,
-            individualHooks: true, // ensure per-row hooks/audit
-          }
-        );
-        if (affected !== 1) {
-          throw new CustomError('ERRORS.RECIPIENT.NOT_FOUND', 404);
-        }
-      });
-
-      res.status(200).send({ code: 'RECIPIENT.EDITED', data: null });
-    } catch (error) {
-      error.code = error.code ?? 'ERRORS.RECIPIENT.NOT_EDITED';
-      next(error);
-    }
-  }
-); */
 
 export default router;

@@ -66,7 +66,7 @@ declare const orderRecipientSchema: z.ZodObject<{
     specialComment: z.ZodNullable<z.ZodString>;
     birthDay: z.ZodNumber;
     birthMonth: z.ZodNumber;
-    birthYear: z.ZodNumber;
+    birthYear: z.ZodNullable<z.ZodNumber>;
     infoNote: z.ZodNullable<z.ZodString>;
     photoLink: z.ZodNullable<z.ZodString>;
     status: z.ZodString;
@@ -84,7 +84,7 @@ export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
         specialComment: z.ZodNullable<z.ZodString>;
         birthDay: z.ZodNumber;
         birthMonth: z.ZodNumber;
-        birthYear: z.ZodNumber;
+        birthYear: z.ZodNullable<z.ZodNumber>;
         infoNote: z.ZodNullable<z.ZodString>;
         photoLink: z.ZodNullable<z.ZodString>;
         status: z.ZodString;
@@ -195,7 +195,7 @@ export declare const orderDetailsSchema: z.ZodObject<{
             specialComment: z.ZodNullable<z.ZodString>;
             birthDay: z.ZodNumber;
             birthMonth: z.ZodNumber;
-            birthYear: z.ZodNumber;
+            birthYear: z.ZodNullable<z.ZodNumber>;
             infoNote: z.ZodNullable<z.ZodString>;
             photoLink: z.ZodNullable<z.ZodString>;
             status: z.ZodString;

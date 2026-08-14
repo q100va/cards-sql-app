@@ -13,10 +13,10 @@ import * as homeSchemas from "../../shared/dist/schemas/home.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
 import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
 import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
-import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-query-builders.js";
+import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-owner-query-builders.js";
 import { setHomeStatusValue, transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
-import { editHomeActiveRecipients } from "../controllers/ctrl-edit-recipient.js";
+import { editHomeActiveRecipients } from "../controllers/ctrl-sync-recipient.js";
 
 const router = Router();
 const includes = [

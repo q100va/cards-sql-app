@@ -1,8 +1,8 @@
-// server/models/occasion.js
 import { DataTypes, Model } from 'sequelize';
 
 export default function RecipientModel(sequelize) {
   class Recipient extends Model { }
+
   Recipient.init(
     {
       id: {
@@ -16,15 +16,23 @@ export default function RecipientModel(sequelize) {
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
       daySnapshot: {
         type: DataTypes.INTEGER,
         allowNull: true,
+        validate: {
+          min: 1,
+          max: 31,
+        },
       },
       monthSnapshot: {
         type: DataTypes.INTEGER,
         allowNull: true,
+        validate: {
+          min: 1,
+          max: 12,
+        },
       },
       yearSnapshot: {
         type: DataTypes.INTEGER,
@@ -33,28 +41,35 @@ export default function RecipientModel(sequelize) {
       regionIdSnapshot: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          min: 1,
+        },
       },
       homeIdSnapshot: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          min: 1,
+        },
       },
       addressSnapshot: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
       acceptableForSchool: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       category: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
       specialComment: {
         type: DataTypes.STRING,
@@ -63,35 +78,59 @@ export default function RecipientModel(sequelize) {
       plusAmount: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        defaultValue: 0,
+        validate: {
+          min: 0,
+        },
       },
       isAbsent: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       occasionId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          min: 1,
+        },
       },
-
       seniorId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          min: 1,
+        },
       },
     },
     {
       sequelize,
       modelName: 'recipient',
       tableName: 'recipients',
-      underscored: false,
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
       indexes: [
         {
+          name: 'recipients_occasion_id_senior_id_uk',
           unique: true,
           fields: ['occasionId', 'seniorId'],
         },
-      ]
-    }
+        {
+          name: 'recipients_active_occasion_category_plus_idx',
+          fields: ['occasionId', 'category', 'plusAmount'],
+          where: {
+            isAbsent: false,
+          },
+        },
+        {
+          name: 'recipients_active_occasion_home_plus_idx',
+          fields: ['occasionId', 'homeIdSnapshot', 'plusAmount'],
+          where: {
+            isAbsent: false,
+          },
+        },
+      ],
+    },
   );
+
   return Recipient;
 }
