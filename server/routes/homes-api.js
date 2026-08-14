@@ -16,7 +16,7 @@ import { createSearchStringFor, createOutdatedSearchStringFor } from "../control
 import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-owner-query-builders.js";
 import { setHomeStatusValue, transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
-import { editHomeActiveRecipients } from "../controllers/ctrl-sync-recipient.js";
+import { syncRecipientsAfterHomeUpdate } from "../controllers/ctrl-sync-recipients.js";
 
 const router = Router();
 const includes = [
@@ -309,7 +309,7 @@ router.post(
           });
           if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
         }
-        await editHomeActiveRecipients(id, changingData?.main ?? {}, t);
+        await syncRecipientsAfterHomeUpdate(id, changingData?.main ?? {}, t);
         return transformOwnerData('home', fresh.toJSON());
       });
       console.log('HOME');
@@ -944,7 +944,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
         }
-        await editHomeActiveRecipients(id, { isRestricted: true }, t);
+        await syncRecipientsAfterHomeUpdate(id, { isRestricted: true }, t);
       });
 
       res.status(200).send({ code: 'HOME.BLOCKED', data: null });
@@ -978,7 +978,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
         }
-        await editHomeActiveRecipients(id, { isRestricted: false }, t);
+        await syncRecipientsAfterHomeUpdate(id, { isRestricted: false }, t);
       });
       res.status(200).send({ code: 'HOME.UNBLOCKED', data: null });
     } catch (error) {

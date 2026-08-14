@@ -8,7 +8,7 @@ import {
 } from '../../shared/dist/constants/occasions.js';
 import CustomError from "../shared/customError.js";
 
-export async function editActiveRecipient(
+export async function syncRecipientsAfterSeniorUpdate(
   seniorId,
   changes,
   t,
@@ -226,7 +226,7 @@ export async function editActiveRecipient(
   }
 }
 
-export async function editHomeActiveRecipients(
+export async function syncRecipientsAfterHomeUpdate(
   homeId,
   changes,
   t,

@@ -22,7 +22,7 @@ import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 import { z } from 'zod';
 import { getPotentialRecipients } from "../controllers/ctrl-potential-recipients.js";
-import { editActiveRecipient, editHomeActiveRecipients } from "../controllers/ctrl-sync-recipient.js";
+import { syncRecipientsAfterSeniorUpdate } from "../controllers/ctrl-sync-recipients.js";
 import { compareSeniorLists } from "../controllers/ctrl-compare-seniors-lists.js";
 import { addNewSeniors, removeSeniors, updateSeniors } from "../controllers/ctrl-update-seniors-list.js";
 import { addRecipients, markAbsentRecipients } from "../controllers/ctrl-check-recipients.js";
@@ -336,7 +336,7 @@ router.post(
                 transaction: t,
                 individualHooks: true
               });
-            await editActiveRecipient(id, payload, t);
+            await syncRecipientsAfterSeniorUpdate(id, payload, t);
           }
         }
 
@@ -826,7 +826,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
         }
-        await editActiveRecipient(id, { isRestricted: true }, t);
+        await syncRecipientsAfterSeniorUpdate(id, { isRestricted: true }, t);
       });
 
       res.status(200).send({ code: 'SENIOR.BLOCKED', data: null });
@@ -860,7 +860,7 @@ router.patch(
         if (affected !== 1) {
           throw new CustomError('ERRORS.SENIOR.NOT_FOUND', 404);
         }
-        await editActiveRecipient(id, { isRestricted: false }, t);
+        await syncRecipientsAfterSeniorUpdate(id, { isRestricted: false }, t);
       });
 
       res.status(200).send({ code: 'SENIOR.UNBLOCKED', data: null });
@@ -975,7 +975,7 @@ router.post(
             s.changes.gender !== undefined ||
             s.changes.birthDate !== undefined
           ) {
-            await editActiveRecipient(s.seniorId, s.changes, t);
+            await syncRecipientsAfterSeniorUpdate(s.seniorId, s.changes, t);
           }
         }
         await HomeUpdateDate.update(
