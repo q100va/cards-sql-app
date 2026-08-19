@@ -122,7 +122,7 @@ export const orderIdParamsSchema = z
 export const orderEditRecipientsSchema = z
     .object({
     id: positiveInt,
-    deletingIds: z.array(positiveInt),
+    deletingIds: z.array(positiveInt).min(1),
 })
     .strict();
 export const orderFilterRegionsAndHomesSchema = z

@@ -22,7 +22,6 @@ import { finalize, map, switchMap } from 'rxjs';
 import { SOURCES } from '../../../../shared/constants/orders';
 import {
   OrderDetails,
-  orderEditSchema,
 } from '../../../../shared/schemas/order.schema';
 import { OrderService } from '../../services/order.service';
 import { MessageWrapperService } from '../../services/message.service';
@@ -72,25 +71,7 @@ export class OrderDetailsComponent {
     { id: 4, label: 'ORDER.STATUS.OVERDUE' },
   ];
 
-  /*   readonly form = new FormGroup({
-    status: new FormControl<number>(1, {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        zodValidator(orderEditSchema.shape.status),
-      ],
-    }),
-    source: new FormControl<number>(1, {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        zodValidator(orderEditSchema.shape.source),
-      ],
-    }),
-    comment: new FormControl<string | null>(null, {
-      validators: [zodValidator(orderEditSchema.shape.comment)],
-    }),
-  }); */
+
 
   ngOnInit(): void {
     this.isLoading.set(true);
