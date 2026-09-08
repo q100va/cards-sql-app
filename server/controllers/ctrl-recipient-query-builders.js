@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { Region, Home, } from '../models/index.js';
+import { escapeLikeValue } from './ctrl-common-helpers.js';
 
 const RECIPIENT_ORDER_FIELDS = {
   fullName: 'fullNameSnapshot',
@@ -20,10 +21,6 @@ const RECIPIENT_ORDER_FIELDS = {
     'homeName',
   ],
 };
-
-function escapeLikeValue(value) {
-  return String(value).replace(/([_%\\])/g, '\\$1');
-}
 
 export function buildRecipientOrderField(field) {
   return RECIPIENT_ORDER_FIELDS[field] ?? 'homeIdSnapshot';

@@ -1258,14 +1258,14 @@
       "WRONG_DAY": "Allowed values: 1 through 31",
       "WRONG_YEAR": "Allowed values: 1900 through the current year",
       "INT_MIN_1": "Only integers greater than 0 are allowed",
-      "DATE_FROM_GREATER_THAN_TO": "The ‘from’ date cannot be later than the ‘to’ date",
-      "YEAR_FROM_GREATER_THAN_TO": "The ‘from’ year cannot be later than the ‘to’ year",
-      "WRONG_SUM": "The sum of the values must equal the requested amount",
-      "WRONG_NO_ADDRESS": "The maximum number of no-return-address entries cannot exceed the requested amount",
-      "WRONG_MIN": "The minimum from one home cannot exceed the requested amount",
-      "WRONG_MAX": "The maximum from one home cannot exceed the requested amount",
+      "INVALID_DATE_RANGE": "The ‘from’ date cannot be later than the ‘to’ date",
+      "INVALID_YEAR_RANGE": "The ‘from’ year cannot be later than the ‘to’ year",
+      "GENDER_AMOUNT_SUM": "The sum of the values must equal the requested amount",
+      "MAX_NO_ADDRESS_TOO_BIG": "The maximum number of no-return-address entries cannot exceed the requested amount",
+      "MIN_FROM_ONE_HOUSE_TOO_BIG": "The minimum from one home cannot exceed the requested amount",
+      "MAX_FROM_ONE_HOUSE_TOO_BIG": "The maximum from one home cannot exceed the requested amount",
       "MIN_GRATE_THAN_MAX": "The minimum from one home cannot exceed the maximum from one home",
-      "WRONG_PROPORTION": "This distribution across homes is not possible for the specified amount"
+      "IMPOSSIBLE_HOUSE_DISTRIBUTION": "This distribution across homes is not possible for the specified amount"
     }
   },
   "INTERNAL_VALIDATION": {

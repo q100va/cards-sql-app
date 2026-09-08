@@ -2,24 +2,46 @@ import { Router } from "express";
 import { Op } from 'sequelize';
 import {
   Order, Region, Home, HomeAddress, OrderRecipient,
-  Volunteer, VolunteerContact,
-  User, Institute, Occasion,
+  VolunteerContact,
+  User, Occasion,
   Recipient
 } from "../models/index.js";
 import CustomError from "../shared/customError.js";
 import * as orderSchemas from "../../shared/dist/schemas/order.schema.js";
+import {
+  ORDER_STATUSES,
+  ORDER_SOURCES,
+  ORDER_STATUS,
+  ORDER_RECIPIENT_STATUS,
+} from '../../shared/dist/constants/orders.js';
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import { validateRequest } from "../middlewares/validate-request.js";
 import { withTransaction } from "../controllers/with-transaction.js";
-import { createRecipientsList } from "../controllers/ctrl-create-order.js";
-import { createSpecialRecipientsList } from "../controllers/ctrl-create-special-order.js";
+import { createRecipientsListForOrder } from "../controllers/ctrl-create-order.js";
+import { createSpecialRecipientsListForOrder } from "../controllers/ctrl-create-special-order.js";
 import { transformOrder, transformOrderDisplayPart, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
-import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-apply-filter.js";
-import { dictToOptions, getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
+import { applyOrderFilters, buildOrderSort, dictToOptions, ORDER_LIST_INCLUDE } from "../controllers/ctrl-order-query-builders.js";
 import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js";
 
+
 const router = Router();
+
+async function getOrderDetails(id, t = null) {
+  const order = await Order.findByPk(id, {
+    attributes: {
+      exclude: ['updatedAt'],
+    },
+    include: ORDER_LIST_INCLUDE,
+    ...(t && { transaction: t }),
+  });
+
+  if (!order) {
+    throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+  }
+
+  return transformOrder(order, t);
+}
 
 router.get("/get-filters-data",
   requireAuth,
@@ -129,8 +151,8 @@ router.post(
 
         const restrictedRecipients = duplicates.flatMap(d => d.orderRecipients.map(r => r.recipientId));
         const recipientsList = filters.minFromOneHouse
-          ? await createSpecialRecipientsList(orderDraft, filters, restrictedRecipients, t)
-          : await createRecipientsList(orderDraft, filters, restrictedRecipients, t);
+          ? await createSpecialRecipientsListForOrder(orderDraft, filters, restrictedRecipients, t)
+          : await createRecipientsListForOrder(orderDraft, filters, restrictedRecipients, t);
 
         if (recipientsList.length < orderDraft.amount) return { contact: contact.content, recipients: [] };
 
@@ -142,7 +164,7 @@ router.post(
           {
             recipientId: r.id,
             orderId: order.id,
-            recipientStatus: 1,
+            recipientStatus: ORDER_RECIPIENT_STATUS.PRESENT,
             homeId: r.homeIdSnapshot,
             seniorId: r.seniorId,
           }));
@@ -152,7 +174,7 @@ router.post(
           transaction: t,
         });
 
-        const recipients = await transformOrderRecipientsPart(order.id, t);
+        const recipients = await transformOrderRecipientsPart(order, t);
         return { contact: contact.content, recipients };
       });
 
@@ -179,213 +201,56 @@ router.post(
         searchValue,
         filters
       } = req.body;
-      const dir = sortField ? (sortOrder === 1 ? 'ASC' : 'DESC') : 'DESC';
+
       const lang = req.headers['x-lang'] === 'ru' ? 'ru' : 'en';
 
-      const field = getOrderSortField(sortField);
-
-      const order =
-        sortField === 'status'
-          ? [
-            [getOrderStatusSortExpression(lang), dir],
-            ['id', 'ASC'],
-          ]
-          : sortField === 'source'
-            ? [
-              [getOrderSourceSortExpression(lang), dir],
-              ['id', 'ASC'],
-            ]
-            : sortField === 'occasionName' ?
-              [
-                [getOccasionTypeSortExpression(lang), dir],
-                [getOccasionMonthSortExpression(lang), dir],
-                [{ model: Occasion, as: 'occasion' }, 'year', dir],
-                ['id', 'ASC'],
-              ]
-              : Array.isArray(field)
-                ? [[...field, dir], ['id', 'ASC']]
-                : [[field, dir], ['id', 'ASC']];
+      const order = buildOrderSort(
+        sortField,
+        sortOrder,
+        lang,
+      );
 
       const where = {};
 
-      if (filters.amount !== undefined) {
-        applyNumericFilter(where, filters, 'amount');
-      }
-      if (filters.comment !== undefined) {
-        applyStringFilter(where, filters, 'comment');
-      }
-      if (filters.userId !== undefined) {
-        applyNumericFilter(where, filters, 'userId');
-      }
-      if (filters.status !== undefined) {
-        applyNumericFilter(where, filters, 'status');
-      }
-      if (filters.source !== undefined) {
-        applyNumericFilter(where, filters, 'source');
-      }
-      if (filters.date !== undefined) {
-        applyDateFilter(where, filters, 'date');
-      }
+      applyOrderFilters(
+        where,
+        filters,
+        searchValue,
+      );
 
-      where[Op.and] ??= [];
+      const include = ORDER_LIST_INCLUDE;
 
-      if (filters.volunteerName?.[0]?.value) {
-        const words = filters.volunteerName[0].value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
+      const [
+        total,
+        draft,
+        users,
+        occasions,
+      ] = await Promise.all([
+        Order.count({
+          where,
+          include,
+          distinct: true,
+        }),
 
-        where[Op.and].push(
-          ...words.map((word) => ({
-            [Op.or]: [
-              { '$volunteer.firstName$': { [Op.iLike]: `%${word}%` } },
-              { '$volunteer.lastName$': { [Op.iLike]: `%${word}%` } },
-              { '$volunteer.patronymic$': { [Op.iLike]: `%${word}%` } },
-            ],
-          })),
-        );
-      }
+        Order.findAll({
+          where,
+          attributes: {
+            exclude: ['updatedAt'],
+          },
+          order,
+          include,
+          offset,
+          limit,
+          distinct: true,
+        }),
 
-      if (filters.instituteName?.[0]?.value) {
-        const words = filters.instituteName[0].value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
-
-        where[Op.and].push(
-          ...words.map((word) => ({
-            [Op.or]: [
-              { '$institute.instituteName$': { [Op.iLike]: `%${word}%` } },
-              { '$institute.category$': { [Op.iLike]: `%${word}%` } },
-            ],
-          })),
-        );
-      }
-
-      if (filters.contact?.[0]?.value) {
-        const words = filters.contact[0].value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
-
-        where[Op.and].push(
-          ...words.map((word) => ({
-            [Op.or]: [
-              { '$contact.content$': { [Op.iLike]: `%${word}%` } },
-              { '$contact.type$': { [Op.iLike]: `%${word}%` } },
-            ],
-          })),
-        );
-      }
-
-      if (filters.occasionName?.[0]?.value) {
-
-        const filtered = filters.occasionName[0].value.filter(item => {
-          const REQUIRED_FIELDS = {
-            1: ['month', 'year'],
-            2: ['year'],
-            3: ['year'],
-            4: ['year'],
-            5: ['year'],
-            6: ['year'],
-          };
-          const required = REQUIRED_FIELDS[item.type];
-          if (!required) return false;
-
-          return required.every(field => item[field] != null);
-        });
-
-        where[Op.or] ??= [];
-
-        where[Op.or].push(
-          ...filtered.map((node) => ({
-            [Op.and]: [
-              { '$occasion.type$': node.type },
-              { '$occasion.month$': node.month },
-              { '$occasion.year$': node.year },
-            ],
-          })),
-        );
-      }
-
-      const search = String(searchValue ?? '').trim();
-      if (search) {
-        where[Op.or] ??= [];
-        const value = `%${search.replace(/([_%\\])/g, '\\$1')}%`;
-        where[Op.or] = [...where[Op.or],
-        { comment: { [Op.iLike]: value } },
-        { '$user.userName$': { [Op.iLike]: value } },
-        { '$volunteer.firstName$': { [Op.iLike]: value } },
-        { '$volunteer.lastName$': { [Op.iLike]: value } },
-        { '$volunteer.patronymic$': { [Op.iLike]: value } },
-        { '$institute.instituteName$': { [Op.iLike]: value } },
-        { '$institute.category$': { [Op.iLike]: value } },
-        { '$contact.content$': { [Op.iLike]: value } },
-        { '$contact.type$': { [Op.iLike]: value } },
-        ];
-      }
-
-      const include = [
-        {
-          model: User,
-          as: 'user',
+        User.findAll({
           attributes: ['id', 'userName'],
-        },
-        {
-          model: Volunteer,
-          as: 'volunteer',
-          attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-        },
-        {
-          model: Institute,
-          as: 'institute',
-          attributes: ['id', 'instituteName', 'category'],
-          required: false,
-        },
-        {
-          model: VolunteerContact,
-          as: 'contact',
-          attributes: ['id', 'content', 'type'],
-          required: false,
-        },
-        {
-          association: 'occasion',
-          attributes: ['id', 'type', 'month', 'year', 'amount', 'status'],
-        },
-      ];
+          order: [['userName', 'ASC']],
+          raw: true,
+        }),
 
-      const total = await Order.count({
-        where,
-        include,
-        distinct: true,
-      });
-
-      const draft = await Order.findAll({
-        where,
-        attributes: {
-          exclude: ['updatedAt']
-        },
-        order,
-        include,
-        offset,
-        limit,
-        distinct: true,
-      });
-      const orders = (await Promise.all(
-        draft.map(o => transformOrderDisplayPart(o.id))
-      )).filter(Boolean);
-
-      const users = await User.findAll({
-        attributes: ['id', 'userName'],
-        order: [["userName", "ASC"]],
-        raw: true,
-      });
-
-      const statuses = dictToOptions(ORDER_STATUSES, lang);
-      const sources = dictToOptions(ORDER_SOURCES, lang);
-
-      const occasions = await Occasion.findAll(
-        {
+        Occasion.findAll({
           attributes: ['id', 'month', 'year', 'type'],
           order: [
             ['type', 'ASC'],
@@ -393,27 +258,35 @@ router.post(
             ['year', 'ASC'],
           ],
           raw: true,
-        }
-      );
+        }),
+      ]);
+
+      const orders = draft.map(order => transformOrderDisplayPart(order));
+
+      const statuses = dictToOptions(ORDER_STATUSES, lang);
+      const sources = dictToOptions(ORDER_SOURCES, lang);
       const nodes = buildOccasionNodes(
         occasions,
         lang,
       );
-      res
-        .status(200)
-        .send({
-          data: {
-            list: orders, length: total, options: {
-              users, statuses, sources, nodes
-            }
-          }
-        });
+
+      res.status(200).send({
+        data: {
+          list: orders,
+          length: total,
+          options: {
+            users,
+            statuses,
+            sources,
+            nodes,
+          },
+        },
+      });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  }
-);
+  });
 
 router.patch(
   "/update-status",
@@ -432,48 +305,79 @@ router.patch(
         }
 
         if (
-          (existingOrder.status === 1 || existingOrder.status === 2)
-          && (status === 3 || status === 4)
+          (
+            existingOrder.status === ORDER_STATUS.PENDING ||
+            existingOrder.status === ORDER_STATUS.ACCEPTED
+          ) &&
+          (
+            status === ORDER_STATUS.RETURNED ||
+            status === ORDER_STATUS.OVERDUE
+          )
         ) {
           const recipients = await OrderRecipient.findAll({
             where: {
               orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              recipientStatus: {
+                [Op.not]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
             },
             attributes: ['recipientId'],
             transaction: t,
           });
-          const recipientIds = recipients.map((i) => i.recipientId);
+
+          const recipientIds = recipients.map(
+            (recipient) => recipient.recipientId,
+          );
+
           await Recipient.decrement('plusAmount', {
             by: 1,
-            where: { id: { [Op.in]: recipientIds } },
+            where: {
+              id: {
+                [Op.in]: recipientIds,
+              },
+            },
             transaction: t,
           });
         }
 
         if (
-          (existingOrder.status === 3 || existingOrder.status === 4)
-          && (status === 1 || status === 2)
+          (
+            existingOrder.status === ORDER_STATUS.RETURNED ||
+            existingOrder.status === ORDER_STATUS.OVERDUE
+          ) &&
+          (
+            status === ORDER_STATUS.PENDING ||
+            status === ORDER_STATUS.ACCEPTED
+          )
         ) {
           const recipients = await OrderRecipient.findAll({
             where: {
               orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              recipientStatus: {
+                [Op.not]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
             },
             attributes: ['recipientId'],
             transaction: t,
           });
-          const recipientIds = recipients.map((i) => i.recipientId);
+
+          const recipientIds = recipients.map(
+            (recipient) => recipient.recipientId,
+          );
+
           await Recipient.increment('plusAmount', {
             by: 1,
-            where: { id: { [Op.in]: recipientIds } },
+            where: {
+              id: {
+                [Op.in]: recipientIds,
+              },
+            },
             transaction: t,
           });
         }
 
         await existingOrder.update({ status }, { transaction: t });
-      }
-      );
+      });
 
       res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
@@ -499,27 +403,37 @@ router.delete(
           throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
 
-        if (existingOrder.status === 1 || existingOrder.status === 2) {
+        if (
+          existingOrder.status === ORDER_STATUS.PENDING ||
+          existingOrder.status === ORDER_STATUS.ACCEPTED
+        ) {
           const recipients = await OrderRecipient.findAll({
             where: {
               orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              recipientStatus: {
+                [Op.not]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
             },
             attributes: ['recipientId'],
             transaction: t,
           });
-          const recipientIds = recipients.map((i) => i.recipientId);
+
+          const recipientIds = recipients.map(
+            (recipient) => recipient.recipientId,
+          );
+
           await Recipient.decrement('plusAmount', {
             by: 1,
-            where: { id: { [Op.in]: recipientIds } },
+            where: {
+              id: {
+                [Op.in]: recipientIds,
+              },
+            },
             transaction: t,
           });
         }
-
         await existingOrder.destroy({ transaction: t });
-      }
-      );
-
+      });
 
       res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
@@ -535,10 +449,7 @@ router.get(
   validateRequest(orderSchemas.orderIdParamsSchema, 'params'),
   async (req, res, next) => {
     try {
-      const order = await transformOrder(req.params.id);
-      if (!order) {
-        throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
-      }
+      const order = await getOrderDetails(req.params.id);
       res.status(200).send({ data: order });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
@@ -573,7 +484,7 @@ router.patch(
             },
             orderId: id,
             recipientStatus: {
-              [Op.ne]: 3,
+              [Op.ne]: ORDER_RECIPIENT_STATUS.DELETED,
             },
           },
           attributes: ['id', 'recipientId'],
@@ -591,7 +502,7 @@ router.patch(
 
         await OrderRecipient.update(
           {
-            recipientStatus: 3,
+            recipientStatus: ORDER_RECIPIENT_STATUS.DELETED,
           },
           {
             where: {
@@ -600,17 +511,19 @@ router.patch(
               },
               orderId: id,
               recipientStatus: {
-                [Op.ne]: 3,
+                [Op.ne]: ORDER_RECIPIENT_STATUS.DELETED,
               },
             },
             transaction: t,
           },
         );
 
-        const recipientIds = recipients.map((i) => i.recipientId);
+        const recipientIds = recipients.map(
+          (recipient) => recipient.recipientId,
+        );
         if (
-          existingOrder.status === 1 ||
-          existingOrder.status === 2
+          existingOrder.status === ORDER_STATUS.PENDING ||
+          existingOrder.status === ORDER_STATUS.ACCEPTED
         ) {
           await Recipient.decrement('plusAmount', {
             by: 1,
@@ -623,9 +536,9 @@ router.patch(
           { amount: existingOrder.amount - recipientIds.length },
           { transaction: t }
         );
-      }
-      );
-      const order = await transformOrder(id);
+      });
+
+      const order = await getOrderDetails(id);
 
       res.status(200).send({ code: 'SUCCESS.UPDATED', data: order });
     } catch (error) {

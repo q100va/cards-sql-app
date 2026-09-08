@@ -8,15 +8,16 @@ export declare const orderDraftSchema: z.ZodObject<{
     volunteerId: z.ZodNumber;
     userId: z.ZodNumber;
     instituteId: z.ZodNullable<z.ZodNumber>;
-    status: z.ZodNumber;
-    source: z.ZodNumber;
+    status: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+    source: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>]>;
+    forSchoolDepartment: z.ZodBoolean;
     contactId: z.ZodNumber;
     amount: z.ZodNumber;
     comment: z.ZodNullable<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodString>>;
 }, z.core.$strict>;
 export declare const filterSchema: z.ZodOptional<z.ZodObject<{
-    addressCategory: z.ZodOptional<z.ZodNumber>;
-    gender: z.ZodOptional<z.ZodNumber>;
+    addressCategory: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>]>>;
+    gender: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>>;
     maleAmount: z.ZodOptional<z.ZodNumber>;
     femaleAmount: z.ZodOptional<z.ZodNumber>;
     onlyWithPicture: z.ZodOptional<z.ZodLiteral<true>>;
@@ -39,15 +40,16 @@ export declare const orderCreateSchema: z.ZodObject<{
         volunteerId: z.ZodNumber;
         userId: z.ZodNumber;
         instituteId: z.ZodNullable<z.ZodNumber>;
-        status: z.ZodNumber;
-        source: z.ZodNumber;
+        status: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+        source: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>]>;
+        forSchoolDepartment: z.ZodBoolean;
         contactId: z.ZodNumber;
         amount: z.ZodNumber;
         comment: z.ZodNullable<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodString>>;
     }, z.core.$strict>;
     filters: z.ZodOptional<z.ZodObject<{
-        addressCategory: z.ZodOptional<z.ZodNumber>;
-        gender: z.ZodOptional<z.ZodNumber>;
+        addressCategory: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>]>>;
+        gender: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>>;
         maleAmount: z.ZodOptional<z.ZodNumber>;
         femaleAmount: z.ZodOptional<z.ZodNumber>;
         onlyWithPicture: z.ZodOptional<z.ZodLiteral<true>>;
@@ -66,8 +68,8 @@ export declare const orderCreateSchema: z.ZodObject<{
     }, z.core.$strict>>;
 }, z.core.$strict>;
 export declare const orderFilterSchema: z.ZodObject<{
-    addressCategory: z.ZodNumber;
-    gender: z.ZodNumber;
+    addressCategory: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>]>;
+    gender: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
     maleAmount: z.ZodNullable<z.ZodNumber>;
     femaleAmount: z.ZodNullable<z.ZodNumber>;
     onlyWithPicture: z.ZodBoolean;
@@ -102,15 +104,12 @@ export declare const orderQueryDTOSchema: z.ZodObject<{
             year: z.ZodNullable<z.ZodNumber>;
         }, z.core.$strict>>]>;
         matchMode: z.ZodString;
-        operator: z.ZodEnum<{
-            and: "and";
-            or: "or";
-        }>;
+        operator: z.ZodString;
     }, z.core.$strict>>>>;
 }, z.core.$strict>;
 export declare const orderStatusUpdateSchema: z.ZodObject<{
     id: z.ZodNumber;
-    status: z.ZodNumber;
+    status: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
 }, z.core.$strict>;
 export declare const orderIdParamsSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
@@ -171,7 +170,7 @@ export declare const orderSchema: z.ZodObject<{
     instituteName: z.ZodNullable<z.ZodString>;
     contact: z.ZodString;
     status: z.ZodString;
-    statusId: z.ZodNumber;
+    statusId: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
     source: z.ZodString;
     occasion: z.ZodString;
     occasionStatus: z.ZodNumber;
@@ -196,7 +195,7 @@ export declare const ordersListSchema: z.ZodObject<{
         instituteName: z.ZodNullable<z.ZodString>;
         contact: z.ZodString;
         status: z.ZodString;
-        statusId: z.ZodNumber;
+        statusId: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
         source: z.ZodString;
         occasion: z.ZodString;
         occasionStatus: z.ZodNumber;
@@ -209,11 +208,11 @@ export declare const ordersListSchema: z.ZodObject<{
             userName: z.ZodString;
         }, z.core.$strict>>;
         statuses: z.ZodArray<z.ZodObject<{
-            value: z.ZodNumber;
+            value: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
             label: z.ZodString;
         }, z.core.$strict>>;
         sources: z.ZodArray<z.ZodObject<{
-            value: z.ZodNumber;
+            value: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>]>;
             label: z.ZodString;
         }, z.core.$strict>>;
         nodes: z.ZodArray<z.ZodType<OccasionNode, unknown, z.core.$ZodTypeInternals<OccasionNode, unknown>>>;
@@ -228,7 +227,7 @@ export declare const orderDetailsSchema: z.ZodObject<{
     instituteName: z.ZodNullable<z.ZodString>;
     contact: z.ZodString;
     status: z.ZodString;
-    statusId: z.ZodNumber;
+    statusId: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
     source: z.ZodString;
     occasion: z.ZodString;
     occasionStatus: z.ZodNumber;

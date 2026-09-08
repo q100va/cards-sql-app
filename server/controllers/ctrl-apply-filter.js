@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import CustomError from '../shared/customError.js';
+import { escapeLikeValue } from './ctrl-common-helpers.js';
 
 const NUMERIC_OPERATIONS = {
   equals: Op.eq,
@@ -96,11 +97,6 @@ function getNumericFilterValue(filter) {
   }
 
   return getNumericValue(filter.value);
-}
-
-// Escape SQL LIKE wildcard characters.
-export function escapeLikeValue(value) {
-  return String(value).replace(/([_%\\])/g, '\\$1');
 }
 
 function getDayRange(date) {

@@ -132,3 +132,8 @@ export function getSpecialComment(birthYear, occasionYear) {
   }
   return '';
 }
+
+// Escape SQL LIKE wildcard characters.
+export function escapeLikeValue(value) {
+  return String(value).replace(/([_%\\])/g, '\\$1');
+}
