@@ -19,7 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { finalize, map, switchMap } from 'rxjs';
 
-import { SOURCES } from '../../../../shared/constants/orders';
+import { ORDER_SOURCE_OPTIONS } from '../../../../shared/constants/orders';
 import {
   OrderDetails,
 } from '../../../../shared/schemas/order.schema';
@@ -56,7 +56,7 @@ export class OrderDetailsComponent {
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly translateService = inject(TranslateService);
   readonly dateUtils = inject(DateUtilsService);
-  readonly SOURCES = SOURCES;
+  readonly sources = ORDER_SOURCE_OPTIONS;
 
   readonly isLoading = signal(false);
 
@@ -117,7 +117,7 @@ export class OrderDetailsComponent {
   }
 
   sourceLabel(sourceId: number): string {
-    return SOURCES.find((source) => source.id === sourceId)?.optionKey ?? '';
+    return this.sources.find((source) => source.id === sourceId)?.optionKey ?? '';
   }
 
   statusLabel(statusId: number): string {

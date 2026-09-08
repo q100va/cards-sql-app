@@ -59,7 +59,7 @@
                   {{'ORDER.CARD.SOURCE_LABEL' | translate}}
                 </mat-label>
                 <mat-select [formControl]="orderForm.controls.source">
-                  @for(source of SOURCES; track source.id){
+                  @for(source of sources; track source.id){
                   <mat-option [value]="source.id">{{source.optionKey | translate}}</mat-option>
                   }
                 </mat-select>
