@@ -1,38 +1,81 @@
-import CustomError from "../shared/customError.js";
-import { MONTHS, OCCASION_TYPES_BY_ID } from "../../shared/dist/constants/occasions.js";
+import CustomError from '../shared/customError.js';
+
+import {
+  MONTHS,
+  OCCASION_TYPES_BY_ID,
+} from '../../shared/dist/constants/occasions.js';
+
+import {
+  REPORT_FREQUENCY,
+  REPORT_TYPE,
+} from '../../shared/dist/constants/reports.js';
+
+import {
+  ORDER_SOURCE,
+} from '../../shared/dist/constants/orders.js';
+
+// TODO: Replace institute category names with shared constants.
+const SCHOOL_CATEGORIES = new Set([
+  'дошкольное ОУ',
+  'школа',
+  'профессиональное ОУ',
+  'ВУЗ',
+  'Preschool',
+  'School',
+  'College',
+  'University',
+]);
 
 export function getSelectedDateRanges(selection) {
   switch (selection.frequency) {
-    case 'MONTHLY':
+    case REPORT_FREQUENCY.MONTHLY:
       return selection.years.flatMap((year) =>
         selection.months.map((month) => ({
-          startDate: new Date(Date.UTC(year, month - 1, 1)),
-          endDate: new Date(Date.UTC(year, month, 1)),
+          startDate: new Date(
+            Date.UTC(year, month - 1, 1),
+          ),
+          endDate: new Date(
+            Date.UTC(year, month, 1),
+          ),
         })),
       );
 
-    case 'QUARTERLY':
+    case REPORT_FREQUENCY.QUARTERLY:
       return selection.years.flatMap((year) =>
         selection.quarters.map((quarter) => {
           const startMonth = (quarter - 1) * 3;
 
           return {
-            startDate: new Date(Date.UTC(year, startMonth, 1)),
-            endDate: new Date(Date.UTC(year, startMonth + 3, 1)),
+            startDate: new Date(
+              Date.UTC(year, startMonth, 1),
+            ),
+            endDate: new Date(
+              Date.UTC(year, startMonth + 3, 1),
+            ),
           };
         }),
       );
 
-    case 'ANNUAL':
+    case REPORT_FREQUENCY.ANNUAL:
       return selection.years.map((year) => ({
-        startDate: new Date(Date.UTC(year, 0, 1)),
-        endDate: new Date(Date.UTC(year + 1, 0, 1)),
+        startDate: new Date(
+          Date.UTC(year, 0, 1),
+        ),
+        endDate: new Date(
+          Date.UTC(year + 1, 0, 1),
+        ),
       }));
+
+    default:
+      throw new CustomError(
+        'ERRORS.UNSUPPORTED_TYPE',
+        422,
+      );
   }
 }
 
 const ALGORITHM = {
-  1: (groups) => Array.from(groups.values()).map((group) => ({
+  [REPORT_TYPE.GENERAL]: (groups) => Array.from(groups.values()).map((group) => ({
     ...group,
     volunteersCount: group.volunteersCount.size,
     institutesCount: group.institutesCount.size,
@@ -45,19 +88,19 @@ const ALGORITHM = {
       seniorsCount: occasion.seniorsCount.size,
     })),
   })),
-  2: (groups) => Array.from(groups.values()).map((group) => ({
+  [REPORT_TYPE.PERSONAL]: (groups) => Array.from(groups.values()).map((group) => ({
     ...group,
     volunteersCount: group.volunteersCount.size,
     seniorsCount: group.seniorsCount.size,
     institutesCount: group.institutesCount.size,
   })),
-  3: (groups) => Array.from(groups.values()).map((group) => ({
+  [REPORT_TYPE.SCHOOL_COORDINATION]: (groups) => Array.from(groups.values()).map((group) => ({
     ...group,
     volunteersCount: group.volunteersCount.size,
     schoolsCount: group.schoolsCount.size,
     newSchoolsCount: group.newSchoolsCount.size,
   })),
-  4: (groups) => Array.from(groups.values()).map((group) => ({
+  [REPORT_TYPE.BY_OCCASION]: (groups) => Array.from(groups.values()).map((group) => ({
     ...group,
     volunteersCount: group.volunteersCount.size,
     seniorsCount: group.seniorsCount.size,
@@ -69,12 +112,25 @@ const ALGORITHM = {
 };
 
 function getOccasionName(occasion) {
-  const type = OCCASION_TYPES_BY_ID[occasion.type].nameKey;
-  const monthNameKey = occasion.month ? (MONTHS.find(m => m.id === occasion.month)).nameKey : null;
-  return [type, monthNameKey, occasion.year].filter(Boolean).join(" ");
+  const typeNameKey =
+    OCCASION_TYPES_BY_ID[occasion.type].nameKey;
+
+  const monthNameKey = occasion.month
+    ? MONTHS.find(
+      (month) => month.id === occasion.month,
+    )?.nameKey
+    : null;
+
+  return [
+    typeNameKey,
+    monthNameKey,
+    occasion.year,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
-//TODO:  home categories??? | institute categories | empty row for report
+// TODO: Add empty periods if reports must include periods without orders.
 
 export function getReportByPeriods(
   type,
@@ -94,7 +150,7 @@ export function getReportByPeriods(
     let periodData;
 
     switch (frequency) {
-      case 'MONTHLY':
+      case REPORT_FREQUENCY.MONTHLY:
         key = `${year}-${month}`;
         periodData = {
           year,
@@ -102,7 +158,7 @@ export function getReportByPeriods(
         };
         break;
 
-      case 'QUARTERLY':
+      case REPORT_FREQUENCY.QUARTERLY:
         key = `${year}-Q${quarter}`;
         periodData = {
           year,
@@ -110,7 +166,7 @@ export function getReportByPeriods(
         };
         break;
 
-      case 'ANNUAL':
+      case REPORT_FREQUENCY.ANNUAL:
         key = `${year}`;
         periodData = {
           year,
@@ -118,45 +174,56 @@ export function getReportByPeriods(
         break;
 
       default:
-        throw new CustomError('ERRORS.REPORTS.INVALID_REQUEST', 422);
+        throw new CustomError(
+          'ERRORS.UNSUPPORTED_TYPE',
+          422,
+        );
     }
 
     const existingGroup = groups.get(key);
-    const instCreatedAt = new Date(order.institute?.createdAt);
+
+    // A school is new if it was created in the reported period.
     let instKey;
 
-    if (instCreatedAt) {
-      const instYear = instCreatedAt.getUTCFullYear();
-      const instMonth = instCreatedAt.getUTCMonth() + 1;
-      const instQuarter = Math.ceil(month / 3);
+    if (
+      type === REPORT_TYPE.SCHOOL_COORDINATION &&
+      order.institute?.createdAt
+    ) {
+      const instCreatedAt = new Date(
+        order.institute.createdAt,
+      );
+
+      const instYear =
+        instCreatedAt.getUTCFullYear();
+
+      const instMonth =
+        instCreatedAt.getUTCMonth() + 1;
+
+      const instQuarter =
+        Math.ceil(instMonth / 3);
 
       switch (frequency) {
-        case 'MONTHLY':
+        case REPORT_FREQUENCY.MONTHLY:
           instKey = `${instYear}-${instMonth}`;
           break;
 
-        case 'QUARTERLY':
-          instKey = `${instYear}-Q${instQuarter}`;
+        case REPORT_FREQUENCY.QUARTERLY:
+          instKey =
+            `${instYear}-Q${instQuarter}`;
           break;
 
-        case 'ANNUAL':
+        case REPORT_FREQUENCY.ANNUAL:
           instKey = `${instYear}`;
           break;
-
-        default:
-          throw new CustomError('ERRORS.REPORTS.INVALID_REQUEST', 422);
       }
     }
 
-    //for type 1
-    if (type === 1) {
-      let seniors = [];
-      let homes = [];
-      let regions = [];
-      const categories = ['дошкольное ОУ', 'школа', 'профессиональное ОУ', 'ВУЗ',
-        'Preschool', 'School', 'College', 'University'];
+    if (type === REPORT_TYPE.GENERAL) {
+      const seniors = [];
+      const homes = [];
+      const regions = [];
 
-      for (let recipient of order.orderRecipients) {
+      for (const recipient of order.orderRecipients) {
         seniors.push(recipient.seniorId);
         homes.push(recipient.homeId);
         regions.push(recipient.recipient.regionIdSnapshot);
@@ -184,7 +251,9 @@ export function getReportByPeriods(
         existingGroup.volunteersCount.add(order.volunteerId);
         if (order.instituteId) {
           existingGroup.institutesCount.add(order.instituteId);
-          if (categories.includes(order.institute.category)) {
+          if (SCHOOL_CATEGORIES.has(
+            order.institute.category,
+          )) {
             existingGroup.schoolsCount.add(order.instituteId);
           }
         }
@@ -202,12 +271,14 @@ export function getReportByPeriods(
         const occasions = new Map();
         updateOccasion(occasions);
         groups.set(key, {
-          key: key,
-          periodData: periodData,
+          key,
+          periodData,
           recipientsCount: Number(order.amount),
           volunteersCount: new Set([order.volunteerId]),
           institutesCount: order.instituteId ? new Set([order.instituteId]) : new Set(),
-          schoolsCount: (order.instituteId && categories.includes(order.institute.category)) ? new Set([order.instituteId]) : new Set(),
+          schoolsCount: (order.instituteId && SCHOOL_CATEGORIES.has(
+            order.institute.category,
+          )) ? new Set([order.instituteId]) : new Set(),
           seniorsCount: new Set(seniors),
           homesCount: new Set(homes),
           regionsCount: new Set(regions),
@@ -215,16 +286,12 @@ export function getReportByPeriods(
 
         });
       }
-
-      console.log('SENIORS', seniors);
-
     }
 
-    //for type 2
-    if (type === 2) {
-      let seniors = [];
+    if (type === REPORT_TYPE.PERSONAL) {
+      const seniors = [];
 
-      for (let recipient of order.orderRecipients) {
+      for (const recipient of order.orderRecipients) {
         seniors.push(recipient.seniorId);
       }
 
@@ -238,13 +305,10 @@ export function getReportByPeriods(
         if (order.instituteId) {
           existingGroup.institutesCount.add(order.instituteId);
         }
-        if (order.instituteId) {
-          existingGroup.institutesCount.add(order.instituteId);
-        }
       } else {
         groups.set(key, {
-          key: key,
-          periodData: periodData,
+          key,
+          periodData,
           ordersCount: 1,
           recipientsCount: Number(order.amount),
           seniorsCount: new Set(seniors),
@@ -254,11 +318,10 @@ export function getReportByPeriods(
       }
     }
 
-    //for type 3
-    if (type === 3) {
+    if (type === REPORT_TYPE.SCHOOL_COORDINATION) {
       if (existingGroup) {
         existingGroup.ordersCount += 1;
-        if (order.source === 7) {
+        if (order.source === ORDER_SOURCE.DOBRORU) {
           existingGroup.dobroruCount += 1;
         }
         existingGroup.recipientsCount += Number(order.amount);
@@ -269,10 +332,10 @@ export function getReportByPeriods(
         }
       } else {
         groups.set(key, {
-          key: key,
-          periodData: periodData,
+          key,
+          periodData,
           ordersCount: 1,
-          dobroruCount: order.source === 7 ? 1 : 0,
+          dobroruCount: order.source === ORDER_SOURCE.DOBRORU ? 1 : 0,
           recipientsCount: Number(order.amount),
           volunteersCount: new Set([order.volunteerId]),
           schoolsCount: order.instituteId ? new Set([order.instituteId]) : new Set(),
@@ -282,10 +345,7 @@ export function getReportByPeriods(
     }
   }
 
-  console.log('seniorsCount', groups.values());
-
   const groupedOrders = ALGORITHM[type](groups);
-  //console.log('groupedOrders', groupedOrders);
 
   return groupedOrders.sort((a, b) => {
     const yearDifference =
@@ -295,14 +355,14 @@ export function getReportByPeriods(
       return yearDifference;
     }
 
-    if (frequency === 'MONTHLY') {
+    if (frequency === REPORT_FREQUENCY.MONTHLY) {
       return (
         (a.periodData.month ?? 0) -
         (b.periodData.month ?? 0)
       );
     }
 
-    if (frequency === 'QUARTERLY') {
+    if (frequency === REPORT_FREQUENCY.QUARTERLY) {
       return (
         (a.periodData.quarter ?? 0) -
         (b.periodData.quarter ?? 0)
@@ -315,15 +375,13 @@ export function getReportByPeriods(
 
 export function getReportByOccasion(orders) {
   const groups = new Map();
-  const categories = ['дошкольное ОУ', 'школа', 'профессиональное ОУ', 'ВУЗ',
-    'Preschool', 'School', 'College', 'University'];
 
   for (const order of orders) {
-    let seniors = [];
-    let homes = [];
-    let regions = [];
+    const seniors = [];
+    const homes = [];
+    const regions = [];
 
-    for (let recipient of order.orderRecipients) {
+    for (const recipient of order.orderRecipients) {
       seniors.push(recipient.seniorId);
       homes.push(recipient.homeId);
       regions.push(recipient.recipient.regionIdSnapshot);
@@ -337,7 +395,9 @@ export function getReportByOccasion(orders) {
       existingGroup.volunteersCount.add(order.volunteerId);
       if (order.instituteId) {
         existingGroup.institutesCount.add(order.instituteId);
-        if (categories.includes(order.institute.category)) {
+        if (SCHOOL_CATEGORIES.has(
+          order.institute.category,
+        )) {
           existingGroup.schoolsCount.add(order.instituteId);
         }
       }
@@ -358,7 +418,9 @@ export function getReportByOccasion(orders) {
         recipientsCount: Number(order.amount),
         volunteersCount: new Set([order.volunteerId]),
         institutesCount: order.instituteId ? new Set([order.instituteId]) : new Set(),
-        schoolsCount: (order.instituteId && categories.includes(order.institute.category)) ? new Set([order.instituteId]) : new Set(),
+        schoolsCount: (order.instituteId && SCHOOL_CATEGORIES.has(
+          order.institute.category,
+        )) ? new Set([order.instituteId]) : new Set(),
         seniorsCount: new Set(seniors),
         homesCount: new Set(homes),
         regionsCount: new Set(regions),
@@ -366,7 +428,7 @@ export function getReportByOccasion(orders) {
       });
     }
   }
-  return ALGORITHM[4](groups);
+  return ALGORITHM[REPORT_TYPE.BY_OCCASION](groups);
 }
 
 export function getStatistic(recipients) {
@@ -374,7 +436,9 @@ export function getStatistic(recipients) {
 
   for (const recipient of recipients) {
 
-    const isParticular = recipient.category.startsWith('ment') || recipient.category.startsWith('spec');
+    const isParticular = recipient.category.startsWith('ment') ||
+      recipient.category.startsWith('spec');
+
     const plusAmount = recipient.plusAmount;
 
     const existingGroup = groups.get(recipient.occasionId);
@@ -386,22 +450,20 @@ export function getStatistic(recipients) {
       if (plusAmount === 0) {
         existingGroup.zeroAll += 1;
         if (isParticular) existingGroup.zeroPart += 1;
-      }
-      if (plusAmount === 1) {
+      } else if (plusAmount === 1) {
         existingGroup.onceAll += 1;
         if (isParticular) existingGroup.oncePart += 1;
-      }
-      if (plusAmount === 2) {
+      } else if (plusAmount === 2) {
         existingGroup.twiceAll += 1;
         if (isParticular) existingGroup.twicePart += 1;
-      }
-      if (plusAmount === 3) {
+      } else if (plusAmount === 3) {
         existingGroup.threeTimesAll += 1;
         if (isParticular) existingGroup.threeTimesPart += 1;
-      }
-      if (plusAmount > 3) {
+      } else if (plusAmount > 3) {
         existingGroup.fourTimesOrMoreAll += 1;
-        if (isParticular) existingGroup.fourTimesOrMorePart += 1;
+        if (isParticular) {
+          existingGroup.fourTimesOrMorePart += 1;
+        }
       }
 
     } else {
@@ -425,149 +487,4 @@ export function getStatistic(recipients) {
   }
   return Array.from(groups.values());
 }
-
-export const COLUMNS = {
-
-  1: () => [
-    { field: 'periodData', header: 'REPORTS.TABLE.PERIOD' },
-    {
-      field: 'recipientsCount',
-      header: 'REPORTS.TABLE.CARDS_COUNT',
-    },
-    {
-      field: 'seniorsCount',
-      header: 'REPORTS.TABLE.SENIORS_COUNT',
-    },
-    {
-      field: 'homesCount',
-      header: 'REPORTS.TABLE.HOMES_COUNT',
-    },
-    {
-      field: 'regionsCount',
-      header: 'REPORTS.TABLE.REGIONS_COUNT',
-    },
-    {
-      field: 'volunteersCount',
-      header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
-    },
-    { field: 'institutesCount', header: 'REPORTS.TABLE.INSTITUTES_COUNT' },
-    { field: 'schoolsCount', header: 'REPORTS.TABLE.SCHOOLS_COUNT' },
-  ],
-
-  2: () => [
-    { field: 'periodData', header: 'REPORTS.TABLE.PERIOD' },
-    { field: 'ordersCount', header: 'REPORTS.TABLE.ORDERS_COUNT' },
-    {
-      field: 'recipientsCount',
-      header: 'REPORTS.TABLE.CARDS_COUNT',
-    },
-    { field: 'seniorsCount', header: 'REPORTS.TABLE.SENIORS_COUNT' },
-    {
-      field: 'volunteersCount',
-      header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
-    },
-    { field: 'institutesCount', header: 'REPORTS.TABLE.INSTITUTES_COUNT' },
-  ],
-
-  3: () => [
-    { field: 'periodData', header: 'REPORTS.TABLE.PERIOD' },
-    { field: 'ordersCount', header: 'REPORTS.TABLE.ORDERS_COUNT' },
-    { field: 'dobroruCount', header: 'REPORTS.TABLE.DOBRORU_COUNT' },
-    {
-      field: 'recipientsCount',
-      header: 'REPORTS.TABLE.CARDS_COUNT',
-    },
-    {
-      field: 'volunteersCount',
-      header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
-    },
-    { field: 'schoolsCount', header: 'REPORTS.TABLE.SCHOOLS_COUNT' },
-    {
-      field: 'newSchoolsCount',
-      header: 'REPORTS.TABLE.NEW_SCHOOLS_COUNT',
-    },
-  ],
-
-  4: () => [
-    { field: 'occasionName', header: 'REPORTS.TABLE.OCCASION' },
-    { field: 'ordersCount', header: 'REPORTS.TABLE.ORDERS_COUNT' },
-    {
-      field: 'recipientsCount',
-      header: 'REPORTS.TABLE.CARDS_COUNT',
-    },
-    {
-      field: 'seniorsCount',
-      header: 'REPORTS.TABLE.SENIORS_COUNT',
-    },
-    {
-      field: 'homesCount',
-      header: 'REPORTS.TABLE.HOMES_COUNT',
-    },
-    {
-      field: 'regionsCount',
-      header: 'REPORTS.TABLE.REGIONS_COUNT',
-    },
-    {
-      field: 'volunteersCount',
-      header: 'REPORTS.TABLE.VOLUNTEERS_COUNT',
-    },
-    { field: 'institutesCount', header: 'REPORTS.TABLE.INSTITUTES_COUNT' },
-    { field: 'schoolsCount', header: 'REPORTS.TABLE.SCHOOLS_COUNT' },
-  ],
-
-  5: () => [
-    { field: 'occasionName', header: 'STATISTIC.TABLE.OCCASION' },
-    { field: 'allRecipients', header: 'STATISTIC.TABLE.ALL_RECIPIENTS' },
-    {
-      field: 'partRecipients',
-      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
-    },
-    {
-      field: 'zeroAll',
-      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
-    },
-    {
-      field: 'zeroPart',
-      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
-    },
-    {
-      field: 'onceAll',
-      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
-    },
-    {
-      field: 'oncePart',
-      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
-    },
-    {
-      field: 'twiceAll',
-      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
-    },
-    {
-      field: 'twicePart',
-      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
-    },
-    {
-      field: 'threeTimesAll',
-      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
-    },
-    {
-      field: 'threeTimesPart',
-      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
-    },
-    {
-      field: 'fourTimesOrMoreAll',
-      header: 'STATISTIC.TABLE.ALL_RECIPIENTS',
-    },
-    {
-      field: 'fourTimesOrMorePart',
-      header: 'STATISTIC.TABLE.PART_RECIPIENTS',
-    },
-
-  ],
-
-
-
-}
-
-
 

@@ -1135,6 +1135,7 @@
     "DATA_NOT_FOUND": "Data not found.",
     "DATA_CREATE_FAILED": "Failed to create the record.",
     "DATA_CHECK_FAILED": "Failed to verify data.",
+    "REPORT_GENERATE_FAILED": "Failed to generate report.",
 
     "OCCASION": {
       "ALREADY_EXISTS": "Occasion with this name already exists.",

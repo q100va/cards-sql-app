@@ -90,7 +90,6 @@ export class StatisticComponent {
   async exportToExcel(): Promise<void> {
     if (
       !this.generalStatistic.length ||
-      !this.cols.length ||
       this.isExporting
     ) {
       return;
@@ -112,7 +111,7 @@ export class StatisticComponent {
       fourTimesOrMoreAll: i.fourTimesOrMoreAll,
       fourTimesOrMorePart: i.fourTimesOrMorePart,
     }));
-    const columnsDraft = [
+    const exportColumnsDraft = [
       { field: 'occasionName', header: 'STATISTIC.EXPORT.OCCASION', width:30 },
       { field: 'allRecipients', header: 'STATISTIC.EXPORT.ALL' },
       {
@@ -161,14 +160,14 @@ export class StatisticComponent {
       },
     ];
 
-    const columns = columnsDraft.map((i) => ({
+    const exportColumns = exportColumnsDraft.map((i) => ({
       field: i.field,
       header: this.translateService.instant(i.header),
       width: i.width ?? 18
     }));
 
     try {
-      await this.fileService.export(data, columns, {
+      await this.fileService.export(data, exportColumns, {
         fileName: `statistic-${new Date().toISOString().slice(0, 10)}.xlsx`,
         sheetName: 'Statistic',
       });

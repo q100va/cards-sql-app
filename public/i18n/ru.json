@@ -1132,6 +1132,7 @@
     "DATA_UPDATE_FAILED": "Не удалось обновить данные.",
     "DATA_DELETE_FAILED": "Не удалось удалить данные.",
     "DATA_CHECK_FAILED": "Не удалось проверить данные.",
+    "REPORT_GENERATE_FAILED": "Не удалось сформировать отчет.",
 
     "OCCASION": {
       "ALREADY_EXISTS": "Такой праздник уже существует.",

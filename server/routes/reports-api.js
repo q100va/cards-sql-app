@@ -1,23 +1,56 @@
-import { Router } from "express";
-import { literal, Op } from 'sequelize';
-import { number, z } from 'zod';
+import { Router } from 'express';
+import { Op } from 'sequelize';
+
 import {
-  Order, Region, Home, HomeAddress, OrderRecipient,
-  Volunteer, VolunteerContact,
-  User, Institute, Occasion,
-  Recipient
-} from "../models/index.js";
-import requireAuth from "../middlewares/check-auth.js";
-import { requireOperation, requireAny } from '../middlewares/require-permission.js';
-import { validateRequest } from "../middlewares/validate-request.js";
-import CustomError from "../shared/customError.js";
-import * as reportSchemas from "../../shared/dist/schemas/report.schema.js";
-import { withTransaction } from "../controllers/with-transaction.js";
-import { col, fn } from 'sequelize';
-import { COLUMNS, getSelectedDateRanges, getReportByPeriods, getReportByOccasion, getStatistic } from "../controllers/ctrl-generate-reports.js";
+  Order,
+  OrderRecipient,
+  Institute,
+  Occasion,
+  Recipient,
+} from '../models/index.js';
+
+import requireAuth from '../middlewares/check-auth.js';
+import {
+  requireOperation,
+  requireAny,
+} from '../middlewares/require-permission.js';
+import { validateRequest } from '../middlewares/validate-request.js';
+
+import * as reportSchemas from '../../shared/dist/schemas/report.schema.js';
+
+import {
+  COLUMNS,
+  REPORT_TYPE,
+} from '../../shared/dist/constants/reports.js';
+
+import {
+  ORDER_STATUS,
+  ORDER_RECIPIENT_STATUS,
+} from '../../shared/dist/constants/orders.js';
+
+import {
+  OCCASION_STATUS,
+} from '../../shared/dist/constants/occasions.js';
+
+import {
+  getSelectedDateRanges,
+  getReportByPeriods,
+  getReportByOccasion,
+  getStatistic,
+} from '../controllers/ctrl-generate-reports.js';
 
 
 const router = Router();
+
+const ACTIVE_ORDER_STATUSES = [
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.ACCEPTED,
+];
+
+const ACTIVE_RECIPIENT_STATUSES = [
+  ORDER_RECIPIENT_STATUS.PRESENT,
+  ORDER_RECIPIENT_STATUS.ABSENT,
+];
 
 router.post("/get-report",
   requireAuth,
@@ -26,20 +59,31 @@ router.post("/get-report",
   async (req, res, next) => {
     try {
       const { userId, type, frequency, months, quarters, years } = req.body;
-      console.log('req.body', req.body);
       const where = {};
       if (userId) where.userId = userId;
 
-      if (type === 1 || type === 4) where.status = { [Op.in]: [1, 2] };
+      if (
+        type === REPORT_TYPE.GENERAL ||
+        type === REPORT_TYPE.BY_OCCASION
+      ) {
+        where.status = {
+          [Op.in]: ACTIVE_ORDER_STATUSES,
+        };
+      }
 
       let include = [];
-      if (type === 1 || type === 4) {
+      if (type === REPORT_TYPE.GENERAL ||
+        type === REPORT_TYPE.BY_OCCASION) {
         include = [
           {
             model: OrderRecipient,
             as: 'orderRecipients',
-            where: { recipientStatus: { [Op.in]: [1, 2] } },
-            require: true,
+            where: {
+              recipientStatus: {
+                [Op.in]: ACTIVE_RECIPIENT_STATUSES,
+              },
+            },
+            required: true,
             attributes: ['homeId', 'seniorId'],
             include: [
               {
@@ -66,20 +110,34 @@ router.post("/get-report",
           }
         ];
       }
-      if (type === 2) {
+      if (type === REPORT_TYPE.PERSONAL) {
         include = [
           {
             model: OrderRecipient,
             as: 'orderRecipients',
-            where: { recipientStatus: { [Op.in]: [1, 2] } },
-            require: true,
+            where: {
+              recipientStatus: {
+                [Op.in]: ACTIVE_RECIPIENT_STATUSES,
+              },
+            },
+            required: true,
             attributes: ['seniorId'],
+          },
+        ];
+      }
+
+      if (type === REPORT_TYPE.SCHOOL_COORDINATION) {
+        include = [
+          {
+            model: Institute,
+            as: 'institute',
+            attributes: ['createdAt'],
           },
         ];
       }
       let fullWhere = {};
 
-      if (type === 4) {
+      if (type === REPORT_TYPE.BY_OCCASION) {
         fullWhere = {
           [Op.and]: [
             where,
@@ -90,10 +148,6 @@ router.post("/get-report",
         };
       } else {
         const dateRanges = getSelectedDateRanges({ frequency, months, quarters, years });
-
-        if (dateRanges.length === 0) {
-          throw new CustomError('ERRORS.REPORTS.INVALID_REQUEST', 422);
-        }
 
         const periodConditions = dateRanges.map(({ startDate, endDate }) => ({
           createdAt: {
@@ -111,24 +165,25 @@ router.post("/get-report",
           ],
         };
       }
-
-
-
       const orders = await Order.findAll({
         where: fullWhere,
         include,
         order: [['createdAt', 'ASC']],
-        //raw: true,
       });
-      //console.log('ORDERS', orders);
-      //console.dir(orders, { depth: null });
 
-      const report = type === 4 ? getReportByOccasion(orders) : getReportByPeriods(type, orders, frequency);
-      const cols = COLUMNS[type]();
+      const report =
+        type === REPORT_TYPE.BY_OCCASION
+          ? getReportByOccasion(orders)
+          : getReportByPeriods(
+            type,
+            orders,
+            frequency,
+          );
+      const cols = COLUMNS[type];
 
       res.status(200).send({ data: { type, report, cols } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.FILTER_DATA_FAILED';
+      error.code = error.code ?? 'ERRORS.REPORT_GENERATE_FAILED';
       next(error);
     }
   }
@@ -136,13 +191,13 @@ router.post("/get-report",
 
 router.get("/get-statistic",
   requireAuth,
-  requireAny('VIEW_CURRENT_STATISTIC'),
+  requireOperation('VIEW_CURRENT_STATISTIC'),
   async (req, res, next) => {
     try {
       const recipients = await Recipient.findAll({
         where: {
           isAbsent: false,
-          '$occasion.status$': 1
+          '$occasion.status$': OCCASION_STATUS.OPEN
         },
         include: [
           {
@@ -155,64 +210,14 @@ router.get("/get-statistic",
 
       const report = getStatistic(recipients);
 
-      const cols = COLUMNS[5]();
+      const cols = COLUMNS[REPORT_TYPE.CURRENT_STATISTIC];
 
       res.status(200).send({ data: { report, cols } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.FILTER_DATA_FAILED';
+      error.code = error.code ?? 'ERRORS.REPORT_GENERATE_FAILED';
       next(error);
     }
   }
 );
 
-
 export default router;
-
-
-/*
-const yearExpression = fn('DATE_PART', 'year', col('createdAt'));
-      const quarterExpression = fn('DATE_PART', 'quarter', col('createdAt'));
-      const monthExpression = fn('DATE_PART', 'month', col('createdAt'));
-let include = [];
-      let order = [['createdAt', 'ASC']];
-
-      if (frequency === 'ANNUAL') {
-        include = [[yearExpression, 'year']];
-        order = [
-          [yearExpression, 'ASC'],
-          ['createdAt', 'ASC'],
-        ];
-      }
-
-      if (frequency === 'MONTHLY') {
-        include = [
-          [yearExpression, 'year'],
-          [monthExpression, 'month'],
-        ];
-        order = [
-          [yearExpression, 'ASC'],
-          [monthExpression, 'ASC'],
-          ['createdAt', 'ASC'],
-        ];
-      }
-
-      if (frequency === 'QUARTERLY') {
-        include = [
-          [yearExpression, 'year'],
-          [quarterExpression, 'quarter'],
-        ];
-        order = [
-          [yearExpression, 'ASC'],
-          [quarterExpression, 'ASC'],
-          ['createdAt', 'ASC'],
-        ];
-      }
-
-      const orders = await Order.findAll({
-        attributes: {
-          include,
-        },
-        where,
-        order,
-        raw: true,
-      }); */

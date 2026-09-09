@@ -28,6 +28,7 @@ import {
   ReportRow,
 } from '../../../../shared/schemas/report.schema';
 import { FileService } from '../../services/file.service';
+import { REPORT_TYPE, REPORT_TYPE_OPTIONS } from '../../../../shared/constants/reports';
 
 type Option = {
   code: number | string;
@@ -95,14 +96,11 @@ export class ReportsComponent {
 
   ngOnInit() {
     //TODO: Dynamic translation
-    this.types = [
-      { name: 'REPORTS.TYPES.GENERAL', code: 1 }, //2
-      { name: 'REPORTS.TYPES.PERSONAL', code: 2 }, //3
-      { name: 'REPORTS.TYPES.SCHOOL_COORDINATION', code: 3 }, //1
-      { name: 'REPORTS.TYPES.BY_OCCASION', code: 4 },
-    ].map((i) => ({
-      name: this.translateService.instant(i.name),
-      code: i.code,
+    this.types = REPORT_TYPE_OPTIONS.filter(
+      (type) => type.id !== REPORT_TYPE.CURRENT_STATISTIC,
+    ).map((type) => ({
+      name: this.translateService.instant(type.optionKey),
+      code: type.id,
     }));
     this.frequencies = [
       {
@@ -324,24 +322,22 @@ this.formGroup.controls['selectedFrequency'].setValue({
           'occasionName' in i ? this.getOccasionName(i.occasionName) : null,
       }));
     } else {
-      data = (this.report as ReportGeneralRow[]).flatMap(
-        (item) => {
-          const { occasions, ...parent } = item;
+      data = (this.report as ReportGeneralRow[]).flatMap((item) => {
+        const { occasions, ...parent } = item;
 
-          return [
-            {
-              ...parent,
-              rowType: 'period' as const,
-              periodData: this.getPeriod(item.periodData),
-            },
-            ...occasions.map((occasion) => ({
-              ...occasion,
-              rowType: 'occasion' as const,
-              periodData: this.getOccasionName(occasion.occasionName)
-            })),
-          ];
-        },
-      );
+        return [
+          {
+            ...parent,
+            rowType: 'period' as const,
+            periodData: this.getPeriod(item.periodData),
+          },
+          ...occasions.map((occasion) => ({
+            ...occasion,
+            rowType: 'occasion' as const,
+            periodData: this.getOccasionName(occasion.occasionName),
+          })),
+        ];
+      });
     }
 
     const columns = this.cols.map((i) => ({
