@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 
 export default function RolePermissionModel(sequelize) {
-  class RolePermission extends Model { }
+  class RolePermission extends Model {}
 
   RolePermission.init(
     {
@@ -11,6 +11,7 @@ export default function RolePermissionModel(sequelize) {
         allowNull: false,
         primaryKey: true,
       },
+
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -18,14 +19,17 @@ export default function RolePermissionModel(sequelize) {
           notEmpty: true,
         },
       },
+
       access: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
       },
+
       disabled: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
       },
+
       roleId: {
         type: DataTypes.INTEGER,
         allowNull: false,

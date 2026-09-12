@@ -1,63 +1,54 @@
 import { z } from 'zod';
+import { positiveInt, positiveIntParam } from './common.schema.js';
 
-export const roleSchema = z
-  .object({
-    id: z.number().int().positive(),
-    name: z.string().trim().min(2).max(50),
-    description: z.string().trim().min(2).max(500),
-  })
-  .strict();
+const roleNameValueSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+  .min(2, { message: 'FORM_VALIDATION.TOO_SHORT_2' })
+  .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' });
+
+const roleDescriptionSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
+  .min(5, { message: 'FORM_VALIDATION.TOO_SHORT_5' })
+  .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' });
 
 export const roleNameSchema = z
   .object({
-    name: z.string().trim().min(2).max(50),
-  })
-  .strict();
-
-export const roleIdSchema = z
-  .object({
-    id: z.coerce.number().int().positive(),
-  })
-  .strict();
-
-export const roleShortSchema = z
-  .object({
-    id: z.number().int().positive(),
-    name: z.string().trim().min(2).max(50),
+    name: roleNameValueSchema,
   })
   .strict();
 
 export const roleDraftSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-      .min(2, { message: 'FORM_VALIDATION.ROLE.NAME_MIN' })
-      .max(50, { message: 'FORM_VALIDATION.ROLE.NAME_MAX' }),
-
-    description: z
-      .string({})
-      .trim()
-      .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-      .min(5, { message: 'FORM_VALIDATION.ROLE.DESCRIPTION_MIN' })
-      .max(500, { message: 'FORM_VALIDATION.ROLE.DESCRIPTION_MAX' }),
+    name: roleNameValueSchema,
+    description: roleDescriptionSchema,
   })
   .strict();
 
-export const roleAccessSchema = z
+export const roleSchema = z
   .object({
-    id: z.number().int().positive(),
-    roleId: z.number().int().positive(),
+    id: positiveInt,
+    name: roleNameValueSchema,
+    description: roleDescriptionSchema,
+  })
+  .strict();
+
+const roleAccessSchema = z
+  .object({
+    id: positiveInt,
+    roleId: positiveInt,
     access: z.boolean(),
     disabled: z.boolean(),
   })
   .strict();
 
-export const operationSchema = z
+const operationSchema = z
   .object({
     description: z.string().trim(),
-    accessToAllOps: z.boolean().optional().default(false),
+    accessToAllOps: z.boolean(),
     object: z.string().trim(),
     objectName: z.string().trim(),
     operation: z.string().trim(),
@@ -86,8 +77,14 @@ export const operationSchema = z
 export const roleChangeAccessSchema = z
   .object({
     access: z.boolean(),
-    roleId: z.number().int().positive(),
+    roleId: positiveInt,
     operation: operationSchema,
+  })
+  .strict();
+
+export const roleIdSchema = z
+  .object({
+    id: positiveIntParam,
   })
   .strict();
 
@@ -102,6 +99,13 @@ export const rolesListSchema = z
   .object({
     roles: z.array(roleSchema),
     operations: z.array(operationSchema),
+  })
+  .strict();
+
+const roleShortSchema = z
+  .object({
+    id: positiveInt,
+    name: roleNameValueSchema,
   })
   .strict();
 

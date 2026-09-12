@@ -1,30 +1,44 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../database.js";
+import { DataTypes, Model } from 'sequelize';
 
-const Role = sequelize.define("role", {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true
-  },
-  name: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [2, 100]
-    }
-  },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [5, 500]
-    }
-  }
-});
+export default function RoleModel(sequelize) {
+  class Role extends Model {}
 
-export default Role;
+  Role.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        allowNull: false,
+        primaryKey: true,
+      },
+
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+          notEmpty: true,
+          len: [2, 50],
+        },
+      },
+
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+          len: [5, 500],
+        },
+      },
+    },
+    {
+      sequelize,
+      modelName: 'role',
+      tableName: 'roles',
+      underscored: false,
+      timestamps: true,
+    },
+  );
+
+  return Role;
+}

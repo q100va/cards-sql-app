@@ -2,12 +2,12 @@ import sequelize from '../database.js';
 import AuditLogModel from './audit-log.js';
 import RefreshToken from './refresh-token.js';
 import RolePermissionModel from './role-permission.js';
-import Role from './role.js';
+import RoleModel from './role.js';
 import LocalityModel from './locality.js';
 import DistrictModel from './district.js';
 import RegionModel from './region.js';
 import CountryModel from './country.js';
-import User from './user.js';
+import UserModel from './user.js';
 import UserAddressModel from './user-address.js';
 import UserContactModel from './user-contact.js';
 import UserSearchModel from './user-search.js';
@@ -41,6 +41,8 @@ import OrderModel from './order.js';
 import OrderRecipientModel from './order-recipient.js'
 
 const AuditLog = AuditLogModel(sequelize);
+const Role = RoleModel(sequelize);
+const User = UserModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
 const Country = CountryModel(sequelize);
 const Region = RegionModel(sequelize);

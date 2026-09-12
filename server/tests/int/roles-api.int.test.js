@@ -102,7 +102,7 @@ describe('Roles API (integration)', () => {
 
   // ---------- POST /create-role ----------
   describe('POST /api/roles/create-role', () => {
-    it('creates role and seeds default operations; returns code ROLE.CREATED and data=name', async () => {
+    it('creates role and seeds default operations; returns code SUCCESS.CREATED and data=name', async () => {
       const payload = { name: 'Editors', description: 'Can edit stuff' };
 
       const { body, status } = await global.api
@@ -111,7 +111,7 @@ describe('Roles API (integration)', () => {
         .send(payload);
 
       expect(status).toBe(200);
-      expect(body.code).toBe('ROLE.CREATED');
+      expect(body.code).toBe('SUCCESS.CREATED');
       expect(body.data).toBe('Editors');
 
       // Роль действительно создалась (имя хранится lowercased)
@@ -144,7 +144,7 @@ describe('Roles API (integration)', () => {
 
   // ---------- PATCH /update-role ----------
   describe('PATCH /api/roles/update-role', () => {
-    it('updates role and returns code ROLE.UPDATED + updated object', async () => {
+    it('updates role and returns code SUCCESS.UPDATED + updated object', async () => {
       const role = await createRole({ name: 'observer', description: 'Role description' });
 
       const { body, status } = await global.api
@@ -153,7 +153,7 @@ describe('Roles API (integration)', () => {
         .send({ id: role.id, name: 'viewer', description: 'read-only' });
 
       expect(status).toBe(200);
-      expect(body.code).toBe('ROLE.UPDATED');
+      expect(body.code).toBe('SUCCESS.UPDATED');
       expect(body.data).toEqual(
         expect.objectContaining({
           id: role.id,
@@ -425,7 +425,7 @@ describe('Roles API (integration)', () => {
 
   // ---------- DELETE /delete-role/:id ----------
   describe('DELETE /api/roles/delete-role/:id', () => {
-    it('deletes role without dependencies → code ROLE.DELETED, ops are removed', async () => {
+    it('deletes role without dependencies → code SUCCESS.DELETED, ops are removed', async () => {
       const role = await createRole({ name: 'tempdel', description: 'Role description' });
       await seedDefaultOperationsForRole(role.id);
 
@@ -434,7 +434,7 @@ describe('Roles API (integration)', () => {
         .set({ ...langRu, ...auth });
 
       expect(status).toBe(200);
-      expect(body.code).toBe('ROLE.DELETED');
+      expect(body.code).toBe('SUCCESS.DELETED');
       expect(body.data).toBeNull();
 
       // роли нет

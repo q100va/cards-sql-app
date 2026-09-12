@@ -1,101 +1,93 @@
 import { Router } from "express";
-import Sequelize from "sequelize";
-import Role from "../models/role.js";
-import User from "../models/user.js";
-import {RolePermission} from "../models/index.js";
-import { OPERATIONS } from "../shared/operations.js";
-import CustomError from "../shared/customError.js";
-import { validateRequest } from "../middlewares/validate-request.js";
-import * as roleSchemas from "../../shared/dist/schemas/role.schema.js";
-import { withTransaction } from "../controllers/with-transaction.js";
-import requireAuth from '../middlewares/check-auth.js';
-import { requireOperation, requireAny, requireAll } from '../middlewares/require-permission.js';
+import { Op } from 'sequelize';
 
-const Op = Sequelize.Op;
+import { Role, RolePermission, User } from "../models/index.js";
+
+import requireAuth from '../middlewares/check-auth.js';
+import { validateRequest } from "../middlewares/validate-request.js";
+import { requireOperation, requireAny } from '../middlewares/require-permission.js';
+
+import { withTransaction } from "../controllers/with-transaction.js";
+
+import { OPERATIONS, OPERATION_FLAG } from "../shared/operations.js";
+import CustomError from "../shared/customError.js";
+
+import * as roleSchemas from "../../shared/dist/schemas/role.schema.js";
+
+
 const router = Router();
 
-/**
- * GET /check-role-name/:name
- * Check if a role with the given name already exists (case-insensitive).
- */
 router.get(
   "/check-role-name/:name",
   requireAuth,
   requireAny('ADD_NEW_ROLE', 'EDIT_ROLE'),
-  validateRequest(roleSchemas.roleNameSchema, "params"),
+  validateRequest(roleSchemas.roleNameSchema, 'params'),
   async (req, res, next) => {
     try {
-      const roleName = req.params.name.toLowerCase();
+      const roleName = req.params.name;
       const duplicate = await Role.findOne({
         where: { name: { [Op.iLike]: roleName } },
         attributes: ["name"],
         raw: true,
       });
-      let response = {};
-      response.data = duplicate !== null;
-      if (duplicate !== null) response.code = 'ROLE.ALREADY_EXISTS';
-      res
-        .status(200)
-        .send(response);
+
+      const exists = duplicate !== null;
+
+      res.status(200).send({
+        data: exists,
+        ...(exists && { code: 'ERRORS.ROLE.ALREADY_EXISTS' }),
+      });
+
     } catch (error) {
-      error.code = 'ERRORS.ROLE.NAME_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * POST /create-role
- * Create a new role and insert default operations for it.
- */
 router.post(
   "/create-role",
   requireAuth,
   requireOperation('ADD_NEW_ROLE'),
-  validateRequest(roleSchemas.roleDraftSchema),
+  validateRequest(roleSchemas.roleDraftSchema, 'body'),
   async (req, res, next) => {
     try {
       const { name, description } = req.body;
 
       const roleName = await withTransaction(async (t) => {
-        // Create role
+
         const role = await Role.create({ name, description }, { transaction: t });
 
         // Seed all operations for the role
-        const rows = OPERATIONS.map((operation) => ({
+        const permissionRows = OPERATIONS.map((operation) => ({
           name: operation.operation,
           roleId: role.id,
           access: false,
-          disabled: operation.flag === "FULL",
+          disabled: operation.flag === OPERATION_FLAG.FULL,
         }));
-        console.log('rows', rows)
-        await RolePermission.bulkCreate(rows, { transaction: t });
+        await RolePermission.bulkCreate(permissionRows, { transaction: t });
 
         return role.name;
       });
 
-      res.status(200).send({ code: 'ROLE.CREATED', data: roleName });
+      res.status(200).send({ code: 'SUCCESS.CREATED', data: roleName });
     } catch (error) {
-      error.code = 'ERRORS.ROLE.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * PATCH /update-role
- * Update role details (name, description).
- */
 router.patch(
   "/update-role",
   requireAuth,
   requireOperation('EDIT_ROLE'),
-  validateRequest(roleSchemas.roleSchema),
+  validateRequest(roleSchemas.roleSchema, 'body'),
   async (req, res, next) => {
     try {
       const { id, name, description } = req.body;
 
-      const [_, [updatedRole]] = await Role.update(
+      const [, [updatedRole]] = await Role.update(
         { name, description },
         {
           where: { id },
@@ -108,24 +100,19 @@ router.patch(
         throw new CustomError('ERRORS.ROLE.NOT_FOUND', 404);
       }
 
-      res.status(200).send({ code: 'ROLE.UPDATED', data: updatedRole });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: updatedRole });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ROLE.NOT_UPDATED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * PATCH /update-role-access
- * Toggle access for a role's operation.
- * If needed, also toggle the corresponding "full access" operation and complementary views.
- */
 router.patch(
   "/update-role-access",
   requireAuth,
   requireOperation('EDIT_ROLE'),
-  validateRequest(roleSchemas.roleChangeAccessSchema),
+  validateRequest(roleSchemas.roleChangeAccessSchema, 'body'),
   async (req, res, next) => {
     try {
       const { access, roleId, operation } = req.body;
@@ -169,7 +156,9 @@ router.patch(
                 })
               )
             );
-            const allHaveAccess = results.every((r) => r === null);
+            const allHaveAccess = results.every(
+              (permission) => permission === null,
+            );
             if (allHaveAccess && superAccessOperation) {
               await changeRoleOperation(roleId, superAccessOperation, true, opsMap, t);
             }
@@ -186,83 +175,112 @@ router.patch(
           data: { ops: updatedOperations, object: operation.object },
         });
     } catch (error) {
-      error.code = 'ERRORS.ROLE.NOT_UPDATED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * Helper: update a role's operation and its complementary VIEW_* pair when applicable.
- *
- * @param roleId - role id
- * @param operation - operation meta from OPERATIONS
- * @param access - desired access value
- * @param updatedOperationsMap - accumulator to return updated rows to client
- * @param transaction - sequelize transaction
- */
 async function changeRoleOperation(
   roleId,
   operation,
   access,
   updatedOperationsMap,
-  transaction
+  transaction,
 ) {
-  // Update main operation
-  const [_, [updatedOperation]] = await RolePermission.update(
-    { access },
-    {
-      where: { roleId, name: operation.operation },
-      individualHooks: true,
-      returning: true,
-      transaction,
-    }
-  );
-  updatedOperationsMap.set(updatedOperation.id, {
-    id: updatedOperation.id,
-    roleId: updatedOperation.roleId,
-    access: updatedOperation.access,
-    disabled: updatedOperation.disabled,
-  });
+  const [, [updatedOperation]] =
+    await RolePermission.update(
+      { access },
+      {
+        where: {
+          roleId,
+          name: operation.operation,
+        },
+        individualHooks: true,
+        returning: true,
+        transaction,
+      },
+    );
 
-  // No complementary view if flag is absent
+  if (!updatedOperation) {
+    throw new CustomError(
+      'ERRORS.DATA_NOT_FOUND',
+      404,
+    );
+  }
+
+  updatedOperationsMap.set(
+    updatedOperation.id,
+    {
+      id: updatedOperation.id,
+      roleId: updatedOperation.roleId,
+      access: updatedOperation.access,
+      disabled: updatedOperation.disabled,
+    },
+  );
+
+  // No complementary view exists without a flag.
   if (!operation.flag) return;
 
-  // Compute complementary VIEW_* op name
-  const isLimited = operation.flag === "LIMITED";
-  const fromView = isLimited ? "VIEW_LIMITED" : "VIEW_FULL";
-  const toView = isLimited ? "VIEW_FULL" : "VIEW_LIMITED";
-  const complementaryOperation = operation.operation.replace(fromView, toView);
+  const isLimited =
+    operation.flag === OPERATION_FLAG.LIMITED;
 
-  // Determine how to update the complementary op:
-  // - LIMITED toggles disabled = !access; FULL toggles disabled = access
-  // - access value is synced when enabling FULL or disabling LIMITED
+  const fromView = isLimited
+    ? 'VIEW_LIMITED'
+    : 'VIEW_FULL';
+
+  const toView = isLimited
+    ? 'VIEW_FULL'
+    : 'VIEW_LIMITED';
+
+  const complementaryOperation =
+    operation.operation.replace(
+      fromView,
+      toView,
+    );
+
   const updateParams = {
     disabled: isLimited ? !access : access,
-    ...((!isLimited && access) || (isLimited && !access) ? { access } : {}),
+    ...(
+      (!isLimited && access) ||
+        (isLimited && !access)
+        ? { access }
+        : {}
+    ),
   };
 
-  const [__, [updatedOperationWithFlag]] = await RolePermission.update(
-    updateParams,
+  const [, [updatedComplementaryOperation]] =
+    await RolePermission.update(
+      updateParams,
+      {
+        where: {
+          roleId,
+          name: complementaryOperation,
+        },
+        returning: true,
+        individualHooks: true,
+        transaction,
+      },
+    );
+
+  if (!updatedComplementaryOperation) {
+    throw new CustomError(
+      'ERRORS.DATA_NOT_FOUND',
+      404,
+    );
+  }
+
+  updatedOperationsMap.set(
+    updatedComplementaryOperation.id,
     {
-      where: { roleId, name: complementaryOperation },
-      returning: true,
-      individualHooks: true,
-      transaction,
-    }
+      id: updatedComplementaryOperation.id,
+      roleId: updatedComplementaryOperation.roleId,
+      access: updatedComplementaryOperation.access,
+      disabled: updatedComplementaryOperation.disabled,
+    },
   );
-  updatedOperationsMap.set(updatedOperationWithFlag.id, {
-    id: updatedOperationWithFlag.id,
-    roleId: updatedOperationWithFlag.roleId,
-    access: updatedOperationWithFlag.access,
-    disabled: updatedOperationWithFlag.disabled,
-  });
 }
 
-/**
- * GET /get-roles-names-list
- * Return all roles as { id, name } sorted by name.
- */
 router.get(
   "/get-roles-names-list",
   requireAuth,
@@ -276,40 +294,41 @@ router.get(
       });
       res.status(200).send({ data: roles });
     } catch (error) {
-      error.code = 'ERRORS.ROLE.NAME_LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * GET /get-roles
- * Return roles and their operations with access/disabled flags.
- */
 router.get(
   "/get-roles",
   requireAuth,
   requireOperation('VIEW_LIMITED_ROLES_LIST'),
   async (req, res, next) => {
     try {
-      // Roles
       const roles = await Role.findAll({
         attributes: ["id", "name", "description"],
         order: [["id", "ASC"]],
         raw: true,
       });
 
-      // Operations per role
-      const rolesIds = roles.map((r) => r.id);
-      const rolesOps = await RolePermission.findAll({
-        where: { roleId: rolesIds },
+      const roleIds = roles.map(
+        (role) => role.id,
+      );
+      const rolePermissions = await RolePermission.findAll({
+        where: { roleId: roleIds },
         attributes: ["id", "roleId", "name", "access", "disabled"],
         raw: true,
       });
 
-      // Index operations by "roleId_opName"
-      const opMap = new Map();
-      rolesOps.forEach((op) => opMap.set(`${op.roleId}_${op.name}`, op));
+      // Index operations by "roleId_permissionName"
+      const permissionMap = new Map();
+      rolePermissions.forEach((permission) => {
+        permissionMap.set(
+          `${permission.roleId}_${permission.name}`,
+          permission,
+        );
+      });
 
       // Start with a copy of all available operations
       const listOfOperations = OPERATIONS.map((op) => ({
@@ -321,13 +340,16 @@ router.get(
       roles.forEach((role) => {
         listOfOperations.forEach((op) => {
           const key = `${role.id}_${op.operation}`;
-          if (opMap.has(key)) {
-            const found = opMap.get(key);
+
+          const permission =
+            permissionMap.get(key);
+
+          if (permission) {
             op.rolesAccesses.push({
-              id: found.id,
-              roleId: found.roleId,
-              access: found.access,
-              disabled: found.disabled,
+              id: permission.id,
+              roleId: permission.roleId,
+              access: permission.access,
+              disabled: permission.disabled,
             });
           }
         });
@@ -337,21 +359,17 @@ router.get(
         .status(200)
         .send({ data: { operations: listOfOperations, roles } });
     } catch (error) {
-      error.code = 'ERRORS.ROLE.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * GET /check-role-before-delete/:id
- * Check whether a role can be deleted (returns assigned usernames if any).
- */
 router.get(
   "/check-role-before-delete/:id",
   requireAuth,
   requireOperation('DELETE_ROLE'),
-  validateRequest(roleSchemas.roleIdSchema, "params"),
+  validateRequest(roleSchemas.roleIdSchema, 'params'),
   async (req, res, next) => {
     try {
       const roleId = req.params.id;
@@ -360,48 +378,71 @@ router.get(
         raw: true,
       });
 
-      let response = { data: connectedUsersAmount };
-      if (connectedUsersAmount > 0) response.code = 'ROLE.HAS_DEPENDENCIES';
+      const response = {
+        data: connectedUsersAmount,
+      };
+
+      if (connectedUsersAmount > 0) {
+        response.code = 'ROLE.HAS_DEPENDENCIES';
+      }
+
       res
         .status(200)
         .send(response);
     } catch (error) {
-      error.code = 'ERRORS.ROLE.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   }
 );
 
-/**
- * DELETE /delete-role/:id
- * Delete a role by id.
- */
-
 router.delete(
-  "/delete-role/:id",
+  '/delete-role/:id',
   requireAuth,
   requireOperation('DELETE_ROLE'),
-  validateRequest(roleSchemas.roleIdSchema, "params"),
+  validateRequest(roleSchemas.roleIdSchema, 'params'),
   async (req, res, next) => {
     try {
       const roleId = req.params.id;
+
       await withTransaction(async (t) => {
+        const connectedUsersAmount = await User.count({
+          where: { roleId },
+          transaction: t,
+        });
+
+        if (connectedUsersAmount > 0) {
+          throw new CustomError(
+            'ERRORS.ROLE.HAS_DEPENDENCIES',
+            409,
+          );
+        }
+
         const destroyed = await Role.destroy({
           where: { id: roleId },
           individualHooks: true,
           transaction: t,
         });
+
         if (destroyed === 0) {
-          throw new CustomError('ERRORS.ROLE.NOT_FOUND', 404);
+          throw new CustomError(
+            'ERRORS.DATA_NOT_FOUND',
+            404,
+          );
         }
       });
 
-      res.status(200).send({ code: 'ROLE.DELETED', data: null });
+      res.status(200).send({
+        code: 'SUCCESS.DELETED',
+        data: null,
+      });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ROLE.NOT_DELETED';
+      error.code =
+        error.code ?? 'ERRORS.DATA_DELETE_FAILED';
+
       next(error);
     }
-  }
+  },
 );
 
 export default router;

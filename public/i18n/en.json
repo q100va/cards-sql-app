@@ -1121,6 +1121,9 @@
     }
   },
   "SUCCESS": {
+    "DATA_ADDED": "Added {{listLength}} records.",
+    "DATA_DELETED": "Records deleted.",
+    "DATA_CHECKED": "Records checked.",
     "CREATED": "Record created successfully.",
     "UPDATED": "Record updated successfully.",
     "DELETED": "Record deleted successfully.",
@@ -1128,6 +1131,18 @@
   },
 
   "ERRORS": {
+    "DATA_ADD_FAILED": "Failed to add records.",
+    "INVALID_FILTER_MATCH_MODE": "Invalid filter match mode.",
+    "INVALID_FILTER_VALUE": "Invalid filter value.",
+    "UNSUPPORTED_TYPE": "Unsupported type value.",
+    "RECIPIENT": {
+      "LIST_ALREADY_EXISTS": "This list already exists.",
+      "HAS_DEPENDENCIES": "The selected records cannot be deleted because they are linked to requests.",
+      "LIST_HAS_DEPENDENCIES": "The list cannot be cleared because it is linked to requests."
+    },
+    "ORDER": {
+      "MIN_RECIPIENTS": "The request must contain at least one recipient."
+    },
     "DATA_FETCH_FAILED": "Failed to load data.",
     "DATA_SAVE_FAILED": "Failed to save data.",
     "DATA_UPDATE_FAILED": "Failed to update data.",
@@ -1168,6 +1183,8 @@
 
     "ROLE": {
       "NOT_FOUND": "Role not found.",
+      "ALREADY_EXISTS": "A role with this name already exists.",
+      "HAS_DEPENDENCIES": "The role cannot be deleted because it is assigned to users.",
       "NAME_NOT_CHECKED": "Failed to check the role name.",
       "NOT_CREATED": "Failed to create the role.",
       "NOT_UPDATED": "Failed to update the role.",
@@ -1229,7 +1246,8 @@
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",
-    "TOO_SHORT_7": "Minimum 5 characters",
+    "TOO_SHORT_2": "Minimum 2 characters",
+    "TOO_SHORT_7": "Minimum 7 characters",
     "NOT_FOUND": "The field is empty or the entered value was not found",
     "INVALID_ISO_DATE": "Invalid date",
     "ROLE": {
@@ -1353,6 +1371,8 @@
   },
 
   "OBJECT": {
+    "RECIPIENTS": "Greeting recipients",
+    "REPORTS": "Reports",
     "TOPONYMS": "Countries\nRegions\nDistricts\nLocalities",
     "USERS": "Users",
     "ROLES": "Roles",
@@ -1364,6 +1384,36 @@
     "OCCASIONS": "Occasions"
   },
   "OPS": {
+    "BULK_CREATE": {
+      "NAME": "Create a list"
+    },
+    "BULK_EDIT": {
+      "NAME": "Edit in bulk"
+    },
+    "BULK_CLEAR": {
+      "NAME": "Clear the list"
+    },
+    "DOWNLOAD": {
+      "NAME": "Download data"
+    },
+    "EDIT_RECIPIENTS": {
+      "NAME": "Edit the recipients list"
+    },
+    "FULL_FILTER": {
+      "NAME": "Access the full filter"
+    },
+    "VIEW_AUDIT_LOG": {
+      "NAME": "View the audit log"
+    },
+    "VIEW_CURRENT_STATISTIC": {
+      "NAME": "View current statistics"
+    },
+    "VIEW_LIMITED_REPORTS": {
+      "NAME": "Access basic report data"
+    },
+    "VIEW_FULL_REPORTS": {
+      "NAME": "Access additional report data"
+    },
     "ALL_OPS": {
       "NAME": "Full access to all operations"
     },

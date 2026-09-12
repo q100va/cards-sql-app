@@ -212,10 +212,10 @@ export class ReportsComponent {
     const type = selectedType.code;
     const frequency = selectedFrequency.code;
     const years = selectedYears.map((item: Option) => item.code);
-    const quarters = selectedQuarters
+    const quarters = selectedQuarters?.length
       ? selectedQuarters.map((item: Option) => item.code)
       : null;
-    const months = selectedMonths
+    const months = selectedMonths?.length
       ? selectedMonths.map((item: Option) => item.code)
       : null;
 

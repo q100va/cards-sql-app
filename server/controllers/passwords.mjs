@@ -23,7 +23,7 @@ export async function hashPassword(plain) {
  * - Если хэш уже Argon2 — проверяем через argon2 + pepper
  * - Если старый bcrypt — проверяем (plain+pepper), при успехе мигрируем на Argon2id
  *
- * @param {import('../models/user.js').default} userInstance — Sequelize instance с полем password
+ * @param {InstanceType<ReturnType<typeof import('../models/user.js').default>>} userInstance — Sequelize instance с полем password
  * @param {string} plain — введённый пароль
  * @returns {Promise<boolean>}
  */

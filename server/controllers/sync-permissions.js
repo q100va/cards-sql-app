@@ -1,7 +1,6 @@
 // ESM
 import sequelize from '../database.js';
-import Role from '../models/role.js';
-import {RolePermission} from '../models/index.js';
+import { Role, RolePermission } from '../models/index.js';
 import { OPERATIONS } from '../shared/operations.js';
 import { applyAllOpsRule } from './apply-all-ops-rule.js';
 
