@@ -1,18 +1,26 @@
 import { Router } from "express";
 import { Op } from 'sequelize';
-import { UserAddress } from "../models/index.js";
+
 import requireAuth from "../middlewares/check-auth.js";
 import { validateRequest } from "../middlewares/validate-request.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
+
+import { withTransaction } from "../controllers/with-transaction.js";
 import CustomError from "../shared/customError.js";
+
 import * as toponymSchemas from "../../shared/dist/schemas/toponym.schema.js";
+
 import {
   findDuplicate,
+  countToponymDependencies,
   postProcessor,
   getToponymById,
-  MAP, MAPS, MAP_POPULATE,
-  markAddressesUnrecoverable
+  MAP,
+  MAPS,
+  MAP_POPULATE,
+  markAddressesUnrecoverable,
 } from "../controllers/ctrl-toponyms.js";
+
 import sequelize from "../database.js";
 
 const router = Router();
@@ -28,7 +36,14 @@ function pick(obj, keys) {
   }
   return out;
 }
-// API to check duplicate toponym name
+
+function requireToponymDeletePermission(req, res, next) {
+  const operation = req.query.destroy
+    ? 'DELETE_TOPONYM'
+    : 'BLOCK_TOPONYM';
+
+  return requireOperation(operation)(req, res, next);
+}
 
 router.get(
   "/check-toponym-name",
@@ -38,95 +53,85 @@ router.get(
   async (req, res, next) => {
     try {
       const query = req.query;
-      console.log('HttpParams ', req.query);
       const duplicateCount = await findDuplicate(query);
-      //console.log("duplicate", duplicateCount);
       const response = {
         data: duplicateCount !== 0,
-        ...(duplicateCount ? { code: 'TOPONYM.ALREADY_EXISTS' } : null),
+        ...(duplicateCount && { code: 'ERRORS.TOPONYM.ALREADY_EXISTS' }),
       };
 
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NAME_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
-
-// API to create toponym
+  }
+);
 
 router.post(
   '/create-toponym',
   requireAuth,
   requireOperation('ADD_NEW_TOPONYM'),
-  validateRequest(toponymSchemas.saveToponymSchema, 'body'),
+  validateRequest(toponymSchemas.toponymCreateSchema, 'body'),
   async (req, res, next) => {
     try {
       const data = req.body;
+      const config = MAP[data.type];
 
-      const cfg = MAP[data.type];
-      for (const key of cfg.needs) {
-        if (data[key] == null) {
-          throw new CustomError('ERRORS.VALIDATION', 422);
-        }
+      await findDuplicate(data);
+
+      if (duplicateCount > 0) {
+        throw new CustomError('ERRORS.TOPONYM.ALREADY_EXISTS', 409);
       }
-      const payload = {
-        ...pick(data, cfg.needs)
-      };
-      const created = await cfg.Model.create(payload);
-      const toponym = await getToponymById(created.id, data.type);
-      //console.log("toponym", toponym);
 
-      res.status(201).json({ code: 'TOPONYM.CREATED', data: toponym });
+      const payload = pick(data, config.payloadFields);
+      const created = await config.Model.create(payload);
+      const toponym = await getToponymById(created.id, data.type);
+
+      res.status(201).json({ code: 'SUCCESS.CREATED', data: toponym });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
   }
 );
 
-// API to update toponym
-
-router.post("/update-toponym",
+router.post(
+  "/update-toponym",
   requireAuth,
   requireOperation('EDIT_TOPONYM'),
-  validateRequest(toponymSchemas.saveToponymSchema, 'body'),
+  validateRequest(toponymSchemas.toponymUpdateSchema, 'body'),
   async (req, res, next) => {
     try {
       const data = req.body;
-      const cfg = MAP[data.type];
+      const config = MAP[data.type];
 
-      for (const key of cfg.attributes) {
-        if (data[key] == null) {
-          throw new CustomError('ERRORS.VALIDATION', 422);
-        }
+      const duplicateCount = await findDuplicate(data);
+
+      if (duplicateCount > 0) {
+        throw new CustomError('ERRORS.TOPONYM.ALREADY_EXISTS', 409);
       }
 
-      const payload = {
-        ...pick(data, cfg.needs)
-      };
-      const [updatedCount] = await cfg.Model.update(payload, {
+      const payload = pick(data, config.payloadFields);
+      const [updatedCount] = await config.Model.update(payload, {
         where: {
           id: data.id
         },
         individualHooks: true
       });
-      //console.log("updated", updated);
       if (updatedCount === 0) {
-        throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
+        throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       }
       const toponym = await getToponymById(data.id, data.type);
-      res.status(201).json({ code: 'TOPONYM.UPDATED', data: toponym });
+      res.status(200).json({ code: 'SUCCESS.UPDATED', data: toponym });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NOT_UPDATED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
 );
 
-// API to get toponym by id
-
-router.get("/get-:type-by-id/:id",
+router.get(
+  "/get-:type-by-id/:id",
   requireAuth,
   requireAny('EDIT_TOPONYM', 'VIEW_TOPONYM'),
   validateRequest(toponymSchemas.findToponymByIdSchema, 'params'),
@@ -134,32 +139,44 @@ router.get("/get-:type-by-id/:id",
     try {
       const { type, id } = req.params;
       const toponym = await getToponymById(id, type);
-      res.status(201).json({ data: toponym });
+      res.status(200).json({ data: toponym });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  }
+);
 
-// API to get address elements for address filter
-
-router.get("/get-toponyms-list",
+router.get(
+  "/get-toponyms-list",
   requireAuth,
-  requireAny('ADD_NEW_TOPONYM', 'EDIT_TOPONYM', 'VIEW_TOPONYM', 'VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'),//TODO: add more permissions
+  requireAny(
+    'ADD_NEW_TOPONYM', 'EDIT_TOPONYM', 'VIEW_TOPONYM', 'VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST',
+    'ADD_NEW_USER', 'EDIT_USER', 'VIEW_USER', 'VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST',
+    'ADD_NEW_HOME', 'EDIT_HOME', 'VIEW_HOME', 'VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST',
+    'ADD_NEW_PARTNER', 'EDIT_PARTNER', 'VIEW_PARTNER', 'VIEW_LIMITED_PARTNERS_LIST', 'VIEW_FULL_PARTNERS_LIST',
+    'ADD_NEW_SENIOR', 'EDIT_SENIOR', 'VIEW_SENIOR', 'VIEW_LIMITED_SENIORS_LIST', 'VIEW_FULL_SENIORS_LIST',
+    'ADD_NEW_VOLUNTEER', 'EDIT_VOLUNTEER', 'VIEW_VOLUNTEER', 'VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST',
+    'VIEW_LIMITED_RECIPIENTS_LIST', 'VIEW_FULL_RECIPIENTS_LIST',
+    'VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'
+  ),
   validateRequest(toponymSchemas.getToponymsListSchema, 'query'),
   async (req, res, next) => {
     try {
       const type = MAPS[req.query.typeOfToponym];
-      const cfg = MAP[type];
+      const config = MAP[type];
       const ids = req.query.ids;
 
-      let attributes = ['id', 'name'];
-      let where = { isRestricted: false };
-      if (cfg.needParent) {
-        where[cfg.needParent] = { [Op.in]: ids };
-        attributes.push(cfg.needParent);
+      const attributes = ['id', 'name'];
+      const where = { isRestricted: false };
+      if (config.parentIdField) {
+        where[config.parentIdField] = {
+          [Op.in]: ids,
+        };
+
+        attributes.push(config.parentIdField);
       }
-      const toponyms = await cfg.Model.findAll({
+      const toponyms = await config.Model.findAll({
         where,
         attributes,
         order: [['name', 'ASC']],
@@ -170,220 +187,282 @@ router.get("/get-toponyms-list",
       }
       res.status(200).send({ data: toponyms });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NAME_LIST_FAILED';
-      next(error);
-    }
-  });
-
-// APT get list of toponyms for table with filter, sort and pagination
-
-router.get(
-  '/toponyms',
-  requireAuth,
-  requireAny('VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'),
-  validateRequest(toponymSchemas.getToponymsSchema, 'query'),
-  async (req, res, next) => {
-    try {
-      const q = req.query;
-      const cfg = MAP[q.type];
-
-      // where + include
-      const where = cfg.where(q) || {};
-      const include = cfg.include(q);
-
-      // AND (exact=true) vs OR
-      if (q.search) {
-        const words = q.search.split(/\s+/).filter(Boolean);
-        // Build an iLike clause for each word across every searchable column.
-        const makeLike = (w, field) => ({ [field]: { [Op.iLike]: `%${w}%` } });
-        const wordClauses = words.map((w) => ({
-          [Op.or]: cfg.searchFields.map((f) => makeLike(w, f)),
-        }));
-        Object.assign(where, q.exact ? { [Op.and]: wordClauses } : { [Op.or]: wordClauses });
-      }
-
-      const order = cfg.order(q);
-      const limit = q.pageSize;
-      const attributes = cfg.attributes;
-      const offset = q.page * q.pageSize;
-
-      const [length, rows] = await Promise.all([
-        cfg.Model.count({
-          where,
-          include,
-          distinct: true,
-        }),
-        cfg.Model.findAll({
-          where,
-          attributes,
-          order,
-          include,
-          limit,
-          offset,
-          raw: true,
-          distinct: true,
-        }),
-      ]);
-
-      const toponyms = rows.map((t) => postProcessor(t, q.type));
-
-      res.status(200).json({
-        data: { toponyms, length /* , page: q.page, pageSize: q.pageSize  */ },
-      });
-    } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
 );
 
-//API to check and delete toponym
-
-router.get("/check-toponym-before-delete",
+router.get(
+  '/toponyms',
   requireAuth,
-  requireAny('BLOCK_TOPONYM', 'DELETE_TOPONYM'),
-  validateRequest(toponymSchemas.deleteToponymSchema, 'query'),
+  requireAny('VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'),
+  validateRequest(toponymSchemas.toponymQueryDTOSchema, 'query'),
   async (req, res, next) => {
     try {
-      const q = req.query;
-      const cfg = MAP[q.type];
-      //all, even restricted: only empty toponym can be deleted
-      const whereAll = {
-        [q.type + 'Id']: q.id,
-      };
-      //only non-restricted: only empty toponym or toponym with all blocked deps can be blocked
-      const whereNonRestricted = {
-        isRestricted: false,
-        [q.type + 'Id']: q.id,
-      };
+      const query = req.query;
+      const config = MAP[query.type];
 
-      const [countPeople, countHomes, countChildren] = await Promise.all([
-        UserAddress.count({
-          where: q.destroy ? whereAll : whereNonRestricted
-        }),
-        UserAddress.count({ //TODO: change to HomeAddress when model will be created
-          where: q.destroy ? whereAll : whereNonRestricted
-        }),
-        cfg.ChildModel?.count({
-          where: q.destroy ? whereAll : whereNonRestricted
-        })
-      ]);
-      const count = countPeople + countHomes + (countChildren ?? 0);
-      const response = {
-        data: count,
-        ...(count ? { code: 'TOPONYM.HAS_DEPENDENCIES' } : null),
-      };
+      const where = config.where(query);
 
-      return res.status(200).json(response);
+      const include = config.listInclude(query);
+
+      // AND (exact=true) vs OR
+      if (query.search) {
+        const words = query.search.split(/\s+/).filter(Boolean);
+        // Build an iLike clause for each word across every searchable column.
+        const makeLike = (word, field) => ({
+          [field]: {
+            [Op.iLike]: `%${word}%`,
+          },
+        });
+
+        const wordClauses = words.map((word) => ({
+          [Op.or]: config.searchFields.map((field) => makeLike(word, field)),
+        }));
+
+        Object.assign(
+          where,
+          query.exact
+            ? {
+              [Op.and]: wordClauses,
+            }
+            : {
+              [Op.or]: wordClauses,
+            },
+        );
+      }
+
+      const order = config.order(query);
+
+      const limit = query.pageSize;
+
+      const attributes = config.attributes;
+
+      const offset = query.page * query.pageSize;
+
+      const [length, rows] =
+        await Promise.all([
+          config.Model.count({
+            where,
+            include,
+            distinct: true,
+          }),
+
+          config.Model.findAll({
+            where,
+            attributes,
+            order,
+            include,
+            limit,
+            offset,
+            raw: true,
+            distinct: true,
+          }),
+        ]);
+
+      const toponyms = rows.map((toponym) => postProcessor(toponym, query.type));
+
+      res.status(200).json({
+        data: { toponyms, length },
+      });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  }
+);
 
-router.delete("/delete-toponym",
+router.get(
+  "/check-toponym-before-delete",
   requireAuth,
-  requireAny('BLOCK_TOPONYM', 'DELETE_TOPONYM'),
-  validateRequest(toponymSchemas.deleteToponymSchema, 'query'),
+  validateRequest(
+    toponymSchemas.deleteToponymSchema,
+    'query',
+  ),
+  requireToponymDeletePermission,
+
   async (req, res, next) => {
     try {
-      const q = req.query;
-      const cfg = MAP[q.type];
-      const where = { id: q.id };
-      await withTransaction(async (t) => {
-        if (q.destroy) {
-          const destroyedCount = await cfg.Model.destroy({ where, individualHooks: true });
+      const query = req.query;
+      const config = MAP[query.type];
+
+      //only empty toponym or toponym with all blocked deps can be blocked
+      const dependenciesCount = await countToponymDependencies(query, config);
+
+      const response = {
+        data: dependenciesCount,
+        ...(dependenciesCount && {
+          code: 'TOPONYM.HAS_DEPENDENCIES',
+        }),
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
+
+      next(error);
+    }
+  },
+);
+
+router.delete(
+  "/delete-toponym",
+  requireAuth,
+  validateRequest(
+    toponymSchemas.deleteToponymSchema,
+    'query',
+  ),
+  requireToponymDeletePermission,
+
+  async (req, res, next) => {
+    try {
+      const query = req.query;
+      const config = MAP[query.type];
+
+      await withTransaction(async (transaction) => {
+        const dependenciesCount = await countToponymDependencies(query, config, transaction);
+
+        if (dependenciesCount > 0) {
+          throw new CustomError('ERRORS.TOPONYM.HAS_DEPENDENCIES', 409);
+        }
+
+        const where = {
+          id: query.id,
+        };
+
+        if (query.destroy) {
+          const destroyedCount = await config.Model.destroy({
+              where,
+              individualHooks: true,
+              transaction,
+            });
+
           if (destroyedCount === 0) {
-            throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
+            throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
           }
-        } else {
-          const [updatedCount] = await cfg.Model.update(
+
+          return;
+        }
+
+        const [updatedCount] =
+          await config.Model.update(
             {
               isRestricted: true,
             },
-            { where, individualHooks: true }
+            {
+              where,
+              individualHooks: true,
+              transaction,
+            },
           );
-          if (updatedCount === 0) {
-            throw new CustomError('ERRORS.TOPONYM.NOT_FOUND', 404);
-          }
-          //TODO: test
-          await markAddressesUnrecoverable(q.type, q.id, t);
+
+        if (updatedCount === 0) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
+
+        await markAddressesUnrecoverable(query.type, query.id, transaction);
       });
-      res.status(200).send({ code: 'TOPONYM.DELETED', data: null });
+
+      res.status(200).send({
+        code: 'SUCCESS.DELETED',
+        data: null,
+      });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
+
       next(error);
     }
-  });
+  },
+);
 
-
-//************************
-
-// API populate address elements
 // country names are unique within DB
 // region names are unique within DB because only one country (Russia) is supported
 router.post(
   '/populate-toponyms',
   requireAuth,
-  requireOperation('ADD_NEW_TOPONYM'),
+  requireOperation('UPLOAD_LIST_OF_TOPONYMS'),
   validateRequest(toponymSchemas.bulkToponymsSchema, 'body'),
   async (req, res, next) => {
     try {
       let list = req.body.data;
       const type = req.body.type;
-      const cfg = MAP_POPULATE[type];
+      const config = MAP_POPULATE[type];
 
-      if (cfg.preprocessRow) list = list.map(r => ({ ...cfg.preprocessRow(r), __i: r.__i }));
+      if (config.preprocessRow) {
+        list = list.map((row) => ({
+          ...config.preprocessRow(row),
+          __i: row.__i,
+        }));
+      }
 
       const seen = new Set();
-      const dup = [];
-      for (const r of list) {
-        const key = cfg.keyFromRow(r);
-        if (seen.has(key)) dup.push(r.name);
-        else seen.add(key);
-      }
-      if (dup.length) throw new CustomError('ERRORS.TOPONYM.BULK_INPUT_DUPLICATES', 422, { duplicates: dup.join(', ') });
 
-      const parents = await cfg.findParents(list);
-      //console.log("DIST");
-      //console.log(parents);
+      const duplicates = [];
+
+      for (const row of list) {
+        const key = config.keyFromRow(row);
+
+        if (seen.has(key)) {
+          duplicates.push(row.name);
+        } else {
+          seen.add(key);
+        }
+      }
+
+      if (duplicates.length) {
+        throw new CustomError(
+          'ERRORS.TOPONYM.BULK_INPUT_DUPLICATES',
+          422,
+          {
+            duplicates: duplicates.join(', '),
+          },
+        );
+      }
+
+      const parents = await config.resolveParents(list);
+
       // Stop early if referenced parents are missing in the database.
-      const missingParents = cfg.missingParents(list, parents);
+      const missingParents = config.findMissingParents(list, parents);
+
       if (missingParents.length) {
-        throw new CustomError('ERRORS.TOPONYM.BULK_PARENT_NOT_FOUND', 422, { parents: missingParents.join(', ') });
+        throw new CustomError(
+          'ERRORS.TOPONYM.BULK_PARENT_NOT_FOUND',
+          422,
+          {
+            parents: missingParents.join(', '),
+          },
+        );
       }
 
-      let conflicts = [];
-      if (cfg.existingQuery) {
-        conflicts = await cfg.existingQuery(list, parents);
-      } else {
-        const keys = [...new Set(list.map(cfg.keyFromRow))];
-        const existing = await cfg.Model.findAll({
-          attributes: ['name'],
-          where: cfg.dbWhereFromKeys(keys, parents),
-          raw: true,
-        });
-        conflicts = existing.map(e => e.name);
-      }
+      const conflicts = await config.findConflicts(list, parents);
+
       if (conflicts.length) {
-        throw new CustomError('ERRORS.TOPONYM.FROM_BULK_ALREADY_EXISTS', 409, { conflicts: conflicts.join(', ') });
+        throw new CustomError(
+          'ERRORS.TOPONYM.FROM_BULK_ALREADY_EXISTS',
+          409,
+          {
+            conflicts: conflicts.join(', '),
+          },
+        );
       }
 
-      // Flatten each row into Sequelize payload records before bulk create.
-      const payload = list.flatMap(r => cfg.buildPayload(r, parents));
-      const created = await sequelize.transaction(t =>
-        cfg.Model.bulkCreate(payload, { validate: true, individualHooks: true, transaction: t })
+      const payload = list.map((row) => config.buildPayload(row, parents));
+
+      const created = await sequelize.transaction((transaction) =>
+        config.Model.bulkCreate(payload, {
+          validate: true,
+          individualHooks: true,
+          transaction,
+        }),
       );
 
-      return res.status(201).json({ code: 'TOPONYM.BULK_CREATED', data: created.length });
+      return res.status(201).json({ code: 'SUCCESS.CREATED', data: created.length });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.TOPONYM.BULK_NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       return next(error);
     }
   }
 );
 
 export default router;
-
-//TODO: создать в БД соседние районы по умолчанию. + настройка у админа и координатора школ?

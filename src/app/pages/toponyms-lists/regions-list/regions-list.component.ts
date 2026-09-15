@@ -6,7 +6,7 @@ import {
   QueryParams,
 } from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';
-import { toponymDraftSchema } from '../../../../../shared/schemas/toponym.schema';
+import { toponymFormSchema } from '../../../../../shared/schemas/toponym.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
@@ -43,7 +43,7 @@ export class RegionsListComponent {
           controlName: 'name',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.name)],
+          validators: [zodValidator(toponymFormSchema.shape.name)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Читинская область',
@@ -53,7 +53,7 @@ export class RegionsListComponent {
           controlName: 'shortName',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.shortName)],
+          validators: [zodValidator(toponymFormSchema.shape.shortName)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_SHORT_NAME',
           placeholder: 'Читинская обл.',

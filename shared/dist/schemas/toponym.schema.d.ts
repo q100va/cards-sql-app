@@ -1,5 +1,5 @@
 import { z } from 'zod';
-declare const toponymTypeSchema: z.ZodEnum<{
+export declare const toponymTypeSchema: z.ZodEnum<{
     country: "country";
     region: "region";
     district: "district";
@@ -18,36 +18,81 @@ export declare const checkToponymNameSchema: z.ZodObject<{
     regionId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
     districtId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strict>;
-export declare const toponymDraftSchema: z.ZodObject<{
+export declare const toponymCreateSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
+    type: z.ZodLiteral<"country">;
+    name: z.ZodString;
+}, z.core.$strict>, z.ZodObject<{
+    type: z.ZodLiteral<"region">;
+    name: z.ZodString;
+    shortName: z.ZodString;
+    countryId: z.ZodNumber;
+}, z.core.$strict>, z.ZodObject<{
+    type: z.ZodLiteral<"district">;
     name: z.ZodString;
     shortName: z.ZodString;
     postName: z.ZodString;
     shortPostName: z.ZodString;
+    countryId: z.ZodNumber;
+    regionId: z.ZodNumber;
+}, z.core.$strict>, z.ZodObject<{
+    type: z.ZodLiteral<"locality">;
+    name: z.ZodString;
+    shortName: z.ZodString;
+    countryId: z.ZodNumber;
+    regionId: z.ZodNumber;
+    districtId: z.ZodNumber;
     isFederalCity: z.ZodBoolean;
     isCapitalOfRegion: z.ZodBoolean;
     isCapitalOfDistrict: z.ZodBoolean;
-    countryId: z.ZodCoercedNumber<unknown>;
-    regionId: z.ZodCoercedNumber<unknown>;
-    districtId: z.ZodCoercedNumber<unknown>;
-}, z.core.$strict>;
-export declare const saveToponymSchema: z.ZodObject<{
-    id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strict>], "type">;
+export declare const toponymUpdateSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
+    type: z.ZodLiteral<"country">;
+    name: z.ZodString;
+    id: z.ZodNumber;
+}, z.core.$strict>, z.ZodObject<{
+    type: z.ZodLiteral<"region">;
+    name: z.ZodString;
+    shortName: z.ZodString;
+    countryId: z.ZodNumber;
+    id: z.ZodNumber;
+}, z.core.$strict>, z.ZodObject<{
+    type: z.ZodLiteral<"district">;
+    name: z.ZodString;
+    shortName: z.ZodString;
+    postName: z.ZodString;
+    shortPostName: z.ZodString;
+    countryId: z.ZodNumber;
+    regionId: z.ZodNumber;
+    id: z.ZodNumber;
+}, z.core.$strict>, z.ZodObject<{
+    type: z.ZodLiteral<"locality">;
+    name: z.ZodString;
+    shortName: z.ZodString;
+    countryId: z.ZodNumber;
+    regionId: z.ZodNumber;
+    districtId: z.ZodNumber;
+    isFederalCity: z.ZodBoolean;
+    isCapitalOfRegion: z.ZodBoolean;
+    isCapitalOfDistrict: z.ZodBoolean;
+    id: z.ZodNumber;
+}, z.core.$strict>], "type">;
+export declare const findToponymByIdSchema: z.ZodObject<{
+    id: z.ZodCoercedNumber<unknown>;
     type: z.ZodEnum<{
         country: "country";
         region: "region";
         district: "district";
         locality: "locality";
     }>;
-    name: z.ZodString;
-    shortName: z.ZodOptional<z.ZodString>;
-    postName: z.ZodOptional<z.ZodString>;
-    shortPostName: z.ZodOptional<z.ZodString>;
-    isFederalCity: z.ZodOptional<z.ZodBoolean>;
-    isCapitalOfRegion: z.ZodOptional<z.ZodBoolean>;
-    isCapitalOfDistrict: z.ZodOptional<z.ZodBoolean>;
-    countryId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
-    regionId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
-    districtId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strict>;
+export declare const getToponymsListSchema: z.ZodObject<{
+    ids: z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+    typeOfToponym: z.ZodEnum<{
+        countries: "countries";
+        regions: "regions";
+        districts: "districts";
+        localities: "localities";
+    }>;
 }, z.core.$strict>;
 export declare const DefaultAddressParamsSchema: z.ZodObject<{
     localityId: z.ZodNullable<z.ZodNumber>;
@@ -74,30 +119,12 @@ export declare const toponymSchema: z.ZodObject<{
     regionName: z.ZodOptional<z.ZodString>;
     districtName: z.ZodOptional<z.ZodString>;
 }, z.core.$strict>;
-export declare const findToponymByIdSchema: z.ZodObject<{
-    id: z.ZodCoercedNumber<unknown>;
-    type: z.ZodEnum<{
-        country: "country";
-        region: "region";
-        district: "district";
-        locality: "locality";
-    }>;
-}, z.core.$strict>;
-export declare const getToponymsListSchema: z.ZodObject<{
-    ids: z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>;
-    typeOfToponym: z.ZodEnum<{
-        countries: "countries";
-        regions: "regions";
-        districts: "districts";
-        localities: "localities";
-    }>;
-}, z.core.$strict>;
 export declare const toponymNamesListSchema: z.ZodArray<z.ZodObject<{
-    id: z.ZodCoercedNumber<unknown>;
+    id: z.ZodNumber;
     name: z.ZodString;
-    countryId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
-    regionId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
-    districtId: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    countryId: z.ZodOptional<z.ZodNumber>;
+    regionId: z.ZodOptional<z.ZodNumber>;
+    districtId: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strict>>;
 export declare const toponymsSchema: z.ZodObject<{
     toponyms: z.ZodArray<z.ZodObject<{
@@ -119,9 +146,15 @@ export declare const toponymsSchema: z.ZodObject<{
         regionName: z.ZodOptional<z.ZodString>;
         districtName: z.ZodOptional<z.ZodString>;
     }, z.core.$strict>>;
-    length: z.ZodCoercedNumber<unknown>;
+    length: z.ZodNumber;
 }, z.core.$strict>;
-export declare const getToponymsSchema: z.ZodObject<{
+export declare const toponymFormSchema: z.ZodObject<{
+    name: z.ZodString;
+    shortName: z.ZodString;
+    postName: z.ZodString;
+    shortPostName: z.ZodString;
+}, z.core.$strict>;
+export declare const toponymQueryDTOSchema: z.ZodObject<{
     type: z.ZodEnum<{
         country: "country";
         region: "region";
@@ -129,13 +162,15 @@ export declare const getToponymsSchema: z.ZodObject<{
         locality: "locality";
     }>;
     search: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-    exact: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<boolean, unknown>, z.ZodBoolean>>>;
+    exact: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodBoolean>>>;
     sortBy: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
-        name: "name";
         country: "country";
         region: "region";
         district: "district";
+        name: "name";
+        shortName: "shortName";
         postName: "postName";
+        shortPostName: "shortPostName";
     }>>>;
     sortDir: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
         asc: "asc";
@@ -143,11 +178,11 @@ export declare const getToponymsSchema: z.ZodObject<{
     }>>>;
     page: z.ZodDefault<z.ZodOptional<z.ZodCoercedNumber<unknown>>>;
     pageSize: z.ZodDefault<z.ZodOptional<z.ZodCoercedNumber<unknown>>>;
-    countries: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>>>;
-    regions: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>>>;
-    districts: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>>>;
-    localities: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>>>;
-}, z.core.$strip>;
+    countries: z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+    regions: z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+    districts: z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+    localities: z.ZodPipe<z.ZodTransform<any[], unknown>, z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+}, z.core.$strict>;
 export declare const deleteToponymSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
     type: z.ZodEnum<{
@@ -156,7 +191,7 @@ export declare const deleteToponymSchema: z.ZodObject<{
         district: "district";
         locality: "locality";
     }>;
-    destroy: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<boolean, unknown>, z.ZodBoolean>>>;
+    destroy: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodBoolean>>>;
 }, z.core.$strict>;
 export declare const bulkToponymsSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     type: z.ZodLiteral<"country">;
@@ -190,9 +225,25 @@ export declare const bulkToponymsSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
         isFederalCity: z.ZodBoolean;
     }, z.core.$strip>>;
 }, z.core.$strip>], "type">;
-export type SaveToponym = z.infer<typeof saveToponymSchema>;
-export type ToponymNamesList = z.infer<typeof toponymNamesListSchema>;
 export type ToponymType = z.infer<typeof toponymTypeSchema>;
+export type ToponymCreate = z.infer<typeof toponymCreateSchema>;
+export type ToponymUpdate = z.infer<typeof toponymUpdateSchema>;
+export type DraftToponym = {
+    id?: number;
+    type: ToponymType;
+    name: string;
+    shortName?: string;
+    postName?: string;
+    shortPostName?: string;
+    countryId?: number;
+    regionId?: number;
+    districtId?: number;
+    isFederalCity?: boolean;
+    isCapitalOfRegion?: boolean;
+    isCapitalOfDistrict?: boolean;
+};
 export type Toponym = z.infer<typeof toponymSchema>;
+export type ToponymNamesList = z.infer<typeof toponymNamesListSchema>;
 export type DefaultAddressParams = z.infer<typeof DefaultAddressParamsSchema>;
-export {};
+export type ToponymQueryDTO = z.infer<typeof toponymQueryDTOSchema>;
+export type BulkToponyms = z.infer<typeof bulkToponymsSchema>;

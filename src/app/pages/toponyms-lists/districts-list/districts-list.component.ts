@@ -7,7 +7,7 @@ import {
   QueryParams,
 } from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';
-import { toponymDraftSchema } from '../../../../../shared/schemas/toponym.schema';
+import { toponymFormSchema } from '../../../../../shared/schemas/toponym.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
@@ -51,7 +51,7 @@ export class DistrictsListComponent {
           controlName: 'name',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.name)],
+          validators: [zodValidator(toponymFormSchema.shape.name)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Диксонский район',
@@ -61,7 +61,7 @@ export class DistrictsListComponent {
           controlName: 'shortName',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.shortName)],
+          validators: [zodValidator(toponymFormSchema.shape.shortName)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_SHORT_NAME',
           placeholder: 'Диксонский р-н',
@@ -71,7 +71,7 @@ export class DistrictsListComponent {
           controlName: 'postName',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.postName)],
+          validators: [zodValidator(toponymFormSchema.shape.postName)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_POST_NAME',
           placeholder: 'Диксонский район',
@@ -81,7 +81,7 @@ export class DistrictsListComponent {
           controlName: 'shortPostName',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.shortPostName)],
+          validators: [zodValidator(toponymFormSchema.shape.shortPostName)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_SHORT_POST_NAME',
           placeholder: 'Диксонский р-н',

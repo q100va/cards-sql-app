@@ -1,7 +1,29 @@
-import { Country, Region, District, Locality } from "../models/index.js";
-import { Op, fn, col, where as sqlWhere } from 'sequelize';
-import { correctCountryName, correctDistrictName, correctLocalityName, correctRegionName } from './correct-toponym-name.js';
-import CustomError from "../shared/customError.js";
+import {
+  Country,
+  Region,
+  District,
+  Locality,
+  HomeAddress,
+  UserAddress,
+  PartnerAddress,
+  VolunteerAddress,
+} from '../models/index.js';
+
+import {
+  Op,
+  fn,
+  col,
+  where as sqlWhere,
+} from 'sequelize';
+
+import {
+  correctCountryName,
+  correctDistrictName,
+  correctLocalityName,
+  correctRegionName,
+} from './correct-toponym-name.js';
+
+import CustomError from '../shared/customError.js';
 
 export const MAPS = {
   countries: 'country',
@@ -15,140 +37,481 @@ export const MAP = {
   country: {
     Model: Country,
     ChildModel: Region,
-    needs: ['name'],
-    needParent: '',
-    parentWhere: (_q) => ({}),
-    attributes: ['id', 'name'],
-    searchFields: ['name'],
-    include: (_q = null) => [],
-    where: (q) => ({
+
+    payloadFields: [
+      'name',
+    ],
+
+    attributes: [
+      'id',
+      'name',
+    ],
+
+    searchFields: [
+      'name',
+    ],
+
+    detailsInclude: [],
+
+    listInclude: () => [],
+
+    where: (query) => ({
       isRestricted: false,
-      ...(q.countries.length ? { id: { [Op.in]: q.countries } } : null),
+
+      ...(query.countries.length
+        ? {
+          id: {
+            [Op.in]: query.countries,
+          },
+        }
+        : null),
     }),
-    order: (q) => [['name', q.sortDir.toUpperCase()]],
+
+    order: (query) => [
+      [
+        'name',
+        query.sortDir.toUpperCase(),
+      ],
+    ],
   },
+
   region: {
     Model: Region,
     ChildModel: District,
-    needs: ['name', 'countryId', 'shortName'],
-    needParent: 'countryId',
-    parentWhere: (q) => ({ countryId: q.countryId }),
-    attributes: ['id', 'name', 'shortName'],
-    searchFields: ['name', 'shortName', '$country.name$'],
-    include: (q = null) => {
-      return q === null ?
-        [{
-          model: Country,
-          attributes: ['id']
-        }] :
-        [{
-          model: Country, as: 'country',
-          attributes: ['id', 'name'],
-          required: true,
-        }]
-    },
-    where: (q) => ({
-      isRestricted: false,
-      ...(q.regions.length ? { id: { [Op.in]: q.regions } } : null),
-      ...(q.countries.length ? { countryId: { [Op.in]: q.countries } } : null),
+
+    payloadFields: [
+      'name',
+      'countryId',
+      'shortName',
+    ],
+
+    parentIdField: 'countryId',
+
+    duplicateScope: (query) => ({
+      countryId: query.countryId,
     }),
-    order: (q) => (q.sortBy === 'country'
-      ? [[{ model: Country, as: 'country' }, 'name', q.sortDir.toUpperCase()]]
-      : [[q.sortBy, q.sortDir.toUpperCase()]]),
+
+    attributes: [
+      'id',
+      'name',
+      'shortName',
+    ],
+
+    searchFields: [
+      'name',
+      'shortName',
+      '$country.name$',
+    ],
+
+    detailsInclude: [
+      {
+        model: Country,
+        as: 'country',
+        attributes: ['id'],
+      },
+    ],
+
+    listInclude: () => [
+      {
+        model: Country,
+        as: 'country',
+        attributes: [
+          'id',
+          'name',
+        ],
+        required: true,
+      },
+    ],
+
+    where: (query) => ({
+      isRestricted: false,
+
+      ...(query.regions.length
+        ? {
+          id: {
+            [Op.in]: query.regions,
+          },
+        }
+        : null),
+
+      ...(query.countries.length
+        ? {
+          countryId: {
+            [Op.in]: query.countries,
+          },
+        }
+        : null),
+    }),
+
+    order: (query) =>
+      query.sortBy === 'country'
+        ? [
+          [
+            {
+              model: Country,
+              as: 'country',
+            },
+            'name',
+            query.sortDir.toUpperCase(),
+          ],
+        ]
+        : [
+          [
+            query.sortBy,
+            query.sortDir.toUpperCase(),
+          ],
+        ],
   },
+
   district: {
     Model: District,
     ChildModel: Locality,
-    needs: ['name', 'regionId', 'shortName', 'postName', 'shortPostName'],
-    needParent: 'regionId',
-    parentWhere: (q) => ({ regionId: q.regionId }),
-    attributes: ['id', 'name', 'shortName', 'postName', 'shortPostName'],
-    searchFields: ['name', 'shortName', '$region.name$', '$region.shortName$', '$region.country.name$'],
-    include: (q = null) => {
-      return q === null ?
-        [{
-          model: Region,
-          attributes: ['id'],
-          include: [{ model: Country, attributes: ['id'] }]
-        }] :
-        [{
-          model: Region, as: 'region',
-          attributes: ['id', 'name'], required: true,
-          include: [{
-            model: Country, as: 'country', attributes: ['id', 'name'], required: true,
-            where: q.countries.length ? { id: { [Op.in]: q.countries } } : undefined,
-          }]
-        }]
-    },
-    where: (q) => ({
-      isRestricted: false,
-      ...(q.districts.length ? { id: { [Op.in]: q.districts } } : null),
-      ...(q.regions.length ? { regionId: { [Op.in]: q.regions } } : null),
+
+    payloadFields: [
+      'name',
+      'regionId',
+      'shortName',
+      'postName',
+      'shortPostName',
+    ],
+
+    parentIdField: 'regionId',
+
+    duplicateScope: (query) => ({
+      regionId: query.regionId,
     }),
-    order: (q) => {
-      const dir = q.sortDir.toUpperCase();
-      if (q.sortBy === 'region')
-        return [[{ model: Region, as: 'region' }, 'name', dir]];
-      if (q.sortBy === 'country')
-        return [[{ model: Region, as: 'region' }, { model: Country, as: 'country' }, 'name', dir]];
-      return [[q.sortBy, dir]]; // name | shortName/postName
+
+    attributes: [
+      'id',
+      'name',
+      'shortName',
+      'postName',
+      'shortPostName',
+    ],
+
+    searchFields: [
+      'name',
+      'shortName',
+      '$region.name$',
+      '$region.shortName$',
+      '$region.country.name$',
+    ],
+
+    detailsInclude: [
+      {
+        model: Region,
+        as: 'region',
+        attributes: ['id'],
+
+        include: [
+          {
+            model: Country,
+            as: 'country',
+            attributes: ['id'],
+          },
+        ],
+      },
+    ],
+
+    listInclude: (query) => [
+      {
+        model: Region,
+        as: 'region',
+        attributes: [
+          'id',
+          'name',
+        ],
+        required: true,
+
+        include: [
+          {
+            model: Country,
+            as: 'country',
+            attributes: [
+              'id',
+              'name',
+            ],
+            required: true,
+
+            where: query.countries.length
+              ? {
+                id: {
+                  [Op.in]: query.countries,
+                },
+              }
+              : undefined,
+          },
+        ],
+      },
+    ],
+
+    where: (query) => ({
+      isRestricted: false,
+
+      ...(query.districts.length
+        ? {
+          id: {
+            [Op.in]: query.districts,
+          },
+        }
+        : null),
+
+      ...(query.regions.length
+        ? {
+          regionId: {
+            [Op.in]: query.regions,
+          },
+        }
+        : null),
+    }),
+
+    order: (query) => {
+      const direction =
+        query.sortDir.toUpperCase();
+
+      if (query.sortBy === 'region') {
+        return [
+          [
+            {
+              model: Region,
+              as: 'region',
+            },
+            'name',
+            direction,
+          ],
+        ];
+      }
+
+      if (query.sortBy === 'country') {
+        return [
+          [
+            {
+              model: Region,
+              as: 'region',
+            },
+            {
+              model: Country,
+              as: 'country',
+            },
+            'name',
+            direction,
+          ],
+        ];
+      }
+
+      return [
+        [
+          query.sortBy,
+          direction,
+        ],
+      ]; // name | shortName/postName
     },
   },
 
   locality: {
     Model: Locality,
-    needs: ['name', 'districtId', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
-    needParent: 'districtId',
-    parentWhere: (q) => ({ districtId: q.districtId }),
-    attributes: ['id', 'name', 'shortName', 'isFederalCity', 'isCapitalOfRegion', 'isCapitalOfDistrict'],
-    searchFields: [
-      'name', 'shortName',
-      '$district.name$', '$district.shortName$',
-      '$district.region.name$', '$district.region.shortName$',
-      '$district.region.country.name$'
+
+    payloadFields: [
+      'name',
+      'districtId',
+      'shortName',
+      'isFederalCity',
+      'isCapitalOfRegion',
+      'isCapitalOfDistrict',
     ],
-    include: (q = null) => {
-      return q === null ?
-        [{
-          model: District,
-          attributes: ['id'],
-          include: [{
-            model: Region, attributes: ['id'],
-            include: [{ model: Country, attributes: ['id'] }],
-          },],
-        },] :
-        [{
-          model: District, as: 'district',
-          attributes: ['id', 'name'], required: true,
-          include: [{
-            model: Region, as: 'region',
-            attributes: ['id', 'name'], required: true,
-            where: q.regions.length ? { id: { [Op.in]: q.regions } } : undefined,
-            include: [{
-              model: Country, as: 'country',
-              attributes: ['id', 'name'], required: true,
-              where: q.countries.length ? { id: { [Op.in]: q.countries } } : undefined,
-            }],
-          }],
-        }]
-    },
-    where: (q) => ({
-      isRestricted: false,
-      ...(q.localities.length ? { id: { [Op.in]: q.localities } } : null),
-      ...(q.districts.length ? { districtId: { [Op.in]: q.districts } } : null),
+
+    parentIdField: 'districtId',
+
+    duplicateScope: (query) => ({
+      districtId: query.districtId,
     }),
-    order: (q) => {
-      const dir = q.sortDir.toUpperCase();
-      if (q.sortBy === 'district')
-        return [[{ model: District, as: 'district' }, 'name', dir]];
-      if (q.sortBy === 'region')
-        return [[{ model: District, as: 'district' }, { model: Region, as: 'region' }, 'name', dir]];
-      if (q.sortBy === 'country')
-        return [[{ model: District, as: 'district' }, { model: Region, as: 'region' }, { model: Country, as: 'country' }, 'name', dir]];
-      return [[q.sortBy, dir]];
+
+    attributes: [
+      'id',
+      'name',
+      'shortName',
+      'isFederalCity',
+      'isCapitalOfRegion',
+      'isCapitalOfDistrict',
+    ],
+
+    searchFields: [
+      'name',
+      'shortName',
+      '$district.name$',
+      '$district.shortName$',
+      '$district.region.name$',
+      '$district.region.shortName$',
+      '$district.region.country.name$',
+    ],
+
+    detailsInclude: [
+      {
+        model: District,
+        as: 'district',
+        attributes: ['id'],
+
+        include: [
+          {
+            model: Region,
+            as: 'region',
+            attributes: ['id'],
+
+            include: [
+              {
+                model: Country,
+                as: 'country',
+                attributes: ['id'],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+
+    listInclude: (query) => [
+      {
+        model: District,
+        as: 'district',
+        attributes: [
+          'id',
+          'name',
+        ],
+        required: true,
+
+        include: [
+          {
+            model: Region,
+            as: 'region',
+            attributes: [
+              'id',
+              'name',
+            ],
+            required: true,
+
+            where: query.regions.length
+              ? {
+                id: {
+                  [Op.in]: query.regions,
+                },
+              }
+              : undefined,
+
+            include: [
+              {
+                model: Country,
+                as: 'country',
+                attributes: [
+                  'id',
+                  'name',
+                ],
+                required: true,
+
+                where: query.countries.length
+                  ? {
+                    id: {
+                      [Op.in]: query.countries,
+                    },
+                  }
+                  : undefined,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+
+    where: (query) => ({
+      isRestricted: false,
+
+      ...(query.localities.length
+        ? {
+          id: {
+            [Op.in]: query.localities,
+          },
+        }
+        : null),
+
+      ...(query.districts.length
+        ? {
+          districtId: {
+            [Op.in]: query.districts,
+          },
+        }
+        : null),
+    }),
+
+    order: (query) => {
+      const direction =
+        query.sortDir.toUpperCase();
+
+      if (query.sortBy === 'district') {
+        return [
+          [
+            {
+              model: District,
+              as: 'district',
+            },
+            'name',
+            direction,
+          ],
+        ];
+      }
+
+      if (query.sortBy === 'region') {
+        return [
+          [
+            {
+              model: District,
+              as: 'district',
+            },
+            {
+              model: Region,
+              as: 'region',
+            },
+            'name',
+            direction,
+          ],
+        ];
+      }
+
+      if (query.sortBy === 'country') {
+        return [
+          [
+            {
+              model: District,
+              as: 'district',
+            },
+            {
+              model: Region,
+              as: 'region',
+            },
+            {
+              model: Country,
+              as: 'country',
+            },
+            'name',
+            direction,
+          ],
+        ];
+      }
+
+      return [
+        [
+          query.sortBy,
+          direction,
+        ],
+      ];
     },
-  }
+  },
 };
+
+const ADDRESS_MODELS = [
+  UserAddress,
+  HomeAddress,
+  PartnerAddress,
+  VolunteerAddress,
+];
 
 // Paths used to pull parent ids from raw toponym rows.
 const ID_WAYS = {
@@ -158,18 +521,21 @@ const ID_WAYS = {
     region: 'district.region.id',
     country: 'district.region.country.id',
   },
+
   district: {
     locality: null,
     district: 'id',
     region: 'region.id',
     country: 'region.country.id',
   },
+
   region: {
     locality: null,
     district: null,
     region: 'id',
     country: 'country.id',
   },
+
   country: {
     locality: null,
     district: null,
@@ -185,325 +551,1002 @@ const NAME_WAYS = {
     region: 'district.region.name',
     country: 'district.region.country.name',
   },
+
   district: {
     region: 'region.name',
     country: 'region.country.name',
   },
+
   region: {
     country: 'country.name',
   },
-  country: {
-  },
+
+  country: {},
 };
 
 export async function findDuplicate(query) {
   try {
-    const cfg = MAP[query.type];
+    const config = MAP[query.type];
 
-    if (cfg.needParent && query[cfg.needParent] == null) {
-      throw new CustomError('ERRORS.VALIDATION', 422);
+    if (
+      config.parentIdField &&
+      query[config.parentIdField] == null
+    ) {
+      throw new CustomError(
+        'ERRORS.VALIDATION',
+        422,
+      );
     }
-    const where = {
-      name: { [Op.iLike]: query.name },
-      isRestricted: false,
-      ...cfg.parentWhere(query),
-      ...(query.id ? { id: { [Op.ne]: query.id } } : null),
-    };
-    console.log("WHERE", where);
 
-    const duplicateCount = await cfg.Model.count({ where });
-    return duplicateCount;
+    const where = {
+      name: {
+        [Op.iLike]: query.name,
+      },
+
+      //isRestricted: false,
+
+      ...(config.duplicateScope
+        ? config.duplicateScope(query)
+        : {}),
+
+      ...(query.id
+        ? {
+          id: {
+            [Op.ne]: query.id,
+          },
+        }
+        : {}),
+    };
+
+    return config.Model.count({
+      where,
+    });
   } catch (error) {
-    error.code = error.code ?? null;
-    error.message = `Error in findDuplicate (${query.name}, ${query.type}): ${error.message ?? ''}`;
+    error.code =
+      error.code ?? null;
+
+    error.message =
+      `Error in findDuplicate (${query.name}, ${query.type}): ${error.message ?? ''}`;
+
     throw error;
   }
 }
 
-export function postProcessor(toponym, type) {
-  toponym = addDefaultAddressParams(toponym, type);
-  toponym = addParentsNames(toponym, type);
-  return toponym;
-};
+export async function countToponymDependencies(
+  query,
+  config,
+  transaction,
+) {
+  const foreignKey =
+    `${query.type}Id`;
 
-export async function getToponymById(id, type) {
-  try {
-    const cfg = MAP[type];
-    let toponym = await cfg.Model.findOne({
-      where: { id, isRestricted: false },
-      attributes: cfg.attributes,
-      include: cfg.include(),
+  const where = query.destroy
+    ? {
+      [foreignKey]: query.id,
+    }
+    : {
+      isRestricted: false,
+      [foreignKey]: query.id,
+    };
+
+  const addressCounts = await Promise.all(
+    ADDRESS_MODELS.map((AddressModel) =>
+      AddressModel.count({
+        where,
+        transaction,
+      }),
+    ),
+  );
+
+  const childrenCount = config.ChildModel
+    ? await config.ChildModel.count({
+      where,
+      transaction,
+    })
+    : 0;
+
+  const addressesCount =
+    addressCounts.reduce(
+      (total, count) =>
+        total + count,
+      0,
+    );
+
+  return (
+    addressesCount +
+    childrenCount
+  );
+}
+
+export function postProcessor(
+  toponym,
+  type,
+) {
+  toponym =
+    addDefaultAddressParams(
+      toponym,
+      type,
+    );
+
+  toponym =
+    addParentsNames(
+      toponym,
+      type,
+    );
+
+  return toponym;
+}
+
+export async function getToponymById(
+  id,
+  type,
+) {
+  const config = MAP[type];
+
+  const toponym =
+    await config.Model.findOne({
+      where: {
+        id,
+        isRestricted: false,
+      },
+
+      attributes:
+        config.attributes,
+
+      include:
+        config.detailsInclude,
+
       raw: true,
     });
-    toponym = addDefaultAddressParams(toponym, type);
-    return toponym;
-  } catch (error) {
-    throw new Error(`Error in getToponymById (${id}, ${type}): ${error.message ?? ''}`);
+
+  if (!toponym) {
+    throw new CustomError(
+      'ERRORS.DATA_NOT_FOUND',
+      404,
+    );
   }
+
+  return addDefaultAddressParams(
+    toponym,
+    type,
+  );
 }
 
-export function addDefaultAddressParams(toponym, type) {
-
-  const idMap = ID_WAYS[type];
+export function addDefaultAddressParams(
+  toponym,
+  type,
+) {
+  const idPaths =
+    ID_WAYS[type];
 
   const getId = (key) => {
-    const way = idMap[key];
-    const id = toponym[way];
+    const path = idPaths[key];
+
+    if (!path) return null;
+
+    const id = toponym[path];
+
     // Remove nested copies so the caller only sees normalized ids.
-    if (way != 'id') delete toponym[way];
-    return way ? id : null;
+    if (path !== 'id') {
+      delete toponym[path];
+    }
+
+    return id;
   };
+
   toponym.defaultAddressParams = {
-    countryId: getId('country'),
-    regionId: getId('region'),
-    districtId: getId('district'),
-    localityId: getId('locality'),
+    countryId:
+      getId('country'),
+
+    regionId:
+      getId('region'),
+
+    districtId:
+      getId('district'),
+
+    localityId:
+      getId('locality'),
   };
 
   return toponym;
 }
 
-export function addParentsNames(toponym, type) {
-
-  const nameMap = NAME_WAYS[type];
+export function addParentsNames(
+  toponym,
+  type,
+) {
+  const namePaths =
+    NAME_WAYS[type];
 
   const getName = (key) => {
-    const way = nameMap[key];
-    const name = toponym[way];
+    const path =
+      namePaths[key];
+
+    if (!path) return null;
+
+    const name =
+      toponym[path];
+
     // Strip raw columns now that they are exposed under friendly keys.
-    delete toponym[way];
-    return way ? name : null;
+    delete toponym[path];
+
+    return name;
   };
+
   if (type !== 'country') {
-    toponym.countryName = getName('country');
+    toponym.countryName =
+      getName('country');
+
     if (type !== 'region') {
-      toponym.regionName = getName('region');
+      toponym.regionName =
+        getName('region');
+
       if (type !== 'district') {
-        toponym.districtName = getName('district');
+        toponym.districtName =
+          getName('district');
       }
     }
   }
+
   return toponym;
 }
 
-export const norm = (s) => (s.normalize ? s.normalize('NFC') : s).trim().toLowerCase();
+export const norm = (value) =>
+  (
+    value.normalize
+      ? value.normalize('NFC')
+      : value
+  )
+    .trim()
+    .toLowerCase();
+
 // Returns a list of parent names that could not be resolved for the given rows.
-const checkMissingParents = (list, parents, parentType) => {
-  let missing = new Set();
-  list.forEach((t) => {
-    if (!parents[`${parentType}ByLowerName`].get(norm(t[parentType]))) {
-      missing.add(t[parentType]);
+const checkMissingParents = (
+  list,
+  parents,
+  parentType,
+) => {
+  const missingParents =
+    new Set();
+
+  list.forEach((toponym) => {
+    const parentMap =
+      parents[
+      `${parentType}ByLowerName`
+      ];
+
+    const parent =
+      parentMap.get(
+        norm(
+          toponym[parentType],
+        ),
+      );
+
+    if (!parent) {
+      missingParents.add(
+        toponym[parentType],
+      );
     }
   });
-  missing = [...missing];
-  return missing;
-}
+
+  return [
+    ...missingParents,
+  ];
+};
 
 // Bulk import helpers keyed by toponym type.
+async function findNameConflicts(
+  Model,
+  rows,
+) {
+  const names = [
+    ...new Set(
+      rows.map((row) =>
+        norm(row.name),
+      ),
+    ),
+  ];
+
+  const existingToponyms =
+    await Model.findAll({
+      attributes: ['name'],
+
+      where: sqlWhere(
+        fn('lower', col('name')),
+        {
+          [Op.in]: names,
+        },
+      ),
+
+      raw: true,
+    });
+
+  return existingToponyms.map(
+    (toponym) => toponym.name,
+  );
+}
+
 export const MAP_POPULATE = {
   country: {
     Model: Country,
+
     preprocessRow: (row) => {
-      const c = correctCountryName(row.name);
-      return { ...row, name: c.name };
+      const correctedCountry =
+        correctCountryName(
+          row.name,
+        );
+
+      return {
+        ...row,
+        name:
+          correctedCountry.name,
+      };
     },
-    keyFromRow: (r) => norm(r.name),
-    findParents: async (_rows) => ({}),
-    missingParents: (_list, _parents) => [],
-    dbWhereFromKeys: (keys) => sqlWhere(fn('lower', col('name')), { [Op.in]: keys }),
-    buildPayload: (r, _parents) => [{ name: r.name, shortName: r.shortName }],
+
+    keyFromRow: (row) =>
+      norm(row.name),
+
+    resolveParents: async () =>
+      ({}),
+
+    findMissingParents: () =>
+      [],
+
+    findConflicts: (rows) =>
+      findNameConflicts(
+        Country,
+        rows,
+      ),
+
+    buildPayload: (row) => ({
+      name: row.name,
+    }),
   },
 
   region: {
     Model: Region,
+
     preprocessRow: (row) => {
-      const d = correctRegionName(row.name, row.shortName);
-      return { ...row, name: d.name, shortName: d.shortName, postName: d.postName, shortPostName: d.shortPostName };
+      const correctedRegion =
+        correctRegionName(
+          row.name,
+          row.shortName,
+        );
+
+      return {
+        ...row,
+
+        name:
+          correctedRegion.name,
+
+        shortName:
+          correctedRegion.shortName,
+      };
     },
-    keyFromRow: (r) => `${norm(r.name)}`,
-    findParents: async (rows) => {
-      const wanted = [...new Set(rows.map(r => norm(r.country)))];
-      const countries = await Country.findAll({
-        attributes: ['id', 'name'],
-        where: sqlWhere(fn('lower', col('name')), { [Op.in]: wanted }),
-        raw: true,
-      });
-      return { countryByLowerName: new Map(countries.map(c => [norm(c.name), c])) };
+
+    keyFromRow: (row) =>
+      norm(row.name),
+
+    resolveParents: async (rows) => {
+      const wantedCountryNames = [
+        ...new Set(
+          rows.map((row) =>
+            norm(row.country),
+          ),
+        ),
+      ];
+
+      const countries =
+        await Country.findAll({
+          attributes: [
+            'id',
+            'name',
+          ],
+
+          where: sqlWhere(
+            fn(
+              'lower',
+              col('name'),
+            ),
+            {
+              [Op.in]:
+                wantedCountryNames,
+            },
+          ),
+
+          raw: true,
+        });
+
+      const countryByLowerName =
+        new Map(
+          countries.map(
+            (country) => [
+              norm(country.name),
+              country,
+            ],
+          ),
+        );
+
+      return {
+        countryByLowerName,
+      };
     },
-    missingParents: (list, parents) => checkMissingParents(list, parents, 'country'),
-    dbWhereFromKeys: (keys) => sqlWhere(fn('lower', col('name')), { [Op.in]: keys }),
-    buildPayload: (r, parents) => {
-      const c = parents.countryByLowerName.get(norm(r.country));
-      return [{ name: r.name, shortName: r.shortName, countryId: c.id }];
+
+    findMissingParents: (
+      rows,
+      parents,
+    ) =>
+      checkMissingParents(
+        rows,
+        parents,
+        'country',
+      ),
+
+    findConflicts: (rows) =>
+      findNameConflicts(
+        Region,
+        rows,
+      ),
+
+    buildPayload: (
+      row,
+      parents,
+    ) => {
+      const country =
+        parents.countryByLowerName.get(
+          norm(row.country),
+        );
+
+      return {
+        name: row.name,
+        shortName: row.shortName,
+        countryId: country.id,
+      };
     },
   },
 
   district: {
     Model: District,
+
     preprocessRow: (row) => {
-      const d = correctDistrictName(row.name, row.postName, row.postNameType);
-      return { ...row, name: d.name, shortName: d.shortName, postName: d.postName, shortPostName: d.shortPostName };
+      const correctedDistrict =
+        correctDistrictName(
+          row.name,
+          row.postName,
+          row.postNameType,
+        );
+
+      return {
+        ...row,
+
+        name:
+          correctedDistrict.name,
+
+        shortName:
+          correctedDistrict.shortName,
+
+        postName:
+          correctedDistrict.postName,
+
+        shortPostName:
+          correctedDistrict.shortPostName,
+      };
     },
-    keyFromRow: (r) => `${norm(r.region)}|${norm(r.name)}`,
-    findParents: async (rows) => {
-      const wanted = [...new Set(rows.map(r => norm(r.region)))];
-      const regions = await Region.findAll({
-        attributes: ['id', 'name'],
-        where: sqlWhere(fn('lower', col('name')), { [Op.in]: wanted }),
-        raw: true,
-      });
-      return { regionByLowerName: new Map(regions.map(x => [norm(x.name), x])) };
-    },
-    missingParents: (list, parents) => checkMissingParents(list, parents, 'region'),
-    existingQuery: async (rows, parents) => {
-      // Group districts by region so we can query once per region.
-      const byRegion = new Map();
-      for (const r of rows) {
-        const reg = parents.regionByLowerName.get(norm(r.region));
-        const set = byRegion.get(reg.id) ?? new Set();
-        set.add(norm(r.name));
-        byRegion.set(reg.id, set);
-      }
-      const existing = [];
-      for (const [regionId, namesLower] of byRegion) {
-        const exist = await District.findAll({
-          attributes: ['name'],
-          where: { regionId, [Op.and]: [sqlWhere(fn('lower', col('district.name')), { [Op.in]: [...namesLower] })] },
-          include: [{
-            model: Region,
-            attributes: ['name']
-          }],
+
+    keyFromRow: (row) =>
+      `${norm(row.region)}|${norm(row.name)}`,
+
+    resolveParents: async (rows) => {
+      const wantedRegionNames = [
+        ...new Set(
+          rows.map((row) =>
+            norm(row.region),
+          ),
+        ),
+      ];
+
+      const regions =
+        await Region.findAll({
+          attributes: [
+            'id',
+            'name',
+          ],
+
+          where: sqlWhere(
+            fn(
+              'lower',
+              col('name'),
+            ),
+            {
+              [Op.in]:
+                wantedRegionNames,
+            },
+          ),
+
           raw: true,
         });
-        existing.push(...exist);
+
+      const regionByLowerName =
+        new Map(
+          regions.map(
+            (region) => [
+              norm(region.name),
+              region,
+            ],
+          ),
+        );
+
+      return {
+        regionByLowerName,
+      };
+    },
+
+    findMissingParents: (
+      rows,
+      parents,
+    ) =>
+      checkMissingParents(
+        rows,
+        parents,
+        'region',
+      ),
+
+    findConflicts: async (
+      rows,
+      parents,
+    ) => {
+      // Group districts by region so we can query once per region.
+      const districtNamesByRegion =
+        new Map();
+
+      for (const row of rows) {
+        const region =
+          parents.regionByLowerName.get(
+            norm(row.region),
+          );
+
+        const districtNames =
+          districtNamesByRegion.get(
+            region.id,
+          ) ?? new Set();
+
+        districtNames.add(
+          norm(row.name),
+        );
+
+        districtNamesByRegion.set(
+          region.id,
+          districtNames,
+        );
       }
-      const conflicts = existing.map(e => `${e.name} (${e['region.name']})`);
+
+      const conflicts = [];
+
+      for (
+        const [
+          regionId,
+          districtNames,
+        ]
+        of districtNamesByRegion
+      ) {
+        const existingDistricts =
+          await District.findAll({
+            attributes: [
+              'name',
+            ],
+
+            where: {
+              regionId,
+
+              [Op.and]: [
+                sqlWhere(
+                  fn(
+                    'lower',
+                    col(
+                      'district.name',
+                    ),
+                  ),
+                  {
+                    [Op.in]: [
+                      ...districtNames,
+                    ],
+                  },
+                ),
+              ],
+            },
+
+            include: [
+              {
+                model: Region,
+                attributes: [
+                  'name',
+                ],
+              },
+            ],
+
+            raw: true,
+          });
+
+        conflicts.push(
+          ...existingDistricts.map(
+            (district) =>
+              `${district.name} (${district['region.name']})`,
+          ),
+        );
+      }
+
       return conflicts;
     },
-    buildPayload: (r, parents) => {
-      const reg = parents.regionByLowerName.get(norm(r.region));
-      return [{
-        name: r.name,
-        shortName: r.shortName,
-        postName: r.postName,
-        shortPostName: r.shortPostName,
-        regionId: reg.id,
-      }];
+
+    buildPayload: (
+      row,
+      parents,
+    ) => {
+      const region =
+        parents.regionByLowerName.get(
+          norm(row.region),
+        );
+
+      return {
+        name: row.name,
+        shortName: row.shortName,
+        postName: row.postName,
+        shortPostName:
+          row.shortPostName,
+        regionId: region.id,
+      };
     },
   },
 
   locality: {
     Model: Locality,
-    keyFromRow: (r) => `${norm(r.name)}|${norm(r.district)}|${norm(r.region)}`,
-    findParents: async (rows) => {
-      const regNames = [...new Set(rows.map(r => norm(r.region)))];
-      const regs = await Region.findAll({
-        attributes: ['id', 'name'],
-        where: sqlWhere(fn('lower', col('name')), { [Op.in]: regNames }), raw: true
-      });
-      const regByLower = new Map(regs.map(x => [norm(x.name), x]));
-      const byRegion = new Map();
-      for (const r of rows) {
-        const reg = regByLower.get(norm(r.region));
-        if (!reg) {
-          throw new CustomError('ERRORS.TOPONYM.BULK_PARENT_NOT_FOUND', 422, { parents: r.region });
-        };
-        //console.log("ROW");
-        //console.log(r);
-        const set = byRegion.get(reg.id) ?? new Set();
-        set.add(norm(r.districtFullName));
-        byRegion.set(reg.id, set);
+
+    preprocessRow: (row) => {
+      const correctedLocality =
+        correctLocalityName(
+          row.name,
+          row.type,
+          row.district,
+        );
+
+      return {
+        ...row,
+
+        name:
+          correctedLocality.name,
+
+        shortName:
+          correctedLocality.shortName,
+
+        districtFullName:
+          correctedLocality.districtFullName,
+      };
+    },
+
+    keyFromRow: (row) =>
+      `${norm(row.name)}|${norm(row.districtFullName)}|${norm(row.region)}`,
+
+    resolveParents: async (rows) => {
+      const wantedRegionNames = [
+        ...new Set(
+          rows.map((row) =>
+            norm(row.region),
+          ),
+        ),
+      ];
+
+      const regions =
+        await Region.findAll({
+          attributes: [
+            'id',
+            'name',
+          ],
+
+          where: sqlWhere(
+            fn(
+              'lower',
+              col('name'),
+            ),
+            {
+              [Op.in]:
+                wantedRegionNames,
+            },
+          ),
+
+          raw: true,
+        });
+
+      const regionByLowerName =
+        new Map(
+          regions.map(
+            (region) => [
+              norm(region.name),
+              region,
+            ],
+          ),
+        );
+
+      const districtNamesByRegion =
+        new Map();
+
+      for (const row of rows) {
+        const region =
+          regionByLowerName.get(
+            norm(row.region),
+          );
+
+        if (!region) {
+          throw new CustomError(
+            'ERRORS.TOPONYM.BULK_PARENT_NOT_FOUND',
+            422,
+            {
+              parents:
+                row.region,
+            },
+          );
+        }
+
+        const districtNames =
+          districtNamesByRegion.get(
+            region.id,
+          ) ?? new Set();
+
+        districtNames.add(
+          norm(
+            row.districtFullName,
+          ),
+        );
+
+        districtNamesByRegion.set(
+          region.id,
+          districtNames,
+        );
       }
-      //console.log("byRegion");
-      //console.log(byRegion);
 
       const districts = [];
-      for (const [regionId, namesLowerSet] of byRegion.entries()) {
-        const namesLower = [...namesLowerSet];
-        if (namesLower.length === 0) continue;
-        const found = await District.findAll({
-          attributes: ['id', 'name', 'regionId'],
-          where: {
-            regionId,
-            [Op.and]: [sqlWhere(fn('lower', col('name')), { [Op.in]: namesLower })],
-          },
-          raw: true,
-        });
-        districts.push(...found);
-      }
-      const keyD = (regionId, name) => `${regionId}|${norm(name)}`;
-      const districtByKey = new Map();
-      for (const d of districts) {
-        districtByKey.set(keyD(d.regionId, d.name), d);
-      }
-      return { regByLower, districtByKey };
-    },
-    missingParents: (list, parents) => {
-      let missing = new Set();
-      list.forEach((t) => {
-        const reg = parents.regByLower.get(norm(t.region));
-        const dist = parents.districtByKey.get(`${reg.id}|${norm(t.districtFullName)}`);
-        if (!dist) {
-          missing.add(`${t.districtFullName} (${t.region})`);
+
+      for (
+        const [
+          regionId,
+          districtNamesSet,
+        ]
+        of districtNamesByRegion.entries()
+      ) {
+        const districtNames = [
+          ...districtNamesSet,
+        ];
+
+        if (
+          districtNames.length === 0
+        ) {
+          continue;
         }
-      });
-      missing = [...missing];
-      return missing;
+
+        const foundDistricts =
+          await District.findAll({
+            attributes: [
+              'id',
+              'name',
+              'regionId',
+            ],
+
+            where: {
+              regionId,
+
+              [Op.and]: [
+                sqlWhere(
+                  fn(
+                    'lower',
+                    col('name'),
+                  ),
+                  {
+                    [Op.in]:
+                      districtNames,
+                  },
+                ),
+              ],
+            },
+
+            raw: true,
+          });
+
+        districts.push(
+          ...foundDistricts,
+        );
+      }
+
+      const getDistrictKey = (
+        regionId,
+        districtName,
+      ) =>
+        `${regionId}|${norm(districtName)}`;
+
+      const districtByKey =
+        new Map();
+
+      for (
+        const district
+        of districts
+      ) {
+        districtByKey.set(
+          getDistrictKey(
+            district.regionId,
+            district.name,
+          ),
+          district,
+        );
+      }
+
+      return {
+        regionByLowerName,
+        districtByKey,
+      };
     },
-    preprocessRow: (row) => {
-      const l = correctLocalityName(row.name, row.type, row.district);
-      console.log("correctLocalityName");
-      console.log(l);
-      return { ...row, name: l.name, shortName: l.shortName, districtFullName: l.districtFullName };
+
+    findMissingParents: (
+      rows,
+      parents,
+    ) => {
+      const missingParents =
+        new Set();
+
+      for (const row of rows) {
+        const region =
+          parents.regionByLowerName.get(
+            norm(row.region),
+          );
+
+        const district =
+          parents.districtByKey.get(
+            `${region.id}|${norm(row.districtFullName)}`,
+          );
+
+        if (!district) {
+          missingParents.add(
+            `${row.districtFullName} (${row.region})`,
+          );
+        }
+      }
+
+      return [
+        ...missingParents,
+      ];
     },
-    buildPayload: (r, parents) => {
-      const reg = parents.regByLower.get(norm(r.region));
-      const dist = parents.districtByKey.get(`${reg.id}|${norm(r.districtFullName)}`);
-      //console.log("DIST");
-      //console.log(dist);
-      return [{
-        name: r.name,
-        shortName: r.shortName,
-        isCapitalOfRegion: !!r.isCapitalOfRegion,
-        isCapitalOfDistrict: !!r.isCapitalOfDistrict,
-        isFederalCity: !!r.isFederalCity,
-        districtId: dist.id,
-      }];
-    },
-    existingQuery: async (rows, parents) => {
+
+    findConflicts: async (
+      rows,
+      parents,
+    ) => {
       // Group localities by district so we can query once per district.
-      const byDistrict = new Map();
-      for (const r of rows) {
-        const reg = parents.regByLower.get(norm(r.region));
-        const dist = parents.districtByKey.get(`${reg.id}|${norm(r.districtFullName)}`);
-        const set = byDistrict.get(dist.id) ?? new Set();
-        set.add(norm(r.name));
-        byDistrict.set(dist.id, set);
+      const localityNamesByDistrict =
+        new Map();
+
+      for (const row of rows) {
+        const region =
+          parents.regionByLowerName.get(
+            norm(row.region),
+          );
+
+        const district =
+          parents.districtByKey.get(
+            `${region.id}|${norm(row.districtFullName)}`,
+          );
+
+        const localityNames =
+          localityNamesByDistrict.get(
+            district.id,
+          ) ?? new Set();
+
+        localityNames.add(
+          norm(row.name),
+        );
+
+        localityNamesByDistrict.set(
+          district.id,
+          localityNames,
+        );
       }
-      //console.log("byDistrict");
-      //console.log(byDistrict);
-      const existing = [];
-      for (const [districtId, namesLower] of byDistrict) {
-        const exist = await Locality.findAll({
-          attributes: ['name'],
-          where: { districtId, [Op.and]: [sqlWhere(fn('lower', col('locality.name')), { [Op.in]: [...namesLower] })] },
-          include: [{
-            model: District,
-            attributes: ['name'],
-            include:
-              [{
-                model: Region,
-                attributes: ['name'],
-              }],
-          }],
-          raw: true,
-        });
-        existing.push(...exist);
+
+      const conflicts = [];
+
+      for (
+        const [
+          districtId,
+          localityNames,
+        ]
+        of localityNamesByDistrict
+      ) {
+        const existingLocalities =
+          await Locality.findAll({
+            attributes: [
+              'name',
+            ],
+
+            where: {
+              districtId,
+
+              [Op.and]: [
+                sqlWhere(
+                  fn(
+                    'lower',
+                    col(
+                      'locality.name',
+                    ),
+                  ),
+                  {
+                    [Op.in]: [
+                      ...localityNames,
+                    ],
+                  },
+                ),
+              ],
+            },
+
+            include: [
+              {
+                model: District,
+                attributes: [
+                  'name',
+                ],
+
+                include: [
+                  {
+                    model: Region,
+                    attributes: [
+                      'name',
+                    ],
+                  },
+                ],
+              },
+            ],
+
+            raw: true,
+          });
+
+        conflicts.push(
+          ...existingLocalities.map(
+            (locality) =>
+              `${locality.name} (${locality['district.name']}, ${locality['district.region.name']})`,
+          ),
+        );
       }
-      const conflicts = existing.map(e => `${e.name} (${e['district.name']}, ${e['district.region.name']})`);
-      //console.log("conflicts");
-      //console.log(conflicts);
+
       return conflicts;
+    },
+
+    buildPayload: (
+      row,
+      parents,
+    ) => {
+      const region =
+        parents.regionByLowerName.get(
+          norm(row.region),
+        );
+
+      const district =
+        parents.districtByKey.get(
+          `${region.id}|${norm(row.districtFullName)}`,
+        );
+
+      return {
+        name:
+          row.name,
+
+        shortName:
+          row.shortName,
+
+        isCapitalOfRegion:
+          row.isCapitalOfRegion,
+
+        isCapitalOfDistrict:
+          row.isCapitalOfDistrict,
+
+        isFederalCity:
+          row.isFederalCity,
+
+        districtId:
+          district.id,
+      };
     },
   },
 };
@@ -512,27 +1555,37 @@ export const MAP_POPULATE = {
 export async function markAddressesUnrecoverable(
   type,
   toponymId,
-  t
+  transaction,
 ) {
-  const byType = {
-    country:  'countryId',
-    region:   'regionId',
+  const foreignKeyByType = {
+    country: 'countryId',
+    region: 'regionId',
     district: 'districtId',
     locality: 'localityId',
   };
 
-  const fk = byType[type];
-  if (!fk) return;
+  const foreignKey =
+    foreignKeyByType[type];
 
-  await UserAddress.update(
-    { isRecoverable: false },
-    {
-      transaction: t,
-      where: {
-        isRestricted: true,
-        [fk]: toponymId,
-      },
-      individualHooks: true, // if you audit address updates
-    }
+  if (!foreignKey) return;
+
+  await Promise.all(
+    ADDRESS_MODELS.map(
+      (AddressModel) =>
+        AddressModel.update(
+          {
+            isRecoverable: false,
+          },
+          {
+            where: {
+              isRestricted: true,
+              [foreignKey]:
+                toponymId,
+            },
+            individualHooks: true,
+            transaction,
+          },
+        ),
+    ),
   );
 }

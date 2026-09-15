@@ -23,7 +23,7 @@ import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
   toponymSchema,
-  SaveToponym,
+  DraftToponym,
   ToponymNamesList,
   toponymNamesListSchema,
   toponymsSchema,
@@ -47,9 +47,9 @@ export class AddressService {
   ): Observable<ApiResponse<boolean>> {
     let params = new HttpParams().set('type', type).set('name', name);
     if (id != null) params = params.set('id', String(id));
-    if (addressFilter.countries[0])
+    if (addressFilter.countries[0]){
        console.log('HttpParams ', addressFilter.countries[0]);
-      params = params.set('countryId', String(addressFilter.countries[0]));
+      params = params.set('countryId', String(addressFilter.countries[0]));}
     if (addressFilter.regions[0])
       params = params.set('regionId', String(addressFilter.regions[0]));
     if (addressFilter.districts[0])
@@ -80,7 +80,7 @@ export class AddressService {
   ): Observable<ApiResponse<Toponym>> {
     const addressPoint =
       operation == 'create' ? 'create-toponym' : 'update-toponym';
-    let toponymData: SaveToponym = {
+    let toponymData: DraftToponym = {
       type: type,
       ...mainValues,
     };

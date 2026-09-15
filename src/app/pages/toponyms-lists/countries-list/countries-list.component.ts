@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component';
 import { ToponymProps, ToponymType } from '../../../interfaces/toponym';
-import { toponymDraftSchema } from '../../../../../shared/schemas/toponym.schema';
+import { toponymFormSchema } from '../../../../../shared/schemas/toponym.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 @Component({
@@ -37,7 +37,7 @@ export class CountriesListComponent {
           controlName: 'name',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymDraftSchema.shape.name)], // [Validators.required],
+          validators: [zodValidator(toponymFormSchema.shape.name)], // [Validators.required],
           type: 'inputText',
           label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Лапландия',

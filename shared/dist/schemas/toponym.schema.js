@@ -1,70 +1,148 @@
 import { z } from 'zod';
-const toponymTypeSchema = z.enum(['country', 'region', 'district', 'locality']);
+import { positiveInt, positiveIntParam, } from './common.schema.js';
+export const toponymTypeSchema = z.enum([
+    'country',
+    'region',
+    'district',
+    'locality',
+]);
+const toponymTextSchema = z
+    .string()
+    .trim()
+    .min(1)
+    .max(200);
+const booleanQuerySchema = z.preprocess((value) => {
+    if (value === 'true')
+        return true;
+    if (value === 'false')
+        return false;
+    return value;
+}, z.boolean());
+const idsQuerySchema = z.preprocess((value) => {
+    if (value == null)
+        return [];
+    return Array.isArray(value)
+        ? value
+        : [value];
+}, z.array(positiveIntParam));
+// --------------------------------------------------
+// Duplicate check
+// --------------------------------------------------
 export const checkToponymNameSchema = z
     .object({
     type: toponymTypeSchema,
-    name: z.string().trim().min(1).max(200),
-    id: z.coerce.number().int().optional(),
-    countryId: z.coerce.number().int().optional(),
-    regionId: z.coerce.number().int().optional(),
-    districtId: z.coerce.number().int().optional(),
+    name: toponymTextSchema,
+    id: positiveIntParam.optional(),
+    countryId: positiveIntParam.optional(),
+    regionId: positiveIntParam.optional(),
+    districtId: positiveIntParam.optional(),
 })
     .strict();
-export const toponymDraftSchema = z
+// --------------------------------------------------
+// Create
+// --------------------------------------------------
+const countryCreateSchema = z
     .object({
-    name: z
-        .string()
-        .trim()
-        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
-    shortName: z
-        .string()
-        .trim()
-        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
-    postName: z
-        .string()
-        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
-    shortPostName: z
-        .string()
-        .min(1, { message: 'FORM_VALIDATION.REQUIRED' })
-        .max(200, { message: 'FORM_VALIDATION.TOPONYM.NAME_MAX' }),
+    type: z.literal('country'),
+    name: toponymTextSchema,
+})
+    .strict();
+const regionCreateSchema = z
+    .object({
+    type: z.literal('region'),
+    name: toponymTextSchema,
+    shortName: toponymTextSchema,
+    countryId: positiveInt,
+})
+    .strict();
+const districtCreateSchema = z
+    .object({
+    type: z.literal('district'),
+    name: toponymTextSchema,
+    shortName: toponymTextSchema,
+    postName: toponymTextSchema,
+    shortPostName: toponymTextSchema,
+    countryId: positiveInt,
+    regionId: positiveInt,
+})
+    .strict();
+const localityCreateSchema = z
+    .object({
+    type: z.literal('locality'),
+    name: toponymTextSchema,
+    shortName: toponymTextSchema,
+    countryId: positiveInt,
+    regionId: positiveInt,
+    districtId: positiveInt,
     isFederalCity: z.boolean(),
     isCapitalOfRegion: z.boolean(),
     isCapitalOfDistrict: z.boolean(),
-    countryId: z.coerce.number().int(),
-    regionId: z.coerce.number().int(),
-    districtId: z.coerce.number().int(),
 })
     .strict();
-export const saveToponymSchema = z
+export const toponymCreateSchema = z.discriminatedUnion('type', [
+    countryCreateSchema,
+    regionCreateSchema,
+    districtCreateSchema,
+    localityCreateSchema,
+]);
+// --------------------------------------------------
+// Update
+// --------------------------------------------------
+const countryUpdateSchema = countryCreateSchema.extend({
+    id: positiveInt,
+});
+const regionUpdateSchema = regionCreateSchema.extend({
+    id: positiveInt,
+});
+const districtUpdateSchema = districtCreateSchema.extend({
+    id: positiveInt,
+});
+const localityUpdateSchema = localityCreateSchema.extend({
+    id: positiveInt,
+});
+export const toponymUpdateSchema = z.discriminatedUnion('type', [
+    countryUpdateSchema,
+    regionUpdateSchema,
+    districtUpdateSchema,
+    localityUpdateSchema,
+]);
+// --------------------------------------------------
+// Get by id
+// --------------------------------------------------
+export const findToponymByIdSchema = z
     .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveIntParam,
     type: toponymTypeSchema,
-    name: z.string().trim().min(1).max(200),
-    shortName: z.string().trim().min(1).max(200).optional(),
-    postName: z.string().trim().min(1).max(200).optional(),
-    shortPostName: z.string().trim().min(1).max(200).optional(),
-    isFederalCity: z.boolean().optional(),
-    isCapitalOfRegion: z.boolean().optional(),
-    isCapitalOfDistrict: z.boolean().optional(),
-    countryId: z.coerce.number().int().optional(),
-    regionId: z.coerce.number().int().optional(),
-    districtId: z.coerce.number().int().optional(),
 })
     .strict();
+// --------------------------------------------------
+// Short lists for address filters
+// --------------------------------------------------
+export const getToponymsListSchema = z
+    .object({
+    ids: idsQuerySchema,
+    typeOfToponym: z.enum([
+        'countries',
+        'regions',
+        'districts',
+        'localities',
+    ]),
+})
+    .strict();
+// --------------------------------------------------
+// Responses
+// --------------------------------------------------
 export const DefaultAddressParamsSchema = z
     .object({
-    localityId: z.number().int().nullable(), // number | null
-    districtId: z.number().int().nullable(),
-    regionId: z.number().int().nullable(),
-    countryId: z.number().int().nullable(),
+    localityId: positiveInt.nullable(),
+    districtId: positiveInt.nullable(),
+    regionId: positiveInt.nullable(),
+    countryId: positiveInt.nullable(),
 })
     .strict();
 export const toponymSchema = z
     .object({
-    id: z.number().int(),
+    id: positiveInt,
     name: z.string(),
     defaultAddressParams: DefaultAddressParamsSchema.optional(),
     shortName: z.string().optional(),
@@ -73,124 +151,202 @@ export const toponymSchema = z
     isFederalCity: z.boolean().optional(),
     isCapitalOfRegion: z.boolean().optional(),
     isCapitalOfDistrict: z.boolean().optional(),
-    countryName: z.string().optional(), // string | undefined
+    countryName: z.string().optional(),
     regionName: z.string().optional(),
     districtName: z.string().optional(),
 })
     .strict();
-export const findToponymByIdSchema = z
+const toponymNameItemSchema = z
     .object({
-    id: z.coerce.number().int(),
-    type: toponymTypeSchema,
-})
-    .strict();
-const IdsAsArray = z.preprocess((v) => {
-    if (v == null)
-        return [];
-    return Array.isArray(v) ? v : [v]; // '1' -> ['1']
-}, z.array(z.coerce.number().int()));
-export const getToponymsListSchema = z
-    .object({
-    ids: IdsAsArray,
-    typeOfToponym: z.enum(['countries', 'regions', 'districts', 'localities']),
-})
-    .strict();
-export const toponymNamesListSchema = z.array(z
-    .object({
-    id: z.coerce.number().int(),
+    id: positiveInt,
     name: z.string(),
-    countryId: z.coerce.number().int().optional(),
-    regionId: z.coerce.number().int().optional(),
-    districtId: z.coerce.number().int().optional(),
+    countryId: positiveInt.optional(),
+    regionId: positiveInt.optional(),
+    districtId: positiveInt.optional(),
 })
-    .strict());
+    .strict();
+export const toponymNamesListSchema = z.array(toponymNameItemSchema);
 export const toponymsSchema = z
     .object({
     toponyms: z.array(toponymSchema),
-    length: z.coerce.number().int().min(0),
+    length: z.number().int().min(0),
 })
     .strict();
-const ArrNum = z.preprocess((v) => (v == null ? [] : Array.isArray(v) ? v : [v]), z.array(z.coerce.number().int()));
-const BoolFromQuery = z.preprocess((v) => {
-    if (typeof v === 'string') {
-        const s = v.trim().toLowerCase();
-        if (['true', '1', 'yes', 'y', 'on'].includes(s))
-            return true;
-        if (['false', '0', 'no', 'n', 'off', ''].includes(s))
-            return false;
-        return false;
-    }
-    if (typeof v === 'number')
-        return v === 1;
-    if (typeof v === 'boolean')
-        return v;
-    return false;
-}, z.boolean());
-export const getToponymsSchema = z
+// --------------------------------------------------
+// Form
+// --------------------------------------------------
+const formTextSchema = z
+    .string()
+    .trim()
+    .min(1, {
+    message: 'FORM_VALIDATION.REQUIRED',
+})
+    .max(200, {
+    message: 'FORM_VALIDATION.TOPONYM.NAME_MAX',
+});
+export const toponymFormSchema = z
+    .object({
+    name: formTextSchema,
+    shortName: formTextSchema,
+    postName: formTextSchema,
+    shortPostName: formTextSchema,
+})
+    .strict();
+// --------------------------------------------------
+// Table query
+// --------------------------------------------------
+const toponymSortSchema = z.enum([
+    'name',
+    'shortName',
+    'postName',
+    'shortPostName',
+    'country',
+    'region',
+    'district',
+]);
+const SORT_FIELDS_BY_TYPE = {
+    country: [
+        'name',
+    ],
+    region: [
+        'name',
+        'shortName',
+        'country',
+    ],
+    district: [
+        'name',
+        'shortName',
+        'postName',
+        'shortPostName',
+        'region',
+        'country',
+    ],
+    locality: [
+        'name',
+        'shortName',
+        'district',
+        'region',
+        'country',
+    ],
+};
+export const toponymQueryDTOSchema = z
     .object({
     type: toponymTypeSchema,
-    search: z.string().trim().optional().default(''), // was: searchValue
-    exact: BoolFromQuery.optional().default(false), // was: exactMatch
-    sortBy: z
-        .enum(['name', 'country', 'region', 'district', 'postName'])
+    search: z
+        .string()
+        .trim()
+        .optional()
+        .default(''),
+    exact: booleanQuerySchema
+        .optional()
+        .default(false),
+    sortBy: toponymSortSchema
         .optional()
         .default('name'),
-    sortDir: z.enum(['asc', 'desc']).optional().default('asc'),
-    page: z.coerce.number().int().min(0).optional().default(0),
-    pageSize: z.coerce.number().int().min(1).max(200).optional().default(20),
-    countries: ArrNum.optional().default([]), // filter by id(s)
-    regions: ArrNum.optional().default([]),
-    districts: ArrNum.optional().default([]),
-    localities: ArrNum.optional().default([]),
+    sortDir: z
+        .enum(['asc', 'desc'])
+        .optional()
+        .default('asc'),
+    page: z
+        .coerce
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .default(0),
+    pageSize: z
+        .coerce
+        .number()
+        .int()
+        .min(1)
+        .max(200)
+        .optional()
+        .default(20),
+    countries: idsQuerySchema,
+    regions: idsQuerySchema,
+    districts: idsQuerySchema,
+    localities: idsQuerySchema,
 })
-    .strip();
+    .strict()
+    .superRefine((query, ctx) => {
+    const allowedSortFields = SORT_FIELDS_BY_TYPE[query.type];
+    if (!allowedSortFields.includes(query.sortBy)) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['sortBy'],
+            message: 'INVALID_SORT_FIELD',
+        });
+    }
+});
+// --------------------------------------------------
+// Delete / block
+// --------------------------------------------------
 export const deleteToponymSchema = z
     .object({
-    id: z.coerce.number().int(),
+    id: positiveIntParam,
     type: toponymTypeSchema,
-    destroy: BoolFromQuery.optional().default(false),
+    destroy: booleanQuerySchema
+        .optional()
+        .default(false),
 })
     .strict();
-const CountryInput = z.object({
-    name: z.string().trim().min(1),
+// --------------------------------------------------
+// Bulk upload
+// --------------------------------------------------
+const countryBulkRowSchema = z.object({
+    name: toponymTextSchema,
 });
-const RegionInput = z.object({
-    country: z.string().trim().min(1),
-    name: z.string().trim().min(1),
-    shortName: z.string().trim().min(1),
+const regionBulkRowSchema = z.object({
+    country: toponymTextSchema,
+    name: toponymTextSchema,
+    shortName: toponymTextSchema,
 });
-const DistrictInput = z.object({
-    region: z.string().trim().min(1),
-    name: z.string().trim().min(1),
-    postName: z.string().trim().min(1),
-    postNameType: z.string().trim().min(1),
+const districtBulkRowSchema = z.object({
+    region: toponymTextSchema,
+    name: toponymTextSchema,
+    postName: toponymTextSchema,
+    postNameType: toponymTextSchema,
 });
-const LocalityInput = z.object({
-    region: z.string().trim().min(1),
-    district: z.string().trim().min(1),
-    name: z.string().trim().min(1),
-    type: z.string().trim().min(1),
+const localityBulkRowSchema = z.object({
+    region: toponymTextSchema,
+    district: toponymTextSchema,
+    name: toponymTextSchema,
+    type: toponymTextSchema,
     isCapitalOfDistrict: z.boolean(),
     isCapitalOfRegion: z.boolean(),
     isFederalCity: z.boolean(),
 });
 export const bulkToponymsSchema = z.discriminatedUnion('type', [
     z
-        .object({ type: z.literal('country'), data: z.array(CountryInput).min(1) })
+        .object({
+        type: z.literal('country'),
+        data: z
+            .array(countryBulkRowSchema)
+            .min(1),
+    })
         .strip(),
     z
-        .object({ type: z.literal('region'), data: z.array(RegionInput).min(1) })
+        .object({
+        type: z.literal('region'),
+        data: z
+            .array(regionBulkRowSchema)
+            .min(1),
+    })
         .strip(),
     z
         .object({
         type: z.literal('district'),
-        data: z.array(DistrictInput).min(1),
+        data: z
+            .array(districtBulkRowSchema)
+            .min(1),
     })
         .strip(),
     z
         .object({
         type: z.literal('locality'),
-        data: z.array(LocalityInput).min(1),
+        data: z
+            .array(localityBulkRowSchema)
+            .min(1),
     })
         .strip(),
 ]);
