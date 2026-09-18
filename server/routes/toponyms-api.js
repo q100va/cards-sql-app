@@ -293,7 +293,7 @@ router.get(
       const response = {
         data: dependenciesCount,
         ...(dependenciesCount && {
-          code: 'TOPONYM.HAS_DEPENDENCIES',
+          code: 'ERRORS.TOPONYM.HAS_DEPENDENCIES',
         }),
       };
 

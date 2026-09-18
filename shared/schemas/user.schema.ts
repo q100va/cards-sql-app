@@ -12,6 +12,7 @@ import {
   nullableInt,
   nullableIsoDate,
   intOptArray,
+  positiveIntParam,
 } from './common.schema.js';
 import {
   emailSchema,
@@ -22,24 +23,15 @@ import {
   telegramIdSchema,
   telegramNicknameSchema,
   vKontakteSchema,
-  websiteSchema
+  websiteSchema,
 } from './common.schema.js';
-import {
-  draftAddressSchema,
-  addressSchema,
-  addressRefFullSchema,
-  addressRefShortSchema,
-} from './common.schema.js';
+import { draftAddressSchema, addressSchema } from './common.schema.js';
 import {
   contactType,
-  contactSchema,
   nonEmptyContacts,
   optionalContactsSchema,
 } from './common.schema.js';
-import {
-  //  changingAddressSchema,
-  changingContactsSchema,
-} from './common.schema.js';
+import { changingContactsSchema } from './common.schema.js';
 import {
   outdatedNameItemSchema,
   outdatedAddressItemSchema,
@@ -53,13 +45,13 @@ export const causeOfRestrictionControlSchema = z.preprocess(
     .string()
     .min(1, 'FORM_VALIDATION.REQUIRED')
     .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
-    .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
+    .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' }),
 );
 
 export const emailControlSchema = z
   .preprocess(
     toLowerTrim,
-    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' })
+    z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }),
   )
   .superRefine((v, ctx) => {
     if (v.length > 254)
@@ -106,7 +98,7 @@ export const telegramIdControlSchema = z.preprocess(
   z
     .string()
     .min(1, 'FORM_VALIDATION.REQUIRED')
-    .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT'),
 );
 
 export const whatsAppControlSchema = z
@@ -141,7 +133,7 @@ export const telegramNicknameControlSchema = z.preprocess(
   z
     .string()
     .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const vKontakteControlSchema = z.preprocess(
@@ -150,9 +142,9 @@ export const vKontakteControlSchema = z.preprocess(
     .string()
     .regex(
       /^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
+      'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const instagramControlSchema = z.preprocess(
@@ -161,9 +153,9 @@ export const instagramControlSchema = z.preprocess(
     .string()
     .regex(
       /^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/,
-      'FORM_VALIDATION.CONTACT.INVALID_CONTACT'
+      'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
     )
-    .nullable()
+    .nullable(),
 );
 
 export const facebookControlSchema = z.preprocess(
@@ -171,7 +163,7 @@ export const facebookControlSchema = z.preprocess(
   z
     .string()
     .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
-    .nullable()
+    .nullable(),
 );
 
 export const websiteControlSchema = z.preprocess(
@@ -180,16 +172,14 @@ export const websiteControlSchema = z.preprocess(
     .string()
     .regex(
       /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
-      "Invalid website URL"
+      'Invalid website URL',
     )
-    .nullable()
+    .nullable(),
 );
-
-
 
 export const otherContactControlSchema = z.preprocess(
   emptyToNull,
-  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable()
+  z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable(),
 );
 
 /* ===================== Contacts (draft / ordered / optional) ===================== */
@@ -238,26 +228,57 @@ export const contactsSchema = z
 /* ===================== Small DTOs ===================== */
 
 export const userIdSchema = z
-  .object({ id: z.coerce.number().int().positive() })
-  .strict();
-
-export const userBlockingSchema = z
   .object({
-    id: z.coerce.number().int().positive(),
-    causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
+    id: positiveInt,
   })
   .strict();
 
+export const userIdParamSchema = z
+  .object({
+    id: positiveIntParam,
+  })
+  .strict();
+
+const restrictionCauseSchema = z
+  .string()
+  .trim()
+  .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+  .max(500, 'FORM_VALIDATION.TOO_LONG_500');
+
+const nullableRestrictionCauseSchema = z.preprocess(
+  emptyToNull,
+  restrictionCauseSchema.nullable(),
+);
+
+export const userBlockingSchema = z
+  .object({
+    id: positiveInt,
+    causeOfRestriction: restrictionCauseSchema,
+  })
+  .strict();
+
+const userNameSchema = z.preprocess(
+  toTrim,
+  z
+    .string()
+    .min(5, {
+      message: 'FORM_VALIDATION.TOO_SHORT_5',
+    })
+    .max(20, {
+      message: 'FORM_VALIDATION.TOO_LONG_20',
+    }),
+);
+
 export const checkUserNameSchema = z
   .object({
-    userName: z.preprocess(toTrim, z.string().min(1).max(20)),
-    id: z.coerce.number().int().positive().optional(),
+    userName: userNameSchema,
+    id: positiveIntParam.optional(),
   })
   .strict();
 
 export const checkUserDataSchema = z
   .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveInt.nullable(),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     contacts: draftContactsSchema,
@@ -266,28 +287,24 @@ export const checkUserDataSchema = z
 
 /* ===================== User Draft ===================== */
 
+const passwordSchema = z.preprocess(
+  toTrim,
+  z
+    .string()
+    .min(8, 'FORM_VALIDATION.USER.MIN_PASSWORD')
+    .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
+    .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD'),
+);
+
 export const userDraftSchema = z
   .object({
     id: nullableInt,
-    userName: z.preprocess(
-      toTrim,
-      z
-        .string()
-        .min(5, { message: 'FORM_VALIDATION.TOO_SHORT_5' })
-        .max(20, { message: 'FORM_VALIDATION.TOO_LONG_20' })
-    ),
-    password: z.preprocess(
-      toTrim,
-      z
-        .string()
-        .min(8, 'FORM_VALIDATION.USER.MIN_PASSWORD')
-        .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
-        .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD')
-    ),
+    userName: userNameSchema,
+    password: passwordSchema,
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     patronymic: z.preprocess(
       emptyToNull,
-      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()
+      z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable(),
     ),
 
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
@@ -299,17 +316,11 @@ export const userDraftSchema = z
       z
         .string()
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
+        .nullable(),
     ),
 
     isRestricted: z.boolean(),
-    causeOfRestriction: z.preprocess(
-      emptyToNull,
-      z
-        .string()
-        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()
-    ),
+    causeOfRestriction: nullableRestrictionCauseSchema,
     dateOfRestriction: nullableIsoDate,
 
     draftContacts: draftContactsSchema,
@@ -354,14 +365,7 @@ export const userDraftSchema = z
 export const changePasswordSchema = z
   .object({
     userId: positiveInt,
-    newPassword: z.preprocess(
-      toTrim,
-      z
-        .string()
-        .min(8, 'FORM_VALIDATION.USER.MIN_PASSWORD')
-        .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
-        .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD')
-    ),
+    newPassword: passwordSchema,
     currentPassword: z.string().trim().min(8).optional(),
   })
   .strict();
@@ -377,42 +381,26 @@ export const changingMainSchema = z
         emptyToNull,
         z
           .string()
-          .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
-          .nullable()
+          .max(50)
+          .nullable(),
       )
       .optional(),
     lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
 
-    userName: z
-      .preprocess(
-        toTrim,
-        z
-          .string()
-          .min(5, { message: 'FORM_VALIDATION.TOO_SHORT_5' })
-          .max(20, { message: 'FORM_VALIDATION.TOO_LONG_20' })
-      )
-      .optional(),
+    userName: userNameSchema.optional(),
     roleId: positiveInt.optional(),
     comment: z
       .preprocess(
         emptyToNull,
         z
           .string()
-          .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
+          .max(500)
+          .nullable(),
       )
       .optional(),
 
     isRestricted: z.boolean().optional(),
-    causeOfRestriction: z
-      .preprocess(
-        emptyToNull,
-        z
-          .string()
-          .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable()
-      )
-      .optional(),
+    causeOfRestriction: nullableRestrictionCauseSchema.optional(),
     dateOfRestriction: nullableIsoDate.optional(),
   })
   .strict();
@@ -514,31 +502,46 @@ export const updateUserDataSchema = z
 /* ========= Users query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
+const userSortFieldSchema = z.enum([
+  'userName',
+  'role',
+  'name',
+  'dateOfStart',
+  'comment',
+  'isRestricted',
+]);
+const userSortSchema = z
+  .object({
+    field: userSortFieldSchema,
+    direction: sortDir,
+  })
+  .strict();
 
 export const usersQueryDTOSchema = z
   .object({
-    page: z.object({
-      size: z.number().int().min(0),
-      number: z.number().int().min(0),
-    }),
-    sort: z
-      .array(z.object({ field: z.string().min(1), direction: sortDir }))
-      .optional(),
+    page: z
+      .object({
+        size: z.number().int().min(1),
+        number: z.number().int().min(0),
+      })
+      .strict(),
+    sort: z.array(userSortSchema).max(1).optional(),
     search: z
       .object({ value: z.string().min(1), exact: z.boolean().optional() })
+      .strict()
       .optional(),
     view: z
       .object({
-        option: z.string().min(1).optional(),
+        option: z.enum(['all', 'only-active', 'only-blocked']).optional(),
         includeOutdated: z.boolean().optional(),
       })
+      .strict()
       .optional(),
     filters: z
       .object({
         general: z
           .object({
             roles: z.array(positiveInt).min(1).optional(),
-            //comment: z.boolean().optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -546,9 +549,12 @@ export const usersQueryDTOSchema = z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            details: z
+              .array(z.enum(['comment']))
+              .min(1)
+              .optional(),
           })
-          .partial()
+          .strict()
           .optional(),
         address: z
           .object({
@@ -557,6 +563,7 @@ export const usersQueryDTOSchema = z
             districts: intOptArray,
             localities: intOptArray,
           })
+          .strict()
           .partial()
           .optional(),
         mode: z
@@ -564,10 +571,10 @@ export const usersQueryDTOSchema = z
             strictAddress: z.boolean().optional(),
             strictContact: z.boolean().optional(),
           })
-          .partial()
+          .strict()
           .optional(),
       })
-      .partial()
+      .strict()
       .optional(),
   })
   .strict();
@@ -615,12 +622,11 @@ export const userSchema = z
 export const usersSchema = z
   .object({
     list: z.array(userSchema),
-    length: z.coerce.number().int().min(0),
+    length: z.number().int().min(0),
   })
   .strict();
 
 /* ===================== Types ===================== */
-//export type UserDuplicates = z.infer<typeof duplicatesSchema>;
 export type UserDraft = z.infer<typeof userDraftSchema>;
 export type UserDraftContacts = z.infer<typeof draftContactsSchema>;
 export type ChangePassword = z.infer<typeof changePasswordSchema>;
@@ -631,6 +637,4 @@ export type OutdatedUserName = z.infer<typeof outdatedUserNameItemSchema>;
 export type UserOutdatedData = z.infer<typeof outdatedDataSchema>;
 
 export type UserChangingData = z.infer<typeof changingDataSchema>;
-//export type UserRestoringData = z.infer<typeof restoringDataSchema>;
 export type UserOutdatingData = z.infer<typeof outdatingDataSchema>;
-//export type UserDeletingData = z.infer<typeof deletingDataSchema>;

@@ -62,7 +62,7 @@ describe('Users API (integration, minimal)', () => {
 
   // ---------- GET /check-user-name ----------
   describe('GET /api/users/check-user-name', () => {
-    it('returns {data:true, code:USER.ALREADY_EXISTS} when userName taken (case-insensitive)', async () => {
+    it('returns {data:true, code:ERRORS.USER.ALREADY_EXISTS} when userName taken (case-insensitive)', async () => {
       await factoryCreateUser({ userName: 'john', roleId: 1 });
 
       const { body, status } = await global.api
@@ -71,7 +71,7 @@ describe('Users API (integration, minimal)', () => {
         .query({ userName: 'JOHN' });
 
       expect(status).toBe(200);
-      expect(body).toEqual(expect.objectContaining({ data: true, code: 'USER.ALREADY_EXISTS' }));
+      expect(body).toEqual(expect.objectContaining({ data: true, code: 'ERRORS.USER.ALREADY_EXISTS' }));
     });
 
     it('returns {data:false} when userName free', async () => {
@@ -119,13 +119,13 @@ describe('Users API (integration, minimal)', () => {
       expect(body.data.duplicatesName).toEqual(['john']);
       const pair = body.data.duplicatesContact.find(x => x.type === 'email' && x.content === 'a@b.com');
       expect(pair?.users).toContain('john');
-      expect(body.code).toBe('USER.HAS_DATA_DUPLICATES');
+      expect(body.code).toBe('ERRORS.USER.HAS_DATA_DUPLICATES');
     });
   });
 
   // ---------- POST /create-user ----------
   describe('POST /api/users/create-user', () => {
-    it('creates user, contacts, optional address, builds UserSearch and returns code USER.CREATED', async () => {
+    it('creates user, contacts, optional address, builds UserSearch and returns code SUCCESS.CREATED', async () => {
       const payload = {
         id: null,
         userName: 'kate5',
@@ -164,7 +164,7 @@ describe('Users API (integration, minimal)', () => {
         .send(payload);
 
       expect(status).toBe(201);
-      expect(body.code).toBe('USER.CREATED');
+      expect(body.code).toBe('SUCCESS.CREATED');
       expect(body.data).toBe('kate5');
 
       const [userRow] = await select(`SELECT id, "userName" FROM users WHERE "userName" = $1`, [payload.userName]);
@@ -192,13 +192,13 @@ describe('Users API (integration, minimal)', () => {
       expect(body.data.orderedContacts.email.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('404 + ERRORS.USER.NOT_FOUND when missing', async () => {
+    it('404 + ERRORS.DATA_NOT_FOUND when missing', async () => {
       const { body, status } = await global.api
         .get('/api/users/get-user-by-id/999999')
         .set({ ...langRu, ...auth });
 
       expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.USER.NOT_FOUND');
+      expect(body.code).toBe('ERRORS.DATA_NOT_FOUND');
     });
   });
 
@@ -215,7 +215,7 @@ describe('Users API (integration, minimal)', () => {
         .send({ userId: u.id, currentPassword: 'password2025', newPassword: 'new12345' });
 
       expect(status).toBe(200);
-      expect(body.code).toBe('USER.PASSWORD_CHANGED');
+      expect(body.code).toBe('SUCCESS.UPDATED');
 
       const tokensLeft = await RefreshToken.count({ where: { userId: u.id } });
       expect(tokensLeft).toBe(0);
@@ -236,7 +236,7 @@ describe('Users API (integration, minimal)', () => {
 
   // ---------- PATCH /block-user & /unblock-user ----------
   describe('PATCH /api/users/block-user & /unblock-user', () => {
-    it('blocks and unblocks user, returns codes USER.BLOCKED / USER.UNBLOCKED', async () => {
+    it('blocks and unblocks user, returning SUCCESS.UPDATED', async () => {
       const u = await factoryCreateUser({ userName: 'blockme', roleId: 1 });
 
       const r1 = await global.api
@@ -245,7 +245,7 @@ describe('Users API (integration, minimal)', () => {
         .send({ id: u.id, causeOfRestriction: 'spam' });
 
       expect(r1.status).toBe(200);
-      expect(r1.body.code).toBe('USER.BLOCKED');
+      expect(r1.body.code).toBe('SUCCESS.UPDATED');
 
       const r2 = await global.api
         .patch('/api/users/unblock-user')
@@ -253,12 +253,12 @@ describe('Users API (integration, minimal)', () => {
         .send({ id: u.id });
 
       expect(r2.status).toBe(200);
-      expect(r2.body.code).toBe('USER.UNBLOCKED');
+      expect(r2.body.code).toBe('SUCCESS.UPDATED');
     });
   });
   // ---------- DELETE /delete-user/:id ----------
   describe('DELETE /api/users/delete-user/:id', () => {
-    it('deletes user, cascades cleanup, returns code USER.DELETED', async () => {
+    it('deletes user, cascades cleanup, returns code SUCCESS.DELETED', async () => {
       const u = await factoryCreateUser({ userName: 'todel', roleId: 1 });
       await RefreshToken.create({ userId: u.id, token: 'zz125846254', expiresAt: '2025-11-25 17:24:54.901-05' });
 
@@ -267,19 +267,19 @@ describe('Users API (integration, minimal)', () => {
         .set({ ...langRu, ...auth });
 
       expect(status).toBe(200);
-      expect(body.code).toBe('USER.DELETED');
+      expect(body.code).toBe('SUCCESS.DELETED');
       expect(body.data).toBeNull();
 
       const users = await select(`SELECT id FROM users WHERE id = $1`, [u.id]);
       expect(users.length).toBe(0);
     });
-    it('404 + ERRORS.USER.NOT_FOUND when deleting missing user', async () => {
+    it('404 + ERRORS.DATA_NOT_FOUND when deleting missing user', async () => {
       const { body, status } = await global.api
         .delete(`/api/users/delete-user/999999`)
         .set({ ...langRu, ...auth });
 
       expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.USER.NOT_FOUND');
+      expect(body.code).toBe('ERRORS.DATA_NOT_FOUND');
     });
   })
 

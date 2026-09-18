@@ -1220,6 +1220,9 @@
       "DOWNLOAD_FAILED": "Failed to download the file."
     },
     "USER": {
+      "ALREADY_EXISTS": "User with this userName already exists",
+      "HAS_DATA_DUPLICATES": "The user data has duplicates",
+      "HAS_DEPENDENCIES": "The user cannot be deleted: {{count}} related items(s)",
       "NOT_FOUND": "User not found.",
       "NAME_NOT_CHECKED": "Failed to check the user name.",
       "DUPLICATES_NOT_CHECKED": "Failed to check the user data.",

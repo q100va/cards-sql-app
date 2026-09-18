@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import CustomError from "../shared/customError.js";
-import {regularExpression} from './helper-contact-re.js';
+import { regularExpression } from './helper-contact-re.js';
 
 export default function UserContactModel(sequelize) {
   class UserContact extends Model { }
@@ -24,8 +24,16 @@ export default function UserContactModel(sequelize) {
       validate: {
         notEmpty: true,
         isFormatCorrect(value) {
-          const RegularExpression = regularExpression(this.type, value);
-          if (RegularExpression && !RegularExpression.test(value)) {
+          const pattern =
+            regularExpression(
+              this.type,
+              value,
+            );
+
+          if (
+            pattern &&
+            !pattern.test(value)
+          ) {
             throw new CustomError(`Invalid contact ${value}!`, 422);
           }
         }
@@ -33,15 +41,26 @@ export default function UserContactModel(sequelize) {
     },
     isRestricted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
+      allowNull: false
     }
   },
     {
       sequelize,
       modelName: 'user-contact',
       tableName: 'user-contacts',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+
+      indexes: [
+        {
+          name: 'idx_user_contacts_user_restricted_type',
+          fields: [
+            'userId',
+            'isRestricted',
+            'type',
+          ],
+        },
+      ],
     });
   return UserContact;
 

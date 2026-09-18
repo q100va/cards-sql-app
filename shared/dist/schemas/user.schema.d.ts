@@ -74,18 +74,21 @@ export declare const contactsSchema: z.ZodObject<{
     }, z.core.$strict>>>;
 }, z.core.$strict>;
 export declare const userIdSchema: z.ZodObject<{
+    id: z.ZodNumber;
+}, z.core.$strict>;
+export declare const userIdParamSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
 export declare const userBlockingSchema: z.ZodObject<{
-    id: z.ZodCoercedNumber<unknown>;
-    causeOfRestriction: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
+    id: z.ZodNumber;
+    causeOfRestriction: z.ZodString;
 }, z.core.$strict>;
 export declare const checkUserNameSchema: z.ZodObject<{
     userName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strict>;
 export declare const checkUserDataSchema: z.ZodObject<{
-    id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    id: z.ZodNullable<z.ZodNumber>;
     firstName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     lastName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
     contacts: z.ZodObject<{
@@ -363,28 +366,39 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
     page: z.ZodObject<{
         size: z.ZodNumber;
         number: z.ZodNumber;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        field: z.ZodString;
+        field: z.ZodEnum<{
+            userName: "userName";
+            name: "name";
+            comment: "comment";
+            isRestricted: "isRestricted";
+            dateOfStart: "dateOfStart";
+            role: "role";
+        }>;
         direction: z.ZodEnum<{
             asc: "asc";
             desc: "desc";
         }>;
-    }, z.core.$strip>>>;
+    }, z.core.$strict>>>;
     search: z.ZodOptional<z.ZodObject<{
         value: z.ZodString;
         exact: z.ZodOptional<z.ZodBoolean>;
-    }, z.core.$strip>>;
+    }, z.core.$strict>>;
     view: z.ZodOptional<z.ZodObject<{
-        option: z.ZodOptional<z.ZodString>;
+        option: z.ZodOptional<z.ZodEnum<{
+            all: "all";
+            "only-active": "only-active";
+            "only-blocked": "only-blocked";
+        }>>;
         includeOutdated: z.ZodOptional<z.ZodBoolean>;
-    }, z.core.$strip>>;
+    }, z.core.$strict>>;
     filters: z.ZodOptional<z.ZodObject<{
-        general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
-            roles: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
-            dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
-            contactTypes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
+        general: z.ZodOptional<z.ZodObject<{
+            roles: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+            dateBeginningRange: z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>;
+            dateRestrictionRange: z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>;
+            contactTypes: z.ZodOptional<z.ZodArray<z.ZodEnum<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
@@ -397,20 +411,22 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
                 facebook: "facebook";
                 website: "website";
                 otherContact: "otherContact";
-            }>>>>;
-            details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
-        }, z.core.$strip>>>;
-        address: z.ZodOptional<z.ZodOptional<z.ZodObject<{
+            }>>>;
+            details: z.ZodOptional<z.ZodArray<z.ZodEnum<{
+                comment: "comment";
+            }>>>;
+        }, z.core.$strict>>;
+        address: z.ZodOptional<z.ZodObject<{
             countries: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             regions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             districts: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             localities: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-        }, z.core.$strip>>>;
-        mode: z.ZodOptional<z.ZodOptional<z.ZodObject<{
-            strictAddress: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-            strictContact: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-        }, z.core.$strip>>>;
-    }, z.core.$strip>>;
+        }, z.core.$strict>>;
+        mode: z.ZodOptional<z.ZodObject<{
+            strictAddress: z.ZodOptional<z.ZodBoolean>;
+            strictContact: z.ZodOptional<z.ZodBoolean>;
+        }, z.core.$strict>>;
+    }, z.core.$strict>>;
 }, z.core.$strict>;
 declare const outdatedUserNameItemSchema: z.ZodObject<{
     userName: z.ZodString;
@@ -829,7 +845,7 @@ export declare const usersSchema: z.ZodObject<{
             }, z.core.$strict>>;
         }, z.core.$strict>;
     }, z.core.$strict>>;
-    length: z.ZodCoercedNumber<unknown>;
+    length: z.ZodNumber;
 }, z.core.$strict>;
 export type UserDraft = z.infer<typeof userDraftSchema>;
 export type UserDraftContacts = z.infer<typeof draftContactsSchema>;

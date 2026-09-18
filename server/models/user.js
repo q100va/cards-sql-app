@@ -2,7 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import { applyFailedLoginState, applySuccessfulLoginReset, SECURITY } from '../controllers/auth-throttle.js';
 
 export default function UserModel(sequelize) {
-  class User extends Model {}
+  class User extends Model { }
 
   User.init(
     {
@@ -14,11 +14,11 @@ export default function UserModel(sequelize) {
       },
       dateOfStart: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
+        allowNull: false
       },
       userName: {
         type: DataTypes.STRING,
-        unique: true,
         allowNull: false,
         validate: {
           notEmpty: true,
@@ -50,7 +50,8 @@ export default function UserModel(sequelize) {
       },
       isRestricted: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
+        allowNull: false
       },
       causeOfRestriction: {
         type: DataTypes.TEXT
@@ -81,53 +82,64 @@ export default function UserModel(sequelize) {
       sequelize,
       modelName: 'user',
       tableName: 'users',
-      underscored: false,
       timestamps: true,
+      indexes: [
+        {
+          name: 'uq_users_username_ci',
+          unique: true,
+          fields: [
+            sequelize.fn(
+              'lower',
+              sequelize.col('userName'),
+            ),
+          ],
+        },
+      ],
     },
+
   );
 
-  User.prototype.registerFailedLogin = async function (now = new Date(), cfg = SECURITY, { transaction } = {}) {
-    const { nextState, events } = applyFailedLoginState(this.toJSON(), now, cfg);
-    this.failedLoginCount = nextState.failedLoginCount;
-    this.lockedUntil = nextState.lockedUntil;
-    this.bruteWindowStart = nextState.bruteWindowStart;
-    this.bruteStrikeCount = nextState.bruteStrikeCount;
-    this.isRestricted = nextState.isRestricted;
-    this.causeOfRestriction = nextState.causeOfRestriction;
-    this.dateOfRestriction = nextState.dateOfRestriction;
-    await this.save({ transaction });
-    return { events, state: nextState };
-  };
+  User.prototype.registerFailedLogin =
+    async function (now = new Date(), cfg = SECURITY, { transaction } = {}) {
+      const { nextState, events } =
+        applyFailedLoginState(
+          this.toJSON(), now, cfg
+        );
+      this.failedLoginCount = nextState.failedLoginCount;
+      this.lockedUntil = nextState.lockedUntil;
+      this.bruteWindowStart = nextState.bruteWindowStart;
+      this.bruteStrikeCount = nextState.bruteStrikeCount;
+      this.isRestricted = nextState.isRestricted;
+      this.causeOfRestriction = nextState.causeOfRestriction;
+      this.dateOfRestriction = nextState.dateOfRestriction;
+      await this.save({ transaction });
+      return {
+        events, state: nextState
+      };
+    };
 
   // reset after successful login
-  User.prototype.resetAfterSuccess = async function ({ transaction } = {}) {
-    const { nextState, touched } = applySuccessfulLoginReset(this.toJSON());
-    if (touched) {
-      this.failedLoginCount = 0;
-      this.lockedUntil = null;
-      await this.save({ transaction });
-    }
-    return { touched };
-  };
+  User.prototype.resetAfterSuccess =
+    async function ({ transaction } = {}) {
+      const { nextState, touched } =
+        applySuccessfulLoginReset(
+          this.toJSON(),
+        );
+
+      if (touched) {
+        this.failedLoginCount =
+          nextState.failedLoginCount;
+
+        this.lockedUntil =
+          nextState.lockedUntil;
+
+        await this.save({
+          transaction,
+        });
+      }
+
+      return { touched };
+    };
 
   return User;
 }
-
-
-//TODO: Индексы:
-
-/* user_contacts (user_id, is_restricted, type)
-
-user_addresses (user_id, is_restricted)
-
-outdated_names (user_id)
-
-search_users (user_id, is_restricted) UNIQUE — удобно для upsert
-
-CREATE INDEX IF NOT EXISTS idx_user_contacts_userid
-  ON public.user_contacts("userId");
-
-CREATE INDEX IF NOT EXISTS idx_user_addresses_userid
-  ON public.user_addresses("userId");
-
-  */

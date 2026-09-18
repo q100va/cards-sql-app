@@ -1,29 +1,90 @@
 import { Router } from "express";
-import { Op } from 'sequelize';
-import { z } from 'zod';
 import {
-  Country, Region, District, Locality,
-  Role, UserAddress, User, UserContact, UserSearch, UserOutdatedName,
-  RefreshToken
+  Op,
+  fn,
+  col,
+  where as sqlWhere,
+  UniqueConstraintError,
+} from 'sequelize';
+import {
+  Country,
+  District,
+  Locality,
+  Order,
+  RefreshToken,
+  Region,
+  Role,
+  User,
+  UserAddress,
+  UserContact,
+  UserOutdatedName,
+  UserSearch,
+  Volunteer,
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import { validateRequest } from "../middlewares/validate-request.js";
+
 import CustomError from "../shared/customError.js";
 import * as userSchemas from "../../shared/dist/schemas/user.schema.js";
+
 import { hashPassword } from "../controllers/passwords.mjs";
-import { withTransaction } from "../controllers/with-transaction.js";
 import { verify } from '../controllers/passwords.mjs';
-import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
-import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
-import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-owner-query-builders.js";
+import { withTransaction } from "../controllers/with-transaction.js";
+import {
+  collectFlatContacts,
+  findDuplicateContacts,
+  fullName,
+  saveOwnerContactsAndAddress,
+} from "../controllers/ctrl-create-owner-contacts-address.js";
+import {
+  createOutdatedSearchStringFor,
+  createSearchStringFor,
+} from "../controllers/ctrl-search-string.js";
+import {
+  betweenDatesInclusive,
+  buildAddressOwnerIdSubquery,
+  buildContactOwnerIdSubquery,
+  buildOrderFor,
+  buildSearchContentWhere,
+} from "../controllers/ctrl-owner-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
 
-
 const router = Router();
 
-// API create user
+async function userNameExists(
+  userName,
+  excludeId = null,
+  transaction = undefined,
+) {
+  const conditions = [
+    sqlWhere(fn('lower', col('userName')), userName.toLowerCase()),
+  ];
+
+  if (excludeId) {
+    conditions.push({
+      id: {
+        [Op.ne]: excludeId,
+      },
+    });
+  }
+
+  return User.count({
+    where: {
+      [Op.and]: conditions,
+    },
+    transaction,
+  });
+}
+
+function isUserNameUniqueError(error) {
+  return (
+    error instanceof UniqueConstraintError &&
+    (error.original?.constraint === 'uq_users_username_ci' ||
+      error.parent?.constraint === 'uq_users_username_ci')
+  );
+}
 
 router.get(
   "/check-user-name",
@@ -32,30 +93,24 @@ router.get(
   validateRequest(userSchemas.checkUserNameSchema, "query"),
   async (req, res, next) => {
     try {
-      const userName = req.query.userName.toLowerCase();
-      const id = req.query.id;
-
-      const whereParams = id ? {
-        userName: { [Op.iLike]: userName },
-        id: { [Op.ne]: id },
-      } : {
-        userName: { [Op.iLike]: userName },
-      };
-
-      const duplicateCount = await User.count({
-        where: whereParams
-      });
+      const { userName, id } = req.query;
+      const duplicateCount = await userNameExists(userName, id);
 
       const response = {
         data: duplicateCount !== 0,
-        ...(duplicateCount ? { code: 'USER.ALREADY_EXISTS' } : null),
+
+        ...(duplicateCount && {
+          code: 'ERRORS.USER.ALREADY_EXISTS',
+        }),
       };
+
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NAME_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.post(
   "/check-user-data",
@@ -64,7 +119,7 @@ router.post(
   validateRequest(userSchemas.checkUserDataSchema, "body"),
   async (req, res, next) => {
     try {
-      let user = req.body;
+      const user = req.body;
       const excludeSelf = user.id ? { id: { [Op.ne]: user.id } } : {};
 
       const nameRows = await User.findAll({
@@ -74,9 +129,9 @@ router.post(
           lastName: { [Op.iLike]: user.lastName },
         },
         attributes: ['userName'],
-        raw: true
+        raw: true,
       });
-      const duplicatesName = nameRows.map(r => r.userName);
+      const duplicatesName = nameRows.map((r) => r.userName);
 
       const flat = collectFlatContacts(user.contacts);
       const duplicatesContact = await findDuplicateContacts({
@@ -86,78 +141,17 @@ router.post(
         flatContacts: flat,
       });
 
-      /*
-            const flatContacts = [];
-            for (const [type, list] of Object.entries(user.contacts ?? {})) {
-              for (const v of list ?? []) {
-                const content = (v ?? '').trim();
-                if (content) flatContacts.push({ type, content });
-              }
-            }
-
-            // Early shortcut if no contacts provided
-            let duplicatesContact = [];
-            if (flatContacts.length > 0) {
-
-              const byType = new Map();
-              for (const { type, content } of flatContacts) {
-                if (!content) continue;
-                if (!byType.has(type)) byType.set(type, new Set());
-                byType.get(type).add(content);
-              }
-
-              // build OR with IN per type
-              const orList = Array.from(byType.entries()).map(([type, contents]) => ({
-                '$contacts.type$': type,
-                '$contacts.content$': { [Op.in]: Array.from(contents) },
-              }));
-
-              const contactRows = await User.findAll({
-                where: { ...excludeSelf, [Op.or]: orList },
-                include: [{
-                  model: UserContact,
-                  as: 'contacts',
-                  attributes: ['type', 'content'],
-                  required: true,
-                }],
-                attributes: ['userName'],
-                raw: true,
-              });
-
-              const byPair = new Map();
-              for (const row of contactRows) {
-                const type = row['contacts.type'] ?? '';
-                const content = row['contacts.content'] ?? '';
-                const userName = row['userName'] ?? '';
-
-                if (!type || !content || !userName) continue;
-
-                const key = `${type}::${content}`;
-                if (!byPair.has(key)) {
-                  byPair.set(key, { type, content, users: new Set() });
-                }
-                byPair.get(key).users.add(userName);
-              }
-
-              duplicatesContact = Array.from(byPair.values())
-                .map(({ type, content, users }) => ({
-                  type,
-                  content,
-                  users: Array.from(users).sort(),
-                }))
-                .sort((a, b) => a.type.localeCompare(b.type) || a.content.localeCompare(b.content));
-            } */
-
       let response = { data: { duplicatesName, duplicatesContact } };
-      if (duplicatesName.length > 0 || duplicatesContact.length > 0) response.code = 'USER.HAS_DATA_DUPLICATES';
-      res
-        .status(200)
-        .send(response);
+      if (duplicatesName.length > 0 || duplicatesContact.length > 0) {
+        response.code = 'ERRORS.USER.HAS_DATA_DUPLICATES';
+      }
+      res.status(200).send(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.DUPLICATES_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.post(
   '/create-user',
@@ -168,10 +162,18 @@ router.post(
     try {
       const creatingUser = req.body;
 
-      console.log('creatingUser', creatingUser)
+      const result = await withTransaction(async (transaction) => {
+        const duplicateCount = await userNameExists(
+          creatingUser.userName,
+          null,
+          transaction,
+        );
 
-      const result = await withTransaction(async (t) => {
-        const role = await Role.findByPk(creatingUser.roleId, { transaction: t });
+        if (duplicateCount > 0) {
+          throw new CustomError('ERRORS.USER.ALREADY_EXISTS', 409);
+        }
+
+        const role = await Role.findByPk(creatingUser.roleId, { transaction });
         if (!role) throw new CustomError('ERRORS.USER.ROLE_REQUIRED', 422);
 
         const hashed = await hashPassword(creatingUser.password);
@@ -188,53 +190,16 @@ router.post(
             causeOfRestriction: creatingUser.causeOfRestriction,
             dateOfRestriction: creatingUser.dateOfRestriction,
           },
-          { transaction: t }
+          { transaction },
         );
 
         await saveOwnerContactsAndAddress(
           'user',
           user,
-          creatingUser, // { draftContacts, draftAddress }
+          creatingUser,
           { UserContact, UserAddress },
-          t
+          transaction,
         );
-
-        /*        const contactRows = Object.entries(creatingUser.draftContacts ?? {}).flatMap(
-                 ([type, list]) =>
-                   (list ?? [])
-                     .map((content) => (content ?? ''))
-                     .filter(Boolean)
-                     .map((content) => ({
-                       userId: user.id,
-                       type,
-                       content,
-                     }))
-               );
-
-               if (contactRows.length) {
-                 await UserContact.bulkCreate(
-                   contactRows, {
-                   validate: true, individualHooks: true, transaction: t
-                 }
-                 );
-               }
-
-               const a = creatingUser.draftAddress ?? {};
-               const hasAnyAddress =
-                 !!a.countryId || !!a.regionId || !!a.districtId || !!a.localityId;
-
-               if (hasAnyAddress) {
-                 await UserAddress.create(
-                   {
-                     userId: user.id,
-                     countryId: a.countryId ?? null,
-                     regionId: a.regionId ?? null,
-                     districtId: a.districtId ?? null,
-                     localityId: a.localityId ?? null,
-                   },
-                   { transaction: t }
-                 );
-               } */
 
         const freshUser = await User.findOne({
           where: { id: user.id },
@@ -246,7 +211,8 @@ router.post(
               'bruteWindowStart',
               'bruteStrikeCount',
               'createdAt',
-              'updatedAt']
+              'updatedAt',
+            ],
           },
           include: [
             {
@@ -270,21 +236,29 @@ router.post(
               ],
             },
           ],
-          transaction: t,
+          transaction,
         });
 
         const searchString = createSearchStringFor('user', freshUser);
-        await UserSearch.create({ userId: user.id, content: searchString }, { transaction: t });
+        await UserSearch.create(
+          { userId: user.id, content: searchString },
+          { transaction },
+        );
 
         return user.userName;
       });
 
-      res.status(201).send({ code: 'USER.CREATED', data: result });
+      res.status(201).send({ code: 'SUCCESS.CREATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_CREATED';
+      if (isUserNameUniqueError(error)) {
+        return next(
+          new CustomError('ERRORS.USER.ALREADY_EXISTS', 409),
+        );
+      }
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -300,8 +274,11 @@ router.patch(
       const isSelf = actorId === userId;
 
       // TODO: test isSelf
-      const target = await User.findByPk(userId, { attributes: ['id', 'password', 'roleId'], raw: false });
-      if (!target) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+      const target = await User.findByPk(userId, {
+        attributes: ['id', 'password', 'roleId'],
+        raw: false,
+      });
+      if (!target) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
       if (isSelf) {
         if (!currentPassword) {
@@ -309,28 +286,30 @@ router.patch(
         }
 
         const ok = await verify(target.password, currentPassword);
-        if (!ok) throw new CustomError('ERRORS.USER.CURRENT_PASSWORD_INVALID', 422);
+        if (!ok) {
+          throw new CustomError('ERRORS.USER.CURRENT_PASSWORD_INVALID', 422);
+        }
       }
 
       const hashed = await hashPassword(newPassword);
 
-      await withTransaction(async (t) => {
+      await withTransaction(async (transaction) => {
         const [affected] = await User.update(
           { password: hashed },
-          { where: { id: userId }, transaction: t, individualHooks: true }
+          { where: { id: userId }, transaction, individualHooks: true },
         );
         if (affected !== 1) {
           throw new CustomError('ERRORS.USER.PASSWORD_NOT_CHANGED', 409);
         }
-        await RefreshToken.destroy({ where: { userId }, transaction: t });
+        await RefreshToken.destroy({ where: { userId }, transaction });
       });
 
-      res.status(200).send({ code: 'USER.PASSWORD_CHANGED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.PASSWORD_NOT_CHANGED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  }
+  },
 );
 
 router.post(
@@ -339,129 +318,162 @@ router.post(
   requireOperation('EDIT_USER'),
   validateRequest(userSchemas.updateUserDataSchema, 'body'),
   async (req, res, next) => {
-    const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
+    const {
+      id,
+      changingData,
+      restoringData,
+      outdatingData,
+      deletingData,
+    } = req.body;
 
     try {
-      const result = await withTransaction(async (t) => {
-        const user = await User.findByPk(id, { transaction: t });
-        if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
-        // CHANGES
-        // main
-        if (changingData?.main) {
-          console.log('changingData?.main', changingData?.main);
-          const payload = changingData.main;
-          if (Object.keys(payload).length > 0) {
-            await User.update(
-              payload,
-              {
-                where: { id },
-                transaction: t,
-                individualHooks: true
-              });
+      const result = await withTransaction(async (transaction) => {
+        const user = await User.findByPk(id, { transaction });
+        if (!user) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        const newUserName = changingData?.main?.userName;
+
+        if (newUserName !== undefined) {
+          const duplicateCount = await userNameExists(
+            newUserName,
+            id,
+            transaction,
+          );
+
+          if (duplicateCount > 0) {
+            throw new CustomError('ERRORS.USER.ALREADY_EXISTS', 409);
           }
         }
 
-        //addresses, contacts, outdated
+        if (changingData?.main) {
+          const payload = changingData.main;
+
+          if (Object.keys(payload).length > 0) {
+            if (payload.roleId !== undefined) {
+              const role = await Role.findByPk(payload.roleId, { transaction });
+
+              if (!role) {
+                throw new CustomError('ERRORS.USER.ROLE_REQUIRED', 422);
+              }
+            }
+            await User.update(payload, {
+              where: { id },
+              transaction,
+              individualHooks: true,
+            });
+          }
+
+          if (payload.isRestricted === true) {
+            await RefreshToken.destroy({
+              where: { userId: id },
+              transaction,
+            });
+          }
+        }
+
         await applyOwnerUpdates(
           'user',
           id,
           { changingData, restoringData, outdatingData, deletingData },
-          t
+          transaction,
         );
 
-        /*         const freshes = await User.findAll({
-                  attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
-                  include: [
-                    { model: Role, attributes: ['name'] },
-                    { model: UserContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
-                    {
-                      model: UserAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
-                      include: [
-                        { model: Country, attributes: ['id', 'name'] },
-                        { model: Region, attributes: ['id', 'shortName', 'name'] },
-                        { model: District, attributes: ['id', 'shortName', 'name'] },
-                        { model: Locality, attributes: ['id', 'shortName', 'name'] },
-                      ]
-                    },
-                    { model: OutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
-                  ],
-                  transaction: t,
-                });
-
-                freshes.forEach(async (fresh) => {
-                  const search = ctrl.createSearchString(fresh);
-
-                  const [row1, created1] = await UserSearch.findOrCreate({
-                    where: { userId: fresh.id, isRestricted: false },
-                    defaults: { content: search },
-                    transaction: t
-                  });
-                  if (!created1)
-                    await row1.update(
-                      { content: search },
-                      { individualHooks: true, transaction: t }
-                    );
-
-                  const outdatedSearch = ctrl.createOutdatedSearchString(fresh);
-                  if (outdatedSearch) {
-
-                    const [row, created] = await UserSearch.findOrCreate({
-                      where: { userId: fresh.id, isRestricted: true },
-                      defaults: { content: outdatedSearch },
-                      transaction: t
-                    });
-                    if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
-                  }
-                });
-         */
-
-        // UPDATED USER
+        // Reload the updated user with all data required for transformation and search.
         const fresh = await User.findOne({
           where: { id },
-          attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
+          attributes: {
+            exclude: [
+              'password',
+              'failedLoginCount',
+              'lockedUntil',
+              'bruteWindowStart',
+              'bruteStrikeCount',
+              'createdAt',
+              'updatedAt',
+            ],
+          },
           include: [
             { model: Role, attributes: ['name'] },
-            { model: UserContact, as: 'contacts', attributes: ['id', 'type', 'content', 'isRestricted'] },
             {
-              model: UserAddress, as: 'addresses', attributes: ['id', 'isRestricted', 'isRecoverable'],
+              model: UserContact,
+              as: 'contacts',
+              attributes: ['id', 'type', 'content', 'isRestricted'],
+            },
+            {
+              model: UserAddress,
+              as: 'addresses',
+              attributes: ['id', 'isRestricted', 'isRecoverable'],
               include: [
                 { model: Country, attributes: ['id', 'name'] },
                 { model: Region, attributes: ['id', 'shortName', 'name'] },
                 { model: District, attributes: ['id', 'shortName', 'name'] },
                 { model: Locality, attributes: ['id', 'shortName', 'name'] },
-              ]
+              ],
             },
-            { model: UserOutdatedName, as: 'outdatedNames', attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'] },
+            {
+              model: UserOutdatedName,
+              as: 'outdatedNames',
+              attributes: [
+                'id',
+                'userName',
+                'firstName',
+                'patronymic',
+                'lastName',
+              ],
+            },
           ],
-          transaction: t,
+          transaction,
         });
-        // SEARCH
+
+        // Rebuild current and outdated search content.
         const search = createSearchStringFor('user', fresh);
         await UserSearch.update(
           { content: search },
-          { where: { userId: id, isRestricted: false }, individualHooks: true, transaction: t }
+          {
+            where: { userId: id, isRestricted: false },
+            individualHooks: true,
+            transaction,
+          },
         );
+
         const outdatedSearch = createOutdatedSearchStringFor('user', fresh);
+
         if (outdatedSearch) {
           const [row, created] = await UserSearch.findOrCreate({
             where: { userId: id, isRestricted: true },
             defaults: { content: outdatedSearch },
-            transaction: t
+            transaction,
           });
-          if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
+
+          if (!created) {
+            await row.update(
+              { content: outdatedSearch },
+              { individualHooks: true, transaction },
+            );
+          }
+        } else {
+          await UserSearch.destroy({
+            where: {
+              userId: id,
+              isRestricted: true,
+            },
+            transaction,
+          });
         }
         return transformOwnerData('user', fresh.toJSON());
       });
 
-      res.status(200).send({ code: 'USER.UPDATED', data: result });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_UPDATED';
+      if (isUserNameUniqueError(error)) {
+        return next(
+          new CustomError('ERRORS.USER.ALREADY_EXISTS', 409),
+        );
+      }
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  }
+  },
 );
-
-// API get users
 
 router.post(
   '/get-users',
@@ -476,69 +488,87 @@ router.post(
         search,
         view,
         filters,
-      } = req.body; // already validated by Zod
+      } = req.body;
 
-      const includeOutdated = !!view?.includeOutdated; // false => only actual
+      // Include outdated data when matching search and filters.
+      const includeOutdated = !!view?.includeOutdated;
       const order = buildOrderFor('user', sort);
 
-      // ---- base where (User) ----
       const whereUser = {};
       const whereAddress = {};
       const whereContact = {};
 
-      // view option (if you still use it)
       switch (view?.option) {
-        case 'only-active': whereUser.isRestricted = false; break;
-        case 'only-blocked': whereUser.isRestricted = true; break;
-        default:              /* 'all' or undefined */        break;
+        case 'only-active':
+          whereUser.isRestricted = false;
+          break;
+        case 'only-blocked':
+          whereUser.isRestricted = true;
+          break;
+        default:
+          break;
       }
 
-      // general filters
       if (filters?.general?.roles?.length) {
         whereUser.roleId = { [Op.in]: filters.general.roles };
       }
 
-      /*       if (filters?.general?.comment !== undefined) {
-              whereUser.comment = !filters.general.comment ? null : { [Op.not]: null };
-            } */
-
       if (filters?.general?.dateBeginningRange) {
-        whereUser.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
-      }
-      if (filters?.general?.dateRestrictionRange) {
-        whereUser.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
+        whereUser.dateOfStart = betweenDatesInclusive(
+          filters.general.dateBeginningRange,
+        );
       }
 
-      const details = filters?.general?.details || [];
-      if (details.length > 0) {
-        const strict = !!filters?.mode?.strictDetail;
-        if (strict) whereUser[Op.and] = details.map(detail => ({
-          [detail]: { [Op.not]: null }
-        }));
-        if (!strict) whereUser[Op.or] = details.map(detail => ({
-          [detail]: { [Op.not]: null }
-        }));
+      if (filters?.general?.dateRestrictionRange) {
+        whereUser.dateOfRestriction = betweenDatesInclusive(
+          filters.general.dateRestrictionRange,
+        );
+      }
+
+      if (filters?.general?.details?.includes('comment')) {
+        whereUser.comment = {
+          [Op.not]: null,
+        };
       }
 
       // contact types filter (weak/strong)
       const contactTypes = filters?.general?.contactTypes ?? [];
       const contRequired = contactTypes.length > 0;
+
       if (contRequired) {
-        const sub = buildContactOwnerIdSubquery('user', contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
+        const sub = buildContactOwnerIdSubquery(
+          'user',
+          contactTypes,
+          includeOutdated ? true : false,
+          !!filters?.mode?.strictContact,
+        );
+
         if (!includeOutdated) whereContact.isRestricted = false;
         if (sub) whereContact.userId = { [Op.in]: sub };
       }
 
       // address filter (weak/strong)
       const addresses = filters?.address || {};
-      const addrRequired = (addresses.countries?.length ?? 0) > 0;
+      const addrRequired = [
+        addresses.countries,
+        addresses.regions,
+        addresses.districts,
+        addresses.localities,
+      ].some((ids) => (ids?.length ?? 0) > 0);
+
       if (addrRequired) {
-        const sub = await buildAddressOwnerIdSubquery('user', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
+        const sub = await buildAddressOwnerIdSubquery(
+          'user',
+          addresses,
+          includeOutdated ? true : false,
+          !!filters?.mode?.strictAddress,
+        );
+
         if (!includeOutdated) whereAddress.isRestricted = false;
         if (sub) whereAddress.userId = { [Op.in]: sub };
       }
 
-      // ---- includes (contacts / addresses / outdated names / search) ----
+      // includes (contacts / addresses / outdated names / search)
       const includes = [
         { model: Role, attributes: ['name'] },
         {
@@ -546,7 +576,7 @@ router.post(
           as: 'contacts',
           required: contRequired,
           attributes: ['id', 'type', 'content', 'isRestricted'],
-          where: whereContact
+          where: whereContact,
         },
         {
           model: UserAddress,
@@ -559,14 +589,13 @@ router.post(
             { model: Region, attributes: ['id', 'shortName'] },
             { model: District, attributes: ['id', 'shortName'] },
             { model: Locality, attributes: ['id', 'shortName'] },
-          ]
+          ],
         },
         {
           model: UserOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'],
-          // separate: true,
-        }
+        },
       ];
 
       // search by UserSearch.content (words; exact → AND; else OR)
@@ -579,55 +608,65 @@ router.post(
           where: {
             ...(includeOutdated ? {} : { isRestricted: false }),
             ...(contentWhere || {}),
-          }
+          },
         });
       }
 
-      // ---- count (distinct) ----
       const total = await User.count({
         where: whereUser,
         include: includes,
         distinct: true,
       });
 
-      console.log('whereUser', whereUser);
-      console.log('ORDER USER', order);
-      /*  console.log('includes', includes);
-     console.log('whereUser', whereUser); */
-
-      // ---- page ----
       const users = await User.findAll({
         where: whereUser,
-        attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
+        attributes: {
+          exclude: [
+            'password',
+            'failedLoginCount',
+            'lockedUntil',
+            'bruteWindowStart',
+            'bruteStrikeCount',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
         order,
         include: includes,
         offset: pageSize * pageNumber,
         limit: pageSize,
-        // subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-      //  console.log('users', users);
+      const items = users.map((u) => transformOwnerData('user', u.toJSON()));
 
-      const items = users.map(u => transformOwnerData('user', u.toJSON()));
-
-      console.log('items', items);
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  }
+  },
 );
 
-router.get("/get-user-by-id/:id",
+router.get(
+  "/get-user-by-id/:id",
   requireAuth,
   requireAny('VIEW_USER', 'EDIT_USER'),
-  validateRequest(z.object({ id: z.coerce.number().int().positive() }), 'params'),
+  validateRequest(userSchemas.userIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const user = await User.findByPk(id, {
-        attributes: { exclude: ['password', 'failedLoginCount', 'lockedUntil', 'bruteWindowStart', 'bruteStrikeCount', 'createdAt', 'updatedAt'] },
+        attributes: {
+          exclude: [
+            'password',
+            'failedLoginCount',
+            'lockedUntil',
+            'bruteWindowStart',
+            'bruteStrikeCount',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
         include: [
           {
             model: UserContact,
@@ -655,128 +694,156 @@ router.get("/get-user-by-id/:id",
                 model: Locality,
                 attributes: ['id', 'shortName'],
               },
-            ]
+            ],
           },
           {
             model: Role,
             attributes: ['name'],
           },
           {
-            model: UserOutdatedName, as: 'outdatedNames',
-            attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName']
+            model: UserOutdatedName,
+            as: 'outdatedNames',
+            attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName'],
           },
         ],
       });
-      if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+      if (!user) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       const data = transformOwnerData('user', user.toJSON());
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-
-router.get("/get-list-of-users",
+router.get(
+  "/get-list-of-users",
   requireAuth,
   requireAny('VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST'),
   async (req, res, next) => {
     try {
       const users = await User.findAll({
-        attributes: ['id', 'userName', 'firstName', 'patronymic', 'lastName', 'isRestricted'],
-        //where: { isRestricted: false },
-        order: [['firstName', 'ASC']]
+        attributes: [
+          'id',
+          'userName',
+          'firstName',
+          'patronymic',
+          'lastName',
+          'isRestricted',
+        ],
+        order: [['firstName', 'ASC']],
       });
 
-      const data = users.map(u => ({
+      const data = users.map((u) => ({
         id: u.id,
-        name: (fullName(u) + ' - ' + u.userName),
-        isRestricted: u.isRestricted
+        name: fullName(u) + ' - ' + u.userName,
+        isRestricted: u.isRestricted,
       }));
-      //  console.log('PARTNERS', data);
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
+
+async function countUserDependencies(userId, transaction) {
+  const [volunteersCount, ordersCount] = await Promise.all([
+    Volunteer.count({
+      where: { userId },
+      transaction,
+    }),
+
+    Order.count({
+      where: { userId },
+      transaction,
+    }),
+  ]);
+
+  return volunteersCount + ordersCount;
+}
 
 router.get(
   "/check-user-before-delete/:id",
   requireAuth,
   requireOperation('DELETE_USER'),
-  validateRequest(z.object({ id: z.coerce.number().int().positive() }), 'params'),
+  validateRequest(userSchemas.userIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const user = await User.findByPk(id);
-      if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+      if (!user) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-      //TODO: find does this user has volunteers and orders
-      const [countVolunteers, countOrders] = await Promise.all([
-        /*         Volunteer.count({
-                  where: {userId: id}
-                }),
-                Order.count({
-                  where: {userId: id}
-                }) */
-      ]);
-      const count = (countVolunteers ?? 0) + (countOrders ?? 0);
+      const count = await countUserDependencies(id);
+
       const response = {
         data: count,
-        ...(count ? { code: 'USER.HAS_DEPENDENCIES' } : null),
+        ...(count ? { code: 'ERRORS.USER.HAS_DEPENDENCIES' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.delete(
   "/delete-user/:id",
   requireAuth,
   requireOperation('DELETE_USER'),
-  validateRequest(userSchemas.userIdSchema, 'params'),
+  validateRequest(userSchemas.userIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
 
-      await withTransaction(async (t) => {
-        // 1) Ensure the user exists
-        const user = await User.findByPk(id, { transaction: t });
-        if (!user) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+      await withTransaction(async (transaction) => {
+        const user = await User.findByPk(id, { transaction });
 
-        // 2) Clean non-cascaded side tables (if any)
-        await RefreshToken.destroy({ where: { userId: id }, transaction: t });
+        if (!user) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
 
-        // 3) Delete the user (DB will cascade child tables)
+        const dependenciesCount = await countUserDependencies(id, transaction);
+
+        if (dependenciesCount > 0) {
+          throw new CustomError('ERRORS.USER.HAS_DEPENDENCIES', 409);
+        }
+
+        await RefreshToken.destroy({ where: { userId: id }, transaction });
+
         const destroyed = await User.destroy({
           where: { id },
-          transaction: t,
-          individualHooks: true, // will run user-level hooks; children won't fire via DB cascade
+          transaction,
+          individualHooks: true,
         });
-        if (destroyed !== 1) throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+
+        if (destroyed !== 1) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
       });
-      res.status(200).send({ code: 'USER.DELETED', data: null });
+
+      res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.patch(
   '/block-user',
   requireAuth,
-  requireAny('BLOCK_USER'),
+  requireOperation('BLOCK_USER'),
   validateRequest(userSchemas.userBlockingSchema, 'body'),
   async (req, res, next) => {
     try {
       const id = req.body.id;
       const cause = req.body.causeOfRestriction;
 
-      await withTransaction(async (t) => {
-        // 1) Block the user
+      await withTransaction(async (transaction) => {
+        // Block the user
         const [affected] = await User.update(
           {
             isRestricted: true,
@@ -785,42 +852,42 @@ router.patch(
           },
           {
             where: { id },
-            transaction: t,
-            individualHooks: true, // ensure per-row hooks/audit
-          }
+            transaction,
+            individualHooks: true,
+          },
         );
         if (affected !== 1) {
-          throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
 
-        // 2) Revoke refresh tokens (log out everywhere)
+        // Revoke refresh tokens (log out everywhere)
         await RefreshToken.destroy({
           where: { userId: id },
-          transaction: t,
+          transaction,
         });
       });
 
-      res.status(200).send({ code: 'USER.BLOCKED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_BLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
   "/unblock-user",
   requireAuth,
-  requireAny('UNBLOCK_USER'),
+  requireOperation('UNBLOCK_USER'),
   validateRequest(userSchemas.userIdSchema, 'body'),
   async (req, res, next) => {
     try {
-      let id = req.body.id;
+      const id = req.body.id;
       const [affected] = await User.update(
         {
           isRestricted: false,
           causeOfRestriction: null,
-          dateOfRestriction: null
+          dateOfRestriction: null,
         },
         {
           where: { id },
@@ -828,15 +895,14 @@ router.patch(
         },
       );
       if (affected !== 1) {
-        throw new CustomError('ERRORS.USER.NOT_FOUND', 404);
+        throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       }
-      res.status(200).send({ code: 'USER.UNBLOCKED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.USER.NOT_UNBLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  });
+  },
+);
+
 export default router;
-
-
-

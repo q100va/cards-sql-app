@@ -383,7 +383,7 @@ router.get(
       };
 
       if (connectedUsersAmount > 0) {
-        response.code = 'ROLE.HAS_DEPENDENCIES';
+        response.code = 'ERRORS.ROLE.HAS_DEPENDENCIES';
       }
 
       res

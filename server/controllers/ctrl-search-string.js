@@ -1,255 +1,412 @@
-
-import { Op } from 'sequelize';
+import CustomError from '../shared/customError.js';
 import { fullName } from './ctrl-create-owner-contacts-address.js';
 
 // ---------- helpers ----------
-function pad2(n) { return String(n).padStart(2, '0'); }
-function fmtDMY(y, m, d) { return `${pad2(d)}.${pad2(m)}.${y}`; }
-function fmtMDY(y, m, d) { return `${pad2(m)}/${pad2(d)}/${y}`; }
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function fmtDMY(year, month, day) {
+  return `${pad2(day)}.${pad2(month)}.${year}`;
+}
+
+function fmtMDY(year, month, day) {
+  return `${pad2(month)}/${pad2(day)}/${year}`;
+}
 
 /** Returns [YYYY-MM-DD, dd.MM.yyyy, MM/dd/yyyy] — TZ-safe */
-export function dateVariants(d) {
-  if (!d) return [];
-  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
-    const [y, m, dd] = d.split('-').map(Number);
-    const iso = `${y}-${pad2(m)}-${pad2(dd)}`;
-    return [iso, fmtDMY(y, m, dd), fmtMDY(y, m, dd)];
+export function dateVariants(dateValue) {
+  if (!dateValue) return [];
+
+  if (
+    typeof dateValue === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+  ) {
+    const [year, month, day] =
+      dateValue.split('-').map(Number);
+
+    const iso =
+      `${year}-${pad2(month)}-${pad2(day)}`;
+
+    return [
+      iso,
+      fmtDMY(year, month, day),
+      fmtMDY(year, month, day),
+    ];
   }
-  const dt = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(+dt)) return [];
-  const y = dt.getUTCFullYear(), m = dt.getUTCMonth() + 1, dd = dt.getUTCDate();
-  const iso = `${y}-${pad2(m)}-${pad2(dd)}`;
-  return [iso, fmtDMY(y, m, dd), fmtMDY(y, m, dd)];
+
+  const date =
+    dateValue instanceof Date
+      ? dateValue
+      : new Date(dateValue);
+
+  if (Number.isNaN(+date)) {
+    return [];
+  }
+
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
+
+  const iso =
+    `${year}-${pad2(month)}-${pad2(day)}`;
+
+  return [
+    iso,
+    fmtDMY(year, month, day),
+    fmtMDY(year, month, day),
+  ];
 }
 
-export function t(v) {
-  if (v === null || v === undefined) return '';
-  const s = String(v).trim();
-  return s || '';
+export function toSearchToken(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return String(value).trim();
 }
 
-function pushAddressTokens(tokens, addr) {
-  if (!addr) return;
+function pushAddressTokens(tokens, address) {
+  if (!address) return;
   tokens.push(
-    t(addr.country?.name),
-    t(addr.region?.name ?? addr.region?.shortName),
-    t(addr.district?.name ?? addr.district?.shortName),
-    t(addr.locality?.name ?? addr.locality?.shortName),
-    t(addr.fullPostalAddress ?? '')
+    toSearchToken(address.country?.name),
+    toSearchToken(address.region?.name ?? address.region?.shortName),
+    toSearchToken(address.district?.name ?? address.district?.shortName),
+    toSearchToken(address.locality?.name ?? address.locality?.shortName),
+    toSearchToken(address.fullPostalAddress ?? ''),
   );
 }
 
-function pushHomeAddressTokens(tokens, addr) {
-  if (!addr) return;
-  tokens.push(
-    t(addr.country.name),
-    t(addr.region.name ?? addr.region.shortName),
-    t(addr.district.name ?? addr.district.shortName),
-    t(addr.locality.name ?? addr.locality.shortName),
-    t(addr.fullPostalAddress),
-  );
-}
-
-function normalizeSpace(s) {
-  return s.split(/\s+/).filter(Boolean).join(' ').trim();
+function normalizeSpace(value) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(' ')
+    .trim();
 }
 
 // ---------- CONFIG per owner kind ----------
 const OWNER_CONFIG = {
   user: {
-    basicTokens: (u) => [
-      t(u?.userName),
-      t(u?.role?.name),
-      t(u?.firstName), t(u?.patronymic), t(u?.lastName),
-      t(u?.comment),
-      u?.isRestricted ? 'заблокирован с blocked from' : 'активен active',
-      ...dateVariants(u?.dateOfRestriction),
-      t(u?.causeOfRestriction),
-      ...dateVariants(u?.dateOfStart),
+    basicTokens: (user) => [
+      toSearchToken(user?.userName),
+      toSearchToken(user?.role?.name),
+      toSearchToken(user?.firstName),
+      toSearchToken(user?.patronymic),
+      toSearchToken(user?.lastName),
+      toSearchToken(user?.comment),
+      user?.isRestricted
+        ? 'заблокирован с blocked from'
+        : 'активен active',
+      ...dateVariants(user?.dateOfRestriction),
+      toSearchToken(user?.causeOfRestriction),
+      ...dateVariants(user?.dateOfStart),
     ],
-    contacts: (u) => u?.contacts ?? [],
-    addresses: (u) => u?.addresses ?? [],
-    firstNonRestrictedAddress: (u) => (u?.addresses ?? []).find(a => !a?.isRestricted),
-    pushAddressTokens: (tokens, addr) => pushAddressTokens(tokens, addr),
-    outdatedNames: (u) =>
-      (u?.outdatedNames ?? [])
-        .flatMap(i => [i.firstName, i.patronymic, i.lastName, i.userName])
+    contacts: (user) => user?.contacts ?? [],
+    addresses: (user) => user?.addresses ?? [],
+    firstNonRestrictedAddress: (user) =>
+      (user?.addresses ?? []).find((address) => !address?.isRestricted),
+    pushAddressTokens: (tokens, address) => pushAddressTokens(tokens, address),
+    outdatedNames: (user) =>
+      (user?.outdatedNames ?? [])
+        .flatMap((outdatedName) => [
+          outdatedName.firstName,
+          outdatedName.patronymic,
+          outdatedName.lastName,
+          outdatedName.userName])
         .filter(Boolean)
         .join(' '),
   },
 
   partner: {
-    basicTokens: (p) => [
-      t(p?.firstName), t(p?.patronymic), t(p?.lastName),
-      t(p?.affiliation), // volunteerCoordinator/homeRepresentative/foundationStaff
-      t(p?.position),
-      t(p?.comment),
-      p?.isRestricted ? 'бывший former' : 'действующий active',
-      ...dateVariants(p?.dateOfRestriction),
-      t(p?.causeOfRestriction),
-      ...dateVariants(p?.dateOfStart),
+    basicTokens: (partner) => [
+      toSearchToken(partner?.firstName),
+      toSearchToken(partner?.patronymic),
+      toSearchToken(partner?.lastName),
+      toSearchToken(partner?.affiliation),
+      toSearchToken(partner?.position),
+      toSearchToken(partner?.comment),
+      partner?.isRestricted ? 'бывший former' : 'действующий active',
+      ...dateVariants(partner?.dateOfRestriction),
+      toSearchToken(partner?.causeOfRestriction),
+      ...dateVariants(partner?.dateOfStart),
     ],
-    contacts: (p) => p?.contacts ?? [],
-    addresses: (p) => p?.addresses ?? [],
-    firstNonRestrictedAddress: (p) => (p?.addresses ?? []).find(a => !a?.isRestricted),
-    pushAddressTokens: (tokens, addr) => pushAddressTokens(tokens, addr),
-    outdatedNames: (p) =>
-      (p?.outdatedNames ?? [])
-        .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+    contacts: (partner) => partner?.contacts ?? [],
+    addresses: (partner) => partner?.addresses ?? [],
+    firstNonRestrictedAddress: (partner) =>
+      (partner?.addresses ?? []).find((address) => !address?.isRestricted),
+    pushAddressTokens: (tokens, address) => pushAddressTokens(tokens, address),
+    outdatedNames: (partner) =>
+      (partner?.outdatedNames ?? [])
+        .flatMap((outdatedName) => [
+          outdatedName.firstName,
+          outdatedName.patronymic,
+          outdatedName.lastName])
         .filter(Boolean)
         .join(' '),
-    coordinations: (v) => v?.coordinations ?? [],
-    //coordinations: (p) => p?.homes ?? [],
+    coordinations: (partner) => partner?.coordinations ?? [],
   },
 
   volunteer: {
-    basicTokens: (v) => [
-      t(v?.firstName), t(v?.patronymic), t(v?.lastName),
-      t(v?.comment),
-      v?.isRestricted ? 'заблокирован с blocked from' : '',
-      ...dateVariants(v?.dateOfRestriction),
-      t(v?.causeOfRestriction),
-      ...dateVariants(v?.dateOfStart),
-      //TODO: DateOfLastOrder
+    basicTokens: (volunteer) => [
+      toSearchToken(volunteer?.firstName),
+      toSearchToken(volunteer?.patronymic),
+      toSearchToken(volunteer?.lastName),
+      toSearchToken(volunteer?.comment),
+      volunteer?.isRestricted ? 'заблокирован с blocked from' : '',
+      ...dateVariants(volunteer?.dateOfRestriction),
+      toSearchToken(volunteer?.causeOfRestriction),
+      ...dateVariants(volunteer?.dateOfStart),
+      // TODO: DateOfLastOrder
     ],
-    contacts: (v) => v?.contacts ?? [],
-    addresses: (v) => v?.addresses ?? [],
-    institutes: (v) => v?.institutes ?? [],
-    subscriptions: (v) => v?.subscriptions ?? [],
-    cooperations: (v) => v?.cooperations ?? [],
-    firstNonRestrictedAddress: (v) => (v?.addresses ?? []).find(a => !a?.isRestricted),
-    pushAddressTokens: (tokens, addr) => pushAddressTokens(tokens, addr),
-    outdatedNames: (v) =>
-      (v?.outdatedNames ?? [])
-        .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+    contacts: (volunteer) => volunteer?.contacts ?? [],
+    addresses: (volunteer) => volunteer?.addresses ?? [],
+    institutes: (volunteer) =>
+      volunteer?.institutes ?? [],
+
+    subscriptions: (volunteer) =>
+      volunteer?.subscriptions ?? [],
+
+    cooperations: (volunteer) =>
+      volunteer?.cooperations ?? [],
+    firstNonRestrictedAddress: (volunteer) =>
+      (volunteer?.addresses ?? []).find((address) => !address?.isRestricted),
+    pushAddressTokens: (tokens, address) => pushAddressTokens(tokens, address),
+    outdatedNames: (volunteer) =>
+      (volunteer?.outdatedNames ?? [])
+        .flatMap((outdatedName) => [
+          outdatedName.firstName,
+          outdatedName.patronymic,
+          outdatedName.lastName])
         .filter(Boolean)
         .join(' '),
   },
 
   home: {
-    basicTokens: (v) => [
-      t(v?.homeName), t(v?.officialName), //t(v?.postalName),
-      v?.noAddress ? 'БОА no return address' : '',
-      v?.specialHome ? 'специальный интернат special home' : '',
-      v?.acceptableForSchool ? 'можно давать школам acceptable for school' : '',
-      ...dateVariants(v?.dateOfClose),
-      v?.isClose ? 'закрыт close' : '',
-      t(v?.comment), t(v?.infoNote),
-      ...dateVariants(v?.updateDates ? v?.updateDates[0] : null),
-      v?.isRestricted ? 'не участвует с inactive from' : '',
-      ...dateVariants(v?.dateOfRestriction),
-      t(v?.causeOfRestriction),
-      ...dateVariants(v?.dateOfStart),
+    basicTokens: (home) => [
+      toSearchToken(home?.homeName),
+      toSearchToken(home?.officialName),
+
+      home?.noAddress
+        ? 'БОА no return address'
+        : '',
+
+      home?.specialHome
+        ? 'специальный интернат special home'
+        : '',
+
+      home?.acceptableForSchool
+        ? 'можно давать школам acceptable for school'
+        : '',
+
+      ...dateVariants(home?.dateOfClose),
+
+      home?.isClose
+        ? 'закрыт close'
+        : '',
+
+      toSearchToken(home?.comment),
+      toSearchToken(home?.infoNote),
+
+      ...dateVariants(
+        home?.updateDates?.[0],
+      ),
+
+      home?.isRestricted
+        ? 'не участвует с inactive from'
+        : '',
+
+      ...dateVariants(home?.dateOfRestriction),
+
+      toSearchToken(home?.causeOfRestriction),
+
+      ...dateVariants(home?.dateOfStart),
     ],
-    contacts: (v) => v?.contacts ?? [],
-    addresses: (v) => v?.addresses ?? [],
-    coordinations: (v) => v?.coordinations ?? [],
-    firstNonRestrictedAddress: (v) => (v?.addresses ?? []).find(a => !a?.isRestricted),
-    pushAddressTokens: (tokens, addr) => pushHomeAddressTokens(tokens, addr),
-    outdatedNames: (v) =>
-      (v?.outdatedNames ?? [])
-        .flatMap(i => [i.officialName])
+
+    contacts: (home) =>
+      home?.contacts ?? [],
+
+    addresses: (home) =>
+      home?.addresses ?? [],
+
+    coordinations: (home) =>
+      home?.coordinations ?? [],
+
+    firstNonRestrictedAddress: (home) =>
+      (home?.addresses ?? [])
+        .find(
+          (address) => !address?.isRestricted,
+        ),
+
+    pushAddressTokens: (tokens, address) =>
+      pushAddressTokens(tokens, address),
+
+    outdatedNames: (home) =>
+      (home?.outdatedNames ?? [])
+        .flatMap(
+          (outdatedName) => [
+            outdatedName.officialName,
+          ],
+        )
         .filter(Boolean)
         .join(' '),
   },
 
   senior: {
+    basicTokens: (senior) => [
+      toSearchToken(senior?.firstName),
+      toSearchToken(senior?.patronymic),
+      toSearchToken(senior?.lastName),
 
-    basicTokens: (v) => [
-      t(v?.firstName), t(v?.patronymic), t(v?.lastName),
-      t(v?.comment),
-      v?.isRestricted ? 'заблокирован с blocked from' : '',
-      ...dateVariants(v?.dateOfRestriction),
-      t(v?.causeOfRestriction),
-      ...dateVariants(v?.dateOfStart),
-      ...dateVariants(v?.birthDate),
-      ...dateVariants(v?.dateOfConsent),
-      ...dateVariants(v?.dateOfExit),
-      v?.gender == 'male' ? 'male муж.' : 'female жен.',
-      t(v?.infoNote), t(v?.photoLink),
-      v?.personalNoAddr ? 'БОА no return address' : '',
-      t(v?.kindergarten), t(v?.teacher), t(v?.veteran),
-      t(v?.childOfWar), t(v?.profession), t(v?.honoraryStatus),
-      t(v?.interests),
-      t(v?.home.homeName),
-      v?.spouse ? (fullName(v.spouse) + (v.birthDate ? (' ' + v.birthDate) : '')) : ''
+      toSearchToken(senior?.comment),
+
+      senior?.isRestricted
+        ? 'заблокирован с blocked from'
+        : '',
+
+      ...dateVariants(senior?.dateOfRestriction),
+
+      toSearchToken(senior?.causeOfRestriction),
+
+      ...dateVariants(senior?.dateOfStart),
+
+      ...dateVariants(senior?.birthDate),
+      ...dateVariants(senior?.dateOfConsent),
+      ...dateVariants(senior?.dateOfExit),
+
+      senior?.gender === 'male'
+        ? 'male муж.'
+        : 'female жен.',
+
+      toSearchToken(senior?.infoNote),
+      toSearchToken(senior?.photoLink),
+
+      senior?.personalNoAddr
+        ? 'БОА no return address'
+        : '',
+
+      toSearchToken(senior?.kindergarten),
+      toSearchToken(senior?.teacher),
+      toSearchToken(senior?.veteran),
+      toSearchToken(senior?.childOfWar),
+      toSearchToken(senior?.profession),
+      toSearchToken(senior?.honoraryStatus),
+      toSearchToken(senior?.interests),
+
+      toSearchToken(
+        senior?.home?.homeName,
+      ),
+
+      senior?.spouse
+        ? [
+          fullName(senior.spouse),
+          ...dateVariants(
+            senior.spouse?.birthDate,
+          ),
+        ].join(' ')
+        : '',
     ],
-    outdatedNames: (v) =>
-      (v?.outdatedNames ?? [])
-        .flatMap(i => [i.firstName, i.patronymic, i.lastName])
+
+    outdatedNames: (senior) =>
+      (senior?.outdatedNames ?? [])
+        .flatMap(
+          (outdatedName) => [
+            outdatedName.firstName,
+            outdatedName.patronymic,
+            outdatedName.lastName,
+          ],
+        )
         .filter(Boolean)
         .join(' '),
-    // home: (v) => v.home,
-    // spouse: (v) => fullName(v.spouse) + (v.birthDate ? (' ' + v.birthDate) : ''),
-    firstNonRestrictedAddress: (s) => (s?.home.addresses ?? []).find(a => !a?.isRestricted),
-    pushAddressTokens: (tokens, addr) => pushAddressTokens(tokens, addr),
-    contacts: (s)=>[],
-    addresses: (s)=>[],
-  }
+
+    firstNonRestrictedAddress: (senior) =>
+      (senior?.home?.addresses ?? [])
+        .find(
+          (address) => !address?.isRestricted,
+        ),
+
+    pushAddressTokens: (tokens, address) =>
+      pushAddressTokens(tokens, address),
+
+    contacts: () => [],
+
+    addresses: () => [],
+  },
 };
 
 // ---------- Public API ----------
-/** Actual Search String*/
+
+/** Actual Search String */
 export function createSearchStringFor(kind, record) {
-  const C = OWNER_CONFIG[kind];
-  if (!C) throw new Error(`Unsupported owner kind: ${kind}`);
+  const config = OWNER_CONFIG[kind];
+  if (!config) throw new CustomError('ERRORS.UNSUPPORTED_TYPE', 500);
 
   const tokens = [];
-  tokens.push(...C.basicTokens(record));
+  tokens.push(...config.basicTokens(record));
 
   // contacts (only not restricted)
-  for (const c of C.contacts(record)) {
-    if (!c?.isRestricted && c?.content) tokens.push(t(c.content));
+  for (const contact of config.contacts(record)) {
+    if (!contact?.isRestricted && contact?.content) tokens.push(toSearchToken(contact.content));
   }
 
   // first non-restricted address
-  const addr = C.firstNonRestrictedAddress(record);
-  C.pushAddressTokens(tokens, addr);
+  const address = config.firstNonRestrictedAddress(record);
+  config.pushAddressTokens(tokens, address);
 
-
-  if (kind == 'volunteer') {
-    for (const i of C.institutes(record)) {
-      if (!i?.isRestricted) {
-        tokens.push(t(i.instituteName));
-        tokens.push(t(i.category));
+  if (kind === 'volunteer') {
+    for (const institute of config.institutes(record)) {
+      if (!institute?.isRestricted) {
+        tokens.push(toSearchToken(institute.instituteName));
+        tokens.push(toSearchToken(institute.category));
       }
     }
-    if (C.subscriptions(record).length) tokens.push('subscription подписка');
-    for (const s of C.subscriptions(record)) {
-      tokens.push(t(s.userName));
+    if (config.subscriptions(record).length) {
+      tokens.push('subscription подписка');
     }
-    for (const c of C.cooperations(record)) {
-      tokens.push(t(c.userName));
+
+    for (const subscription of config.subscriptions(record)) {
+      tokens.push(
+        toSearchToken(subscription.userName)
+      );
+    }
+    for (const cooperation of config.cooperations(record)) {
+      tokens.push(
+        toSearchToken(cooperation.userName),
+      );
     }
   }
 
-  if (kind == 'partner') {
-    for (const c of C.coordinations(record)) {
-      if (!c?.isRestricted) {
-        tokens.push(t(c.homeName));
-        tokens.push(t(c.regionName));
+  if (kind === 'partner') {
+    for (const coordination of config.coordinations(record)) {
+      if (!coordination?.isRestricted) {
+        tokens.push(toSearchToken(coordination.homeName));
+        tokens.push(toSearchToken(coordination.regionName));
       }
     }
   }
 
-  if (kind == 'home') {
-    for (const c of C.coordinations(record)) {
-      if (!c?.isRestricted) {
-        tokens.push(fullName({
-          firstName: c.partner.firstName,
-          patronymic: c.partner.patronymic,
-          lastName: c.partner.lastName
-        }));
-        console.log('coordinations', JSON.stringify(c));
-        for (const contact of c.partner.contacts) {
-          if (!contact?.isRestricted && contact?.content) tokens.push(t(contact.content));
+  if (kind === 'home') {
+    for (const coordination of config.coordinations(record)) {
+      if (!coordination?.isRestricted) {
+        tokens.push(
+          fullName(coordination.partner ?? {}),
+        );
+
+        for (
+          const contact
+          of coordination.partner?.contacts ?? []
+        ) {
+          if (
+            !contact?.isRestricted &&
+            contact?.content
+          ) {
+            tokens.push(
+              toSearchToken(contact.content),
+            );
+          }
         }
       }
     }
-  }
-
-  if (kind == 'senior') {
-
   }
 
   return normalizeSpace(tokens.join(' '));
@@ -257,54 +414,67 @@ export function createSearchStringFor(kind, record) {
 
 /** Outdated Search String */
 export function createOutdatedSearchStringFor(kind, record) {
-  const C = OWNER_CONFIG[kind];
-  if (!C) throw new Error(`Unsupported owner kind: ${kind}`);
+  const config = OWNER_CONFIG[kind];
+  if (!config) throw new CustomError('ERRORS.UNSUPPORTED_TYPE', 500);
 
   const parts = [];
 
-  // Restricted contacts
-  for (const c of C.contacts(record)) {
-    if (c?.isRestricted && c?.content) parts.push(t(c.content));
+  // restricted contacts
+  for (const contact of config.contacts(record)) {
+    if (contact?.isRestricted && contact?.content) {
+      parts.push(
+        toSearchToken(contact.content),
+      );
+    }
   }
 
-  // Restricted addresses
-  const restricted = C.addresses(record).filter(a => a?.isRestricted);
-  for (const a of restricted) C.pushAddressTokens(parts, a);
+  // restricted addresses
+  const restrictedAddresses =
+    config.addresses(record)
+      .filter(
+        (address) => address?.isRestricted,
+      );
 
-  // Outdated names
-  const names = C.outdatedNames(record);
-  if (names) parts.push(names);
+  for (const address of restrictedAddresses) {
+    config.pushAddressTokens(
+      parts,
+      address,
+    );
+  }
 
+  // outdated names
+  const outdatedNames = config.outdatedNames(record);
+  if (outdatedNames) {
+    parts.push(outdatedNames);
+  }
 
-  if (kind == 'volunteer') {
-    for (const i of C.institutes(record)) {
-      if (i?.isRestricted) {
-        parts.push(t(i.instituteName));
-        parts.push(t(i.category));
+  if (kind === 'volunteer') {
+    for (const institute of config.institutes(record)) {
+      if (institute?.isRestricted) {
+        parts.push(toSearchToken(institute.instituteName));
+        parts.push(toSearchToken(institute.category));
       }
     }
   }
 
-  if (kind == 'partner') {
-    for (const c of C.coordinations(record)) {
-      if (c?.isRestricted) {
-        parts.push(t(c.homeName));
-        parts.push(t(c.regionName));
+  if (kind === 'partner') {
+    for (const coordination of config.coordinations(record)) {
+      if (coordination?.isRestricted) {
+        parts.push(toSearchToken(coordination.homeName));
+        parts.push(toSearchToken(coordination.regionName));
       }
     }
   }
 
-  if (kind == 'home') {
-    for (const c of C.coordinations(record)) {
-      if (c?.isRestricted) {
-        parts.push(fullName({
-          firstName: c.partner.firstName,
-          patronymic: c.partner.patronymic,
-          lastName: c.partner.lastName
-        }));
-        console.log('coordinations', JSON.stringify(c));
-        for (const contact of c.partner.contacts) {
-          if (!contact?.isRestricted && contact?.content) parts.push(t(contact.content));
+  if (kind === 'home') {
+    for (const coordination of config.coordinations(record)) {
+      if (coordination?.isRestricted) {
+        parts.push(fullName(coordination.partner ?? {}));
+
+        for (const contact of coordination.partner?.contacts ?? []) {
+          if (!contact?.isRestricted && contact?.content) {
+            parts.push(toSearchToken(contact.content));
+          }
         }
       }
     }

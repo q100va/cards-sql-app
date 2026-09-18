@@ -164,11 +164,11 @@ export declare const toponymQueryDTOSchema: z.ZodObject<{
     search: z.ZodDefault<z.ZodOptional<z.ZodString>>;
     exact: z.ZodDefault<z.ZodOptional<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodBoolean>>>;
     sortBy: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        name: "name";
+        shortName: "shortName";
         country: "country";
         region: "region";
         district: "district";
-        name: "name";
-        shortName: "shortName";
         postName: "postName";
         shortPostName: "shortPostName";
     }>>>;
