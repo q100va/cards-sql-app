@@ -1,3 +1,14 @@
+import {
+  Volunteer,
+  VolunteerAddress,
+  VolunteerInstitute,
+  VolunteerSubscription,
+  VolunteerCooperation,
+  VolunteerSearch,
+  Country,
+  District,
+  Locality,
+} from '../models/index.js';
 import CustomError from '../shared/customError.js';
 import { fullName } from './ctrl-create-owner-contacts-address.js';
 
@@ -157,7 +168,7 @@ const OWNER_CONFIG = {
       ...dateVariants(volunteer?.dateOfRestriction),
       toSearchToken(volunteer?.causeOfRestriction),
       ...dateVariants(volunteer?.dateOfStart),
-      // TODO: DateOfLastOrder
+      ...dateVariants(volunteer?.orders?.[0]?.createdAt ?? null),
     ],
     contacts: (volunteer) => volunteer?.contacts ?? [],
     addresses: (volunteer) => volunteer?.addresses ?? [],
@@ -366,12 +377,12 @@ export function createSearchStringFor(kind, record) {
 
     for (const subscription of config.subscriptions(record)) {
       tokens.push(
-        toSearchToken(subscription.userName)
+        toSearchToken(subscription.user.userName)
       );
     }
     for (const cooperation of config.cooperations(record)) {
       tokens.push(
-        toSearchToken(cooperation.userName),
+        toSearchToken(cooperation.user.userName),
       );
     }
   }
@@ -481,4 +492,112 @@ export function createOutdatedSearchStringFor(kind, record) {
   }
 
   return normalizeSpace(parts.join(' '));
+}
+
+export async function refreshVolunteerSearch(
+  volunteerId,
+  transaction,
+) {
+  const volunteer = await Volunteer.findByPk(
+    volunteerId,
+    {
+      include: [
+        {
+          model: VolunteerContact,
+          as: 'contacts',
+          attributes: [
+            'content',
+            'isRestricted',
+          ],
+        },
+        {
+          model: VolunteerAddress,
+          as: 'addresses',
+          attributes: [
+            'isRestricted',
+            'fullPostalAddress',
+          ],
+          include: [
+            {
+              model: Country,
+              attributes: ['name'],
+            },
+            {
+              model: Region,
+              attributes: ['name', 'shortName'],
+            },
+            {
+              model: District,
+              attributes: ['name', 'shortName'],
+            },
+            {
+              model: Locality,
+              attributes: ['name', 'shortName'],
+            },
+          ],
+        },
+        {
+          model: VolunteerInstitute,
+          as: 'institutes',
+          attributes: [
+            'instituteName',
+            'category',
+            'isRestricted',
+          ],
+        },
+        {
+          model: VolunteerSubscription,
+          as: 'subscriptions',
+          attributes: ['userId'],
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['userName'],
+            },
+          ],
+        },
+        {
+          model: VolunteerCooperation,
+          as: 'cooperations',
+          attributes: ['userId'],
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['userName'],
+            },
+          ],
+        },
+        {
+          model: Order,
+          as: 'orders',
+          attributes: ['createdAt'],
+          required: false,
+          separate: true,
+          limit: 1,
+          order: [['createdAt', 'DESC']],
+        },
+      ],
+      transaction,
+    },
+  );
+
+  if (!volunteer) return;
+
+  const content = createSearchStringFor(
+    'volunteer',
+    volunteer,
+  );
+
+  await VolunteerSearch.update(
+    { content },
+    {
+      where: {
+        volunteerId,
+        isRestricted: false,
+      },
+      transaction,
+    },
+  );
 }

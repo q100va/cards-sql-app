@@ -40,7 +40,12 @@ const OWNER_CONFIG = {
     defaultOrderField: 'firstName',
     orderKeys: {
       name: () => "firstName",
-      dateOfLastOrder: () => "firstName", // TODO:
+      dateOfLastOrder: () =>
+        literal(`(
+          SELECT MAX(o."createdAt")
+          FROM "orders" o
+          WHERE o."volunteerId" = "volunteer"."id"
+        )`)
     },
   },
   home: {

@@ -11,8 +11,7 @@ import {
   nullableInt,
   nullableIsoDate,
   intOptArray,
-} from './common.schema.js';
-import {
+  positiveIntParam,
   emailSchema,
   facebookSchema,
   instagramSchema,
@@ -22,19 +21,25 @@ import {
   telegramNicknameSchema,
   vKontakteSchema,
   websiteSchema,
-} from './common.schema.js';
-import { draftAddressSchema, addressSchema } from './common.schema.js';
-import { contactType, optionalContactsSchema } from './common.schema.js';
-import { changingContactsSchema } from './common.schema.js';
-import {
+  draftAddressSchema,
+  addressSchema,
+  contactType,
+  optionalContactsSchema,
+  changingContactsSchema,
   outdatedNameItemSchema,
   outdatedAddressItemSchema,
 } from './common.schema.js';
 
+const instituteNameSchema = z
+  .string()
+  .trim()
+  .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+  .max(150, 'FORM_VALIDATION.TOO_LONG_150');
+
 const instituteItemSchema = z
   .object({
     category: nonEmptyString,
-    instituteName: nonEmptyString,
+    instituteName: instituteNameSchema,
     isDeletable: z.boolean(),
     id: positiveInt,
   })
@@ -43,7 +48,7 @@ const instituteItemSchema = z
 const draftInstituteItemSchema = z
   .object({
     category: nonEmptyString,
-    instituteName: nonEmptyString,
+    instituteName: instituteNameSchema,
   })
   .strict();
 
@@ -69,6 +74,17 @@ const coopItemSchema = z
     isDeletable: z.boolean().optional(),
   })
   .strict();
+
+const restrictionCauseSchema = z
+  .string()
+  .trim()
+  .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+  .max(500, 'FORM_VALIDATION.TOO_LONG_500');
+
+const nullableRestrictionCauseSchema = z.preprocess(
+  emptyToNull,
+  restrictionCauseSchema.nullable(),
+);
 
 /* ===================== Some Schemas for form validation ===================== */
 export const instituteNameControlSchema = z.preprocess(
@@ -221,9 +237,8 @@ export const otherContactControlSchema = z.preprocess(
   z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable(),
 );
 
-/* ===================== Contacts (draft / ordered / optional) ===================== */
+/* ===================== Contacts ===================== */
 
-// Draft
 export const draftContactsSchema = z
   .object({
     email: z.array(emailSchema),
@@ -255,26 +270,37 @@ export const draftContactsSchema = z
 /* ===================== DTOs ===================== */
 export const checkVolunteerDataSchema = z
   .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveInt.nullable(),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    lastName: z
-      .preprocess(
-        toTrim,
-        z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }),
-      )
-      .nullable(),
+    lastName: z.preprocess(
+      emptyToNull,
+      z
+        .string()
+        .max(50, {
+          message: 'FORM_VALIDATION.TOO_LONG_50',
+        })
+        .nullable(),
+    ),
     contacts: draftContactsSchema,
   })
   .strict();
 
 export const volunteerIdSchema = z
-  .object({ id: z.coerce.number().int().positive() })
+  .object({
+    id: positiveInt,
+  })
+  .strict();
+
+export const volunteerIdParamSchema = z
+  .object({
+    id: positiveIntParam,
+  })
   .strict();
 
 export const volunteerBlockingSchema = z
   .object({
-    id: z.coerce.number().int().positive(),
-    causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
+    id: positiveInt,
+    causeOfRestriction: restrictionCauseSchema,
   })
   .strict();
 
@@ -302,13 +328,7 @@ export const volunteerDraftSchema = z
     ),
 
     isRestricted: z.boolean(),
-    causeOfRestriction: z.preprocess(
-      emptyToNull,
-      z
-        .string()
-        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable(),
-    ),
+    causeOfRestriction: nullableRestrictionCauseSchema,
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
     draftInstitutes: z.array(draftInstituteItemSchema),
@@ -385,15 +405,7 @@ export const changingMainSchema = z
       .optional(),
 
     isRestricted: z.boolean().optional(),
-    causeOfRestriction: z
-      .preprocess(
-        emptyToNull,
-        z
-          .string()
-          .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-          .nullable(),
-      )
-      .optional(),
+    causeOfRestriction: nullableRestrictionCauseSchema.optional(),
     dateOfRestriction: nullableIsoDate.optional(),
   })
   .strict();
@@ -499,22 +511,37 @@ export const updateVolunteerDataSchema = z
 /* ========= Volunteer query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
+const volunteerSortField = z.enum([
+  'name',
+  'dateOfStart',
+  'comment',
+  'isRestricted',
+  'dateOfLastOrder',
+]);
 
 export const volunteersQueryDTOSchema = z
   .object({
     page: z.object({
-      size: z.number().int().min(0),
+      size: z.number().int().min(1),
       number: z.number().int().min(0),
     }),
     sort: z
-      .array(z.object({ field: z.string().min(1), direction: sortDir }))
+      .array(
+        z.object({
+          field: volunteerSortField,
+          direction: sortDir,
+        }),
+      )
       .optional(),
     search: z
-      .object({ value: z.string().min(1), exact: z.boolean().optional() })
+      .object({
+        value: z.string().min(1),
+        exact: z.boolean().optional(),
+      })
       .optional(),
     view: z
       .object({
-        option: z.string().min(1).optional(),
+        option: z.enum(['all', 'only-active', 'only-blocked']).optional(),
         includeOutdated: z.boolean().optional(),
       })
       .optional(),
@@ -525,7 +552,10 @@ export const volunteersQueryDTOSchema = z
             subscriptions: z.array(positiveInt).min(1).optional(),
             cooperations: z.array(positiveInt).min(1).optional(),
             categories: z.array(nonEmptyString).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            details: z
+              .array(z.enum(['comment']))
+              .min(1)
+              .optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -573,7 +603,7 @@ export const outdatedDataSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    institutes: z.array(instituteItemSchema), //TODO:
+    institutes: z.array(instituteItemSchema),
     subscriptions: z.array(subsItemSchema),
     cooperations: z.array(coopItemSchema),
   })
@@ -609,12 +639,18 @@ export const volunteersSchema = z
   })
   .strict();
 
+export const volunteerSearchContactSchema = z
+  .object({
+    q: z.string().trim().min(3),
+  })
+  .strict();
+
 export const contactOptionSchema = z
   .object({
     id: positiveInt,
     volunteerId: positiveInt,
-    type: z.string(),
-    content: z.string(),
+    type: contactType,
+    content: nonEmptyString,
   })
   .strict();
 
@@ -623,11 +659,13 @@ export type VolunteerDraft = z.infer<typeof volunteerDraftSchema>;
 export type VolunteerDraftContacts = z.infer<typeof draftContactsSchema>;
 
 export type VolunteerOutdatedData = z.infer<typeof outdatedDataSchema>;
-
 export type VolunteerChangingData = z.infer<typeof changingDataSchema>;
 export type VolunteerOutdatingData = z.infer<typeof outdatingDataSchema>;
+
 export type Institute = z.infer<typeof instituteItemSchema>;
 export type OutdatedInstitute = z.infer<typeof instituteItemSchema>;
+
 export type Cooperation = z.infer<typeof coopItemSchema>;
 export type Subscription = z.infer<typeof subsItemSchema>;
+
 export type ContactOption = z.infer<typeof contactOptionSchema>;

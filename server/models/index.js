@@ -24,7 +24,7 @@ import VolunteerSearchModel from './volunteer-search.js';
 import VolunteerOutdatedNameModel from './volunteer-outdated-name.js';
 import VolunteerSubscriptionModel from './volunteer-subscription.js';
 import VolunteerCooperationModel from './volunteer-cooperation.js';
-import InstituteModel from './institute.js';
+import VolunteerInstituteModel from './volunteer-institute.js';
 import HomeModel from './home.js';
 import HomeAddressModel from './home-address.js';
 import HomeContactModel from './home-contact.js';
@@ -64,7 +64,7 @@ const VolunteerSearch = VolunteerSearchModel(sequelize);
 const VolunteerOutdatedName = VolunteerOutdatedNameModel(sequelize);
 const VolunteerSubscription = VolunteerSubscriptionModel(sequelize);
 const VolunteerCooperation = VolunteerCooperationModel(sequelize);
-const Institute = InstituteModel(sequelize);
+const VolunteerInstitute = VolunteerInstituteModel(sequelize);
 const Home = HomeModel(sequelize);
 const HomeAddress = HomeAddressModel(sequelize);
 const HomeContact = HomeContactModel(sequelize);
@@ -401,10 +401,10 @@ VolunteerCooperation.belongsTo(User, {
 });
 
 //institutes
-Institute.belongsTo(Volunteer, {
+VolunteerInstitute.belongsTo(Volunteer, {
   foreignKey: 'volunteerId',
 });
-Volunteer.hasMany(Institute, {
+Volunteer.hasMany(VolunteerInstitute, {
   as: 'institutes',
   foreignKey: 'volunteerId',
   onDelete: 'CASCADE',
@@ -528,12 +528,12 @@ Volunteer.hasMany(Order, {
   as: 'orders',
 });
 
-Order.belongsTo(Institute, {
+Order.belongsTo(VolunteerInstitute, {
   foreignKey: 'instituteId',
   as: 'institute',
 });
 
-Institute.hasMany(Order, {
+VolunteerInstitute.hasMany(Order, {
   foreignKey: 'instituteId',
   as: 'orders',
 });
@@ -606,7 +606,7 @@ export {
   Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute,
+  VolunteerSubscription, VolunteerCooperation, VolunteerInstitute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
   Senior, SeniorOutdatedName, SeniorSearch,
   Occasion, Recipient, Order, OrderRecipient

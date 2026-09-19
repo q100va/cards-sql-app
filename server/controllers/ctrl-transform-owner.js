@@ -527,8 +527,8 @@ export function transformOwnerData(kind, record) {
     outdatedData.subscriptions = outdatedSubscriptions;
     result.cooperations = cooperations;
     outdatedData.cooperations = outdatedCooperations;
-    //TODO: dateOfLastOrder
-    result.dateOfLastOrder = null;
+    result.dateOfLastOrder = result.orders?.[0]?.createdAt ?? null;
+    delete result.orders;
   }
 
   if (kind === 'home') {

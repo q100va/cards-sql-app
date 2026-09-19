@@ -3,7 +3,7 @@ import {
   Volunteer,
   VolunteerContact,
   User,
-  Institute,
+  VolunteerInstitute,
   Occasion
 } from '../models/index.js';
 import {
@@ -30,7 +30,7 @@ export const ORDER_LIST_INCLUDE = [
     attributes: ['id', 'firstName', 'patronymic', 'lastName'],
   },
   {
-    model: Institute,
+    model: VolunteerInstitute,
     as: 'institute',
     attributes: ['id', 'instituteName', 'category'],
     required: false,
@@ -54,7 +54,7 @@ const ORDER_SORT_FIELDS = {
   amount: 'amount',
   volunteerName: [{ model: Volunteer, as: 'volunteer' }, 'lastName'],
   instituteName: [
-    { model: Institute, as: 'institute' },
+    { model: VolunteerInstitute, as: 'institute' },
     'instituteName'],
   contact: [
     { model: VolunteerContact, as: 'contact' },

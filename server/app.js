@@ -38,7 +38,7 @@ import {
   Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute,
+  VolunteerSubscription, VolunteerCooperation, VolunteerInstitute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
   Senior, SeniorOutdatedName, SeniorSearch,
   Occasion, Recipient, Order, OrderRecipient
@@ -153,7 +153,7 @@ export async function initInfrastructure() {
   await VolunteerOutdatedName.sync(syncOpts);
   await VolunteerSubscription.sync(syncOpts);
   await VolunteerCooperation.sync(syncOpts);
-  await Institute.sync(syncOpts);
+  await VolunteerInstitute.sync(syncOpts);
   await Home.sync(syncOpts);
   await HomeContact.sync(syncOpts);
   await HomeAddress.sync(syncOpts);

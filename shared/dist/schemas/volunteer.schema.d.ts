@@ -49,9 +49,9 @@ export declare const draftContactsSchema: z.ZodObject<{
     otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
 }, z.core.$strict>;
 export declare const checkVolunteerDataSchema: z.ZodObject<{
-    id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    id: z.ZodNullable<z.ZodNumber>;
     firstName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
-    lastName: z.ZodNullable<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
+    lastName: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
     contacts: z.ZodObject<{
         email: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>;
         phoneNumber: z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>;
@@ -67,11 +67,14 @@ export declare const checkVolunteerDataSchema: z.ZodObject<{
     }, z.core.$strict>;
 }, z.core.$strict>;
 export declare const volunteerIdSchema: z.ZodObject<{
+    id: z.ZodNumber;
+}, z.core.$strict>;
+export declare const volunteerIdParamSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
 export declare const volunteerBlockingSchema: z.ZodObject<{
-    id: z.ZodCoercedNumber<unknown>;
-    causeOfRestriction: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
+    id: z.ZodNumber;
+    causeOfRestriction: z.ZodString;
 }, z.core.$strict>;
 export declare const volunteerDraftSchema: z.ZodObject<{
     id: z.ZodNullable<z.ZodNumber>;
@@ -342,7 +345,13 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
         number: z.ZodNumber;
     }, z.core.$strip>;
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        field: z.ZodString;
+        field: z.ZodEnum<{
+            comment: "comment";
+            isRestricted: "isRestricted";
+            name: "name";
+            dateOfStart: "dateOfStart";
+            dateOfLastOrder: "dateOfLastOrder";
+        }>;
         direction: z.ZodEnum<{
             asc: "asc";
             desc: "desc";
@@ -353,7 +362,11 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
         exact: z.ZodOptional<z.ZodBoolean>;
     }, z.core.$strip>>;
     view: z.ZodOptional<z.ZodObject<{
-        option: z.ZodOptional<z.ZodString>;
+        option: z.ZodOptional<z.ZodEnum<{
+            all: "all";
+            "only-active": "only-active";
+            "only-blocked": "only-blocked";
+        }>>;
         includeOutdated: z.ZodOptional<z.ZodBoolean>;
     }, z.core.$strip>>;
     filters: z.ZodOptional<z.ZodObject<{
@@ -361,7 +374,9 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
             subscriptions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             cooperations: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             categories: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
-            details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
+            details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
+                comment: "comment";
+            }>>>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateLastOrderRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
@@ -369,7 +384,6 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
-                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -378,6 +392,7 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
                 facebook: "facebook";
                 website: "website";
                 otherContact: "otherContact";
+                telegram: "telegram";
             }>>>>;
             hasInstitute: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             hasSubscription: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
@@ -915,10 +930,26 @@ export declare const volunteersSchema: z.ZodObject<{
     }, z.core.$strict>>;
     length: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
+export declare const volunteerSearchContactSchema: z.ZodObject<{
+    q: z.ZodString;
+}, z.core.$strict>;
 export declare const contactOptionSchema: z.ZodObject<{
     id: z.ZodNumber;
     volunteerId: z.ZodNumber;
-    type: z.ZodString;
+    type: z.ZodEnum<{
+        email: "email";
+        phoneNumber: "phoneNumber";
+        whatsApp: "whatsApp";
+        telegramNickname: "telegramNickname";
+        telegramId: "telegramId";
+        telegramPhoneNumber: "telegramPhoneNumber";
+        vKontakte: "vKontakte";
+        instagram: "instagram";
+        facebook: "facebook";
+        website: "website";
+        otherContact: "otherContact";
+        telegram: "telegram";
+    }>;
     content: z.ZodString;
 }, z.core.$strict>;
 export type VolunteerDraft = z.infer<typeof volunteerDraftSchema>;

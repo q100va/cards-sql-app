@@ -3,8 +3,8 @@ import { Op, Sequelize } from 'sequelize';
 import {
   Country, Region, District, Locality,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute,
-  User
+  VolunteerSubscription, VolunteerCooperation, VolunteerInstitute,
+  User, Order
 } from "../models/index.js";
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
@@ -12,16 +12,28 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
 import * as volunteerSchemas from "../../shared/dist/schemas/volunteer.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
-import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
-import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
-import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-owner-query-builders.js";
+import {
+  collectFlatContacts,
+  findDuplicateContacts,
+  fullName,
+  saveOwnerContactsAndAddress
+} from "../controllers/ctrl-create-owner-contacts-address.js";
+import {
+  createSearchStringFor,
+  createOutdatedSearchStringFor,
+  refreshVolunteerSearch
+} from "../controllers/ctrl-search-string.js";
+import {
+  betweenDatesInclusive,
+  buildAddressOwnerIdSubquery,
+  buildContactOwnerIdSubquery,
+  buildOrderFor,
+  buildSearchContentWhere
+} from "../controllers/ctrl-owner-query-builders.js";
 import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
 import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
-import z from "zod";
 
 const router = Router();
-
-// API create volunteer
 
 router.post(
   "/check-volunteer-data",
@@ -30,7 +42,7 @@ router.post(
   validateRequest(volunteerSchemas.checkVolunteerDataSchema, "body"),
   async (req, res, next) => {
     try {
-      let volunteer = req.body;
+      const volunteer = req.body;
       const excludeSelf = volunteer.id ? { id: { [Op.ne]: volunteer.id } } : {};
 
       const nameRows = volunteer.lastName ? await Volunteer.findAll({
@@ -52,13 +64,15 @@ router.post(
         flatContacts: flat,
       });
 
-      let response = { data: { duplicatesName, duplicatesContact } };
-      if (duplicatesName.length > 0 || duplicatesContact.length > 0) response.code = 'VOLUNTEER.HAS_DATA_DUPLICATES';
+      const response = { data: { duplicatesName, duplicatesContact } };
+      if (duplicatesName.length > 0 || duplicatesContact.length > 0) {
+        response.code = 'ERRORS.VOLUNTEER.HAS_DATA_DUPLICATES';
+      }
       res
         .status(200)
         .send(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.DUPLICATES_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   });
@@ -72,9 +86,7 @@ router.post(
     try {
       const creatingVolunteer = req.body;
 
-      //console.log('creatingVolunteer', creatingVolunteer)
-
-      const result = await withTransaction(async (t) => {
+      const result = await withTransaction(async (transaction) => {
 
         const volunteer = await Volunteer.create(
           {
@@ -86,37 +98,26 @@ router.post(
             causeOfRestriction: creatingVolunteer.causeOfRestriction,
             dateOfRestriction: creatingVolunteer.dateOfRestriction,
           },
-          { transaction: t }
+          { transaction }
         );
 
         await saveOwnerContactsAndAddress(
           'volunteer',
           volunteer,
-          creatingVolunteer, // { draftContacts, draftAddress }
+          creatingVolunteer,
           { VolunteerContact, VolunteerAddress },
-          t
+          transaction
         );
 
         if ((creatingVolunteer.draftInstitutes ?? []).length) {
-          console.log("INSTITUTES", creatingVolunteer.draftInstitutes)
-          /*           creatingVolunteer.draftInstitutes.forEach(async i =>
-                      await Institute.create(
-                        {
-                          instituteName: i.instituteName,
-                          category: i.category,
-                          volunteerId: volunteer.id
-                        },
-                    { transaction: t }
-                      )
-                    ) */
-          await Institute.bulkCreate(
+          await VolunteerInstitute.bulkCreate(
             creatingVolunteer.draftInstitutes.map((i) => ({
               instituteName: i.instituteName,
               category: i.category,
               volunteerId: volunteer.id,
             })),
             {
-              transaction: t,
+              transaction,
               individualHooks: true,
             }
           );
@@ -130,7 +131,7 @@ router.post(
               userId: id
             })),
             {
-              transaction: t,
+              transaction,
               individualHooks: true,
             }
           );
@@ -143,7 +144,7 @@ router.post(
               userId: id
             })),
             {
-              transaction: t,
+              transaction,
               individualHooks: true,
             }
           );
@@ -174,7 +175,7 @@ router.post(
               ],
             },
             {
-              model: Institute,
+              model: VolunteerInstitute,
               as: 'institutes',
               attributes: ['id', 'instituteName', 'category', 'isRestricted', 'isDeletable'],
             },
@@ -209,22 +210,20 @@ router.post(
                     'isRestricted']
                 },
               ]
-            }
-            //TODO: DateOfLastOrder
-
+            },
           ],
-          transaction: t,
+          transaction,
         });
 
         const searchString = createSearchStringFor('volunteer', freshVolunteer);
-        await VolunteerSearch.create({ volunteerId: volunteer.id, content: searchString }, { transaction: t });
+        await VolunteerSearch.create({ volunteerId: volunteer.id, content: searchString }, { transaction });
 
         return fullName(volunteer);
       });
 
-      res.status(201).send({ code: 'VOLUNTEER.CREATED', data: result });
+      res.status(201).send({ code: 'SUCCESS.CREATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
   }
@@ -239,34 +238,33 @@ router.post(
     const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
 
     try {
-      const result = await withTransaction(async (t) => {
-        const volunteer = await Volunteer.findByPk(id, { transaction: t });
-        if (!volunteer) throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
-        // CHANGES
-        // main
+      const result = await withTransaction(async (transaction) => {
+        const volunteer = await Volunteer.findByPk(id, { transaction });
+        if (!volunteer) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+
+        // Update main volunteer data
         if (changingData?.main) {
-          console.log('changes?.main', changingData?.main);
           const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
             await Volunteer.update(
               payload,
               {
                 where: { id },
-                transaction: t,
+                transaction,
                 individualHooks: true
               });
           }
         }
 
-        //addresses, contacts, outdated
+        // Apply related data changes
         await applyOwnerUpdates(
           'volunteer',
           id,
           { changingData, restoringData, outdatingData, deletingData },
-          t
+          transaction
         );
 
-        // UPDATED VOLUNTEER
+        // Reload volunteer with related data
         const fresh = await Volunteer.findOne({
           where: { id },
           attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -284,7 +282,7 @@ router.post(
             { model: VolunteerOutdatedName, as: 'outdatedNames', attributes: ['id', 'firstName', 'patronymic', 'lastName'] },
 
             {
-              model: Institute,
+              model: VolunteerInstitute,
               as: 'institutes',
               attributes: ['id', 'instituteName', 'category', 'isRestricted', 'isDeletable'],
             },
@@ -319,41 +317,69 @@ router.post(
                     'isRestricted']
                 },
               ]
-            }
-            //TODO: DateOfLastOrder
+            },
+            {
+              model: Order,
+              as: 'orders',
+              attributes: ['createdAt'],
+              required: false,
+              separate: true,
+              limit: 1,
+              order: [['createdAt', 'DESC']],
+            },
 
           ],
-          transaction: t,
+          transaction,
         });
 
-        // SEARCH
+        // Refresh search strings
         const search = createSearchStringFor('volunteer', fresh);
         await VolunteerSearch.update(
           { content: search },
-          { where: { volunteerId: id, isRestricted: false }, individualHooks: true, transaction: t }
+          { where: { volunteerId: id, isRestricted: false }, individualHooks: true, transaction }
         );
         const outdatedSearch = createOutdatedSearchStringFor('volunteer', fresh);
         if (outdatedSearch) {
-          const [row, created] = await VolunteerSearch.findOrCreate({
-            where: { volunteerId: id, isRestricted: true },
-            defaults: { content: outdatedSearch },
-            transaction: t
+          const [row, created] =
+            await VolunteerSearch.findOrCreate({
+              where: {
+                volunteerId: id,
+                isRestricted: true,
+              },
+              defaults: {
+                content: outdatedSearch,
+              },
+              transaction,
+            });
+
+          if (!created) {
+            await row.update(
+              { content: outdatedSearch },
+              {
+                individualHooks: true,
+                transaction,
+              },
+            );
+          }
+        } else {
+          await VolunteerSearch.destroy({
+            where: {
+              volunteerId: id,
+              isRestricted: true,
+            },
+            transaction,
           });
-          if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
         }
+
         return transformOwnerData('volunteer', fresh.toJSON());
       });
-      console.log('VOLUNTEER');
-      console.dir(result, { depth: null });
-      res.status(200).send({ code: 'VOLUNTEER.UPDATED', data: result });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_UPDATED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
 );
-
-// API get volunteers
 
 router.post(
   '/get-volunteers',
@@ -368,24 +394,23 @@ router.post(
         search,
         view,
         filters,
-      } = req.body; // already validated by Zod
+      } = req.body;
 
       const includeOutdated = !!view?.includeOutdated; // false => only actual
       const order = buildOrderFor('volunteer', sort);
 
-      // ---- base where (Volunteer) ----
+      // Base filters
       const whereVolunteer = {};
       const whereAddress = {};
       const whereContact = {};
 
-      // view option (if you still use it)
       switch (view?.option) {
         case 'only-active': whereVolunteer.isRestricted = false; break;
         case 'only-blocked': whereVolunteer.isRestricted = true; break;
-        default:              /* 'all' or undefined */        break;
+        default: break;
       }
 
-      // general filters
+      // General filters
 
       if (filters?.general?.dateBeginningRange) {
         whereVolunteer.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
@@ -393,18 +418,27 @@ router.post(
       if (filters?.general?.dateRestrictionRange) {
         whereVolunteer.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
-      //TODO:
-      // dateOfLastOrder filter
 
-      const whereLastOrderDate = { isLatest: true }
-      const dates = filters?.general?.dateLastOrderRange || [];
-      const datesRequired = (dates.length ?? 0) > 0;
-      if (datesRequired) {
-        whereLastOrderDate.date = betweenDatesInclusive(filters.general.dateUpdateRange);
-        console.log('whereLastOrderDate.date', whereLastOrderDate.date);
+      // Last order date filter
+      const dateLastOrderRange =
+        filters?.general?.dateLastOrderRange;
+
+      if (dateLastOrderRange) {
+        whereVolunteer[Op.and] = [
+          ...(whereVolunteer[Op.and] ?? []),
+
+          Sequelize.where(
+            Sequelize.literal(`(
+        SELECT MAX(o."createdAt")
+        FROM "orders" o
+        WHERE o."volunteerId" = "volunteer"."id"
+      )`),
+            betweenDatesInclusive(dateLastOrderRange),
+          ),
+        ];
       }
 
-      // details && has... filter
+      // Detail filters
       const buildHasInstsLiteral = (has, includeOutdated) => {
         const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
         const restrictedClause = includeOutdated ? '' : 'AND i."isRestricted" = false';
@@ -412,7 +446,7 @@ router.post(
         return Sequelize.literal(`
           ${existsKeyword} (
             SELECT 1
-            FROM "institutes" i
+            FROM "volunteer-institutes" i
             WHERE i."volunteerId" = "volunteer"."id"
             ${restrictedClause}
           )
@@ -441,7 +475,7 @@ router.post(
         return Sequelize.literal(`
                 EXISTS (
                   SELECT 1
-                    FROM "institutes" i
+                    FROM "volunteer-institutes" i
                     WHERE i."volunteerId" = "volunteer"."id"
                     AND i."category" IN (${categoriesList})
                      ${restrictedClause}
@@ -456,9 +490,9 @@ router.post(
                     FROM "${tableName}" c
                     JOIN "users" u
                     ON u.id = c."userId"
-                    ${restrictedClause}
                     WHERE c."volunteerId" = "volunteer"."id"
                     AND c."userId" IN (${userList})
+                    ${restrictedClause}
                 )
               `);
       };
@@ -503,19 +537,20 @@ router.post(
         }
       }
 
-
-      //institutes
+      // Institute filters
       const categories = filters?.general?.categories || [];
       const institutesRequired = (categories.length ?? 0) > 0;
       if (institutesRequired) {
-        const categoriesList = categories.map(s => `'${s}'`).join(',');
+        const categoriesList = categories
+          .map((category) => Sequelize.escape(category))
+          .join(',');
         whereVolunteer[Op.and] = [
           ...(whereVolunteer[Op.and] ?? []),
           buildInstLiteral(categoriesList, !!includeOutdated),
         ];
       }
 
-      // subscriptions and cooperations filter
+      // Subscription and cooperation filters
       const subs = filters?.general?.subscriptions || [];
       const subscriptionsRequired = (subs.length ?? 0) > 0;
       if (subscriptionsRequired) {
@@ -543,22 +578,26 @@ router.post(
           );
 
       const subsRequired =
-        subscriptionsRequired ? true :
-          (
-            subscriptionCondition ? (!!hasInstituteValue && strict) :
-              false
+        subscriptionsRequired
+          ? true
+          : (
+            subscriptionCondition
+              ? (!!hasSubscriptionValue && strict)
+              : false
           );
 
       const coopsRequired =
-        cooperationsRequired ? true :
-          (
-            cooperationCondition ? (!!hasInstituteValue && strict) :
-              false
+        cooperationsRequired
+          ? true
+          : (
+            cooperationCondition
+              ? (!!hasCooperationValue && strict)
+              : false
           );
 
 
 
-      // contact types filter (weak/strong)
+      // Contact filters
       const contactTypes = filters?.general?.contactTypes ?? [];
       const contRequired = contactTypes.length > 0;
       if (contRequired) {
@@ -567,9 +606,16 @@ router.post(
         if (sub) whereContact.volunteerId = { [Op.in]: sub };
       }
 
-      // address filter (weak/strong)
+      // Address filters
       const addresses = filters?.address || {};
-      const addrRequired = (addresses.countries?.length ?? 0) > 0;
+      const addrRequired = [
+        addresses.countries,
+        addresses.regions,
+        addresses.districts,
+        addresses.localities,
+      ].some(
+        (items) => (items?.length ?? 0) > 0,
+      );
       if (addrRequired) {
         const sub = await buildAddressOwnerIdSubquery('volunteer', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
         if (!includeOutdated) whereAddress.isRestricted = false;
@@ -577,7 +623,7 @@ router.post(
       }
 
 
-      // ---- includes (contacts / addresses / outdated names / search) ----
+      // Related data
       const includes = [
         {
           model: VolunteerContact,
@@ -603,10 +649,9 @@ router.post(
           model: VolunteerOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-          //separate: true,
         },
         {
-          model: Institute,
+          model: VolunteerInstitute,
           as: 'institutes',
           required: instsRequired,
           attributes: ['id', 'instituteName', 'category', 'isRestricted', 'isDeletable'],
@@ -644,12 +689,19 @@ router.post(
                 'isRestricted']
             },
           ]
-        }
-
-        //TODO: DateOfLastOrder
+        },
+        {
+          model: Order,
+          as: 'orders',
+          attributes: ['id', 'createdAt'],
+          required: false,
+          separate: true,
+          limit: 1,
+          order: [['createdAt', 'DESC']],
+        },
       ];
 
-      // search by VolunteerSearch.content (words; exact → AND; else OR)
+      // Search
       if (search?.value?.trim()) {
         const contentWhere = buildSearchContentWhere(search.value, search.exact);
         includes.push({
@@ -663,19 +715,14 @@ router.post(
         });
       }
 
-      // ---- count (distinct) ----
+      // Total count
       const total = await Volunteer.count({
         where: whereVolunteer,
         include: includes,
         distinct: true,
       });
 
-      console.log('whereVolunteer', whereVolunteer);
-      console.log('ORDER', order);
-      /*  console.log('includes', includes);
-       console.log('whereVolunteer', whereVolunteer); */
-
-      // ---- page ----
+      // Paginated result
       const volunteers = await Volunteer.findAll({
         where: whereVolunteer,
         attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -683,16 +730,13 @@ router.post(
         include: includes,
         offset: pageSize * pageNumber,
         limit: pageSize,
-        // subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
 
       const items = volunteers.map(p => transformOwnerData('volunteer', p.toJSON()));
-      //console.log('VOLUNTEERs', items);
-
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
@@ -701,7 +745,7 @@ router.post(
 router.get("/get-volunteer-by-id/:id",
   requireAuth,
   requireAny('VIEW_VOLUNTEER', 'EDIT_VOLUNTEER'),
-  validateRequest(volunteerSchemas.volunteerIdSchema, 'params'),
+  validateRequest(volunteerSchemas.volunteerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
@@ -741,7 +785,7 @@ router.get("/get-volunteer-by-id/:id",
             attributes: ['id', 'firstName', 'patronymic', 'lastName']
           },
           {
-            model: Institute,
+            model: VolunteerInstitute,
             as: 'institutes',
             attributes: ['id', 'instituteName', 'category', 'isRestricted', 'isDeletable'],
           },
@@ -776,47 +820,54 @@ router.get("/get-volunteer-by-id/:id",
                   'isRestricted']
               },
             ]
-          }
-          //TODO: DateOfLastOrder
+          },
+          {
+            model: Order,
+            as: 'orders',
+            attributes: ['createdAt'],
+            required: false,
+            separate: true,
+            limit: 1,
+            order: [['createdAt', 'DESC']],
+          },
 
         ],
       });
-      if (!volunteer) throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
+      if (!volunteer) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       const data = transformOwnerData('volunteer', volunteer.toJSON());
-      console.log('VOLUNTEER', data);
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   });
+
+async function countVolunteerDependencies(volunteerId, transaction) {
+  return Order.count({
+    where: { volunteerId },
+    transaction,
+  });
+}
 
 router.get(
   "/check-volunteer-before-delete/:id",
   requireAuth,
   requireOperation('DELETE_VOLUNTEER'),
-  validateRequest(volunteerSchemas.volunteerIdSchema, 'params'),
+  validateRequest(volunteerSchemas.volunteerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const volunteer = await Volunteer.findByPk(id);
-      if (!volunteer) throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
+      if (!volunteer) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-      //TODO: find does this volunteer has orders
-      const [countOrders] = await Promise.all([
-        /*         Order.count({
-                  where: {volunteerId: id}
-                }),
-                }) */
-      ]);
-      const count = (countOrders ?? 0);
+      const count = await countVolunteerDependencies(id);
       const response = {
         data: count,
         ...(count ? { code: 'VOLUNTEER.HAS_DEPENDENCIES' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   });
@@ -825,68 +876,48 @@ router.delete(
   "/delete-volunteer/:id",
   requireAuth,
   requireOperation('DELETE_VOLUNTEER'),
-  validateRequest(volunteerSchemas.volunteerIdSchema, 'params'),
+  validateRequest(volunteerSchemas.volunteerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
 
-      await withTransaction(async (t) => {
-        // 1) Ensure the volunteer exists
-        const volunteer = await Volunteer.findByPk(id, { transaction: t });
-        if (!volunteer) throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
+      await withTransaction(async (transaction) => {
+        // Ensure the volunteer exists
+        const volunteer = await Volunteer.findByPk(id, { transaction });
+        if (!volunteer) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-        // 2) Delete the volunteer (DB will cascade child tables)
+        const dependenciesCount = await countVolunteerDependencies(id, transaction);
+        if (dependenciesCount > 0) {
+          throw new CustomError('ERRORS.VOLUNTEER.HAS_DEPENDENCIES', 409);
+        }
+
+        // Delete the volunteer (DB will cascade child tables)
         const destroyed = await Volunteer.destroy({
           where: { id },
-          transaction: t,
-          individualHooks: true, // will run volunteer-level hooks; children won't fire via DB cascade
+          transaction,
+          individualHooks: true,
         });
-        if (destroyed !== 1) throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
+        if (destroyed !== 1) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       });
-      res.status(200).send({ code: 'VOLUNTEER.DELETED', data: null });
+      res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
   });
 
-/* router.get(
-  "/check-volunteer-before-block/:id",
-  requireAuth,
-  requireOperation('BLOCK_VOLUNTEER'),
-  validateRequest(volunteerSchemas.volunteerIdSchema, 'params'),
-  async (req, res, next) => {
-    try {
-      const id = req.params.id;
-      const volunteer = await Volunteer.findByPk(id);
-      if (!volunteer) throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
-
-
-      ]);
-      const count = (countHouses ?? 0);
-      const response = {
-        data: count,
-        ...(count ? { code: 'VOLUNTEER.HAS_DEPENDENCIES' } : null),
-      };
-      return res.status(200).json(response);
-    } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_CHECKED';
-      next(error);
-    }
-  }); */
-
 router.patch(
   '/block-volunteer',
   requireAuth,
-  requireAny('BLOCK_VOLUNTEER'),
+  requireOperation('BLOCK_VOLUNTEER'),
   validateRequest(volunteerSchemas.volunteerBlockingSchema, 'body'),
   async (req, res, next) => {
     try {
       const id = req.body.id;
       const cause = req.body.causeOfRestriction;
 
-      await withTransaction(async (t) => {
-        // 1) Block the volunteer
+      await withTransaction(async (transaction) => {
+
         const [affected] = await Volunteer.update(
           {
             isRestricted: true,
@@ -895,18 +926,23 @@ router.patch(
           },
           {
             where: { id },
-            transaction: t,
-            individualHooks: true, // ensure per-row hooks/audit
+            transaction,
+            individualHooks: true,
           }
         );
         if (affected !== 1) {
-          throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
+
+        await refreshVolunteerSearch(
+          id,
+          transaction,
+        );
       });
 
-      res.status(200).send({ code: 'VOLUNTEER.BLOCKED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_BLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
@@ -915,28 +951,38 @@ router.patch(
 router.patch(
   "/unblock-volunteer",
   requireAuth,
-  requireAny('UNBLOCK_VOLUNTEER'),
+  requireOperation('UNBLOCK_VOLUNTEER'),
   validateRequest(volunteerSchemas.volunteerIdSchema, 'body'),
   async (req, res, next) => {
     try {
-      let id = req.body.id;
-      const [affected] = await Volunteer.update(
-        {
-          isRestricted: false,
-          causeOfRestriction: null,
-          dateOfRestriction: null
-        },
-        {
-          where: { id },
-          individualHooks: true,
-        },
-      );
-      if (affected !== 1) {
-        throw new CustomError('ERRORS.VOLUNTEER.NOT_FOUND', 404);
-      }
-      res.status(200).send({ code: 'VOLUNTEER.UNBLOCKED', data: null });
+      const id = req.body.id;
+
+      await withTransaction(async (transaction) => {
+
+        const [affected] = await Volunteer.update(
+          {
+            isRestricted: false,
+            causeOfRestriction: null,
+            dateOfRestriction: null
+          },
+          {
+            where: { id },
+            transaction,
+            individualHooks: true,
+          },
+        );
+        if (affected !== 1) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
+        await refreshVolunteerSearch(
+          id,
+          transaction,
+        );
+      });
+
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.NOT_UNBLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   });
@@ -944,24 +990,24 @@ router.patch(
 router.get("/search-contacts/:q",
   requireAuth,
   requireAny('ADD_NEW_ORDER', 'EDIT_ORDER'),
-  validateRequest(z.object({ q: z.string().trim().min(3) }), 'params'),
+  validateRequest(volunteerSchemas.volunteerSearchContactSchema, 'params'),
   async (req, res, next) => {
     try {
-      const q = req.params.q;
+      const contactContent = req.params.q;
       const contacts = await VolunteerContact.findAll({
         where: {
           content: {
-            [Op.iLike]: `%${q}%`,
+            [Op.iLike]: `%${contactContent}%`,
           },
         },
         attributes: ['id', 'content', 'type', 'volunteerId'],
         limit: 20,
         order: [['content', 'ASC']],
         raw: true,
-      })
+      });
       res.status(200).send({ data: contacts });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.VOLUNTEER.CONTACT_NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   });

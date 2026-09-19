@@ -571,7 +571,7 @@ export class OrderCardComponent {
     this.list = []; */
     const query = event.query?.trim();
 
-    if (!query || query.length < 2) {
+    if (!query || query.length < 3) {
       this.filteredContacts = [];
       return;
     }
@@ -606,16 +606,24 @@ export class OrderCardComponent {
         next: (res) => {
           this.volunteer = res.data;
           if (updateContact) {
-            const firstKey = Object.keys(this.volunteer.orderedContacts)[0];
-            const firstContact = Object.values(
+            const firstKey = Object.keys(this.volunteer.orderedContacts)[0] as
+              | ContactOption['type']
+              | undefined;
+
+            const firstContacts = Object.values(
               this.volunteer.orderedContacts,
-            )[0][0];
-            this.orderForm.controls.contact.setValue({
-              id: firstContact.id,
-              volunteerId: this.volunteer.id,
-              type: firstKey,
-              content: firstContact.content,
-            });
+            )[0];
+
+            const firstContact = firstContacts?.[0];
+
+            if (firstKey && firstContact) {
+              this.orderForm.controls.contact.setValue({
+                id: firstContact.id,
+                volunteerId: this.volunteer.id,
+                type: firstKey,
+                content: firstContact.content,
+              });
+            }
           }
           //this.addCheckboxes();
           //  console.log(this.filteredContacts);

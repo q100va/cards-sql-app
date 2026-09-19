@@ -1,11 +1,17 @@
 import { Router } from "express";
 import { Op } from 'sequelize';
 import {
-  Order, Region, Home, HomeAddress, OrderRecipient,
+  Order,
+  Region,
+  Home,
+  HomeAddress,
+  OrderRecipient,
   VolunteerContact,
-  User, Occasion,
-  Recipient
-} from "../models/index.js";
+  User,
+  Occasion,
+  Recipient,
+} from '../models/index.js';
+
 import CustomError from "../shared/customError.js";
 import * as orderSchemas from "../../shared/dist/schemas/order.schema.js";
 import {
@@ -23,7 +29,6 @@ import { createSpecialRecipientsListForOrder } from "../controllers/ctrl-create-
 import { transformOrder, transformOrderDisplayPart, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
 import { applyOrderFilters, buildOrderSort, dictToOptions, ORDER_LIST_INCLUDE } from "../controllers/ctrl-order-query-builders.js";
 import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js";
-
 
 const router = Router();
 
@@ -178,6 +183,10 @@ router.post(
           individualHooks: true,
           transaction: t,
         });
+        await refreshVolunteerSearch(
+          order.volunteerId,
+          t,
+        );
 
         const recipients = await transformOrderRecipientsPart(order, t);
         return { contact: contact.content, recipients };
@@ -438,6 +447,10 @@ router.delete(
           });
         }
         await existingOrder.destroy({ transaction: t });
+        await refreshVolunteerSearch(
+          existingOrder.volunteerId,
+          t,
+        );
       });
 
       res.status(200).send({ code: 'SUCCESS.DELETED', data: null });

@@ -5,7 +5,7 @@ import {
   HomeContact,
   HomeCoordination,
   HomeOutdatedName,
-  Institute,
+  VolunteerInstitute,
   PartnerAddress,
   PartnerContact,
   PartnerOutdatedName,
@@ -162,7 +162,7 @@ export async function applyOwnerUpdates(ownerKind, id, payload, transaction) {
   }
 
   if (changingData?.institutes?.length) {
-    await Institute.bulkCreate(
+    await VolunteerInstitute.bulkCreate(
       changingData.institutes.map((i) => ({
         instituteName: i.instituteName,
         category: i.category,
@@ -315,7 +315,7 @@ export async function applyOwnerUpdates(ownerKind, id, payload, transaction) {
   }
 
   if (restoringData?.institutes?.length) {
-    await Institute.update(
+    await VolunteerInstitute.update(
       { isRestricted: false },
       {
         where: {
@@ -396,7 +396,7 @@ export async function applyOwnerUpdates(ownerKind, id, payload, transaction) {
   }
 
   if (outdatingData?.institutes?.length) {
-    await Institute.update(
+    await VolunteerInstitute.update(
       { isRestricted: true },
       {
         where: {
@@ -481,7 +481,7 @@ export async function applyOwnerUpdates(ownerKind, id, payload, transaction) {
   }
 
   if (deletingData?.institutes?.length) {
-    await Institute.destroy({
+    await VolunteerInstitute.destroy({
       where: {
         id: { [Op.in]: deletingData.institutes },
         [config.idField]: id,

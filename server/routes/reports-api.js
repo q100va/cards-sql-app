@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 import {
   Order,
   OrderRecipient,
-  Institute,
+  VolunteerInstitute,
   Occasion,
   Recipient,
 } from '../models/index.js';
@@ -102,7 +102,7 @@ router.post("/get-report",
             ],
           },
           {
-            model: Institute,
+            model: VolunteerInstitute,
             as: 'institute',
             attributes: [
               'category'
@@ -129,7 +129,7 @@ router.post("/get-report",
       if (type === REPORT_TYPE.SCHOOL_COORDINATION) {
         include = [
           {
-            model: Institute,
+            model: VolunteerInstitute,
             as: 'institute',
             attributes: ['createdAt'],
           },

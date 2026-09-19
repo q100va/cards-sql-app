@@ -801,6 +801,7 @@
   },
 
   "VOLUNTEER": {
+    "HAS_DEPENDENCIES": "The volunteer cannot be deleted: {{count}} related request(s)",
     "TABLE_TITLE": "Volunteers",
     "ADD_PARTNER": "Add volunteer",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
@@ -1237,6 +1238,13 @@
       "PASSWORD_NOT_CHANGED": "The password could not be changed. Please try again.",
       "NOT_BLOCKED": "Failed to block the user.",
       "NOT_UNBLOCKED": "Failed to unblock the user."
+    },
+    "VOLUNTEER": {
+      "HAS_DATA_DUPLICATES": "The volunteer data has duplicates",
+      "HAS_DEPENDENCIES": "The volunteer cannot be deleted because related requests exist."
+    },
+    "CONTACT": {
+      "INVALID_FORMAT": "The contact value has an invalid format."
     }
   },
 
