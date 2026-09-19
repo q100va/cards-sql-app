@@ -125,6 +125,11 @@ router.post(
   async (req, res, next) => {
     try {
       const { orderDraft, filters } = req.body;
+      const orderData = {
+        ...orderDraft,
+      };
+
+      delete orderData.forSchoolDepartment;
 
       const result = await withTransaction(async (t) => {
         const duplicates = await Order.findAll({
@@ -157,7 +162,7 @@ router.post(
         if (recipientsList.length < orderDraft.amount) return { contact: contact.content, recipients: [] };
 
         const order = await Order.create(
-          orderDraft,
+          orderData,
           { transaction: t }
         );
         const orderRecipientsRows = recipientsList.map(r => (

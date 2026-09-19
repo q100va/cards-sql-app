@@ -54,7 +54,6 @@ export default function OrderRecipientModel(sequelize) {
       tableName: 'order-recipients',
       underscored: false,
       timestamps: true,
-      updatedAt: true,
       indexes: [
         {
           unique: true,
