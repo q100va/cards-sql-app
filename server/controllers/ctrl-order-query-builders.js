@@ -15,6 +15,7 @@ import {
   ORDER_STATUSES,
   ORDER_SOURCES,
 } from '../../shared/dist/constants/orders.js';
+import { INSTITUTE_CATEGORIES } from '../../shared/dist/constants/volunteers.js';
 import { escapeLikeValue } from './ctrl-common-helpers.js';
 import { applyDateFilter, applyNumericFilter, applyStringFilter } from "./ctrl-apply-filter.js";
 
@@ -231,6 +232,50 @@ function applyMultiFieldSearch(where, value, fields) {
   );
 }
 
+function getMatchingInstituteCategoryIds(value) {
+  const search = String(value ?? '').trim().toLocaleLowerCase();
+
+  if (!search) return [];
+
+  return Object.entries(INSTITUTE_CATEGORIES)
+    .filter(([, category]) =>
+      category.en.toLocaleLowerCase().includes(search) ||
+      category.ru.toLocaleLowerCase().includes(search),
+    )
+    .map(([id]) => Number(id));
+}
+
+function applyInstituteSearch(where, value) {
+  const words = String(value ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) return;
+
+  where[Op.and] ??= [];
+  where[Op.and].push(
+    ...words.map((word) => {
+      const conditions = [
+        {
+          '$institute.instituteName$': {
+            [Op.iLike]: `%${escapeLikeValue(word)}%`,
+          },
+        },
+      ];
+      const categoryIds = getMatchingInstituteCategoryIds(word);
+
+      if (categoryIds.length) {
+        conditions.push({
+          '$institute.category$': { [Op.in]: categoryIds },
+        });
+      }
+
+      return { [Op.or]: conditions };
+    }),
+  );
+}
+
 function applyOccasionFilter(
   where,
   occasionNodes,
@@ -269,6 +314,7 @@ function applyOrderGlobalSearch(
   if (!search) return;
 
   const value = `%${escapeLikeValue(search)}%`;
+  const categoryIds = getMatchingInstituteCategoryIds(search);
 
   where[Op.and] ??= [];
 
@@ -280,7 +326,9 @@ function applyOrderGlobalSearch(
       { '$volunteer.lastName$': { [Op.iLike]: value } },
       { '$volunteer.patronymic$': { [Op.iLike]: value } },
       { '$institute.instituteName$': { [Op.iLike]: value } },
-      { '$institute.category$': { [Op.iLike]: value } },
+      ...(categoryIds.length
+        ? [{ '$institute.category$': { [Op.in]: categoryIds } }]
+        : []),
       { '$contact.content$': { [Op.iLike]: value } },
       { '$contact.type$': { [Op.iLike]: value } },
     ],
@@ -309,14 +357,7 @@ export function applyOrderFilters(
     ],
   );
 
-  applyMultiFieldSearch(
-    where,
-    filters.instituteName?.[0]?.value,
-    [
-      '$institute.instituteName$',
-      '$institute.category$',
-    ],
-  );
+  applyInstituteSearch(where, filters.instituteName?.[0]?.value);
 
   applyMultiFieldSearch(
     where,

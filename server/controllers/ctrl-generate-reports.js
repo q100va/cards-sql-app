@@ -13,17 +13,13 @@ import {
 import {
   ORDER_SOURCE,
 } from '../../shared/dist/constants/orders.js';
+import { INSTITUTE_CATEGORY } from '../../shared/dist/constants/volunteers.js';
 
-// TODO: Replace institute category names with shared constants.
 const SCHOOL_CATEGORIES = new Set([
-  'дошкольное ОУ',
-  'школа',
-  'профессиональное ОУ',
-  'ВУЗ',
-  'Preschool',
-  'School',
-  'College',
-  'University',
+  INSTITUTE_CATEGORY.KINDERGARTEN,
+  INSTITUTE_CATEGORY.SCHOOL,
+  INSTITUTE_CATEGORY.COLLEGE,
+  INSTITUTE_CATEGORY.UNIVERSITY,
 ]);
 
 export function getSelectedDateRanges(selection) {

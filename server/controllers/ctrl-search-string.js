@@ -11,6 +11,7 @@ import {
 } from '../models/index.js';
 import CustomError from '../shared/customError.js';
 import { fullName } from './ctrl-create-owner-contacts-address.js';
+import { INSTITUTE_CATEGORIES } from '../../shared/dist/constants/volunteers.js';
 
 // ---------- helpers ----------
 function pad2(n) {
@@ -94,6 +95,13 @@ function normalizeSpace(value) {
     .filter(Boolean)
     .join(' ')
     .trim();
+}
+
+function pushInstituteCategoryTokens(tokens, categoryId) {
+  const category = INSTITUTE_CATEGORIES[categoryId];
+  if (!category) return;
+
+  tokens.push(toSearchToken(category.en), toSearchToken(category.ru));
 }
 
 // ---------- CONFIG per owner kind ----------
@@ -368,7 +376,7 @@ export function createSearchStringFor(kind, record) {
     for (const institute of config.institutes(record)) {
       if (!institute?.isRestricted) {
         tokens.push(toSearchToken(institute.instituteName));
-        tokens.push(toSearchToken(institute.category));
+        pushInstituteCategoryTokens(tokens, institute.category);
       }
     }
     if (config.subscriptions(record).length) {
@@ -463,7 +471,7 @@ export function createOutdatedSearchStringFor(kind, record) {
     for (const institute of config.institutes(record)) {
       if (institute?.isRestricted) {
         parts.push(toSearchToken(institute.instituteName));
-        parts.push(toSearchToken(institute.category));
+        pushInstituteCategoryTokens(parts, institute.category);
       }
     }
   }

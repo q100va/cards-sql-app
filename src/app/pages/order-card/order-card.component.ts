@@ -34,6 +34,7 @@ import {
   ORDER_SOURCE_OPTIONS,
   ORDER_STATUS,
 } from '../../../../shared/constants/orders';
+import { INSTITUTE_CATEGORIES, InstituteCategoryId } from '../../../../shared/constants/volunteers';
 import { OrderFiltersComponent } from './order-filters/order-filters.component';
 
 import { OrderRecipientsComponent } from './order-recipients/order-recipients.component';
@@ -89,6 +90,10 @@ import { finalize } from 'rxjs';
   styleUrl: './order-card.component.css',
 })
 export class OrderCardComponent {
+  readonly instituteCategories: Record<
+  number,
+  (typeof INSTITUTE_CATEGORIES)[InstituteCategoryId]
+> = INSTITUTE_CATEGORIES;
   readonly route = inject(ActivatedRoute);
   readonly dateUtils = inject(DateUtilsService);
   private readonly occasionService = inject(OccasionService);

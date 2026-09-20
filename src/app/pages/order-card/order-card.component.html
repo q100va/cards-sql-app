@@ -197,7 +197,7 @@
               optionValue="id" [checkmark]="true" [highlightOnSelect]="false" class="w-full">
 
               <ng-template let-institute #item>
-                {{ institute.instituteName }} - {{ institute.category }}
+                {{ institute.instituteName }} - {{ instituteCategories[institute.category].key | translate }}
               </ng-template>
 
             </p-listbox>

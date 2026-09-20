@@ -29,6 +29,22 @@ import {
   outdatedNameItemSchema,
   outdatedAddressItemSchema,
 } from './common.schema.js';
+import { INSTITUTE_CATEGORY } from '../constants/volunteers.js';
+
+const instituteCategorySchema = z.union([
+  z.literal(INSTITUTE_CATEGORY.SCHOOL),
+  z.literal(INSTITUTE_CATEGORY.KINDERGARTEN),
+  z.literal(INSTITUTE_CATEGORY.COLLEGE),
+  z.literal(INSTITUTE_CATEGORY.UNIVERSITY),
+  z.literal(INSTITUTE_CATEGORY.GOVERNMENT),
+  z.literal(INSTITUTE_CATEGORY.BUSINESS),
+  z.literal(INSTITUTE_CATEGORY.CHURCH),
+  z.literal(INSTITUTE_CATEGORY.CHARITY),
+  z.literal(INSTITUTE_CATEGORY.CHILDREN),
+  z.literal(INSTITUTE_CATEGORY.YOUTH),
+  z.literal(INSTITUTE_CATEGORY.ADULTS),
+  z.literal(INSTITUTE_CATEGORY.OTHER),
+]);
 
 const instituteNameSchema = z
   .string()
@@ -38,7 +54,7 @@ const instituteNameSchema = z
 
 const instituteItemSchema = z
   .object({
-    category: nonEmptyString,
+    category: instituteCategorySchema,
     instituteName: instituteNameSchema,
     isDeletable: z.boolean(),
     id: positiveInt,
@@ -47,7 +63,7 @@ const instituteItemSchema = z
 
 const draftInstituteItemSchema = z
   .object({
-    category: nonEmptyString,
+    category: instituteCategorySchema,
     instituteName: instituteNameSchema,
   })
   .strict();
@@ -98,7 +114,7 @@ export const instituteNameControlSchema = z.preprocess(
 
 export const instituteCategoryControlSchema = z.preprocess(
   emptyToNull,
-  z.string({ message: 'FORM_VALIDATION.REQUIRED' }),
+  instituteCategorySchema,
 );
 export const emailControlSchema = z
   .preprocess(
@@ -551,7 +567,7 @@ export const volunteersQueryDTOSchema = z
           .object({
             subscriptions: z.array(positiveInt).min(1).optional(),
             cooperations: z.array(positiveInt).min(1).optional(),
-            categories: z.array(nonEmptyString).min(1).optional(),
+            categories: z.array(instituteCategorySchema).min(1).optional(),
             details: z
               .array(z.enum(['comment']))
               .min(1)

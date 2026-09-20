@@ -28,6 +28,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DateUtilsService } from '../../services/date-utils.service';
+import { INSTITUTE_CATEGORIES } from '../../../../shared/constants/volunteers';
 
 import { TableSettingsComponent } from '../table-settings/table-settings.component';
 import { TableFilterComponent } from '../table-filter/table-filter.component';
@@ -316,7 +317,9 @@ export class BaseListComponent {
     }
 
     if (gf.categories.length) {
-      const categories = gf.categories.map((i) => this.translate.instant(i));
+      const categories = gf.categories.map((id) =>
+        this.translate.instant(INSTITUTE_CATEGORIES[id].key),
+      );
       pieces.push(...categories);
     }
     if (gf.homes.length) {

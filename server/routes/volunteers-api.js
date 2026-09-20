@@ -541,9 +541,7 @@ router.post(
       const categories = filters?.general?.categories || [];
       const institutesRequired = (categories.length ?? 0) > 0;
       if (institutesRequired) {
-        const categoriesList = categories
-          .map((category) => Sequelize.escape(category))
-          .join(',');
+        const categoriesList = categories.join(',');
         whereVolunteer[Op.and] = [
           ...(whereVolunteer[Op.and] ?? []),
           buildInstLiteral(categoriesList, !!includeOutdated),

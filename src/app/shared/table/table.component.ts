@@ -41,6 +41,10 @@ import { MatIconRegistry, MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import {
+  INSTITUTE_CATEGORIES,
+  InstituteCategoryId,
+} from '../../../../shared/constants/volunteers';
 import { ConfirmationService } from 'primeng/api';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
@@ -138,6 +142,10 @@ import { ExcelExportRow, FileService } from '../../services/file.service';
   styleUrl: './table.component.css',
 })
 export class TableComponent<K extends Kind> implements OnChanges {
+  readonly instituteCategories: Record<
+    number,
+    (typeof INSTITUTE_CATEGORIES)[InstituteCategoryId]
+  > = INSTITUTE_CATEGORIES;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 

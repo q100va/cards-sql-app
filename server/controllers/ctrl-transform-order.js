@@ -11,6 +11,7 @@ import {
   ORDER_SOURCES,
   ORDER_RECIPIENT_STATUS,
 } from '../../shared/dist/constants/orders.js';
+import { INSTITUTE_CATEGORIES } from '../../shared/dist/constants/volunteers.js';
 import { transformOccasionDisplayParts } from "./ctrl-transform-occasion.js";
 
 function buildFullName(owner) {
@@ -134,7 +135,12 @@ export async function transformOrderRecipientsPart(order, t) {
   return [...groups.values()];
 }
 
-export function transformOrderDisplayPart(order) {
+export function transformOrderDisplayPart(order, lang = 'en') {
+  const locale = lang === 'ru' ? 'ru' : 'en';
+  const instituteCategory = order.institute
+    ? INSTITUTE_CATEGORIES[order.institute.category]?.[locale] ?? ''
+    : '';
+
   return {
     id: order.id,
     date: order.createdAt,
@@ -142,7 +148,7 @@ export function transformOrderDisplayPart(order) {
     userName: order.user?.userName ?? "",
     volunteerName: buildFullName(order.volunteer),
     instituteName: order.institute
-      ? `${order.institute.instituteName} - ${order.institute.category}`
+      ? `${order.institute.instituteName} - ${instituteCategory}`
       : null,
     contact: `${order.contact.content} - ${order.contact.type}`,
     status: ORDER_STATUSES[order.status]?.key ?? "",

@@ -275,7 +275,7 @@ router.post(
         }),
       ]);
 
-      const orders = draft.map(order => transformOrderDisplayPart(order));
+      const orders = draft.map((order) => transformOrderDisplayPart(order, lang));
 
       const statuses = dictToOptions(ORDER_STATUSES, lang);
       const sources = dictToOptions(ORDER_SOURCES, lang);

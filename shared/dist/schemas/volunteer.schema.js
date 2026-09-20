@@ -1,5 +1,20 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, positiveIntParam, emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, draftAddressSchema, addressSchema, contactType, optionalContactsSchema, changingContactsSchema, outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
+import { INSTITUTE_CATEGORY } from '../constants/volunteers.js';
+const instituteCategorySchema = z.union([
+    z.literal(INSTITUTE_CATEGORY.SCHOOL),
+    z.literal(INSTITUTE_CATEGORY.KINDERGARTEN),
+    z.literal(INSTITUTE_CATEGORY.COLLEGE),
+    z.literal(INSTITUTE_CATEGORY.UNIVERSITY),
+    z.literal(INSTITUTE_CATEGORY.GOVERNMENT),
+    z.literal(INSTITUTE_CATEGORY.BUSINESS),
+    z.literal(INSTITUTE_CATEGORY.CHURCH),
+    z.literal(INSTITUTE_CATEGORY.CHARITY),
+    z.literal(INSTITUTE_CATEGORY.CHILDREN),
+    z.literal(INSTITUTE_CATEGORY.YOUTH),
+    z.literal(INSTITUTE_CATEGORY.ADULTS),
+    z.literal(INSTITUTE_CATEGORY.OTHER),
+]);
 const instituteNameSchema = z
     .string()
     .trim()
@@ -7,7 +22,7 @@ const instituteNameSchema = z
     .max(150, 'FORM_VALIDATION.TOO_LONG_150');
 const instituteItemSchema = z
     .object({
-    category: nonEmptyString,
+    category: instituteCategorySchema,
     instituteName: instituteNameSchema,
     isDeletable: z.boolean(),
     id: positiveInt,
@@ -15,7 +30,7 @@ const instituteItemSchema = z
     .strict();
 const draftInstituteItemSchema = z
     .object({
-    category: nonEmptyString,
+    category: instituteCategorySchema,
     instituteName: instituteNameSchema,
 })
     .strict();
@@ -53,7 +68,7 @@ export const instituteNameControlSchema = z.preprocess(toTrim, z
     .min(1, 'FORM_VALIDATION.REQUIRED')
     .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
     .max(150, 'FORM_VALIDATION.TOO_LONG_150'));
-export const instituteCategoryControlSchema = z.preprocess(emptyToNull, z.string({ message: 'FORM_VALIDATION.REQUIRED' }));
+export const instituteCategoryControlSchema = z.preprocess(emptyToNull, instituteCategorySchema);
 export const emailControlSchema = z
     .preprocess(emptyToNull, z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable())
     .superRefine((v, ctx) => {
@@ -418,7 +433,7 @@ export const volunteersQueryDTOSchema = z
             .object({
             subscriptions: z.array(positiveInt).min(1).optional(),
             cooperations: z.array(positiveInt).min(1).optional(),
-            categories: z.array(nonEmptyString).min(1).optional(),
+            categories: z.array(instituteCategorySchema).min(1).optional(),
             details: z
                 .array(z.enum(['comment']))
                 .min(1)

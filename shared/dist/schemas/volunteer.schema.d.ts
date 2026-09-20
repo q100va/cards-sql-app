@@ -1,6 +1,6 @@
 import { z } from 'zod';
 declare const instituteItemSchema: z.ZodObject<{
-    category: z.ZodString;
+    category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
     instituteName: z.ZodString;
     isDeletable: z.ZodBoolean;
     id: z.ZodNumber;
@@ -24,7 +24,7 @@ declare const coopItemSchema: z.ZodObject<{
     isDeletable: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strict>;
 export declare const instituteNameControlSchema: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
-export declare const instituteCategoryControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodString>;
+export declare const instituteCategoryControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>>;
 export declare const emailControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodEmail>>;
 export declare const phoneNumberControlSchema: z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodNullable<z.ZodString>>;
 export declare const telegramIdControlSchema: z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>;
@@ -105,7 +105,7 @@ export declare const volunteerDraftSchema: z.ZodObject<{
         otherContact: z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>;
     }, z.core.$strict>;
     draftInstitutes: z.ZodArray<z.ZodObject<{
-        category: z.ZodString;
+        category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
         instituteName: z.ZodString;
     }, z.core.$strict>>;
     draftSubscriptions: z.ZodArray<z.ZodNumber>;
@@ -150,7 +150,7 @@ export declare const changingDataSchema: z.ZodObject<{
         otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
     }, z.core.$strict>>;
     institutes: z.ZodNullable<z.ZodArray<z.ZodObject<{
-        category: z.ZodString;
+        category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
         instituteName: z.ZodString;
     }, z.core.$strict>>>;
     subscriptions: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -260,7 +260,7 @@ export declare const updateVolunteerDataSchema: z.ZodObject<{
             otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
         }, z.core.$strict>>;
         institutes: z.ZodNullable<z.ZodArray<z.ZodObject<{
-            category: z.ZodString;
+            category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
             instituteName: z.ZodString;
         }, z.core.$strict>>>;
         subscriptions: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
@@ -373,7 +373,7 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
         general: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             subscriptions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
             cooperations: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            categories: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
+            categories: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>>>>;
             details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
                 comment: "comment";
             }>>>>;
@@ -489,7 +489,7 @@ export declare const outdatedDataSchema: z.ZodObject<{
         id: z.ZodNumber;
     }, z.core.$strict>>;
     institutes: z.ZodArray<z.ZodObject<{
-        category: z.ZodString;
+        category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
         instituteName: z.ZodString;
         isDeletable: z.ZodBoolean;
         id: z.ZodNumber;
@@ -671,7 +671,7 @@ export declare const volunteerSchema: z.ZodObject<{
             id: z.ZodNumber;
         }, z.core.$strict>>;
         institutes: z.ZodArray<z.ZodObject<{
-            category: z.ZodString;
+            category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
             instituteName: z.ZodString;
             isDeletable: z.ZodBoolean;
             id: z.ZodNumber;
@@ -696,7 +696,7 @@ export declare const volunteerSchema: z.ZodObject<{
         }, z.core.$strict>>;
     }, z.core.$strict>;
     institutes: z.ZodArray<z.ZodObject<{
-        category: z.ZodString;
+        category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
         instituteName: z.ZodString;
         isDeletable: z.ZodBoolean;
         id: z.ZodNumber;
@@ -879,7 +879,7 @@ export declare const volunteersSchema: z.ZodObject<{
                 id: z.ZodNumber;
             }, z.core.$strict>>;
             institutes: z.ZodArray<z.ZodObject<{
-                category: z.ZodString;
+                category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
                 instituteName: z.ZodString;
                 isDeletable: z.ZodBoolean;
                 id: z.ZodNumber;
@@ -904,7 +904,7 @@ export declare const volunteersSchema: z.ZodObject<{
             }, z.core.$strict>>;
         }, z.core.$strict>;
         institutes: z.ZodArray<z.ZodObject<{
-            category: z.ZodString;
+            category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
             instituteName: z.ZodString;
             isDeletable: z.ZodBoolean;
             id: z.ZodNumber;

@@ -260,7 +260,7 @@
 
           @for (institute of row.institutes; track $index) {
           <div>
-            {{institute.instituteName}} ({{institute.category}})
+            {{institute.instituteName}} ({{instituteCategories[institute.category].key | translate}})
             <br />
           </div>
           }
@@ -269,7 +269,7 @@
           <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
           @for (institute of row.outdatedData.institutes; track $index) {
           <div class="outdated-data">
-            {{institute.instituteName}} ({{institute.category}})
+            {{institute.instituteName}} ({{instituteCategories[institute.category].key | translate}})
             <br />
           </div>
           }

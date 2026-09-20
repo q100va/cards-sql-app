@@ -74,8 +74,12 @@ import {
   OptionalContacts,
   UserContacts,
   affiliations,
-  categories,
 } from '../../../../interfaces/advanced-model';
+import {
+  INSTITUTE_CATEGORIES,
+  INSTITUTE_CATEGORY_OPTIONS,
+  InstituteCategoryId,
+} from '../../../../../../shared/constants/volunteers';
 import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -308,7 +312,11 @@ export class AdvancedDetailsComponent<
   mainProps!: (keyof NonNullable<ChangingByKind<K>['main']>)[];
 
   affiliations = affiliations;
-  categories = categories;
+  categories = INSTITUTE_CATEGORY_OPTIONS;
+  readonly instituteCategories: Record<
+    number,
+    (typeof INSTITUTE_CATEGORIES)[InstituteCategoryId]
+  > = INSTITUTE_CATEGORIES;
 
   genders = ['male', 'female'];
 

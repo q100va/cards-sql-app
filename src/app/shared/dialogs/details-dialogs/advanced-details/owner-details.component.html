@@ -367,8 +367,8 @@
               <mat-form-field>
                 <mat-label>{{'VOLUNTEER.CARD.CATEGORY_LABEL' | translate}}</mat-label>
                 <mat-select formControlName="category">
-                  @for (c of categories; track $index) {
-                  <mat-option [value]="translate.instant(c)">{{ c | translate}}</mat-option>
+                  @for (category of categories; track category.id) {
+                    <mat-option [value]="category.id">{{ category.optionKey | translate}}</mat-option>
                   }
                 </mat-select>
                 @if(group.controls.category.hasError('zodError')){
@@ -630,7 +630,7 @@
               (delete)="onDeleteOutdatedData('institutes', institute.id)">
             </app-outdated-item-menu>
             }
-            <div class="outdated-data">{{ institute.instituteName }} ({{institute.category}})</div>
+            <div class="outdated-data">{{ institute.instituteName }} ({{ instituteCategories[institute.category].key | translate }})</div>
           </div>
         </mat-grid-tile>
         }

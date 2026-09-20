@@ -10,7 +10,7 @@ export interface GeneralFilter {
   dateLastOrderRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
   affiliations: string[];
-  categories: string[];
+  categories: number[];
   homes: RelationPick[];
   homeRegions: { id: number; name: string }[];
   partners: RelationPick[];

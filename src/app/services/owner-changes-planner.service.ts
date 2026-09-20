@@ -67,7 +67,7 @@ export type NamesDiff = {
 
 const uniq = (arr: number[]) => Array.from(new Set(arr));
 
-function instituteKey(v: { instituteName: string; category: string }): string {
+function instituteKey(v: { instituteName: string; category: number }): string {
   return `${v.instituteName.trim().toLowerCase()}::${v.category}`;
 }
 

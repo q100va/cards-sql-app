@@ -73,7 +73,7 @@ export type {
 
 export type InstituteFormGroup = FormGroup<{
   instituteName: FormControl<string | null>;
-  category: FormControl<string | null>;
+  category: FormControl<number | null>;
 }>;
 
 export type Kind = 'user' | 'partner' | 'volunteer' | 'home' | 'senior';
@@ -176,7 +176,7 @@ export type PartnerChangingData = AdvancedChangingData<PartnerChangingMain> & {
 };
 
 export type VolunteerChangingData = AdvancedChangingData<PersonChangingMain> & {
-  institutes: { instituteName: string; category: string }[] | null;
+  institutes: { instituteName: string; category: number }[] | null;
   subscriptions: number[] | null;
   cooperations: number[] | null;
 };
@@ -328,7 +328,7 @@ export type PartnerDraft = PersonDraft & {
 export type VolunteerDraft = PersonDraft & {
   draftAddress: DraftAddress;
   draftContacts: Record<NonTelegram, string[]>;
-  draftInstitutes: { instituteName: string; category: string }[];
+  draftInstitutes: { instituteName: string; category: number }[];
   draftSubscriptions: number[];
   draftCooperations: number[];
 };
@@ -691,17 +691,3 @@ export const affiliations = [
     'PARTNER.AFF.FOUNDATION_STAFF',
   ];
 
-  export const categories = [
-    'VOLUNTEER.CATEGORIES.SCHOOL',
-    'VOLUNTEER.CATEGORIES.KINDERGARTEN',
-    'VOLUNTEER.CATEGORIES.COLLEGE',
-    'VOLUNTEER.CATEGORIES.UNIVERSITY',
-    'VOLUNTEER.CATEGORIES.GOVERNMENT',
-    'VOLUNTEER.CATEGORIES.BUSINESS',
-    'VOLUNTEER.CATEGORIES.CHURCH',
-    'VOLUNTEER.CATEGORIES.CHARITY',
-    'VOLUNTEER.CATEGORIES.CHILDREN',
-    'VOLUNTEER.CATEGORIES.YOUTH',
-    'VOLUNTEER.CATEGORIES.ADULTS',
-    'VOLUNTEER.CATEGORIES.OTHER',
-  ];

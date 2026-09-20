@@ -94,8 +94,8 @@
         <mat-form-field>
           <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
           <mat-select formControlName="categories" multiple>
-            @for (c of categories; track $index) {
-            <mat-option [value]="translate.instant(c)">{{c | translate}}</mat-option>
+            @for (category of categories; track category.id) {
+            <mat-option [value]="category.id">{{category.optionKey | translate}}</mat-option>
             }
           </mat-select>
         </mat-form-field>

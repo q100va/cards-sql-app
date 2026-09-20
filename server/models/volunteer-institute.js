@@ -1,4 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
+import { INSTITUTE_CATEGORY } from '../../shared/dist/constants/volunteers.js';
 
 export default function VolunteerInstituteModel(sequelize) {
   class VolunteerInstitute extends Model { }
@@ -21,10 +22,10 @@ export default function VolunteerInstituteModel(sequelize) {
       },
 
       category: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          notEmpty: true,
+          isIn: [Object.values(INSTITUTE_CATEGORY)],
         },
       },
 
