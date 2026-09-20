@@ -228,8 +228,8 @@ const OWNER_CONFIG = {
       toSearchToken(home?.infoNote),
 
       ...dateVariants(
-        home?.updateDates?.[0],
-      ),
+  home?.updateDates?.[0]?.date,
+),
 
       home?.isRestricted
         ? 'не участвует с inactive from'

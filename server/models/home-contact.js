@@ -23,29 +23,40 @@ export default function HomeContactModel(sequelize) {
       allowNull: false,
       validate: {
         notEmpty: true,
+
         isFormatCorrect(value) {
-          const RegularExpression = regularExpression(this.type, value);
-          if (RegularExpression && !RegularExpression.test(value)) {
-            throw new CustomError(`Invalid contact ${value}!`, 422);
+          const pattern =
+            regularExpression(
+              this.type,
+              value,
+            );
+
+          if (
+            pattern &&
+            !pattern.test(value)
+          ) {
+            throw new CustomError(
+              'ERRORS.CONTACT.INVALID_FORMAT',
+              422,
+            );
           }
-        }
-      }
+        },
+      },
     },
     isRestricted: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: false
     },
-
   },
     {
       sequelize,
       modelName: 'home-contact',
       tableName: 'home-contacts',
-      timestamps: true, // createdAt
-      updatedAt: true,
-    });
+      timestamps: true,
+    }
+  );
   return HomeContact;
-
 }
 
 

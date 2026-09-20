@@ -1,25 +1,51 @@
-import { Router } from "express";
+import { Router } from 'express';
 import { Op, Sequelize } from 'sequelize';
 import {
-  Country, Region, District, Locality,
-  HomeAddress, Home, HomeContact, HomeSearch, HomeOutdatedName,
-  Partner, PartnerContact, HomeUpdateDate, HomeCoordination,// Senior
-} from "../models/index.js";
-import requireAuth from "../middlewares/check-auth.js";
+  Country,
+  Region,
+  District,
+  Locality,
+  Home,
+  HomeAddress,
+  HomeContact,
+  HomeCoordination,
+  HomeOutdatedName,
+  HomeSearch,
+  HomeUpdateDate,
+  Partner,
+  PartnerContact,
+  Senior,
+} from '../models/index.js';
+import requireAuth from '../middlewares/check-auth.js';
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
-import { validateRequest } from "../middlewares/validate-request.js";
-import CustomError from "../shared/customError.js";
-import * as homeSchemas from "../../shared/dist/schemas/home.schema.js";
-import { withTransaction } from "../controllers/with-transaction.js";
-import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
-import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
-import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-owner-query-builders.js";
-import { setHomeStatusValue, transformOwnerData } from "../controllers/ctrl-transform-owner.js";
-import { applyOwnerUpdates } from "../controllers/ctrl-apply-owner-updates.js";
-import { syncRecipientsAfterHomeUpdate } from "../controllers/ctrl-sync-recipients.js";
+import { validateRequest } from '../middlewares/validate-request.js';
+import CustomError from '../shared/customError.js';
+import * as homeSchemas from '../../shared/dist/schemas/home.schema.js';
+import { withTransaction } from '../controllers/with-transaction.js';
+import {
+  saveOwnerContactsAndAddress,
+} from '../controllers/ctrl-create-owner-contacts-address.js';
+import {
+  createSearchStringFor,
+  createOutdatedSearchStringFor,
+} from '../controllers/ctrl-search-string.js';
+import {
+  betweenDatesInclusive,
+  buildAddressOwnerIdSubquery,
+  buildContactOwnerIdSubquery,
+  buildOrderFor,
+  buildSearchContentWhere,
+} from '../controllers/ctrl-owner-query-builders.js';
+import {
+  setHomeStatusValue,
+  transformOwnerData,
+} from '../controllers/ctrl-transform-owner.js';
+import { applyOwnerUpdates } from '../controllers/ctrl-apply-owner-updates.js';
+import { syncRecipientsAfterHomeUpdate } from '../controllers/ctrl-sync-recipients.js';
 
 const router = Router();
-const includes = [
+
+const HOME_DETAILS_INCLUDE = [
   {
     model: HomeContact,
     as: 'contacts',
@@ -29,7 +55,14 @@ const includes = [
     model: HomeAddress,
     as: 'addresses',
     attributes: [
-      'id', 'isRestricted', 'isRecoverable', 'postalName', 'postalCode', 'postalAddressPart', 'fullPostalAddress'],
+      'id',
+      'isRestricted',
+      'isRecoverable',
+      'postalName',
+      'postalCode',
+      'postalAddressPart',
+      'fullPostalAddress',
+    ],
     include: [
       {
         model: Country,
@@ -47,11 +80,12 @@ const includes = [
         model: Locality,
         attributes: ['id', 'shortName'],
       },
-    ]
+    ],
   },
   {
-    model: HomeOutdatedName, as: 'outdatedNames',
-    attributes: ['id', 'officialName']
+    model: HomeOutdatedName,
+    as: 'outdatedNames',
+    attributes: ['id', 'officialName'],
   },
   {
     model: HomeCoordination,
@@ -68,10 +102,11 @@ const includes = [
             as: 'contacts',
             where: { isRestricted: false },
             attributes: ['id', 'type', 'content', 'isRestricted'],
+            required: false,
           },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     model: HomeUpdateDate,
@@ -79,46 +114,66 @@ const includes = [
     attributes: ['date'],
     where: { isLatest: true },
     required: false,
-    // separate: true,
-    // limit: 1,
-    //order: [['date', 'DESC']]
   },
-
 ];
 
-// API create home
+async function refreshHomeSearch(homeId, transaction) {
+  const home = await Home.findByPk(homeId, {
+    attributes: {
+      exclude: ['createdAt', 'updatedAt'],
+    },
+    include: HOME_DETAILS_INCLUDE,
+    transaction,
+  });
+
+  if (!home) return;
+
+  const content = createSearchStringFor(
+    'home',
+    home,
+  );
+
+  await HomeSearch.update(
+    { content },
+    {
+      where: {
+        homeId,
+        isRestricted: false,
+      },
+      individualHooks: true,
+      transaction,
+    },
+  );
+}
 
 router.get(
-  "/check-home-name",
+  '/check-home-name',
   requireAuth,
   requireAny('ADD_NEW_HOME', 'EDIT_HOME'),
-  validateRequest(homeSchemas.checkHomeNameSchema, "query"),
+  validateRequest(homeSchemas.checkHomeNameSchema, 'query'),
   async (req, res, next) => {
     try {
-      const homeName = req.query.homeName.toLowerCase();
-      const id = req.query.id;
-
-      const whereParams = id ? {
-        homeName: { [Op.iLike]: homeName },
-        id: { [Op.ne]: id },
-      } : {
-        homeName: { [Op.iLike]: homeName },
+      const { homeName, id } = req.query;
+      const where = {
+        homeName: { [Op.iLike]: homeName.toLowerCase() },
+        ...(id ? { id: { [Op.ne]: id } } : {}),
       };
 
       const duplicateCount = await Home.count({
-        where: whereParams
+        where,
       });
 
       const response = {
         data: duplicateCount !== 0,
-        ...(duplicateCount ? { code: 'HOME.ALREADY_EXISTS' } : null),
+        ...(duplicateCount ? { code: 'ERRORS.HOME.ALREADY_EXISTS' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NAME_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.post(
   '/create-home',
@@ -128,11 +183,7 @@ router.post(
   async (req, res, next) => {
     try {
       const creatingHome = req.body;
-
-      //  console.log('creatingHOME', creatingHome)
-
-      const result = await withTransaction(async (t) => {
-        //TODO: check that in creation home cant be close - ПОЧЕМУ?
+      const result = await withTransaction(async (transaction) => {
 
         const home = await Home.create(
           {
@@ -149,21 +200,15 @@ router.post(
             isClose: creatingHome.isClose,
             dateOfClose: creatingHome.dateOfClose,
           },
-          { transaction: t }
+          { transaction },
         );
-        /*         console.log('HOME', home.id);
-                const freshHome1 = await Home.findOne({
-                  where: { id: home.id },
-                  transaction: t,
-                });
-                console.log('freshHOME1', freshHome1) */
 
         await saveOwnerContactsAndAddress(
           'home',
           home,
-          creatingHome, // { draftContacts, draftAddress }
+          creatingHome,
           { HomeContact, HomeAddress },
-          t
+          transaction,
         );
 
         if ((creatingHome.draftCoordinations ?? []).length) {
@@ -175,39 +220,34 @@ router.post(
               isRecoverable: !creatingHome.isClose,
             })),
             {
-              transaction: t,
+              transaction,
               individualHooks: true,
-            }
+            },
           );
         }
 
-
         const freshHome = await Home.findOne({
           where: { id: home.id },
-          attributes: {
-            exclude: [
-              'createdAt',
-              'updatedAt']
-          },
-          include: includes,
-          transaction: t,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          include: HOME_DETAILS_INCLUDE,
+          transaction,
         });
 
-        //   console.log('freshHOME', freshHome)
-
-
         const searchString = createSearchStringFor('home', freshHome);
-        await HomeSearch.create({ homeId: home.id, content: searchString }, { transaction: t });
+        await HomeSearch.create(
+          { homeId: home.id, content: searchString },
+          { transaction },
+        );
 
-        return fullName(home);
+        return home.homeName;
       });
 
-      res.status(201).send({ code: 'HOME.CREATED', data: result });
+      res.status(201).send({ code: 'SUCCESS.CREATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
-  }
+  },
 );
 
 router.post(
@@ -216,46 +256,51 @@ router.post(
   requireOperation('EDIT_HOME'),
   validateRequest(homeSchemas.updateHomeDataSchema, 'body'),
   async (req, res, next) => {
-    const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
+    const {
+      id,
+      changingData,
+      restoringData,
+      outdatingData,
+      deletingData,
+    } = req.body;
 
     try {
-      const result = await withTransaction(async (t) => {
-        const home = await Home.findByPk(id, { transaction: t });
-        if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
-        // CHANGES
-        // main
+      const result = await withTransaction(async (transaction) => {
+        const home = await Home.findByPk(id, { transaction });
+        if (!home) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+
+        // Update main home data
         if (changingData?.main) {
-          console.log('changes?.main', changingData?.main);
           const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
-            await Home.update(
-              payload,
-              {
-                where: { id },
-                transaction: t,
-                individualHooks: true
-              });
+            await Home.update(payload, {
+              where: { id },
+              transaction,
+              individualHooks: true,
+            });
           }
         }
-        //addresses, contacts, coordinations, outdated
+
+        // Apply related data changes
         await applyOwnerUpdates(
           'home',
           id,
           { changingData, restoringData, outdatingData, deletingData },
-          t
+          transaction,
         );
 
-        if (changingData.main?.isClose === true) {
+        // Update coordination availability when the home is closed or reopened
+        if (changingData?.main?.isClose === true) {
           await HomeCoordination.update(
             { isRestricted: true, isRecoverable: false },
             {
               where: { homeId: id },
               individualHooks: true,
-              transaction: t,
-            }
+              transaction,
+            },
           );
         }
-        if (changingData.main?.isClose === false) {
+        if (changingData?.main?.isClose === false) {
           const coordinations = await HomeCoordination.findAll({
             where: { homeId: id },
             include: [
@@ -268,10 +313,12 @@ router.post(
               },
             ],
             attributes: ['id'],
-            transaction: t,
+            transaction,
           });
 
-          const coordinationIds = coordinations.map(c => c.id);
+          const coordinationIds = coordinations.map(
+            (coordination) => coordination.id,
+          );
 
           if (coordinationIds.length > 0) {
             await HomeCoordination.update(
@@ -279,50 +326,67 @@ router.post(
               {
                 where: { id: coordinationIds },
                 individualHooks: true,
-                transaction: t,
-              }
+                transaction,
+              },
             );
           }
         }
 
-
-        // UPDATED HOME
+        // Reload home with related data
         const fresh = await Home.findOne({
           where: { id },
           attributes: { exclude: ['createdAt', 'updatedAt'] },
-          include: includes,
-          transaction: t,
+          include: HOME_DETAILS_INCLUDE,
+          transaction,
         });
 
-        // SEARCH
+        // Refresh search strings
         const search = createSearchStringFor('home', fresh);
         await HomeSearch.update(
           { content: search },
-          { where: { homeId: id, isRestricted: false }, individualHooks: true, transaction: t }
+          {
+            where: { homeId: id, isRestricted: false },
+            individualHooks: true,
+            transaction,
+          },
         );
         const outdatedSearch = createOutdatedSearchStringFor('home', fresh);
         if (outdatedSearch) {
           const [row, created] = await HomeSearch.findOrCreate({
             where: { homeId: id, isRestricted: true },
             defaults: { content: outdatedSearch },
-            transaction: t
+            transaction,
           });
-          if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
+          if (!created) {
+            await row.update(
+              { content: outdatedSearch },
+              { individualHooks: true, transaction },
+            );
+          }
+        } else {
+          await HomeSearch.destroy({
+            where: {
+              homeId: id,
+              isRestricted: true,
+            },
+            transaction,
+          });
         }
-        await syncRecipientsAfterHomeUpdate(id, changingData?.main ?? {}, t);
+        await syncRecipientsAfterHomeUpdate(
+          id,
+          changingData?.main ?? {},
+          transaction,
+        );
         return transformOwnerData('home', fresh.toJSON());
       });
-      console.log('HOME');
-      console.dir(result, { depth: null });
-      res.status(200).send({ code: 'HOME.UPDATED', data: result });
+
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_UPDATED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  }
+  },
 );
-
-// API get homes
 
 router.post(
   '/get-homes',
@@ -337,68 +401,62 @@ router.post(
         search,
         view,
         filters,
-      } = req.body; // already validated by Zod
+      } = req.body;
 
-      const includeOutdated = !!view?.includeOutdated; // false => only actual
+      const includeOutdated = !!view?.includeOutdated;
       const order = buildOrderFor('home', sort);
 
-      // ---- base where (Home) ----
+      // Base filters
       const whereHome = {};
       const whereAddress = {};
       const whereContact = {};
-      // const wherePartner = {};
       const whereCoordination = !includeOutdated ? { isRestricted: false } : {};
       const whereUpdateDate = { isLatest: true };
 
-
-      // view option (if you still use it)
       switch (view?.option) {
-        case 'only-active': whereHome.isRestricted = false; whereHome.isClose = false; break;
-        case 'only-blocked': whereHome.isRestricted = true; whereHome.isClose = false; break;
-        case 'only-closed': whereHome.isClose = true; break;
-        case 'exclude-closed': whereHome.isClose = false; break;
-        default:      /* 'all' or undefined */    break;
+        case 'only-active':
+          whereHome.isRestricted = false;
+          whereHome.isClose = false;
+          break;
+        case 'only-blocked':
+          whereHome.isRestricted = true;
+          whereHome.isClose = false;
+          break;
+        case 'only-closed':
+          whereHome.isClose = true;
+          break;
+        case 'exclude-closed':
+          whereHome.isClose = false;
+          break;
+        default:
+          break;
       }
-      /*       const options = view?.option ?? [];
-            if (options.includes('all')) { }
-            if (options.includes('active') && options.length == 1) { whereHome.isRestricted = false; }
-            if (options.includes('blocked') && options.length == 1) { whereHome.isRestricted = true; whereHome.isClose = false; }
-            if (options.includes('quitted') && options.length == 1) { whereHome.isClose = true; }
-            if (options.includes('active') && options.includes('blocked')) { whereHome.isClose = false; }
-            if (options.includes('active') && options.includes('quitted')) { whereHome[Op.or] = [{ isClose: true }, { isRestricted: false }]; }
-            if (options.includes('blocked') && options.includes('quitted')) { whereHome.isRestricted = true; }
-       */
 
-
-      // general filters
-
-      if (filters?.general?.noAddress === true || filters?.general?.noAddress === false) {
+      // General filters
+      if (typeof filters?.general?.noAddress === 'boolean') {
         whereHome.noAddress = filters.general.noAddress;
-
       }
-      if (filters?.general?.specialHome === true || filters?.general?.specialHome === false) {
+      if (typeof filters?.general?.specialHome === 'boolean') {
         whereHome.specialHome = filters.general.specialHome;
-
       }
-      if (filters?.general?.acceptableForSchool === true || filters?.general?.acceptableForSchool === false) {
+      if (typeof filters?.general?.acceptableForSchool === 'boolean') {
         whereHome.acceptableForSchool = filters.general.acceptableForSchool;
       }
-
-
       if (filters?.general?.dateBeginningRange) {
         whereHome.dateOfStart = betweenDatesInclusive(filters.general.dateBeginningRange);
       }
       if (filters?.general?.dateRestrictionRange) {
         whereHome.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
-      if (filters?.general?.dateExitRange) {
-        whereHome.dateOfClose = betweenDatesInclusive(filters.general.dateExitRange);
+      if (filters?.general?.dateCloseRange) {
+        whereHome.dateOfClose = betweenDatesInclusive(filters.general.dateCloseRange);
       }
 
-      // coordination filter
-
+      // Coordination filters
       const buildPartnerLiteral = (partnerList, includeOutdated) => {
-        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+        const restrictedClause = includeOutdated
+          ? ''
+          : 'AND c."isRestricted" = false';
 
         return Sequelize.literal(`
           EXISTS (
@@ -413,7 +471,9 @@ router.post(
 
       const buildCoordinationLiteral = (has, includeOutdated) => {
         const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
-        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+        const restrictedClause = includeOutdated
+          ? ''
+          : 'AND c."isRestricted" = false';
 
         return Sequelize.literal(`
           ${existsKeyword} (
@@ -425,9 +485,9 @@ router.post(
         `);
       };
 
-      // details && hasCoordination filter
       const hasCoordinationValue = filters?.general?.hasCoordination;
-      const coordinationCondition = hasCoordinationValue !== undefined && hasCoordinationValue !== null;
+      const coordinationCondition =
+        hasCoordinationValue !== undefined && hasCoordinationValue !== null;
 
       const hasCoordination = coordinationCondition
         ? buildCoordinationLiteral(!!hasCoordinationValue, !!includeOutdated)
@@ -439,16 +499,15 @@ router.post(
         const op = strict ? Op.and : Op.or;
 
         whereHome[op] = [
-          ...details.map(detail => ({ [detail]: { [Op.not]: null } })),
+          ...details.map((detail) => ({ [detail]: { [Op.not]: null } })),
           ...(hasCoordination ? [hasCoordination] : []),
         ];
       } else if (hasCoordination) {
         whereHome[Op.and] = [hasCoordination];
       }
 
-      // partners filter
       const partners = filters?.general?.partners || [];
-      const partnerRequired = (partners.length ?? 0) > 0;
+      const partnerRequired = partners.length > 0;
       if (partnerRequired) {
         const partnerList = partners.map(Number).join(',');
 
@@ -458,82 +517,110 @@ router.post(
         ];
       }
 
-      const coordinationRequired =
-        partnerRequired ? true : (
-          coordinationCondition ? (!!hasCoordinationValue && !!filters?.mode?.strictDetail) :
-            false
-        );
+      const coordinationRequired = partnerRequired || (
+        coordinationCondition &&
+        !!hasCoordinationValue &&
+        !!filters?.mode?.strictDetail
+      );
 
-      // contact types filter (weak/strong)
+      // Contact filters
       const contactTypes = filters?.general?.contactTypes ?? [];
       const contRequired = contactTypes.length > 0;
       if (contRequired) {
-        const sub = buildContactOwnerIdSubquery('home', contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
+        const sub = buildContactOwnerIdSubquery(
+          'home',
+          contactTypes,
+          includeOutdated,
+          !!filters?.mode?.strictContact,
+        );
         if (!includeOutdated) whereContact.isRestricted = false;
         if (sub) whereContact.homeId = { [Op.in]: sub };
       }
 
-      // address filter (weak/strong)
+      // Address filters
       const addresses = filters?.address || {};
-      const addrRequired = (addresses.countries?.length ?? 0) > 0;
+      const addrRequired = [
+        addresses.countries,
+        addresses.regions,
+        addresses.districts,
+        addresses.localities,
+      ].some((items) => (items?.length ?? 0) > 0);
       if (addrRequired) {
-        const sub = await buildAddressOwnerIdSubquery('home', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
+        const sub = await buildAddressOwnerIdSubquery(
+          'home',
+          addresses,
+          includeOutdated,
+          !!filters?.mode?.strictAddress,
+        );
         if (!includeOutdated) whereAddress.isRestricted = false;
         if (sub) whereAddress.homeId = { [Op.in]: sub };
       }
 
-      // dateOfLastUpdate filter
+      // Last update date filter
       const dates = filters?.general?.dateUpdateRange || [];
-      const datesRequired = (dates.length ?? 0) > 0;
+      const datesRequired = dates.length > 0;
       if (datesRequired) {
         whereUpdateDate.date = betweenDatesInclusive(filters.general.dateUpdateRange);
-        console.log('whereUpdateDate.date', whereUpdateDate.date);
       }
 
-
-      // ---- includes (contacts / addresses / outdated names / search) ----
+      // Related data
       const includes = [
         {
           model: HomeContact,
           as: 'contacts',
           required: contRequired,
           attributes: ['id', 'type', 'content', 'isRestricted'],
-          where: whereContact
+          where: whereContact,
         },
         {
           model: HomeAddress,
           as: 'addresses',
           required: addrRequired,
           attributes: [
-            'id', 'isRestricted', 'isRecoverable', 'postalName', 'postalCode', 'postalAddressPart', 'fullPostalAddress'],
-
+            'id',
+            'isRestricted',
+            'isRecoverable',
+            'postalName',
+            'postalCode',
+            'postalAddressPart',
+            'fullPostalAddress',
+          ],
           where: whereAddress,
           include: [
             { model: Country, attributes: ['id', 'name'] },
             { model: Region, attributes: ['id', 'shortName'] },
             { model: District, attributes: ['id', 'shortName'] },
             { model: Locality, attributes: ['id', 'shortName'] },
-          ]
+          ],
         },
         {
           model: HomeOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'officialName'],
-          //separate: true,
         },
         {
           model: HomeCoordination,
           as: 'coordinations',
-          attributes: ['id', 'partnerId', 'homeId', 'isRecoverable', 'isRestricted'],
+          attributes: [
+            'id',
+            'partnerId',
+            'homeId',
+            'isRecoverable',
+            'isRestricted',
+          ],
           required: coordinationRequired,
           where: whereCoordination,
           include: [
             {
               model: Partner,
               as: 'partner',
-              //where: wherePartner,
-              //required: partnersRequired,
-              attributes: ['firstName', 'patronymic', 'lastName', 'affiliation', 'position'],
+              attributes: [
+                'firstName',
+                'patronymic',
+                'lastName',
+                'affiliation',
+                'position',
+              ],
               include: [
                 {
                   model: PartnerContact,
@@ -542,38 +629,30 @@ router.post(
                   attributes: ['id', 'type', 'content', 'isRestricted'],
                   required: false,
                 },
-              ]
-            }
-          ]
+              ],
+            },
+          ],
         },
         {
           model: HomeUpdateDate,
           as: 'updateDates',
           attributes: ['date'],
           required: datesRequired,
-          // separate: true,
           where: whereUpdateDate,
-          //  where: { date :  {[Op.between]: [new Date('2026-01-01'), new Date('2026-01-16')]},
-          /* {
-            [Op.gte]: new Date('2026-01-01'),
-            [Op.lt]: new Date('2026-02-01'),
-          } },
-      order: [['date', 'DESC']],
-        limit: 1,*/
         },
       ];
-      //order by region.shortName
       if (sort?.[0]?.field === 'regionName') {
         includes.push({
           model: HomeAddress,
           as: 'activeAddress',
           attributes: [],
           required: false,
-          include: [{ model: Region, as: 'region', attributes: [], }],
+          include: [{ model: Region, as: 'region', attributes: [] }],
         });
       }
 
-      // search by HomeSearch.content (words; exact → AND; else OR)
+      // Search
+      // Exact search requires every word; non-exact search accepts any word.
       if (search?.value?.trim()) {
         const contentWhere = buildSearchContentWhere(search.value, search.exact);
         includes.push({
@@ -583,28 +662,18 @@ router.post(
           where: {
             ...(includeOutdated ? {} : { isRestricted: false }),
             ...(contentWhere || {}),
-          }
+          },
         });
       }
 
-      // ---- count (distinct) ----
+      // Total count
       const total = await Home.count({
         where: whereHome,
         include: includes,
         distinct: true,
       });
 
-      //console.log('whereHome', whereHome);
-      //console.log('ORDER', order);
-      /*  console.log('includes', includes);*/
-
-
-      /*       console.log('whereHome');
-            console.log(JSON.stringify(whereHome, null, 2));
-            console.log('INCLUDES');
-            console.log(JSON.stringify(includes, null, 2)); */
-      console.log('pageSize && pageNumber');
-      console.log(pageSize, pageNumber);
+      // Fetch homes with optional pagination
       const params = pageSize
         ? {
           where: whereHome,
@@ -623,42 +692,43 @@ router.post(
           distinct: true,
         };
 
-      // ---- page ----
       const homes = await Home.findAll(params);
-      //console.log('HOMEs', JSON.stringify(homes));
-      const items = homes.map(p => transformOwnerData('home', p.toJSON()));
-      //console.log('HOMEs-2', JSON.stringify(items));
+      const items = homes.map((home) =>
+        transformOwnerData('home', home.toJSON()),
+      );
 
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  }
+  },
 );
 
-router.get("/get-home-by-id/:id",
+router.get(
+  '/get-home-by-id/:id',
   requireAuth,
   requireAny('VIEW_HOME', 'EDIT_HOME'),
-  validateRequest(homeSchemas.homeIdSchema, 'params'),
+  validateRequest(homeSchemas.homeIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const home = await Home.findByPk(id, {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: includes,
+        include: HOME_DETAILS_INCLUDE,
       });
-      if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+      if (!home) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       const data = transformOwnerData('home', home.toJSON());
-      //console.log('HOME', data);
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-router.get("/get-list-of-active-homes",
+router.get(
+  '/get-list-of-active-homes',
   requireAuth,
   requireAny('VIEW_PARTNER',
     'EDIT_PARTNER',
@@ -693,8 +763,6 @@ router.get("/get-list-of-active-homes",
         order: [['homeName', 'ASC']]
       });
 
-      //  console.log('HOMEs', JSON.stringify(homes));
-
       const data = homes.map(h => ({
         id: h.id,
         name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
@@ -707,15 +775,17 @@ router.get("/get-list-of-active-homes",
         specialHome: h.specialHome,
         acceptableForSchool: h.acceptableForSchool
       }));
-      console.log('HOMES', data);
+
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-router.get("/get-list-of-potential-homes",
+router.get(
+  '/get-list-of-potential-homes',
   requireAuth,
   requireAny('VIEW_PARTNER',
     'EDIT_PARTNER',
@@ -749,8 +819,6 @@ router.get("/get-list-of-potential-homes",
         order: [['homeName', 'ASC']]
       });
 
-      //  console.log('HOMEs', JSON.stringify(homes));
-
       const data = homes.map(h => ({
         id: h.id,
         name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
@@ -763,15 +831,17 @@ router.get("/get-list-of-potential-homes",
         isClose: h.isClose,
         homeStatus: setHomeStatusValue(h)
       }));
-      console.log('HOMES', data);
+
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-router.get("/get-list-of-homes",
+router.get(
+  '/get-list-of-homes',
   requireAuth,
   requireAny('VIEW_PARTNER',
     'EDIT_PARTNER',
@@ -794,7 +864,6 @@ router.get("/get-list-of-homes",
           'noAddress',
           'specialHome',
           'acceptableForSchool'],
-        // where: { isRestricted: false, isClose: false },
         include: [{
           model: HomeAddress,
           as: 'addresses',
@@ -807,8 +876,6 @@ router.get("/get-list-of-homes",
         order: [['homeName', 'ASC']]
       });
 
-      //  console.log('HOMEs', JSON.stringify(homes));
-
       const data = homes.map(h => ({
         id: h.id,
         name: (h.homeName + ' - ' + h.addresses[0].region.shortName),
@@ -819,116 +886,104 @@ router.get("/get-list-of-homes",
         localityId: h.addresses[0].localityId,
         isRestricted: h.isRestricted,
         isClose: h.isClose,
-        /* noAddress: h.noAddress,
-        specialHome: h.specialHome,
-        acceptableForSchool: h.acceptableForSchool */
       }));
-      console.log('HOMES', data);
+
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
+
+async function countHomeDependencies(homeId, transaction) {
+  const [seniorCount, coordinationCount] = await Promise.all([
+    Senior.count({
+      where: { homeId },
+      transaction,
+    }),
+    HomeCoordination.count({
+      where: { homeId },
+      transaction,
+    }),
+  ]);
+
+  return seniorCount + coordinationCount;
+}
 
 router.get(
-  "/check-home-before-delete/:id",
+  '/check-home-before-delete/:id',
   requireAuth,
   requireOperation('DELETE_HOME'),
-  validateRequest(homeSchemas.homeIdSchema, 'params'),
+  validateRequest(homeSchemas.homeIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const home = await Home.findByPk(id);
-      if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+      if (!home) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-      //TODO: find does this home has seniors, partners
-      const [countSeniors, countPartners] = await Promise.all([
-        Senior.count({
-          where: { homeId: id }
-        }),
-        Partner.count({
-          where: { homeId: id }
-        })
-      ]);
-      const count = (countSeniors ?? 0) + (countPartners ?? 0);
+      const count = await countHomeDependencies(id);
       const response = {
         data: count,
-        ...(count ? { code: 'HOME.HAS_DEPENDENCIES' } : null),
+        ...(count ? { code: 'ERRORS.HOME.HAS_DEPENDENCIES' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.delete(
-  "/delete-home/:id",
+  '/delete-home/:id',
   requireAuth,
   requireOperation('DELETE_HOME'),
-  validateRequest(homeSchemas.homeIdSchema, 'params'),
+  validateRequest(homeSchemas.homeIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
 
-      await withTransaction(async (t) => {
-        // 1) Ensure the home exists
-        const home = await Home.findByPk(id, { transaction: t });
-        if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+      await withTransaction(async (transaction) => {
+        const home = await Home.findByPk(id, { transaction });
+        if (!home) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-        // 2) Delete the home (DB will cascade child tables)
+        const dependenciesCount = await countHomeDependencies(
+          id,
+          transaction,
+        );
+        if (dependenciesCount > 0) {
+          throw new CustomError('HOME.HAS_DEPENDENCIES', 409);
+        }
+
         const destroyed = await Home.destroy({
           where: { id },
-          transaction: t,
-          individualHooks: true, // will run home-level hooks; children won't fire via DB cascade
+          transaction,
+          individualHooks: true,
         });
-        if (destroyed !== 1) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+        if (destroyed !== 1) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
       });
-      res.status(200).send({ code: 'HOME.DELETED', data: null });
+      res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
-  });
-
-/* router.get(
-  "/check-home-before-block/:id",
-  requireAuth,
-  requireOperation('BLOCK_HOME'),
-  validateRequest(homeSchemas.homeIdSchema, 'params'),
-  async (req, res, next) => {
-    try {
-      const id = req.params.id;
-      const home = await Home.findByPk(id);
-      if (!home) throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
-
-
-      ]);
-      const count = (countHouses ?? 0);
-      const response = {
-        data: count,
-        ...(count ? { code: 'HOME.HAS_DEPENDENCIES' } : null),
-      };
-      return res.status(200).json(response);
-    } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_CHECKED';
-      next(error);
-    }
-  }); */
+  },
+);
 
 router.patch(
   '/block-home',
   requireAuth,
-  requireAny('BLOCK_HOME'),
+  requireOperation('BLOCK_HOME'),
   validateRequest(homeSchemas.homeBlockingSchema, 'body'),
   async (req, res, next) => {
     try {
       const id = req.body.id;
       const cause = req.body.causeOfRestriction;
 
-      await withTransaction(async (t) => {
-        // 1) Block the home
+      await withTransaction(async (transaction) => {
         const [affected] = await Home.update(
           {
             isRestricted: true,
@@ -937,60 +992,78 @@ router.patch(
           },
           {
             where: { id },
-            transaction: t,
-            individualHooks: true, // ensure per-row hooks/audit
+            transaction,
+            individualHooks: true,
           }
         );
         if (affected !== 1) {
-          throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
-        await syncRecipientsAfterHomeUpdate(id, { isRestricted: true }, t);
+        await syncRecipientsAfterHomeUpdate(
+          id,
+          { isRestricted: true },
+          transaction,
+        );
+        await refreshHomeSearch(
+          id,
+          transaction,
+        );
       });
 
-      res.status(200).send({ code: 'HOME.BLOCKED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_BLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
 );
 
 router.patch(
-  "/unblock-home",
+  '/unblock-home',
   requireAuth,
-  requireAny('UNBLOCK_HOME'),
+  requireOperation('UNBLOCK_HOME'),
   validateRequest(homeSchemas.homeIdSchema, 'body'),
   async (req, res, next) => {
     try {
       const id = req.body.id;
-      await withTransaction(async (t) => {
+      await withTransaction(async (transaction) => {
         const [affected] = await Home.update(
           {
             isRestricted: false,
             causeOfRestriction: null,
-            dateOfRestriction: null
+            dateOfRestriction: null,
           },
           {
             where: { id },
+            transaction,
             individualHooks: true,
           },
         );
         if (affected !== 1) {
-          throw new CustomError('ERRORS.HOME.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
-        await syncRecipientsAfterHomeUpdate(id, { isRestricted: false }, t);
+        await syncRecipientsAfterHomeUpdate(
+          id,
+          { isRestricted: false },
+          transaction,
+        );
+        await refreshHomeSearch(
+          id,
+          transaction,
+        );
       });
-      res.status(200).send({ code: 'HOME.UNBLOCKED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.NOT_UNBLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-router.get("/get-home-groups/",
+router.get(
+  '/get-home-groups/',
   requireAuth,
-  requireAny(
-    'ADD_NEW_RECIPIENT'),
+  requireOperation('ADD_NEW_RECIPIENT'),
   async (req, res, next) => {
     try {
       const homes = await Home.findAll({
@@ -1039,12 +1112,12 @@ router.get("/get-home-groups/",
         );
       }
 
-      console.log('HOMES', data);
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.HOME.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 export default router;

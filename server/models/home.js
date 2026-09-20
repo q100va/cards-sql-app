@@ -1,4 +1,3 @@
-// server/models/home.js
 import { DataTypes, Model } from 'sequelize';
 
 export default function HomeModel(sequelize) {
@@ -12,67 +11,77 @@ export default function HomeModel(sequelize) {
         primaryKey: true,
       },
       homeName: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
+
       officialName: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(500),
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
       noAddress: {
         type: DataTypes.BOOLEAN,
-        defaultValue: true
+        allowNull: false,
+        defaultValue: true,
       },
       specialHome: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       acceptableForSchool: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       comment: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       infoNote: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       dateOfStart: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
       },
       isRestricted: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       causeOfRestriction: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       dateOfRestriction: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        allowNull: true,
       },
-      isClose:{
+      isClose: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       dateOfClose: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        allowNull: true,
       },
-
     },
     {
       sequelize,
       modelName: 'home',
       tableName: 'homes',
       underscored: false,
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     }
   );
   return Home;

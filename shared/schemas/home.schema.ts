@@ -8,14 +8,13 @@ import {
   nonEmptyTrim,
   nonEmptyTrimMax,
   positiveInt,
+  positiveIntParam,
   nullableInt,
   nullableIsoDate,
   intOptArray,
   nonEmptyContacts,
   addressRefFullSchema,
   addressRefShortSchema,
-} from './common.schema.js';
-import {
   emailSchema,
   facebookSchema,
   instagramSchema,
@@ -25,8 +24,8 @@ import {
   telegramNicknameSchema,
   vKontakteSchema,
   websiteSchema,
+  contactType,
 } from './common.schema.js';
-import { contactType } from './common.schema.js';
 
 export const optionalContactsSchema = z
   .object({
@@ -219,18 +218,26 @@ export const draftContactsSchema = z
 /* ===================== DTOs ===================== */
 export const checkHomeNameSchema = z
   .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveIntParam.optional(),
     homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
   })
   .strict();
 
 export const homeIdSchema = z
-  .object({ id: z.coerce.number().int().positive() })
+  .object({
+    id: positiveInt,
+  })
+  .strict();
+
+export const homeIdParamSchema = z
+  .object({
+    id: positiveIntParam,
+  })
   .strict();
 
 export const homeBlockingSchema = z
   .object({
-    id: z.coerce.number().int().positive(),
+    id: positiveInt,
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
   })
   .strict();
@@ -252,7 +259,6 @@ export const homeDraftSchema = z
     homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     officialName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
     postalName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
-    // type: z.enum(['NURSING_HOME', 'SPECIAL_HOME', 'PSYCH_NEURO_HOME', 'HOSPICE', 'OTHER']),
     noAddress: z.boolean(),
     specialHome: z.boolean(),
     acceptableForSchool: z.boolean(),
@@ -330,6 +336,23 @@ export const homeDraftSchema = z
           code: 'custom',
           path: ['dateOfRestriction'],
           message: 'Required when isRestricted is true',
+        });
+      }
+    }
+    if (data.isClose) {
+      if (!data.dateOfClose) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['dateOfClose'],
+          message: 'Required when isClose is true',
+        });
+      }
+    } else {
+      if (data.dateOfClose !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['dateOfClose'],
+          message: 'Must be null when isClose is false',
         });
       }
     }
@@ -469,6 +492,24 @@ export const changingDataSchema = z
         });
       }
     }
+    if (m.isClose === true) {
+      if (m.dateOfClose === undefined || m.dateOfClose === null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['main', 'dateOfClose'],
+          message: 'Required when isClose is true',
+        });
+      }
+    }
+    if (m.isClose === false) {
+      if (m.dateOfClose !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['main', 'dateOfClose'],
+          message: 'Must be null when isClose is false',
+        });
+      }
+    }
   });
 
 /* ========= OutdatingData ========= */
@@ -520,6 +561,15 @@ export const updateHomeDataSchema = z
 /* ========= Home query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
+const homeSortField = z.enum([
+  'name',
+  'regionName',
+  'dateOfStart',
+  'comment',
+  'isRestricted',
+  'isClose',
+  'dateOfLastUpdate',
+]);
 
 export const homesQueryDTOSchema = z
   .object({
@@ -528,14 +578,27 @@ export const homesQueryDTOSchema = z
       number: z.number().int().min(0),
     }),
     sort: z
-      .array(z.object({ field: z.string().min(1), direction: sortDir }))
+      .array(
+        z.object({
+          field: homeSortField,
+          direction: sortDir,
+        }),
+      )
       .optional(),
     search: z
       .object({ value: z.string().min(1), exact: z.boolean().optional() })
       .optional(),
     view: z
       .object({
-        option: z.string().min(1).optional(),
+        option: z
+          .enum([
+            'all',
+            'only-active',
+            'only-blocked',
+            'only-closed',
+            'exclude-closed',
+          ])
+          .optional(),
         includeOutdated: z.boolean().optional(),
       })
       .optional(),
@@ -548,7 +611,10 @@ export const homesQueryDTOSchema = z
             acceptableForSchool: z.boolean().optional(),
             hasCoordination: z.boolean().optional(),
             partners: z.array(positiveInt).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            details: z
+              .array(z.enum(['comment']))
+              .min(1)
+              .optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -646,15 +712,6 @@ export const homeAddressItemSchema = z
   })
   .strict();
 
-/* export const postalAddressSchema = z
-  .object({
-    postalCode: nonEmptyString,
-    postalAddressPart: nonEmptyString.nullable(),
-    fullPostalAddress: nonEmptyString,
-    id: positiveInt,
-  })
-  .strict(); */
-
 export const homeSchema = z
   .object({
     id: positiveInt,
@@ -668,7 +725,6 @@ export const homeSchema = z
     causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: homeAddressItemSchema,
-    //postalAddress: postalAddressSchema,
     comment: nonEmptyString.nullable(),
     infoNote: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
@@ -703,15 +759,16 @@ export const regionWithHomesSchema = z.array(
 /* ===================== Types ===================== */
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
-export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
-export type HomeChangingData = z.infer<typeof changingDataSchema>;
-export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
+export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
+
 export type HomeCoordination = z.infer<typeof coordinationItemSchema>;
 export type HomeAddress = z.infer<typeof homeAddressItemSchema>;
-export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
-//export type PostalAddress = z.infer<typeof postalAddressSchema>;
-//export type HomeContacts = z.infer<typeof optionalContactsSchema>;
+export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
+
+export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;
-export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
+
+export type HomeChangingData = z.infer<typeof changingDataSchema>;
+export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;

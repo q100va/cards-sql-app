@@ -9,34 +9,29 @@ export default function HomeAddressModel(sequelize) {
       allowNull: false,
       primaryKey: true
     },
-    isRestricted:
-    {
+    isRestricted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      allowNull: false,
+      defaultValue: false,
     },
-    isRecoverable:
-    {
+    isRecoverable: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
     },
-    postalCode:
-    {
+    postalCode: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    postalAddressPart:
-    {
+    postalAddressPart: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    postalName:
-    {
+    postalName: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    fullPostalAddress:
-    {
+    fullPostalAddress: {
       type: DataTypes.STRING,
       allowNull: false,
     }
@@ -45,8 +40,7 @@ export default function HomeAddressModel(sequelize) {
       sequelize,
       modelName: 'home-address',
       tableName: 'home-addresses',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     });
 
   return HomeAddress;

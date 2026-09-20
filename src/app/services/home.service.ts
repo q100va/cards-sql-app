@@ -168,7 +168,7 @@ export class HomeService implements HomeMainService {
         general: ctrl.omitEmpty({
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
-          dateExitRange: ctrl.toIsoRange(p.filter.dateExitRange),
+          dateCloseRange: ctrl.toIsoRange(p.filter.dateExitRange),
           dateUpdateRange: ctrl.toIsoRange(p.filter.dateUpdateRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),
           details: p.filter.details.map((d) => d.value),

@@ -605,6 +605,7 @@
     "TABLE_TITLE": "Nursing Homes",
     "ADD_PARTNER": "Add home",
     "SEARCH_PLACEHOLDER": "KABANOVO",
+    "HAS_DEPENDENCIES": "The home cannot be deleted: {{count}} related resident(s) or coordination(s).",
     "VIEW_OPTIONS": {
       "ALL": "all homes",
       "ONLY_ACTIVE": "only active",
@@ -1242,6 +1243,9 @@
     "VOLUNTEER": {
       "HAS_DATA_DUPLICATES": "The volunteer data has duplicates",
       "HAS_DEPENDENCIES": "The volunteer cannot be deleted because related requests exist."
+    },
+    "HOME": {
+      "ALREADY_EXISTS": "A home with this name already exists."
     },
     "CONTACT": {
       "INVALID_FORMAT": "The contact value has an invalid format."

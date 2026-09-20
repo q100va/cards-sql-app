@@ -861,7 +861,7 @@ router.get(
       const count = await countVolunteerDependencies(id);
       const response = {
         data: count,
-        ...(count ? { code: 'VOLUNTEER.HAS_DEPENDENCIES' } : null),
+        ...(count ? { code: 'ERRORS.VOLUNTEER.HAS_DEPENDENCIES' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
