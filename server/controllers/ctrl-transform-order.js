@@ -160,8 +160,8 @@ export function transformOrderDisplayPart(order, lang = 'en') {
   };
 }
 
-export async function transformOrder(order, t) {
-  const displayPart = transformOrderDisplayPart(order);
+export async function transformOrder(order, t, lang = 'en') {
+  const displayPart = transformOrderDisplayPart(order, lang);
   const recipients = await transformOrderRecipientsPart(order, t);
 
   return {

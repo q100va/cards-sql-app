@@ -32,7 +32,7 @@ import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js"
 
 const router = Router();
 
-async function getOrderDetails(id, t = null) {
+async function getOrderDetails(id, t = null, lang = 'en') {
   const order = await Order.findByPk(id, {
     attributes: {
       exclude: ['updatedAt'],
@@ -45,7 +45,7 @@ async function getOrderDetails(id, t = null) {
     throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
   }
 
-  return transformOrder(order, t);
+  return transformOrder(order, t, lang);
 }
 
 router.get("/get-filters-data",
@@ -467,7 +467,11 @@ router.get(
   validateRequest(orderSchemas.orderIdParamsSchema, 'params'),
   async (req, res, next) => {
     try {
-      const order = await getOrderDetails(req.params.id);
+      const order = await getOrderDetails(
+        req.params.id,
+        null,
+        req.headers['x-lang'],
+      );
       res.status(200).send({ data: order });
     } catch (error) {
       error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
@@ -556,7 +560,11 @@ router.patch(
         );
       });
 
-      const order = await getOrderDetails(id);
+      const order = await getOrderDetails(
+        id,
+        null,
+        req.headers['x-lang'],
+      );
 
       res.status(200).send({ code: 'SUCCESS.UPDATED', data: order });
     } catch (error) {
