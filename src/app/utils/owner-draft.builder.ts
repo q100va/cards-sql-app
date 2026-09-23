@@ -125,7 +125,7 @@ const BUILD_EXTRAS: BuildExtrasMap = {
     firstName: normalize(get(form, 'firstName')),
     patronymic: normalize(get(form, 'patronymic')),
     lastName: normalize(get(form, 'lastName')),
-    affiliation: normalize(get(form, 'affiliation')),
+    affiliation: get(form, 'affiliation'),
     position: lightNormalize(get(form, 'position')),
     draftCoordinations: getIds(form, 'coordinations'),
     draftAddress: getAddress(address),

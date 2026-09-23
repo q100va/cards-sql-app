@@ -12,6 +12,7 @@ import {
 import CustomError from '../shared/customError.js';
 import { fullName } from './ctrl-create-owner-contacts-address.js';
 import { INSTITUTE_CATEGORIES } from '../../shared/dist/constants/volunteers.js';
+import { PARTNER_AFFILIATIONS } from '../../shared/dist/constants/partners.js';
 
 // ---------- helpers ----------
 function pad2(n) {
@@ -104,6 +105,17 @@ function pushInstituteCategoryTokens(tokens, categoryId) {
   tokens.push(toSearchToken(category.en), toSearchToken(category.ru));
 }
 
+function pushPartnerAffiliationTokens(tokens, affiliationId) {
+  const affiliation = PARTNER_AFFILIATIONS[affiliationId];
+
+  if (!affiliation) return;
+
+  tokens.push(
+    toSearchToken(affiliation.en),
+    toSearchToken(affiliation.ru),
+  );
+}
+
 // ---------- CONFIG per owner kind ----------
 const OWNER_CONFIG = {
   user: {
@@ -138,18 +150,22 @@ const OWNER_CONFIG = {
   },
 
   partner: {
-    basicTokens: (partner) => [
-      toSearchToken(partner?.firstName),
-      toSearchToken(partner?.patronymic),
-      toSearchToken(partner?.lastName),
-      toSearchToken(partner?.affiliation),
-      toSearchToken(partner?.position),
-      toSearchToken(partner?.comment),
-      partner?.isRestricted ? 'бывший former' : 'действующий active',
-      ...dateVariants(partner?.dateOfRestriction),
-      toSearchToken(partner?.causeOfRestriction),
-      ...dateVariants(partner?.dateOfStart),
-    ],
+    basicTokens: (partner) => {
+      const tokens = [
+        toSearchToken(partner?.firstName),
+        toSearchToken(partner?.patronymic),
+        toSearchToken(partner?.lastName),
+        toSearchToken(partner?.position),
+        toSearchToken(partner?.comment),
+        partner?.isRestricted ? 'бывший former' : 'действующий active',
+        ...dateVariants(partner?.dateOfRestriction),
+        toSearchToken(partner?.causeOfRestriction),
+        ...dateVariants(partner?.dateOfStart),
+      ];
+
+      pushPartnerAffiliationTokens(tokens, partner?.affiliation);
+      return tokens;
+    },
     contacts: (partner) => partner?.contacts ?? [],
     addresses: (partner) => partner?.addresses ?? [],
     firstNonRestrictedAddress: (partner) =>

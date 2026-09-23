@@ -26,6 +26,13 @@ import {
   websiteSchema,
   contactType,
 } from './common.schema.js';
+import { PARTNER_AFFILIATION } from '../constants/partners.js';
+
+const partnerAffiliationSchema = z.union([
+  z.literal(PARTNER_AFFILIATION.VOLUNTEER_COORDINATOR),
+  z.literal(PARTNER_AFFILIATION.HOME_REPRESENTATIVE),
+  z.literal(PARTNER_AFFILIATION.FOUNDATION_STAFF),
+]);
 
 export const optionalContactsSchema = z
   .object({
@@ -47,7 +54,8 @@ export const optionalContactsSchema = z
 const coordinationItemSchema = z.object({
   partnerContacts: optionalContactsSchema.optional(),
   partnerName: nonEmptyString.optional(),
-  partnerOccupation: nonEmptyString.optional(),
+  partnerAffiliation: partnerAffiliationSchema.optional(),
+  partnerPosition: nonEmptyString.nullable().optional(),
   homeName: nonEmptyString.optional(),
   regionName: nonEmptyString.optional(),
   partnerId: positiveInt,

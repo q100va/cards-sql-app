@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, positiveIntParam, nullableInt, nullableIsoDate, intOptArray, nonEmptyContacts, addressRefFullSchema, addressRefShortSchema, emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, contactType, } from './common.schema.js';
+import { PARTNER_AFFILIATION } from '../constants/partners.js';
+const partnerAffiliationSchema = z.union([
+    z.literal(PARTNER_AFFILIATION.VOLUNTEER_COORDINATOR),
+    z.literal(PARTNER_AFFILIATION.HOME_REPRESENTATIVE),
+    z.literal(PARTNER_AFFILIATION.FOUNDATION_STAFF),
+]);
 export const optionalContactsSchema = z
     .object({
     email: nonEmptyContacts.optional(),
@@ -19,7 +25,8 @@ export const optionalContactsSchema = z
 const coordinationItemSchema = z.object({
     partnerContacts: optionalContactsSchema.optional(),
     partnerName: nonEmptyString.optional(),
-    partnerOccupation: nonEmptyString.optional(),
+    partnerAffiliation: partnerAffiliationSchema.optional(),
+    partnerPosition: nonEmptyString.nullable().optional(),
     homeName: nonEmptyString.optional(),
     regionName: nonEmptyString.optional(),
     partnerId: positiveInt,

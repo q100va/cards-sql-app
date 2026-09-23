@@ -68,8 +68,8 @@
         <mat-form-field>
           <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
           <mat-select formControlName="affiliations" multiple>
-            @for (aff of affiliations; track $index) {
-            <mat-option [value]="translate.instant(aff)">{{aff | translate}}</mat-option>
+            @for (affiliation of affiliations; track affiliation.id) {
+            <mat-option [value]="affiliation.id">{{affiliation.optionKey | translate}}</mat-option>
             }
           </mat-select>
         </mat-form-field>

@@ -1,24 +1,51 @@
-import { Router } from "express";
+import { Router } from 'express';
 import { Op, Sequelize } from 'sequelize';
 import {
-  Country, Region, District, Locality, Home,
-  PartnerAddress, Partner, PartnerContact, PartnerSearch, PartnerOutdatedName, HomeCoordination,
-  HomeAddress
-} from "../models/index.js";
-import requireAuth from "../middlewares/check-auth.js";
+  Country,
+  District,
+  Home,
+  HomeAddress,
+  HomeCoordination,
+  Locality,
+  Partner,
+  PartnerAddress,
+  PartnerContact,
+  PartnerOutdatedName,
+  PartnerSearch,
+  Region,
+} from '../models/index.js';
+import requireAuth from '../middlewares/check-auth.js';
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
-import { validateRequest } from "../middlewares/validate-request.js";
-import CustomError from "../shared/customError.js";
-import * as partnerSchemas from "../../shared/dist/schemas/partner.schema.js";
-import { withTransaction } from "../controllers/with-transaction.js";
-import { collectFlatContacts, findDuplicateContacts, fullName, saveOwnerContactsAndAddress } from "../controllers/ctrl-create-owner-contacts-address.js";
-import { createSearchStringFor, createOutdatedSearchStringFor } from "../controllers/ctrl-search-string.js";
-import { betweenDatesInclusive, buildAddressOwnerIdSubquery, buildContactOwnerIdSubquery, buildOrderFor, buildSearchContentWhere } from "../controllers/ctrl-owner-query-builders.js";
-import { transformOwnerData } from "../controllers/ctrl-transform-owner.js";
-import { applyOwnerUpdates, updateCoordinationByPartner } from "../controllers/ctrl-apply-owner-updates.js";
+import { validateRequest } from '../middlewares/validate-request.js';
+import CustomError from '../shared/customError.js';
+import * as partnerSchemas from '../../shared/dist/schemas/partner.schema.js';
+import { withTransaction } from '../controllers/with-transaction.js';
+import {
+  collectFlatContacts,
+  findDuplicateContacts,
+  fullName,
+  saveOwnerContactsAndAddress,
+} from '../controllers/ctrl-create-owner-contacts-address.js';
+import {
+  createSearchStringFor,
+  createOutdatedSearchStringFor,
+} from '../controllers/ctrl-search-string.js';
+import {
+  betweenDatesInclusive,
+  buildAddressOwnerIdSubquery,
+  buildContactOwnerIdSubquery,
+  buildOrderFor,
+  buildSearchContentWhere,
+} from '../controllers/ctrl-owner-query-builders.js';
+import { transformOwnerData } from '../controllers/ctrl-transform-owner.js';
+import {
+  applyOwnerUpdates,
+  updateCoordinationByPartner,
+} from '../controllers/ctrl-apply-owner-updates.js';
 
 const router = Router();
-const includes = [
+
+const PARTNER_DETAILS_INCLUDE = [
   {
     model: PartnerContact,
     as: 'contacts',
@@ -33,26 +60,19 @@ const includes = [
       { model: Region, attributes: ['id', 'shortName', 'name'] },
       { model: District, attributes: ['id', 'shortName', 'name'] },
       { model: Locality, attributes: ['id', 'shortName', 'name'] },
-    ]
+    ],
   },
   {
     model: HomeCoordination,
     as: 'coordinations',
-    attributes: ['id', 'homeId', 'partnerId', 'isRecoverable', 'isRestricted'],
+    attributes: [
+      'id',
+      'homeId',
+      'partnerId',
+      'isRecoverable',
+      'isRestricted',
+    ],
     include: [
-      /*       {
-              model: Partner,
-              as: 'partner',
-              attributes: ['firstName', 'patronymic', 'lastName'],
-              include: [
-                {
-                  model: PartnerContact,
-                  as: 'contacts',
-                  where: { isRestricted: false },
-                  attributes: ['content', 'isRestricted'],
-                },
-              ]
-            }, */
       {
         model: Home,
         as: 'home',
@@ -63,48 +83,73 @@ const includes = [
             as: 'addresses',
             attributes: ['id'],
             where: { isRestricted: false },
+            required: false,
             include: [
               {
                 model: Region,
-                attributes: ['shortName']
-              }
-            ]
-          }
-        ]
-      }
-    ]
+                attributes: ['shortName'],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     model: PartnerOutdatedName,
     as: 'outdatedNames',
-    attributes: ['id', 'firstName', 'patronymic', 'lastName']
+    attributes: ['id', 'firstName', 'patronymic', 'lastName'],
   },
 ];
 
+async function refreshPartnerSearch(partnerId, transaction) {
+  const partner = await Partner.findByPk(partnerId, {
+    attributes: {
+      exclude: ['createdAt', 'updatedAt'],
+    },
+    include: PARTNER_DETAILS_INCLUDE,
+    transaction,
+  });
 
+  if (!partner) return;
 
-// API create partner
+  const content = createSearchStringFor('partner', partner);
+
+  await PartnerSearch.update(
+    { content },
+    {
+      where: {
+        partnerId,
+        isRestricted: false,
+      },
+      individualHooks: true,
+      transaction,
+    },
+  );
+}
 
 router.post(
-  "/check-partner-data",
+  '/check-partner-data',
   requireAuth,
   requireAny('ADD_NEW_PARTNER', 'EDIT_PARTNER'),
-  validateRequest(partnerSchemas.checkPartnerDataSchema, "body"),
+  validateRequest(partnerSchemas.checkPartnerDataSchema, 'body'),
   async (req, res, next) => {
     try {
-      let partner = req.body;
+      const partner = req.body;
       const excludeSelf = partner.id ? { id: { [Op.ne]: partner.id } } : {};
 
-      const nameRows = partner.lastName ? await Partner.findAll({
-        where: {
-          ...excludeSelf,
-          firstName: { [Op.iLike]: partner.firstName },
-          lastName: { [Op.iLike]: partner.lastName },
-        },
-        attributes: ['firstName', 'patronymic', 'lastName'],
-        raw: true
-      }) : [];
-      const duplicatesName = nameRows.map(row => fullName(row));
+      const nameRows = partner.lastName
+        ? await Partner.findAll({
+          where: {
+            ...excludeSelf,
+            firstName: { [Op.iLike]: partner.firstName },
+            lastName: { [Op.iLike]: partner.lastName },
+          },
+          attributes: ['firstName', 'patronymic', 'lastName'],
+          raw: true,
+        })
+        : [];
+      const duplicatesName = nameRows.map((row) => fullName(row));
 
       const flat = collectFlatContacts(partner.contacts);
       const duplicatesContact = await findDuplicateContacts({
@@ -115,15 +160,16 @@ router.post(
       });
 
       let response = { data: { duplicatesName, duplicatesContact } };
-      if (duplicatesName.length > 0 || duplicatesContact.length > 0) response.code = 'PARTNER.HAS_DATA_DUPLICATES';
-      res
-        .status(200)
-        .send(response);
+      if (duplicatesName.length > 0 || duplicatesContact.length > 0) {
+        response.code = 'ERRORS.PARTNER.HAS_DATA_DUPLICATES';
+      }
+      res.status(200).send(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.DUPLICATES_NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.post(
   '/create-partner',
@@ -134,10 +180,7 @@ router.post(
     try {
       const creatingPartner = req.body;
 
-      //console.log('creatingPartner', creatingPartner)
-
-      const result = await withTransaction(async (t) => {
-
+      const result = await withTransaction(async (transaction) => {
         const partner = await Partner.create(
           {
             firstName: creatingPartner.firstName,
@@ -150,32 +193,31 @@ router.post(
             causeOfRestriction: creatingPartner.causeOfRestriction,
             dateOfRestriction: creatingPartner.dateOfRestriction,
           },
-          { transaction: t }
+          { transaction },
         );
 
         await saveOwnerContactsAndAddress(
           'partner',
           partner,
-          creatingPartner, // { draftContacts, draftAddress }
+          creatingPartner,
           { PartnerContact, PartnerAddress },
-          t
+          transaction,
         );
 
         if (creatingPartner.draftCoordinations.length) {
           const coordinationRows = creatingPartner.draftCoordinations.map(
-            id => ({
+            (id) => ({
               partnerId: partner.id,
               homeId: id,
               isRestricted: creatingPartner.isRestricted,
               isRecoverable: !creatingPartner.isRestricted,
-            })
-          )
+            }),
+          );
           await HomeCoordination.bulkCreate(coordinationRows, {
             validate: true,
             individualHooks: true,
-            transaction: t,
+            transaction,
           });
-
         }
 
         const freshPartner = await Partner.findOne({
@@ -185,22 +227,25 @@ router.post(
               'createdAt',
               'updatedAt']
           },
-          include: includes,
-          transaction: t,
+          include: PARTNER_DETAILS_INCLUDE,
+          transaction,
         });
 
         const searchString = createSearchStringFor('partner', freshPartner);
-        await PartnerSearch.create({ partnerId: partner.id, content: searchString }, { transaction: t });
+        await PartnerSearch.create(
+          { partnerId: partner.id, content: searchString },
+          { transaction },
+        );
 
         return fullName(partner);
       });
 
-      res.status(201).send({ code: 'PARTNER.CREATED', data: result });
+      res.status(201).send({ code: 'SUCCESS.CREATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
-  }
+  },
 );
 
 router.post(
@@ -209,75 +254,92 @@ router.post(
   requireOperation('EDIT_PARTNER'),
   validateRequest(partnerSchemas.updatePartnerDataSchema, 'body'),
   async (req, res, next) => {
-    const { id, changingData, restoringData, outdatingData, deletingData } = req.body;
+    const {
+      id,
+      changingData,
+      restoringData,
+      outdatingData,
+      deletingData,
+    } = req.body;
 
     try {
-      const result = await withTransaction(async (t) => {
-        const partner = await Partner.findByPk(id, { transaction: t });
-        if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
-        // CHANGES
-        // main
+      const result = await withTransaction(async (transaction) => {
+        const partner = await Partner.findByPk(id, { transaction });
+        if (!partner) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+
         if (changingData?.main) {
-          console.log('changes?.main', changingData?.main);
           const payload = changingData.main;
           if (Object.keys(payload).length > 0) {
-            await Partner.update(
-              payload,
-              {
-                where: { id },
-                transaction: t,
-                individualHooks: true
-              });
+            await Partner.update(payload, {
+              where: { id },
+              transaction,
+              individualHooks: true,
+            });
           }
         }
 
-        //addresses, contacts, coordinations, outdated
         await applyOwnerUpdates(
           'partner',
           id,
           { changingData, restoringData, outdatingData, deletingData },
-          t
+          transaction,
         );
 
-        if (changingData.main?.isRestricted === true || changingData.main?.isRestricted === false)
-          await updateCoordinationByPartner(changingData.main.isRestricted, id, t);
+        if (typeof changingData?.main?.isRestricted === 'boolean') {
+          await updateCoordinationByPartner(
+            changingData.main.isRestricted,
+            id,
+            transaction,
+          );
+        }
 
-        // UPDATED PARTNER
         const fresh = await Partner.findOne({
           where: { id },
           attributes: { exclude: ['createdAt', 'updatedAt'] },
-          include: includes,
-          transaction: t,
+          include: PARTNER_DETAILS_INCLUDE,
+          transaction,
         });
 
-        // SEARCH
         const search = createSearchStringFor('partner', fresh);
         await PartnerSearch.update(
           { content: search },
-          { where: { partnerId: id, isRestricted: false }, individualHooks: true, transaction: t }
+          {
+            where: { partnerId: id, isRestricted: false },
+            individualHooks: true,
+            transaction,
+          },
         );
         const outdatedSearch = createOutdatedSearchStringFor('partner', fresh);
         if (outdatedSearch) {
           const [row, created] = await PartnerSearch.findOrCreate({
             where: { partnerId: id, isRestricted: true },
             defaults: { content: outdatedSearch },
-            transaction: t
+            transaction,
           });
-          if (!created) await row.update({ content: outdatedSearch }, { individualHooks: true, transaction: t });
+          if (!created) {
+            await row.update(
+              { content: outdatedSearch },
+              { individualHooks: true, transaction },
+            );
+          }
+        } else {
+          await PartnerSearch.destroy({
+            where: {
+              partnerId: id,
+              isRestricted: true,
+            },
+            transaction,
+          });
         }
         return transformOwnerData('partner', fresh.toJSON());
       });
-      console.log('PARTNER');
-      console.dir(result, { depth: null });
-      res.status(200).send({ code: 'PARTNER.UPDATED', data: result });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_UPDATED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   }
 );
-
-// API get partners
 
 router.post(
   '/get-partners',
@@ -292,35 +354,31 @@ router.post(
         search,
         view,
         filters,
-      } = req.body; // already validated by Zod
+      } = req.body;
 
-      const includeOutdated = !!view?.includeOutdated; // false => only actual
+      const includeOutdated = !!view?.includeOutdated;
       const order = buildOrderFor('partner', sort);
 
-      // ---- base where (Partner) ----
+      // Base filters
       const wherePartner = {};
       const whereAddress = !includeOutdated ? { isRestricted: false } : {};
       const whereContact = !includeOutdated ? { isRestricted: false } : {};
-      //const whereHomeAddress = { isRestricted: false };
       const whereCoordination = !includeOutdated ? { isRestricted: false } : {};
 
 
-      // view option
+      // View option
       switch (view?.option) {
-        case 'only-active': wherePartner.isRestricted = false; break;
-        case 'only-blocked': wherePartner.isRestricted = true; break;
-        default: break;
+        case 'only-active':
+          wherePartner.isRestricted = false;
+          break;
+        case 'only-blocked':
+          wherePartner.isRestricted = true;
+          break;
+        default:
+          break;
       }
 
-      /*       const options = view?.option ?? [];
-            if (options.includes('all')) { }
-            if (options.includes('active') && options.length == 1) { wherePartner.isRestricted = false; }
-            if (options.includes('blocked') && options.length == 1) { wherePartner.isRestricted = true; }
-       */
-
-      console.log('filters?.general?.affiliations', filters?.general?.affiliations);
-
-      // general filters
+      // General filters
       if (filters?.general?.affiliations?.length) {
         wherePartner.affiliation = { [Op.in]: filters.general.affiliations };
       }
@@ -332,10 +390,11 @@ router.post(
         wherePartner.dateOfRestriction = betweenDatesInclusive(filters.general.dateRestrictionRange);
       }
 
-      // coordination filter
-
+      // Coordination filters
       const buildHomeLiteral = (homeList, includeOutdated) => {
-        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+        const restrictedClause = includeOutdated
+          ? ''
+          : 'AND c."isRestricted" = false';
 
         return Sequelize.literal(`
           EXISTS (
@@ -350,7 +409,9 @@ router.post(
 
       const buildCoordinationLiteral = (has, includeOutdated) => {
         const existsKeyword = has ? 'EXISTS' : 'NOT EXISTS';
-        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+        const restrictedClause = includeOutdated
+          ? ''
+          : 'AND c."isRestricted" = false';
 
         return Sequelize.literal(`
           ${existsKeyword} (
@@ -363,7 +424,9 @@ router.post(
       };
 
       const buildHomeRegionLiteral = (regionList, includeOutdated) => {
-        const restrictedClause = includeOutdated ? '' : 'AND c."isRestricted" = false';
+        const restrictedClause = includeOutdated
+          ? ''
+          : 'AND c."isRestricted" = false';
 
         return Sequelize.literal(`
           EXISTS (
@@ -379,9 +442,9 @@ router.post(
         `);
       };
 
-      // details && hasCoordination filter
       const hasCoordinationValue = filters?.general?.hasCoordination;
-      const coordinationCondition = hasCoordinationValue !== undefined && hasCoordinationValue !== null;
+      const coordinationCondition =
+        hasCoordinationValue !== undefined && hasCoordinationValue !== null;
 
       const hasCoordination = coordinationCondition
         ? buildCoordinationLiteral(!!hasCoordinationValue, !!includeOutdated)
@@ -394,16 +457,15 @@ router.post(
         const op = strict ? Op.and : Op.or;
 
         wherePartner[op] = [
-          ...details.map(detail => ({ [detail]: { [Op.not]: null } })),
+          ...details.map((detail) => ({ [detail]: { [Op.not]: null } })),
           ...(hasCoordination ? [hasCoordination] : []),
         ];
       } else if (hasCoordination) {
         wherePartner[Op.and] = [hasCoordination];
       }
 
-      // homeRegions filter
       const homeRegions = filters?.general?.homeRegions || [];
-      const homeAddressRequired = (homeRegions.length ?? 0) > 0;
+      const homeAddressRequired = homeRegions.length > 0;
       if (homeAddressRequired) {
         const regionList = homeRegions.map(Number).join(',');
 
@@ -413,10 +475,9 @@ router.post(
         ];
       }
 
-      // homes filter
       const homes = filters?.general?.homes || [];
-      const homeRequired = (homes.length ?? 0) > 0;
-      if (homeRequired && (homeRegions.length ?? 0) <= 1) {
+      const homeRequired = homes.length > 0;
+      if (homeRequired && homeRegions.length <= 1) {
         const homeList = homes.map(Number).join(',');
 
         wherePartner[Op.and] = [
@@ -425,44 +486,56 @@ router.post(
         ];
       }
 
-
-
       const coordinationRequired =
-        homeRequired ? true : (
-          homeAddressRequired ? true : (
-            coordinationCondition ? (!!hasCoordinationValue && !!filters?.mode?.strictDetail) :
-              false
-          )
+        homeRequired ||
+        homeAddressRequired ||
+        (
+          coordinationCondition &&
+          !!hasCoordinationValue &&
+          !!filters?.mode?.strictDetail
         );
 
-      // contact types filter (weak/strong)
+      // Contact filters
       const contactTypes = filters?.general?.contactTypes ?? [];
       const contRequired = contactTypes.length > 0;
       if (contRequired) {
-        const sub = buildContactOwnerIdSubquery('partner', contactTypes, includeOutdated ? true : false, !!filters?.mode?.strictContact);
+        const sub = buildContactOwnerIdSubquery(
+          'partner',
+          contactTypes,
+          includeOutdated,
+          !!filters?.mode?.strictContact,
+        );
 
         if (sub) whereContact.partnerId = { [Op.in]: sub };
       }
 
-      // address filter (weak/strong)
+      // Address filters
       const addresses = filters?.address || {};
-      const addrRequired = (addresses.countries?.length ?? 0) > 0;
+      const addrRequired = [
+        addresses.countries,
+        addresses.regions,
+        addresses.districts,
+        addresses.localities,
+      ].some((items) => (items?.length ?? 0) > 0);
       if (addrRequired) {
-        const sub = await buildAddressOwnerIdSubquery('partner', addresses, includeOutdated ? true : false, !!filters?.mode?.strictAddress);
+        const sub = await buildAddressOwnerIdSubquery(
+          'partner',
+          addresses,
+          includeOutdated,
+          !!filters?.mode?.strictAddress,
+        );
 
         if (sub) whereAddress.partnerId = { [Op.in]: sub };
       }
 
-
-
-      // ---- includes (contacts / addresses / coordinations / outdated names / search) ----
+      // Related data
       const includes = [
         {
           model: PartnerContact,
           as: 'contacts',
           required: contRequired,
           attributes: ['id', 'type', 'content', 'isRestricted'],
-          where: whereContact
+          where: whereContact,
         },
         {
           model: PartnerAddress,
@@ -475,19 +548,24 @@ router.post(
             { model: Region, attributes: ['id', 'shortName'] },
             { model: District, attributes: ['id', 'shortName'] },
             { model: Locality, attributes: ['id', 'shortName'] },
-          ]
+          ],
         },
         {
           model: PartnerOutdatedName,
           as: 'outdatedNames',
           attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-          // separate: true,
         },
 
         {
           model: HomeCoordination,
           as: 'coordinations',
-          attributes: ['id', 'homeId', 'partnerId', 'isRecoverable', 'isRestricted'],
+          attributes: [
+            'id',
+            'homeId',
+            'partnerId',
+            'isRecoverable',
+            'isRestricted',
+          ],
           required: coordinationRequired,
           where: whereCoordination,
           include: [
@@ -495,29 +573,27 @@ router.post(
               model: Home,
               as: 'home',
               attributes: ['homeName', 'isClose', 'isRestricted'],
-              // where: whereHome,
-              // required: homesRequired,
               include: [
                 {
                   model: HomeAddress,
                   as: 'addresses',
                   attributes: ['id'],
-                  where: { isRestricted: false },//whereHomeAddress,
-                  required: false, //homeAddressRequired,
+                  where: { isRestricted: false },
+                  required: false,
                   include: [
                     {
                       model: Region,
-                      attributes: ['shortName']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
+                      attributes: ['shortName'],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         },
       ];
 
-      // search by PartnerSearch.content (words; exact → AND; else OR)
+      /// Search by PartnerSearch content: exact requires all words, otherwise any word
       if (search?.value?.trim()) {
         const contentWhere = buildSearchContentWhere(search.value, search.exact);
         includes.push({
@@ -527,27 +603,18 @@ router.post(
           where: {
             ...(includeOutdated ? {} : { isRestricted: false }),
             ...(contentWhere || {}),
-          }
+          },
         });
       }
-      //  console.log('INCLUDES', includes);
-      //  console.log(JSON.stringify(includes, null, 2));
 
-
-
-      // ---- count (distinct) ----
+      // Total count
       const total = await Partner.count({
         where: wherePartner,
         include: includes,
         distinct: true,
       });
 
-      // console.log('wherePartner', wherePartner);
-      // console.log('ORDER', order);
-      /*  console.log('includes', includes);
-       console.log('wherePartner', wherePartner); */
-
-      // ---- page ----
+      // Paginated result
       const partners = await Partner.findAll({
         where: wherePartner,
         attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -555,165 +622,191 @@ router.post(
         include: includes,
         offset: pageSize * pageNumber,
         limit: pageSize,
-        //subQuery: false, // avoid subquery limits in includes
         distinct: true,
       });
-      console.log('PARTNERS', partners);
-      console.log(JSON.stringify(partners, null, 2));
-      const items = partners.map(p => transformOwnerData('partner', p.toJSON()));
+      const items = partners.map((partner) =>
+        transformOwnerData('partner', partner.toJSON()),
+      );
       res.status(200).send({ data: { list: items, length: total } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  }
+  },
 );
 
-router.get("/get-partner-by-id/:id",
+router.get(
+  '/get-partner-by-id/:id',
   requireAuth,
   requireAny('VIEW_PARTNER', 'EDIT_PARTNER'),
-  validateRequest(partnerSchemas.partnerIdSchema, 'params'),
+  validateRequest(partnerSchemas.partnerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const partner = await Partner.findByPk(id, {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: includes,
+        include: PARTNER_DETAILS_INCLUDE,
       });
-      if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+      if (!partner) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
       const data = transformOwnerData('partner', partner.toJSON());
-      console.log('PARTNER', data);
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_FOUND';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-router.get("/get-list-of-active-partners",
+router.get(
+  '/get-list-of-active-partners',
   requireAuth,
-  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME', 'VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST'),
+  requireAny(
+    'VIEW_HOME',
+    'EDIT_HOME',
+    'ADD_NEW_HOME',
+    'VIEW_LIMITED_HOMES_LIST',
+    'VIEW_FULL_HOMES_LIST',
+  ),
   async (req, res, next) => {
     try {
       const partners = await Partner.findAll({
         attributes: { exclude: ['createdAt', 'updatedAt'] },
         where: { isRestricted: false },
-        order: [['firstName', 'ASC']]
+        order: [['firstName', 'ASC']],
       });
 
-      const data = partners.map(p => ({ id: p.id, name: fullName(p) }));
-      //  console.log('PARTNERS', data);
+      const data = partners.map((partner) => ({
+        id: partner.id,
+        name: fullName(partner),
+      }));
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  });
+  },
+);
 
-router.get("/get-list-of-partners",
+router.get(
+  '/get-list-of-partners',
   requireAuth,
-  requireAny('VIEW_HOME', 'EDIT_HOME', 'ADD_HOME', 'VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST'),
+  requireAny(
+    'VIEW_HOME',
+    'EDIT_HOME',
+    'ADD_NEW_HOME',
+    'VIEW_LIMITED_HOMES_LIST',
+    'VIEW_FULL_HOMES_LIST',
+  ),
   async (req, res, next) => {
     try {
       const partners = await Partner.findAll({
         attributes: { exclude: ['createdAt', 'updatedAt'] },
-        //where: { isRestricted: false },
-        order: [['firstName', 'ASC']]
+        order: [['firstName', 'ASC']],
       });
 
-      const data = partners.map(p => ({ id: p.id, name: fullName(p), isRestricted: p.isRestricted }));
-      //  console.log('PARTNERS', data);
+      const data = partners.map((partner) => ({
+        id: partner.id,
+        name: fullName(partner),
+        isRestricted: partner.isRestricted,
+      }));
       res.status(200).send({ data });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
+  },
+);
+
+function countPartnerDependencies(partnerId, transaction) {
+  return HomeCoordination.count({
+    where: { partnerId },
+    transaction,
   });
+}
 
 router.get(
-  "/check-partner-before-delete/:id",
+  '/check-partner-before-delete/:id',
   requireAuth,
   requireOperation('DELETE_PARTNER'),
-  validateRequest(partnerSchemas.partnerIdSchema, 'params'),
+  validateRequest(partnerSchemas.partnerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const partner = await Partner.findByPk(id);
-      if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+      if (!partner) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-      //TODO: find does this partner has houses
-      const [countHouses] = await Promise.all([
-        HomeCoordination.count({
-          where: { partnerId: id }
-        }),
-      ]);
-      const count = (countHouses ?? 0);
+      const count = await countPartnerDependencies(id);
       const response = {
         data: count,
-        ...(count ? { code: 'PARTNER.HAS_DEPENDENCIES' } : null),
+        ...(count ? { code: 'ERRORS.PARTNER.HAS_DEPENDENCIES' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.delete(
-  "/delete-partner/:id",
+  '/delete-partner/:id',
   requireAuth,
   requireOperation('DELETE_PARTNER'),
-  validateRequest(partnerSchemas.partnerIdSchema, 'params'),
+  validateRequest(partnerSchemas.partnerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
 
-      await withTransaction(async (t) => {
-        // 1) Ensure the partner exists
-        const partner = await Partner.findByPk(id, { transaction: t });
-        if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+      await withTransaction(async (transaction) => {
+        const partner = await Partner.findByPk(id, { transaction });
+        if (!partner) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-        // 2) Delete the partner (DB will cascade child tables)
+        const dependenciesCount = await countPartnerDependencies(
+          id,
+          transaction,
+        );
+        if (dependenciesCount > 0) {
+          throw new CustomError('ERRORS.PARTNER.HAS_DEPENDENCIES', 409);
+        }
+
         const destroyed = await Partner.destroy({
           where: { id },
-          transaction: t,
-          individualHooks: true, // will run partner-level hooks; children won't fire via DB cascade
+          transaction,
+          individualHooks: true,
         });
-        if (destroyed !== 1) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+        if (destroyed !== 1) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
       });
-      res.status(200).send({ code: 'PARTNER.DELETED', data: null });
+      res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_DELETED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
-  });
+  },
+);
 
 router.get(
-  "/check-partner-before-block/:id",
+  '/check-partner-before-block/:id',
   requireAuth,
   requireOperation('BLOCK_PARTNER'),
-  validateRequest(partnerSchemas.partnerIdSchema, 'params'),
+  validateRequest(partnerSchemas.partnerIdParamSchema, 'params'),
   async (req, res, next) => {
     try {
       const id = req.params.id;
       const partner = await Partner.findByPk(id);
-      if (!partner) throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+      if (!partner) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
-      //TODO: find does this partner has actual houses -we blocked coordinations after blocking partner
-      /*       const [countHouses] = await Promise.all([
-              HomeCoordination.count({
-                where: { partnerId: id, isRestricted: false }
-              }),
-            ]);
-            const count = (countHouses ?? 0); */
-      const count = 0;
+      const count = await HomeCoordination.count({
+        where: { partnerId: id, isRestricted: false },
+      });
       const response = {
         data: count,
-        ...(count ? { code: 'PARTNER.HAS_DEPENDENCIES' } : null),
+        ...(count ? { code: 'ERRORS.PARTNER.HAS_DEPENDENCIES' } : null),
       };
       return res.status(200).json(response);
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_CHECKED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   });
@@ -721,15 +814,14 @@ router.get(
 router.patch(
   '/block-partner',
   requireAuth,
-  requireAny('BLOCK_PARTNER'),
+  requireOperation('BLOCK_PARTNER'),
   validateRequest(partnerSchemas.partnerBlockingSchema, 'body'),
   async (req, res, next) => {
     try {
       const id = req.body.id;
       const cause = req.body.causeOfRestriction;
 
-      await withTransaction(async (t) => {
-        // 1) Block the partner
+      await withTransaction(async (transaction) => {
         const [affected] = await Partner.update(
           {
             isRestricted: true,
@@ -738,53 +830,58 @@ router.patch(
           },
           {
             where: { id },
-            transaction: t,
-            individualHooks: true, // ensure per-row hooks/audit
-          }
-        );
-        if (affected !== 1) {
-          throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
-        }
-        await updateCoordinationByPartner(true, id, t);
-      });
-
-      res.status(200).send({ code: 'PARTNER.BLOCKED', data: null });
-    } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_BLOCKED';
-      next(error);
-    }
-  }
-);
-
-router.patch(
-  "/unblock-partner",
-  requireAuth,
-  requireAny('UNBLOCK_PARTNER'),
-  validateRequest(partnerSchemas.partnerIdSchema, 'body'),
-  async (req, res, next) => {
-    try {
-      let id = req.body.id;
-      await withTransaction(async (t) => {
-        const [affected] = await Partner.update(
-          {
-            isRestricted: false,
-            causeOfRestriction: null,
-            dateOfRestriction: null
-          },
-          {
-            where: { id },
+            transaction,
             individualHooks: true,
           },
         );
         if (affected !== 1) {
-          throw new CustomError('ERRORS.PARTNER.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
-        await updateCoordinationByPartner(false, id, t);
+        await updateCoordinationByPartner(true, id, transaction);
+        await refreshPartnerSearch(id, transaction);
       });
-      res.status(200).send({ code: 'PARTNER.UNBLOCKED', data: null });
+
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.PARTNER.NOT_UNBLOCKED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
-  });
+  },
+);
+
+router.patch(
+  '/unblock-partner',
+  requireAuth,
+  requireOperation('UNBLOCK_PARTNER'),
+  validateRequest(partnerSchemas.partnerIdSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const id = req.body.id;
+      await withTransaction(async (transaction) => {
+        const [affected] = await Partner.update(
+          {
+            isRestricted: false,
+            causeOfRestriction: null,
+            dateOfRestriction: null,
+          },
+          {
+            where: { id },
+            transaction,
+            individualHooks: true,
+          },
+        );
+        if (affected !== 1) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
+        await updateCoordinationByPartner(false, id, transaction);
+        await refreshPartnerSearch(id, transaction);
+      });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
+    } catch (error) {
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
+      next(error);
+    }
+  },
+);
+
 export default router;

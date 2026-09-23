@@ -22,6 +22,7 @@ import type {
 } from '../../../shared/schemas/home.schema';
 
 import type { SeniorAddress } from '../../../shared/schemas/senior.schema';
+import type { PartnerAffiliationId } from '../../../shared/constants/partners';
 
 import type {
   Contact,
@@ -168,7 +169,7 @@ export type UserChangingMain = PersonChangingMain & {
 export type UserChangingData = AdvancedChangingData<UserChangingMain>;
 
 export type PartnerChangingMain = PersonChangingMain & {
-  affiliation?: string; // enum ?
+  affiliation?: PartnerAffiliationId;
   position?: string | null;
 };
 export type PartnerChangingData = AdvancedChangingData<PartnerChangingMain> & {
@@ -320,7 +321,7 @@ export type UserDraft = PersonDraft & {
 export type PartnerDraft = PersonDraft & {
   draftAddress: DraftAddress;
   draftContacts: Record<NonTelegram, string[]>;
-  affiliation: string;
+  affiliation: PartnerAffiliationId;
   position: string | null;
   draftCoordinations: number[];
 };
@@ -429,7 +430,7 @@ export type User = Person & {
   outdatedData: UserOutdatedData;
 };
 export type Partner = Person & {
-  affiliation: string;
+  affiliation: PartnerAffiliationId;
   position: string | null;
   outdatedData: PartnerOutdatedData;
   coordinations: HomeCoordination[];
@@ -684,10 +685,3 @@ export interface OwnerMainService<
   deleteOwner(id: number): Observable<ApiResponse<null>>;
   getOwnerName(owner: TOwner): string;
 }
-
-export const affiliations = [
-    'PARTNER.AFF.VOLUNTEER_COORDINATOR',
-    'PARTNER.AFF.HOME_REPRESENTATIVE',
-    'PARTNER.AFF.FOUNDATION_STAFF',
-  ];
-

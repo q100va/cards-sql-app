@@ -52,12 +52,9 @@ import {
 } from '../../interfaces/base-list';
 
 import { AddressFilterComponent } from '../address-filter/address-filter.component';
-import {
-  affiliations,
-  ContactType,
-  RelationPick,
-} from '../../interfaces/advanced-model';
+import { ContactType, RelationPick } from '../../interfaces/advanced-model';
 import { INSTITUTE_CATEGORY_OPTIONS } from '../../../../shared/constants/volunteers';
+import { PARTNER_AFFILIATION_OPTIONS } from '../../../../shared/constants/partners';
 import { HomeService } from '../../services/home.service';
 import {
   debounceTime,
@@ -77,7 +74,7 @@ type FilterForm = FormGroup<{
       name: string;
     }[]
   >;
-  affiliations: FormControl<string[]>;
+  affiliations: FormControl<number[]>;
   categories: FormControl<number[]>;
   homes: FormControl<RelationPick[]>;
   homeRegions: FormControl<{ id: number; name: string }[]>;
@@ -185,7 +182,7 @@ export class TableFilterComponent implements OnInit {
   // Data
   rolesList: { id: number; name: string }[] = [];
   params!: AddressFilterParams;
-  affiliations = affiliations;
+  affiliations = PARTNER_AFFILIATION_OPTIONS;
   categories = INSTITUTE_CATEGORY_OPTIONS;
   homesList: RelationPick[] = [];
   accessibleHomesList: RelationPick[] = [];
@@ -246,7 +243,7 @@ export class TableFilterComponent implements OnInit {
         name: string;
       }[]
     >([], { nonNullable: true }),
-    affiliations: new FormControl<string[]>([], { nonNullable: true }),
+    affiliations: new FormControl<number[]>([], { nonNullable: true }),
     categories: new FormControl<number[]>([], { nonNullable: true }),
     startBeginningDate: new FormControl<Date | null>(null),
     endBeginningDate: new FormControl<Date | null>(null),

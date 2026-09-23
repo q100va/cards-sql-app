@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
-import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, } from './common.schema.js';
-import { draftAddressSchema, addressSchema, } from './common.schema.js';
-import { contactType, optionalContactsSchema, } from './common.schema.js';
-import { 
-//changingAddressSchema,
-changingContactsSchema, } from './common.schema.js';
-import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
+import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, draftAddressSchema, addressSchema, contactType, optionalContactsSchema, changingContactsSchema, outdatedNameItemSchema, outdatedAddressItemSchema, positiveIntParam, } from './common.schema.js';
+import { PARTNER_AFFILIATION } from '../constants/partners.js';
+const partnerAffiliationSchema = z.union([
+    z.literal(PARTNER_AFFILIATION.VOLUNTEER_COORDINATOR),
+    z.literal(PARTNER_AFFILIATION.HOME_REPRESENTATIVE),
+    z.literal(PARTNER_AFFILIATION.FOUNDATION_STAFF),
+]);
 /* ===================== Some Schemas for form validation ===================== */
 export const emailControlSchema = z
     .preprocess(emptyToNull, z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable())
@@ -99,7 +98,7 @@ export const facebookControlSchema = z.preprocess(emptyToNull, z
     .nullable());
 export const websiteControlSchema = z.preprocess(emptyToNull, z
     .string()
-    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL')
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'FORM_VALIDATION.CONTACT.INVALID_URL')
     .nullable());
 export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
 /* ===================== Contacts (draft / ordered / optional) ===================== */
@@ -132,7 +131,7 @@ export const draftContactsSchema = z
 /* ===================== DTOs ===================== */
 export const checkPartnerDataSchema = z
     .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveInt.optional(),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     lastName: z
         .preprocess(toTrim, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }))
@@ -141,11 +140,18 @@ export const checkPartnerDataSchema = z
 })
     .strict();
 export const partnerIdSchema = z
-    .object({ id: z.coerce.number().int().positive() })
+    .object({
+    id: positiveInt,
+})
+    .strict();
+export const partnerIdParamSchema = z
+    .object({
+    id: positiveIntParam,
+})
     .strict();
 export const partnerBlockingSchema = z
     .object({
-    id: z.coerce.number().int().positive(),
+    id: positiveInt,
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
 })
     .strict();
@@ -156,10 +162,9 @@ export const partnerDraftSchema = z
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
     lastName: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
-    affiliation: nonEmptyString,
+    affiliation: partnerAffiliationSchema,
     position: z.preprocess(emptyToNull, z
         .string()
-        .trim()
         .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
         .nullable()),
     draftAddress: draftAddressSchema,
@@ -228,7 +233,7 @@ export const changingMainSchema = z
         .max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' })
         .nullable())
         .optional(),
-    affiliation: z.string().optional(),
+    affiliation: partnerAffiliationSchema.optional(),
     position: z
         .preprocess(emptyToNull, z
         .string()
@@ -302,9 +307,9 @@ export const outdatingDataSchema = z
     address: positiveInt.nullable(),
     names: z
         .object({
-        firstName: nonEmptyTrim,
-        patronymic: z.preprocess(toTrim, z.string().min(1)).nullable(),
-        lastName: z.preprocess(toTrim, z.string().min(1)).nullable(),
+        firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+        patronymic: z.preprocess(emptyToNull, z.string().max(50).nullable()),
+        lastName: z.preprocess(emptyToNull, z.string().max(50).nullable()),
     })
         .strict()
         .nullable(),
@@ -342,21 +347,31 @@ export const updatePartnerDataSchema = z
     .strict();
 /* ========= Partner query DTO ========= */
 const sortDir = z.enum(['asc', 'desc']);
+const partnerSortField = z.enum([
+    'name',
+    'affiliation',
+    'dateOfStart',
+    'comment',
+    'isRestricted',
+]);
 export const partnersQueryDTOSchema = z
     .object({
     page: z.object({
-        size: z.number().int().min(0),
+        size: z.number().int().min(1),
         number: z.number().int().min(0),
     }),
     sort: z
-        .array(z.object({ field: z.string().min(1), direction: sortDir }))
+        .array(z.object({
+        field: partnerSortField,
+        direction: sortDir,
+    }))
         .optional(),
     search: z
         .object({ value: z.string().min(1), exact: z.boolean().optional() })
         .optional(),
     view: z
         .object({
-        option: z.string().min(1).optional(),
+        option: z.enum(['all', 'only-active', 'only-blocked']).optional(),
         includeOutdated: z.boolean().optional(),
     })
         .optional(),
@@ -364,7 +379,7 @@ export const partnersQueryDTOSchema = z
         .object({
         general: z
             .object({
-            affiliations: z.array(nonEmptyString).min(1).optional(),
+            affiliations: z.array(partnerAffiliationSchema).min(1).optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
@@ -372,7 +387,10 @@ export const partnersQueryDTOSchema = z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            details: z
+                .array(z.enum(['comment']))
+                .min(1)
+                .optional(),
             hasCoordination: z.boolean().optional(),
             homes: intOptArray,
             homeRegions: intOptArray,
@@ -396,7 +414,6 @@ export const partnersQueryDTOSchema = z
         })
             .partial()
             .optional(),
-        //houses
     })
         .partial()
         .optional(),
@@ -419,7 +436,7 @@ export const outdatedDataSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    coordinations: z.array(coordinationItemSchema), //TODO:
+    coordinations: z.array(coordinationItemSchema),
 })
     .strict();
 /* ===================== Partner (view) & partners list ===================== */
@@ -429,7 +446,7 @@ export const partnerSchema = z
     firstName: nonEmptyString,
     patronymic: nonEmptyString.nullable(),
     lastName: nonEmptyString.nullable(),
-    affiliation: nonEmptyString,
+    affiliation: partnerAffiliationSchema,
     position: nonEmptyString.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),

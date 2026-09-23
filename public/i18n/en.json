@@ -1244,6 +1244,10 @@
       "HAS_DATA_DUPLICATES": "The volunteer data has duplicates",
       "HAS_DEPENDENCIES": "The volunteer cannot be deleted because related requests exist."
     },
+    "PARTNER": {
+      "HAS_DATA_DUPLICATES": "The partner data has duplicates.",
+      "HAS_DEPENDENCIES": "The partner cannot be deleted while related home coordinations exist."
+    },
     "HOME": {
       "ALREADY_EXISTS": "A home with this name already exists."
     },
@@ -1257,6 +1261,7 @@
     "INVALID_FORMAT": "Invalid data format",
     "REQUIRED": "This field cannot be empty",
     "TOO_LONG_500": "Maximum 500 characters",
+    "TOO_LONG_256": "Maximum 256 characters",
     "TOO_LONG_150": "Maximum 150 characters",
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
@@ -1265,6 +1270,7 @@
     "TOO_SHORT_7": "Minimum 7 characters",
     "NOT_FOUND": "The field is empty or the entered value was not found",
     "INVALID_ISO_DATE": "Invalid date",
+    "MIN_ONE_CONTACT": "At least one contact is required",
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",
@@ -1276,7 +1282,8 @@
     },
     "CONTACT": {
       "MIN_CONTACT": "At least one contact is required",
-      "INVALID_CONTACT": "Invalid data"
+      "INVALID_CONTACT": "Invalid data",
+      "INVALID_URL": "Invalid URL"
     },
     "USER": {
       "MIN_PASSWORD": "Minimum 8 characters",

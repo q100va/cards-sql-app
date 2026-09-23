@@ -297,13 +297,8 @@ function splitPartnersForHome(home) {
         splitContacts(
           coordination.partner.contacts,
         ).orderedContacts,
-      partnerOccupation:
-        coordination.partner.affiliation +
-        (
-          coordination.partner.position
-            ? ` - ${coordination.partner.position}`
-            : ''
-        ),
+      partnerAffiliation: coordination.partner.affiliation,
+      partnerPosition: coordination.partner.position,
       isRecoverable:
         !!coordination.isRecoverable,
     }));
@@ -325,13 +320,8 @@ function splitPartnersForHome(home) {
         splitContacts(
           coordination.partner.contacts,
         ).orderedContacts,
-      partnerOccupation:
-        coordination.partner.affiliation +
-        (
-          coordination.partner.position
-            ? ` - ${coordination.partner.position}`
-            : ''
-        ),
+      partnerAffiliation: coordination.partner.affiliation,
+      partnerPosition: coordination.partner.position,
       isRecoverable:
         !!coordination.isRecoverable,
     }));

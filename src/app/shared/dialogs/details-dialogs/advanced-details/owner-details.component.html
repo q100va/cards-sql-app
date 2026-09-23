@@ -90,8 +90,8 @@
               <mat-option [value]="role.id">{{ role.name }}</mat-option>
               }}
               @if(hasAffiliation()){
-              @for (aff of affiliations; track $index) {
-              <mat-option [value]="translate.instant(aff)">{{ aff | translate}}</mat-option>
+              @for (affiliation of affiliations; track affiliation.id) {
+              <mat-option [value]="affiliation.id">{{ affiliation.optionKey | translate}}</mat-option>
               }}
               @if(isSeniorContext()){
               @for (gender of genders; track $index) {

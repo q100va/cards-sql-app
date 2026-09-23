@@ -89,7 +89,7 @@
       <ng-container matColumnDef="affiliation">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.AFFILIATION' | translate}}</th>
         <td mat-cell *matCellDef="let row">
-          <div> <span>{{row.affiliation}}</span><br />
+          <div> <span>{{partnerAffiliations[row.affiliation].key | translate}}</span><br />
             @if (row.position) {<span>{{row.position}}</span><br />}
           </div>
         </td>
@@ -356,7 +356,8 @@
 
           @for (partner of row.coordinations; track $index) {
           <div>
-            {{partner.partnerName}} - {{partner.partnerOccupation}}
+            {{partner.partnerName}} - {{partnerAffiliations[partner.partnerAffiliation].key | translate}}
+            @if (partner.partnerPosition) { - {{partner.partnerPosition}} }
             @for (item of contactTypes; track $index) {
             @if (partner.partnerContacts[item.type]) {
             <div class="outer">
@@ -378,7 +379,8 @@
           <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}
             @for (partner of row.outdatedData.coordinations; track $index) {
             <div>
-              {{partner.partnerName}} - {{partner.partnerOccupation}}
+              {{partner.partnerName}} - {{partnerAffiliations[partner.partnerAffiliation].key | translate}}
+              @if (partner.partnerPosition) { - {{partner.partnerPosition}} }
               @for (item of contactTypes; track $index) {
               @if (partner.partnerContacts[item.type]) {
               <div class="outer">

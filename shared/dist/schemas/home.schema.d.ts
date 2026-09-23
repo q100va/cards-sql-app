@@ -101,7 +101,8 @@ declare const coordinationItemSchema: z.ZodObject<{
         }, z.core.$strict>>>;
     }, z.core.$strict>>;
     partnerName: z.ZodOptional<z.ZodString>;
-    partnerOccupation: z.ZodOptional<z.ZodString>;
+    partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+    partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     homeName: z.ZodOptional<z.ZodString>;
     regionName: z.ZodOptional<z.ZodString>;
     partnerId: z.ZodNumber;
@@ -453,11 +454,11 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
     }, z.core.$strip>;
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
         field: z.ZodEnum<{
+            name: "name";
+            regionName: "regionName";
             comment: "comment";
             isRestricted: "isRestricted";
             isClose: "isClose";
-            name: "name";
-            regionName: "regionName";
             dateOfStart: "dateOfStart";
             dateOfLastUpdate: "dateOfLastUpdate";
         }>;
@@ -681,7 +682,8 @@ export declare const outdatedDataSchema: z.ZodObject<{
             }, z.core.$strict>>>;
         }, z.core.$strict>>;
         partnerName: z.ZodOptional<z.ZodString>;
-        partnerOccupation: z.ZodOptional<z.ZodString>;
+        partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+        partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         homeName: z.ZodOptional<z.ZodString>;
         regionName: z.ZodOptional<z.ZodString>;
         partnerId: z.ZodNumber;
@@ -939,7 +941,8 @@ export declare const homeSchema: z.ZodObject<{
                 }, z.core.$strict>>>;
             }, z.core.$strict>>;
             partnerName: z.ZodOptional<z.ZodString>;
-            partnerOccupation: z.ZodOptional<z.ZodString>;
+            partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+            partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             homeName: z.ZodOptional<z.ZodString>;
             regionName: z.ZodOptional<z.ZodString>;
             partnerId: z.ZodNumber;
@@ -1001,7 +1004,8 @@ export declare const homeSchema: z.ZodObject<{
             }, z.core.$strict>>>;
         }, z.core.$strict>>;
         partnerName: z.ZodOptional<z.ZodString>;
-        partnerOccupation: z.ZodOptional<z.ZodString>;
+        partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+        partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         homeName: z.ZodOptional<z.ZodString>;
         regionName: z.ZodOptional<z.ZodString>;
         partnerId: z.ZodNumber;
@@ -1233,7 +1237,8 @@ export declare const homesSchema: z.ZodObject<{
                     }, z.core.$strict>>>;
                 }, z.core.$strict>>;
                 partnerName: z.ZodOptional<z.ZodString>;
-                partnerOccupation: z.ZodOptional<z.ZodString>;
+                partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+                partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 homeName: z.ZodOptional<z.ZodString>;
                 regionName: z.ZodOptional<z.ZodString>;
                 partnerId: z.ZodNumber;
@@ -1295,7 +1300,8 @@ export declare const homesSchema: z.ZodObject<{
                 }, z.core.$strict>>>;
             }, z.core.$strict>>;
             partnerName: z.ZodOptional<z.ZodString>;
-            partnerOccupation: z.ZodOptional<z.ZodString>;
+            partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+            partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             homeName: z.ZodOptional<z.ZodString>;
             regionName: z.ZodOptional<z.ZodString>;
             partnerId: z.ZodNumber;

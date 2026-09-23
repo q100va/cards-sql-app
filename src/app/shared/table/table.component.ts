@@ -45,6 +45,10 @@ import {
   INSTITUTE_CATEGORIES,
   InstituteCategoryId,
 } from '../../../../shared/constants/volunteers';
+import {
+  PARTNER_AFFILIATIONS,
+  PartnerAffiliationId,
+} from '../../../../shared/constants/partners';
 import { ConfirmationService } from 'primeng/api';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
@@ -142,6 +146,10 @@ import { ExcelExportRow, FileService } from '../../services/file.service';
   styleUrl: './table.component.css',
 })
 export class TableComponent<K extends Kind> implements OnChanges {
+  readonly partnerAffiliations: Record<
+    number,
+    (typeof PARTNER_AFFILIATIONS)[PartnerAffiliationId]
+  > = PARTNER_AFFILIATIONS;
   readonly instituteCategories: Record<
     number,
     (typeof INSTITUTE_CATEGORIES)[InstituteCategoryId]

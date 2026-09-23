@@ -29,6 +29,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DateUtilsService } from '../../services/date-utils.service';
 import { INSTITUTE_CATEGORIES } from '../../../../shared/constants/volunteers';
+import { PARTNER_AFFILIATIONS } from '../../../../shared/constants/partners';
 
 import { TableSettingsComponent } from '../table-settings/table-settings.component';
 import { TableFilterComponent } from '../table-filter/table-filter.component';
@@ -312,7 +313,9 @@ export class BaseListComponent {
     }
 
     if (gf.affiliations.length) {
-      const affs = gf.affiliations.map((i) => this.translate.instant(i));
+      const affs = gf.affiliations.map((id) =>
+        this.translate.instant(PARTNER_AFFILIATIONS[id].key),
+      );
       pieces.push(...affs);
     }
 
