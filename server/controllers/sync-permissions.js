@@ -1,55 +1,83 @@
-// ESM
 import sequelize from '../database.js';
 import { Role, RolePermission } from '../models/index.js';
 import { OPERATIONS } from '../shared/operations.js';
 import { applyAllOpsRule } from './apply-all-ops-rule.js';
 
-/** Соберём коды операций один раз */
-const ALL_CODES = new Set(OPERATIONS.map(o => o.operation));
+// Cache all configured operation codes.
+const ALL_CODES = new Set(
+  OPERATIONS.map((operation) => operation.operation),
+);
 
-/** Синхронизировать одну роль */
+// Synchronize permissions for a single role.
 export async function syncRolePermissionsFor(roleId) {
-  // advisory lock, чтобы не гонялись несколько инстансов
-  await sequelize.query('SELECT pg_advisory_lock(42042)');
-  try {
-    const current = await RolePermission.findAll({ where: { roleId: roleId }, raw: true });
-    const currentMap = new Map(current.map(r => [r.name, r]));
+  await sequelize.transaction(
+    async (transaction) => {
+      // Prevent concurrent permission synchronization.
+      await sequelize.query(
+        'SELECT pg_advisory_xact_lock(42042)',
+        { transaction },
+      );
 
-    // добавить недостающие из OPERATIONS
-    for (const op of OPERATIONS) {
-      if (!currentMap.has(op.operation)) {
-        await RolePermission.create({
-          roleId: roleId,
-          name: op.operation,
-          access: op.accessToAllOps ? true : false,
-          disabled: false,
+      const current =
+        await RolePermission.findAll({
+          where: { roleId },
+          raw: true,
+          transaction,
         });
-      }
-    }
 
-    // обработать «лишние» (в коде их больше нет)
-    for (const [code] of currentMap) {
-      if (!ALL_CODES.has(code)) {
- /*        // можно мягко выключить...
-        await RolePermission.update(
-          { access: false, disabled: true },
-          { where: { roleId: roleId, name: code } }
-        ); */
-        await RolePermission.destroy({ where: { roleId: roleId, name: code } });
-      }
-    }
+      const currentMap = new Map(
+        current.map((permission) => [
+          permission.name,
+          permission,
+        ]),
+      );
 
-    // применяем правило ALL_OPS
-    await applyAllOpsRule(roleId);
-  } finally {
-    await sequelize.query('SELECT pg_advisory_unlock(42042)');
-  }
+      // Add operations that are present in configuration but missing for the role.
+      for (const operation of OPERATIONS) {
+        if (!currentMap.has(operation.operation)) {
+          await RolePermission.create(
+            {
+              roleId,
+              name: operation.operation,
+              access: false,
+              disabled:
+                operation.flag === 'FULL',
+            },
+            { transaction },
+          );
+        }
+      }
+
+      // Remove permissions for operations that no longer exist in configuration.
+      for (const [code] of currentMap) {
+        if (!ALL_CODES.has(code)) {
+          await RolePermission.destroy({
+            where: {
+              roleId,
+              name: code,
+            },
+            transaction,
+          });
+        }
+      }
+
+      // Normalize ALL_OPS and FULL/LIMITED dependencies.
+      await applyAllOpsRule(
+        roleId,
+        transaction,
+      );
+    },
+  );
 }
 
-/** Синхронизировать все роли */
+// Synchronize permissions for all roles.
 export async function syncAllRolesPermissions() {
-  const roles = await Role.findAll({ attributes: ['id'], raw: true });
-  for (const r of roles) {
-    await syncRolePermissionsFor(r.id);
+  const roles = await Role.findAll({
+    attributes: ['id'],
+    raw: true,
+  });
+
+  for (const role of roles) {
+    await syncRolePermissionsFor(role.id);
   }
 }

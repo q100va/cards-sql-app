@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'dotenv/config';
-import sequelize from '../server/db.js';
-import { syncAllRolesPermissions } from '../server/permissions/sync-permissions.js';
+import sequelize from '../database.js';
+import { syncAllRolesPermissions } from '../controllers/sync-permissions.js';
 
 try {
   await sequelize.authenticate();
