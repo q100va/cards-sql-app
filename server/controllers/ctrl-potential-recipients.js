@@ -17,7 +17,8 @@ async function getExistingIds(occasionId, homeId) {
 }
 
 function buildFullData(senior) {
-  const [year, month, day] = s.birthDate.split('-').map(Number);
+  const [year, month, day] =
+    senior.birthDate.split('-').map(Number);
   const firstName = senior.firstName ?? '';
   const patronymic = senior.patronymic ?? '';
   const lastName = senior.lastName ?? '';
@@ -82,7 +83,6 @@ async function getBirthdayPotentialRecipients(
     fullData: buildFullData(senior),
   }));
 }
-
 // TODO: Add potential recipient lookup for other occasion types.
 export async function getPotentialRecipients(
   occasion,

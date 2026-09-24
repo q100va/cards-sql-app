@@ -21,7 +21,7 @@ function buildFullData(recipient) {
     .trim();
 }
 
-async function transformRecipientList(items, t) {
+async function transformRecipientList(items, transaction) {
   if (!items.length) return [];
 
   const ids = items.map((item) => item.id);
@@ -42,7 +42,7 @@ async function transformRecipientList(items, t) {
         attributes: ['homeName'],
       },
     ],
-    transaction: t,
+    transaction,
   });
 
   return recipients.map((recipient) => ({
@@ -51,8 +51,8 @@ async function transformRecipientList(items, t) {
   }));
 }
 
-export async function addRecipients(occasion, t, homeId = null) {
-  let seniors = await getSeniors(occasion, t);
+export async function addRecipients(occasion, transaction, homeId = null) {
+  let seniors = await getSeniors(occasion, transaction);
   if (homeId !== null) seniors = seniors.filter(s => s.homeId === homeId);
   const seniorIds = seniors.map((senior) => senior.id);
 
@@ -62,7 +62,7 @@ export async function addRecipients(occasion, t, homeId = null) {
   const recipients = await Recipient.findAll({
     where: activeWhere,
     attributes: ['seniorId'],
-    transaction: t,
+    transaction,
   });
   const activeSeniorIds = new Set(
     recipients.map((recipient) => recipient.seniorId),
@@ -77,7 +77,7 @@ export async function addRecipients(occasion, t, homeId = null) {
   const absent = await Recipient.findAll({
     where: absentWhere,
     attributes: ['seniorId'],
-    transaction: t,
+    transaction,
   });
   const absentSeniorIds = absent.map(
     (recipient) => recipient.seniorId,
@@ -109,7 +109,7 @@ export async function addRecipients(occasion, t, homeId = null) {
             [Op.in]: returningSeniorIds,
           },
         },
-        transaction: t,
+        transaction,
         individualHooks: true,
         returning: true,
       },
@@ -118,27 +118,27 @@ export async function addRecipients(occasion, t, homeId = null) {
   }
 
   if (newSeniorIds.length) {
-    const rows = await generateRecipients(occasion, t, newSeniorIds);
-    created = await Recipient.bulkCreate(rows, { transaction: t, individualHooks: true, });
+    const rows = await generateRecipients(occasion, transaction, newSeniorIds);
+    created = await Recipient.bulkCreate(rows, { transaction, individualHooks: true, });
 
     await Occasion.increment(
       { amount: created.length },
       {
         where: { id: occasion.id },
-        transaction: t,
+        transaction,
       }
     );
   }
-  const added = await transformRecipientList(created, t);
-  const returned = await transformRecipientList(updated, t);
+  const added = await transformRecipientList(created, transaction);
+  const returned = await transformRecipientList(updated, transaction);
   return {
     added,
     returned
   };
 }
 
-export async function markAbsentRecipients(occasion, t, homeId = null) {
-  let seniors = await getSeniors(occasion, t);
+export async function markAbsentRecipients(occasion, transaction, homeId = null) {
+  let seniors = await getSeniors(occasion, transaction);
   if (homeId !== null) seniors = seniors.filter(s => s.homeId === homeId);
   const currentSeniorIds = new Set(
     seniors.map((senior) => senior.id),
@@ -150,7 +150,7 @@ export async function markAbsentRecipients(occasion, t, homeId = null) {
   const activeRecipients = await Recipient.findAll({
     where: activeWhere,
     attributes: ['seniorId'],
-    transaction: t,
+    transaction,
   });
 
   const activeSeniorIds = activeRecipients.map(
@@ -171,12 +171,12 @@ export async function markAbsentRecipients(occasion, t, homeId = null) {
           occasionId: occasion.id,
           seniorId: { [Op.in]: absentSeniorIds }
         },
-        transaction: t,
+        transaction,
         individualHooks: true,
         returning: true,
       }
     );
     updatedRecipients = rows;
   }
-  return transformRecipientList(updatedRecipients, t);
+  return transformRecipientList(updatedRecipients, transaction);
 }

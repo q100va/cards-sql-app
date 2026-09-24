@@ -4,7 +4,7 @@ import { INCLUDES } from "../routes/seniors-api.js";
 import { createSearchStringFor } from "./ctrl-search-string.js";
 import CustomError from "../shared/customError.js";
 
-export async function addNewSeniors(admitted, dateOfUpdate, t) {
+export async function addNewSeniors(admitted, dateOfUpdate, transaction) {
   if (!admitted?.length) {
     return 0;
   }
@@ -12,7 +12,7 @@ export async function addNewSeniors(admitted, dateOfUpdate, t) {
   admitted.forEach(s => s.dateOfStart = dateOfUpdate);
 
   const created = await Senior.bulkCreate(admitted, {
-    transaction: t,
+    transaction,
     individualHooks: true,
   });
 
@@ -28,7 +28,7 @@ export async function addNewSeniors(admitted, dateOfUpdate, t) {
       exclude: ['createdAt', 'updatedAt'],
     },
     include: INCLUDES,
-    transaction: t,
+    transaction,
   });
 
   if (freshSeniors.length !== created.length) {
@@ -41,7 +41,7 @@ export async function addNewSeniors(admitted, dateOfUpdate, t) {
   }));
 
   const createdSearchRows = await SeniorSearch.bulkCreate(searchRows, {
-    transaction: t,
+    transaction,
     individualHooks: true,
   });
 
@@ -52,7 +52,7 @@ export async function addNewSeniors(admitted, dateOfUpdate, t) {
   return created.length;
 }
 
-export async function removeSeniors(removed, dateOfExit, t) {
+export async function removeSeniors(removed, dateOfExit, transaction) {
   if (!removed?.length) {
     return 0;
   }
@@ -62,10 +62,9 @@ export async function removeSeniors(removed, dateOfExit, t) {
     { dateOfExit },
     {
       where: { id: { [Op.in]: ids } },
-      transaction: t,
+      transaction,
     });
 
-  console.log('removedCount', removedCount)
   if (removedCount !== removed.length) {
     throw new CustomError('ERRORS.SENIOR.BULK_REMOVED_COUNT_MISMATCH', 500);
   }
@@ -73,16 +72,16 @@ export async function removeSeniors(removed, dateOfExit, t) {
   return removedCount;
 }
 
-export async function updateSeniors(updated, t) {
+export async function updateSeniors(updated, transaction) {
   if (!updated?.length) {
     return 0;
   }
-  for (let data of updated) {
+  for (const data of updated) {
     await Senior.update(
       data.changes,
       {
         where: { id: data.seniorId },
-        transaction: t,
+        transaction,
       });
   }
 

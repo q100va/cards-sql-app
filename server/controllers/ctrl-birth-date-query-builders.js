@@ -1,26 +1,7 @@
 import { Op, fn, col, where } from 'sequelize';
 
-/* type NullableInt = number | null;
-type RangeTuple = [NullableInt, NullableInt];
-
-type BirthPartsRanges = {
-  dayRange?: RangeTuple;  // day of month: 1..31
-  monthRange?: RangeTuple; // 1..12 (may wrap: [11,2])
-  yearRange?: RangeTuple;  // e.g. 1945..1954 (must be ascending if both set)
-}; */
-
 // --- helpers ----------------------------------------------------
 
-function normalizeInt(v) {
-  if (v == null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.trunc(n) : null;
-}
-
-/* function isEmptyRange([a, b]) {
-  return a == null && b == null;
-}
- */
 function assertAscendingRange(name, [a, b]) {
   if (a != null && b != null && a > b) {
     throw new Error(`${name} must be ascending (start <= end). Got [${a}, ${b}]`);
@@ -31,8 +12,6 @@ function clamp(v, min, max) {
   return Math.min(max, Math.max(min, v));
 }
 
-
-
 /**
  * Builds a Sequelize condition for DATE_PART(part, birthDate)
  * - If both bounds present:
@@ -41,7 +20,7 @@ function clamp(v, min, max) {
  * - If only one bound present: >= start OR <= end
  */
 function buildPartRangeCondition(
-  part,// 'day' | 'month' | 'year'
+  part, // 'day' | 'month' | 'year'
   range,
   opts = {}
 ) {
@@ -103,77 +82,44 @@ export function applyBirthDatePartsFilters(
   ranges
 ) {
   const { dayRange, monthRange, yearRange } = ranges;
-  const currYear = +new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
   pushAnd(whereSenior, { birthDate: { [Op.not]: null } });
 
   if (dayRange) {
     assertAscendingRange('dayRange', dayRange);
-    pushAnd(whereSenior, buildPartRangeCondition('day', dayRange, { clampTo: [1, 31] }));
+    pushAnd(
+      whereSenior,
+      buildPartRangeCondition(
+        'day',
+        dayRange,
+        { clampTo: [1, 31] })
+    );
   }
   if (monthRange)
-    pushAnd(whereSenior, buildPartRangeCondition('month', monthRange, { allowWrap: true, clampTo: [1, 12] }));
+    pushAnd(
+      whereSenior,
+      buildPartRangeCondition(
+        'month',
+        monthRange,
+        { allowWrap: true, clampTo: [1, 12] })
+    );
   if (yearRange) {
     assertAscendingRange('yearRange', yearRange);
-    pushAnd(whereSenior, buildPartRangeCondition('year', yearRange, { clampTo: [1917, currYear] }));
+    pushAnd(
+      whereSenior,
+      buildPartRangeCondition(
+        'year',
+        yearRange,
+        { clampTo: [1917, currentYear] })
+    );
   } else if (hideWithoutYear) {
-    pushAnd(whereSenior, where(fn('DATE_PART', 'year', col('senior.birthDate')), { [Op.not]: 1800 }));
+    pushAnd(
+      whereSenior,
+      where(
+        fn('DATE_PART', 'year', col('senior.birthDate')),
+        { [Op.not]: 1800 }
+      )
+    );
   }
 }
-
-
-
-/* export function buildBirthDatePartsWhere(
-  ranges,
-  options = {}
-) {
-  const dayRange = ranges.dayRange
-    ? [normalizeInt(ranges.dayRange[0]), normalizeInt(ranges.dayRange[1])]
-    : undefined;
-
-  const monthRange = ranges.monthRange
-    ? [normalizeInt(ranges.monthRange[0]), normalizeInt(ranges.monthRange[1])]
-    : undefined;
-
-  const yearRange = ranges.yearRange
-    ? [normalizeInt(ranges.yearRange[0]), normalizeInt(ranges.yearRange[1])]
-    : undefined;
-
-  // Validate ascending constraints (only where you required it)
-  if (dayRange && !isEmptyRange(dayRange)) assertAscendingRange('dayRange', dayRange);
-  if (yearRange && !isEmptyRange(yearRange)) assertAscendingRange('yearRange', yearRange);
-
-  const and = [];
-
-  // If you want to EXCLUDE null birthDate by default (typical for filtering)
-  if (!options.includeNullBirthDate) {
-    and.push({ birthDate: { [Op.not]: null } });
-  }
-
-  if (dayRange && !isEmptyRange(dayRange)) {
-    and.push(
-      buildPartRangeCondition('day', dayRange, { clampTo: [1, 31] })
-    );
-  }
-
-  if (monthRange && !isEmptyRange(monthRange)) {
-    and.push(
-      buildPartRangeCondition('month', monthRange, { allowWrap: true, clampTo: [1, 12] })
-    );
-  }
-
-  if (yearRange && !isEmptyRange(yearRange)) {
-    // "reasonable bounds" — поставь свои (например 1850..2100)
-    and.push(
-      buildPartRangeCondition('year', yearRange, { clampTo: [1910, 2026] })
-    );
-  }
-
-  // Remove nulls (if any)
-  const filtered = and.filter(Boolean);
-
-  // If no conditions besides maybe null-filter, return something sane
-  if (filtered.length === 0) return {};
-
-  return { [Op.and]: filtered };
-} */

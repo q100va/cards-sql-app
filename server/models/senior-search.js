@@ -13,18 +13,24 @@ export default function SeniorSearchModel(sequelize) {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    isRestricted:
-    {
+    isRestricted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      allowNull: false,
+      defaultValue: false,
     },
   },
     {
       sequelize,
       modelName: 'senior-search',
       tableName: 'senior-searches',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+      indexes: [
+        {
+          name: 'uq_senior_searches_senior_restricted',
+          unique: true,
+          fields: ['seniorId', 'isRestricted'],
+        },
+      ],
     });
   return SeniorSearch;
 }

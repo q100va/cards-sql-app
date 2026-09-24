@@ -11,7 +11,7 @@ import CustomError from "../shared/customError.js";
 export async function syncRecipientsAfterSeniorUpdate(
   seniorId,
   changes,
-  t,
+  transaction,
 ) {
   const senior = await Senior.findByPk(seniorId, {
     include: [
@@ -27,16 +27,18 @@ export async function syncRecipientsAfterSeniorUpdate(
         ],
       },
     ],
-    transaction: t,
+    transaction,
   });
 
   if (!senior) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
 
   const home = senior.home;
 
-  const [, birthMonth] = senior.birthDate
-    .split('-')
-    .map(Number);
+  const birthDateParts = senior.birthDate
+    ? senior.birthDate.split('-').map(Number)
+    : null;
+
+  const birthMonth = birthDateParts?.[1] ?? null;
 
   const activeOccasions = await Occasion.findAll({
     where: {
@@ -48,7 +50,7 @@ export async function syncRecipientsAfterSeniorUpdate(
       'month',
       'year',
     ],
-    transaction: t,
+    transaction,
   });
 
   const activeOccasionIds = activeOccasions.map(
@@ -72,7 +74,7 @@ export async function syncRecipientsAfterSeniorUpdate(
         ],
       },
     ],
-    transaction: t,
+    transaction,
   });
 
   let absentRecipientIds = [];
@@ -85,11 +87,13 @@ export async function syncRecipientsAfterSeniorUpdate(
 
   if (seniorIsActive) {
     // TODO: Add support for other occasion types.
-    const actualBirthday = activeOccasions.find(
-      (occasion) =>
-        occasion.type === OCCASION_TYPE.BIRTHDAY &&
-        occasion.month === birthMonth,
-    );
+    const actualBirthday = birthMonth !== null
+      ? activeOccasions.find(
+        (occasion) =>
+          occasion.type === OCCASION_TYPE.BIRTHDAY &&
+          occasion.month === birthMonth,
+      )
+      : null;
 
     if (actualBirthday) {
       const birthdayRecipientExists =
@@ -101,14 +105,14 @@ export async function syncRecipientsAfterSeniorUpdate(
       if (!birthdayRecipientExists) {
         const rows = await generateRecipients(
           actualBirthday,
-          t,
+          transaction,
           [seniorId],
         );
 
         const created = await Recipient.bulkCreate(
           rows,
           {
-            transaction: t,
+            transaction,
             individualHooks: true,
           },
         );
@@ -121,7 +125,7 @@ export async function syncRecipientsAfterSeniorUpdate(
             where: {
               id: actualBirthday.id,
             },
-            transaction: t,
+            transaction,
           },
         );
       }
@@ -152,7 +156,7 @@ export async function syncRecipientsAfterSeniorUpdate(
     birthYear,
     currentBirthMonth,
     birthDay,
-  ] = senior.birthDate.split('-').map(Number);
+  ] = birthDateParts ?? [null, null, null];
 
   for (const recipient of activeRecipients) {
     const payload = {};
@@ -166,17 +170,22 @@ export async function syncRecipientsAfterSeniorUpdate(
     }
 
     if (
-      changes.gender !== undefined ||
-      changes.personalNoAddr !== undefined ||
-      changes.birthDate !== undefined
+      birthDateParts &&
+      (
+        changes.gender !== undefined ||
+        changes.personalNoAddr !== undefined ||
+        changes.birthDate !== undefined
+      )
     ) {
       payload.category = getCategory(
         senior,
         birthYear,
         recipient.occasion.year,
       );
+    }
 
-      if (changes.birthDate !== undefined) {
+    if (changes.birthDate !== undefined) {
+      if (birthDateParts) {
         payload.daySnapshot = birthDay;
         payload.monthSnapshot = currentBirthMonth;
         payload.yearSnapshot =
@@ -191,6 +200,11 @@ export async function syncRecipientsAfterSeniorUpdate(
               recipient.occasion.year,
             )
             : '';
+      } else {
+        payload.daySnapshot = null;
+        payload.monthSnapshot = null;
+        payload.yearSnapshot = null;
+        payload.specialComment = '';
       }
     }
 
@@ -203,7 +217,7 @@ export async function syncRecipientsAfterSeniorUpdate(
         : true;
 
     await recipient.update(payload, {
-      transaction: t,
+      transaction,
       individualHooks: true,
     });
   }
@@ -219,7 +233,7 @@ export async function syncRecipientsAfterSeniorUpdate(
             [Op.in]: absentRecipientIds,
           },
         },
-        transaction: t,
+        transaction,
         individualHooks: true,
       },
     );
@@ -229,7 +243,7 @@ export async function syncRecipientsAfterSeniorUpdate(
 export async function syncRecipientsAfterHomeUpdate(
   homeId,
   changes,
-  t,
+  transaction,
 ) {
   const home = await Home.findByPk(homeId, {
     include: [
@@ -247,7 +261,7 @@ export async function syncRecipientsAfterHomeUpdate(
         ],
       },
     ],
-    transaction: t,
+    transaction,
   });
 
   if (!home) throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
@@ -292,7 +306,7 @@ export async function syncRecipientsAfterHomeUpdate(
         ],
       },
     ],
-    transaction: t,
+    transaction,
   });
 
   for (const recipient of activeRecipients) {
@@ -332,7 +346,7 @@ export async function syncRecipientsAfterHomeUpdate(
     };
 
     await recipient.update(payload, {
-      transaction: t,
+      transaction,
       individualHooks: true,
     });
   }
@@ -360,13 +374,13 @@ export async function syncRecipientsAfterHomeUpdate(
         'month',
         'year',
       ],
-      transaction: t,
+      transaction,
     });
 
     for (const occasion of activeOccasions) {
       await addRecipients(
         occasion,
-        t,
+        transaction,
         homeId,
       );
     }

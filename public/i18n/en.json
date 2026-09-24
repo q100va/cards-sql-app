@@ -1248,6 +1248,10 @@
       "HAS_DATA_DUPLICATES": "The partner data has duplicates.",
       "HAS_DEPENDENCIES": "The partner cannot be deleted while related home coordinations exist."
     },
+    "SENIOR": {
+      "HAS_DATA_DUPLICATES": "The resident data has duplicates.",
+      "HAS_DEPENDENCIES": "The resident cannot be deleted while related records exist."
+    },
     "HOME": {
       "ALREADY_EXISTS": "A home with this name already exists."
     },
@@ -1260,6 +1264,7 @@
     "INVALID_FORM": "Invalid form",
     "INVALID_FORMAT": "Invalid data format",
     "REQUIRED": "This field cannot be empty",
+    "REQUIRED_SELECTION": "A selection is required",
     "TOO_LONG_500": "Maximum 500 characters",
     "TOO_LONG_256": "Maximum 256 characters",
     "TOO_LONG_150": "Maximum 150 characters",

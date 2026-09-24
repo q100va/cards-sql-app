@@ -12,18 +12,18 @@ export default function SeniorModel(sequelize) {
         primaryKey: true,
       },
       firstName: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
       patronymic: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: true,
       },
       lastName: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: true,
       },
       birthDate: {
@@ -56,56 +56,56 @@ export default function SeniorModel(sequelize) {
       },
       infoNote: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       photoLink: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       dateOfConsent: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: true,
-        defaultValue: null
       },
       personalNoAddr: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       kindergarten: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       teacher: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       veteran: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       childOfWar: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       profession: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       honoraryStatus: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       interests: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       orthodoxBeliever: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       comment: {
         type: DataTypes.TEXT,
-        defaultValue: null
+        allowNull: true,
       },
       dateOfStart: {
         type: DataTypes.DATE,
@@ -113,7 +113,8 @@ export default function SeniorModel(sequelize) {
       },
       isRestricted: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       causeOfRestriction: {
         type: DataTypes.TEXT,
@@ -121,11 +122,11 @@ export default function SeniorModel(sequelize) {
       },
       dateOfRestriction: {
         type: DataTypes.DATE,
-        defaultValue: null
+        allowNull: true,
       },
       dateOfExit: {
         type: DataTypes.DATE,
-        defaultValue: null
+        allowNull: true,
       },
     },
     {
@@ -133,8 +134,7 @@ export default function SeniorModel(sequelize) {
       modelName: 'senior',
       tableName: 'seniors',
       underscored: false,
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     }
   );
   return Senior;
