@@ -47,11 +47,23 @@ import { corsMiddleware } from './cors.js';
 
 const app = express();
 
+app.set('trust proxy', 1);
+app.use(corsMiddleware);
+app.use(correlationId());
+app.use(requestLogger);
+app.use(withRequestContext);
+
+// Client logs have a much smaller payload limit.
+app.use(
+  '/api/client-logs',
+  express.json({ limit: '256kb' }),
+  ClientLogsApi,
+);
+
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(correlationId());
-app.use(requestLogger);
+
 
 // статика
 const __filename = fileURLToPath(import.meta.url);
@@ -80,11 +92,6 @@ app.use((req, res, next) => {
   next();
 }); */
 
-app.set('trust proxy', 1);
-app.use(corsMiddleware);
-
-// request context
-app.use(withRequestContext);
 
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 app.head('/healthz', (_req, res) => res.sendStatus(200));
@@ -105,7 +112,6 @@ app.use('/api/recipients', RecipientsApi);
 app.use('/api/orders', OrdersApi);
 app.use('/api/reports', ReportsApi);
 app.use('/api/audit', AuditApi);
-app.use('/api/client-logs', ClientLogsApi);
 app.use('/api/auth', AuthApi);
 
 const noCache = (_req, res, next) => {

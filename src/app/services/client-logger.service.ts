@@ -1,6 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ClientLogBatch, ClientLogItem, ClientLogLevel } from '../interfaces/client-log';
+import {
+  ClientLogBatch,
+  ClientLogItem,
+  ClientLogLevel,
+} from '../interfaces/client-log';
 import { environment } from '../../environments/environment';
 
 function uuid(): string {
@@ -8,10 +12,9 @@ function uuid(): string {
   if (!c) return Math.random().toString(36).slice(2) + Date.now();
   c[6] = (c[6] & 0x0f) | 0x40;
   c[8] = (c[8] & 0x3f) | 0x80;
-  const h = Array.from(c, b => b.toString(16).padStart(2, '0')).join('');
-  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+  const h = Array.from(c, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
-//TODO: не всегда добавляется юзер ID
 
 @Injectable({ providedIn: 'root' })
 export class ClientLoggerService {
@@ -28,7 +31,7 @@ export class ClientLoggerService {
   private readonly maxBuffer = 20;
   private readonly flushIntervalMs = 10_000;
   private readonly maxPerMinute = 60;
-  private sentInWindow = 0;
+  private acceptedInWindow = 0;
   private windowStart = Date.now();
 
   constructor() {
@@ -49,44 +52,75 @@ export class ClientLoggerService {
   }
 
   error(err: any, context?: Record<string, unknown>) {
-    // err: Error | string | unknown
-    const message = typeof err === 'string' ? err : (err?.error?.message ?? err?.message ?? 'Client error');
-    const stack = typeof err?.stack === 'string' ? err.stack : undefined;
-    this.push('error', message, { ...context, stack });
-  }
+    const message =
+      typeof err === 'string'
+        ? err
+        : (err?.error?.message ?? err?.message ?? 'Client error');
 
-  attachCorrId(id?: string | null) {
-    // Можно подмешивать corrId в следующий элемент через context — но лучше указывать при отправке события
-    // Оставим метод на случай ручной привязки
+    const stack = typeof err?.stack === 'string' ? err.stack : undefined;
+
+    this.push('error', message, context, stack);
   }
 
   // ---- internals ------------------------------------------------------------
 
-  private push(level: ClientLogLevel, message: any, extra?: Record<string, unknown>) {
+  private push(
+    level: ClientLogLevel,
+    message: any,
+    context?: Record<string, unknown>,
+    stack?: string,
+  ) {
     if (!message) return;
 
-    // rate-limit
     const now = Date.now();
+
     if (now - this.windowStart >= 60_000) {
       this.windowStart = now;
-      this.sentInWindow = 0;
+      this.acceptedInWindow = 0;
     }
-    if (this.sentInWindow >= this.maxPerMinute) return;
+
+    if (this.acceptedInWindow >= this.maxPerMinute) {
+      return;
+    }
+
+    const contextCopy = context ? { ...context } : undefined;
+
+    const corrIdValue =
+      contextCopy?.['correlationId'] ?? contextCopy?.['corrId'];
+
+    const corrId =
+      typeof corrIdValue === 'string' && corrIdValue.trim()
+        ? corrIdValue
+        : null;
+
+    if (contextCopy) {
+      delete contextCopy['correlationId'];
+      delete contextCopy['corrId'];
+    }
 
     const item: ClientLogItem = {
       ts: new Date().toISOString(),
       level,
       message: this.maskPII(String(message)),
-      stack: typeof extra?.['stack'] === 'string' ? this.maskPII(extra['stack'] as string) : undefined,
-      pageUrl: location?.href,
-      route: location?.pathname,
+      stack: stack ? this.maskPII(stack) : undefined,
+      pageUrl: `${location.origin}${location.pathname}`,
+      route: location.pathname,
       userId: this.userId ?? null,
       sessionId: this.sessionId,
+      corrId,
       userAgent: navigator.userAgent,
-      context: extra ? this.maskCtx(extra) : undefined,
+      context:
+        contextCopy && Object.keys(contextCopy).length > 0
+          ? this.maskCtx(contextCopy)
+          : undefined,
     };
+
     this.buf.push(item);
-    if (this.buf.length >= this.maxBuffer) this.flush();
+    this.acceptedInWindow += 1;
+
+    if (this.buf.length >= this.maxBuffer) {
+      this.flush();
+    }
   }
 
   private flush(useBeacon = false) {
@@ -97,16 +131,24 @@ export class ClientLoggerService {
       env: this.env,
       items: this.buf.splice(0, this.maxBuffer),
     };
-    // sendBeacon
+
     if (useBeacon && navigator.sendBeacon) {
       try {
-        const ok = navigator.sendBeacon(this.endpoint, new Blob([JSON.stringify(batch)], { type: 'application/json' }));
-        if (ok) { this.sentInWindow += batch.items.length; return; }
-      } catch { /* fallback ниже */ }
+        const ok = navigator.sendBeacon(
+          this.endpoint,
+          new Blob([JSON.stringify(batch)], { type: 'application/json' }),
+        );
+
+        if (ok) return;
+      } catch {
+        // Fall back to HttpClient below.
+      }
     }
+
     this.http.post(this.endpoint, batch).subscribe({
-      next: () => { this.sentInWindow += batch.items.length; },
-      error: () => { /* в проде можно положить обратно и попробовать позже */ }
+      error: () => {
+        // Logging failures must not affect the application.
+      },
     });
   }
 
@@ -153,38 +195,82 @@ export class ClientLoggerService {
     window.addEventListener('unhandledrejection', (e) => {
       const r: any = e.reason;
       if (r instanceof Error) this.error(r, { from: 'unhandledrejection' });
-      else this.error(String(r ?? 'unhandledrejection'), { from: 'unhandledrejection' });
+      else
+        this.error(String(r ?? 'unhandledrejection'), {
+          from: 'unhandledrejection',
+        });
     });
   }
 
   // --- helpers ---------------------------------------------------------------
 
   private joinArgs(args: any[]): string {
-    return args.map(a => {
-      if (a instanceof Error) return `${a.name}: ${a.message}`;
-      if (typeof a === 'object') {
-        try { return JSON.stringify(this.maskCtx(a)); } catch { return String(a); }
-      }
-      return String(a);
-    }).join(' ');
+    return args
+      .map((a) => {
+        if (a instanceof Error) return `${a.name}: ${a.message}`;
+        if (typeof a === 'object') {
+          try {
+            return JSON.stringify(this.maskCtx(a));
+          } catch {
+            return String(a);
+          }
+        }
+        return String(a);
+      })
+      .join(' ');
   }
 
   private maskPII(s: string): string {
-    const email = /\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g;
+    const email =
+      /\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g;
     const phone = /\b(\+?\d{1,3}[-.\s]?)?(\d{2,3}[-.\s]?){2,4}\d\b/g;
     return s
       .replace(email, (_, a, domain) => `${a}***@${domain}`)
-      .replace(phone, (m) => m.length <= 6 ? '***' : m.slice(0, 3) + '***' + m.slice(-2));
+      .replace(phone, (m) =>
+        m.length <= 6 ? '***' : m.slice(0, 3) + '***' + m.slice(-2),
+      );
   }
+
   private maskCtx(obj: Record<string, unknown>): Record<string, unknown> {
-    const clone: Record<string, unknown> = Array.isArray(obj) ? { arr: obj } : { ...obj };
-    const redactKeys = ['email','phone','password','token','authorization','cookie'];
-    for (const k of Object.keys(clone)) {
-      const v = clone[k];
-      if (typeof v === 'string' && redactKeys.some(key => k.toLowerCase().includes(key))) {
-        clone[k] = this.maskPII(v);
+    const secretKeys = ['password', 'token', 'authorization', 'cookie'];
+
+    const seen = new WeakSet<object>();
+
+    const maskValue = (value: unknown, key = ''): unknown => {
+      const normalizedKey = key.toLowerCase();
+
+      if (secretKeys.some((secretKey) => normalizedKey.includes(secretKey))) {
+        return '[REDACTED]';
       }
-    }
-    return clone;
+
+      if (typeof value === 'string') {
+        return this.maskPII(value);
+      }
+
+      if (Array.isArray(value)) {
+        return value.map((item) => maskValue(item));
+      }
+
+      if (value !== null && typeof value === 'object') {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+
+        seen.add(value);
+
+        return Object.fromEntries(
+          Object.entries(value as Record<string, unknown>).map(
+            ([nestedKey, nestedValue]) => [
+              nestedKey,
+              maskValue(nestedValue, nestedKey),
+            ],
+          ),
+        );
+      }
+
+      return value;
+    };
+
+    return maskValue(obj) as Record<string, unknown>;
   }
 }

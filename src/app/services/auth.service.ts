@@ -62,6 +62,7 @@ export class AuthService {
   private resetAuthState() {
     this.setToken('');
     this.user$.next(null);
+    this.log.setUser(null);
     this.setPermissions([]);
     this.permsReady$.next(false); // прав нет
     this.authReady$.next(false); // не готов
@@ -72,7 +73,7 @@ export class AuthService {
     const map = new Map<OperationCode, Permission>();
     for (const p of list) map.set(p.operation, p);
     this.permissions$.set(map);
-      //console.log(this.permissions$());
+    //console.log(this.permissions$());
   }
 
   private loadPermissions$() {
@@ -90,7 +91,7 @@ export class AuthService {
           this.setPermissions([]);
           this.permsReady$.next(true); // даже при ошибке считаем «готовы» (просто пусто)
           return of(void 0);
-        })
+        }),
       );
   }
 
@@ -100,7 +101,7 @@ export class AuthService {
       .post<RawApiResponse>(
         url,
         { userName, password },
-        { withCredentials: true }
+        { withCredentials: true },
       )
       .pipe(
         validateResponse(signInRespSchema),
@@ -111,7 +112,7 @@ export class AuthService {
           this.authReady$.next(true);
         }),
         switchMap(() => this.loadPermissions$()),
-        map(() => void 0)
+        map(() => void 0),
       );
   }
 
@@ -126,12 +127,13 @@ export class AuthService {
         switchMap(() =>
           this.http.get<RawApiResponse>(
             `${environment.apiUrl}/api/session/me`,
-            { withCredentials: true }
-          )
+            { withCredentials: true },
+          ),
         ),
         validateResponse(userSchema),
         tap((res) => {
           this.user$.next(res.data);
+          this.log.setUser(res.data.id);
           this.authReady$.next(true); // ✅ можно рендерить Shell
         }),
         tap(() => this.loadPermissions$().subscribe()),
@@ -142,7 +144,7 @@ export class AuthService {
           //this.permsReady$.next(true);
           this.router.navigate(['/session/sign-in']);
           return of(void 0);
-        })
+        }),
       );
   }
 
@@ -151,7 +153,7 @@ export class AuthService {
   }
 
   has(op: OperationCode) {
-   // console.log(this.permissions$());
+    // console.log(this.permissions$());
     return !!this.permissions$().get(op)?.access;
   }
 
@@ -170,7 +172,7 @@ export class AuthService {
           this.resetAuthState();
           this.router.navigate(['/session/sign-in']);
         }),
-        map(() => void 0)
+        map(() => void 0),
       );
   }
 }

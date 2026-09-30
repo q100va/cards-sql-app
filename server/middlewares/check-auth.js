@@ -1,5 +1,8 @@
 // ESM
 import jwt from 'jsonwebtoken';
+import {
+  setRequestUserId,
+} from './request-context.js';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 const VERIFY_OPTS = {
@@ -40,6 +43,8 @@ export function requireAuth(req, res, next) {
       roleId: roleIdNum,
     };
 
+    setRequestUserId(subNum);
+
     return next();
   } catch {
     return badAuth(res);
@@ -65,6 +70,7 @@ export function optionalAuth(req, res, next) {
           role: payload.role ?? null,
           roleId: Number.isFinite(roleIdNum) ? roleIdNum : null,
         };
+        setRequestUserId(subNum);
       }
     }
   } catch {
