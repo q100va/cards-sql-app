@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { requireAccess } from '../middlewares/require-access.js';
 import { validateRequest } from '../middlewares/validate-request.js';
 import { signInReqSchema } from '../../shared/dist/schemas/auth.schema.js';
-import { auditAuthFail } from '../logging/audit-auth.js';
+import { auditAuthEvent } from '../audit/audit-auth.js';
 import { verify, DUMMY_ARGON2_HASH } from '../controllers/passwords.mjs';
 import { signInIpLimiter, signInUserLimiter, resetKey, loginKey, signInUaLimiter, signInGlobalLimiter } from '../controllers/rate-limit.js';
 import { mintTokenPair, setRefreshCookie, clearRefreshCookie, ACCESS_TTL_SEC, REFRESH_SECRET } from '../controllers/token.js';
@@ -30,7 +30,7 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     } catch (rlUser) {
       const retrySec = Math.ceil((rlUser?.msBeforeNext ?? 0) / 1000);
       res.setHeader('Retry-After', retrySec);
-      await auditAuthFail(req, { event: 'login_blocked', reason: 'user_rate_limit', entityId: userName });
+      await auditAuthEvent(req, { event: 'login_blocked', reason: 'user_rate_limit', entityId: userName });
       return res.status(429).json({ code: 'ERRORS.TOO_MANY_ATTEMPTS', data: { retryAfterSec: retrySec } });
     }
 
@@ -38,19 +38,19 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     try { await signInIpLimiter.consume(ipKey); } catch (rl) {
       const retrySec = Math.ceil((rl?.msBeforeNext ?? 0) / 1000);
       res.setHeader('Retry-After', retrySec);
-      await auditAuthFail(req, { event: 'login_blocked', reason: 'ip_rate_limit', entityId: userName });
+      await auditAuthEvent(req, { event: 'login_blocked', reason: 'ip_rate_limit', entityId: userName });
       return res.status(429).json({ code: 'ERRORS.TOO_MANY_ATTEMPTS', data: { retryAfterSec: retrySec } });
     }
     try { await signInUaLimiter.consume(uaKey); } catch (rl) {
       const retrySec = Math.ceil((rl?.msBeforeNext ?? 0) / 1000);
       res.setHeader('Retry-After', retrySec);
-      await auditAuthFail(req, { event: 'login_blocked', reason: 'ua_rate_limit', entityId: userName });
+      await auditAuthEvent(req, { event: 'login_blocked', reason: 'ua_rate_limit', entityId: userName });
       return res.status(429).json({ code: 'ERRORS.TOO_MANY_ATTEMPTS', data: { retryAfterSec: retrySec } });
     }
     try { await signInGlobalLimiter.consume('ALL'); } catch (rl) {
       const retrySec = Math.ceil((rl?.msBeforeNext ?? 0) / 1000);
       res.setHeader('Retry-After', retrySec);
-      await auditAuthFail(req, { event: 'login_blocked', reason: 'global_rate_limit' });
+      await auditAuthEvent(req, { event: 'login_blocked', reason: 'global_rate_limit' });
       return res.status(429).json({ code: 'ERRORS.TOO_MANY_ATTEMPTS', data: { retryAfterSec: retrySec } });
     }
 
@@ -67,18 +67,18 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     if (!user) {
       // имитация затрат времени на hash-verify
       if (DUMMY_ARGON2_HASH) { try { await verify(DUMMY_ARGON2_HASH, password ?? ''); } catch { } }
-      await auditAuthFail(req, { event: 'login_failed', reason: 'unknown_user', entityId: userName });
+      await auditAuthEvent(req, { event: 'login_failed', reason: 'unknown_user', entityId: userName });
       return res.status(401).json({ code: 'ERRORS.INVALID_AUTHORIZATION', data: null });
     }
 
     // 3) Статусы аккаунта
     const now = new Date();
     if (user.isRestricted) {
-      await auditAuthFail(req, { event: 'login_blocked', userId: user.id, reason: 'user_restricted' });
+      await auditAuthEvent(req, { event: 'login_blocked', userId: user.id, reason: 'user_restricted' });
       return res.status(423).json({ code: 'ERRORS.ACCOUNT_RESTRICTED', data: null });
     }
     if (user.lockedUntil && new Date(user.lockedUntil) > now) {
-      await auditAuthFail(req, {
+      await auditAuthEvent(req, {
         event: 'login_blocked', userId: user.id, reason: 'user_locked',
         details: { lockedUntil: user.lockedUntil },
       });
@@ -90,13 +90,13 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
     if (!ok) {
       const { events, state } = await user.registerFailedLogin(now /*, SECURITY, { transaction: t }*/);
       if (events.includes('locked')) {
-        await auditAuthFail(req, {
+        await auditAuthEvent(req, {
           event: 'user_locked', userId: user.id, reason: 'user_rate_limit',
           details: { lockedUntil: state.lockedUntil },
         });
       }
       if (events.includes('restricted')) {
-        await auditAuthFail(req, {
+        await auditAuthEvent(req, {
           event: 'user_restricted', userId: user.id, reason: 'daily_lockout',
           details: { strikeCount: state.bruteStrikeCount, windowStart: state.bruteWindowStart },
         });
@@ -104,7 +104,7 @@ router.post('/sign-in', validateRequest(signInReqSchema), async (req, res, next)
       const attemptsLeft = events.includes('locked')
         ? 0
         : Math.max(0, FAILS_TO_LOCK - (state.failedLoginCount ?? 0));
-      await auditAuthFail(req, { event: 'login_failed', userId: user.id, reason: 'bad_password', details: { attemptsLeft } });
+      await auditAuthEvent(req, { event: 'login_failed', userId: user.id, reason: 'bad_password', details: { attemptsLeft } });
       return res.status(401).json({ code: 'ERRORS.INVALID_AUTHORIZATION', data: null });
     }
 
@@ -174,7 +174,7 @@ router.post('/refresh', async (req, res, next) => {
     const now = new Date();
     if (tokenRow.revokedAt || tokenRow.rotatedAt || tokenRow.expiresAt <= now) {
       // токен уже использовали/протух/отозван → нельзя
-      await auditAuthFail(req, {
+      await auditAuthEvent(req, {
         event: 'refresh_failed',
         reason: tokenRow.revokedAt ? 'token_revoked' : (tokenRow.rotatedAt ? 'token_rotated' : 'token_expired'),
         userId: Number(sub),

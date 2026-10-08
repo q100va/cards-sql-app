@@ -536,6 +536,7 @@ router.patch(
                 [Op.ne]: ORDER_RECIPIENT_STATUS.DELETED,
               },
             },
+            individualHooks: true,
             transaction: t,
           },
         );

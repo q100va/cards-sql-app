@@ -122,7 +122,6 @@ async function refreshPartnerSearch(partnerId, transaction) {
         partnerId,
         isRestricted: false,
       },
-      individualHooks: true,
       transaction,
     },
   );
@@ -305,7 +304,6 @@ router.post(
           { content: search },
           {
             where: { partnerId: id, isRestricted: false },
-            individualHooks: true,
             transaction,
           },
         );
@@ -319,7 +317,7 @@ router.post(
           if (!created) {
             await row.update(
               { content: outdatedSearch },
-              { individualHooks: true, transaction },
+              { transaction },
             );
           }
         } else {

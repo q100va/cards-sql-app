@@ -156,7 +156,7 @@ const passwordsMock = {
 };
 
 // аудит провалов логина
-const auditAuthMock = { auditAuthFail: jest.fn(async () => { }) };
+const auditAuthMock = { auditAuthEvent: jest.fn(async () => { }) };
 
 
 // ---------- загрузчик приложения с моками ----------
@@ -174,7 +174,7 @@ async function loadApp({
     // моки модулей
     jest.unstable_mockModule('../../middlewares/validate-request.js', () => validateRequestMock);
     jest.unstable_mockModule('../../../shared/dist/schemas/auth.schema.js', () => signInSchemaMock);
-    jest.unstable_mockModule('../../logging/audit-auth.js', () => auditAuthMock);
+    jest.unstable_mockModule('../../audit/audit-auth.js', () => auditAuthMock);
     jest.unstable_mockModule('../../controllers/passwords.mjs', () => passwords);
     jest.unstable_mockModule('../../controllers/rate-limit.js', () => rateLimiter);
     jest.unstable_mockModule('../../controllers/token.js', () => tokens);

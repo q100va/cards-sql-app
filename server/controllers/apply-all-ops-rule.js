@@ -106,6 +106,7 @@ async function normalizeObjectOps(roleId, codes, transaction) {
           roleId,
           name: p.code,
         },
+        skipAudit: true,
         transaction,
       },
     );

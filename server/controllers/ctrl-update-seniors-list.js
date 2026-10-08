@@ -42,7 +42,6 @@ export async function addNewSeniors(admitted, dateOfUpdate, transaction) {
 
   const createdSearchRows = await SeniorSearch.bulkCreate(searchRows, {
     transaction,
-    individualHooks: true,
   });
 
   if (createdSearchRows.length !== searchRows.length) {
@@ -62,6 +61,7 @@ export async function removeSeniors(removed, dateOfExit, transaction) {
     { dateOfExit },
     {
       where: { id: { [Op.in]: ids } },
+      individualHooks: true,
       transaction,
     });
 
@@ -81,6 +81,7 @@ export async function updateSeniors(updated, transaction) {
       data.changes,
       {
         where: { id: data.seniorId },
+        individualHooks: true,
         transaction,
       });
   }

@@ -336,7 +336,11 @@ router.post(
         const search = createSearchStringFor('volunteer', fresh);
         await VolunteerSearch.update(
           { content: search },
-          { where: { volunteerId: id, isRestricted: false }, individualHooks: true, transaction }
+          {
+            where:
+              { volunteerId: id, isRestricted: false },
+            transaction
+          }
         );
         const outdatedSearch = createOutdatedSearchStringFor('volunteer', fresh);
         if (outdatedSearch) {
@@ -356,7 +360,6 @@ router.post(
             await row.update(
               { content: outdatedSearch },
               {
-                individualHooks: true,
                 transaction,
               },
             );

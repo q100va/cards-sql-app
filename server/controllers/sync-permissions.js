@@ -43,7 +43,10 @@ export async function syncRolePermissionsFor(roleId) {
               disabled:
                 operation.flag === 'FULL',
             },
-            { transaction },
+            {
+              skipAudit: true,
+              transaction
+            },
           );
         }
       }
@@ -56,6 +59,7 @@ export async function syncRolePermissionsFor(roleId) {
               roleId,
               name: code,
             },
+            skipAudit: true,
             transaction,
           });
         }

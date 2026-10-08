@@ -181,7 +181,7 @@ async function refreshSeniorSearch(seniorId, transaction) {
   if (!currentCreated) {
     await currentRow.update(
       { content },
-      { individualHooks: true, transaction },
+      { transaction },
     );
   }
 
@@ -204,7 +204,7 @@ async function refreshSeniorSearch(seniorId, transaction) {
     if (!outdatedCreated) {
       await outdatedRow.update(
         { content: outdatedContent },
-        { individualHooks: true, transaction },
+        { transaction },
       );
     }
   } else {
@@ -277,6 +277,7 @@ router.post(
               { spouseId: null },
               {
                 where: { id: exSpouse.id },
+                individualHooks: true,
                 transaction,
               },
             );
@@ -287,6 +288,7 @@ router.post(
             { spouseId: senior.id },
             {
               where: { id: creatingSenior.spouseId },
+              individualHooks: true,
               transaction,
             },
           );
@@ -329,6 +331,7 @@ router.post(
                 { spouseId: null },
                 {
                   where: { id: senior.spouseId },
+                  individualHooks: true,
                   transaction,
                 },
               );
@@ -348,6 +351,7 @@ router.post(
                   { spouseId: null },
                   {
                     where: { id: exSpouse.id },
+                    individualHooks: true,
                     transaction,
                   },
                 );
@@ -358,6 +362,7 @@ router.post(
                 { spouseId: id },
                 {
                   where: { id: spouseId },
+                  individualHooks: true,
                   transaction,
                 },
               );
@@ -1015,6 +1020,7 @@ router.post(
               isLatest: true,
             },
             transaction,
+            individualHooks: true,
           },
         );
 

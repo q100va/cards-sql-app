@@ -140,7 +140,6 @@ async function refreshHomeSearch(homeId, transaction) {
         homeId,
         isRestricted: false,
       },
-      individualHooks: true,
       transaction,
     },
   );
@@ -346,7 +345,6 @@ router.post(
           { content: search },
           {
             where: { homeId: id, isRestricted: false },
-            individualHooks: true,
             transaction,
           },
         );
@@ -360,7 +358,7 @@ router.post(
           if (!created) {
             await row.update(
               { content: outdatedSearch },
-              { individualHooks: true, transaction },
+              { transaction },
             );
           }
         } else {

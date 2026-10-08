@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 
 import sequelize from './database.js';
 import logger from './logging/logger.js';
-import { initAuditHooks } from './logging/audit-hooks.js';
+import { initAuditHooks } from './audit/audit-hooks.js';
 import requestLogger from './middlewares/request-logger.js';
 import { correlationId } from './middlewares/correlation-id.js';
 import { withRequestContext } from './middlewares/request-context.js';
@@ -96,6 +96,24 @@ app.use((req, res, next) => {
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 app.head('/healthz', (_req, res) => res.sendStatus(200));
 
+const noCache = (_req, res, next) => {
+  res.set({
+    'Cache-Control':
+      'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+  });
+
+  next();
+};
+
+app.use(
+  [
+    '/api/auth/permissions',
+    '/api/session/me',
+  ],
+  noCache,
+);
 
 // API
 app.use('/api/session', SessionApi);
@@ -114,13 +132,6 @@ app.use('/api/reports', ReportsApi);
 app.use('/api/audit', AuditApi);
 app.use('/api/auth', AuthApi);
 
-const noCache = (_req, res, next) => {
-  res.set({ 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
-  next();
-};
-app.use(['/api/auth/permissions', '/api/sessions/me'], noCache);
-
-
 // 404 + errors
 app.use(notFound);
 app.use(handleError);
@@ -134,7 +145,10 @@ export async function initInfrastructure() {
   await sequelize.authenticate();
   logger.info('DB authenticated');
 
-  const syncOpts = isProd ? { alter: true } : { force: false };
+  const syncOpts = {
+    force: false,
+    alter: false,
+  };
 
   await Country.sync(syncOpts);
   await Region.sync(syncOpts);

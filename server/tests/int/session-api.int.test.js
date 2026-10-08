@@ -176,7 +176,7 @@ const signInSchemaMock = { signInReqSchema: {} };
 // verify пароля — будем менять в тестах по месту
 const passwordsMock = { verify: jest.fn(async () => true), DUMMY_ARGON2_HASH: '$argon2id$dummy' };
 // аудит
-const auditAuthMock = { auditAuthFail: jest.fn(async () => { }) };
+const auditAuthMock = { auditAuthEvent: jest.fn(async () => { }) };
 
 // requireAccess: декодируем Bearer, кладём req.user (приближение к реальному)
 function makeRequireAccessMock() {
@@ -210,7 +210,7 @@ async function loadApp({
 
     jest.unstable_mockModule('../../middlewares/validate-request.js', () => validateRequestMock);
     jest.unstable_mockModule('../../../shared/dist/schemas/auth.schema.js', () => signInSchemaMock);
-    jest.unstable_mockModule('../../logging/audit-auth.js', () => auditAuthMock);
+    jest.unstable_mockModule('../../audit/audit-auth.js', () => auditAuthMock);
     jest.unstable_mockModule('../../controllers/passwords.mjs', () => passwords);
     jest.unstable_mockModule('../../controllers/rate-limit.js', () => rateLimiter);
     jest.unstable_mockModule('../../controllers/token.js', () => tokens);

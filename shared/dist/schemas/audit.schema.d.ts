@@ -20,7 +20,7 @@ export declare const auditQuerySchema: z.ZodObject<{
     to: z.ZodOptional<z.ZodCoercedDate<unknown>>;
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     offset: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const auditDiffCreateSchema: z.ZodObject<{
     after: z.ZodRecord<z.ZodString, z.ZodUnknown>;
 }, z.core.$strict>;
@@ -55,7 +55,7 @@ export declare const auditItemSchema: z.ZodObject<{
         auth: "auth";
     }>;
     model: z.ZodString;
-    entityId: z.ZodString;
+    entityId: z.ZodNullable<z.ZodString>;
     diff: z.ZodUnion<readonly [z.ZodObject<{
         after: z.ZodRecord<z.ZodString, z.ZodUnknown>;
     }, z.core.$strict>, z.ZodObject<{
@@ -83,7 +83,7 @@ export declare const auditPageSchema: z.ZodObject<{
             auth: "auth";
         }>;
         model: z.ZodString;
-        entityId: z.ZodString;
+        entityId: z.ZodNullable<z.ZodString>;
         diff: z.ZodUnion<readonly [z.ZodObject<{
             after: z.ZodRecord<z.ZodString, z.ZodUnknown>;
         }, z.core.$strict>, z.ZodObject<{
