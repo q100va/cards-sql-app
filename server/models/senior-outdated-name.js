@@ -10,22 +10,26 @@ export default function SeniorOutdatedNameModel(sequelize) {
       primaryKey: true
     },
     firstName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    patronymic: {
-      type: DataTypes.STRING
-    },
-    lastName: {
-      type: DataTypes.STRING,
-    },
+  type: DataTypes.STRING(50),
+  allowNull: false,
+  validate: {
+    notEmpty: true,
+  },
+},
+patronymic: {
+  type: DataTypes.STRING(50),
+  allowNull: true,
+},
+lastName: {
+  type: DataTypes.STRING(50),
+  allowNull: true,
+},
   },
     {
       sequelize,
       modelName: 'senior-outdated-name',
       tableName: 'senior-outdated-names',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     });
   return SeniorOutdatedName;
 }

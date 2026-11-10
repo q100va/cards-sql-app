@@ -1,5 +1,8 @@
-// server/models/order.js
 import { DataTypes, Model } from 'sequelize';
+import {
+  ORDER_STATUS,
+  ORDER_SOURCE,
+} from '../../shared/dist/constants/orders.js';
 
 export default function OrderModel(sequelize) {
   class Order extends Model { }
@@ -34,54 +37,35 @@ export default function OrderModel(sequelize) {
       amount: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          min: 1,
+        },
       },
-      //1 - 'PENDING' 2 - 'ACCEPTED' 3 - 'RETURNED' 4 - 'OVERDUE'
       status: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          min: 1,
-          max: 4,
-        }
+          isIn: [Object.values(ORDER_STATUS)],
+        },
       },
-      //1 - 'SUBS' 2 - 'SITE' 3 - 'VK' 4 - 'TELEGRAM' 5 - 'INSTA' 6 - 'FB' 7 - 'DOBRORU' 8 - 'INFLUENCER' 9 - 'OTHER'
       source: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          min: 1,
-          max: 9,
-        }
+          isIn: [Object.values(ORDER_SOURCE)],
+        },
       },
-
-/*       contactSnapshot: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          notEmpty: true,
-        }
-      }, */
       comment: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(500),
+        allowNull: true,
       },
-/*       orderRecipientsId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      } */
     },
     {
       sequelize,
       modelName: 'order',
       tableName: 'orders',
       underscored: false,
-      timestamps: true, // createdAt
-      updatedAt: true,
-/*       indexes: [
-        {
-          unique: true,
-          fields: ['occasionId', 'seniorId'],
-        },
-      ] */
+      timestamps: true,
     }
   );
   return Order;

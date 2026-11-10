@@ -605,6 +605,7 @@
     "TABLE_TITLE": "Nursing Homes",
     "ADD_PARTNER": "Add home",
     "SEARCH_PLACEHOLDER": "KABANOVO",
+    "HAS_DEPENDENCIES": "The home cannot be deleted: {{count}} related resident(s) or coordination(s).",
     "VIEW_OPTIONS": {
       "ALL": "all homes",
       "ONLY_ACTIVE": "only active",
@@ -801,6 +802,7 @@
   },
 
   "VOLUNTEER": {
+    "HAS_DEPENDENCIES": "The volunteer cannot be deleted: {{count}} related request(s)",
     "TABLE_TITLE": "Volunteers",
     "ADD_PARTNER": "Add volunteer",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
@@ -1120,93 +1122,160 @@
       }
     }
   },
+  "SUCCESS": {
+    "DATA_ADDED": "Added {{listLength}} records.",
+    "DATA_DELETED": "Records deleted.",
+    "DATA_CHECKED": "Records checked.",
+    "CREATED": "Record created successfully.",
+    "UPDATED": "Record updated successfully.",
+    "DELETED": "Record deleted successfully.",
+    "SAVED": "Changes saved successfully."
+  },
+
   "ERRORS": {
-    "VALIDATION": "Validation error",
-    "FORBIDDEN": "Not enough permissions",
-    "ACCESS": "Failed to check permissions",
-    "BAD_REQUEST": "Bad request",
-    "DB_ERROR": "Storage error",
+    "DATA_ADD_FAILED": "Failed to add records.",
+    "INVALID_FILTER_MATCH_MODE": "Invalid filter match mode.",
+    "INVALID_FILTER_VALUE": "Invalid filter value.",
+    "UNSUPPORTED_TYPE": "Unsupported type value.",
+    "RECIPIENT": {
+      "LIST_ALREADY_EXISTS": "This list already exists.",
+      "HAS_DEPENDENCIES": "The selected records cannot be deleted because they are linked to requests.",
+      "LIST_HAS_DEPENDENCIES": "The list cannot be cleared because it is linked to requests."
+    },
+    "ORDER": {
+      "MIN_RECIPIENTS": "The request must contain at least one recipient."
+    },
+    "DATA_FETCH_FAILED": "Failed to load data.",
+    "DATA_SAVE_FAILED": "Failed to save data.",
+    "DATA_UPDATE_FAILED": "Failed to update data.",
+    "DATA_DELETE_FAILED": "Failed to delete data.",
+    "DATA_NOT_FOUND": "Data not found.",
+    "DATA_CREATE_FAILED": "Failed to create the record.",
+    "DATA_CHECK_FAILED": "Failed to verify data.",
+    "REPORT_GENERATE_FAILED": "Failed to generate report.",
+
+    "OCCASION": {
+      "ALREADY_EXISTS": "Occasion with this name already exists.",
+      "HAS_DEPENDENCIES": "The occasion cannot be deleted because it has related recipients."
+    },
+
+    "VALIDATION": "Validation error.",
+    "FORBIDDEN": "Not enough permissions.",
+    "ACCESS": "Failed to check permissions.",
+    "BAD_REQUEST": "Bad request.",
+    "DB_ERROR": "Storage error.",
     "SERVER": "Unexpected server error. Please try again later.",
-    "UNAUTHORIZED": "Unauthorized",
-    "INVALID_AUTHORIZATION": "Invalid password or username",
-    "NOT_FOUND": "Resource not found",
-    "CONFLICT": "Data conflict",
-    "LOGS_NOT_ACCEPTED": "Failed to accept client logs",
+    "UNAUTHORIZED": "Unauthorized.",
+    "INVALID_AUTHORIZATION": "Invalid password or username.",
+    "NOT_FOUND": "Resource not found.",
+    "CONFLICT": "Data conflict.",
+    "LOGS_NOT_ACCEPTED": "Failed to accept client logs.",
     "NO_DATA_RECEIVED": "An error occurred. No data received.",
-    "INVALID_SCHEMA": "Invalid response data format",
-    "INVALID_TYPE": "Invalid response data type",
-    "NO_VALIDATOR": "Validation is not available",
-    "UNKNOWN": "Unknown error occurred",
+    "INVALID_SCHEMA": "Invalid response data format.",
+    "INVALID_TYPE": "Invalid response data type.",
+    "NO_VALIDATOR": "Validation is not available.",
+    "UNKNOWN": "Unknown error occurred.",
     "TOO_MANY_ATTEMPTS": "Too many attempts. Try again in {{retryAfterSec}} sec.",
     "ACCOUNT_RESTRICTED": "Your account is restricted by an administrator.",
     "ACCOUNT_LOCKED": "Temporary lock after multiple failed attempts. Please try later.",
     "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
     "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
-    "USER_WITHOUT_ROLE": "User without role",
+    "USER_WITHOUT_ROLE": "User without role.",
     "ADDRESS_NOT_RESTORED": "Failed to restore the address. Object not updated.",
 
     "ROLE": {
-      "NOT_FOUND": "Role not found",
-      "NAME_NOT_CHECKED": "Failed to check the role name",
-      "NOT_CREATED": "Failed to create the role",
-      "NOT_UPDATED": "Failed to update the role",
-      "NAME_LIST_FAILED": "Failed to get the list of role names",
-      "LIST_FAILED": "Failed to get the list of roles",
-      "NOT_CHECKED": "Failed to check the role dependencies",
-      "NOT_DELETED": "Failed to delete the role"
+      "NOT_FOUND": "Role not found.",
+      "ALREADY_EXISTS": "A role with this name already exists.",
+      "HAS_DEPENDENCIES": "The role cannot be deleted because it is assigned to users.",
+      "NAME_NOT_CHECKED": "Failed to check the role name.",
+      "NOT_CREATED": "Failed to create the role.",
+      "NOT_UPDATED": "Failed to update the role.",
+      "NAME_LIST_FAILED": "Failed to get the list of role names.",
+      "LIST_FAILED": "Failed to get the list of roles.",
+      "NOT_CHECKED": "Failed to check the role dependencies.",
+      "NOT_DELETED": "Failed to delete the role."
     },
     "TOPONYM": {
-      "NOT_FOUND": "Toponym not found",
-      "NAME_NOT_CHECKED": "Failed to check the toponym name",
-      "NOT_CREATED": "Failed to create the toponym",
-      "NOT_UPDATED": "Failed to update the toponym",
-      "NAME_LIST_FAILED": "Failed to get the list of toponym names",
-      "LIST_FAILED": "Failed to get the list of toponyms",
-      "NOT_CHECKED": "Failed to check the toponym dependencies",
-      "NOT_DELETED": "Failed to delete the toponym",
-      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}",
+      "NOT_FOUND": "Toponym not found.",
+      "NAME_NOT_CHECKED": "Failed to check the toponym name.",
+      "NOT_CREATED": "Failed to create the toponym.",
+      "NOT_UPDATED": "Failed to update the toponym.",
+      "NAME_LIST_FAILED": "Failed to get the list of toponym names.",
+      "LIST_FAILED": "Failed to get the list of toponyms.",
+      "NOT_CHECKED": "Failed to check the toponym dependencies.",
+      "NOT_DELETED": "Failed to delete the toponym.",
+      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}.",
       "FROM_BULK_ALREADY_EXISTS": "These names: {{conflicts}} are already in use for this area. If this isn’t a mistake, please contact an administrator.",
-      "BULK_NOT_CREATED": "Toponyms were not created due to an error",
+      "BULK_NOT_CREATED": "Toponyms were not created due to an error.",
       "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling.",
-      "INVALID_TYPE": "Invalid type of the toponym: {{name}}"
+      "INVALID_TYPE": "Invalid type of the toponym: {{name}}."
     },
     "FILE": {
-      "EMPTY": "The file contains no data",
-      "INVALID_STRUCTURE": "Required columns are missing",
-      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx)",
-      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'",
-      "NOT_UPLOADED": "Failed to upload the file",
-      "NOT_CHOSEN": "The file isn't chosen"
+      "EMPTY": "The file contains no data.",
+      "INVALID_STRUCTURE": "Required columns are missing.",
+      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx).",
+      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'.",
+      "NOT_UPLOADED": "Failed to upload the file.",
+      "NOT_CHOSEN": "The file isn't chosen.",
+      "INVALID_PATH": "Invalid file path.",
+      "NOT_FOUND": "File not found.",
+      "DOWNLOAD_FAILED": "Failed to download the file."
     },
     "USER": {
-      "NOT_FOUND": "User not found",
-      "NAME_NOT_CHECKED": "Failed to check the user name",
-      "DUPLICATES_NOT_CHECKED": "Failed to check the user data",
+      "ALREADY_EXISTS": "User with this userName already exists",
+      "HAS_DATA_DUPLICATES": "The user data has duplicates",
+      "HAS_DEPENDENCIES": "The user cannot be deleted: {{count}} related items(s)",
+      "NOT_FOUND": "User not found.",
+      "NAME_NOT_CHECKED": "Failed to check the user name.",
+      "DUPLICATES_NOT_CHECKED": "Failed to check the user data.",
       "ROLE_REQUIRED": "User has no assigned role. Account not created.",
-      "NOT_CREATED": "Failed to create the user",
-      "NOT_UPDATED": "Failed to update the user",
-      "LIST_FAILED": "Failed to get the list of users",
-      "NOT_CHECKED": "Failed to check the user dependencies",
-      "NOT_DELETED": "Failed to delete the user",
+      "NOT_CREATED": "Failed to create the user.",
+      "NOT_UPDATED": "Failed to update the user.",
+      "LIST_FAILED": "Failed to get the list of users.",
+      "NOT_CHECKED": "Failed to check the user dependencies.",
+      "NOT_DELETED": "Failed to delete the user.",
       "CURRENT_PASSWORD_REQUIRED": "Current password is required to change your password.",
       "CURRENT_PASSWORD_INVALID": "The current password you entered is incorrect.",
       "PASSWORD_NOT_CHANGED": "The password could not be changed. Please try again.",
-      "NOT_BLOCKED": "Failed to block the user",
-      "NOT_UNBLOCKED": "Failed to unblock the user"
+      "NOT_BLOCKED": "Failed to block the user.",
+      "NOT_UNBLOCKED": "Failed to unblock the user."
+    },
+    "VOLUNTEER": {
+      "HAS_DATA_DUPLICATES": "The volunteer data has duplicates",
+      "HAS_DEPENDENCIES": "The volunteer cannot be deleted because related requests exist."
+    },
+    "PARTNER": {
+      "HAS_DATA_DUPLICATES": "The partner data has duplicates.",
+      "HAS_DEPENDENCIES": "The partner cannot be deleted while related home coordinations exist."
+    },
+    "SENIOR": {
+      "HAS_DATA_DUPLICATES": "The resident data has duplicates.",
+      "HAS_DEPENDENCIES": "The resident cannot be deleted while related records exist."
+    },
+    "HOME": {
+      "ALREADY_EXISTS": "A home with this name already exists."
+    },
+    "CONTACT": {
+      "INVALID_FORMAT": "The contact value has an invalid format."
     }
   },
+
   "FORM_VALIDATION": {
     "INVALID_FORM": "Invalid form",
     "INVALID_FORMAT": "Invalid data format",
     "REQUIRED": "This field cannot be empty",
+    "REQUIRED_SELECTION": "A selection is required",
     "TOO_LONG_500": "Maximum 500 characters",
+    "TOO_LONG_256": "Maximum 256 characters",
     "TOO_LONG_150": "Maximum 150 characters",
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",
-    "TOO_SHORT_7": "Minimum 5 characters",
+    "TOO_SHORT_2": "Minimum 2 characters",
+    "TOO_SHORT_7": "Minimum 7 characters",
     "NOT_FOUND": "The field is empty or the entered value was not found",
     "INVALID_ISO_DATE": "Invalid date",
+    "MIN_ONE_CONTACT": "At least one contact is required",
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",
@@ -1218,7 +1287,8 @@
     },
     "CONTACT": {
       "MIN_CONTACT": "At least one contact is required",
-      "INVALID_CONTACT": "Invalid data"
+      "INVALID_CONTACT": "Invalid data",
+      "INVALID_URL": "Invalid URL"
     },
     "USER": {
       "MIN_PASSWORD": "Minimum 8 characters",
@@ -1234,14 +1304,14 @@
       "WRONG_DAY": "Allowed values: 1 through 31",
       "WRONG_YEAR": "Allowed values: 1900 through the current year",
       "INT_MIN_1": "Only integers greater than 0 are allowed",
-      "DATE_FROM_GREATER_THAN_TO": "The ‘from’ date cannot be later than the ‘to’ date",
-      "YEAR_FROM_GREATER_THAN_TO": "The ‘from’ year cannot be later than the ‘to’ year",
-      "WRONG_SUM": "The sum of the values must equal the requested amount",
-      "WRONG_NO_ADDRESS": "The maximum number of no-return-address entries cannot exceed the requested amount",
-      "WRONG_MIN": "The minimum from one home cannot exceed the requested amount",
-      "WRONG_MAX": "The maximum from one home cannot exceed the requested amount",
+      "INVALID_DATE_RANGE": "The ‘from’ date cannot be later than the ‘to’ date",
+      "INVALID_YEAR_RANGE": "The ‘from’ year cannot be later than the ‘to’ year",
+      "GENDER_AMOUNT_SUM": "The sum of the values must equal the requested amount",
+      "MAX_NO_ADDRESS_TOO_BIG": "The maximum number of no-return-address entries cannot exceed the requested amount",
+      "MIN_FROM_ONE_HOUSE_TOO_BIG": "The minimum from one home cannot exceed the requested amount",
+      "MAX_FROM_ONE_HOUSE_TOO_BIG": "The maximum from one home cannot exceed the requested amount",
       "MIN_GRATE_THAN_MAX": "The minimum from one home cannot exceed the maximum from one home",
-      "WRONG_PROPORTION": "This distribution across homes is not possible for the specified amount"
+      "IMPOSSIBLE_HOUSE_DISTRIBUTION": "This distribution across homes is not possible for the specified amount"
     }
   },
   "INTERNAL_VALIDATION": {
@@ -1328,6 +1398,8 @@
   },
 
   "OBJECT": {
+    "RECIPIENTS": "Greeting recipients",
+    "REPORTS": "Reports",
     "TOPONYMS": "Countries\nRegions\nDistricts\nLocalities",
     "USERS": "Users",
     "ROLES": "Roles",
@@ -1339,6 +1411,36 @@
     "OCCASIONS": "Occasions"
   },
   "OPS": {
+    "BULK_CREATE": {
+      "NAME": "Create a list"
+    },
+    "BULK_EDIT": {
+      "NAME": "Edit in bulk"
+    },
+    "BULK_CLEAR": {
+      "NAME": "Clear the list"
+    },
+    "DOWNLOAD": {
+      "NAME": "Download data"
+    },
+    "EDIT_RECIPIENTS": {
+      "NAME": "Edit the recipients list"
+    },
+    "FULL_FILTER": {
+      "NAME": "Access the full filter"
+    },
+    "VIEW_AUDIT_LOG": {
+      "NAME": "View the audit log"
+    },
+    "VIEW_CURRENT_STATISTIC": {
+      "NAME": "View current statistics"
+    },
+    "VIEW_LIMITED_REPORTS": {
+      "NAME": "Access basic report data"
+    },
+    "VIEW_FULL_REPORTS": {
+      "NAME": "Access additional report data"
+    },
     "ALL_OPS": {
       "NAME": "Full access to all operations"
     },

@@ -6,7 +6,7 @@ import { AuditService } from '../../services/audit.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { FilterService } from 'primeng/api';
 import { PaginatorState } from 'primeng/paginator';
-import { AuditItem } from '@shared/schemas/audit.schema';
+import { AuditItem } from '../../../../shared/schemas/audit.schema';
 
 // ---- Mocks ------------------------------------------------------------------
 

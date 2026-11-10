@@ -1,155 +1,87 @@
-import { literal } from "sequelize";
+import { literal, Op } from 'sequelize';
 import {
-  Volunteer, VolunteerContact,
-  User, Institute, Occasion
-} from "../models/index.js";
+  Volunteer,
+  VolunteerContact,
+  User,
+  VolunteerInstitute,
+  Occasion
+} from '../models/index.js';
+import {
+  OCCASION_TYPES,
+  MONTHS,
+  OCCASION_TYPE,
+} from '../../shared/dist/constants/occasions.js';
+import {
+  ORDER_STATUSES,
+  ORDER_SOURCES,
+} from '../../shared/dist/constants/orders.js';
+import { INSTITUTE_CATEGORIES } from '../../shared/dist/constants/volunteers.js';
+import { escapeLikeValue } from './ctrl-common-helpers.js';
+import { applyDateFilter, applyNumericFilter, applyStringFilter } from "./ctrl-apply-filter.js";
 
-export const ORDER_STATUSES = {
-  1: {
-    key: 'ORDER.STATUS.PENDING',
-    ru: 'Ожидаема',
-    en: 'Pending',
+export const ORDER_LIST_INCLUDE = [
+  {
+    model: User,
+    as: 'user',
+    attributes: ['id', 'userName'],
   },
-  2: {
-    key: 'ORDER.STATUS.ACCEPTED',
-    ru: 'Подтверждена',
-    en: 'Accepted',
+  {
+    model: Volunteer,
+    as: 'volunteer',
+    attributes: ['id', 'firstName', 'patronymic', 'lastName'],
   },
-  3: {
-    key: 'ORDER.STATUS.RETURNED',
-    ru: 'Возвращена',
-    en: 'Returned',
+  {
+    model: VolunteerInstitute,
+    as: 'institute',
+    attributes: ['id', 'instituteName', 'category'],
+    required: false,
   },
-  4: {
-    key: 'ORDER.STATUS.OVERDUE',
-    ru: 'Просрочена',
-    en: 'Overdue',
+  {
+    model: VolunteerContact,
+    as: 'contact',
+    attributes: ['id', 'content', 'type'],
+    required: false,
   },
-};
+  {
+    model: Occasion,
+    as: 'occasion',
+    attributes: ['id', 'type', 'month', 'year', 'amount', 'status'],
+  },
+];
 
-//1 - 'SUBS' 2 - 'SITE' 3 - 'VK' 4 - 'TELEGRAM' 5 - 'INSTA' 6 - 'FB' 7 - 'DOBRORU' 8 - 'INFLUENCER' 9 - 'OTHER'
-
-/* export const SOURCES = [
-  {
-    id: 1,
-    optionKey: 'ORDER.CARD.SOURCE.SUBS',
-  },
-  {
-    id: 2,
-    optionKey: 'ORDER.CARD.SOURCE.SITE',
-  },
-  {
-    id: 3,
-    optionKey: 'ORDER.CARD.SOURCE.VK',
-  },
-  {
-    id: 4,
-    optionKey: 'ORDER.CARD.SOURCE.TELEGRAM',
-  },
-  {
-    id: 5,
-    optionKey: 'ORDER.CARD.SOURCE.INSTA',
-  },
-  {
-    id: 6,
-    optionKey: 'ORDER.CARD.SOURCE.DOBRORU',
-  },
-  {
-    id: 7,
-    optionKey: 'ORDER.CARD.SOURCE.INFLUENCER',
-  },
-  {
-    id: 8,
-    optionKey: 'ORDER.CARD.SOURCE.OTHER',
-  },
-]; */
-
-export const ORDER_SOURCES = {
-  1: {
-    key: 'ORDER.CARD.SOURCE.SUBS',
-    ru: 'постоянные',
-    en: 'Subscription',
-  },
-  2: {
-    key: 'ORDER.CARD.SOURCE.SITE',
-    ru: 'сайт',
-    en: 'Website',
-  },
-  3: {
-    key: 'ORDER.CARD.SOURCE.VK',
-    ru: 'вконтакте',
-    en: 'VK',
-  },
-  4: {
-    key: 'ORDER.CARD.SOURCE.TELEGRAM',
-    ru: 'телеграм',
-    en: 'Telegram',
-  },
-  5: {
-    key: 'ORDER.CARD.SOURCE.INSTA',
-    ru: 'инста',
-    en: 'Instagram',
-  },
-  6: {
-    key: 'ORDER.CARD.SOURCE.DOBRORU',
-    ru: 'добро.ру',
-    en: 'Dobro.ru',
-  },
-  7: {
-    key: 'ORDER.CARD.SOURCE.INFLUENCER',
-    ru: 'блогер',
-    en: 'Influencer',
-  },
-  8: {
-    key: 'ORDER.CARD.SOURCE.OTHER',
-    ru: 'другое',
-    en: 'Other',
-  },
-}
-export const RECIPIENT_STATUS = {
-  1: 'ORDER.CARD.RECIPIENT_STATUS.PRESENT',
-  2: 'ORDER.CARD.RECIPIENT_STATUS.ABSENT',
-  3: 'ORDER.CARD.RECIPIENT_STATUS.DELETED',
-};
-
-const orderSortFields = {
+const ORDER_SORT_FIELDS = {
   userName: [{ model: User, as: 'user' }, 'userName'],
   date: 'createdAt',
   amount: 'amount',
   volunteerName: [{ model: Volunteer, as: 'volunteer' }, 'lastName'],
-  //status: 'status',
-  //source: 'source',
-  //occasionName: 'occasionId',
   instituteName: [
-    { model: Institute, as: 'institute' },
+    { model: VolunteerInstitute, as: 'institute' },
     'instituteName'],
   contact: [
     { model: VolunteerContact, as: 'contact' },
-    'content'],//TODO: add sorting by 'type'
+    'content'],
+  //TODO: Add contact type to sorting.
 };
 
 function getTranslatedOrderStatus(status, lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
   return ORDER_STATUSES[status]?.[locale] ?? '';
 }
+
 function getTranslatedOrderSource(source, lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
   return ORDER_SOURCES[source]?.[locale] ?? '';
 }
 
-export function getOrderStatusSortExpression(lang = 'en') {
+function getOrderStatusSortExpression(lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
-
-  const statuses = [1, 2, 3, 4];
-
+  const statuses = Object.keys(ORDER_STATUSES).map(Number);
   const sortedStatuses = statuses.sort((statusA, statusB) =>
     getTranslatedOrderStatus(statusA, locale).localeCompare(
       getTranslatedOrderStatus(statusB, locale),
       locale,
     ),
   );
-  console.log('sortedStatuses');
-  console.log(sortedStatuses);
   const cases = sortedStatuses
     .map((status, index) => `WHEN ${status} THEN ${index}`)
     .join(' ');
@@ -162,11 +94,9 @@ export function getOrderStatusSortExpression(lang = 'en') {
   `);
 }
 
-export function getOrderSourceSortExpression(lang = 'en') {
+function getOrderSourceSortExpression(lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
-
-  const sources = [1, 2, 3, 4, 5, 6, 7, 8];
-
+  const sources = Object.keys(ORDER_SOURCES).map(Number);
   const sortedSources = sources.sort((sourceA, sourceB) =>
     getTranslatedOrderSource(sourceA, locale).localeCompare(
       getTranslatedOrderSource(sourceB, locale),
@@ -185,76 +115,17 @@ export function getOrderSourceSortExpression(lang = 'en') {
   `);
 }
 
-export function getOrderSortField(sortField) {
-  const field = Array.isArray(sortField) ? sortField[0] : sortField;
-  return orderSortFields[field] ?? 'createdAt';
-}
-
-export const OCCASION_TYPES = {
-  1: {
-    key: 'OCCASION.TYPE.BIRTHDAY.NAME',
-    ru: 'Дни рождения',
-    en: 'Birthdays',
-  },
-  2: {
-    key: 'OCCASION.TYPE.NEW_YEAR.NAME',
-    ru: 'Новый год',
-    en: 'New Year',
-  },
-  3: {
-    key: 'OCCASION.TYPE.FEBRUARY_23.NAME',
-    ru: '23 февраля',
-    en: "Defender of the Fatherland Day",
-  },
-  4: {
-    key: 'OCCASION.TYPE.MARCH_8.NAME',
-    ru: '8 Марта',
-    en: "International Women's Day",
-  },
-  5: {
-    key: 'OCCASION.TYPE.MAY_9.NAME',
-    ru: 'День Победы',
-    en: "Victory Day",
-  },
-  6: {
-    key: 'OCCASION.TYPE.EASTER.NAME',
-    ru: 'Пасха',
-    en: "Easter",
-  },
-};
-
-export const MONTHS = {
-  1: { ru: 'Январь', en: 'January' },
-  2: { ru: 'Февраль', en: 'February' },
-  3: { ru: 'Март', en: 'March' },
-  4: { ru: 'Апрель', en: 'April' },
-  5: { ru: 'Май', en: 'May' },
-  6: { ru: 'Июнь', en: 'June' },
-  7: { ru: 'Июль', en: 'July' },
-  8: { ru: 'Август', en: 'August' },
-  9: { ru: 'Сентябрь', en: 'September' },
-  10: { ru: 'Октябрь', en: 'October' },
-  11: { ru: 'Ноябрь', en: 'November' },
-  12: { ru: 'Декабрь', en: 'December' },
-};
-
-export function getOccasionTypeSortExpression(lang = 'en') {
+function getOccasionTypeSortExpression(lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
-
-  const sortedTypes = Object.keys(OCCASION_TYPES).sort((typeA, typeB) =>
-    OCCASION_TYPES[typeA][locale].localeCompare(
-      OCCASION_TYPES[typeB][locale],
-      locale,
-    ),
+  const sortedTypes = [...OCCASION_TYPES].sort((a, b) =>
+    a[locale].localeCompare(b[locale], locale),
   );
-
   const cases = sortedTypes
     .map(
       (type, index) =>
-        `WHEN ${type} THEN ${index}`,
+        `WHEN ${type.id} THEN ${index}`,
     )
     .join(' ');
-
   return literal(`
     CASE "occasion"."type"
       ${cases}
@@ -263,28 +134,249 @@ export function getOccasionTypeSortExpression(lang = 'en') {
   `);
 }
 
-export function getOccasionMonthSortExpression(lang = 'en') {
+function getOccasionMonthSortExpression(lang = 'en') {
   const locale = lang === 'ru' ? 'ru' : 'en';
-
-  const sortedMonths = Object.keys(MONTHS)
-    .map(Number)
-    .sort((monthA, monthB) =>
-      MONTHS[monthA][locale].localeCompare(
-        MONTHS[monthB][locale],
-        locale,
-      ),
-    );
-
+  const sortedMonths = [...MONTHS].sort((a, b) =>
+    a[locale].localeCompare(b[locale], locale),
+  );
   const cases = sortedMonths
-    .map((month, index) => `WHEN ${month} THEN ${index}`)
+    .map(
+      (month, index) =>
+        `WHEN ${month.id} THEN ${index}`,
+    )
     .join(' ');
-
   return literal(`
     CASE "occasion"."month"
       ${cases}
       ELSE 999
     END
   `);
+}
+
+export function buildOrderSort(
+  sortField,
+  sortOrder,
+  lang,
+) {
+  const sortKey = Array.isArray(sortField)
+    ? sortField[0]
+    : sortField;
+
+  const dir =
+    sortKey
+      ? sortOrder === 1
+        ? 'ASC'
+        : 'DESC'
+      : 'DESC';
+
+  const field = ORDER_SORT_FIELDS[sortKey] ?? 'createdAt';
+
+  if (sortKey === 'status') {
+    return [
+      [getOrderStatusSortExpression(lang), dir],
+      ['id', 'ASC'],
+    ];
+  }
+
+  if (sortKey === 'source') {
+    return [
+      [getOrderSourceSortExpression(lang), dir],
+      ['id', 'ASC'],
+    ];
+  }
+
+  if (sortKey === 'occasionName') {
+    return [
+      [getOccasionTypeSortExpression(lang), dir],
+      [getOccasionMonthSortExpression(lang), dir],
+      [{ model: Occasion, as: 'occasion' }, 'year', dir],
+      ['id', 'ASC'],
+    ];
+  }
+
+  if (Array.isArray(field)) {
+    return [
+      [...field, dir],
+      ['id', 'ASC'],
+    ];
+  }
+
+  return [
+    [field, dir],
+    ['id', 'ASC'],
+  ];
+}
+
+function applyMultiFieldSearch(where, value, fields) {
+  const words = String(value ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) return;
+
+  where[Op.and] ??= [];
+
+  where[Op.and].push(
+    ...words.map((word) => {
+      const searchValue = `%${escapeLikeValue(word)}%`;
+
+      return {
+        [Op.or]: fields.map((field) => ({
+          [field]: {
+            [Op.iLike]: searchValue,
+          },
+        })),
+      };
+    }),
+  );
+}
+
+function getMatchingInstituteCategoryIds(value) {
+  const search = String(value ?? '').trim().toLocaleLowerCase();
+
+  if (!search) return [];
+
+  return Object.entries(INSTITUTE_CATEGORIES)
+    .filter(([, category]) =>
+      category.en.toLocaleLowerCase().includes(search) ||
+      category.ru.toLocaleLowerCase().includes(search),
+    )
+    .map(([id]) => Number(id));
+}
+
+function applyInstituteSearch(where, value) {
+  const words = String(value ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) return;
+
+  where[Op.and] ??= [];
+  where[Op.and].push(
+    ...words.map((word) => {
+      const conditions = [
+        {
+          '$institute.instituteName$': {
+            [Op.iLike]: `%${escapeLikeValue(word)}%`,
+          },
+        },
+      ];
+      const categoryIds = getMatchingInstituteCategoryIds(word);
+
+      if (categoryIds.length) {
+        conditions.push({
+          '$institute.category$': { [Op.in]: categoryIds },
+        });
+      }
+
+      return { [Op.or]: conditions };
+    }),
+  );
+}
+
+function applyOccasionFilter(
+  where,
+  occasionNodes,
+) {
+  if (!occasionNodes?.length) return;
+  const validNodes = occasionNodes.filter(
+    (item) =>
+      item.year != null &&
+      (
+        item.type !== OCCASION_TYPE.BIRTHDAY ||
+        item.month != null
+      ),
+  );
+
+  if (!validNodes.length) return;
+  where[Op.and] ??= [];
+
+  where[Op.and].push({
+    [Op.or]: validNodes.map((node) => ({
+      [Op.and]: [
+        { '$occasion.type$': node.type },
+        { '$occasion.month$': node.month },
+        { '$occasion.year$': node.year },
+      ],
+    })),
+  });
+
+}
+
+function applyOrderGlobalSearch(
+  where,
+  searchValue,
+) {
+  const search = String(searchValue ?? '').trim();
+
+  if (!search) return;
+
+  const value = `%${escapeLikeValue(search)}%`;
+  const categoryIds = getMatchingInstituteCategoryIds(search);
+
+  where[Op.and] ??= [];
+
+  where[Op.and].push({
+    [Op.or]: [
+      { comment: { [Op.iLike]: value } },
+      { '$user.userName$': { [Op.iLike]: value } },
+      { '$volunteer.firstName$': { [Op.iLike]: value } },
+      { '$volunteer.lastName$': { [Op.iLike]: value } },
+      { '$volunteer.patronymic$': { [Op.iLike]: value } },
+      { '$institute.instituteName$': { [Op.iLike]: value } },
+      ...(categoryIds.length
+        ? [{ '$institute.category$': { [Op.in]: categoryIds } }]
+        : []),
+      { '$contact.content$': { [Op.iLike]: value } },
+      { '$contact.type$': { [Op.iLike]: value } },
+    ],
+  });
+}
+
+export function applyOrderFilters(
+  where,
+  filters,
+  searchValue,
+) {
+  applyNumericFilter(where, filters, 'amount');
+  applyStringFilter(where, filters, 'comment');
+  applyNumericFilter(where, filters, 'userId');
+  applyNumericFilter(where, filters, 'status');
+  applyNumericFilter(where, filters, 'source');
+  applyDateFilter(where, filters, 'date');
+
+  applyMultiFieldSearch(
+    where,
+    filters.volunteerName?.[0]?.value,
+    [
+      '$volunteer.firstName$',
+      '$volunteer.lastName$',
+      '$volunteer.patronymic$',
+    ],
+  );
+
+  applyInstituteSearch(where, filters.instituteName?.[0]?.value);
+
+  applyMultiFieldSearch(
+    where,
+    filters.contact?.[0]?.value,
+    [
+      '$contact.content$',
+      '$contact.type$',
+    ],
+  );
+
+  applyOccasionFilter(
+    where,
+    filters.occasionName?.[0]?.value,
+  );
+
+  applyOrderGlobalSearch(
+    where,
+    searchValue,
+  );
 }
 
 export function dictToOptions(dict, lang) {

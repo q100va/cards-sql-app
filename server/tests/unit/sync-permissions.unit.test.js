@@ -5,14 +5,13 @@ const q = jest.fn();
 jest.unstable_mockModule('../../database.js', () => ({ default: { query: q } }));
 
 const Role = { findAll: jest.fn() };
-jest.unstable_mockModule('../../models/role.js', () => ({ default: Role }));
 
 const RolePermission = {
   findAll: jest.fn(),
   create : jest.fn(),
   destroy: jest.fn(),
 };
-jest.unstable_mockModule('../../models/index.js', () => ({ RolePermission }));
+jest.unstable_mockModule('../../models/index.js', () => ({ Role, RolePermission }));
 
 // Минимальный OPERATIONS
 const OPERATIONS = [

@@ -18,11 +18,10 @@ import z from 'zod';
 import {
   Order,
   OrderDraft,
-  OrderEdit,
   OrderFilter,
-  OrderFiltersData,
+  OrderFilterRegionsAndHomes,
   orderSchema,
-  orderFiltersDataSchema,
+  orderFilterRegionsAndHomesSchema,
   OrderQuery,
   OrderRecipients,
   orderRecipientsSchema,
@@ -44,11 +43,11 @@ export class OrderService {
   constructor(private msgWrapper: MessageWrapperService) {}
 
   //get list of toponyms names for address-filter
-  getOrderFiltersData(): Observable<ApiResponse<OrderFiltersData>> {
+  getOrderFiltersData(): Observable<ApiResponse<OrderFilterRegionsAndHomes>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-filters-data`)
       .pipe(
-        validateResponse(orderFiltersDataSchema),
+        validateResponse(orderFilterRegionsAndHomesSchema),
         catchError(this.handleError),
       );
   }
@@ -160,12 +159,5 @@ export class OrderService {
       );
   }
 
-  /*   editOrder(
-    id: number,
-    draft: OrderEdit,
-  ): Observable<ApiResponse<OrderDetails>> {
-    return this.http
-      .put<RawApiResponse>(`${this.BASE_URL}/${id}`, draft)
-      .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));
-  } */
+
 }

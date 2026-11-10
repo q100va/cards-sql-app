@@ -39,9 +39,7 @@ jest.unstable_mockModule('../../middlewares/require-permission.js', () => ({
 
 // Load router and models after mocks
 const { default: router } = await import("../../routes/roles-api.js");
-import {RolePermission} from "../../models/index.js";
-import Role from "../../models/role.js";
-import User from "../../models/user.js";
+import { Role, RolePermission, User } from "../../models/index.js";
 import { OPERATIONS } from "../../shared/operations.js";
 import { makeTestApp } from "./makeApp.js";
 
@@ -144,7 +142,7 @@ describe("Role Routes", () => {
 
       // Response
       expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('ROLE.CREATED');
+      expect(res.body.code).toBe('SUCCESS.CREATED');
       expect(res.body.data).toBe("manager");
 
       // Role.create called with tx
@@ -200,7 +198,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_CREATED'
+        code: 'ERRORS.DATA_CREATE_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -235,7 +233,7 @@ describe("Role Routes", () => {
       );
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('ROLE.UPDATED');
+      expect(res.body.code).toBe('SUCCESS.UPDATED');
       expect(res.body.data).toEqual(payload);
     });
 
@@ -264,7 +262,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_UPDATED'
+        code: 'ERRORS.DATA_UPDATE_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -591,7 +589,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_UPDATED'
+        code: 'ERRORS.DATA_UPDATE_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -638,7 +636,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NAME_LIST_FAILED'
+        code: 'ERRORS.DATA_FETCH_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -707,7 +705,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.LIST_FAILED'
+        code: 'ERRORS.DATA_FETCH_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -740,7 +738,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_CHECKED'
+        code: 'ERRORS.DATA_CHECK_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });
@@ -772,7 +770,7 @@ describe("Role Routes", () => {
         },
       });
       expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('ROLE.DELETED');
+      expect(res.body.code).toBe('SUCCESS.DELETED');
       expect(res.body.data).toBe(null);
     });
 
@@ -797,7 +795,7 @@ describe("Role Routes", () => {
       expect(res.status).toBe(500);
       expect(res.headers['content-type']).toMatch(/application\/json/i);
       expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_DELETED'
+        code: 'ERRORS.DATA_DELETE_FAILED'
       });
       expect('correlationId' in res.body).toBe(true);
     });

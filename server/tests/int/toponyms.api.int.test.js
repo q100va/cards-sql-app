@@ -105,7 +105,7 @@ describe('Toponyms API (integration)', () => {
 
   // ---------- POST /api/toponyms/create-toponym ----------
   describe('POST /api/toponyms/create-toponym', () => {
-    it('creates region and returns code TOPONYM.CREATED with hydrated object', async () => {
+    it('creates region and returns code SUCCESS.CREATED with hydrated object', async () => {
       const c = await createCountry({ name: 'Россия' });
       const payload = { type: 'region', name: 'Тверская', shortName: 'Твер.', countryId: c.id };
 
@@ -115,7 +115,7 @@ describe('Toponyms API (integration)', () => {
         .send(payload);
 
       expect(status).toBe(201);
-      expect(body.code).toBe('TOPONYM.CREATED');
+      expect(body.code).toBe('SUCCESS.CREATED');
       expect(body.data).toEqual(expect.objectContaining({
         id: expect.any(Number),
         name: 'Тверская',
@@ -146,7 +146,7 @@ describe('Toponyms API (integration)', () => {
 
   // ---------- POST /api/toponyms/update-toponym ----------
   describe('POST /api/toponyms/update-toponym', () => {
-    it('updates and returns code TOPONYM.UPDATED with hydrated object', async () => {
+    it('updates and returns code SUCCESS.UPDATED with hydrated object', async () => {
       const c = await createCountry({ name: 'Россия' });
       const r = await createRegion({ name: 'Ярославская', shortName: 'Яросл.', countryId: c.id });
 
@@ -156,11 +156,11 @@ describe('Toponyms API (integration)', () => {
         .send({ type: 'region', id: r.id, name: 'Обновлена', shortName: 'Обн.', countryId: c.id });
 
       expect(status).toBe(201);
-      expect(body.code).toBe('TOPONYM.UPDATED');
+      expect(body.code).toBe('SUCCESS.UPDATED');
       expect(body.data).toEqual(expect.objectContaining({ id: r.id, name: 'Обновлена', shortName: 'Обн.' }));
     });
 
-    it('404 + ERRORS.TOPONYM.NOT_FOUND when row does not exist', async () => {
+    it('404 + ERRORS.DATA_NOT_FOUND when row does not exist', async () => {
       const c = await createCountry({ name: 'Россия' });
 
       const { body, status } = await global.api
@@ -169,7 +169,7 @@ describe('Toponyms API (integration)', () => {
         .send({ type: 'region', id: 999999, name: 'X', shortName: 'Y', countryId: c.id });
 
       expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.TOPONYM.NOT_FOUND');
+      expect(body.code).toBe('ERRORS.DATA_NOT_FOUND');
     });
   });
 
@@ -275,7 +275,7 @@ describe('Toponyms API (integration)', () => {
 
   // ---------- DELETE /api/toponyms/delete-toponym ----------
   describe('DELETE /api/toponyms/delete-toponym', () => {
-    it('hard delete (destroy=true): returns code TOPONYM.DELETED', async () => {
+    it('hard delete (destroy=true): returns code SUCCESS.DELETED', async () => {
       const c = await createCountry({ name: 'Удаляемая' });
 
       const { body, status } = await global.api
@@ -284,7 +284,7 @@ describe('Toponyms API (integration)', () => {
         .query({ type: 'country', id: c.id, destroy: 'true' });
 
       expect(status).toBe(200);
-      expect(body.code).toBe('TOPONYM.DELETED');
+      expect(body.code).toBe('SUCCESS.DELETED');
 
       const check = await select('SELECT id FROM countries WHERE id = $1', [c.id]);
       expect(check.length).toBe(0);
@@ -299,20 +299,20 @@ describe('Toponyms API (integration)', () => {
         .query({ type: 'region', id: r.id, destroy: 'false' });
 
       expect(status).toBe(200);
-      expect(body.code).toBe('TOPONYM.DELETED');
+      expect(body.code).toBe('SUCCESS.DELETED');
 
       const rows = await select('SELECT "isRestricted" FROM regions WHERE id = $1', [r.id]);
       expect(rows[0].isRestricted).toBe(true);
     });
 
-    it('404 + ERRORS.TOPONYM.NOT_FOUND when deleting missing row', async () => {
+    it('404 + ERRORS.DATA_NOT_FOUND when deleting missing row', async () => {
       const { body, status } = await global.api
         .delete('/api/toponyms/delete-toponym')
         .set({ ...langRu, ...auth })
         .query({ type: 'country', id: 999999, destroy: 'true' });
 
       expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.TOPONYM.NOT_FOUND');
+      expect(body.code).toBe('ERRORS.DATA_NOT_FOUND');
     });
   });
 
@@ -346,7 +346,7 @@ describe('Toponyms API (integration)', () => {
       expect(body.code).toBe('ERRORS.TOPONYM.FROM_BULK_ALREADY_EXISTS');
     });
 
-    it('201 + TOPONYM.BULK_CREATED when ok (country)', async () => {
+    it('201 + SUCCESS.CREATED when ok (country)', async () => {
       const { body, status } = await global.api
         .post('/api/toponyms/populate-toponyms')
         .set({ ...langRu, ...auth })
@@ -359,7 +359,7 @@ describe('Toponyms API (integration)', () => {
         });
 
       expect(status).toBe(201);
-      expect(body).toEqual({ code: 'TOPONYM.BULK_CREATED', data: 2 });
+      expect(body).toEqual({ code: 'SUCCESS.CREATED', data: 2 });
 
       const rows = await select(`SELECT name FROM countries WHERE lower(name) IN (lower($1), lower($2))`, ['Estonia', 'Latvia']);
       expect(rows.length).toBe(2);

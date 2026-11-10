@@ -1,8 +1,12 @@
 import { z } from 'zod';
 export declare const reportDTOSchema: z.ZodObject<{
     userId: z.ZodNullable<z.ZodNumber>;
-    type: z.ZodNumber;
-    frequency: z.ZodString;
+    type: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
+    frequency: z.ZodEnum<{
+        readonly MONTHLY: "MONTHLY";
+        readonly QUARTERLY: "QUARTERLY";
+        readonly ANNUAL: "ANNUAL";
+    }>;
     months: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     quarters: z.ZodNullable<z.ZodArray<z.ZodNumber>>;
     years: z.ZodArray<z.ZodNumber>;
@@ -13,7 +17,7 @@ export declare const reportSchoolCoordinationRowSchema: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
         month: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     ordersCount: z.ZodNumber;
     dobroruCount: z.ZodNumber;
     recipientsCount: z.ZodNumber;
@@ -27,7 +31,7 @@ export declare const reportGeneralRowSchema: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
         month: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     recipientsCount: z.ZodNumber;
     volunteersCount: z.ZodNumber;
     institutesCount: z.ZodNumber;
@@ -48,7 +52,7 @@ export declare const reportPersonalRowSchema: z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
         month: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     ordersCount: z.ZodNumber;
     seniorsCount: z.ZodNumber;
     recipientsCount: z.ZodNumber;
@@ -73,7 +77,7 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
         month: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     ordersCount: z.ZodNumber;
     dobroruCount: z.ZodNumber;
     recipientsCount: z.ZodNumber;
@@ -86,7 +90,7 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
         month: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     recipientsCount: z.ZodNumber;
     volunteersCount: z.ZodNumber;
     institutesCount: z.ZodNumber;
@@ -106,7 +110,7 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
         year: z.ZodNumber;
         quarter: z.ZodOptional<z.ZodNumber>;
         month: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>;
+    }, z.core.$strict>;
     ordersCount: z.ZodNumber;
     seniorsCount: z.ZodNumber;
     recipientsCount: z.ZodNumber;
@@ -125,14 +129,14 @@ export declare const reportRowSchema: z.ZodUnion<readonly [z.ZodObject<{
     schoolsCount: z.ZodNumber;
 }, z.core.$strip>]>;
 export declare const reportSchema: z.ZodObject<{
-    type: z.ZodNumber;
+    type: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
     report: z.ZodArray<z.ZodUnion<readonly [z.ZodObject<{
         key: z.ZodString;
         periodData: z.ZodObject<{
             year: z.ZodNumber;
             quarter: z.ZodOptional<z.ZodNumber>;
             month: z.ZodOptional<z.ZodNumber>;
-        }, z.core.$strip>;
+        }, z.core.$strict>;
         ordersCount: z.ZodNumber;
         dobroruCount: z.ZodNumber;
         recipientsCount: z.ZodNumber;
@@ -145,7 +149,7 @@ export declare const reportSchema: z.ZodObject<{
             year: z.ZodNumber;
             quarter: z.ZodOptional<z.ZodNumber>;
             month: z.ZodOptional<z.ZodNumber>;
-        }, z.core.$strip>;
+        }, z.core.$strict>;
         recipientsCount: z.ZodNumber;
         volunteersCount: z.ZodNumber;
         institutesCount: z.ZodNumber;
@@ -165,7 +169,7 @@ export declare const reportSchema: z.ZodObject<{
             year: z.ZodNumber;
             quarter: z.ZodOptional<z.ZodNumber>;
             month: z.ZodOptional<z.ZodNumber>;
-        }, z.core.$strip>;
+        }, z.core.$strict>;
         ordersCount: z.ZodNumber;
         seniorsCount: z.ZodNumber;
         recipientsCount: z.ZodNumber;
@@ -227,8 +231,8 @@ export declare const statisticSchema: z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export type ReportRow = z.infer<typeof reportRowSchema>;
-export type ReportResponse = z.infer<typeof reportSchema>;
-export type StatisticResponse = z.infer<typeof statisticSchema>;
 export type StatisticRow = z.infer<typeof statisticRowSchema>;
 export type ReportGeneralRow = z.infer<typeof reportGeneralRowSchema>;
+export type ReportResponse = z.infer<typeof reportSchema>;
+export type StatisticResponse = z.infer<typeof statisticSchema>;
 export {};

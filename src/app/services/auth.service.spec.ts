@@ -18,7 +18,7 @@ import type {
   SignInResp,
   RefreshResp,
   Permission,
-} from '@shared/schemas/auth.schema';
+} from '../../../shared/schemas/auth.schema';
 
 describe('AuthService', () => {
   let service: AuthService;

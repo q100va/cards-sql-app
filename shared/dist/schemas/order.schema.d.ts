@@ -1,18 +1,75 @@
 import { z } from 'zod';
+export declare const orderDataSchema: z.ZodObject<{
+    volunteerId: z.ZodCoercedNumber<unknown>;
+    occasionId: z.ZodCoercedNumber<unknown>;
+}, z.core.$strict>;
 export declare const orderDraftSchema: z.ZodObject<{
     occasionId: z.ZodNumber;
     volunteerId: z.ZodNumber;
     userId: z.ZodNumber;
     instituteId: z.ZodNullable<z.ZodNumber>;
-    status: z.ZodNumber;
-    source: z.ZodNumber;
+    status: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+    source: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>]>;
+    forSchoolDepartment: z.ZodBoolean;
     contactId: z.ZodNumber;
     amount: z.ZodNumber;
-    comment: z.ZodNullable<z.ZodString>;
+    comment: z.ZodNullable<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodString>>;
+}, z.core.$strict>;
+export declare const filterSchema: z.ZodOptional<z.ZodObject<{
+    addressCategory: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>]>>;
+    gender: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>>;
+    maleAmount: z.ZodOptional<z.ZodNumber>;
+    femaleAmount: z.ZodOptional<z.ZodNumber>;
+    onlyWithPicture: z.ZodOptional<z.ZodLiteral<true>>;
+    onlyAnniversaries: z.ZodOptional<z.ZodLiteral<true>>;
+    onlyAnniversariesAndOldest: z.ZodOptional<z.ZodLiteral<true>>;
+    onlyWithConcents: z.ZodOptional<z.ZodLiteral<true>>;
+    year1: z.ZodOptional<z.ZodNumber>;
+    year2: z.ZodOptional<z.ZodNumber>;
+    date1: z.ZodOptional<z.ZodNumber>;
+    date2: z.ZodOptional<z.ZodNumber>;
+    regions: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    homes: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    minFromOneHouse: z.ZodOptional<z.ZodNumber>;
+    maxFromOneHouse: z.ZodOptional<z.ZodNumber>;
+    maxNoAddress: z.ZodOptional<z.ZodNumber>;
+}, z.core.$strict>>;
+export declare const orderCreateSchema: z.ZodObject<{
+    orderDraft: z.ZodObject<{
+        occasionId: z.ZodNumber;
+        volunteerId: z.ZodNumber;
+        userId: z.ZodNumber;
+        instituteId: z.ZodNullable<z.ZodNumber>;
+        status: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+        source: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>]>;
+        forSchoolDepartment: z.ZodBoolean;
+        contactId: z.ZodNumber;
+        amount: z.ZodNumber;
+        comment: z.ZodNullable<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodString>>;
+    }, z.core.$strict>;
+    filters: z.ZodOptional<z.ZodObject<{
+        addressCategory: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>]>>;
+        gender: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>>;
+        maleAmount: z.ZodOptional<z.ZodNumber>;
+        femaleAmount: z.ZodOptional<z.ZodNumber>;
+        onlyWithPicture: z.ZodOptional<z.ZodLiteral<true>>;
+        onlyAnniversaries: z.ZodOptional<z.ZodLiteral<true>>;
+        onlyAnniversariesAndOldest: z.ZodOptional<z.ZodLiteral<true>>;
+        onlyWithConcents: z.ZodOptional<z.ZodLiteral<true>>;
+        year1: z.ZodOptional<z.ZodNumber>;
+        year2: z.ZodOptional<z.ZodNumber>;
+        date1: z.ZodOptional<z.ZodNumber>;
+        date2: z.ZodOptional<z.ZodNumber>;
+        regions: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+        homes: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+        minFromOneHouse: z.ZodOptional<z.ZodNumber>;
+        maxFromOneHouse: z.ZodOptional<z.ZodNumber>;
+        maxNoAddress: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strict>>;
 }, z.core.$strict>;
 export declare const orderFilterSchema: z.ZodObject<{
-    addressCategory: z.ZodNumber;
-    gender: z.ZodNumber;
+    addressCategory: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>]>;
+    gender: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
     maleAmount: z.ZodNullable<z.ZodNumber>;
     femaleAmount: z.ZodNullable<z.ZodNumber>;
     onlyWithPicture: z.ZodBoolean;
@@ -29,97 +86,11 @@ export declare const orderFilterSchema: z.ZodObject<{
     maxFromOneHouse: z.ZodNullable<z.ZodNumber>;
     maxNoAddress: z.ZodNullable<z.ZodNumber>;
 }, z.core.$strict>;
-export declare const filterSchema: z.ZodOptional<z.ZodObject<{
-    addressCategory: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    gender: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    maleAmount: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    femaleAmount: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    onlyWithPicture: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
-    onlyAnniversaries: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
-    onlyAnniversariesAndOldest: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
-    onlyWithConcents: z.ZodOptional<z.ZodOptional<z.ZodLiteral<true>>>;
-    year1: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    year2: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    date1: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    date2: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    regions: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-    homes: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-    minFromOneHouse: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    maxFromOneHouse: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    maxNoAddress: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>>;
-export declare const orderFiltersDataSchema: z.ZodObject<{
-    regions: z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        name: z.ZodString;
-    }, z.core.$strip>>;
-    homes: z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        name: z.ZodString;
-        regionId: z.ZodNumber;
-    }, z.core.$strip>>;
-}, z.core.$strict>;
-declare const orderRecipientSchema: z.ZodObject<{
-    index: z.ZodNumber;
-    id: z.ZodNumber;
-    fullNameSnapshot: z.ZodString;
-    specialComment: z.ZodNullable<z.ZodString>;
-    birthDay: z.ZodNumber;
-    birthMonth: z.ZodNumber;
-    birthYear: z.ZodNumber;
-    infoNote: z.ZodNullable<z.ZodString>;
-    photoLink: z.ZodNullable<z.ZodString>;
-    status: z.ZodString;
-    statusId: z.ZodNumber;
-}, z.core.$strip>;
-export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
-    homeId: z.ZodNumber;
-    postAddress: z.ZodString;
-    infoNote: z.ZodNullable<z.ZodString>;
-    noAddressNote: z.ZodNullable<z.ZodString>;
-    homeRecipients: z.ZodArray<z.ZodObject<{
-        index: z.ZodNumber;
-        id: z.ZodNumber;
-        fullNameSnapshot: z.ZodString;
-        specialComment: z.ZodNullable<z.ZodString>;
-        birthDay: z.ZodNumber;
-        birthMonth: z.ZodNumber;
-        birthYear: z.ZodNumber;
-        infoNote: z.ZodNullable<z.ZodString>;
-        photoLink: z.ZodNullable<z.ZodString>;
-        status: z.ZodString;
-        statusId: z.ZodNumber;
-    }, z.core.$strip>>;
-}, z.core.$strip>>;
-export declare const orderSchema: z.ZodObject<{
-    id: z.ZodNumber;
-    date: z.ZodCoercedDate<unknown>;
-    amount: z.ZodNumber;
-    userName: z.ZodString;
-    volunteerName: z.ZodString;
-    instituteName: z.ZodNullable<z.ZodString>;
-    contact: z.ZodString;
-    status: z.ZodString;
-    statusId: z.ZodNumber;
-    source: z.ZodString;
-    occasion: z.ZodString;
-    occasionStatus: z.ZodNumber;
-    comment: z.ZodNullable<z.ZodString>;
-}, z.core.$strict>;
 declare const occasionNodeDataSchema: z.ZodObject<{
     type: z.ZodNumber;
     month: z.ZodNullable<z.ZodNumber>;
     year: z.ZodNullable<z.ZodNumber>;
-}, z.core.$strip>;
-export type OccasionNodeData = z.infer<typeof occasionNodeDataSchema>;
-export interface OccasionNode {
-    key: string;
-    label: string;
-    data: OccasionNodeData;
-    children?: OccasionNode[];
-}
-export declare const occasionNodeSchema: z.ZodType<OccasionNode>;
-export declare const occasionNodesSchema: z.ZodArray<z.ZodType<OccasionNode, unknown, z.core.$ZodTypeInternals<OccasionNode, unknown>>>;
+}, z.core.$strict>;
 export declare const orderQueryDTOSchema: z.ZodObject<{
     offset: z.ZodNumber;
     limit: z.ZodNumber;
@@ -131,11 +102,89 @@ export declare const orderQueryDTOSchema: z.ZodObject<{
             type: z.ZodNumber;
             month: z.ZodNullable<z.ZodNumber>;
             year: z.ZodNullable<z.ZodNumber>;
-        }, z.core.$strip>>]>;
+        }, z.core.$strict>>]>;
         matchMode: z.ZodString;
         operator: z.ZodString;
-    }, z.core.$strip>>>>;
-}, z.core.$strip>;
+    }, z.core.$strict>>>>;
+}, z.core.$strict>;
+export declare const orderStatusUpdateSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    status: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
+}, z.core.$strict>;
+export declare const orderIdParamsSchema: z.ZodObject<{
+    id: z.ZodCoercedNumber<unknown>;
+}, z.core.$strict>;
+export declare const orderEditRecipientsSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    deletingIds: z.ZodArray<z.ZodNumber>;
+}, z.core.$strict>;
+export declare const orderFilterRegionsAndHomesSchema: z.ZodObject<{
+    regions: z.ZodArray<z.ZodObject<{
+        id: z.ZodNumber;
+        name: z.ZodString;
+    }, z.core.$strict>>;
+    homes: z.ZodArray<z.ZodObject<{
+        id: z.ZodNumber;
+        name: z.ZodString;
+        regionId: z.ZodNumber;
+    }, z.core.$strict>>;
+}, z.core.$strict>;
+declare const orderRecipientSchema: z.ZodObject<{
+    index: z.ZodNumber;
+    id: z.ZodNumber;
+    fullNameSnapshot: z.ZodString;
+    specialComment: z.ZodString;
+    birthDay: z.ZodNumber;
+    birthMonth: z.ZodNumber;
+    birthYear: z.ZodNullable<z.ZodNumber>;
+    infoNote: z.ZodNullable<z.ZodString>;
+    photoLink: z.ZodNullable<z.ZodString>;
+    status: z.ZodString;
+    statusId: z.ZodNumber;
+}, z.core.$strict>;
+export declare const orderRecipientsSchema: z.ZodArray<z.ZodObject<{
+    homeId: z.ZodNumber;
+    postAddress: z.ZodString;
+    infoNote: z.ZodNullable<z.ZodString>;
+    noAddressNote: z.ZodNullable<z.ZodString>;
+    homeRecipients: z.ZodArray<z.ZodObject<{
+        index: z.ZodNumber;
+        id: z.ZodNumber;
+        fullNameSnapshot: z.ZodString;
+        specialComment: z.ZodString;
+        birthDay: z.ZodNumber;
+        birthMonth: z.ZodNumber;
+        birthYear: z.ZodNullable<z.ZodNumber>;
+        infoNote: z.ZodNullable<z.ZodString>;
+        photoLink: z.ZodNullable<z.ZodString>;
+        status: z.ZodString;
+        statusId: z.ZodNumber;
+    }, z.core.$strict>>;
+}, z.core.$strict>>;
+export declare const orderSchema: z.ZodObject<{
+    id: z.ZodNumber;
+    date: z.ZodCoercedDate<unknown>;
+    amount: z.ZodNumber;
+    userName: z.ZodString;
+    volunteerName: z.ZodString;
+    instituteName: z.ZodNullable<z.ZodString>;
+    contact: z.ZodString;
+    status: z.ZodString;
+    statusId: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
+    source: z.ZodString;
+    occasion: z.ZodString;
+    occasionStatus: z.ZodNumber;
+    comment: z.ZodNullable<z.ZodString>;
+}, z.core.$strict>;
+export type OccasionNodeData = z.infer<typeof occasionNodeDataSchema>;
+export interface OccasionNode {
+    key: string;
+    label: string;
+    data: OccasionNodeData;
+    children?: OccasionNode[];
+}
+export declare const occasionNodeSchema: z.ZodType<OccasionNode>;
+export declare const occasionNodesSchema: z.ZodArray<z.ZodType<OccasionNode, unknown, z.core.$ZodTypeInternals<OccasionNode, unknown>>>;
 export declare const ordersListSchema: z.ZodObject<{
     list: z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
@@ -146,26 +195,26 @@ export declare const ordersListSchema: z.ZodObject<{
         instituteName: z.ZodNullable<z.ZodString>;
         contact: z.ZodString;
         status: z.ZodString;
-        statusId: z.ZodNumber;
+        statusId: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
         source: z.ZodString;
         occasion: z.ZodString;
         occasionStatus: z.ZodNumber;
         comment: z.ZodNullable<z.ZodString>;
     }, z.core.$strict>>;
-    length: z.ZodCoercedNumber<unknown>;
+    length: z.ZodNumber;
     options: z.ZodObject<{
         users: z.ZodArray<z.ZodObject<{
             id: z.ZodNumber;
             userName: z.ZodString;
-        }, z.core.$strip>>;
+        }, z.core.$strict>>;
         statuses: z.ZodArray<z.ZodObject<{
-            value: z.ZodNumber;
+            value: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
             label: z.ZodString;
-        }, z.core.$strip>>;
+        }, z.core.$strict>>;
         sources: z.ZodArray<z.ZodObject<{
-            value: z.ZodNumber;
+            value: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>]>;
             label: z.ZodString;
-        }, z.core.$strip>>;
+        }, z.core.$strict>>;
         nodes: z.ZodArray<z.ZodType<OccasionNode, unknown, z.core.$ZodTypeInternals<OccasionNode, unknown>>>;
     }, z.core.$strip>;
 }, z.core.$strict>;
@@ -178,7 +227,7 @@ export declare const orderDetailsSchema: z.ZodObject<{
     instituteName: z.ZodNullable<z.ZodString>;
     contact: z.ZodString;
     status: z.ZodString;
-    statusId: z.ZodNumber;
+    statusId: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>;
     source: z.ZodString;
     occasion: z.ZodString;
     occasionStatus: z.ZodNumber;
@@ -192,29 +241,22 @@ export declare const orderDetailsSchema: z.ZodObject<{
             index: z.ZodNumber;
             id: z.ZodNumber;
             fullNameSnapshot: z.ZodString;
-            specialComment: z.ZodNullable<z.ZodString>;
+            specialComment: z.ZodString;
             birthDay: z.ZodNumber;
             birthMonth: z.ZodNumber;
-            birthYear: z.ZodNumber;
+            birthYear: z.ZodNullable<z.ZodNumber>;
             infoNote: z.ZodNullable<z.ZodString>;
             photoLink: z.ZodNullable<z.ZodString>;
             status: z.ZodString;
             statusId: z.ZodNumber;
-        }, z.core.$strip>>;
-    }, z.core.$strip>>;
+        }, z.core.$strict>>;
+    }, z.core.$strict>>;
 }, z.core.$strict>;
-export declare const orderEditSchema: z.ZodObject<{
-    status: z.ZodNumber;
-    source: z.ZodNumber;
-    comment: z.ZodNullable<z.ZodString>;
-}, z.core.$strict>;
-export type OrderFiltersData = z.infer<typeof orderFiltersDataSchema>;
+export type OrderFilterRegionsAndHomes = z.infer<typeof orderFilterRegionsAndHomesSchema>;
 export type OrderDraft = z.infer<typeof orderDraftSchema>;
 export type OrderFilter = z.infer<typeof orderFilterSchema>;
-export type Filter = z.infer<typeof filterSchema>;
 export type Order = z.infer<typeof orderSchema>;
 export type OrderDetails = z.infer<typeof orderDetailsSchema>;
-export type OrderEdit = z.infer<typeof orderEditSchema>;
 export type OrderRecipients = z.infer<typeof orderRecipientsSchema>;
 export type OrderRecipient = z.infer<typeof orderRecipientSchema>;
 export type OrderQuery = z.infer<typeof orderQueryDTOSchema>;

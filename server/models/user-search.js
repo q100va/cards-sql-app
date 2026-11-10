@@ -16,15 +16,26 @@ export default function UserSearchModel(sequelize) {
     isRestricted:
     {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
+      allowNull: false
     }
   },
     {
       sequelize,
       modelName: 'user-search',
       tableName: 'user-searches',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+
+      indexes: [
+        {
+          name: 'uq_user_searches_user_restricted',
+          unique: true,
+          fields: [
+            'userId',
+            'isRestricted',
+          ],
+        },
+      ],
     });
   return UserSearch;
 }

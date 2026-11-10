@@ -55,7 +55,7 @@ import { zodValidator } from '../../../utils/zod-validator';
 import {
   MONTHS,
   STATUSES,
-  TYPES,
+  OCCASION_TYPES,
   YEARS,
 } from '../../../../../shared/constants/occasions';
 
@@ -126,7 +126,7 @@ export class CreateOccasionDialogComponent {
   isLoading = false;
   occasionName = '';
   MONTHS = MONTHS;
-  TYPES = TYPES;
+  TYPES = OCCASION_TYPES;
   YEARS = YEARS;
   STATUSES = STATUSES;
 

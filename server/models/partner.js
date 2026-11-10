@@ -1,5 +1,5 @@
-// server/models/partner.js
 import { DataTypes, Model } from 'sequelize';
+import { PARTNER_AFFILIATION } from '../../shared/dist/constants/partners.js';
 
 export default function PartnerModel(sequelize) {
   class Partner extends Model { }
@@ -12,54 +12,60 @@ export default function PartnerModel(sequelize) {
         primaryKey: true,
       },
       firstName: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: false,
         validate: {
           notEmpty: true,
-        }
+        },
       },
       patronymic: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: true,
       },
       lastName: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: true,
       },
       affiliation: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          isIn: [Object.values(PARTNER_AFFILIATION)],
+        },
       },
       position: {
-        type: DataTypes.STRING(100),
-        allowNull: true
+        type: DataTypes.STRING(150),
+        allowNull: true,
       },
       comment: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       dateOfStart: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
       },
       isRestricted: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        allowNull: false,
+        defaultValue: false,
       },
       causeOfRestriction: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       dateOfRestriction: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        allowNull: true,
       },
-
     },
     {
       sequelize,
       modelName: 'partner',
       tableName: 'partners',
       underscored: false,
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     }
   );
   return Partner;

@@ -42,6 +42,7 @@ export class ReportsService {
     quarters: number[] | null,
     years: number[],
   ): Observable<ApiResponse<ReportResponse>> {
+    //console.log('months', months);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-report/`, {
         userId,

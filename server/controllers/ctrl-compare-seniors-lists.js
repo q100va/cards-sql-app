@@ -1,12 +1,12 @@
+function buildKey(...values) {
+  return values
+    .map((value) => value ?? '')
+    .join('|');
+}
+
 export function compareSeniorLists(newList, oldList, homeId, commentsMode) {
 
-  for (let newSenior of newList) {
-    /*     newSenior.birthDate = newSenior.yearBirthday ?
-          (newSenior.yearBirthday + '-' +
-            (newSenior.monthBirthday < 10 ? '0' : '') + newSenior.monthBirthday + '-' +
-            (newSenior.dayBirthday < 10 ? '0' : '') + newSenior.dayBirthday) :
-          null; */
-    // console.log('newSenior.birthDate', newSenior.birthDate);
+  for (const newSenior of newList) {
     newSenior.dateOfExit = null;
     newSenior.homeId = homeId;
     const fields = [
@@ -18,7 +18,6 @@ export function compareSeniorLists(newList, oldList, homeId, commentsMode) {
     for (const field of fields) {
       newSenior[field] = newSenior[field] ?? null;
     }
-
   }
 
   newList.sort(
@@ -41,14 +40,23 @@ export function compareSeniorLists(newList, oldList, homeId, commentsMode) {
 
   const foundIds = [];
 
-  for (let newSenior of newList) {
+  for (const newSenior of newList) {
 
-    const key1 = newSenior.lastName + newSenior.firstName + newSenior.patronymic + newSenior.birthDate;
+    const key1 = buildKey(
+      newSenior.lastName,
+      newSenior.firstName,
+      newSenior.patronymic,
+      newSenior.birthDate,
+    );
     const index1 = oldList.findIndex(
-      item => (
-        item.lastName + item.firstName + item.patronymic +
-        item.birthDate)
-        == key1);
+      (item) =>
+        buildKey(
+          item.lastName,
+          item.firstName,
+          item.patronymic,
+          item.birthDate,
+        ) === key1,
+    );
     if (index1 !== -1) {
       if (oldList[index1].dateOfExit) {
         const changes = compareData(newSenior, oldList[index1], commentsMode);
@@ -73,34 +81,68 @@ export function compareSeniorLists(newList, oldList, homeId, commentsMode) {
       continue;
     }
 
-    const key2 = newSenior.firstName + newSenior.patronymic + newSenior.birthDate;
+    const key2 = buildKey(
+      newSenior.firstName,
+      newSenior.patronymic,
+      newSenior.birthDate,
+    );
+
     let index2 = oldList.findIndex(
-      item => (
-        item.firstName + item.patronymic +
-        item.birthDate)
-        == key2);
+      (item) =>
+        buildKey(
+          item.firstName,
+          item.patronymic,
+          item.birthDate,
+        ) === key2,
+    );
+
     if (index2 === -1) {
-      const key3 = newSenior.lastName + newSenior.firstName + newSenior.patronymic;
+      const key3 = buildKey(
+        newSenior.lastName,
+        newSenior.firstName,
+        newSenior.patronymic,
+      );
+
       index2 = oldList.findIndex(
-        item => (
-          item.lastName + item.firstName + item.patronymic)
-          == key3);
+        (item) =>
+          buildKey(
+            item.lastName,
+            item.firstName,
+            item.patronymic,
+          ) === key3,
+      );
 
       if (index2 === -1) {
-        const key4 = newSenior.lastName + newSenior.patronymic + newSenior.birthDate;
+        const key4 = buildKey(
+          newSenior.lastName,
+          newSenior.patronymic,
+          newSenior.birthDate,
+        );
+
         index2 = oldList.findIndex(
-          item => (
-            item.lastName + item.patronymic +
-            item.birthDate)
-            == key4);
+          (item) =>
+            buildKey(
+              item.lastName,
+              item.patronymic,
+              item.birthDate,
+            ) === key4,
+        );
 
         if (index2 === -1) {
-          const key5 = newSenior.lastName + newSenior.firstName + newSenior.birthDate;
+          const key5 = buildKey(
+            newSenior.lastName,
+            newSenior.firstName,
+            newSenior.birthDate,
+          );
+
           index2 = oldList.findIndex(
-            item => (
-              item.lastName + item.firstName +
-              item.birthDate)
-              == key5);
+            (item) =>
+              buildKey(
+                item.lastName,
+                item.firstName,
+                item.birthDate,
+              ) === key5,
+          );
         }
       }
     }
@@ -133,7 +175,7 @@ function compareData(newData, oldData, commentsMode) {
   const mainFields = [
     'lastName', 'firstName', 'patronymic', 'gender', 'birthDate', 'dateOfExit'
   ];
-  for (let field of mainFields) {
+  for (const field of mainFields) {
     const newValue = newData[field] ?? null;
     const oldValue = oldData[field] ?? null;
     if (newValue !== oldValue) {
@@ -146,13 +188,10 @@ function compareData(newData, oldData, commentsMode) {
     'kindergarten', 'teacher', 'veteran', 'childOfWar', 'profession', 'honoraryStatus',
     'interests', 'orthodoxBeliever'
   ];
-  for (let field of otherFields) {
+  for (const field of otherFields) {
     const newValue = newData[field] ?? null;
     const oldValue = oldData[field] ?? null;
-    if(field==='infoNote') {
-      console.log('INFONOTE', oldValue,newValue);
-      console.log('newData', newData);
-    }
+
     if (commentsMode && newValue === null) continue;
     if (newValue !== oldValue) {
       changes[field] = { newValue, oldValue };
@@ -170,30 +209,3 @@ function getChangeRows(changes) {
     oldValue: change?.oldValue ?? null,
   }));
 }
-
-
-/* function compareBirthDates(
-  seniorRow,
-  senior
-) {
-  const oldDate = senior.birthDate ?? null;
-  const day = seniorRow.dayBirthday;
-  const month = seniorRow.monthBirthday;
-  const year = seniorRow.yearBirthday;
-
-  let newDate = null;
-
-  if (day != null && month != null && year != null) {
-    newDate = [
-      year.toString().padStart(4, '0'),
-      month.toString().padStart(2, '0'),
-      day.toString().padStart(2, '0'),
-    ].join('-');
-  }
-
-  return {
-    isDifferent: oldDate !== newDate,
-    oldDate,
-    newDate,
-  };
-} */

@@ -13,18 +13,24 @@ export default function PartnerSearchModel(sequelize) {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    isRestricted:
-    {
+    isRestricted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      allowNull: false,
+      defaultValue: false,
     },
   },
     {
       sequelize,
       modelName: 'partner-search',
       tableName: 'partner-searches',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+      indexes: [
+        {
+          name: 'uq_partner_searches_partner_restricted',
+          unique: true,
+          fields: ['partnerId', 'isRestricted'],
+        },
+      ],
     });
   return PartnerSearch;
 }

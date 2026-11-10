@@ -36,6 +36,13 @@ import {
 
 import { HasOpDirective } from '../../../directives/has-op.directive';
 import { AuthService } from '../../../services/auth.service';
+import { ADDRESS_CATEGORY_OPTIONS, GENDER_FILTERS } from '../../../../../shared/constants/orders';
+
+type FilterOption = {
+  id: number;
+  optionKey: string;
+  disabled: boolean;
+};
 
 @Component({
   selector: 'app-order-filters',
@@ -67,38 +74,26 @@ export class OrderFiltersComponent {
   readonly translateService = inject(TranslateService);
   readonly authService = inject(AuthService);
 
-  ADDRESS_FILTER = this.authService.has('FULL_FILTER_NEW_ORDER')
-    ? ([
-        { id: 1, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY' },
-        { id: 2, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.FOR_SCHOOLS' },
-        {
-          id: 3,
-          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS',
-        },
-        { id: 4, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.NO_RELEASED' },
-        {
-          id: 5,
-          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY',
-        },
-      ] as const)
-    : ([
-        { id: 2, optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY' },
-        {
-          id: 3,
-          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_WITH_ADDRESS',
-        },
-        {
-          id: 5,
-          optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ONLY_MENT_CATEGORY',
-        },
-      ] as const);
+  readonly ADDRESS_FILTER = this.authService.has('FULL_FILTER_NEW_ORDER')
+  ? [
+      ADDRESS_CATEGORY_OPTIONS.ANY,
+      ADDRESS_CATEGORY_OPTIONS.FOR_SCHOOLS,
+      ADDRESS_CATEGORY_OPTIONS.ONLY_WITH_ADDRESS,
+      ADDRESS_CATEGORY_OPTIONS.NO_RELEASED,
+      ADDRESS_CATEGORY_OPTIONS.ONLY_MENT,
+    ]
+  : [
+      {
+        ...ADDRESS_CATEGORY_OPTIONS.FOR_SCHOOLS,
+        optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY',
+      },
+      ADDRESS_CATEGORY_OPTIONS.ONLY_WITH_ADDRESS,
+      ADDRESS_CATEGORY_OPTIONS.ONLY_MENT,
+    ];
 
-  GENDER_FILTER = [
-    { id: 1, optionKey: 'ORDER.CARD.FILTERS.GENDER.ANY' },
-    { id: 2, optionKey: 'ORDER.CARD.FILTERS.GENDER.MALE' },
-    { id: 3, optionKey: 'ORDER.CARD.FILTERS.GENDER.FEMALE' },
-    { id: 4, optionKey: 'ORDER.CARD.FILTERS.GENDER.PROPORTION' },
-  ] as const;
+ genderFilterOptions: FilterOption[] = GENDER_FILTERS.map((item) => ({
+  ...item,
+}));
 
   periodOptions = [
     { label: '1-15', value: 1 },
@@ -257,6 +252,25 @@ export class OrderFiltersComponent {
       this.filterForm().controls['minFromOneHouse'].setValue(null);
     }
   }
+  correctMinFromOneHouse(event: Event){
+    const value = (event.target as HTMLInputElement).value;
+    if(value){
+      if(this.filterForm().controls['gender'].value === 4) this.filterForm().controls['gender'].setValue(1)
+      this.filterForm().controls['femaleAmount'].setValue(null);
+      this.filterForm().controls['maleAmount'].setValue(null);
+      this.filterForm().controls['femaleAmount'].disable();
+      this.filterForm().controls['maleAmount'].disable()
+      this.genderFilterOptions[3].disabled = true;
+    } else {
+      this.filterForm().controls['femaleAmount'].setValue(null);
+      this.filterForm().controls['maleAmount'].setValue(null);
+      this.filterForm().controls['femaleAmount'].enable();
+      this.filterForm().controls['maleAmount'].enable()
+      this.genderFilterOptions[3].disabled = false;
+
+    }
+  }
+  //TODO: disable option "только БОА/без БОА" if maxNoAddress
   onSlideToggleChange(reason: string) {
     if (reason == 'onlyAnniversaries') {
       if (

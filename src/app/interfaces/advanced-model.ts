@@ -22,6 +22,7 @@ import type {
 } from '../../../shared/schemas/home.schema';
 
 import type { SeniorAddress } from '../../../shared/schemas/senior.schema';
+import type { PartnerAffiliationId } from '../../../shared/constants/partners';
 
 import type {
   Contact,
@@ -73,7 +74,7 @@ export type {
 
 export type InstituteFormGroup = FormGroup<{
   instituteName: FormControl<string | null>;
-  category: FormControl<string | null>;
+  category: FormControl<number | null>;
 }>;
 
 export type Kind = 'user' | 'partner' | 'volunteer' | 'home' | 'senior';
@@ -168,7 +169,7 @@ export type UserChangingMain = PersonChangingMain & {
 export type UserChangingData = AdvancedChangingData<UserChangingMain>;
 
 export type PartnerChangingMain = PersonChangingMain & {
-  affiliation?: string; // enum ?
+  affiliation?: PartnerAffiliationId;
   position?: string | null;
 };
 export type PartnerChangingData = AdvancedChangingData<PartnerChangingMain> & {
@@ -176,7 +177,7 @@ export type PartnerChangingData = AdvancedChangingData<PartnerChangingMain> & {
 };
 
 export type VolunteerChangingData = AdvancedChangingData<PersonChangingMain> & {
-  institutes: { instituteName: string; category: string }[] | null;
+  institutes: { instituteName: string; category: number }[] | null;
   subscriptions: number[] | null;
   cooperations: number[] | null;
 };
@@ -320,7 +321,7 @@ export type UserDraft = PersonDraft & {
 export type PartnerDraft = PersonDraft & {
   draftAddress: DraftAddress;
   draftContacts: Record<NonTelegram, string[]>;
-  affiliation: string;
+  affiliation: PartnerAffiliationId;
   position: string | null;
   draftCoordinations: number[];
 };
@@ -328,7 +329,7 @@ export type PartnerDraft = PersonDraft & {
 export type VolunteerDraft = PersonDraft & {
   draftAddress: DraftAddress;
   draftContacts: Record<NonTelegram, string[]>;
-  draftInstitutes: { instituteName: string; category: string }[];
+  draftInstitutes: { instituteName: string; category: number }[];
   draftSubscriptions: number[];
   draftCooperations: number[];
 };
@@ -429,7 +430,7 @@ export type User = Person & {
   outdatedData: UserOutdatedData;
 };
 export type Partner = Person & {
-  affiliation: string;
+  affiliation: PartnerAffiliationId;
   position: string | null;
   outdatedData: PartnerOutdatedData;
   coordinations: HomeCoordination[];
@@ -684,24 +685,3 @@ export interface OwnerMainService<
   deleteOwner(id: number): Observable<ApiResponse<null>>;
   getOwnerName(owner: TOwner): string;
 }
-
-export const affiliations = [
-    'PARTNER.AFF.VOLUNTEER_COORDINATOR',
-    'PARTNER.AFF.HOME_REPRESENTATIVE',
-    'PARTNER.AFF.FOUNDATION_STAFF',
-  ];
-
-  export const categories = [
-    'VOLUNTEER.CATEGORIES.SCHOOL',
-    'VOLUNTEER.CATEGORIES.KINDERGARTEN',
-    'VOLUNTEER.CATEGORIES.COLLEGE',
-    'VOLUNTEER.CATEGORIES.UNIVERSITY',
-    'VOLUNTEER.CATEGORIES.GOVERNMENT',
-    'VOLUNTEER.CATEGORIES.BUSINESS',
-    'VOLUNTEER.CATEGORIES.CHURCH',
-    'VOLUNTEER.CATEGORIES.CHARITY',
-    'VOLUNTEER.CATEGORIES.CHILDREN',
-    'VOLUNTEER.CATEGORIES.YOUTH',
-    'VOLUNTEER.CATEGORIES.ADULTS',
-    'VOLUNTEER.CATEGORIES.OTHER',
-  ];

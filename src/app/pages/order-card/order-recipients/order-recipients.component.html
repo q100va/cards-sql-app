@@ -84,7 +84,8 @@
   @if(home.noAddressNote){
   <p style="color: red; font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
     <!-- {{home.noAddressNote | translate}}</p> -->
-    {{orderDetails().forInstitute && !flag ? ('ORDER.CARD.NO_ADDRESS_NOTE_SCHOOL' | translate) : (home.noAddressNote | translate)}}
+    {{orderDetails().forInstitute && !flag ? ('ORDER.CARD.NO_ADDRESS_NOTE_SCHOOL' | translate) : (home.noAddressNote |
+    translate)}}
   </p>
   }
 
@@ -113,8 +114,8 @@
         : '' }}</strong></span>
 
   </div>
-  <br />
   }
+  <br />
   }
 
 

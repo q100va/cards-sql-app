@@ -372,13 +372,13 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   ): InstituteFormGroup {
     return new FormGroup<{
       instituteName: FormControl<string | null>;
-      category: FormControl<string | null>;
+      category: FormControl<number | null>;
     }>({
       instituteName: new FormControl<string | null>(
         { value: null, disabled: mode === 'view' },
         [zodValidator(instituteNameControlSchema)],
       ),
-      category: new FormControl<string | null>(
+      category: new FormControl<number | null>(
         { value: null, disabled: mode === 'view' },
         [zodValidator(instituteCategoryControlSchema)],
       ),
@@ -447,7 +447,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     if (original.length !== current.length) return true;
 
     // content differs -> changed
-    const normalize = (arr: { instituteName: string; category: string }[]) =>
+    const normalize = (arr: { instituteName: string; category: number }[]) =>
       arr
         .map((item) => ({
           instituteName: item.instituteName?.trim(),
@@ -456,7 +456,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
         .sort(
           (x, y) =>
             x.instituteName.localeCompare(y.instituteName) ||
-            x.category.localeCompare(y.category),
+            x.category - y.category,
         );
     /*     console.log(
       'JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))',

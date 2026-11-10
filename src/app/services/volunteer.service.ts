@@ -45,9 +45,7 @@ export interface VolunteerMainService extends OwnerMainService<
   VolunteerOutdatingData,
   VolunteerDeletingData,
   { list: Volunteer[]; length: number }
-> {
-  checkPossibilityToBlockVolunteer(id: number): Observable<ApiResponse<number>>;
-}
+> {}
 
 @Injectable({
   providedIn: 'root',
@@ -223,29 +221,6 @@ export class VolunteerService implements VolunteerMainService {
       );
   }
 
-  checkPossibilityToBlockVolunteer(
-    id: number,
-  ): Observable<ApiResponse<number>> {
-    return this.http
-      .get<RawApiResponse>(
-        `${this.BASE_URL}/check-volunteer-before-block/${id}`,
-      )
-      .pipe(
-        validateNoSchemaResponse<number>('isNumber'),
-        this.msgWrapper.messageTap(
-          'warn',
-          (res) => ({
-            source: 'VolunteersList',
-            stage: 'checkPossibilityToDeleteVolunteer',
-            volunteerId: id,
-            amountOfDependencies: res.data,
-          }),
-          (res) => ({ count: res.data }),
-        ),
-        catchError(this.handleError),
-      );
-  }
-
   blockOwner(
     id: number,
     causeOfRestriction: string,
@@ -272,7 +247,7 @@ export class VolunteerService implements VolunteerMainService {
       );
   }
 
-    searchContacts(query: string): Observable<ApiResponse<ContactOption[]>> {
+  searchContacts(query: string): Observable<ApiResponse<ContactOption[]>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/search-contacts/${query}`)
       .pipe(

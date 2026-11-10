@@ -13,11 +13,14 @@ export declare const clientLogItemSchema: z.ZodObject<{
     sessionId: z.ZodString;
     corrId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     userAgent: z.ZodOptional<z.ZodString>;
-    context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
-}, z.core.$strip>;
+    context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+}, z.core.$strict>;
 export declare const clientLogBatchSchema: z.ZodObject<{
-    app: z.ZodString;
-    env: z.ZodString;
+    app: z.ZodLiteral<"cards-sql-app">;
+    env: z.ZodEnum<{
+        development: "development";
+        production: "production";
+    }>;
     items: z.ZodArray<z.ZodObject<{
         ts: z.ZodISODateTime;
         level: z.ZodEnum<{
@@ -32,7 +35,7 @@ export declare const clientLogBatchSchema: z.ZodObject<{
         sessionId: z.ZodString;
         corrId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         userAgent: z.ZodOptional<z.ZodString>;
-        context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
-    }, z.core.$strip>>;
-}, z.core.$strip>;
+        context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+    }, z.core.$strict>>;
+}, z.core.$strict>;
 export type ClientLogBatch = z.infer<typeof clientLogBatchSchema>;

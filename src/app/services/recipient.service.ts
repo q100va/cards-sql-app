@@ -38,14 +38,14 @@ export class RecipientService {
   constructor(private msgWrapper: MessageWrapperService) {}
 
   // Create a new recipients list.
-  createList(id: number): Observable<ApiResponse<number>> {
+  createList(occasionId: number): Observable<ApiResponse<number>> {
     return this.http
-      .post<RawApiResponse>(`${this.BASE_URL}/create-list`, { id })
+      .post<RawApiResponse>(`${this.BASE_URL}/create-list`, { occasionId })
       .pipe(
         // validateResponse(z.string().trim()),
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
-          name: res.data,
+          listLength: res.data,
         })),
         catchError(this.handleError),
       );

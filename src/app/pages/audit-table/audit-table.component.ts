@@ -33,7 +33,7 @@ import { PaginatorState } from 'primeng/paginator';
 
 // App services, utils, schemas
 import { AuditService } from '../../services/audit.service';
-import { AuditItem } from '@shared/schemas/audit.schema';
+import { AuditItem } from '../../../../shared/schemas/audit.schema';
 import { MessageWrapperService } from '../../services/message.service';
 
 // --- Types & constants -------------------------------------------------------

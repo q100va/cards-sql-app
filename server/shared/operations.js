@@ -7,11 +7,16 @@ export const objects = [
   'partners', // institution representatives (employees, coordinators)
   'seniors',   // residents of the nursing homes
   'volunteers', // volunteers who send cards
-  'holidays',  // holidays
+  'recipients', //card recipients
+  'occasions',  // holidays
   'reports', // reports
-  'statistics', // statistics
   'orders', // orders
 ];
+
+export const OPERATION_FLAG = {
+  FULL: 'FULL',
+  LIMITED: 'LIMITED',
+};
 
 // List of operations available for each object type in the system
 export const OPERATIONS = [
@@ -64,21 +69,12 @@ export const OPERATIONS = [
     description: 'Block access to data of a country, region, district, or locality',
     objectName: 'OBJECT.TOPONYMS',
   },
-  //TODO: delete 'UNBLOCK_TOPONYM',
-  {
-    operation: 'UNBLOCK_TOPONYM',
-    object: 'toponyms',
-    accessToAllOps: false,
-    operationName: 'OPS.UNBLOCK.NAME',
-    description: 'Unblock access to data of a country, region, district, or locality',
-    objectName: 'OBJECT.TOPONYMS',
-  },
   {
     operation: 'DOWNLOAD_TEMPLATE_FOR_TOPONYM',
     object: 'toponyms',
     accessToAllOps: false,
     operationName: 'OPS.DOWNLOAD_TEMPLATE.NAME',
-    description: 'Bulk update toponym list via XLSX upload',
+    description: 'Download XLSX template for bulk toponym update',
     objectName: 'OBJECT.TOPONYMS',
   },
   {
@@ -96,7 +92,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View lists of countries, regions, districts, and localities with limited access',
     objectName: 'OBJECT.TOPONYMS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_TOPONYMS_LIST',
@@ -105,9 +101,8 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View lists of countries, regions, districts, and localities with full access',
     objectName: 'OBJECT.TOPONYMS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
   // --- Users ---
   {
     operation: 'ALL_OPS_USERS',
@@ -173,14 +168,6 @@ export const OPERATIONS = [
     description: 'Unblock a user',
     objectName: 'OBJECT.USERS',
   },
-/*   {
-    operation: 'DOWNLOAD_USERS_TABLE',
-    object: 'users',
-    accessToAllOps: false,
-    operationName: 'OPS.DOWNLOAD_TABLE.NAME',
-    description: 'Download list of users',
-    objectName: 'OBJECT.USERS',
-  }, */
   {
     operation: 'VIEW_LIMITED_USERS_LIST',
     object: 'users',
@@ -188,7 +175,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View user list with limited access',
     objectName: 'OBJECT.USERS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_USERS_LIST',
@@ -197,9 +184,8 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View user list with full access',
     objectName: 'OBJECT.USERS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
   // --- Roles ---
   {
     operation: 'ALL_OPS_ROLES',
@@ -234,13 +220,22 @@ export const OPERATIONS = [
     objectName: 'OBJECT.ROLES',
   },
   {
+    operation: 'VIEW_AUDIT_LOG',
+    object: 'roles',
+    accessToAllOps: false,
+    operationName: 'OPS.VIEW_AUDIT_LOG.NAME',
+    description: 'View log list',
+    objectName: 'OBJECT.ROLES'
+  },
+
+  {
     operation: 'VIEW_LIMITED_ROLES_LIST',
     object: 'roles',
     accessToAllOps: false,
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View role list with limited access',
     objectName: 'OBJECT.ROLES',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_ROLES_LIST',
@@ -249,9 +244,8 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View role list with full access',
     objectName: 'OBJECT.ROLES',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
   // --- Homes ---
   {
     operation: 'ALL_OPS_HOMES',
@@ -309,7 +303,7 @@ export const OPERATIONS = [
     description: 'Reinclude nursing home in the program',
     objectName: 'OBJECT.HOMES',
   },
-    {
+  {
     operation: 'DOWNLOAD_HOMES_TABLE',
     object: 'homes',
     accessToAllOps: false,
@@ -325,7 +319,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View nursing home list with limited access',
     objectName: 'OBJECT.HOMES',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_HOMES_LIST',
@@ -334,9 +328,8 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View nursing home list with full access',
     objectName: 'OBJECT.HOMES',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
   // --- Partners ---
   {
     operation: 'ALL_OPS_PARTNERS',
@@ -401,7 +394,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View partner list with limited access',
     objectName: 'OBJECT.PARTNERS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_PARTNERS_LIST',
@@ -410,9 +403,8 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View partner list with full access',
     objectName: 'OBJECT.PARTNERS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
   // --- Seniors ---
   {
     operation: 'ALL_OPS_SENIORS',
@@ -475,7 +467,7 @@ export const OPERATIONS = [
     object: 'seniors',
     accessToAllOps: false,
     operationName: 'OPS.DOWNLOAD_TEMPLATE.NAME',
-    description: 'Download template sor seniors',
+    description: 'Download template for seniors',
     objectName: 'OBJECT.SENIORS',
   },
   {
@@ -493,7 +485,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View resident list with limited access',
     objectName: 'OBJECT.SENIORS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_SENIORS_LIST',
@@ -502,7 +494,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View resident list with full access',
     objectName: 'OBJECT.SENIORS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
   // --- Volunteers ---
   {
@@ -561,14 +553,6 @@ export const OPERATIONS = [
     description: 'Unblock a volunteer',
     objectName: 'OBJECT.VOLUNTEERS',
   },
-/*   {
-    operation: 'DOWNLOAD_TEMPLATE_FOR_VOLUNTEER',
-    object: 'volunteers',
-    accessToAllOps: false,
-    operationName: 'OPS.DOWNLOAD_TEMPLATE.NAME',
-    description: 'Download template for volunteers',
-    objectName: 'OBJECT.VOLUNTEERS',
-  }, */
   {
     operation: 'UPLOAD_LIST_OF_VOLUNTEERS',
     object: 'volunteers',
@@ -584,7 +568,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View volunteer list with limited access',
     objectName: 'OBJECT.VOLUNTEERS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_VOLUNTEERS_LIST',
@@ -593,7 +577,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View volunteer list with full access',
     objectName: 'OBJECT.VOLUNTEERS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
   // --- Orders ---
   {
@@ -657,20 +641,19 @@ export const OPERATIONS = [
     object: 'orders',
     accessToAllOps: false,
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
-    description: 'View volunteer list with limited access',
+    description: 'View order list with limited access',
     objectName: 'OBJECT.ORDERS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_ORDERS_LIST',
     object: 'orders',
     accessToAllOps: false,
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
-    description: 'View volunteer list with full access',
+    description: 'View order list with full access',
     objectName: 'OBJECT.ORDERS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
   // --- Occasions ---
   {
     operation: 'ALL_OPS_OCCASIONS',
@@ -719,7 +702,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View occasion list with limited access',
     objectName: 'OBJECT.OCCASIONS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_OCCASIONS_LIST',
@@ -728,10 +711,9 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View occasion list with full access',
     objectName: 'OBJECT.OCCASIONS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
-  // --- Celebrators ---
+  // --- Recipients ---
   {
     operation: 'ALL_OPS_RECIPIENTS',
     object: 'recipients',
@@ -753,25 +735,9 @@ export const OPERATIONS = [
     object: 'recipients',
     accessToAllOps: false,
     operationName: 'OPS.DELETE.NAME',
-    description: 'Permanently delete an recipient',
+    description: 'Permanently delete a recipient',
     objectName: 'OBJECT.RECIPIENTS',
   },
-  /*     {
-      operation: 'BLOCK_OCCASION',
-      object: 'occasions',
-      accessToAllOps: false,
-      operationName: 'OPS.BLOCK.NAME',
-      description: 'Close an occasion',
-      objectName: 'OBJECT.OCCASIONS',
-    },
-    {
-      operation: 'UNBLOCK_OCCASION',
-      object: 'occasions',
-      accessToAllOps: false,
-      operationName: 'OPS.UNBLOCK.NAME',
-      description: 'Activate an occasion',
-      objectName: 'OBJECT.OCCASIONS',
-    }, */
   {
     operation: 'CREATE_RECIPIENTS_LIST',
     object: 'recipients',
@@ -796,7 +762,6 @@ export const OPERATIONS = [
     description: 'Bulk edit recipients list',
     objectName: 'OBJECT.RECIPIENTS',
   },
-
   {
     operation: 'VIEW_LIMITED_RECIPIENTS_LIST',
     object: 'recipients',
@@ -804,7 +769,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_LIST.NAME',
     description: 'View recipients list with limited access',
     objectName: 'OBJECT.RECIPIENTS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_RECIPIENTS_LIST',
@@ -813,7 +778,16 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_LIST.NAME',
     description: 'View recipients list with full access',
     objectName: 'OBJECT.RECIPIENTS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
+  },
+  // --- Reports ---
+  {
+    operation: 'ALL_OPS_REPORTS',
+    object: 'reports',
+    accessToAllOps: true,
+    operationName: 'OPS.ALL_OPS.NAME',
+    description: 'Full access to all report operations',
+    objectName: 'OBJECT.REPORTS',
   },
   {
     operation: 'VIEW_CURRENT_STATISTIC',
@@ -823,7 +797,6 @@ export const OPERATIONS = [
     description: 'View current statistic',
     objectName: 'OBJECT.REPORTS'
   },
-
   {
     operation: 'VIEW_LIMITED_REPORTS',
     object: 'reports',
@@ -831,7 +804,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_LIMITED_REPORTS.NAME',
     description: 'View reports with limited access',
     objectName: 'OBJECT.REPORTS',
-    flag: 'LIMITED',
+    flag: OPERATION_FLAG.LIMITED,
   },
   {
     operation: 'VIEW_FULL_REPORTS',
@@ -840,12 +813,7 @@ export const OPERATIONS = [
     operationName: 'OPS.VIEW_FULL_REPORTS.NAME',
     description: 'View reports list with full access',
     objectName: 'OBJECT.REPORTS',
-    flag: 'FULL',
+    flag: OPERATION_FLAG.FULL,
   },
-
-
-
-
-
 ];
 

@@ -17,19 +17,27 @@ export default function HomeUpdateDateModel(sequelize) {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    isLatest:
-    {
+    isLatest: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
+      defaultValue: false,
     },
-
   },
     {
       sequelize,
       modelName: 'home-update-date',
       tableName: 'home-update-dates',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+      indexes: [
+        {
+          name: 'uq_home_update_dates_latest',
+          unique: true,
+          fields: ['homeId'],
+          where: {
+            isLatest: true,
+          },
+        },
+      ],
     });
   return HomeUpdateDate;
 }

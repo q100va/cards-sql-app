@@ -40,7 +40,7 @@ import { switchMap, finalize } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Validation
-import { roleDraftSchema } from '@shared/schemas/role.schema';
+import { roleDraftSchema } from '../../../../../shared/schemas/role.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 //Directives

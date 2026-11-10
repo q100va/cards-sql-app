@@ -125,9 +125,10 @@ export class OrderRecipientsComponent {
         recipient.birthMonth > 9
           ? recipient.birthMonth
           : '0' + recipient.birthMonth
-      }${recipient.birthYear > 1800 ? '.' + recipient.birthYear : ''}`;
+          //TODO: не 1800 а null
+      }${recipient.birthYear !== null /* > 1800 */ ? '.' + recipient.birthYear : ''}`;
     } else {
-      return `${recipient.birthYear > 1800 ? recipient.birthYear : '????'}/
+      return `${recipient.birthYear !== null /* > 1800 */ ? recipient.birthYear : '????'}/
       ${recipient.birthMonth}/${recipient.birthDay}`;
     }
   }

@@ -1,5 +1,4 @@
 export function transformRecipient(recipient) {
- // console.log('RECIPIENT', recipient);
   return {
     id: recipient.id,
     fullName: recipient.fullNameSnapshot,
@@ -8,8 +7,8 @@ export function transformRecipient(recipient) {
     birthYear: recipient.yearSnapshot,
     category: recipient.category,
     acceptableForSchool: recipient.acceptableForSchool,
-    regionName: recipient.senior.home.activeAddress.region.name,
-    homeName: recipient.senior.home.homeName,
+    regionName: recipient.snapshotRegion.name,
+    homeName: recipient.snapshotHome.homeName,
     plusAmount: recipient.plusAmount,
     specialComment: recipient.specialComment,
     isAbsent: recipient.isAbsent,

@@ -1,57 +1,56 @@
 import { Router } from "express";
-import { literal, Op } from 'sequelize';
-import { number, z } from 'zod';
+import { Op } from 'sequelize';
 import {
-  Order, Region, Home, HomeAddress, OrderRecipient,
-  Volunteer, VolunteerContact,
-  User, Institute, Occasion,
-  Recipient
-} from "../models/index.js";
+  Order,
+  Region,
+  Home,
+  HomeAddress,
+  OrderRecipient,
+  VolunteerContact,
+  User,
+  Occasion,
+  Recipient,
+} from '../models/index.js';
+
+import CustomError from "../shared/customError.js";
+import * as orderSchemas from "../../shared/dist/schemas/order.schema.js";
+import {
+  ORDER_STATUSES,
+  ORDER_SOURCES,
+  ORDER_STATUS,
+  ORDER_RECIPIENT_STATUS,
+} from '../../shared/dist/constants/orders.js';
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import { validateRequest } from "../middlewares/validate-request.js";
-import CustomError from "../shared/customError.js";
-import { createRecipientsList } from "../controllers/ctrl-create-order.js";
-import * as orderSchemas from "../../shared/dist/schemas/order.schema.js";
 import { withTransaction } from "../controllers/with-transaction.js";
-import { createSpecialRecipientsList } from "../controllers/ctrl-create-special-order.js";
+import { createRecipientsListForOrder } from "../controllers/ctrl-create-order.js";
+import { createSpecialRecipientsListForOrder } from "../controllers/ctrl-create-special-order.js";
 import { transformOrder, transformOrderDisplayPart, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
-import { applyDateFilter, applyNumericFilter, applyStringFilter } from "../controllers/ctrl-query-builders.js";
-import { dictToOptions, getOccasionMonthSortExpression, getOccasionTypeSortExpression, getOrderSortField, getOrderSourceSortExpression, getOrderStatusSortExpression, ORDER_SOURCES, ORDER_STATUSES } from "../controllers/ctrl-order-query-builders.js";
-import { buildOccasionNodes } from "../controllers/ctrl-transform-occasion.js";
+import { applyOrderFilters, buildOrderSort, dictToOptions, ORDER_LIST_INCLUDE } from "../controllers/ctrl-order-query-builders.js";
+import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js";
 
 const router = Router();
-const orderIdParamsSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
 
+async function getOrderDetails(id, t = null, lang = 'en') {
+  const order = await Order.findByPk(id, {
+    attributes: {
+      exclude: ['updatedAt'],
+    },
+    include: ORDER_LIST_INCLUDE,
+    ...(t && { transaction: t }),
+  });
 
-/*
-function applyOrderNumericFilter(where, filters, field) {
-  const fieldFilters = filters[field];
-  if (!fieldFilters?.length) return;
-
-  const value = Number(fieldFilters[0].value);
-  if (Number.isFinite(value)) {
-    where[field] = value;
+  if (!order) {
+    throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
   }
+
+  return transformOrder(order, t, lang);
 }
-
-function applyOrderDateFilter(where, filters, field) {
-  const fieldFilters = filters[field];
-  if (!fieldFilters?.length) return;
-
-  const value = new Date(fieldFilters[0].value);
-  if (!Number.isNaN(value.getTime())) {
-    const nextDay = new Date(value);
-    nextDay.setDate(nextDay.getDate() + 1);
-    where[field] = { [Op.gte]: value, [Op.lt]: nextDay };
-  }
-} */
 
 router.get("/get-filters-data",
   requireAuth,
-  requireAny('ADD_NEW_ORDER'),
+  requireOperation('ADD_NEW_ORDER'),
   async (req, res, next) => {
     try {
 
@@ -72,7 +71,6 @@ router.get("/get-filters-data",
         order: [['homeName', 'ASC']],
         raw: true
       });
-      console.log('HOMES', homes);
 
       homes = homes.map(h => ({
         id: h.id,
@@ -80,10 +78,9 @@ router.get("/get-filters-data",
         regionId: h['activeAddress.regionId']
       }));
 
-
       res.status(200).send({ data: { regions, homes } });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.FILTER_DATA_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
@@ -91,11 +88,8 @@ router.get("/get-filters-data",
 
 router.get("/check-order",
   requireAuth,
-  requireAny('ADD_NEW_ORDER'),
-  validateRequest(z.object({
-    volunteerId: z.coerce.number().int().positive(),
-    occasionId: z.coerce.number().int().positive()
-  }), "query"),
+  requireOperation('ADD_NEW_ORDER'),
+  validateRequest(orderSchemas.orderDataSchema, "query"),
   async (req, res, next) => {
     try {
 
@@ -120,10 +114,9 @@ router.get("/check-order",
         amount: d.amount
       }));
 
-
       res.status(200).send({ data: result });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.CHECKING_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_CHECK_FAILED';
       next(error);
     }
   }
@@ -133,13 +126,15 @@ router.post(
   "/create-order",
   requireAuth,
   requireOperation('ADD_NEW_ORDER'),
-  validateRequest(z.object({
-    orderDraft: orderSchemas.orderDraftSchema,
-    filters: orderSchemas.filterSchema,
-  }), 'body'),
+  validateRequest(orderSchemas.orderCreateSchema, 'body'),
   async (req, res, next) => {
     try {
       const { orderDraft, filters } = req.body;
+      const orderData = {
+        ...orderDraft,
+      };
+
+      delete orderData.forSchoolDepartment;
 
       const result = await withTransaction(async (t) => {
         const duplicates = await Order.findAll({
@@ -147,32 +142,39 @@ router.post(
             volunteerId: orderDraft.volunteerId,
             occasionId: orderDraft.occasionId,
           },
+          transaction: t,
           attributes: ['id'],
           include: {
             model: OrderRecipient,
             as: 'orderRecipients',
             attributes: ['recipientId'],
           },
-        })
-        const contact = await VolunteerContact.findByPk(orderDraft.contactId,
-          { transaction: t });
+        });
+
+        const contact = await VolunteerContact.findByPk(
+          orderDraft.contactId,
+          { transaction: t },
+        );
+        if (!contact) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
+
         const restrictedRecipients = duplicates.flatMap(d => d.orderRecipients.map(r => r.recipientId));
         const recipientsList = filters.minFromOneHouse
-          ? await createSpecialRecipientsList(orderDraft, filters, restrictedRecipients, t)
-          : await createRecipientsList(orderDraft, filters, restrictedRecipients, t);
-        console.log("QQQ - recipientsList", recipientsList);
+          ? await createSpecialRecipientsListForOrder(orderDraft, filters, restrictedRecipients, t)
+          : await createRecipientsListForOrder(orderDraft, filters, restrictedRecipients, t);
 
         if (recipientsList.length < orderDraft.amount) return { contact: contact.content, recipients: [] };
 
         const order = await Order.create(
-          orderDraft,
+          orderData,
           { transaction: t }
         );
         const orderRecipientsRows = recipientsList.map(r => (
           {
             recipientId: r.id,
             orderId: order.id,
-            recipientStatus: 1,
+            recipientStatus: ORDER_RECIPIENT_STATUS.PRESENT,
             homeId: r.homeIdSnapshot,
             seniorId: r.seniorId,
           }));
@@ -181,14 +183,18 @@ router.post(
           individualHooks: true,
           transaction: t,
         });
+        await refreshVolunteerSearch(
+          order.volunteerId,
+          t,
+        );
 
-        const recipients = await transformOrderRecipientsPart(order.id, t);
+        const recipients = await transformOrderRecipientsPart(order, t);
         return { contact: contact.content, recipients };
       });
 
-      res.status(200).send({ code: 'ORDER.CREATED', data: result });
+      res.status(200).send({ data: result });
     } catch (error) {
-      error.code = 'ERRORS.ORDER.NOT_CREATED';
+      error.code = error.code ?? 'ERRORS.DATA_CREATE_FAILED';
       next(error);
     }
   }
@@ -209,217 +215,56 @@ router.post(
         searchValue,
         filters
       } = req.body;
-      const dir = sortField ? (sortOrder === 1 ? 'ASC' : 'DESC') : 'DESC';
+
       const lang = req.headers['x-lang'] === 'ru' ? 'ru' : 'en';
 
-      console.log('sortOrder, dir, lang');
-      console.log(sortOrder, dir, lang);
-
-      const field = getOrderSortField(sortField);
-
-      const order =
-        sortField === 'status'
-          ? [
-            [getOrderStatusSortExpression(lang), dir],
-            ['id', 'ASC'],
-          ]
-          : sortField === 'source'
-            ? [
-              [getOrderSourceSortExpression(lang), dir],
-              ['id', 'ASC'],
-            ]
-            : sortField === 'occasionName' ?
-              [
-                [getOccasionTypeSortExpression(lang), dir],
-                [getOccasionMonthSortExpression(lang), dir],
-                [{ model: Occasion, as: 'occasion' }, 'year', dir],
-                ['id', 'ASC'],
-              ]
-              : Array.isArray(field)
-                ? [[...field, dir], ['id', 'ASC']]
-                : [[field, dir], ['id', 'ASC']];
+      const order = buildOrderSort(
+        sortField,
+        sortOrder,
+        lang,
+      );
 
       const where = {};
 
-      if (filters.amount !== undefined) {
-        applyNumericFilter(where, filters, 'amount');
-      }
-      if (filters.comment !== undefined) {
-        applyStringFilter(where, filters, 'comment');
-      }
-      if (filters.userId !== undefined) {
-        applyNumericFilter(where, filters, 'userId');
-      }
-      if (filters.status !== undefined) {
-        applyNumericFilter(where, filters, 'status');
-      }
-      if (filters.source !== undefined) {
-        applyNumericFilter(where, filters, 'source');
-      }
-      if (filters.date !== undefined) {
-        applyDateFilter(where, filters, 'date');
-      }
+      applyOrderFilters(
+        where,
+        filters,
+        searchValue,
+      );
 
-      where[Op.and] ??= [];
+      const include = ORDER_LIST_INCLUDE;
 
-      if (filters.volunteerName?.[0]?.value) {
-        const words = filters.volunteerName[0].value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
+      const [
+        total,
+        draft,
+        users,
+        occasions,
+      ] = await Promise.all([
+        Order.count({
+          where,
+          include,
+          distinct: true,
+        }),
 
-        where[Op.and].push(
-          ...words.map((word) => ({
-            [Op.or]: [
-              { '$volunteer.firstName$': { [Op.iLike]: `%${word}%` } },
-              { '$volunteer.lastName$': { [Op.iLike]: `%${word}%` } },
-              { '$volunteer.patronymic$': { [Op.iLike]: `%${word}%` } },
-            ],
-          })),
-        );
-      }
+        Order.findAll({
+          where,
+          attributes: {
+            exclude: ['updatedAt'],
+          },
+          order,
+          include,
+          offset,
+          limit,
+          distinct: true,
+        }),
 
-      if (filters.instituteName?.[0]?.value) {
-        const words = filters.instituteName[0].value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
-
-        where[Op.and].push(
-          ...words.map((word) => ({
-            [Op.or]: [
-              { '$institute.instituteName$': { [Op.iLike]: `%${word}%` } },
-              { '$institute.category$': { [Op.iLike]: `%${word}%` } },
-            ],
-          })),
-        );
-      }
-
-
-      if (filters.contact?.[0]?.value) {
-        const words = filters.contact[0].value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
-
-        where[Op.and].push(
-          ...words.map((word) => ({
-            [Op.or]: [
-              { '$contact.content$': { [Op.iLike]: `%${word}%` } },
-              { '$contact.type$': { [Op.iLike]: `%${word}%` } },
-            ],
-          })),
-        );
-      }
-
-      if (filters.occasionName?.[0]?.value) {
-
-        const filtered = filters.occasionName[0].value.filter(item => {
-          const REQUIRED_FIELDS = {
-            1: ['month', 'year'],
-            2: ['year'],
-            3: ['year'],
-            4: ['year'],
-            5: ['year'],
-            6: ['year'],
-          };
-          const required = REQUIRED_FIELDS[item.type];
-          if (!required) return false;
-
-          return required.every(field => item[field] != null);
-        });
-
-        where[Op.or] ??= [];
-
-        where[Op.or].push(
-          ...filtered.map((node) => ({
-            [Op.and]: [
-              { '$occasion.type$': node.type },
-              { '$occasion.month$': node.month },
-              { '$occasion.year$': node.year },
-            ],
-          })),
-        );
-      }
-
-      const search = String(searchValue ?? '').trim();
-      if (search) {
-        where[Op.or] ??= [];
-        const value = `%${search.replace(/([_%\\])/g, '\\$1')}%`;
-        where[Op.or] = [...where[Op.or],
-        { comment: { [Op.iLike]: value } },
-        { '$user.userName$': { [Op.iLike]: value } },
-        { '$volunteer.firstName$': { [Op.iLike]: value } },
-        { '$volunteer.lastName$': { [Op.iLike]: value } },
-        { '$volunteer.patronymic$': { [Op.iLike]: value } },
-        { '$institute.instituteName$': { [Op.iLike]: value } },
-        { '$institute.category$': { [Op.iLike]: value } },
-        { '$contact.content$': { [Op.iLike]: value } },
-        { '$contact.type$': { [Op.iLike]: value } },
-        ];
-      }
-
-      const include = [
-        {
-          model: User,
-          as: 'user',
+        User.findAll({
           attributes: ['id', 'userName'],
-        },
-        {
-          model: Volunteer,
-          as: 'volunteer',
-          attributes: ['id', 'firstName', 'patronymic', 'lastName'],
-        },
-        {
-          model: Institute,
-          as: 'institute',
-          attributes: ['id', 'instituteName', 'category'],
-          required: false,
-        },
-        {
-          model: VolunteerContact,
-          as: 'contact',
-          attributes: ['id', 'content', 'type'],
-          required: false,
-        },
-        {
-          association: 'occasion',
-          attributes: ['id', 'type', 'month', 'year', 'amount', 'status'],
-        },
-      ];
+          order: [['userName', 'ASC']],
+          raw: true,
+        }),
 
-      const total = await Order.count({
-        where: where,
-        include: include,
-        distinct: true,
-      });
-
-      const draft = await Order.findAll({
-        where: where,
-        attributes: {
-          exclude: ['updatedAt']
-        },
-        order,
-        include: include,
-        offset: offset,
-        limit: limit,
-        distinct: true,
-      });
-      const orders = (await Promise.all(
-        draft.map(o => transformOrderDisplayPart(o.id))
-      )).filter(Boolean);
-
-      const users = await User.findAll({
-        attributes: ['id', 'userName'],
-        order: [["userName", "ASC"]],
-        raw: true,
-      });
-
-      const statuses = dictToOptions(ORDER_STATUSES, lang);
-      const sources = dictToOptions(ORDER_SOURCES, lang);
-
-      const occasions = await Occasion.findAll(
-        {
+        Occasion.findAll({
           attributes: ['id', 'month', 'year', 'type'],
           order: [
             ['type', 'ASC'],
@@ -427,93 +272,130 @@ router.post(
             ['year', 'ASC'],
           ],
           raw: true,
-        }
-      );
+        }),
+      ]);
+
+      const orders = draft.map((order) => transformOrderDisplayPart(order, lang));
+
+      const statuses = dictToOptions(ORDER_STATUSES, lang);
+      const sources = dictToOptions(ORDER_SOURCES, lang);
       const nodes = buildOccasionNodes(
         occasions,
-        req.language ?? 'ru',
+        lang,
       );
-      res
-        .status(200)
-        .send({
-          data: {
-            list: orders, length: total, options: {
-              users, statuses, sources, nodes
-            }
-          }
-        });
+
+      res.status(200).send({
+        data: {
+          list: orders,
+          length: total,
+          options: {
+            users,
+            statuses,
+            sources,
+            nodes,
+          },
+        },
+      });
     } catch (error) {
-      error.code = 'ERRORS.ORDER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
-  }
-);
+  });
 
 router.patch(
   "/update-status",
   requireAuth,
-  requireAny('EDIT_ORDER'),
-  validateRequest(z.object({ id: z.number().int().min(1), status: z.number().int().min(1).max(4) }), 'body'),
+  requireOperation('EDIT_ORDER'),
+  validateRequest(orderSchemas.orderStatusUpdateSchema, 'body'),
 
   async (req, res, next) => {
     try {
-      const { id } = req.body;
-      const { status } = req.body;
+      const { id, status } = req.body;
       await withTransaction(async (t) => {
         const existingOrder = await Order.findByPk(id, { transaction: t });
 
         if (!existingOrder) {
-          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
 
         if (
-          (existingOrder.status === 1 || existingOrder.status === 2)
-          && (status === 3 || status === 4)
+          (
+            existingOrder.status === ORDER_STATUS.PENDING ||
+            existingOrder.status === ORDER_STATUS.ACCEPTED
+          ) &&
+          (
+            status === ORDER_STATUS.RETURNED ||
+            status === ORDER_STATUS.OVERDUE
+          )
         ) {
           const recipients = await OrderRecipient.findAll({
             where: {
               orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              recipientStatus: {
+                [Op.not]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
             },
             attributes: ['recipientId'],
             transaction: t,
           });
-          const recipientIds = recipients.map((i) => i.recipientId);
+
+          const recipientIds = recipients.map(
+            (recipient) => recipient.recipientId,
+          );
+
           await Recipient.decrement('plusAmount', {
             by: 1,
-            where: { id: { [Op.in]: recipientIds } },
+            where: {
+              id: {
+                [Op.in]: recipientIds,
+              },
+            },
             transaction: t,
           });
         }
 
         if (
-          (existingOrder.status === 3 || existingOrder.status === 4)
-          && (status === 1)
+          (
+            existingOrder.status === ORDER_STATUS.RETURNED ||
+            existingOrder.status === ORDER_STATUS.OVERDUE
+          ) &&
+          (
+            status === ORDER_STATUS.PENDING ||
+            status === ORDER_STATUS.ACCEPTED
+          )
         ) {
           const recipients = await OrderRecipient.findAll({
             where: {
               orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              recipientStatus: {
+                [Op.not]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
             },
             attributes: ['recipientId'],
             transaction: t,
           });
-          const recipientIds = recipients.map((i) => i.recipientId);
+
+          const recipientIds = recipients.map(
+            (recipient) => recipient.recipientId,
+          );
+
           await Recipient.increment('plusAmount', {
             by: 1,
-            where: { id: { [Op.in]: recipientIds } },
+            where: {
+              id: {
+                [Op.in]: recipientIds,
+              },
+            },
             transaction: t,
           });
         }
 
         await existingOrder.update({ status }, { transaction: t });
-      }
-      );
+      });
 
-
-      res.status(200).send({ code: 'ORDER.UPDATED', data: null });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: null });
     } catch (error) {
-      error.code = 'ERRORS.ORDER.UPDATE_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   });
@@ -521,8 +403,8 @@ router.patch(
 router.delete(
   "/delete-order/:id",
   requireAuth,
-  requireAny('DELETE_ORDER'),
-  validateRequest(orderIdParamsSchema, 'params'),
+  requireOperation('DELETE_ORDER'),
+  validateRequest(orderSchemas.orderIdParamsSchema, 'params'),
 
   async (req, res, next) => {
     try {
@@ -532,50 +414,48 @@ router.delete(
         const existingOrder = await Order.findByPk(id, { transaction: t });
 
         if (!existingOrder) {
-          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
 
-        if (existingOrder.status === 1 || existingOrder.status === 2) {
+        if (
+          existingOrder.status === ORDER_STATUS.PENDING ||
+          existingOrder.status === ORDER_STATUS.ACCEPTED
+        ) {
           const recipients = await OrderRecipient.findAll({
             where: {
               orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              recipientStatus: {
+                [Op.not]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
             },
             attributes: ['recipientId'],
             transaction: t,
           });
-          const recipientIds = recipients.map((i) => i.recipientId);
+
+          const recipientIds = recipients.map(
+            (recipient) => recipient.recipientId,
+          );
+
           await Recipient.decrement('plusAmount', {
             by: 1,
-            where: { id: { [Op.in]: recipientIds } },
-            transaction: t,
-          });
-        }
-
-        if (existingOrder.status === 3 || existingOrder.status === 4) {
-          const recipients = await OrderRecipient.findAll({
             where: {
-              orderId: existingOrder.id,
-              recipientStatus: { [Op.not]: 3 }
+              id: {
+                [Op.in]: recipientIds,
+              },
             },
-            attributes: ['recipientId'],
-            transaction: t,
-          });
-          const recipientIds = recipients.map((i) => i.recipientId);
-          await Recipient.increment('plusAmount', {
-            by: 1,
-            where: { id: { [Op.in]: recipientIds } },
             transaction: t,
           });
         }
         await existingOrder.destroy({ transaction: t });
-      }
-      );
+        await refreshVolunteerSearch(
+          existingOrder.volunteerId,
+          t,
+        );
+      });
 
-
-      res.status(200).send({ code: 'ORDER.UPDATED', data: null });
+      res.status(200).send({ code: 'SUCCESS.DELETED', data: null });
     } catch (error) {
-      error.code = 'ERRORS.ORDER.LIST_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_DELETE_FAILED';
       next(error);
     }
   });
@@ -584,17 +464,17 @@ router.get(
   "/order/:id",
   requireAuth,
   requireAny('VIEW_ORDER', 'EDIT_ORDER'),
-  validateRequest(orderIdParamsSchema, 'params'),
+  validateRequest(orderSchemas.orderIdParamsSchema, 'params'),
   async (req, res, next) => {
     try {
-      const order = await transformOrder(req.params.id);
-      if (!order) {
-        throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
-      }
-
+      const order = await getOrderDetails(
+        req.params.id,
+        null,
+        req.headers['x-lang'],
+      );
       res.status(200).send({ data: order });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.UPDATE_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_FETCH_FAILED';
       next(error);
     }
   }
@@ -603,16 +483,12 @@ router.get(
 router.patch(
   "/edit-recipients",
   requireAuth,
-  requireAny('EDIT_ORDER'),
-  validateRequest(z.object({
-    id: z.number().int().min(1),
-    deletingIds: z.array(z.number().int().min(1))
-  }), 'body'),
+  requireOperation('EDIT_ORDER'),
+  validateRequest(orderSchemas.orderEditRecipientsSchema, 'body'),
 
   async (req, res, next) => {
     try {
       const { id, deletingIds } = req.body;
-      console.log('deletingIds', deletingIds);
 
       await withTransaction(async (t) => {
         const existingOrder = await Order.findByPk(id, {
@@ -620,78 +496,82 @@ router.patch(
         });
 
         if (!existingOrder) {
-          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
         }
 
         const recipients = await OrderRecipient.findAll({
           where: {
-            id: { [Op.in]: deletingIds }
+            id: {
+              [Op.in]: deletingIds,
+            },
+            orderId: id,
+            recipientStatus: {
+              [Op.ne]: ORDER_RECIPIENT_STATUS.DELETED,
+            },
           },
-          attributes: ['recipientId'],
+          attributes: ['id', 'recipientId'],
           transaction: t,
         });
-        if (recipients.length === 0) throw new CustomError('ERRORS.RECIPIENTS.NOT_FOUND', 404);
+        if (recipients.length !== deletingIds.length) {
+          throw new CustomError('ERRORS.DATA_NOT_FOUND', 404);
+        }
+        if (existingOrder.amount - recipients.length < 1) {
+          throw new CustomError(
+            'ERRORS.ORDER.MIN_RECIPIENTS',
+            409,
+          );
+        }
 
         await OrderRecipient.update(
-          { recipientStatus: 3 }, {
-          where: {
-            id: { [Op.in]: deletingIds }
+          {
+            recipientStatus: ORDER_RECIPIENT_STATUS.DELETED,
           },
-          transaction: t
-        }
+          {
+            where: {
+              id: {
+                [Op.in]: deletingIds,
+              },
+              orderId: id,
+              recipientStatus: {
+                [Op.ne]: ORDER_RECIPIENT_STATUS.DELETED,
+              },
+            },
+            individualHooks: true,
+            transaction: t,
+          },
         );
 
-        const recipientIds = recipients.map((i) => i.recipientId);
-        await Recipient.decrement('plusAmount', {
-          by: 1,
-          where: { id: { [Op.in]: recipientIds } },
-          transaction: t,
-        });
+        const recipientIds = recipients.map(
+          (recipient) => recipient.recipientId,
+        );
+        if (
+          existingOrder.status === ORDER_STATUS.PENDING ||
+          existingOrder.status === ORDER_STATUS.ACCEPTED
+        ) {
+          await Recipient.decrement('plusAmount', {
+            by: 1,
+            where: { id: { [Op.in]: recipientIds } },
+            transaction: t,
+          });
+        }
 
         await existingOrder.update(
           { amount: existingOrder.amount - recipientIds.length },
           { transaction: t }
         );
+      });
 
-
-      }
+      const order = await getOrderDetails(
+        id,
+        null,
+        req.headers['x-lang'],
       );
-      const order = await transformOrder(id);
 
-      res.status(200).send({ code: 'ORDER.UPDATED', data: order });
+      res.status(200).send({ code: 'SUCCESS.UPDATED', data: order });
     } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.GET_FAILED';
+      error.code = error.code ?? 'ERRORS.DATA_UPDATE_FAILED';
       next(error);
     }
   });
-
-/* router.put(
-  "/:id",
-  requireAuth,
-  requireOperation('EDIT_ORDER'),
-  validateRequest(orderIdParamsSchema, 'params'),
-  validateRequest(orderSchemas.orderEditSchema, 'body'),
-  async (req, res, next) => {
-    try {
-      const order = await withTransaction(async (t) => {
-        const existingOrder = await Order.findByPk(req.params.id, {
-          transaction: t,
-        });
-
-        if (!existingOrder) {
-          throw new CustomError('ERRORS.ORDER.NOT_FOUND', 404);
-        }
-
-        await existingOrder.update(req.body, { transaction: t });
-        return transformOrder(existingOrder.id, t);
-      });
-
-      res.status(200).send({ code: 'ORDER.UPDATED', data: order });
-    } catch (error) {
-      error.code = error.code ?? 'ERRORS.ORDER.UPDATE_FAILED';
-      next(error);
-    }
-  }
-); */
 
 export default router;

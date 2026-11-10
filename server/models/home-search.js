@@ -16,6 +16,7 @@ export default function HomeSearchModel(sequelize) {
     isRestricted:
     {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: false
     },
   },
@@ -23,8 +24,14 @@ export default function HomeSearchModel(sequelize) {
       sequelize,
       modelName: 'home-search',
       tableName: 'home-searches',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+      indexes: [
+        {
+          name: 'uq_home_searches_home_restricted',
+          unique: true,
+          fields: ['homeId', 'isRestricted'],
+        },
+      ],
     });
   return HomeSearch;
 }

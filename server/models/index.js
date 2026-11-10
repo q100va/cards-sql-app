@@ -1,13 +1,13 @@
 import sequelize from '../database.js';
 import AuditLogModel from './audit-log.js';
-import RefreshToken from './refresh-token.js';
+import RefreshTokenModel from './refresh-token.js';
 import RolePermissionModel from './role-permission.js';
-import Role from './role.js';
+import RoleModel from './role.js';
 import LocalityModel from './locality.js';
 import DistrictModel from './district.js';
 import RegionModel from './region.js';
 import CountryModel from './country.js';
-import User from './user.js';
+import UserModel from './user.js';
 import UserAddressModel from './user-address.js';
 import UserContactModel from './user-contact.js';
 import UserSearchModel from './user-search.js';
@@ -24,7 +24,7 @@ import VolunteerSearchModel from './volunteer-search.js';
 import VolunteerOutdatedNameModel from './volunteer-outdated-name.js';
 import VolunteerSubscriptionModel from './volunteer-subscription.js';
 import VolunteerCooperationModel from './volunteer-cooperation.js';
-import InstituteModel from './institute.js';
+import VolunteerInstituteModel from './volunteer-institute.js';
 import HomeModel from './home.js';
 import HomeAddressModel from './home-address.js';
 import HomeContactModel from './home-contact.js';
@@ -38,9 +38,12 @@ import SeniorSearchModel from './senior-search.js';
 import OccasionModel from './occasion.js';
 import RecipientModel from './recipient.js';
 import OrderModel from './order.js';
-import OrderRecipientModel from './order-recipient.js'
+import OrderRecipientModel from './order-recipient.js';
 
 const AuditLog = AuditLogModel(sequelize);
+const RefreshToken = RefreshTokenModel(sequelize);
+const Role = RoleModel(sequelize);
+const User = UserModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
 const Country = CountryModel(sequelize);
 const Region = RegionModel(sequelize);
@@ -62,7 +65,7 @@ const VolunteerSearch = VolunteerSearchModel(sequelize);
 const VolunteerOutdatedName = VolunteerOutdatedNameModel(sequelize);
 const VolunteerSubscription = VolunteerSubscriptionModel(sequelize);
 const VolunteerCooperation = VolunteerCooperationModel(sequelize);
-const Institute = InstituteModel(sequelize);
+const VolunteerInstitute = VolunteerInstituteModel(sequelize);
 const Home = HomeModel(sequelize);
 const HomeAddress = HomeAddressModel(sequelize);
 const HomeContact = HomeContactModel(sequelize);
@@ -80,10 +83,13 @@ const OrderRecipient = OrderRecipientModel(sequelize);
 
 User.hasMany(UserContact, {
   as: 'contacts',
+  foreignKey: 'userId',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  onUpdate: 'CASCADE',
 });
-UserContact.belongsTo(User);
+UserContact.belongsTo(User, {
+  foreignKey: 'userId',
+});
 
 Partner.hasMany(PartnerContact, {
   as: 'contacts',
@@ -120,8 +126,6 @@ Country.hasMany(Region, {
   onUpdate: 'CASCADE',
 });
 Region.belongsTo(Country);
-/* Region.belongsToMany(Region, { through: 'NearbyRegions', as: 'mainRegion' });
-Region.belongsToMany(Region, { through: 'NearbyRegions', as: 'neighbor' }); */
 Region.hasMany(District, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
@@ -158,13 +162,15 @@ Home.hasMany(HomeAddress, {
   onUpdate: 'CASCADE'
 });
 
-Home.hasOne(HomeAddress, {               // ✅ одна актуальная
+Home.hasOne(HomeAddress, {
   as: 'activeAddress',
   foreignKey: 'homeId',
-  scope: { isRestricted: false },        // ✅ фильтр прямо в ассоциации
+  // Exposes the current non-restricted address as a separate association.
+  scope: {
+    isRestricted: false,
+  },
+  // The main Home -> HomeAddress association already owns the FK constraint.
   constraints: false,
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'                  // чтобы не ругался на множественные связи
 });
 
 UserAddress.belongsTo(User);
@@ -399,10 +405,10 @@ VolunteerCooperation.belongsTo(User, {
 });
 
 //institutes
-Institute.belongsTo(Volunteer, {
+VolunteerInstitute.belongsTo(Volunteer, {
   foreignKey: 'volunteerId',
 });
-Volunteer.hasMany(Institute, {
+Volunteer.hasMany(VolunteerInstitute, {
   as: 'institutes',
   foreignKey: 'volunteerId',
   onDelete: 'CASCADE',
@@ -526,12 +532,12 @@ Volunteer.hasMany(Order, {
   as: 'orders',
 });
 
-Order.belongsTo(Institute, {
+Order.belongsTo(VolunteerInstitute, {
   foreignKey: 'instituteId',
   as: 'institute',
 });
 
-Institute.hasMany(Order, {
+VolunteerInstitute.hasMany(Order, {
   foreignKey: 'instituteId',
   as: 'orders',
 });
@@ -586,6 +592,16 @@ OrderRecipient.belongsTo(Home, {
   as: 'home',
 });
 
+Recipient.belongsTo(Region, {
+  foreignKey: 'regionIdSnapshot',
+  as: 'snapshotRegion',
+});
+
+Recipient.belongsTo(Home, {
+  foreignKey: 'homeIdSnapshot',
+  as: 'snapshotHome',
+});
+
 
 
 export {
@@ -594,7 +610,7 @@ export {
   Role, UserAddress, UserContact, User, UserSearch, RolePermission, UserOutdatedName,
   Partner, PartnerAddress, PartnerContact, PartnerOutdatedName, PartnerSearch,
   VolunteerAddress, Volunteer, VolunteerContact, VolunteerSearch, VolunteerOutdatedName,
-  VolunteerSubscription, VolunteerCooperation, Institute,
+  VolunteerSubscription, VolunteerCooperation, VolunteerInstitute,
   Home, HomeAddress, HomeContact, HomeOutdatedName, HomeSearch, HomeCoordination, HomeUpdateDate,
   Senior, SeniorOutdatedName, SeniorSearch,
   Occasion, Recipient, Order, OrderRecipient

@@ -101,7 +101,8 @@ declare const coordinationItemSchema: z.ZodObject<{
         }, z.core.$strict>>>;
     }, z.core.$strict>>;
     partnerName: z.ZodOptional<z.ZodString>;
-    partnerOccupation: z.ZodOptional<z.ZodString>;
+    partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+    partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     homeName: z.ZodOptional<z.ZodString>;
     regionName: z.ZodOptional<z.ZodString>;
     partnerId: z.ZodNumber;
@@ -138,10 +139,13 @@ export declare const checkHomeNameSchema: z.ZodObject<{
     homeName: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 }, z.core.$strict>;
 export declare const homeIdSchema: z.ZodObject<{
+    id: z.ZodNumber;
+}, z.core.$strict>;
+export declare const homeIdParamSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
 }, z.core.$strict>;
 export declare const homeBlockingSchema: z.ZodObject<{
-    id: z.ZodCoercedNumber<unknown>;
+    id: z.ZodNumber;
     causeOfRestriction: z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>;
 }, z.core.$strict>;
 export declare const draftAddressSchema: z.ZodObject<{
@@ -449,7 +453,15 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
         number: z.ZodNumber;
     }, z.core.$strip>;
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        field: z.ZodString;
+        field: z.ZodEnum<{
+            name: "name";
+            regionName: "regionName";
+            comment: "comment";
+            isRestricted: "isRestricted";
+            isClose: "isClose";
+            dateOfStart: "dateOfStart";
+            dateOfLastUpdate: "dateOfLastUpdate";
+        }>;
         direction: z.ZodEnum<{
             asc: "asc";
             desc: "desc";
@@ -460,7 +472,13 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
         exact: z.ZodOptional<z.ZodBoolean>;
     }, z.core.$strip>>;
     view: z.ZodOptional<z.ZodObject<{
-        option: z.ZodOptional<z.ZodString>;
+        option: z.ZodOptional<z.ZodEnum<{
+            all: "all";
+            "only-active": "only-active";
+            "only-blocked": "only-blocked";
+            "only-closed": "only-closed";
+            "exclude-closed": "exclude-closed";
+        }>>;
         includeOutdated: z.ZodOptional<z.ZodBoolean>;
     }, z.core.$strip>>;
     filters: z.ZodOptional<z.ZodObject<{
@@ -470,7 +488,9 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
             acceptableForSchool: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             hasCoordination: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             partners: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber>>>;
-            details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
+            details: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodEnum<{
+                comment: "comment";
+            }>>>>;
             dateBeginningRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateRestrictionRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
             dateUpdateRange: z.ZodOptional<z.ZodOptional<z.ZodTuple<[z.ZodCoercedDate<unknown>, z.ZodCoercedDate<unknown>], null>>>;
@@ -662,7 +682,8 @@ export declare const outdatedDataSchema: z.ZodObject<{
             }, z.core.$strict>>>;
         }, z.core.$strict>>;
         partnerName: z.ZodOptional<z.ZodString>;
-        partnerOccupation: z.ZodOptional<z.ZodString>;
+        partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+        partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         homeName: z.ZodOptional<z.ZodString>;
         regionName: z.ZodOptional<z.ZodString>;
         partnerId: z.ZodNumber;
@@ -920,7 +941,8 @@ export declare const homeSchema: z.ZodObject<{
                 }, z.core.$strict>>>;
             }, z.core.$strict>>;
             partnerName: z.ZodOptional<z.ZodString>;
-            partnerOccupation: z.ZodOptional<z.ZodString>;
+            partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+            partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             homeName: z.ZodOptional<z.ZodString>;
             regionName: z.ZodOptional<z.ZodString>;
             partnerId: z.ZodNumber;
@@ -982,7 +1004,8 @@ export declare const homeSchema: z.ZodObject<{
             }, z.core.$strict>>>;
         }, z.core.$strict>>;
         partnerName: z.ZodOptional<z.ZodString>;
-        partnerOccupation: z.ZodOptional<z.ZodString>;
+        partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+        partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         homeName: z.ZodOptional<z.ZodString>;
         regionName: z.ZodOptional<z.ZodString>;
         partnerId: z.ZodNumber;
@@ -1214,7 +1237,8 @@ export declare const homesSchema: z.ZodObject<{
                     }, z.core.$strict>>>;
                 }, z.core.$strict>>;
                 partnerName: z.ZodOptional<z.ZodString>;
-                partnerOccupation: z.ZodOptional<z.ZodString>;
+                partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+                partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 homeName: z.ZodOptional<z.ZodString>;
                 regionName: z.ZodOptional<z.ZodString>;
                 partnerId: z.ZodNumber;
@@ -1276,7 +1300,8 @@ export declare const homesSchema: z.ZodObject<{
                 }, z.core.$strict>>>;
             }, z.core.$strict>>;
             partnerName: z.ZodOptional<z.ZodString>;
-            partnerOccupation: z.ZodOptional<z.ZodString>;
+            partnerAffiliation: z.ZodOptional<z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+            partnerPosition: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             homeName: z.ZodOptional<z.ZodString>;
             regionName: z.ZodOptional<z.ZodString>;
             partnerId: z.ZodNumber;
@@ -1300,14 +1325,14 @@ export declare const regionWithHomesSchema: z.ZodArray<z.ZodObject<{
 }, z.core.$strip>>;
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
-export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
-export type HomeChangingData = z.infer<typeof changingDataSchema>;
-export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
+export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
 export type HomeCoordination = z.infer<typeof coordinationItemSchema>;
 export type HomeAddress = z.infer<typeof homeAddressItemSchema>;
-export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
+export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
+export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;
-export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
+export type HomeChangingData = z.infer<typeof changingDataSchema>;
+export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
 export {};

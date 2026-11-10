@@ -1,30 +1,45 @@
 import { z } from 'zod';
-import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmpty, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, } from './common.schema.js';
-import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, } from './common.schema.js';
-import { draftAddressSchema, addressSchema } from './common.schema.js';
-import { contactType, optionalContactsSchema } from './common.schema.js';
-import { changingContactsSchema } from './common.schema.js';
-import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
+import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, positiveIntParam, emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, draftAddressSchema, addressSchema, contactType, optionalContactsSchema, changingContactsSchema, outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
+import { INSTITUTE_CATEGORY } from '../constants/volunteers.js';
+const instituteCategorySchema = z.union([
+    z.literal(INSTITUTE_CATEGORY.SCHOOL),
+    z.literal(INSTITUTE_CATEGORY.KINDERGARTEN),
+    z.literal(INSTITUTE_CATEGORY.COLLEGE),
+    z.literal(INSTITUTE_CATEGORY.UNIVERSITY),
+    z.literal(INSTITUTE_CATEGORY.GOVERNMENT),
+    z.literal(INSTITUTE_CATEGORY.BUSINESS),
+    z.literal(INSTITUTE_CATEGORY.CHURCH),
+    z.literal(INSTITUTE_CATEGORY.CHARITY),
+    z.literal(INSTITUTE_CATEGORY.CHILDREN),
+    z.literal(INSTITUTE_CATEGORY.YOUTH),
+    z.literal(INSTITUTE_CATEGORY.ADULTS),
+    z.literal(INSTITUTE_CATEGORY.OTHER),
+]);
+const instituteNameSchema = z
+    .string()
+    .trim()
+    .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+    .max(150, 'FORM_VALIDATION.TOO_LONG_150');
 const instituteItemSchema = z
     .object({
-    category: nonEmpty,
-    instituteName: nonEmpty,
+    category: instituteCategorySchema,
+    instituteName: instituteNameSchema,
     isDeletable: z.boolean(),
     id: positiveInt,
 })
     .strict();
 const draftInstituteItemSchema = z
     .object({
-    category: nonEmpty,
-    instituteName: nonEmpty,
+    category: instituteCategorySchema,
+    instituteName: instituteNameSchema,
 })
     .strict();
 const subsItemSchema = z
     .object({
-    userName: nonEmpty,
+    userName: nonEmptyString,
     userId: positiveInt,
     id: positiveInt,
-    userFullName: nonEmpty,
+    userFullName: nonEmptyString,
     isRestricted: z.boolean().optional(),
     isRecoverable: z.boolean().optional(),
     isDeletable: z.boolean().optional(),
@@ -32,22 +47,28 @@ const subsItemSchema = z
     .strict();
 const coopItemSchema = z
     .object({
-    userName: nonEmpty,
+    userName: nonEmptyString,
     userId: positiveInt,
     id: positiveInt,
-    userFullName: nonEmpty,
+    userFullName: nonEmptyString,
     isRestricted: z.boolean().optional(),
     isRecoverable: z.boolean().optional(),
     isDeletable: z.boolean().optional(),
 })
     .strict();
+const restrictionCauseSchema = z
+    .string()
+    .trim()
+    .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+    .max(500, 'FORM_VALIDATION.TOO_LONG_500');
+const nullableRestrictionCauseSchema = z.preprocess(emptyToNull, restrictionCauseSchema.nullable());
 /* ===================== Some Schemas for form validation ===================== */
 export const instituteNameControlSchema = z.preprocess(toTrim, z
     .string()
     .min(1, 'FORM_VALIDATION.REQUIRED')
     .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
     .max(150, 'FORM_VALIDATION.TOO_LONG_150'));
-export const instituteCategoryControlSchema = z.preprocess(emptyToNull, z.string({ message: 'FORM_VALIDATION.REQUIRED' }));
+export const instituteCategoryControlSchema = z.preprocess(emptyToNull, instituteCategorySchema);
 export const emailControlSchema = z
     .preprocess(emptyToNull, z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }).nullable())
     .superRefine((v, ctx) => {
@@ -142,8 +163,7 @@ export const websiteControlSchema = z.preprocess(emptyToNull, z
     .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL')
     .nullable());
 export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
-/* ===================== Contacts (draft / ordered / optional) ===================== */
-// Draft
+/* ===================== Contacts ===================== */
 export const draftContactsSchema = z
     .object({
     email: z.array(emailSchema),
@@ -172,21 +192,31 @@ export const draftContactsSchema = z
 /* ===================== DTOs ===================== */
 export const checkVolunteerDataSchema = z
     .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveInt.nullable(),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
-    lastName: z
-        .preprocess(toTrim, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }))
-        .nullable(),
+    lastName: z.preprocess(emptyToNull, z
+        .string()
+        .max(50, {
+        message: 'FORM_VALIDATION.TOO_LONG_50',
+    })
+        .nullable()),
     contacts: draftContactsSchema,
 })
     .strict();
 export const volunteerIdSchema = z
-    .object({ id: z.coerce.number().int().positive() })
+    .object({
+    id: positiveInt,
+})
+    .strict();
+export const volunteerIdParamSchema = z
+    .object({
+    id: positiveIntParam,
+})
     .strict();
 export const volunteerBlockingSchema = z
     .object({
-    id: z.coerce.number().int().positive(),
-    causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
+    id: positiveInt,
+    causeOfRestriction: restrictionCauseSchema,
 })
     .strict();
 /* ===================== Volunteer Draft ===================== */
@@ -202,10 +232,7 @@ export const volunteerDraftSchema = z
         .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
         .nullable()),
     isRestricted: z.boolean(),
-    causeOfRestriction: z.preprocess(emptyToNull, z
-        .string()
-        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable()),
+    causeOfRestriction: nullableRestrictionCauseSchema,
     dateOfRestriction: nullableIsoDate,
     draftContacts: draftContactsSchema,
     draftInstitutes: z.array(draftInstituteItemSchema),
@@ -271,12 +298,7 @@ export const changingMainSchema = z
         .nullable())
         .optional(),
     isRestricted: z.boolean().optional(),
-    causeOfRestriction: z
-        .preprocess(emptyToNull, z
-        .string()
-        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
-        .nullable())
-        .optional(),
+    causeOfRestriction: nullableRestrictionCauseSchema.optional(),
     dateOfRestriction: nullableIsoDate.optional(),
 })
     .strict();
@@ -374,21 +396,34 @@ export const updateVolunteerDataSchema = z
     .strict();
 /* ========= Volunteer query DTO ========= */
 const sortDir = z.enum(['asc', 'desc']);
+const volunteerSortField = z.enum([
+    'name',
+    'dateOfStart',
+    'comment',
+    'isRestricted',
+    'dateOfLastOrder',
+]);
 export const volunteersQueryDTOSchema = z
     .object({
     page: z.object({
-        size: z.number().int().min(0),
+        size: z.number().int().min(1),
         number: z.number().int().min(0),
     }),
     sort: z
-        .array(z.object({ field: z.string().min(1), direction: sortDir }))
+        .array(z.object({
+        field: volunteerSortField,
+        direction: sortDir,
+    }))
         .optional(),
     search: z
-        .object({ value: z.string().min(1), exact: z.boolean().optional() })
+        .object({
+        value: z.string().min(1),
+        exact: z.boolean().optional(),
+    })
         .optional(),
     view: z
         .object({
-        option: z.string().min(1).optional(),
+        option: z.enum(['all', 'only-active', 'only-blocked']).optional(),
         includeOutdated: z.boolean().optional(),
     })
         .optional(),
@@ -398,8 +433,11 @@ export const volunteersQueryDTOSchema = z
             .object({
             subscriptions: z.array(positiveInt).min(1).optional(),
             cooperations: z.array(positiveInt).min(1).optional(),
-            categories: z.array(nonEmpty).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            categories: z.array(instituteCategorySchema).min(1).optional(),
+            details: z
+                .array(z.enum(['comment']))
+                .min(1)
+                .optional(),
             dateBeginningRange: z
                 .tuple([z.coerce.date(), z.coerce.date()])
                 .optional(),
@@ -445,7 +483,7 @@ export const outdatedDataSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    institutes: z.array(instituteItemSchema), //TODO:
+    institutes: z.array(instituteItemSchema),
     subscriptions: z.array(subsItemSchema),
     cooperations: z.array(coopItemSchema),
 })
@@ -454,16 +492,16 @@ export const outdatedDataSchema = z
 export const volunteerSchema = z
     .object({
     id: positiveInt,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty.nullable(),
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     dateOfLastOrder: nullableIsoDate,
     address: addressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
     institutes: z.array(instituteItemSchema),
@@ -477,11 +515,16 @@ export const volunteersSchema = z
     length: z.coerce.number().int().min(0),
 })
     .strict();
+export const volunteerSearchContactSchema = z
+    .object({
+    q: z.string().trim().min(3),
+})
+    .strict();
 export const contactOptionSchema = z
     .object({
     id: positiveInt,
     volunteerId: positiveInt,
-    type: z.string(),
-    content: z.string(),
+    type: contactType,
+    content: nonEmptyString,
 })
     .strict();

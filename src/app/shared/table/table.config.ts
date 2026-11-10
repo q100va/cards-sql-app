@@ -1,5 +1,6 @@
 import { ContactParamsForList } from '../../interfaces/base-list';
 import { TranslateService } from '@ngx-translate/core';
+import { PARTNER_AFFILIATIONS } from '../../../../shared/constants/partners';
 import { DateUtilsService } from '../../services/date-utils.service';
 
 export const CONTACT_PARAMS_FOR_LIST: ContactParamsForList[] = [
@@ -218,7 +219,8 @@ export const COLUMNS = {
       row: {
         coordinations: {
           partnerName: string;
-          partnerOccupation: string;
+          partnerAffiliation: number;
+          partnerPosition: string | null;
           partnerContacts: Record<string, { content: string }[]>;
         }[];
       },
@@ -231,8 +233,14 @@ export const COLUMNS = {
             (items) => items?.map(({ content }) => content) ?? [],
           ); */
           const contacts = formatContacts(partner.partnerContacts);
+          const affiliation = translate.instant(
+            PARTNER_AFFILIATIONS[partner.partnerAffiliation].key,
+          );
+          const occupation = partner.partnerPosition
+            ? `${affiliation} - ${partner.partnerPosition}`
+            : affiliation;
           return [
-            `${partner.partnerName} - ${partner.partnerOccupation}\n`,
+            `${partner.partnerName} - ${occupation}\n`,
             ...contacts,
           ].join('');
         })

@@ -10,17 +10,18 @@ export default function HomeOutdatedNameModel(sequelize) {
       primaryKey: true
     },
     officialName: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(500),
       allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
-
   },
     {
       sequelize,
       modelName: 'home-outdated-name',
       tableName: 'home-outdated-names',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     });
   return HomeOutdatedName;
 }

@@ -19,10 +19,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { finalize, map, switchMap } from 'rxjs';
 
-import { SOURCES } from '../../../../shared/constants/orders';
+import { ORDER_SOURCE_OPTIONS } from '../../../../shared/constants/orders';
 import {
   OrderDetails,
-  orderEditSchema,
 } from '../../../../shared/schemas/order.schema';
 import { OrderService } from '../../services/order.service';
 import { MessageWrapperService } from '../../services/message.service';
@@ -57,7 +56,7 @@ export class OrderDetailsComponent {
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly translateService = inject(TranslateService);
   readonly dateUtils = inject(DateUtilsService);
-  readonly SOURCES = SOURCES;
+  readonly sources = ORDER_SOURCE_OPTIONS;
 
   readonly isLoading = signal(false);
 
@@ -72,25 +71,7 @@ export class OrderDetailsComponent {
     { id: 4, label: 'ORDER.STATUS.OVERDUE' },
   ];
 
-  /*   readonly form = new FormGroup({
-    status: new FormControl<number>(1, {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        zodValidator(orderEditSchema.shape.status),
-      ],
-    }),
-    source: new FormControl<number>(1, {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        zodValidator(orderEditSchema.shape.source),
-      ],
-    }),
-    comment: new FormControl<string | null>(null, {
-      validators: [zodValidator(orderEditSchema.shape.comment)],
-    }),
-  }); */
+
 
   ngOnInit(): void {
     this.isLoading.set(true);
@@ -136,7 +117,7 @@ export class OrderDetailsComponent {
   }
 
   sourceLabel(sourceId: number): string {
-    return SOURCES.find((source) => source.id === sourceId)?.optionKey ?? '';
+    return this.sources.find((source) => source.id === sourceId)?.optionKey ?? '';
   }
 
   statusLabel(statusId: number): string {

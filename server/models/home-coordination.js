@@ -9,23 +9,22 @@ export default function HomeCoordinationModel(sequelize) {
       allowNull: false,
       primaryKey: true
     },
-    isRestricted:
-    {
+    isRestricted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      allowNull: false,
+      defaultValue: false,
     },
-    isRecoverable:
-    {
+    isRecoverable: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true
+      allowNull: false,
+      defaultValue: true,
     },
   },
     {
       sequelize,
       modelName: 'home-coordination',
       tableName: 'home-coordinations',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
     });
 
   return HomeCoordination;

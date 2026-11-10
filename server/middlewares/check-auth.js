@@ -1,44 +1,89 @@
-// ESM
 import jwt from 'jsonwebtoken';
+import {
+  setRequestUserId,
+} from './request-context.js';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const ACCESS_SECRET =
+  process.env.JWT_ACCESS_SECRET;
+
 const VERIFY_OPTS = {
   issuer: 'cards-sql-app',
   audience: 'web',
-  algorithms: ['HS256'],   // ✅ зафиксировали алгоритм
-  clockTolerance: 15,      // ✅ +/- 15s на дрейф часов
+  algorithms: ['HS256'],
+  clockTolerance: 15,
 };
 
 function badAuth(res) {
-  return res.status(401).json({ code: 'ERRORS.UNAUTHORIZED', data: null });
+  return res.status(401).json({
+    code: 'ERRORS.UNAUTHORIZED',
+    data: null,
+  });
 }
 
-export function requireAuth(req, res, next) {
+function getBearerToken(req) {
+  const authorization =
+    req.headers.authorization ?? '';
+
+  const match =
+    authorization.match(
+      /^Bearer\s+(.+)$/i,
+    );
+
+  return match?.[1] ?? null;
+}
+
+export function requireAuth(
+  req,
+  res,
+  next,
+) {
   try {
-    if (req.method === 'OPTIONS') return next();
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
 
-    if (!ACCESS_SECRET) return badAuth(res);
+    if (!ACCESS_SECRET) {
+      return badAuth(res);
+    }
 
-    const auth = req.headers.authorization || '';
-    const m = auth.match(/^Bearer\s+(.+)$/i);   // ✅ case-insensitive
-    const token = m?.[1];
-    if (!token) return badAuth(res);
+    const token =
+      getBearerToken(req);
 
-    const payload = jwt.verify(token, ACCESS_SECRET, VERIFY_OPTS);
+    if (!token) {
+      return badAuth(res);
+    }
 
-    // валидация критичных полей
-    const subNum = Number(payload.sub);
-    const roleIdNum = Number(payload.roleId);
-    if (!Number.isFinite(subNum) || !Number.isFinite(roleIdNum)) {
+    const payload = jwt.verify(
+      token,
+      ACCESS_SECRET,
+      VERIFY_OPTS,
+    );
+
+    const userId =
+      Number(payload.sub);
+
+    const roleId =
+      Number(payload.roleId);
+
+    if (
+      !Number.isInteger(userId) ||
+      userId <= 0 ||
+      !Number.isInteger(roleId) ||
+      roleId <= 0
+    ) {
       return badAuth(res);
     }
 
     req.user = {
-      id: subNum,
-      userName: payload.uname,
-      role: payload.role,
-      roleId: roleIdNum,
+      id: userId,
+      userName:
+        payload.uname ?? null,
+      role:
+        payload.role ?? null,
+      roleId,
     };
+
+    setRequestUserId(userId);
 
     return next();
   } catch {
@@ -46,29 +91,60 @@ export function requireAuth(req, res, next) {
   }
 }
 
-export function optionalAuth(req, res, next) {
+export function optionalAuth(
+  req,
+  _res,
+  next,
+) {
   try {
-    if (!ACCESS_SECRET) return next();
-
-    const auth = req.headers.authorization || '';
-    const m = auth.match(/^Bearer\s+(.+)$/i);
-    const token = m?.[1];
-    if (token) {
-      const payload = jwt.verify(token, ACCESS_SECRET, VERIFY_OPTS);
-      const subNum = Number(payload.sub);
-      const roleIdNum = payload.roleId != null ? Number(payload.roleId) : null;
-
-      if (Number.isFinite(subNum)) {
-        req.user = {
-          id: subNum,
-          userName: payload.uname ?? null,
-          role: payload.role ?? null,
-          roleId: Number.isFinite(roleIdNum) ? roleIdNum : null,
-        };
-      }
+    if (!ACCESS_SECRET) {
+      return;
     }
+
+    const token =
+      getBearerToken(req);
+
+    if (!token) {
+      return;
+    }
+
+    const payload = jwt.verify(
+      token,
+      ACCESS_SECRET,
+      VERIFY_OPTS,
+    );
+
+    const userId =
+      Number(payload.sub);
+
+    const roleId =
+      payload.roleId != null
+        ? Number(payload.roleId)
+        : null;
+
+    if (
+      !Number.isInteger(userId) ||
+      userId <= 0
+    ) {
+      return;
+    }
+
+    req.user = {
+      id: userId,
+      userName:
+        payload.uname ?? null,
+      role:
+        payload.role ?? null,
+      roleId:
+        Number.isInteger(roleId) &&
+        roleId > 0
+          ? roleId
+          : null,
+    };
+
+    setRequestUserId(userId);
   } catch {
-    // игнорим — optional
+    // Invalid authentication is ignored for optional access.
   } finally {
     next();
   }

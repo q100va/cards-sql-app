@@ -26,8 +26,17 @@ export default function UserOutdatedNameModel(sequelize) {
       sequelize,
       modelName: 'user-outdated-name',
       tableName: 'user-outdated-names',
-      timestamps: true, // createdAt
-      updatedAt: true,
+      timestamps: true,
+      updatedAt: true, //change to false?
+
+      indexes: [
+        {
+          name: 'idx_user_outdated_names_user',
+          fields: [
+            'userId',
+          ],
+        },
+      ],
     });
   return UserOutdatedName;
 }

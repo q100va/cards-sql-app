@@ -1,198 +1,182 @@
 import { Op } from "sequelize";
-import { Occasion, Recipient, Senior, Home } from "../models/index.js";
+import { Occasion, Recipient, Home } from "../models/index.js";
 import { generateRecipients, getSeniors } from "./ctrl-generate-recipients.js";
-import { transformRecipient } from "./ctrl-transform-recipient.js";
 
-function fullData(row) {
-  const hn = row.senior.home.homeName;
-  const fn = row.fullNameSnapshot;
-  const db = row.senior.birthDate ?? '';
-  return [hn, fn, db].filter(Boolean).join(' ').trim();
+function buildFullData(recipient) {
+  const homeName = recipient.snapshotHome.homeName;
+  const fullName = recipient.fullNameSnapshot;
+  const birthDate =
+      recipient.monthSnapshot &&
+      recipient.daySnapshot
+      ? [
+        recipient.yearSnapshot !== null ? recipient.yearSnapshot : '?',
+        String(recipient.monthSnapshot).padStart(2, '0'),
+        String(recipient.daySnapshot).padStart(2, '0'),
+      ].join('-')
+      : '';
+
+  return [homeName, fullName, birthDate]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
 }
 
-async function transformRecipientList(arr, t) {
-  if (!arr.length) return [];
+async function transformRecipientList(items, transaction) {
+  if (!items.length) return [];
 
-  // console.log('arr', arr);
-  const ids = arr.map(i => i.id);
-  console.log('ids', ids);
+  const ids = items.map((item) => item.id);
+
   const recipients = await Recipient.findAll({
-    where: { id: { [Op.in]: ids } },
-    //where: { id: 92 },
+    where: {
+      id: {
+        [Op.in]: ids,
+      },
+    },
     attributes: {
-      exclude: [
-        'createdAt',
-        'updatedAt']
+      exclude: ['createdAt', 'updatedAt'],
     },
     include: [
       {
-        model: Senior,
-        as: 'senior',
-        attributes: ['id', 'birthDate'],
-        include: [
-          {
-            model: Home,
-            as: 'home',
-            attributes: ['homeName'],
-          },
-        ]
+        model: Home,
+        as: 'snapshotHome',
+        attributes: ['homeName'],
       },
     ],
-    transaction: t,
+    transaction,
   });
-  console.log('recipients', recipients);
-  const result = recipients.map(r => ({
-    id: r.id,
-    fullData: fullData(r)
-  }));
 
-  return result;
+  return recipients.map((recipient) => ({
+    id: recipient.id,
+    fullData: buildFullData(recipient),
+  }));
 }
 
-export async function addRecipients(occasion, t, homeId = null) {
-  let seniors = await getSeniors(occasion, t);
+export async function addRecipients(occasion, transaction, homeId = null) {
+  let seniors = await getSeniors(occasion, transaction);
   if (homeId !== null) seniors = seniors.filter(s => s.homeId === homeId);
-  const seniorsIds = seniors.map(s => s.id);
+  const seniorIds = seniors.map((senior) => senior.id);
 
-  const whereRes = { occasionId: occasion.id, isAbsent: false };
-  if (homeId !== null) whereRes.homeIdSnapshot = homeId;
+  const activeWhere = { occasionId: occasion.id, isAbsent: false };
+  if (homeId !== null) activeWhere.homeIdSnapshot = homeId;
 
   const recipients = await Recipient.findAll({
-    where: whereRes,
+    where: activeWhere,
     attributes: ['seniorId'],
-    transaction: t,
+    transaction,
   });
-  const recipientsSet = new Set(recipients.map(r => r.seniorId));
-  const result = seniorsIds.filter(id => !recipientsSet.has(id));
-  console.log('result', result);
+  const activeSeniorIds = new Set(
+    recipients.map((recipient) => recipient.seniorId),
+  );
+  const missingSeniorIds = seniorIds.filter(
+    (id) => !activeSeniorIds.has(id),
+  );
 
-  const whereAbs = { occasionId: occasion.id, isAbsent: true };
-  if (homeId !== null) whereAbs.homeIdSnapshot = homeId;
+  const absentWhere = { occasionId: occasion.id, isAbsent: true };
+  if (homeId !== null) absentWhere.homeIdSnapshot = homeId;
 
   const absent = await Recipient.findAll({
-    where: whereAbs,
+    where: absentWhere,
     attributes: ['seniorId'],
-    transaction: t,
+    transaction,
   });
-  const absentIds = absent.map(r => r.seniorId);
+  const absentSeniorIds = absent.map(
+    (recipient) => recipient.seniorId,
+  );
 
-  const resultToMark = absentIds.filter(id => (new Set(result)).has(id));
-  const resultToAdd = result.filter(id => !(new Set(resultToMark)).has(id));
+  const missingSeniorIdsSet = new Set(missingSeniorIds);
 
-  console.log('resultToMark', resultToMark);
-  console.log('resultToAdd', resultToAdd);
+  // Separate returning recipients from new recipients.
+  const returningSeniorIds = absentSeniorIds.filter((id) =>
+    missingSeniorIdsSet.has(id),
+  );
+  const returningSeniorIdsSet = new Set(returningSeniorIds);
+
+  const newSeniorIds = missingSeniorIds.filter(
+    (id) => !returningSeniorIdsSet.has(id),
+  );
 
   let updated = [];
   let created = [];
-  if (resultToMark.length) {
+  if (returningSeniorIds.length) {
     const [_count, rows] = await Recipient.update(
       {
-        isAbsent: false
+        isAbsent: false,
       },
       {
-        where: { occasionId: occasion.id, seniorId: { [Op.in]: resultToMark } },
-        transaction: t,
-        individualHooks: true, // ensure per-row hooks/audit
+        where: {
+          occasionId: occasion.id,
+          seniorId: {
+            [Op.in]: returningSeniorIds,
+          },
+        },
+        transaction,
+        individualHooks: true,
         returning: true,
-      }
+      },
     );
     updated = rows;
   }
 
-  if (resultToAdd.length) {
-    const rows = await generateRecipients(occasion, t, resultToAdd);
-    created = await Recipient.bulkCreate(rows, { transaction: t, individualHooks: true, });
-    //console.log('created', created);
+  if (newSeniorIds.length) {
+    const rows = await generateRecipients(occasion, transaction, newSeniorIds);
+    created = await Recipient.bulkCreate(rows, { transaction, individualHooks: true, });
+
     await Occasion.increment(
       { amount: created.length },
       {
         where: { id: occasion.id },
-        transaction: t,
+        transaction,
       }
     );
   }
-  const added = await transformRecipientList(created, t);
-  const returned = await transformRecipientList(updated, t);
-  console.log('added', added);
-  console.log('returned', returned);
+  const added = await transformRecipientList(created, transaction);
+  const returned = await transformRecipientList(updated, transaction);
   return {
     added,
     returned
   };
 }
 
-export async function markAbsentRecipients(occasion, t, homeId = null) {
-  let seniors = await getSeniors(occasion, t);
+export async function markAbsentRecipients(occasion, transaction, homeId = null) {
+  let seniors = await getSeniors(occasion, transaction);
   if (homeId !== null) seniors = seniors.filter(s => s.homeId === homeId);
-  const seniorsSet = new Set(seniors.map(s => s.id));
+  const currentSeniorIds = new Set(
+    seniors.map((senior) => senior.id),
+  );
 
-  const whereRes = { occasionId: occasion.id, isAbsent: false };
-  if (homeId !== null) whereRes.homeIdSnapshot = homeId;
+  const activeWhere = { occasionId: occasion.id, isAbsent: false };
+  if (homeId !== null) activeWhere.homeIdSnapshot = homeId;
 
-  const recipients = await Recipient.findAll({
-    where: whereRes,
+  const activeRecipients = await Recipient.findAll({
+    where: activeWhere,
     attributes: ['seniorId'],
-    transaction: t,
+    transaction,
   });
 
-  const recipientsIds = recipients.map(r => r.seniorId);
+  const activeSeniorIds = activeRecipients.map(
+    (recipient) => recipient.seniorId,
+  );
+  const absentSeniorIds = activeSeniorIds.filter(
+    (id) => !currentSeniorIds.has(id),
+  );
 
-  const absent = recipientsIds.filter(id => !seniorsSet.has(id));
-  console.log('absent', absent);
-  let updated = [];
-  if (absent.length) {
+  let updatedRecipients = [];
+  if (absentSeniorIds.length) {
     const [_count, rows] = await Recipient.update(
       {
         isAbsent: true
       },
       {
-        where: { occasionId: occasion.id, seniorId: { [Op.in]: absent } },
-        transaction: t,
-        individualHooks: true, // ensure per-row hooks/audit
+        where: {
+          occasionId: occasion.id,
+          seniorId: { [Op.in]: absentSeniorIds }
+        },
+        transaction,
+        individualHooks: true,
         returning: true,
       }
     );
-    updated = rows;
+    updatedRecipients = rows;
   }
-  const list = await transformRecipientList(updated);
-  return list;
+  return transformRecipientList(updatedRecipients, transaction);
 }
-
-
-
-
-
-
-
-
-/* function checkRecipientsDuplicates(rows) {
-  const seen = new Set();
-
-  for (const r of rows) {
-    const key = `${r.occasionId}_${r.seniorId}`;
-
-    if (seen.has(key)) {
-      throw new CustomError('ERRORS.RECIPIENT.DUPLICATE_IN_LIST', 400);
-    }
-
-    seen.add(key);
-  }
-}
-
-function findRecipientsDuplicates(rows) {
-  const seen = new Set();
-  const duplicates = [];
-
-  for (const r of rows) {
-    const key = `${r.occasionId}_${r.seniorId}`;
-
-    if (seen.has(key)) {
-      duplicates.push(r);
-    } else {
-      seen.add(key);
-    }
-  }
-
-  return duplicates;
-}
- */

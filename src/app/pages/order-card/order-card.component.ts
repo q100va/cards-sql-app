@@ -29,7 +29,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { DateUtilsService } from '../../services/date-utils.service';
-import { SOURCES } from '../../../../shared/constants/orders';
+import {
+  ADDRESS_CATEGORY,
+  ORDER_SOURCE_OPTIONS,
+  ORDER_STATUS,
+} from '../../../../shared/constants/orders';
+import { INSTITUTE_CATEGORIES, InstituteCategoryId } from '../../../../shared/constants/volunteers';
 import { OrderFiltersComponent } from './order-filters/order-filters.component';
 
 import { OrderRecipientsComponent } from './order-recipients/order-recipients.component';
@@ -85,6 +90,10 @@ import { finalize } from 'rxjs';
   styleUrl: './order-card.component.css',
 })
 export class OrderCardComponent {
+  readonly instituteCategories: Record<
+  number,
+  (typeof INSTITUTE_CATEGORIES)[InstituteCategoryId]
+> = INSTITUTE_CATEGORIES;
   readonly route = inject(ActivatedRoute);
   readonly dateUtils = inject(DateUtilsService);
   private readonly occasionService = inject(OccasionService);
@@ -95,7 +104,7 @@ export class OrderCardComponent {
   readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly msgWrapper = inject(MessageWrapperService);
-  readonly SOURCES = SOURCES;
+  readonly sources = ORDER_SOURCE_OPTIONS;
   readonly dialog = inject(MatDialog);
 
   @ViewChild(OrderFiltersComponent)
@@ -129,10 +138,11 @@ export class OrderCardComponent {
 
   filterForm = new FormGroup({
     addressCategory: new FormControl<number>(
-      this.authService.has('FULL_FILTER_NEW_ORDER') ? 1 : 2,
+      this.authService.has('FULL_FILTER_NEW_ORDER')
+        ? ADDRESS_CATEGORY.ANY
+        : ADDRESS_CATEGORY.FOR_SCHOOLS,
       {
         nonNullable: true,
-        //validators: [zodValidator(occasionDraftSchema.shape.year)],
       },
     ),
     gender: new FormControl<number>(1, {
@@ -442,46 +452,59 @@ export class OrderCardComponent {
     ) {
       return;
     }
-    const params = {
+    const params = orderDraftSchema.parse({
       userId,
       volunteerId: this.volunteer!.id,
       occasionId: this.actualOccasions[this.index].id,
-      //occasionType: +this.orderTypeId,
-      status: this.orderForm.controls.noConfirmationRequired.value ? 2 : 1,
+
+      status: this.orderForm.controls.noConfirmationRequired.value
+        ? ORDER_STATUS.ACCEPTED
+        : ORDER_STATUS.PENDING,
+
       source,
+
+      forSchoolDepartment: !this.authService.has('FULL_FILTER_NEW_ORDER'),
       contactId: contact.id,
       amount,
       comment: this.orderForm.controls.comment.value,
       instituteId: this.orderForm.controls.instituteId.value,
-    };
+    });
     console.log('this.volunteer!.id', this.volunteer!.id);
 
-    const filtersDraft = {
+    const filtersDraft = orderFilterSchema.parse({
       addressCategory: this.filterForm.controls.addressCategory.value,
       gender: this.filterForm.controls.gender.value,
+
       maleAmount: this.filterForm.controls.maleAmount.value,
       femaleAmount: this.filterForm.controls.femaleAmount.value,
+
       onlyWithPicture: this.filterForm.controls.onlyWithPicture.value,
       onlyAnniversaries: this.filterForm.controls.onlyAnniversaries.value,
       onlyAnniversariesAndOldest:
         this.filterForm.controls.onlyAnniversariesAndOldest.value,
       onlyWithConcents: this.filterForm.controls.onlyWithConcents.value,
+
       year1: this.filterForm.controls.year1.value,
       year2: this.filterForm.controls.year2.value,
+
       date1: this.filterForm.controls.date1.value,
       date2: this.filterForm.controls.date2.value,
+
       regions:
         this.filterForm.controls.homes.value.length > 0
           ? []
           : this.filterForm.controls.addSpareRegions.value
             ? getRegionsWithNearby(this.filterForm.controls.regions.value)
             : this.filterForm.controls.regions.value,
+
       homes: this.filterForm.controls.homes.value,
-      //addSpareRegions: this.filterForm.controls.addSpareRegions.value,
+
       minFromOneHouse: this.filterForm.controls.minFromOneHouse.value,
+
       maxFromOneHouse: this.filterForm.controls.maxFromOneHouse.value,
+
       maxNoAddress: this.filterForm.controls.maxNoAddress.value,
-    };
+    });
 
     this.orderService
       .createOrder(params, filtersDraft)
@@ -548,12 +571,12 @@ export class OrderCardComponent {
   }
 
   filterContact(event: AutoCompleteCompleteEvent) {
-/*     this.message = '';
+    /*     this.message = '';
     this.contactReminder = '';
     this.list = []; */
     const query = event.query?.trim();
 
-    if (!query || query.length < 2) {
+    if (!query || query.length < 3) {
       this.filteredContacts = [];
       return;
     }
@@ -588,16 +611,24 @@ export class OrderCardComponent {
         next: (res) => {
           this.volunteer = res.data;
           if (updateContact) {
-            const firstKey = Object.keys(this.volunteer.orderedContacts)[0];
-            const firstContact = Object.values(
+            const firstKey = Object.keys(this.volunteer.orderedContacts)[0] as
+              | ContactOption['type']
+              | undefined;
+
+            const firstContacts = Object.values(
               this.volunteer.orderedContacts,
-            )[0][0];
-            this.orderForm.controls.contact.setValue({
-              id: firstContact.id,
-              volunteerId: this.volunteer.id,
-              type: firstKey,
-              content: firstContact.content,
-            });
+            )[0];
+
+            const firstContact = firstContacts?.[0];
+
+            if (firstKey && firstContact) {
+              this.orderForm.controls.contact.setValue({
+                id: firstContact.id,
+                volunteerId: this.volunteer.id,
+                type: firstKey,
+                content: firstContact.content,
+              });
+            }
           }
           //this.addCheckboxes();
           //  console.log(this.filteredContacts);

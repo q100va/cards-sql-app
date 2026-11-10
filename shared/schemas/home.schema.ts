@@ -4,18 +4,16 @@ import {
   emptyToNull,
   keepE164Chars,
   keepE164CharsNullable,
-  nonEmpty,
+  nonEmptyString,
   nonEmptyTrim,
   nonEmptyTrimMax,
   positiveInt,
+  positiveIntParam,
   nullableInt,
   nullableIsoDate,
   intOptArray,
-  nonEmptyContacts,
   addressRefFullSchema,
   addressRefShortSchema,
-} from './common.schema.js';
-import {
   emailSchema,
   facebookSchema,
   instagramSchema,
@@ -25,32 +23,25 @@ import {
   telegramNicknameSchema,
   vKontakteSchema,
   websiteSchema,
+  contactType,
+  optionalContactsSchema,
+  changingContactsSchema,
 } from './common.schema.js';
-import { contactType } from './common.schema.js';
+import { PARTNER_AFFILIATION } from '../constants/partners.js';
 
-export const optionalContactsSchema = z
-  .object({
-    email: nonEmptyContacts.optional(),
-    phoneNumber: nonEmptyContacts.optional(),
-    whatsApp: nonEmptyContacts.optional(),
-    telegram: nonEmptyContacts.optional(),
-    telegramNickname: nonEmptyContacts.optional(),
-    telegramId: nonEmptyContacts.optional(),
-    telegramPhoneNumber: nonEmptyContacts.optional(),
-    vKontakte: nonEmptyContacts.optional(),
-    instagram: nonEmptyContacts.optional(),
-    facebook: nonEmptyContacts.optional(),
-    website: nonEmptyContacts.optional(),
-    otherContact: nonEmptyContacts.optional(),
-  })
-  .strict();
+const partnerAffiliationSchema = z.union([
+  z.literal(PARTNER_AFFILIATION.VOLUNTEER_COORDINATOR),
+  z.literal(PARTNER_AFFILIATION.HOME_REPRESENTATIVE),
+  z.literal(PARTNER_AFFILIATION.FOUNDATION_STAFF),
+]);
 
 const coordinationItemSchema = z.object({
   partnerContacts: optionalContactsSchema.optional(),
-  partnerName: nonEmpty.optional(),
-  partnerOccupation: nonEmpty.optional(),
-  homeName: nonEmpty.optional(),
-  regionName: nonEmpty.optional(),
+  partnerName: nonEmptyString.optional(),
+  partnerAffiliation: partnerAffiliationSchema.optional(),
+  partnerPosition: nonEmptyString.nullable().optional(),
+  homeName: nonEmptyString.optional(),
+  regionName: nonEmptyString.optional(),
   partnerId: positiveInt,
   homeId: positiveInt,
   isRecoverable: z.boolean(),
@@ -219,18 +210,26 @@ export const draftContactsSchema = z
 /* ===================== DTOs ===================== */
 export const checkHomeNameSchema = z
   .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveIntParam.optional(),
     homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
   })
   .strict();
 
 export const homeIdSchema = z
-  .object({ id: z.coerce.number().int().positive() })
+  .object({
+    id: positiveInt,
+  })
+  .strict();
+
+export const homeIdParamSchema = z
+  .object({
+    id: positiveIntParam,
+  })
   .strict();
 
 export const homeBlockingSchema = z
   .object({
-    id: z.coerce.number().int().positive(),
+    id: positiveInt,
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
   })
   .strict();
@@ -252,7 +251,6 @@ export const homeDraftSchema = z
     homeName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     officialName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
     postalName: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
-    // type: z.enum(['NURSING_HOME', 'SPECIAL_HOME', 'PSYCH_NEURO_HOME', 'HOSPICE', 'OTHER']),
     noAddress: z.boolean(),
     specialHome: z.boolean(),
     acceptableForSchool: z.boolean(),
@@ -333,6 +331,23 @@ export const homeDraftSchema = z
         });
       }
     }
+    if (data.isClose) {
+      if (!data.dateOfClose) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['dateOfClose'],
+          message: 'Required when isClose is true',
+        });
+      }
+    } else {
+      if (data.dateOfClose !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['dateOfClose'],
+          message: 'Must be null when isClose is false',
+        });
+      }
+    }
   });
 
 /* ===================== UpdateHomeData ===================== */
@@ -408,22 +423,6 @@ export const changingMainSchema = z
   })
   .strict();
 
-export const changingContactsSchema = z
-  .object({
-    email: z.array(emailSchema).optional(),
-    phoneNumber: z.array(phoneNumberSchema).optional(),
-    whatsApp: z.array(phoneNumberSchema).optional(),
-    telegramNickname: z.array(telegramNicknameSchema).optional(),
-    telegramId: z.array(telegramIdSchema).optional(),
-    telegramPhoneNumber: z.array(phoneNumberSchema).optional(),
-    vKontakte: z.array(vKontakteSchema).optional(),
-    instagram: z.array(instagramSchema).optional(),
-    facebook: z.array(facebookSchema).optional(),
-    website: z.array(websiteSchema).optional(),
-    otherContact: z.array(otherContactSchema).optional(),
-  })
-  .strict();
-
 export const changingDataSchema = z
   .object({
     main: changingMainSchema.nullable(),
@@ -466,6 +465,24 @@ export const changingDataSchema = z
           code: 'custom',
           path: ['main', 'dateOfRestriction'],
           message: 'Required when isRestricted is true',
+        });
+      }
+    }
+    if (m.isClose === true) {
+      if (m.dateOfClose === undefined || m.dateOfClose === null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['main', 'dateOfClose'],
+          message: 'Required when isClose is true',
+        });
+      }
+    }
+    if (m.isClose === false) {
+      if (m.dateOfClose !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['main', 'dateOfClose'],
+          message: 'Must be null when isClose is false',
         });
       }
     }
@@ -520,6 +537,15 @@ export const updateHomeDataSchema = z
 /* ========= Home query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
+const homeSortField = z.enum([
+  'name',
+  'regionName',
+  'dateOfStart',
+  'comment',
+  'isRestricted',
+  'isClose',
+  'dateOfLastUpdate',
+]);
 
 export const homesQueryDTOSchema = z
   .object({
@@ -528,14 +554,27 @@ export const homesQueryDTOSchema = z
       number: z.number().int().min(0),
     }),
     sort: z
-      .array(z.object({ field: z.string().min(1), direction: sortDir }))
+      .array(
+        z.object({
+          field: homeSortField,
+          direction: sortDir,
+        }),
+      )
       .optional(),
     search: z
       .object({ value: z.string().min(1), exact: z.boolean().optional() })
       .optional(),
     view: z
       .object({
-        option: z.string().min(1).optional(),
+        option: z
+          .enum([
+            'all',
+            'only-active',
+            'only-blocked',
+            'only-closed',
+            'exclude-closed',
+          ])
+          .optional(),
         includeOutdated: z.boolean().optional(),
       })
       .optional(),
@@ -548,7 +587,10 @@ export const homesQueryDTOSchema = z
             acceptableForSchool: z.boolean().optional(),
             hasCoordination: z.boolean().optional(),
             partners: z.array(positiveInt).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            details: z
+              .array(z.enum(['comment']))
+              .min(1)
+              .optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -592,21 +634,21 @@ export const homesQueryDTOSchema = z
 
 export const outdatedNameItemSchema = z
   .object({
-    officialName: nonEmpty,
+    officialName: nonEmptyString,
     id: positiveInt,
   })
   .strict();
 
 export const outdatedAddressItemSchema = z
   .object({
-    postalCode: nonEmpty,
-    postalName: nonEmpty,
+    postalCode: nonEmptyString,
+    postalName: nonEmptyString,
     country: addressRefFullSchema,
     region: addressRefShortSchema,
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
-    postalAddressPart: nonEmpty.nullable(),
-    fullPostalAddress: nonEmpty,
+    postalAddressPart: nonEmptyString.nullable(),
+    fullPostalAddress: nonEmptyString,
     id: positiveInt,
     isRecoverable: z.boolean(),
   })
@@ -633,44 +675,34 @@ const nonNullableAddressSchema = z
 
 export const homeAddressItemSchema = z
   .object({
-    postalCode: nonEmpty,
+    postalCode: nonEmptyString,
     country: addressRefFullSchema,
     region: addressRefShortSchema,
     district: addressRefShortSchema,
     locality: addressRefShortSchema,
-    postalAddressPart: nonEmpty.nullable(),
-    postalName: nonEmpty,
-    fullPostalAddress: nonEmpty,
+    postalAddressPart: nonEmptyString.nullable(),
+    postalName: nonEmptyString,
+    fullPostalAddress: nonEmptyString,
     id: positiveInt,
     isRecoverable: z.boolean(),
   })
   .strict();
 
-/* export const postalAddressSchema = z
-  .object({
-    postalCode: nonEmpty,
-    postalAddressPart: nonEmpty.nullable(),
-    fullPostalAddress: nonEmpty,
-    id: positiveInt,
-  })
-  .strict(); */
-
 export const homeSchema = z
   .object({
     id: positiveInt,
-    homeName: nonEmpty,
-    officialName: nonEmpty,
+    homeName: nonEmptyString,
+    officialName: nonEmptyString,
     noAddress: z.boolean(),
     specialHome: z.boolean(),
     acceptableForSchool: z.boolean(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: homeAddressItemSchema,
-    //postalAddress: postalAddressSchema,
-    comment: nonEmpty.nullable(),
-    infoNote: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
+    infoNote: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
     coordinations: z.array(coordinationItemSchema),
@@ -703,15 +735,16 @@ export const regionWithHomesSchema = z.array(
 /* ===================== Types ===================== */
 export type HomeDraft = z.infer<typeof homeDraftSchema>;
 export type HomeDraftContacts = z.infer<typeof draftContactsSchema>;
-export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
-export type HomeChangingData = z.infer<typeof changingDataSchema>;
-export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;
+export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
+
 export type HomeCoordination = z.infer<typeof coordinationItemSchema>;
 export type HomeAddress = z.infer<typeof homeAddressItemSchema>;
-export type HomeAddressDraft = z.infer<typeof nonNullableAddressSchema>;
-//export type PostalAddress = z.infer<typeof postalAddressSchema>;
-//export type HomeContacts = z.infer<typeof optionalContactsSchema>;
+export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
+
+export type HomeOutdatedData = z.infer<typeof outdatedDataSchema>;
 export type OutdatedCoordination = z.infer<typeof coordinationItemSchema>;
 export type OutdatedOfficialName = z.infer<typeof outdatedNameItemSchema>;
 export type OutdatedHomeAddress = z.infer<typeof outdatedAddressItemSchema>;
-export type RegionWithHomes = z.infer<typeof regionWithHomesSchema>;
+
+export type HomeChangingData = z.infer<typeof changingDataSchema>;
+export type HomeOutdatingData = z.infer<typeof outdatingDataSchema>;

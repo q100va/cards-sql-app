@@ -273,7 +273,7 @@ export function reconcileRestoredInstitutes(
     outdating,
     outdatedAll,
     (candidate) => {
-      // candidate может иметь instituteName/category как строки — предполагаю так
+      // Match the candidate by its normalized name and numeric category ID.
       const key = `${norm(candidate.instituteName)}|${candidate.category}`;
       return !draftKeySet.has(key);
     },

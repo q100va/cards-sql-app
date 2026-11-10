@@ -1,19 +1,15 @@
-import { number, z } from 'zod';
+import { z } from 'zod';
 import {
   toTrim,
   emptyToNull,
-  toLowerTrim,
   keepE164Chars,
   keepE164CharsNullable,
-  nonEmpty,
-  nonEmptyTrim,
+  nonEmptyString,
   nonEmptyTrimMax,
   positiveInt,
   nullableInt,
   nullableIsoDate,
   intOptArray,
-} from './common.schema.js';
-import {
   emailSchema,
   facebookSchema,
   instagramSchema,
@@ -23,27 +19,22 @@ import {
   telegramNicknameSchema,
   vKontakteSchema,
   websiteSchema,
-} from './common.schema.js';
-import {
   draftAddressSchema,
   addressSchema,
-  addressRefFullSchema,
-  addressRefShortSchema,
-} from './common.schema.js';
-import {
   contactType,
-  contactSchema,
-  nonEmptyContacts,
   optionalContactsSchema,
-} from './common.schema.js';
-import {
-  //changingAddressSchema,
   changingContactsSchema,
-} from './common.schema.js';
-import {
   outdatedNameItemSchema,
   outdatedAddressItemSchema,
+  positiveIntParam,
 } from './common.schema.js';
+import { PARTNER_AFFILIATION } from '../constants/partners.js';
+
+const partnerAffiliationSchema = z.union([
+  z.literal(PARTNER_AFFILIATION.VOLUNTEER_COORDINATOR),
+  z.literal(PARTNER_AFFILIATION.HOME_REPRESENTATIVE),
+  z.literal(PARTNER_AFFILIATION.FOUNDATION_STAFF),
+]);
 
 /* ===================== Some Schemas for form validation ===================== */
 
@@ -174,7 +165,7 @@ export const websiteControlSchema = z.preprocess(
     .string()
     .regex(
       /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i,
-      'Invalid website URL',
+      'FORM_VALIDATION.CONTACT.INVALID_URL',
     )
     .nullable(),
 );
@@ -218,7 +209,7 @@ export const draftContactsSchema = z
 /* ===================== DTOs ===================== */
 export const checkPartnerDataSchema = z
   .object({
-    id: z.coerce.number().int().optional(),
+    id: positiveInt.optional(),
     firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
     lastName: z
       .preprocess(
@@ -231,12 +222,20 @@ export const checkPartnerDataSchema = z
   .strict();
 
 export const partnerIdSchema = z
-  .object({ id: z.coerce.number().int().positive() })
+  .object({
+    id: positiveInt,
+  })
+  .strict();
+
+export const partnerIdParamSchema = z
+  .object({
+    id: positiveIntParam,
+  })
   .strict();
 
 export const partnerBlockingSchema = z
   .object({
-    id: z.coerce.number().int().positive(),
+    id: positiveInt,
     causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
   })
   .strict();
@@ -255,12 +254,11 @@ export const partnerDraftSchema = z
       emptyToNull,
       z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable(),
     ),
-    affiliation: nonEmpty,
+    affiliation: partnerAffiliationSchema,
     position: z.preprocess(
       emptyToNull,
       z
         .string()
-        .trim()
         .max(150, { message: 'FORM_VALIDATION.TOO_LONG_150' })
         .nullable(),
     ),
@@ -346,7 +344,7 @@ export const changingMainSchema = z
       )
       .optional(),
 
-    affiliation: z.string().optional(),
+    affiliation: partnerAffiliationSchema.optional(),
 
     position: z
       .preprocess(
@@ -435,9 +433,9 @@ export const outdatingDataSchema = z
     address: positiveInt.nullable(),
     names: z
       .object({
-        firstName: nonEmptyTrim,
-        patronymic: z.preprocess(toTrim, z.string().min(1)).nullable(),
-        lastName: z.preprocess(toTrim, z.string().min(1)).nullable(),
+        firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+        patronymic: z.preprocess(emptyToNull, z.string().max(50).nullable()),
+        lastName: z.preprocess(emptyToNull, z.string().max(50).nullable()),
       })
       .strict()
       .nullable(),
@@ -480,22 +478,34 @@ export const updatePartnerDataSchema = z
 /* ========= Partner query DTO ========= */
 
 const sortDir = z.enum(['asc', 'desc']);
+const partnerSortField = z.enum([
+  'name',
+  'affiliation',
+  'dateOfStart',
+  'comment',
+  'isRestricted',
+]);
 
 export const partnersQueryDTOSchema = z
   .object({
     page: z.object({
-      size: z.number().int().min(0),
+      size: z.number().int().min(1),
       number: z.number().int().min(0),
     }),
     sort: z
-      .array(z.object({ field: z.string().min(1), direction: sortDir }))
+      .array(
+        z.object({
+          field: partnerSortField,
+          direction: sortDir,
+        }),
+      )
       .optional(),
     search: z
       .object({ value: z.string().min(1), exact: z.boolean().optional() })
       .optional(),
     view: z
       .object({
-        option: z.string().min(1).optional(),
+        option: z.enum(['all', 'only-active', 'only-blocked']).optional(),
         includeOutdated: z.boolean().optional(),
       })
       .optional(),
@@ -503,7 +513,7 @@ export const partnersQueryDTOSchema = z
       .object({
         general: z
           .object({
-            affiliations: z.array(nonEmpty).min(1).optional(),
+            affiliations: z.array(partnerAffiliationSchema).min(1).optional(),
             dateBeginningRange: z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
@@ -511,7 +521,10 @@ export const partnersQueryDTOSchema = z
               .tuple([z.coerce.date(), z.coerce.date()])
               .optional(),
             contactTypes: z.array(contactType).min(1).optional(),
-            details: z.array(z.string()).optional(),
+            details: z
+              .array(z.enum(['comment']))
+              .min(1)
+              .optional(),
             hasCoordination: z.boolean().optional(),
             homes: intOptArray,
             homeRegions: intOptArray,
@@ -536,7 +549,6 @@ export const partnersQueryDTOSchema = z
           })
           .partial()
           .optional(),
-        //houses
       })
       .partial()
       .optional(),
@@ -547,9 +559,9 @@ export const partnersQueryDTOSchema = z
 
 const coordinationItemSchema = z.object({
   partnerContacts: optionalContactsSchema.optional(),
-  partnerName: nonEmpty.optional(),
-  homeName: nonEmpty.optional(),
-  regionName: nonEmpty.optional(),
+  partnerName: nonEmptyString.optional(),
+  homeName: nonEmptyString.optional(),
+  regionName: nonEmptyString.optional(),
   partnerId: positiveInt,
   homeId: positiveInt,
   isRecoverable: z.boolean(),
@@ -562,7 +574,7 @@ export const outdatedDataSchema = z
     contacts: optionalContactsSchema,
     addresses: z.array(outdatedAddressItemSchema),
     names: z.array(outdatedNameItemSchema),
-    coordinations: z.array(coordinationItemSchema), //TODO:
+    coordinations: z.array(coordinationItemSchema),
   })
   .strict();
 
@@ -571,17 +583,17 @@ export const outdatedDataSchema = z
 export const partnerSchema = z
   .object({
     id: positiveInt,
-    firstName: nonEmpty,
-    patronymic: nonEmpty.nullable(),
-    lastName: nonEmpty.nullable(),
-    affiliation: nonEmpty,
-    position: nonEmpty.nullable(),
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString.nullable(),
+    affiliation: partnerAffiliationSchema,
+    position: nonEmptyString.nullable(),
     isRestricted: z.boolean(),
     dateOfStart: z.coerce.date(),
-    causeOfRestriction: nonEmpty.nullable(),
+    causeOfRestriction: nonEmptyString.nullable(),
     dateOfRestriction: nullableIsoDate,
     address: addressSchema,
-    comment: nonEmpty.nullable(),
+    comment: nonEmptyString.nullable(),
     orderedContacts: optionalContactsSchema,
     outdatedData: outdatedDataSchema,
     coordinations: z.array(coordinationItemSchema),
@@ -596,14 +608,11 @@ export const partnersSchema = z
   .strict();
 
 /* ===================== Types ===================== */
-//export type PartnerDuplicates = z.infer<typeof duplicatesSchema>;
 export type PartnerDraft = z.infer<typeof partnerDraftSchema>;
 export type PartnerDraftContacts = z.infer<typeof draftContactsSchema>;
 
 export type PartnerOutdatedData = z.infer<typeof outdatedDataSchema>;
+export type OutdatedHome = z.infer<typeof coordinationItemSchema>;
 
 export type PartnerChangingData = z.infer<typeof changingDataSchema>;
-//export type PartnerRestoringData = z.infer<typeof restoringDataSchema>;
 export type PartnerOutdatingData = z.infer<typeof outdatingDataSchema>;
-//export type PartnerDeletingData = z.infer<typeof deletingDataSchema>;
-export type OutdatedHome = z.infer<typeof coordinationItemSchema>;
