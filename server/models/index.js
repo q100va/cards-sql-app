@@ -1,6 +1,6 @@
 import sequelize from '../database.js';
 import AuditLogModel from './audit-log.js';
-import RefreshToken from './refresh-token.js';
+import RefreshTokenModel from './refresh-token.js';
 import RolePermissionModel from './role-permission.js';
 import RoleModel from './role.js';
 import LocalityModel from './locality.js';
@@ -41,6 +41,7 @@ import OrderModel from './order.js';
 import OrderRecipientModel from './order-recipient.js'
 
 const AuditLog = AuditLogModel(sequelize);
+const RefreshToken = RefreshTokenModel(sequelize);
 const Role = RoleModel(sequelize);
 const User = UserModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);

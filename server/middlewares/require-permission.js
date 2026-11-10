@@ -1,63 +1,187 @@
-// server/middlewares/require-permission.js
 import { Op } from 'sequelize';
 import { RolePermission } from '../models/index.js';
 
-function unauth() {
-  return Object.assign(new Error('Unauthorized'), { status: 401, code: 'ERRORS.UNAUTHORIZED' });
+function unauthorized() {
+  return Object.assign(
+    new Error('Unauthorized'),
+    {
+      status: 401,
+      code: 'ERRORS.UNAUTHORIZED',
+    },
+  );
 }
+
 function forbidden(details) {
-  return Object.assign(new Error('Forbidden'), { status: 403, code: 'ERRORS.FORBIDDEN', details });
+  return Object.assign(
+    new Error('Forbidden'),
+    {
+      status: 403,
+      code: 'ERRORS.FORBIDDEN',
+      details,
+    },
+  );
 }
 
-/** Требует хотя бы ОДНУ операцию (OR) */
-export function requireAny(...opCodes) {
-  // dedupe на всякий
-  const codes = [...new Set(opCodes)];
-  return async (req, _res, next) => {
+function getOperationCodes(opCodes) {
+  return [
+    ...new Set(
+      opCodes.filter(
+        (code) =>
+          typeof code === 'string' &&
+          code.trim() !== '',
+      ),
+    ),
+  ];
+}
+
+function handleAccessCheckError(
+  error,
+  next,
+) {
+  error.status =
+    error.status ?? 500;
+
+  error.code =
+    error.code ??
+    'ERRORS.DATA_FETCH_FAILED';
+
+  return next(error);
+}
+
+// Requires at least one of the specified operations.
+export function requireAny(
+  ...opCodes
+) {
+  const codes =
+    getOperationCodes(opCodes);
+
+  return async (
+    req,
+    _res,
+    next,
+  ) => {
     try {
-      //console.log('requireAny: req', req);
-      const roleId = req.user?.roleId;
-      if (!roleId) return next(unauth());
+      const roleId =
+        req.user?.roleId;
 
-      const count = await RolePermission.count({
-        where: { roleId, name: { [Op.in]: codes }, access: true },
-      });
+      if (!roleId) {
+        return next(
+          unauthorized(),
+        );
+      }
 
-      if (count >= 1) return next();
-      return next(forbidden({ requiredAny: codes }));
-    } catch (e) {
-      return next(forbidden({ error: 'ACCESS.CHECK_FAILED', cause: e?.message }));
+      if (codes.length === 0) {
+        return next(
+          forbidden({
+            requiredAny: [],
+          }),
+        );
+      }
+
+      const count =
+        await RolePermission.count({
+          where: {
+            roleId,
+            name: {
+              [Op.in]: codes,
+            },
+            access: true,
+          },
+        });
+
+      if (count > 0) {
+        return next();
+      }
+
+      return next(
+        forbidden({
+          requiredAny: codes,
+        }),
+      );
+    } catch (error) {
+      return handleAccessCheckError(
+        error,
+        next,
+      );
     }
   };
 }
 
-/** Требует ВСЕ перечисленные операции (AND) */
-export function requireAll(...opCodes) {
-  const codes = [...new Set(opCodes)];
-  return async (req, _res, next) => {
+// Requires all of the specified operations.
+export function requireAll(
+  ...opCodes
+) {
+  const codes =
+    getOperationCodes(opCodes);
+
+  return async (
+    req,
+    _res,
+    next,
+  ) => {
     try {
-     // console.log('requireAny: req', req);
-     // console.log('requireAll: user', req.user);
-      const roleId = req.user?.roleId;
-     // console.log('requireAll: roleId', roleId);
-      if (!roleId) return next(unauth());
+      const roleId =
+        req.user?.roleId;
 
-      const rows = await RolePermission.findAll({
-        where: { roleId, name: { [Op.in]: codes }, access: true },
-        attributes: ['name'],
-        raw: true,
-      });
-      console.log('rows', rows);
-      const have = new Set(rows.map(r => r.name));
-      const missing = codes.filter(c => !have.has(c));
+      if (!roleId) {
+        return next(
+          unauthorized(),
+        );
+      }
 
-      if (missing.length === 0) return next();
-      return next(forbidden({ requiredAll: codes, missing }));
-    } catch (e) {
-      return next(forbidden({ error: 'ACCESS.CHECK_FAILED', cause: e?.message }));
+      if (codes.length === 0) {
+        return next(
+          forbidden({
+            requiredAll: [],
+          }),
+        );
+      }
+
+      const rows =
+        await RolePermission.findAll({
+          where: {
+            roleId,
+            name: {
+              [Op.in]: codes,
+            },
+            access: true,
+          },
+          attributes: ['name'],
+          raw: true,
+        });
+
+      const available =
+        new Set(
+          rows.map(
+            (row) => row.name,
+          ),
+        );
+
+      const missing =
+        codes.filter(
+          (code) =>
+            !available.has(code),
+        );
+
+      if (missing.length === 0) {
+        return next();
+      }
+
+      return next(
+        forbidden({
+          requiredAll: codes,
+          missing,
+        }),
+      );
+    } catch (error) {
+      return handleAccessCheckError(
+        error,
+        next,
+      );
     }
   };
 }
 
-/** Для простого случая одной операции (сugar) */
-export const requireOperation = (opCode) => requireAll(opCode);
+export const requireOperation =
+  (opCode) =>
+    requireAll(opCode);

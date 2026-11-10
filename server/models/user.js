@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
-import { applyFailedLoginState, applySuccessfulLoginReset, SECURITY } from '../controllers/auth-throttle.js';
+import { applyFailedLoginState, applySuccessfulLoginReset, SECURITY } from '../domain/auth-throttle.js';
 
 export default function UserModel(sequelize) {
   class User extends Model { }

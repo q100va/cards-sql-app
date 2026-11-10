@@ -28,8 +28,8 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
 import * as userSchemas from "../../shared/dist/schemas/user.schema.js";
 
-import { hashPassword } from "../controllers/passwords.mjs";
-import { verify } from '../controllers/passwords.mjs';
+import { hashPassword } from "../security/passwords.mjs";
+import { verify } from '../security/passwords.mjs';
 import { withTransaction } from "../controllers/with-transaction.js";
 import {
   collectFlatContacts,
