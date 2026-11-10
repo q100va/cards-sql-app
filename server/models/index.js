@@ -38,7 +38,7 @@ import SeniorSearchModel from './senior-search.js';
 import OccasionModel from './occasion.js';
 import RecipientModel from './recipient.js';
 import OrderModel from './order.js';
-import OrderRecipientModel from './order-recipient.js'
+import OrderRecipientModel from './order-recipient.js';
 
 const AuditLog = AuditLogModel(sequelize);
 const RefreshToken = RefreshTokenModel(sequelize);
@@ -83,10 +83,13 @@ const OrderRecipient = OrderRecipientModel(sequelize);
 
 User.hasMany(UserContact, {
   as: 'contacts',
+  foreignKey: 'userId',
   onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+  onUpdate: 'CASCADE',
 });
-UserContact.belongsTo(User);
+UserContact.belongsTo(User, {
+  foreignKey: 'userId',
+});
 
 Partner.hasMany(PartnerContact, {
   as: 'contacts',
@@ -123,8 +126,6 @@ Country.hasMany(Region, {
   onUpdate: 'CASCADE',
 });
 Region.belongsTo(Country);
-/* Region.belongsToMany(Region, { through: 'NearbyRegions', as: 'mainRegion' });
-Region.belongsToMany(Region, { through: 'NearbyRegions', as: 'neighbor' }); */
 Region.hasMany(District, {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE',
@@ -161,13 +162,15 @@ Home.hasMany(HomeAddress, {
   onUpdate: 'CASCADE'
 });
 
-Home.hasOne(HomeAddress, {               // ✅ одна актуальная
+Home.hasOne(HomeAddress, {
   as: 'activeAddress',
   foreignKey: 'homeId',
-  scope: { isRestricted: false },        // ✅ фильтр прямо в ассоциации
+  // Exposes the current non-restricted address as a separate association.
+  scope: {
+    isRestricted: false,
+  },
+  // The main Home -> HomeAddress association already owns the FK constraint.
   constraints: false,
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'                  // чтобы не ругался на множественные связи
 });
 
 UserAddress.belongsTo(User);

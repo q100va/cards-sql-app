@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import CustomError from '../shared/customError.js';
-import { regularExpression } from './helper-contact-re.js';
+import { regularExpression } from './contact-validation.js';
 
 export default function PartnerContactModel(sequelize) {
   class PartnerContact extends Model {}

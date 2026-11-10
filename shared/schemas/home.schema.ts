@@ -12,7 +12,6 @@ import {
   nullableInt,
   nullableIsoDate,
   intOptArray,
-  nonEmptyContacts,
   addressRefFullSchema,
   addressRefShortSchema,
   emailSchema,
@@ -25,6 +24,8 @@ import {
   vKontakteSchema,
   websiteSchema,
   contactType,
+  optionalContactsSchema,
+  changingContactsSchema,
 } from './common.schema.js';
 import { PARTNER_AFFILIATION } from '../constants/partners.js';
 
@@ -33,23 +34,6 @@ const partnerAffiliationSchema = z.union([
   z.literal(PARTNER_AFFILIATION.HOME_REPRESENTATIVE),
   z.literal(PARTNER_AFFILIATION.FOUNDATION_STAFF),
 ]);
-
-export const optionalContactsSchema = z
-  .object({
-    email: nonEmptyContacts.optional(),
-    phoneNumber: nonEmptyContacts.optional(),
-    whatsApp: nonEmptyContacts.optional(),
-    telegram: nonEmptyContacts.optional(),
-    telegramNickname: nonEmptyContacts.optional(),
-    telegramId: nonEmptyContacts.optional(),
-    telegramPhoneNumber: nonEmptyContacts.optional(),
-    vKontakte: nonEmptyContacts.optional(),
-    instagram: nonEmptyContacts.optional(),
-    facebook: nonEmptyContacts.optional(),
-    website: nonEmptyContacts.optional(),
-    otherContact: nonEmptyContacts.optional(),
-  })
-  .strict();
 
 const coordinationItemSchema = z.object({
   partnerContacts: optionalContactsSchema.optional(),
@@ -436,22 +420,6 @@ export const changingMainSchema = z
     dateOfRestriction: nullableIsoDate.optional(),
     isClose: z.boolean().optional(),
     dateOfClose: nullableIsoDate.optional(),
-  })
-  .strict();
-
-export const changingContactsSchema = z
-  .object({
-    email: z.array(emailSchema).optional(),
-    phoneNumber: z.array(phoneNumberSchema).optional(),
-    whatsApp: z.array(phoneNumberSchema).optional(),
-    telegramNickname: z.array(telegramNicknameSchema).optional(),
-    telegramId: z.array(telegramIdSchema).optional(),
-    telegramPhoneNumber: z.array(phoneNumberSchema).optional(),
-    vKontakte: z.array(vKontakteSchema).optional(),
-    instagram: z.array(instagramSchema).optional(),
-    facebook: z.array(facebookSchema).optional(),
-    website: z.array(websiteSchema).optional(),
-    otherContact: z.array(otherContactSchema).optional(),
   })
   .strict();
 

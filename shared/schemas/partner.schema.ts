@@ -5,7 +5,6 @@ import {
   keepE164Chars,
   keepE164CharsNullable,
   nonEmptyString,
-  nonEmptyTrim,
   nonEmptyTrimMax,
   positiveInt,
   nullableInt,

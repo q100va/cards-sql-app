@@ -7,25 +7,37 @@ export function withRequestContext(
   _res,
   next,
 ) {
-  const ctx = {
+  const context = {
     correlationId:
       req.correlationId ??
       req.id ??
       null,
+
     userId: null,
-    ip: req.ip ?? null,
+
+    ip:
+      req.ip ?? null,
+
     userAgent:
-      req.get('user-agent') ?? null,
+      req.get('user-agent') ??
+      null,
   };
 
-  als.run(ctx, () => next());
+  // Keep request metadata available across asynchronous operations.
+  return als.run(
+    context,
+    next,
+  );
 }
 
 export function setRequestUserId(userId) {
-  const ctx = als.getStore();
+  const context =
+    als.getStore();
 
-  if (ctx) {
-    ctx.userId = userId ?? null;
+  if (context) {
+    // Authentication happens after the request context is created.
+    context.userId =
+      userId ?? null;
   }
 }
 

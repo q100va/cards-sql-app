@@ -59,15 +59,6 @@ export const nonEmptyTrimMax = (max: number, msgMax: string) =>
 
 export const nullableInt = positiveInt.nullable();
 
-const stringArray = z.array(nonEmptyTrim); // [] ok
-
-// null | '' | Date | ISO → Date|null
-/* export const nullableIsoDate = z.preprocess((v: unknown) => {
-  if (v == null || v === '') return null;
-  if (v instanceof Date) return v;
-  const d = new Date(String(v));
-  return Number.isNaN(+d) ? v : d;
-}, z.date().nullable()); */
 
 export const nullableIsoDate = z.preprocess(
   (v: unknown) => {
@@ -226,7 +217,7 @@ export const contactType = z.enum([
 ]);
 
 // View: { id, content }[]
-export const contactSchema = z
+const contactSchema = z
   .object({ id: positiveInt, content: nonEmptyString })
   .strict();
 export const nonEmptyContacts = z.array(contactSchema).nonempty();
@@ -249,16 +240,6 @@ export const optionalContactsSchema = z
   })
   .strict();
 
-/* ===================== UpdateData ===================== */
-// ChangingData.address
-/* export const changingAddressSchema = z
-  .object({
-    countryId: nullableInt,
-    regionId: nullableInt,
-    districtId: nullableInt,
-    localityId: nullableInt,
-  })
-  .strict(); */
 
 // ChangingData.contacts
 export const changingContactsSchema = z
@@ -298,13 +279,6 @@ export const outdatedAddressItemSchema = z
   })
   .strict();
 
-export const outdatedCommonSchema = z
-  .object({
-    //contacts: optionalContactsSchema,
-    //addresses: z.array(outdatedAddressItemSchema),
-    //  names: z.array(outdatedNameItemSchema)
-  })
-  .strict();
 
 /* ===================== DTO ===================== */
 
@@ -325,21 +299,3 @@ export const duplicatesSchema = z
   })
   .strict();
 
-export const coordinationNameControlSchema = z.object(
-  {
-    id: z.number().int().positive(),
-
-    name: z.string().min(1),
-  },
-  'FORM_VALIDATION.REQUIRED',
-);
-
-export type Contact = z.infer<typeof contactSchema>;
-export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
-export type Address = z.infer<typeof addressSchema>;
-export type DraftAddress = z.infer<typeof draftAddressSchema>;
-export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
-export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
-export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;
-export type BaseOutdatedData = z.infer<typeof outdatedCommonSchema>;
-export type Duplicates = z.infer<typeof duplicatesSchema>;
