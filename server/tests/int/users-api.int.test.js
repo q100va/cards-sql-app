@@ -1,311 +1,498 @@
-import 'dotenv/config';
+import { randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import sequelize from '../../database.js';
-import { QueryTypes, Op } from 'sequelize';
 
-import { beforeEach } from '@jest/globals';
+import {
+  RefreshToken,
+  User,
+  UserContact,
+  UserSearch,
+  Volunteer,
+  VolunteerSubscription,
+} from '../../models/index.js';
+
+import { hashPassword, verify } from '../../security/passwords.mjs';
+
 import { createRole } from './factories/role.js';
-import { createUser as factoryCreateUser } from './factories/user.js';
-import { createUserHashed } from './factories/user.js';
-import { seedOperationsForRole } from './factories/role.js';
-import { Role, RolePermission, User, UserContact, UserAddress, UserSearch, RefreshToken } from '../../models/index.js';
+import { createOperation } from './factories/operation.js';
 
-// маленький хелпер для SELECT-ов (возвращает массив строк)
-async function select(text, bind = []) {
-  return sequelize.query(text, { bind, type: QueryTypes.SELECT });
+const PASSWORD = 'Password123';
+const NEW_PASSWORD = 'NewPassword456';
+
+let passwordHash;
+
+beforeAll(async () => {
+  passwordHash = await hashPassword(PASSWORD);
+});
+
+function makeAccessToken(roleId, userId = 42) {
+  return jwt.sign(
+    { sub: String(userId), roleId, uname: 'users-integration-user', role: 'USERS_TEST_ROLE' },
+    process.env.JWT_ACCESS_SECRET,
+    { algorithm: 'HS256', expiresIn: '15m', issuer: 'cards-sql-app', audience: 'web' },
+  );
 }
 
-describe('Users API (integration, minimal)', () => {
-  const langRu = { 'x-lang': 'ru' };
-  let auth = {};
+async function createAuthorizedRole(operationNames = [], userId = 42) {
+  const role = await createRole({ name: 'Users Test Role' });
 
-  beforeAll(async () => {
-    const secret = process.env.JWT_ACCESS_SECRET;
-    if (!secret) throw new Error('JWT_ACCESS_SECRET is not set (check .env.test)');
+  for (const name of operationNames) {
+    await createOperation({ roleId: role.id, name, access: true, disabled: false });
+  }
 
-    // check-auth.js ожидает issuer/audience и поля payload:
-    const token = jwt.sign(
-      { sub: '1', uname: 'superAdmin', role: 'ADMIN', roleId: 1 },
-      secret,
-      { issuer: 'cards-sql-app', audience: 'web', expiresIn: '15m' }
+  return { role, token: makeAccessToken(role.id, userId) };
+}
+
+async function createStoredUser({ roleId, userName = 'stored_user', ...overrides } = {}) {
+  const user = await User.create({
+    userName,
+    password: passwordHash,
+    firstName: 'John',
+    patronymic: null,
+    lastName: 'Fox',
+    roleId,
+    comment: null,
+    isRestricted: false,
+    causeOfRestriction: null,
+    dateOfRestriction: null,
+    ...overrides,
+  });
+
+  return user.get({ plain: true });
+}
+
+async function createRefreshToken(userId) {
+  return RefreshToken.create({
+    id: randomUUID(),
+    userId,
+    userAgent: 'users-api-integration-test',
+    ip: '127.0.0.1',
+    expiresAt: new Date(Date.now() + 60_000),
+  });
+}
+
+function auth(request, token) {
+  return request.set('Authorization', `Bearer ${token}`);
+}
+
+function draftContacts() {
+  return {
+    email: ['integration@example.com'],
+    phoneNumber: ['+12125550101'],
+    whatsApp: [],
+    telegramNickname: [],
+    telegramId: ['#1234567'],
+    telegramPhoneNumber: ['+12125550102'],
+    vKontakte: [],
+    instagram: [],
+    facebook: [],
+    website: [],
+    otherContact: [],
+  };
+}
+
+function userDraft(roleId, overrides = {}) {
+  return {
+    id: null,
+    userName: 'created_user',
+    password: PASSWORD,
+    firstName: 'Created',
+    patronymic: null,
+    lastName: 'User',
+    roleId,
+    draftAddress: { countryId: null, regionId: null, districtId: null, localityId: null },
+    comment: null,
+    isRestricted: false,
+    causeOfRestriction: null,
+    dateOfRestriction: null,
+    draftContacts: draftContacts(),
+    ...overrides,
+  };
+}
+
+function simpleUpdate(id, main) {
+  return {
+    id,
+    changingData: { main, address: null, contacts: null },
+    restoringData: { addresses: null, names: null, userNames: null, contacts: null },
+    outdatingData: { address: null, names: null, userName: null, contacts: null },
+    deletingData: { userNames: null, names: null, addresses: null, contacts: null },
+  };
+}
+
+describe('users API', () => {
+  test('returns 401 when authentication is missing', async () => {
+    const res = await global.api.get('/api/users/check-user-name').query({ userName: 'test_user' });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ code: 'ERRORS.UNAUTHORIZED', data: null });
+  });
+
+  test('returns 403 when the role lacks permission', async () => {
+    const role = await createRole({ name: 'No User Access Role' });
+
+    const token = makeAccessToken(role.id);
+
+    const res = await auth(global.api.post('/api/users/create-user'), token).send(
+      userDraft(role.id),
     );
 
-    auth = { Authorization: `Bearer ${token}` };
+    expect(res.status).toBe(403);
   });
 
-  beforeEach(async () => {
-    // чистим хвосты пользователей (каскады и индексы)
-    await RefreshToken.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await UserSearch.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await UserContact.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await UserAddress.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await User.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
+  test('checks user names case-insensitively and excludes the current user', async () => {
+    const { role, token } = await createAuthorizedRole(['ADD_NEW_USER']);
 
-    // роль 1 и её операции
-    await Role.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    const role = await createRole({ name: 'ADMIN', description: 'test-admin' });
-    await RolePermission.destroy({ where: { roleId: role.id } });
-    await seedOperationsForRole(role.id);
+    const user = await createStoredUser({ roleId: role.id, userName: 'CaseUser' });
 
-    // минимальный набор прав для тестируемых ручек
-    const perms = [
-      'ADD_NEW_USER', 'EDIT_USER', 'VIEW_USER', 'VIEW_LIMITED_USERS_LIST',
-      'DELETE_USER', 'BLOCK_USER', 'UNBLOCK_USER', 'CHANGE_USER_PASSWORD'
-    ];
-    await RolePermission.update(
-      { access: true },
-      { where: { roleId: role.id, name: { [Op.in]: perms } } }
+    const existing = await auth(global.api.get('/api/users/check-user-name'), token).query({
+      userName: 'caseuser',
+    });
+
+    expect(existing.status).toBe(200);
+    expect(existing.body).toEqual({ code: 'ERRORS.USER.ALREADY_EXISTS', data: true });
+
+    const self = await auth(global.api.get('/api/users/check-user-name'), token).query({
+      userName: 'CASEUSER',
+      id: user.id,
+    });
+
+    expect(self.status).toBe(200);
+    expect(self.body).toEqual({ data: false });
+  });
+
+  test('detects another user with the same first and last name', async () => {
+    const { role, token } = await createAuthorizedRole(['ADD_NEW_USER']);
+
+    await createStoredUser({
+      roleId: role.id,
+      userName: 'duplicate_name_user',
+      firstName: 'Anna',
+      lastName: 'Smith',
+    });
+
+    const res = await auth(global.api.post('/api/users/check-user-data'), token).send({
+      id: null,
+      firstName: 'Anna',
+      lastName: 'Smith',
+      contacts: draftContacts(),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ code: 'ERRORS.USER.HAS_DATA_DUPLICATES' });
+    expect(res.body.data.duplicatesName).toContain('duplicate_name_user');
+  });
+
+  test('creates a user with hashed password, contacts, and search row', async () => {
+    const { role, token } = await createAuthorizedRole(['ADD_NEW_USER']);
+
+    const draft = userDraft(role.id);
+
+    const res = await auth(global.api.post('/api/users/create-user'), token).send(draft);
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ code: 'SUCCESS.CREATED', data: 'created_user' });
+
+    const user = await User.findOne({ where: { userName: 'created_user' } });
+
+    expect(user).not.toBeNull();
+    expect(user.password).not.toBe(PASSWORD);
+    expect(await verify(user.password, PASSWORD)).toBe(true);
+
+    const contacts = await UserContact.findAll({ where: { userId: user.id }, raw: true });
+
+    expect(contacts).toHaveLength(4);
+
+    const searchRow = await UserSearch.findOne({
+      where: { userId: user.id, isRestricted: false },
+      raw: true,
+    });
+
+    expect(searchRow).not.toBeNull();
+    expect(typeof searchRow.content).toBe('string');
+  });
+
+  test('returns 409 when creating a duplicate user name', async () => {
+    const { role, token } = await createAuthorizedRole(['ADD_NEW_USER']);
+
+    await createStoredUser({ roleId: role.id, userName: 'duplicate_user' });
+
+    const res = await auth(global.api.post('/api/users/create-user'), token).send(
+      userDraft(role.id, { userName: 'DUPLICATE_USER' }),
     );
-    const rows = await RolePermission.findAll({ where: { roleId: role.id, access: true }, raw: true });
-    if (rows.length === 0) throw new Error('Seeded permission not found via RolePermission.findAll()');
+
+    expect(res.status).toBe(409);
+    expect(res.body).toMatchObject({ code: 'ERRORS.USER.ALREADY_EXISTS' });
   });
 
-  // ---------- GET /check-user-name ----------
-  describe('GET /api/users/check-user-name', () => {
-    it('returns {data:true, code:ERRORS.USER.ALREADY_EXISTS} when userName taken (case-insensitive)', async () => {
-      await factoryCreateUser({ userName: 'john', roleId: 1 });
+  test('updates main user data', async () => {
+    const { role, token } = await createAuthorizedRole(['EDIT_USER']);
 
-      const { body, status } = await global.api
-        .get('/api/users/check-user-name')
-        .set({ ...langRu, ...auth })
-        .query({ userName: 'JOHN' });
+    const user = await createStoredUser({ roleId: role.id, userName: 'update_user' });
 
-      expect(status).toBe(200);
-      expect(body).toEqual(expect.objectContaining({ data: true, code: 'ERRORS.USER.ALREADY_EXISTS' }));
+    await UserSearch.create({ userId: user.id, content: 'old search content' });
+
+    const res = await auth(global.api.post('/api/users/update-user'), token).send(
+      simpleUpdate(user.id, { firstName: 'Updated', comment: 'Updated by integration test' }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe('SUCCESS.UPDATED');
+    expect(res.body.data).toMatchObject({
+      id: user.id,
+      firstName: 'Updated',
+      comment: 'Updated by integration test',
     });
 
-    it('returns {data:false} when userName free', async () => {
-      const { body, status } = await global.api
-        .get('/api/users/check-user-name')
-        .set({ ...langRu, ...auth })
-        .query({ userName: 'unique_name_123' });
+    const updated = await User.findByPk(user.id, { raw: true });
 
-      expect(status).toBe(200);
-      expect(body.data).toBe(false);
-      expect(body.code).toBeUndefined();
-    });
+    expect(updated.firstName).toBe('Updated');
+    expect(updated.comment).toBe('Updated by integration test');
   });
 
-  // ---------- POST /check-user-data ----------
-  describe('POST /api/users/check-user-data', () => {
-    it('detects duplicates by name and contacts', async () => {
-      // user с контактами
-      const u = await factoryCreateUser({ userName: 'john', firstName: 'John', lastName: 'Smith', roleId: 1 });
-      await UserContact.create({ userId: u.id, type: 'email', content: 'a@b.com' });
-      await UserSearch.create({ userId: u.id, content: 'john John Smith a@b.com' });
+  test('returns a user by id without exposing password data', async () => {
+    const { role, token } = await createAuthorizedRole(['VIEW_USER']);
 
-      const { body, status } = await global.api
-        .post('/api/users/check-user-data')
-        .set({ ...langRu, ...auth })
-        .send({
-          id: null,
-          firstName: 'john',
-          lastName: 'SMITH',
-          contacts: {
-            email: ['a@b.com'],
-            phoneNumber: ['+78585859944'],
-            telegramId: ['#8585859944'],
-            telegramPhoneNumber: ['+78585859944'],
-            telegramNickname: [],
-            whatsApp: [],
-            vKontakte: [],
-            instagram: [],
-            facebook: [],
-            otherContact: []
-          }
-        });
-
-      expect(status).toBe(200);
-      expect(body.data.duplicatesName).toEqual(['john']);
-      const pair = body.data.duplicatesContact.find(x => x.type === 'email' && x.content === 'a@b.com');
-      expect(pair?.users).toContain('john');
-      expect(body.code).toBe('ERRORS.USER.HAS_DATA_DUPLICATES');
+    const user = await createStoredUser({
+      roleId: role.id,
+      userName: 'view_user',
+      firstName: 'View',
+      lastName: 'User',
     });
+
+    const res = await auth(global.api.get(`/api/users/get-user-by-id/${user.id}`), token);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({
+      id: user.id,
+      userName: 'view_user',
+      firstName: 'View',
+      lastName: 'User',
+      roleId: role.id,
+      roleName: role.name,
+    });
+    expect(res.body.data.password).toBeUndefined();
+    expect(res.body.data.failedLoginCount).toBeUndefined();
   });
 
-  // ---------- POST /create-user ----------
-  describe('POST /api/users/create-user', () => {
-    it('creates user, contacts, optional address, builds UserSearch and returns code SUCCESS.CREATED', async () => {
-      const payload = {
-        id: null,
-        userName: 'kate5',
-        password: '102dfgdfgd',
-        firstName: 'Kate',
-        patronymic: null,
-        lastName: 'SMITH',
-        roleId: 1,
-        draftAddress: {
-          countryId: 1,
-          regionId: null,
-          districtId: null,
-          localityId: null
-        },
-        comment: null,
-        isRestricted: false,
-        causeOfRestriction: null,
-        dateOfRestriction: null,
-        draftContacts: {
-          email: ['ara@b.com'],
-          phoneNumber: ['+78585859944'],
-          whatsApp: [],
-          telegramNickname: [],
-          telegramId: ['#8585859944'],
-          telegramPhoneNumber: ['+78585859944'],
-          vKontakte: [],
-          instagram: [],
-          facebook: [],
-          otherContact: []
-        }
-      };
+  test('returns only active users and preserves the total count for pagination', async () => {
+    const { role, token } = await createAuthorizedRole(['VIEW_LIMITED_USERS_LIST']);
 
-      const { body, status } = await global.api
-        .post('/api/users/create-user')
-        .set({ ...langRu, ...auth })
-        .send(payload);
+    await createStoredUser({ roleId: role.id, userName: 'active_one', firstName: 'Alpha' });
 
-      expect(status).toBe(201);
-      expect(body.code).toBe('SUCCESS.CREATED');
-      expect(body.data).toBe('kate5');
+    await createStoredUser({ roleId: role.id, userName: 'active_two', firstName: 'Beta' });
 
-      const [userRow] = await select(`SELECT id, "userName" FROM users WHERE "userName" = $1`, [payload.userName]);
-      expect(userRow).toBeTruthy();
-
-      const search = await UserSearch.findOne({ where: { userId: userRow.id, isRestricted: false } });
-      expect(search?.content).toMatch(/kate5/i);
+    await createStoredUser({
+      roleId: role.id,
+      userName: 'blocked_one',
+      firstName: 'Gamma',
+      isRestricted: true,
+      causeOfRestriction: 'Integration block',
+      dateOfRestriction: new Date(),
     });
+
+    const res = await auth(global.api.post('/api/users/get-users'), token).send({
+      page: { size: 1, number: 0 },
+      view: { option: 'only-active', includeOutdated: false },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(2);
+    expect(res.body.data.list).toHaveLength(1);
+    expect(res.body.data.list[0].isRestricted).toBe(false);
+    expect(res.body.data.list[0].password).toBeUndefined();
   });
 
-  // ---------- GET /get-user-by-id/:id ----------
-  describe('GET /api/users/get-user-by-id/:id', () => {
-    it('returns user with contacts/addresses and role name', async () => {
-      const u = await factoryCreateUser({ userName: 'mike4', roleId: 1 });
-      await UserContact.create({ userId: u.id, type: 'email', content: 'm@ex.com' });
+  test('returns a simple user list for volunteer workflows', async () => {
+    const { role, token } = await createAuthorizedRole(['VIEW_LIMITED_VOLUNTEERS_LIST']);
 
-      const { body, status } = await global.api
-        .get(`/api/users/get-user-by-id/${u.id}`)
-
-        .set({ ...langRu, ...auth });
-
-      expect(status).toBe(200);
-      expect(body.data.userName).toBe('mike4');
-      expect(Array.isArray(body.data.orderedContacts.email)).toBe(true);
-      expect(body.data.orderedContacts.email.length).toBeGreaterThanOrEqual(1);
+    await createStoredUser({
+      roleId: role.id,
+      userName: 'zoe_user',
+      firstName: 'Zoe',
+      lastName: 'Fox',
     });
 
-    it('404 + ERRORS.DATA_NOT_FOUND when missing', async () => {
-      const { body, status } = await global.api
-        .get('/api/users/get-user-by-id/999999')
-        .set({ ...langRu, ...auth });
-
-      expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.DATA_NOT_FOUND');
+    await createStoredUser({
+      roleId: role.id,
+      userName: 'anna_user',
+      firstName: 'Anna',
+      lastName: 'Smith',
     });
+
+    const res = await auth(global.api.get('/api/users/get-list-of-users'), token);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((item) => item.name)).toEqual([
+      'Anna Smith - anna_user',
+      'Zoe Fox - zoe_user',
+    ]);
   });
 
-  // ---------- PATCH /change-password ----------
-  describe('PATCH /api/users/change-password', () => {
-    it('self path: requires currentPassword, updates hash, revokes refresh tokens', async () => {
-      const u = await createUserHashed({ userName: 'self', roleId: 1 });
-      // подложим refresh-токен
-      await RefreshToken.create({ userId: u.id, token: 't12345687', expiresAt: '2025-11-25 17:24:54.901-05' });
+  test('allows a user to change their own password and revokes refresh tokens', async () => {
+    const role = await createRole({ name: 'Password Role' });
 
-      const { body, status } = await global.api
-        .patch('/api/users/change-password')
-        .set({ ...langRu, ...auth })
-        .send({ userId: u.id, currentPassword: 'password2025', newPassword: 'new12345' });
-
-      expect(status).toBe(200);
-      expect(body.code).toBe('SUCCESS.UPDATED');
-
-      const tokensLeft = await RefreshToken.count({ where: { userId: u.id } });
-      expect(tokensLeft).toBe(0);
+    await createOperation({
+      roleId: role.id,
+      name: 'CHANGE_USER_PASSWORD',
+      access: true,
+      disabled: false,
     });
 
-    it('returns 422 when currentPassword missing for self', async () => {
-      const u = await factoryCreateUser({ userName: 'self2', roleId: 1 });
+    const user = await createStoredUser({ roleId: role.id, userName: 'password_user' });
 
-      const { body, status } = await global.api
-        .patch('/api/users/change-password')
-        .set({ ...langRu, ...auth })
-        .send({ userId: u.id, newPassword: 'new123456' });
+    await createRefreshToken(user.id);
 
-      expect(status).toBe(422);
-      expect(body.code).toBe('ERRORS.USER.CURRENT_PASSWORD_REQUIRED');
+    const token = makeAccessToken(role.id, user.id);
+
+    const res = await auth(global.api.patch('/api/users/change-password'), token).send({
+      userId: user.id,
+      currentPassword: PASSWORD,
+      newPassword: NEW_PASSWORD,
     });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ code: 'SUCCESS.UPDATED', data: null });
+
+    const updated = await User.findByPk(user.id);
+
+    expect(await verify(updated.password, NEW_PASSWORD)).toBe(true);
+    expect(await verify(updated.password, PASSWORD)).toBe(false);
+
+    const tokens = await RefreshToken.count({ where: { userId: user.id } });
+
+    expect(tokens).toBe(0);
   });
 
-  // ---------- PATCH /block-user & /unblock-user ----------
-  describe('PATCH /api/users/block-user & /unblock-user', () => {
-    it('blocks and unblocks user, returning SUCCESS.UPDATED', async () => {
-      const u = await factoryCreateUser({ userName: 'blockme', roleId: 1 });
+  test('rejects an incorrect current password when changing own password', async () => {
+    const role = await createRole({ name: 'Password Error Role' });
 
-      const r1 = await global.api
-        .patch('/api/users/block-user')
-        .set({ ...langRu, ...auth })
-        .send({ id: u.id, causeOfRestriction: 'spam' });
-
-      expect(r1.status).toBe(200);
-      expect(r1.body.code).toBe('SUCCESS.UPDATED');
-
-      const r2 = await global.api
-        .patch('/api/users/unblock-user')
-        .set({ ...langRu, ...auth })
-        .send({ id: u.id });
-
-      expect(r2.status).toBe(200);
-      expect(r2.body.code).toBe('SUCCESS.UPDATED');
+    await createOperation({
+      roleId: role.id,
+      name: 'CHANGE_USER_PASSWORD',
+      access: true,
+      disabled: false,
     });
+
+    const user = await createStoredUser({ roleId: role.id, userName: 'wrong_password_user' });
+
+    const token = makeAccessToken(role.id, user.id);
+
+    const res = await auth(global.api.patch('/api/users/change-password'), token).send({
+      userId: user.id,
+      currentPassword: 'WrongPassword999',
+      newPassword: NEW_PASSWORD,
+    });
+
+    expect(res.status).toBe(422);
+    expect(res.body).toMatchObject({ code: 'ERRORS.USER.CURRENT_PASSWORD_INVALID' });
+
+    const unchanged = await User.findByPk(user.id);
+
+    expect(await verify(unchanged.password, PASSWORD)).toBe(true);
   });
-  // ---------- DELETE /delete-user/:id ----------
-  describe('DELETE /api/users/delete-user/:id', () => {
-    it('deletes user, cascades cleanup, returns code SUCCESS.DELETED', async () => {
-      const u = await factoryCreateUser({ userName: 'todel', roleId: 1 });
-      await RefreshToken.create({ userId: u.id, token: 'zz125846254', expiresAt: '2025-11-25 17:24:54.901-05' });
 
-      const { body, status } = await global.api
-        .delete(`/api/users/delete-user/${u.id}`)
-        .set({ ...langRu, ...auth });
+  test('blocks a user and removes their refresh tokens', async () => {
+    const { role, token } = await createAuthorizedRole(['BLOCK_USER']);
 
-      expect(status).toBe(200);
-      expect(body.code).toBe('SUCCESS.DELETED');
-      expect(body.data).toBeNull();
+    const user = await createStoredUser({ roleId: role.id, userName: 'block_user' });
 
-      const users = await select(`SELECT id FROM users WHERE id = $1`, [u.id]);
-      expect(users.length).toBe(0);
+    await createRefreshToken(user.id);
+
+    const res = await auth(global.api.patch('/api/users/block-user'), token).send({
+      id: user.id,
+      causeOfRestriction: 'Integration block',
     });
-    it('404 + ERRORS.DATA_NOT_FOUND when deleting missing user', async () => {
-      const { body, status } = await global.api
-        .delete(`/api/users/delete-user/999999`)
-        .set({ ...langRu, ...auth });
 
-      expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.DATA_NOT_FOUND');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ code: 'SUCCESS.UPDATED', data: null });
+
+    const blocked = await User.findByPk(user.id, { raw: true });
+
+    expect(blocked.isRestricted).toBe(true);
+    expect(blocked.causeOfRestriction).toBe('Integration block');
+    expect(blocked.dateOfRestriction).not.toBeNull();
+    expect(await RefreshToken.count({ where: { userId: user.id } })).toBe(0);
+  });
+
+  test('unblocks a user and clears restriction data', async () => {
+    const { role, token } = await createAuthorizedRole(['UNBLOCK_USER']);
+
+    const user = await createStoredUser({
+      roleId: role.id,
+      userName: 'unblock_user',
+      isRestricted: true,
+      causeOfRestriction: 'Previous block',
+      dateOfRestriction: new Date(),
     });
-  })
 
-  // ---------- POST /get-users (минимальный happy-path) ----------
-  describe('POST /api/users/get-users', () => {
-    it('returns list with length and transformed items', async () => {
-      const u1 = await factoryCreateUser({ userName: 'anna', firstName: 'Anna', lastName: 'Bell', roleId: 1 });
-      const u2 = await factoryCreateUser({ userName: 'boris', firstName: 'Boris', lastName: 'Cook', roleId: 1 });
-      await UserSearch.create({ userId: u1.id, content: 'anna Anna Bell' });
-      await UserSearch.create({ userId: u2.id, content: 'boris Boris Cook' });
-      const { body, status } = await global.api
-        .post('/api/users/get-users')
-        .set({ ...langRu, ...auth })
-        .send({
-          page: { size: 10, number: 0 },
-          sort: [{ field: 'userName', direction: 'asc' }],
-          search: { value: 'anna' },
-          view: { option: 'only-active', includeOutdated: false },
-          filters: { mode: { strictAddress: false, strictContact: false } }
-        });
-
-      expect(status).toBe(200);
-      expect(body.data.length).toBeGreaterThanOrEqual(1);
-      expect(Array.isArray(body.data.users)).toBe(true);
-      const names = body.data.users.map(u => u.userName);
-      expect(names).toContain('anna');
+    const res = await auth(global.api.patch('/api/users/unblock-user'), token).send({
+      id: user.id,
     });
+
+    expect(res.status).toBe(200);
+
+    const unblocked = await User.findByPk(user.id, { raw: true });
+
+    expect(unblocked.isRestricted).toBe(false);
+    expect(unblocked.causeOfRestriction).toBeNull();
+    expect(unblocked.dateOfRestriction).toBeNull();
+  });
+
+  test('does not delete a user who is connected to a volunteer subscription', async () => {
+    const { role, token } = await createAuthorizedRole(['DELETE_USER']);
+
+    const user = await createStoredUser({ roleId: role.id, userName: 'dependent_user' });
+
+    const volunteer = await Volunteer.create({
+      firstName: 'Dependency',
+      patronymic: null,
+      lastName: 'Volunteer',
+      comment: null,
+      isRestricted: false,
+      causeOfRestriction: null,
+      dateOfRestriction: null,
+    });
+
+    await VolunteerSubscription.create({ volunteerId: volunteer.id, userId: user.id });
+
+    const check = await auth(
+      global.api.get(`/api/users/check-user-before-delete/${user.id}`),
+      token,
+    );
+
+    expect(check.status).toBe(200);
+    expect(check.body).toEqual({ code: 'ERRORS.USER.HAS_DEPENDENCIES', data: 1 });
+
+    const deletion = await auth(global.api.delete(`/api/users/delete-user/${user.id}`), token);
+
+    expect(deletion.status).toBe(409);
+    expect(deletion.body).toMatchObject({ code: 'ERRORS.USER.HAS_DEPENDENCIES' });
+
+    const storedUser = await User.findByPk(user.id);
+
+    expect(storedUser).not.toBeNull();
+  });
+
+  test('reports no dependencies for an unused user and deletes the user', async () => {
+    const { role, token } = await createAuthorizedRole(['DELETE_USER']);
+
+    const user = await createStoredUser({ roleId: role.id, userName: 'delete_user' });
+
+    await createRefreshToken(user.id);
+
+    const check = await auth(
+      global.api.get(`/api/users/check-user-before-delete/${user.id}`),
+      token,
+    );
+
+    expect(check.status).toBe(200);
+    expect(check.body).toEqual({ data: 0 });
+
+    const deletion = await auth(global.api.delete(`/api/users/delete-user/${user.id}`), token);
+
+    expect(deletion.status).toBe(200);
+    expect(deletion.body).toEqual({ code: 'SUCCESS.DELETED', data: null });
+    expect(await User.findByPk(user.id)).toBeNull();
+    expect(await RefreshToken.count({ where: { userId: user.id } })).toBe(0);
   });
 });

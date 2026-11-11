@@ -28,14 +28,6 @@ export const keepE164CharsNullable = (v) => typeof v === 'string' ? v.replace(/[
 export const nonEmptyTrim = z.preprocess(toTrim, nonEmptyString);
 export const nonEmptyTrimMax = (max, msgMax) => z.preprocess(toTrim, z.string().min(1, 'FORM_VALIDATION.REQUIRED').max(max, { message: msgMax }));
 export const nullableInt = positiveInt.nullable();
-const stringArray = z.array(nonEmptyTrim); // [] ok
-// null | '' | Date | ISO → Date|null
-/* export const nullableIsoDate = z.preprocess((v: unknown) => {
-  if (v == null || v === '') return null;
-  if (v instanceof Date) return v;
-  const d = new Date(String(v));
-  return Number.isNaN(+d) ? v : d;
-}, z.date().nullable()); */
 export const nullableIsoDate = z.preprocess((v) => {
     if (v == null || v === '')
         return null;
@@ -149,7 +141,7 @@ export const contactType = z.enum([
     'otherContact',
 ]);
 // View: { id, content }[]
-export const contactSchema = z
+const contactSchema = z
     .object({ id: positiveInt, content: nonEmptyString })
     .strict();
 export const nonEmptyContacts = z.array(contactSchema).nonempty();
@@ -170,16 +162,6 @@ export const optionalContactsSchema = z
     otherContact: nonEmptyContacts.optional(),
 })
     .strict();
-/* ===================== UpdateData ===================== */
-// ChangingData.address
-/* export const changingAddressSchema = z
-  .object({
-    countryId: nullableInt,
-    regionId: nullableInt,
-    districtId: nullableInt,
-    localityId: nullableInt,
-  })
-  .strict(); */
 // ChangingData.contacts
 export const changingContactsSchema = z
     .object({
@@ -215,13 +197,6 @@ export const outdatedAddressItemSchema = z
     isRecoverable: z.boolean(),
 })
     .strict();
-export const outdatedCommonSchema = z
-    .object({
-//contacts: optionalContactsSchema,
-//addresses: z.array(outdatedAddressItemSchema),
-//  names: z.array(outdatedNameItemSchema)
-})
-    .strict();
 /* ===================== DTO ===================== */
 export const duplicatesSchema = z
     .object({
@@ -237,7 +212,3 @@ export const duplicatesSchema = z
         .optional(),
 })
     .strict();
-export const coordinationNameControlSchema = z.object({
-    id: z.number().int().positive(),
-    name: z.string().min(1),
-}, 'FORM_VALIDATION.REQUIRED');

@@ -77,7 +77,7 @@ router.post(
       const data = req.body;
       const config = MAP[data.type];
 
-      await findDuplicate(data);
+      const duplicateCount = await findDuplicate(data);
 
       if (duplicateCount > 0) {
         throw new CustomError('ERRORS.TOPONYM.ALREADY_EXISTS', 409);

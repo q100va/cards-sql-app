@@ -1,36 +1,38 @@
-// server/tests/factories/role.js
-
-import {RolePermission, Role} from '../../../models/index.js';
+import { RolePermission, Role } from '../../../models/index.js';
 import { OPERATIONS } from '../../../shared/operations.js';
 
-/** Создать роль (с разумными дефолтами) */
+/**
+ * Create a role with sensible test defaults.
+ */
 export async function createRole(attrs = {}) {
-  try{
-      const defaults = {
+  const defaults = {
     name: `role_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     description: 'Test role',
   };
+
   const data = { ...defaults, ...attrs };
   const role = await Role.create(data);
-  return role.get({ plain: true });
-  }
-  catch(err){
-    console.log(err);
-  }
 
+  return role.get({ plain: true });
 }
 
-/** Найти роль по id (raw) — то, чего не хватает тесту */
+/**
+ * Find a role by id and return a plain object.
+ */
 export async function findRoleById(id) {
   return Role.findByPk(id, { raw: true });
 }
 
-/** Удалить роль (мягко через destroy) */
+/**
+ * Delete a role by id.
+ */
 export async function destroyRoleById(id) {
-  return Role.destroy({ where: { id }});
+  return Role.destroy({ where: { id } });
 }
 
-/** Посеять записи в RolePermission для роли по OPERATIONS */
+/**
+ * Seed the default permission set for a role.
+ */
 export async function seedOperationsForRole(roleId) {
   const rows = OPERATIONS.map((op) => ({
     name: op.operation,
@@ -38,10 +40,14 @@ export async function seedOperationsForRole(roleId) {
     access: false,
     disabled: op.flag === 'FULL',
   }));
+
   await RolePermission.bulkCreate(rows);
 }
 
-/** Очистить таблицы ролей/операций (аккуратно, только для тестов) */
+/**
+ * Truncate role and permission tables.
+ * Intended for integration tests only.
+ */
 export async function truncateRolesAndOperations({ cascade = true } = {}) {
   await RolePermission.destroy({ where: {}, truncate: true, cascade });
   await Role.destroy({ where: {}, truncate: true, cascade });

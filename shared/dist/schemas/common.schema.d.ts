@@ -70,10 +70,6 @@ export declare const contactType: z.ZodEnum<{
     website: "website";
     otherContact: "otherContact";
 }>;
-export declare const contactSchema: z.ZodObject<{
-    id: z.ZodNumber;
-    content: z.ZodString;
-}, z.core.$strict>;
 export declare const nonEmptyContacts: z.ZodArray<z.ZodObject<{
     id: z.ZodNumber;
     content: z.ZodString;
@@ -167,7 +163,6 @@ export declare const outdatedAddressItemSchema: z.ZodObject<{
     id: z.ZodNumber;
     isRecoverable: z.ZodBoolean;
 }, z.core.$strict>;
-export declare const outdatedCommonSchema: z.ZodObject<{}, z.core.$strict>;
 export declare const duplicatesSchema: z.ZodObject<{
     duplicatesName: z.ZodArray<z.ZodString>;
     duplicatesContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -176,16 +171,3 @@ export declare const duplicatesSchema: z.ZodObject<{
         owners: z.ZodArray<z.ZodString>;
     }, z.core.$strict>>>;
 }, z.core.$strict>;
-export declare const coordinationNameControlSchema: z.ZodObject<{
-    id: z.ZodNumber;
-    name: z.ZodString;
-}, z.core.$strip>;
-export type Contact = z.infer<typeof contactSchema>;
-export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
-export type Address = z.infer<typeof addressSchema>;
-export type DraftAddress = z.infer<typeof draftAddressSchema>;
-export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
-export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
-export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;
-export type BaseOutdatedData = z.infer<typeof outdatedCommonSchema>;
-export type Duplicates = z.infer<typeof duplicatesSchema>;

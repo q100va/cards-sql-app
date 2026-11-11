@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export declare const instituteCategorySchema: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
 declare const instituteItemSchema: z.ZodObject<{
     category: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>, z.ZodLiteral<5>, z.ZodLiteral<6>, z.ZodLiteral<7>, z.ZodLiteral<8>, z.ZodLiteral<9>, z.ZodLiteral<10>, z.ZodLiteral<11>, z.ZodLiteral<12>]>;
     instituteName: z.ZodString;
@@ -346,9 +347,9 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
     }, z.core.$strip>;
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
         field: z.ZodEnum<{
+            name: "name";
             comment: "comment";
             isRestricted: "isRestricted";
-            name: "name";
             dateOfStart: "dateOfStart";
             dateOfLastOrder: "dateOfLastOrder";
         }>;
@@ -384,6 +385,7 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
                 email: "email";
                 phoneNumber: "phoneNumber";
                 whatsApp: "whatsApp";
+                telegram: "telegram";
                 telegramNickname: "telegramNickname";
                 telegramId: "telegramId";
                 telegramPhoneNumber: "telegramPhoneNumber";
@@ -392,7 +394,6 @@ export declare const volunteersQueryDTOSchema: z.ZodObject<{
                 facebook: "facebook";
                 website: "website";
                 otherContact: "otherContact";
-                telegram: "telegram";
             }>>>>;
             hasInstitute: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
             hasSubscription: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
@@ -940,6 +941,7 @@ export declare const contactOptionSchema: z.ZodObject<{
         email: "email";
         phoneNumber: "phoneNumber";
         whatsApp: "whatsApp";
+        telegram: "telegram";
         telegramNickname: "telegramNickname";
         telegramId: "telegramId";
         telegramPhoneNumber: "telegramPhoneNumber";
@@ -948,7 +950,6 @@ export declare const contactOptionSchema: z.ZodObject<{
         facebook: "facebook";
         website: "website";
         otherContact: "otherContact";
-        telegram: "telegram";
     }>;
     content: z.ZodString;
 }, z.core.$strict>;

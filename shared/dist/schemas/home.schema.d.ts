@@ -1,54 +1,4 @@
 import { z } from 'zod';
-export declare const optionalContactsSchema: z.ZodObject<{
-    email: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    phoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    whatsApp: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    telegram: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    telegramNickname: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    telegramId: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    vKontakte: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    instagram: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    facebook: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    website: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-    otherContact: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodNumber;
-        content: z.ZodString;
-    }, z.core.$strict>>>;
-}, z.core.$strict>;
 declare const coordinationItemSchema: z.ZodObject<{
     partnerContacts: z.ZodOptional<z.ZodObject<{
         email: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -214,19 +164,6 @@ export declare const changingMainSchema: z.ZodObject<{
     dateOfRestriction: z.ZodOptional<z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>>;
     isClose: z.ZodOptional<z.ZodBoolean>;
     dateOfClose: z.ZodOptional<z.ZodPipe<z.ZodTransform<Date | null | undefined, unknown>, z.ZodNullable<z.ZodDate>>>;
-}, z.core.$strict>;
-export declare const changingContactsSchema: z.ZodObject<{
-    email: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodEmail>>>;
-    phoneNumber: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>>;
-    whatsApp: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>>;
-    telegramNickname: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
-    telegramId: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
-    telegramPhoneNumber: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<{}, unknown>, z.ZodString>>>;
-    vKontakte: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
-    instagram: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
-    facebook: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
-    website: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
-    otherContact: z.ZodOptional<z.ZodArray<z.ZodPipe<z.ZodTransform<string, unknown>, z.ZodString>>>;
 }, z.core.$strict>;
 export declare const changingDataSchema: z.ZodObject<{
     main: z.ZodNullable<z.ZodObject<{

@@ -543,7 +543,6 @@ export async function refreshVolunteerSearch(
           as: 'addresses',
           attributes: [
             'isRestricted',
-            'fullPostalAddress',
           ],
           include: [
             {

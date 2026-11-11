@@ -17,7 +17,24 @@ export const occasionDataSchema = z
     year: positiveIntParam.min(2022),
     month: positiveIntParam.max(12).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.type === 1 && data.month === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['month'],
+        message: 'FORM_VALIDATION.REQUIRED',
+      });
+    }
+
+    if (data.type !== 1 && data.month !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['month'],
+        message: 'FORM_VALIDATION.INVALID_VALUE',
+      });
+    }
+  });
 
 export const occasionDraftSchema = z
   .object({
@@ -26,7 +43,24 @@ export const occasionDraftSchema = z
     month: occasionMonth.nullable(),
     status: occasionStatus,
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.type === 1 && data.month === null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['month'],
+        message: 'FORM_VALIDATION.REQUIRED',
+      });
+    }
+
+    if (data.type !== 1 && data.month !== null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['month'],
+        message: 'FORM_VALIDATION.INVALID_VALUE',
+      });
+    }
+  });
 
 export const monthIdSchema = occasionMonth;
 

@@ -36,7 +36,7 @@ router.get(
 
       try {
         stat = await fs.stat(filePath);
-      } catch {
+      } catch (error) {
         if (error.code === 'ENOENT' || error.code === 'ENOTDIR') {
           throw new CustomError('ERRORS.FILE.NOT_FOUND', 404);
         }

@@ -29,6 +29,7 @@ import { createSpecialRecipientsListForOrder } from "../controllers/ctrl-create-
 import { transformOrder, transformOrderDisplayPart, transformOrderRecipientsPart } from "../controllers/ctrl-transform-order.js";
 import { applyOrderFilters, buildOrderSort, dictToOptions, ORDER_LIST_INCLUDE } from "../controllers/ctrl-order-query-builders.js";
 import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js";
+import { refreshVolunteerSearch } from '../controllers/ctrl-search-string.js';
 
 const router = Router();
 

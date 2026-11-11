@@ -19,8 +19,9 @@ import {
   UserContact,
   UserOutdatedName,
   UserSearch,
-  Volunteer,
-} from "../models/index.js";
+  VolunteerSubscription,
+  VolunteerCooperation,
+} from '../models/index.js';
 import requireAuth from "../middlewares/check-auth.js";
 import { requireOperation, requireAny } from '../middlewares/require-permission.js';
 import { validateRequest } from "../middlewares/validate-request.js";
@@ -748,8 +749,17 @@ router.get(
 );
 
 async function countUserDependencies(userId, transaction) {
-  const [volunteersCount, ordersCount] = await Promise.all([
-    Volunteer.count({
+  const [
+    subscriptionsCount,
+    cooperationsCount,
+    ordersCount,
+  ] = await Promise.all([
+    VolunteerSubscription.count({
+      where: { userId },
+      transaction,
+    }),
+
+    VolunteerCooperation.count({
       where: { userId },
       transaction,
     }),
@@ -760,7 +770,11 @@ async function countUserDependencies(userId, transaction) {
     }),
   ]);
 
-  return volunteersCount + ordersCount;
+  return (
+    subscriptionsCount +
+    cooperationsCount +
+    ordersCount
+  );
 }
 
 router.get(

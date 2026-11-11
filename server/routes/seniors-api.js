@@ -102,6 +102,35 @@ export const INCLUDES = [
   },
 ];
 
+async function countSeniorDependencies(
+  seniorId,
+  transaction,
+) {
+  const [
+    recipientsCount,
+    spouseCount,
+  ] = await Promise.all([
+    Recipient.count({
+      where: {
+        seniorId,
+      },
+      transaction,
+    }),
+
+    Senior.count({
+      where: {
+        spouseId: seniorId,
+      },
+      transaction,
+    }),
+  ]);
+
+  return (
+    recipientsCount +
+    spouseCount
+  );
+}
+
 router.post(
   "/check-senior-data",
   requireAuth,
@@ -755,15 +784,11 @@ router.get(
       const senior = await Senior.findByPk(id);
       if (!senior) throw new CustomError("ERRORS.DATA_NOT_FOUND", 404);
 
-      const [countRecipients, countSpouse] = await Promise.all([
-        Recipient.count({
-          where: { seniorId: id },
-        }),
-        Senior.count({
-          where: { spouseId: id },
-        }),
-      ]);
-      const count = (countRecipients ?? 0) + (countSpouse ?? 0);
+      const count =
+        await countSeniorDependencies(
+          id,
+        );
+
       const response = {
         data: count,
         ...(count ? { code: "ERRORS.SENIOR.HAS_DEPENDENCIES" } : null),
@@ -790,6 +815,18 @@ router.delete(
         const senior = await Senior.findByPk(id, { transaction });
         if (!senior) throw new CustomError("ERRORS.DATA_NOT_FOUND", 404);
 
+        const dependenciesCount =
+          await countSeniorDependencies(
+            id,
+            transaction,
+          );
+
+        if (dependenciesCount > 0) {
+          throw new CustomError(
+            'ERRORS.SENIOR.HAS_DEPENDENCIES',
+            409,
+          );
+        }
         // Delete the senior (DB will cascade child tables)
         const destroyed = await Senior.destroy({
           where: { id },

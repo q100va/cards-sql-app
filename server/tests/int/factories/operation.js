@@ -1,54 +1,54 @@
-// tests/factories/operation.js
-
-import { RolePermission } from "../../../models";
-import { OPERATIONS } from "../../../shared/operations";
-
+import { RolePermission } from '../../../models/index.js';
+import { OPERATIONS } from '../../../shared/operations.js';
 
 /**
- * Создать одну запись в operations через модель.
+ * Create a role permission record.
  */
 export async function createOperation(overrides = {}) {
-  const op = {
-    roleId: overrides.roleId,              // обязательный
-    name: overrides.name,                  // обязательный
+  const operation = {
+    roleId: overrides.roleId,
+    name: overrides.name,
     access: overrides.access ?? false,
     disabled: overrides.disabled ?? false,
   };
-  if (!op.roleId || !op.name) {
-    throw new Error('createOperation: roleId и name required');
+
+  if (!operation.roleId || !operation.name) {
+    throw new Error('createOperation: roleId and name are required');
   }
 
-  const row = await RolePermission.create(op, { returning: true });
-  // plain JS object:
+  const row = await RolePermission.create(operation, { returning: true });
   return row.get({ plain: true });
 }
 
 /**
- * Засидить ВЕСЬ дефолтный набор операций для роли (точно повторяет логику /create-role).
+ * Seed the complete default permission set for a role.
  */
 export async function seedDefaultOperationsForRole(roleId) {
-  const rows = OPERATIONS.map(o => ({
+  const rows = OPERATIONS.map((operation) => ({
     roleId,
-    name: o.operation,
+    name: operation.operation,
     access: false,
-    disabled: o.flag === 'FULL',
+    disabled: operation.flag === 'FULL',
   }));
+
   await RolePermission.bulkCreate(rows);
 }
 
 /**
- * Вытащить все операции роли (для ассертов).
+ * Get all permissions assigned to a role.
  */
 export async function getOperationsByRole(roleId) {
-  const rows = await RolePermission.findAll({
-    where: { roleId},
+  return RolePermission.findAll({
+    where: { roleId },
     attributes: ['id', 'roleId', 'name', 'access', 'disabled'],
     order: [['name', 'ASC']],
     raw: true,
   });
-  return rows;
 }
 
+/**
+ * Get a permission id by role and operation name.
+ */
 export async function getOperationIdByRoleAndName(roleId, name) {
   const row = await RolePermission.findOne({
     where: { roleId, name },
@@ -56,23 +56,31 @@ export async function getOperationIdByRoleAndName(roleId, name) {
     order: [['name', 'ASC']],
     raw: true,
   });
+
   return row.id;
 }
 
 /**
- * Быстро включить/выключить одну операцию роли.
+ * Update access or disabled state for a role permission.
  */
-export async function setOperationAccess(roleId, name, { access, disabled }) {
+export async function setOperationAccess(
+  roleId,
+  name,
+  { access, disabled },
+) {
   const [affected, updated] = await RolePermission.update(
     {
-      ...(access   !== undefined ? { access }   : {}),
+      ...(access !== undefined ? { access } : {}),
       ...(disabled !== undefined ? { disabled } : {}),
     },
     {
       where: { roleId, name },
       individualHooks: true,
       returning: true,
-    }
+    },
   );
-  return affected > 0 ? updated[0].get({ plain: true }) : null;
+
+  return affected > 0
+    ? updated[0].get({ plain: true })
+    : null;
 }

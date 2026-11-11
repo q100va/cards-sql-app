@@ -1,8 +1,12 @@
-// tests/int/factories/toponym.js
-import { Country, Region, District, Locality } from '../../../models/index.js';
+import {
+  Country,
+  Region,
+  District,
+  Locality,
+} from '../../../models/index.js';
 
 /**
- * Create a country.
+ * Create a country with sensible test defaults.
  */
 export async function createCountry(overrides = {}) {
   const payload = {
@@ -10,36 +14,42 @@ export async function createCountry(overrides = {}) {
     shortName: overrides.shortName ?? 'RU',
     isRestricted: overrides.isRestricted ?? false,
   };
+
   const row = await Country.create(payload);
   return row.get({ plain: true });
 }
 
 /**
- * Create a region (requires countryId).
+ * Create a region.
+ * Creates a parent country automatically when countryId is not provided.
  */
 export async function createRegion(overrides = {}) {
   if (!overrides.countryId) {
-    const c = await createCountry();
-    overrides.countryId = c.id;
+    const country = await createCountry();
+    overrides.countryId = country.id;
   }
+
   const payload = {
     name: overrides.name ?? 'Москва',
     shortName: overrides.shortName ?? 'Мск',
     countryId: overrides.countryId,
     isRestricted: overrides.isRestricted ?? false,
   };
+
   const row = await Region.create(payload);
   return row.get({ plain: true });
 }
 
 /**
- * Create a district (requires regionId).
+ * Create a district.
+ * Creates the required parent hierarchy when regionId is not provided.
  */
 export async function createDistrict(overrides = {}) {
   if (!overrides.regionId) {
-    const r = await createRegion();
-    overrides.regionId = r.id;
+    const region = await createRegion();
+    overrides.regionId = region.id;
   }
+
   const payload = {
     name: overrides.name ?? 'Тверской район',
     shortName: overrides.shortName ?? 'Твер.',
@@ -48,18 +58,21 @@ export async function createDistrict(overrides = {}) {
     regionId: overrides.regionId,
     isRestricted: overrides.isRestricted ?? false,
   };
+
   const row = await District.create(payload);
   return row.get({ plain: true });
 }
 
 /**
- * Create a locality (requires districtId).
+ * Create a locality.
+ * Creates the required parent hierarchy when districtId is not provided.
  */
 export async function createLocality(overrides = {}) {
   if (!overrides.districtId) {
-    const d = await createDistrict();
-    overrides.districtId = d.id;
+    const district = await createDistrict();
+    overrides.districtId = district.id;
   }
+
   const payload = {
     name: overrides.name ?? 'Москва',
     shortName: overrides.shortName ?? 'Мск',
@@ -69,6 +82,7 @@ export async function createLocality(overrides = {}) {
     districtId: overrides.districtId,
     isRestricted: overrides.isRestricted ?? false,
   };
+
   const row = await Locality.create(payload);
   return row.get({ plain: true });
 }

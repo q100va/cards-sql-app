@@ -951,7 +951,7 @@ router.delete(
           transaction,
         );
         if (dependenciesCount > 0) {
-          throw new CustomError('HOME.HAS_DEPENDENCIES', 409);
+          throw new CustomError('ERRORS.HOME.HAS_DEPENDENCIES', 409);
         }
 
         const destroyed = await Home.destroy({

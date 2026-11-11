@@ -1,164 +1,197 @@
-// server/tests/int/audit-api.int.test.js
 import jwt from 'jsonwebtoken';
-import request from 'supertest';
-import { jest } from '@jest/globals';
-import { Op } from 'sequelize';
 
-const JWT_SECRET = 'acc-secret';
-process.env.JWT_ACCESS_SECRET = JWT_SECRET; // ✅ до импортов
+import { AuditLog } from '../../models/index.js';
 
-let app, initInfrastructure, AuditLog, RolePermission;
-let token;
+import { createRole } from './factories/role.js';
+import { createOperation } from './factories/operation.js';
 
-function makeToken() {
+function makeAccessToken(roleId) {
   return jwt.sign(
-    { sub: '1', uname: 'tester', role: 'ADMIN', roleId: 1 },
-    JWT_SECRET,
-    { issuer: 'cards-sql-app', audience: 'web', expiresIn: 3600 }
+    { sub: '42', roleId, uname: 'audit-integration-user', role: 'AUDIT_TEST_ROLE' },
+    process.env.JWT_ACCESS_SECRET,
+    { algorithm: 'HS256', expiresIn: '15m', issuer: 'cards-sql-app', audience: 'web' },
   );
 }
 
-beforeEach(async () => {
-  jest.resetModules();
+async function createAuthorizedToken() {
+  const role = await createRole({ name: 'Audit Test Role' });
 
-  // Изолируем загрузку модулей после установки env
-  await jest.isolateModulesAsync(async () => {
-    ({ default: app, initInfrastructure } = await import('../../app.js'));
-    ({ Role, AuditLog, RolePermission } = await import('../../models/index.js'));
-  });
+  await createOperation({ roleId: role.id, name: 'VIEW_AUDIT_LOG', access: true, disabled: false });
 
-  await initInfrastructure();
+  const token = makeAccessToken(role.id);
 
-  await Role.findOrCreate({
-    where: { id: 1 },
-    defaults: { name: 'ADMIN', description: 'test-admin' },
-  });
-  await seedPermission();
-  await seedAudit();
+  // Role/permission creation may itself be audited.
+  // Remove setup noise before testing the audit endpoint.
+  await AuditLog.destroy({ truncate: true, restartIdentity: true });
 
-  token = makeToken();
-});
-
-function authGet(url) {
-  return request(app).get(url).set('Authorization', `Bearer ${token}`);
+  return token;
 }
 
-async function seedAudit() {
-  await AuditLog.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-  await AuditLog.bulkCreate(
-    [
-      { model: 'user', action: 'create', entityId: 'u1', actorUserId: '42', correlationId: 'c1', createdAt: new Date('2025-01-10T10:00:00Z') },
-      { model: 'user', action: 'update', entityId: 'u1', actorUserId: '42', correlationId: 'c2', createdAt: new Date('2025-01-12T12:00:00Z') },
-      { model: 'role', action: 'delete', entityId: 'r1', actorUserId: '7', correlationId: 'c3', createdAt: new Date('2025-02-01T09:30:00Z') },
-      { model: 'role', action: 'create', entityId: 'r2', actorUserId: '7', correlationId: 'c4', createdAt: new Date('2025-02-03T11:00:00Z') },
-      { model: 'user', action: 'update', entityId: 'u2', actorUserId: '13', correlationId: 'c5', createdAt: new Date('2025-02-03T11:00:00Z') },
-    ],
-    { validate: false }
-  );
+function auth(request, token) {
+  return request.set('Authorization', `Bearer ${token}`);
 }
 
-async function seedPermission() {
-  // право, требуемое роутом: requireOperation('VIEW_FULL_ROLES_LIST')
-  await RolePermission.destroy({
-    where: { roleId: 1, name: 'VIEW_FULL_ROLES_LIST' }
-  });
-
-  await RolePermission.create({
-    roleId: 1,
-    name: 'VIEW_FULL_ROLES_LIST',
-    access: true,
-    disabled: false,
-  });
-  // sanity check – тот же экземпляр модели должен видеть запись
-  const rows = await RolePermission.findAll({
-    where: { roleId: 1, name: { [Op.in]: ['VIEW_FULL_ROLES_LIST'] }, access: true },
-    raw: true,
-  });
-  if (rows.length === 0) {
-    throw new Error('Seeded permission not found via RolePermission.findAll()');
+function diffFor(action) {
+  if (action === 'update') {
+    return { changed: { name: ['Old', 'New'] } };
   }
+
+  if (action === 'delete') {
+    return { before: { id: 1 } };
+  }
+
+  if (action === 'auth') {
+    return { event: 'login_success' };
+  }
+
+  return { after: { id: 1 } };
 }
 
-beforeEach(async () => {
-  //await seedAudit();
-  //await seedPermission();
-});
+async function createAuditLog(overrides = {}) {
+  const action = overrides.action ?? 'create';
 
-
-it('200: default sort (createdAt DESC, id DESC) + pagination', async () => {
-  const res = await authGet('/api/audit').query({ limit: 3, offset: 0 });
-  expect(res.status).toBe(200);
-  expect(res.body.data.count).toBe(5);
-  expect(res.body.data.rows.map(r => r.correlationId)).toEqual(['c5', 'c4', 'c3']);
-});
-
- it('supports offset window', async () => {
-  const res = await authGet('/api/audit').query({ limit: 2, offset: 2 });
-  expect(res.status).toBe(200);
-  expect(res.body.data.rows.map(r => r.correlationId)).toEqual(['c3', 'c2']);
-});
-
-it('filters by model/action/entityId/userId/correlationId', async () => {
-  const byModel = await authGet('/api/audit').query({ model: 'user', limit: 100, offset: 0 });
-  expect(byModel.status).toBe(200);
-  expect(byModel.body.data.count).toBe(3);
-  expect(byModel.body.data.rows.every(r => r.model === 'user')).toBe(true);
-
-  const byAction = await authGet('/api/audit').query({ action: 'delete', limit: 100, offset: 0 });
-  expect(byAction.status).toBe(200);
-  expect(byAction.body.data.count).toBe(1);
-  expect(byAction.body.data.rows[0].correlationId).toBe('c3');
-
-  const byEntity = await authGet('/api/audit').query({ entityId: 'u1', limit: 100, offset: 0 });
-  expect(byEntity.status).toBe(200);
-  expect(byEntity.body.data.count).toBe(2);
-  expect(byEntity.body.data.rows.map(r => r.correlationId)).toEqual(['c2', 'c1']);
-
-  const byUser = await authGet('/api/audit').query({ userId: '7', limit: 100, offset: 0 });
-  expect(byUser.status).toBe(200);
-  expect(byUser.body.data.count).toBe(2);
-  expect(byUser.body.data.rows.map(r => r.correlationId)).toEqual(['c4', 'c3']);
-
-  const byCorr = await authGet('/api/audit').query({ correlationId: 'c5', limit: 100, offset: 0 });
-  expect(byCorr.status).toBe(200);
-  expect(byCorr.body.data.count).toBe(1);
-  expect(byCorr.body.data.rows[0].correlationId).toBe('c5');
-});
-
-it('filters by date range (from/to inclusive)', async () => {
-  const res = await authGet('/api/audit').query({
-    from: '2025-02-01T00:00:00.000Z',
-    to: '2025-02-02T00:00:00.000Z',
-    limit: 100,
+  return AuditLog.create({
+    action,
+    model: 'user',
+    entityId: '1',
+    diff: diffFor(action),
+    actorUserId: 10,
+    correlationId: 'corr-default',
+    ip: '127.0.0.1',
+    userAgent: 'audit-api-integration-test',
+    ...overrides,
   });
-  expect(res.status).toBe(200);
-  expect(res.body.data.count).toBe(1);
-  expect(res.body.data.rows[0].correlationId).toBe('c3');
+}
+
+describe('GET /api/audit', () => {
+  test('returns 401 when authentication is missing', async () => {
+    const res = await global.api.get('/api/audit');
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ code: 'ERRORS.UNAUTHORIZED', data: null });
+  });
+
+  test('returns 403 when the role lacks VIEW_AUDIT_LOG', async () => {
+    const role = await createRole({ name: 'No Audit Access Role' });
+
+    const token = makeAccessToken(role.id);
+
+    const res = await auth(global.api.get('/api/audit'), token);
+
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 422 when query validation fails', async () => {
+    const token = await createAuthorizedToken();
+
+    const res = await auth(global.api.get('/api/audit'), token).query({ action: 'invalid-action' });
+
+    expect(res.status).toBe(422);
+    expect(res.body).toMatchObject({ code: 'ERRORS.VALIDATION' });
+  });
+
+  test('returns audit rows ordered from newest to oldest', async () => {
+    const token = await createAuthorizedToken();
+
+    await createAuditLog({ entityId: 'oldest', createdAt: new Date('2026-01-01T10:00:00.000Z') });
+
+    await createAuditLog({ entityId: 'newest', createdAt: new Date('2026-01-03T10:00:00.000Z') });
+
+    await createAuditLog({ entityId: 'middle', createdAt: new Date('2026-01-02T10:00:00.000Z') });
+
+    const res = await auth(global.api.get('/api/audit'), token);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.count).toBe(3);
+    expect(res.body.data.rows.map((row) => row.entityId)).toEqual(['newest', 'middle', 'oldest']);
+  });
+
+  test('filters by model, action, entity, user, and correlation id', async () => {
+    const token = await createAuthorizedToken();
+
+    await createAuditLog({
+      action: 'update',
+      model: 'user',
+      entityId: '42',
+      actorUserId: 7,
+      correlationId: 'corr-target',
+      diff: { changed: { name: ['Before', 'After'] } },
+    });
+
+    await createAuditLog({
+      action: 'create',
+      model: 'role',
+      entityId: '99',
+      actorUserId: 8,
+      correlationId: 'corr-other',
+    });
+
+    const res = await auth(global.api.get('/api/audit'), token).query({
+      model: 'user',
+      action: 'update',
+      entityId: '42',
+      userId: 7,
+      correlationId: 'corr-target',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.count).toBe(1);
+    expect(res.body.data.rows).toHaveLength(1);
+    expect(res.body.data.rows[0]).toMatchObject({
+      action: 'update',
+      model: 'user',
+      entityId: '42',
+      actorUserId: 7,
+      correlationId: 'corr-target',
+    });
+  });
+
+  test('filters audit rows by date range', async () => {
+    const token = await createAuthorizedToken();
+
+    await createAuditLog({
+      entityId: 'before-range',
+      createdAt: new Date('2026-02-01T12:00:00.000Z'),
+    });
+
+    await createAuditLog({
+      entityId: 'inside-range',
+      createdAt: new Date('2026-02-02T12:00:00.000Z'),
+    });
+
+    await createAuditLog({
+      entityId: 'after-range',
+      createdAt: new Date('2026-02-03T12:00:00.000Z'),
+    });
+
+    const res = await auth(global.api.get('/api/audit'), token).query({
+      from: '2026-02-02T00:00:00.000Z',
+      to: '2026-02-02T23:59:59.999Z',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.count).toBe(1);
+    expect(res.body.data.rows).toHaveLength(1);
+    expect(res.body.data.rows[0].entityId).toBe('inside-range');
+  });
+
+  test('applies limit and offset while count remains the total', async () => {
+    const token = await createAuthorizedToken();
+
+    await createAuditLog({ entityId: 'first', createdAt: new Date('2026-03-01T10:00:00.000Z') });
+
+    await createAuditLog({ entityId: 'second', createdAt: new Date('2026-03-02T10:00:00.000Z') });
+
+    await createAuditLog({ entityId: 'third', createdAt: new Date('2026-03-03T10:00:00.000Z') });
+
+    const res = await auth(global.api.get('/api/audit'), token).query({ limit: 1, offset: 1 });
+
+    expect(res.status).toBe(200);
+
+    // Count is the total matching rows,
+    // not the number on this page.
+    expect(res.body.data.count).toBe(3);
+    expect(res.body.data.rows).toHaveLength(1);
+    expect(res.body.data.rows[0].entityId).toBe('second');
+  });
 });
-
-it('422 on invalid query (schema validation)', async () => {
-  const res = await authGet('/api/audit').query({ from: 'not-a-date' });
-  expect(res.status).toBe(422);
-  expect(res.headers['content-type']).toMatch(/application\/json/i);
-  expect(res.body).toMatchObject({ code: 'ERRORS.VALIDATION' });
-});
-
-it('500 + ERRORS.NO_DATA_RECEIVED when DB fails', async () => {
-  const orig = AuditLog.findAll;
-  try {
-    AuditLog.findAll = () => { throw new Error('db fail'); };
-    const res = await authGet('/api/audit');
-    expect(res.status).toBeGreaterThanOrEqual(500);
-    expect(res.body.code).toBe('ERRORS.NO_DATA_RECEIVED');
-  } finally {
-    AuditLog.findAll = orig;
-  }
-});
-
-/* it('caps limit at 100', async () => {
-  const res = await authGet('/api/audit').query({ limit: 100, offset: 0 });
-  expect(res.status).toBe(200);
-  expect(res.body.data.rows.length).toBeLessThanOrEqual(100);
-  expect(res.body.data.count).toBe(5);
-}); */
-

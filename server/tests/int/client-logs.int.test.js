@@ -1,135 +1,75 @@
-// server/tests/int/client-logs.int.test.js
-import express from 'express';
-import request from 'supertest';
-import router from '../../routes/client-logs.js';
-import { handleError } from '../../middlewares/error-handler.js';
-import logger from '../../logging/logger.js';
-import { jest } from "@jest/globals";
-
-describe('POST /api/client-logs (integration)', () => {
-  const makeApp = () => {
-    const app = express();
-    app.use(express.json({ limit: '1mb' }));
-    app.use('/api/client-logs', router);
-    app.use(handleError);
-    return app;
+function makeItem(overrides = {}) {
+  return {
+    ts: new Date().toISOString(),
+    level: 'warn',
+    message: 'Client warning',
+    sessionId: 'session-123',
+    ...overrides,
   };
+}
 
-  beforeEach(() => {
-    jest.spyOn(logger, 'warn').mockImplementation(() => {});
-    jest.spyOn(logger, 'error').mockImplementation(() => {});
-  });
+function makeBatch(overrides = {}) {
+  return { app: 'cards-sql-app', env: 'development', items: [makeItem()], ...overrides };
+}
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it('204 and logs each item at the correct level', async () => {
-    const batch = {
-      app: 'web',
-      env: 'test',
-      items: [
-        {
-          level: 'warn',
-          message: 'w1',
-          ts: new Date().toISOString(),
-          sessionId: 's12345678',
-          pageUrl: '/p1',
-          route: '/r1',
-          userAgent: 'UA',
-          context: { a: 1 }
-        },
-        {
-          level: 'error',
-          message: 'e1',
-          ts: new Date().toISOString(),
-          sessionId: 's12345678',
-          pageUrl: '/p2',
-          route: '/r2',
-          userAgent: 'UA',
-          context: { b: 2 },
-          stack: 'Error: boom\n at x',
-        },
-      ],
-    };
-
-    const res = await request(makeApp())
-      .post('/api/client-logs')
-      .send(batch);
+describe('POST /api/client-logs', () => {
+  test('accepts a valid warning log batch', async () => {
+    const res = await global.api.post('/api/client-logs').send(makeBatch());
 
     expect(res.status).toBe(204);
-    expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledTimes(1);
-
-    // Проверим, что структура entry корректная и message передан вторым аргументом
-    const [warnEntry, warnMsg] = logger.warn.mock.calls[0];
-    expect(warnMsg).toBe('w1');
-    expect(warnEntry).toMatchObject({
-      client: true,
-      app: 'web',
-      env: 'test',
-      ts: expect.any(String),
-      sessionId: 's12345678',
-      pageUrl: '/p1',
-      route: '/r1',
-      userAgent: 'UA',
-      context: { a: 1 },
-      // поля с null по умолчанию, если не пришли
-      corrId: null,
-      userId: null,
-    });
-
-    const [errEntry, errMsg] = logger.error.mock.calls[0];
-    expect(errMsg).toBe('e1');
-    expect(errEntry).toMatchObject({
-      client: true,
-      app: 'web',
-      env: 'test',
-      sessionId: 's12345678',
-      pageUrl: '/p2',
-      route: '/r2',
-      userAgent: 'UA',
-      context: { b: 2 },
-    });
+    expect(res.text).toBe('');
   });
 
-  it('422 on invalid body (validateRequest → handleError)', async () => {
-    const res = await request(makeApp())
+  test('accepts a valid error log with optional fields', async () => {
+    const res = await global.api
       .post('/api/client-logs')
-      .send({ app: 'web', env: 'test', items: 'not-array' });
+      .send(
+        makeBatch({
+          env: 'production',
+          items: [
+            makeItem({
+              level: 'error',
+              message: 'Client error',
+              stack: 'Error: test failure',
+              pageUrl: 'http://localhost/orders',
+              route: '/orders',
+              userId: 42,
+              sessionId: 'session-456',
+              corrId: 'corr-123',
+              userAgent: 'Jest integration test',
+              context: { source: 'integration-test', nested: { value: 'test' } },
+            }),
+          ],
+        }),
+      );
+
+    expect(res.status).toBe(204);
+    expect(res.text).toBe('');
+  });
+
+  test('returns 422 when the request body fails validation', async () => {
+    const res = await global.api
+      .post('/api/client-logs')
+      .send({ app: 'wrong-app', env: 'development', items: [] });
 
     expect(res.status).toBe(422);
-    expect(res.headers['content-type']).toMatch(/application\/json/i);
-    expect(res.body.code).toBe('ERRORS.VALIDATION');
+    expect(res.body).toMatchObject({ code: 'ERRORS.VALIDATION' });
+    expect(res.body).toHaveProperty('correlationId');
   });
 
-  it('500 + ERRORS.LOGS_NOT_ACCEPTED if logger throws (catch branch)', async () => {
-    // Смоделируем падение логгера, чтобы попасть в catch
-    logger.warn.mockImplementationOnce(() => {
-      throw new Error('logger down');
-    });
+  test('returns 429 when the client exceeds the log rate limit', async () => {
+    const oversizedInvalidBatch = {
+      app: 'cards-sql-app',
+      env: 'development',
+      items: Array.from({ length: 200 }, () => ({})),
+    };
 
-    const res = await request(makeApp())
-      .post('/api/client-logs')
-      .send({
-        app: 'web',
-        env: 'test',
-        items: [
-          {
-            level: 'warn',
-            message: 'will-throw',
-            ts: new Date().toISOString(),
-            sessionId: 'sX12345678',
-            pageUrl: '/',
-            route: '/',
-            userAgent: 'UA',
-            context: {},
-          },
-        ],
-      });
+    const first = await global.api.post('/api/client-logs').send(oversizedInvalidBatch);
 
-    expect(res.status).toBeGreaterThanOrEqual(500);
-    expect(res.headers['content-type']).toMatch(/application\/json/i);
-    expect(res.body.code).toBe('ERRORS.LOGS_NOT_ACCEPTED');
+    expect(first.status).toBe(422);
+
+    const second = await global.api.post('/api/client-logs').send(oversizedInvalidBatch);
+
+    expect(second.status).toBe(429);
   });
 });

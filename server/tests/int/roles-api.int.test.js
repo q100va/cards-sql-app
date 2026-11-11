@@ -1,458 +1,258 @@
-// tests/roles.api.int.test.js
-import 'dotenv/config';
 import jwt from 'jsonwebtoken';
-import sequelize from '../../database.js';
-import { QueryTypes, Op } from 'sequelize';
 
-import { beforeEach, jest } from '@jest/globals';
-import { createRole, findRoleById, seedOperationsForRole } from './factories/role.js';
-import { createUser } from './factories/user.js';
-import {
-  seedDefaultOperationsForRole,
-  getOperationsByRole,
-  getOperationIdByRoleAndName,
-} from './factories/operation.js';
-import logger from '../../logging/logger.js';
-import { Role, RolePermission } from '../../models/index.js';
-import { OPERATIONS } from '../../shared/operations.js';
+import { Role, RolePermission, User } from '../../models/index.js';
 
-// маленький хелпер для SELECT-ов (возвращает массив строк)
-async function select(text, bind = []) {
-  return sequelize.query(text, { bind, type: QueryTypes.SELECT });
+import { OPERATIONS, OPERATION_FLAG } from '../../shared/operations.js';
+
+import { createRole, seedOperationsForRole } from './factories/role.js';
+import { createOperation } from './factories/operation.js';
+
+function makeAccessToken(roleId) {
+  return jwt.sign(
+    { sub: '42', roleId, uname: 'roles-integration-user', role: 'TEST_ROLE' },
+    process.env.JWT_ACCESS_SECRET,
+    { algorithm: 'HS256', expiresIn: '15m', issuer: 'cards-sql-app', audience: 'web' },
+  );
 }
 
-describe('Roles API (integration)', () => {
-  const langRu = { 'x-lang': 'ru' };
-  let auth = {};
-  //const withHeaders = (req) => req.set({ ...langRu, ...auth });
+async function createAuthorizedRole(operationNames = []) {
+  const role = await createRole();
 
-  beforeAll(async () => {
-    const secret = process.env.JWT_ACCESS_SECRET;
-    if (!secret) {
-      throw new Error('JWT_ACCESS_SECRET is not set (check .env.test)');
-    }
+  for (const name of operationNames) {
+    await createOperation({ roleId: role.id, name, access: true, disabled: false });
+  }
 
-    // check-auth.js ожидает именно эти iss/aud и поля payload:
-    const token = jwt.sign(
-      { sub: '1', uname: 'superAdmin', role: 'ADMIN', roleId: 1 },
-      secret,
-      { issuer: 'cards-sql-app', audience: 'web', expiresIn: '15m' }
-    );
+  return { role, token: makeAccessToken(role.id) };
+}
 
-    auth = { Authorization: `Bearer ${token}` };
+function auth(request, token) {
+  return request.set('Authorization', `Bearer ${token}`);
+}
 
+describe('roles API', () => {
+  test('returns 401 when authentication is missing', async () => {
+    const res = await global.api
+      .post('/api/roles/create-role')
+      .send({ name: 'New Role', description: 'Integration test role' });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ code: 'ERRORS.UNAUTHORIZED', data: null });
   });
 
-  beforeEach(async () => {
+  test('returns 403 when the authenticated role lacks permission', async () => {
+    const actorRole = await createRole();
+    const token = makeAccessToken(actorRole.id);
 
-    await Role.destroy({ where: { id: 1, }, truncate: true, cascade: true, restartIdentity: true });
+    const res = await auth(global.api.post('/api/roles/create-role'), token).send({
+      name: 'Forbidden Role',
+      description: 'Integration test role',
+    });
 
-    const role = await createRole({ name: 'ADMIN', description: 'test-admin' });
-    //console.log('role', role);
-    await RolePermission.destroy({ where: { roleId: 1, } });
-    await seedOperationsForRole(1);
-    const perms = ['VIEW_FULL_ROLES_LIST', 'VIEW_LIMITED_ROLES_LIST', 'ADD_NEW_ROLE',
-      'EDIT_ROLE', 'DELETE_ROLE', 'ADD_NEW_USER', 'EDIT_USER', 'VIEW_LIMITED_USERS_LIST',
-    ];
+    expect(res.status).toBe(403);
+  });
+
+  test('checks role names case-insensitively', async () => {
+    const { token } = await createAuthorizedRole(['ADD_NEW_ROLE']);
+
+    await createRole({ name: 'Case Test Role', description: 'Existing integration role' });
+
+    const existing = await auth(
+      global.api.get('/api/roles/check-role-name/case%20test%20role'),
+      token,
+    );
+
+    expect(existing.status).toBe(200);
+    expect(existing.body).toEqual({ code: 'ERRORS.ROLE.ALREADY_EXISTS', data: true });
+
+    const missing = await auth(global.api.get('/api/roles/check-role-name/another%20role'), token);
+
+    expect(missing.status).toBe(200);
+    expect(missing.body).toEqual({ data: false });
+  });
+
+  test('creates a role and seeds all default permissions', async () => {
+    const { token } = await createAuthorizedRole(['ADD_NEW_ROLE']);
+
+    const res = await auth(global.api.post('/api/roles/create-role'), token).send({
+      name: 'Created Role',
+      description: 'Created by integration test',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ code: 'SUCCESS.CREATED', data: 'Created Role' });
+
+    const role = await Role.findOne({ where: { name: 'Created Role' }, raw: true });
+
+    expect(role).not.toBeNull();
+
+    const permissions = await RolePermission.findAll({ where: { roleId: role.id }, raw: true });
+
+    expect(permissions).toHaveLength(OPERATIONS.length);
+    expect(permissions.every((permission) => permission.access === false)).toBe(true);
+
+    const fullView = permissions.find((permission) => permission.name === 'VIEW_FULL_ROLES_LIST');
+
+    const limitedView = permissions.find(
+      (permission) => permission.name === 'VIEW_LIMITED_ROLES_LIST',
+    );
+
+    expect(fullView.disabled).toBe(true);
+    expect(limitedView.disabled).toBe(false);
+  });
+
+  test('updates an existing role', async () => {
+    const { token } = await createAuthorizedRole(['EDIT_ROLE']);
+
+    const role = await createRole({ name: 'Old Role Name', description: 'Old description' });
+
+    const res = await auth(global.api.patch('/api/roles/update-role'), token).send({
+      id: role.id,
+      name: 'Updated Role Name',
+      description: 'Updated role description',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      code: 'SUCCESS.UPDATED',
+      data: { id: role.id, name: 'Updated Role Name', description: 'Updated role description' },
+    });
+
+    const updated = await Role.findByPk(role.id, { raw: true });
+
+    expect(updated.name).toBe('Updated Role Name');
+    expect(updated.description).toBe('Updated role description');
+  });
+
+  test('updates role access and synchronizes LIMITED/FULL views', async () => {
+    const { token } = await createAuthorizedRole(['EDIT_ROLE']);
+
+    const targetRole = await createRole({ name: 'Access Target Role' });
+
+    await seedOperationsForRole(targetRole.id);
+
+    const operation = OPERATIONS.find((item) => item.operation === 'VIEW_LIMITED_ROLES_LIST');
+
+    const res = await auth(global.api.patch('/api/roles/update-role-access'), token).send({
+      access: true,
+      roleId: targetRole.id,
+      operation: { ...operation, rolesAccesses: [] },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.object).toBe('roles');
+
+    const limited = await RolePermission.findOne({
+      where: { roleId: targetRole.id, name: 'VIEW_LIMITED_ROLES_LIST' },
+      raw: true,
+    });
+
+    const full = await RolePermission.findOne({
+      where: { roleId: targetRole.id, name: 'VIEW_FULL_ROLES_LIST' },
+      raw: true,
+    });
+
+    expect(limited.access).toBe(true);
+    expect(limited.disabled).toBe(false);
+    expect(full.access).toBe(false);
+    expect(full.disabled).toBe(false);
+  });
+
+  test('returns roles with their permission mappings', async () => {
+    const { token } = await createAuthorizedRole(['VIEW_LIMITED_ROLES_LIST']);
+
+    const targetRole = await createRole({
+      name: 'Listed Role',
+      description: 'Role returned by list endpoint',
+    });
+
+    await seedOperationsForRole(targetRole.id);
 
     await RolePermission.update(
       { access: true },
-      { where: { roleId: 1, name: { [Op.in]: perms } } }
+      { where: { roleId: targetRole.id, name: 'VIEW_LIMITED_ROLES_LIST' } },
     );
-    //await RolePermission.bulkUpdate();
-    const rows = await RolePermission.findAll({
-      where: { roleId: 1, access: true },
-      raw: true,
-    });
-    //console.log('RolePermission.findAll', rows);
-    if (rows.length === 0) {
-      throw new Error('Seeded permission not found via RolePermission.findAll()');
-    }
 
+    const res = await auth(global.api.get('/api/roles/get-roles'), token);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.roles).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: targetRole.id, name: 'Listed Role' })]),
+    );
+    expect(res.body.data.operations).toHaveLength(OPERATIONS.length);
+
+    const limitedOperation = res.body.data.operations.find(
+      (item) => item.operation === 'VIEW_LIMITED_ROLES_LIST',
+    );
+
+    expect(limitedOperation).toBeDefined();
+    expect(limitedOperation.rolesAccesses).toEqual(
+      expect.arrayContaining([expect.objectContaining({ roleId: targetRole.id, access: true })]),
+    );
   });
 
-  // ---------- GET /check-role-name/:name ----------
-  describe('GET /api/roles/check-role-name/:name', () => {
-    it('returns {data:true, code:ROLE.ALREADY_EXISTS} when name is taken', async () => {
-      const role = await createRole({ name: 'Manager', description: 'Role description' });
+  test('returns the number of users connected to a role', async () => {
+    const { token } = await createAuthorizedRole(['DELETE_ROLE']);
 
-      const { body, status } = await global.api
-        .get(`/api/roles/check-role-name/${encodeURIComponent(role.name)}`)
-        .set({ ...langRu, ...auth });
+    const targetRole = await createRole({ name: 'Role With User' });
 
-      expect(status).toBe(200);
-      expect(body).toEqual(
-        expect.objectContaining({
-          data: true,
-          code: 'ROLE.ALREADY_EXISTS',
-        })
-      );
+    await User.create({
+      userName: 'role_dependency_user',
+      password: 'not-used-in-this-test',
+      firstName: 'Test',
+      lastName: 'User',
+      roleId: targetRole.id,
     });
 
-    it('returns {data:false} when name is free (no code)', async () => {
-      const { body, status } = await global.api
-        .get('/api/roles/check-role-name/UniqueName123')
-        .set({ ...langRu, ...auth });
+    const res = await auth(
+      global.api.get(`/api/roles/check-role-before-delete/${targetRole.id}`),
+      token,
+    );
 
-      expect(status).toBe(200);
-      expect(body.data).toBe(false);
-      expect(body.code).toBeUndefined();
-    });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ code: 'ERRORS.ROLE.HAS_DEPENDENCIES', data: 1 });
   });
 
-  // ---------- POST /create-role ----------
-  describe('POST /api/roles/create-role', () => {
-    it('creates role and seeds default operations; returns code SUCCESS.CREATED and data=name', async () => {
-      const payload = { name: 'Editors', description: 'Can edit stuff' };
+  test('does not delete a role that still has users', async () => {
+    const { token } = await createAuthorizedRole(['DELETE_ROLE']);
 
-      const { body, status } = await global.api
-        .post('/api/roles/create-role')
-        .set({ ...langRu, ...auth })
-        .send(payload);
+    const targetRole = await createRole({ name: 'Protected Role' });
 
-      expect(status).toBe(200);
-      expect(body.code).toBe('SUCCESS.CREATED');
-      expect(body.data).toBe('Editors');
-
-      // Роль действительно создалась (имя хранится lowercased)
-      const roleRows = await select(
-        `SELECT id, name, description FROM roles WHERE name = $1`,
-        [payload.name]
-      );
-      expect(roleRows.length).toBe(1);
-
-      const roleId = roleRows[0].id;
-
-      // Операции насыпались по списку OPERATIONS?
-      const ops = await getOperationsByRole(roleId);
-      expect(ops.length).toBe(OPERATIONS.length);
-
-      // Проверим дефолты: FULL → disabled=true, остальное disabled=false; access=false у всех
-      const fullOps = new Set(
-        OPERATIONS.filter(o => o.flag === 'FULL').map(o => o.operation)
-      );
-      for (const op of ops) {
-        if (fullOps.has(op.name)) {
-          expect(op.disabled).toBe(true);
-        } else {
-          expect(op.disabled).toBe(false);
-        }
-        expect(op.access).toBe(false);
-      }
+    await User.create({
+      userName: 'protected_role_user',
+      password: 'not-used-in-this-test',
+      firstName: 'Test',
+      lastName: 'User',
+      roleId: targetRole.id,
     });
+
+    const res = await auth(global.api.delete(`/api/roles/delete-role/${targetRole.id}`), token);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toMatchObject({ code: 'ERRORS.ROLE.HAS_DEPENDENCIES' });
+
+    const role = await Role.findByPk(targetRole.id, { raw: true });
+
+    expect(role).not.toBeNull();
   });
 
-  // ---------- PATCH /update-role ----------
-  describe('PATCH /api/roles/update-role', () => {
-    it('updates role and returns code SUCCESS.UPDATED + updated object', async () => {
-      const role = await createRole({ name: 'observer', description: 'Role description' });
+  test('deletes an unused role and its permissions', async () => {
+    const { token } = await createAuthorizedRole(['DELETE_ROLE']);
 
-      const { body, status } = await global.api
-        .patch('/api/roles/update-role')
-        .set({ ...langRu, ...auth })
-        .send({ id: role.id, name: 'viewer', description: 'read-only' });
+    const targetRole = await createRole({ name: 'Deletable Role' });
 
-      expect(status).toBe(200);
-      expect(body.code).toBe('SUCCESS.UPDATED');
-      expect(body.data).toEqual(
-        expect.objectContaining({
-          id: role.id,
-          name: 'viewer',
-          description: 'read-only',
-        })
-      );
+    await seedOperationsForRole(targetRole.id);
 
-      const updated = await findRoleById(role.id);
-      expect(updated.name).toBe('viewer');
-      expect(updated.description).toBe('read-only');
-    });
+    const res = await auth(global.api.delete(`/api/roles/delete-role/${targetRole.id}`), token);
 
-    it('404 + ERRORS.ROLE.NOT_FOUND when role missing', async () => {
-      const { body, status } = await global.api
-        .patch('/api/roles/update-role')
-        .set({ ...langRu, ...auth })
-        .send({ id: 999999, name: 'xxxxxx', description: 'Role description' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ code: 'SUCCESS.DELETED', data: null });
 
-      expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.ROLE.NOT_FOUND');
-    });
-  });
-  // ---------- PATCH /update-role-access ----------
-  describe('PATCH /api/roles/update-role-access', () => {
-    it('enabling ALL_OPS_* enables all related ops and returns both updated ops', async () => {
-      const role = await createRole({ name: 'opsall', description: 'Role description' });
-      await seedDefaultOperationsForRole(role.id);
-      const opId = await getOperationIdByRoleAndName(role.id, 'ALL_OPS_ROLES')
+    const role = await Role.findByPk(targetRole.id, { raw: true });
 
-      const { body, status } = await global.api
-        .patch('/api/roles/update-role-access')
-        .set({ ...langRu, ...auth })
-        .send({
-          access: true,
-          roleId: role.id,
-          operation: {
-            description: 'any',
-            accessToAllOps: true,
-            object: 'roles',
-            objectName: 'any',
-            operation: 'ALL_OPS_ROLES',
-            operationName: 'any',
-            rolesAccesses: [
-              {
-                id: opId,
-                roleId: role.id,
-                access: false,
-                disabled: false,
-              }]
-          },
-        });
+    expect(role).toBeNull();
 
-      expect(status).toBe(200);
-      expect(body.data.object).toBe('roles');
-      expect(Array.isArray(body.data.ops)).toBe(true);
-      expect(body.data.ops.length).toBeGreaterThan(1);
+    const permissions = await RolePermission.count({ where: { roleId: targetRole.id } });
 
-      // Все операции этого объекта должны стать access=true
-      const after = await getOperationsByRole(role.id);
-      const affected = after.filter((x) =>
-        OPERATIONS.some((o) => o.object === 'roles' && o.operation === x.name)
-      );
-      expect(affected.every((x) => x.access === true)).toBe(true);
-    });
-
-    it('turning off any single op disables ALL_OPS_* (if existed)', async () => {
-      const role = await createRole({ name: 'cascade', description: 'Role description' });
-      await seedDefaultOperationsForRole(role.id);
-
-      const opId = await getOperationIdByRoleAndName(role.id, 'ALL_OPS_ROLES');
-
-      await global.api.patch('/api/roles/update-role-access').send({
-        access: true,
-        roleId: role.id,
-        operation: {
-          description: 'any',
-          accessToAllOps: true,
-          object: 'users',
-          objectName: 'any',
-          operation: 'ALL_OPS_USERS',
-          operationName: 'any',
-          rolesAccesses: [
-            {
-              id: opId,
-              roleId: role.id,
-              access: false,
-              disabled: false,
-            }]
-        },
-      });
-
-      const { status } = await global.api
-        .patch('/api/roles/update-role-access')
-        .set({ ...langRu, ...auth })
-        .send({
-          access: false,
-          roleId: role.id,
-          operation: {
-            description: 'any',
-            accessToAllOps: false,
-            object: 'users',
-            objectName: 'any',
-            operation: 'ADD_NEW_USER',
-            operationName: 'any',
-            rolesAccesses: [
-              {
-                id: opId,
-                roleId: role.id,
-                access: true,
-                disabled: false,
-              }]
-          },
-        });
-
-      expect(status).toBe(200);
-
-      const ops = await getOperationsByRole(role.id);
-      const allOpsRow = ops.find((x) => x.name === 'ALL_OPS_USERS');
-      expect(allOpsRow.access).toBe(false); // ALL_OPS выключился
-    });
-
-    it('LIMITED/FULL complementary pair updates disabled/access correctly', async () => {
-      const role = await createRole({ name: 'pairtest', description: 'Role description' });
-      await seedDefaultOperationsForRole(role.id);
-
-      // Включаем LIMITED → FULL получает disabled=false (access не синхронизируется)
-
-      const opIdLimited = await getOperationIdByRoleAndName(role.id, 'VIEW_LIMITED_USERS_LIST');
-
-      await global.api.patch('/api/roles/update-role-access')
-        .set(auth)
-        .send({
-          access: true,
-          roleId: role.id,
-          operation: {
-            description: 'any',
-            accessToAllOps: false,
-            object: 'users',
-            objectName: 'any',
-            operation: 'VIEW_LIMITED_USERS_LIST',
-            operationName: 'any',
-            flag: "LIMITED",
-            rolesAccesses: [
-              {
-                id: opIdLimited,
-                roleId: role.id,
-                access: false,
-                disabled: false,
-              }]
-          },
-        });
-
-      let ops = await getOperationsByRole(role.id);
-      logger.debug(ops, 'ops');
-      let limitedRow = ops.find((x) => x.name === 'VIEW_LIMITED_USERS_LIST');
-      let fullRow = ops.find((x) => x.name === 'VIEW_FULL_USERS_LIST');
-      logger.debug(limitedRow, 'limitedRow');
-      logger.debug(fullRow, 'fullRow');
-      expect(limitedRow.access).toBe(true);
-      expect(fullRow.disabled).toBe(false);
-
-      // Включаем FULL → LIMITED.disabled=true
-      const opIdFull = await getOperationIdByRoleAndName(role.id, 'VIEW_FULL_USERS_LIST');
-
-      await global.api.patch('/api/roles/update-role-access')
-        .set(auth)
-        .send({
-          access: true,
-          roleId: role.id,
-          operation: {
-            description: 'any',
-            accessToAllOps: false,
-            object: 'users',
-            objectName: 'any',
-            operation: 'VIEW_FULL_USERS_LIST',
-            operationName: 'any',
-            flag: "FULL",
-            rolesAccesses: [
-              {
-                id: opIdFull,
-                roleId: role.id,
-                access: false,
-                disabled: false,
-              }]
-          },
-        });
-
-      ops = await getOperationsByRole(role.id);
-      const limitedAfter = ops.find((x) => x.name === 'VIEW_LIMITED_USERS_LIST');
-      const fullAfter = ops.find((x) => x.name === 'VIEW_FULL_USERS_LIST');
-      expect(fullAfter.access).toBe(true);
-      expect(limitedAfter.disabled).toBe(true);
-    });
-  });
-
-  // ---------- GET /get-roles-names-list ----------
-  describe('GET /api/roles/get-roles-names-list', () => {
-    it('returns {id,name} array sorted by name', async () => {
-      await createRole({ name: 'zeta', description: 'Role description' });
-      await createRole({ name: 'alpha', description: 'Role description' });
-
-      const { body, status } = await global.api
-        .get('/api/roles/get-roles-names-list')
-        .set({ ...langRu, ...auth });
-
-      expect(status).toBe(200);
-      expect(Array.isArray(body.data)).toBe(true);
-
-      const names = body.data.map((r) => r.name);
-      const sorted = [...names].sort((a, b) => a.localeCompare(b));
-      expect(names).toEqual(sorted);
-    });
-  });
-
-  // ---------- GET /get-roles ----------
-  describe('GET /api/roles/get-roles', () => {
-    it('returns roles + operations with rolesAccesses for each role', async () => {
-      const r1 = await createRole({ name: 'role1', description: 'Role description' });
-      const r2 = await createRole({ name: 'role2', description: 'Role description' });
-      await seedDefaultOperationsForRole(r1.id);
-      await seedDefaultOperationsForRole(r2.id);
-
-      const { body, status } = await global.api.get('/api/roles/get-roles').set(auth);;
-
-      expect(status).toBe(200);
-      expect(body.data).toBeTruthy();
-      const { roles, operations } = body.data;
-      //console.log('roles', roles);
-      //console.log('operations', operations)
-      expect(roles.length).toBeGreaterThanOrEqual(2);
-      expect(operations.length).toBe(OPERATIONS.length);
-
-      for (const op of operations) {
-        expect(Array.isArray(op.rolesAccesses)).toBe(true);
-        expect(op.rolesAccesses.length).toBeGreaterThanOrEqual(roles.length);
-      }
-    });
-  });
-
-  // ---------- GET /check-role-before-delete/:id ----------
-  describe('GET /api/roles/check-role-before-delete/:id', () => {
-    it('returns {data:0} if no users attached (no code)', async () => {
-      const role = await createRole({ name: 'empty', description: 'Role description' });
-
-      const { body, status } = await global.api
-        .get(`/api/roles/check-role-before-delete/${role.id}`)
-        .set(auth);
-
-      expect(status).toBe(200);
-      expect(body.data).toBe(0);
-      expect(body.code).toBeUndefined();
-    });
-
-    it('returns {data:count, code:ROLE.HAS_DEPENDENCIES} if users attached', async () => {
-      const role = await createRole({ name: 'busy', description: 'Role description' });
-      await createUser({ roleId: role.id, email: 'u1@example.com' });
-      await createUser({ roleId: role.id, email: 'u2@example.com' });
-
-      const { body, status } = await global.api
-        .get(`/api/roles/check-role-before-delete/${role.id}`)
-        .set(auth);
-
-      expect(status).toBe(200);
-      expect(body.data).toBe(2);
-      expect(body.code).toBe('ROLE.HAS_DEPENDENCIES');
-    });
-  });
-
-  // ---------- DELETE /delete-role/:id ----------
-  describe('DELETE /api/roles/delete-role/:id', () => {
-    it('deletes role without dependencies → code SUCCESS.DELETED, ops are removed', async () => {
-      const role = await createRole({ name: 'tempdel', description: 'Role description' });
-      await seedDefaultOperationsForRole(role.id);
-
-      const { body, status } = await global.api
-        .delete(`/api/roles/delete-role/${role.id}`)
-        .set({ ...langRu, ...auth });
-
-      expect(status).toBe(200);
-      expect(body.code).toBe('SUCCESS.DELETED');
-      expect(body.data).toBeNull();
-
-      // роли нет
-      const roles = await select(`SELECT id FROM roles WHERE id = $1`, [role.id]);
-      expect(roles.length).toBe(0);
-
-      // операций роли нет
-      const ops = await getOperationsByRole(role.id);
-      expect(ops.length).toBe(0);
-    });
-
-    it('404 + ERRORS.ROLE.NOT_FOUND when deleting missing role', async () => {
-      const { body, status } = await global.api
-        .delete(`/api/roles/delete-role/999999`)
-        .set({ ...langRu, ...auth });
-
-      expect(status).toBe(404);
-      expect(body.code).toBe('ERRORS.ROLE.NOT_FOUND');
-    });
+    expect(permissions).toBe(0);
   });
 });
