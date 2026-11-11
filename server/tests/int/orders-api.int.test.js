@@ -1,21 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-import {
-  Country,
-  District,
-  Home,
-  HomeAddress,
-  Locality,
-  Occasion,
-  Order,
-  OrderRecipient,
-  Recipient,
-  Region,
-  Senior,
-  User,
-  Volunteer,
-  VolunteerContact,
-} from '../../models/index.js';
+import { Order, OrderRecipient, Recipient } from '../../models/index.js';
 
 import {
   GENDER_FILTER,
@@ -26,9 +11,15 @@ import {
 
 import { hashPassword } from '../../security/passwords.mjs';
 
-import { createRole } from './factories/role.js';
+import { createRoleWithOperations } from './factories/role.js';
 
-import { createOperation } from './factories/operation.js';
+import { createLocation } from './factories/toponym.js';
+import { createHomeFixture } from './factories/home.js';
+import { createSenior } from './factories/senior.js';
+import { createRecipient as createRecipientRow } from './factories/recipient.js';
+import { createOccasion } from './factories/occasion.js';
+import { createVolunteerWithContact } from './factories/volunteer.js';
+import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
 
@@ -41,23 +32,17 @@ function makeAccessToken(user, role) {
 }
 
 async function createAuthorizedActor(operationNames = []) {
-  const role = await createRole({ name: 'Orders Test Role' });
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Orders Test Role',
+  });
 
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
-
-  const user = await User.create({
+  const user = await createUserInstance({
     userName: 'orders_test_user',
     password: await hashPassword(PASSWORD),
     firstName: 'Order',
-    patronymic: null,
     lastName: 'Tester',
     roleId: role.id,
-    comment: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
   });
 
   return { role, user, token: makeAccessToken(user, role) };
@@ -67,121 +52,63 @@ function auth(request, token) {
   return request.set('Authorization', `Bearer ${token}`);
 }
 
-async function createLocation() {
-  const country = await Country.create({
-    id: 143,
-    name: 'Russia',
-    shortName: 'RU',
-    isRestricted: false,
-  });
-
-  const region = await Region.create({
-    name: 'Integration Region',
-    shortName: 'IR',
-    countryId: country.id,
-    isRestricted: false,
-  });
-
-  const district = await District.create({
+const LOCATION = {
+  country: { id: 143, name: 'Russia', shortName: 'RU', isRestricted: false },
+  region: { name: 'Integration Region', shortName: 'IR', isRestricted: false },
+  district: {
     name: 'Integration District',
     shortName: 'ID',
     postName: 'Integration District',
     shortPostName: 'ID',
-    regionId: region.id,
     isRestricted: false,
-  });
-
-  const locality = await Locality.create({
+  },
+  locality: {
     name: 'Integration Locality',
     shortName: 'IL',
     isFederalCity: false,
     isCapitalOfRegion: false,
     isCapitalOfDistrict: false,
-    districtId: district.id,
     isRestricted: false,
-  });
+  },
+};
 
-  return { country, region, district, locality };
-}
-
-async function createHomeFixture(location) {
-  const home = await Home.create({
+const HOME_FIXTURE = {
+  home: {
     homeName: 'Order Test Home',
     officialName: 'Order Test Home Official',
     noAddress: false,
     specialHome: false,
     acceptableForSchool: true,
-    comment: null,
-    infoNote: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
     isClose: false,
-    dateOfClose: null,
-  });
-
-  const fullPostalAddress = '123456, Integration Region, 10 Test Street';
-
-  const address = await HomeAddress.create({
-    homeId: home.id,
-    countryId: location.country.id,
-    regionId: location.region.id,
-    districtId: location.district.id,
-    localityId: location.locality.id,
+  },
+  address: {
     postalName: 'Order Test Home',
     postalCode: '123456',
     postalAddressPart: '10 Test Street',
-    fullPostalAddress,
+    fullPostalAddress: '123456, Integration Region, 10 Test Street',
     isRestricted: false,
     isRecoverable: true,
-  });
+  },
+};
 
-  return { home, address, fullPostalAddress };
-}
-
-async function createVolunteerFixture() {
-  const volunteer = await Volunteer.create({
-    firstName: 'Integration',
-    patronymic: null,
-    lastName: 'Volunteer',
-    comment: null,
-    isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-  });
-
-  const contact = await VolunteerContact.create({
-    volunteerId: volunteer.id,
-    type: 'email',
-    content: 'orders.volunteer@example.com',
-    isRestricted: false,
-  });
-
-  return { volunteer, contact };
-}
-
-async function createOccasionFixture() {
-  return Occasion.create({ type: 1, month: 11, year: 2027, status: 1, amount: 0 });
-}
+const OCCASION = { type: 1, month: 11, year: 2027, status: 1, amount: 0 };
 
 async function createRecipient({ home, fullPostalAddress, regionId, occasionId, index }) {
   const female = index === 0;
 
-  const senior = await Senior.create({
+  const senior = await createSenior({
     firstName: female ? 'Anna' : 'John',
-    patronymic: null,
     lastName: female ? 'Senior' : 'Recipient',
     birthDate: female ? '1940-11-15' : '2000-11-15',
     gender: female ? 'female' : 'male',
     personalNoAddr: false,
     homeId: home.id,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
     dateOfExit: null,
   });
 
-  const recipient = await Recipient.create({
+  const recipient = await createRecipientRow({
     fullNameSnapshot: female ? 'Anna Senior' : 'John Recipient',
     daySnapshot: 15,
     monthSnapshot: 11,
@@ -202,13 +129,16 @@ async function createRecipient({ home, fullPostalAddress, regionId, occasionId, 
 }
 
 async function createFixture(actor, recipientCount = 2) {
-  const location = await createLocation();
+  const location = await createLocation(LOCATION);
 
-  const { home, fullPostalAddress } = await createHomeFixture(location);
+  const { home, fullPostalAddress } = await createHomeFixture(location, HOME_FIXTURE);
 
-  const { volunteer, contact } = await createVolunteerFixture();
+  const { volunteer, contact } = await createVolunteerWithContact(
+    { firstName: 'Integration', lastName: 'Volunteer', isRestricted: false },
+    { type: 'email', content: 'orders.volunteer@example.com', isRestricted: false },
+  );
 
-  const occasion = await createOccasionFixture();
+  const occasion = await createOccasion(OCCASION);
 
   const recipients = [];
 

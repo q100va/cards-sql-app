@@ -63,24 +63,22 @@ export async function getOperationIdByRoleAndName(roleId, name) {
 /**
  * Update access or disabled state for a role permission.
  */
-export async function setOperationAccess(
-  roleId,
-  name,
-  { access, disabled },
-) {
+export async function setOperationAccess(roleId, name, { access, disabled }) {
   const [affected, updated] = await RolePermission.update(
     {
       ...(access !== undefined ? { access } : {}),
       ...(disabled !== undefined ? { disabled } : {}),
     },
-    {
-      where: { roleId, name },
-      individualHooks: true,
-      returning: true,
-    },
+    { where: { roleId, name }, individualHooks: true, returning: true },
   );
 
-  return affected > 0
-    ? updated[0].get({ plain: true })
-    : null;
+  return affected > 0 ? updated[0].get({ plain: true }) : null;
+}
+
+export async function grantOperationsForRole(roleId, operationNames) {
+  const operations = [];
+  for (const name of operationNames) {
+    operations.push(await createOperation({ roleId, name, access: true, disabled: false }));
+  }
+  return operations;
 }

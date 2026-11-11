@@ -1,23 +1,15 @@
 import jwt from 'jsonwebtoken';
 
-import {
-  Country,
-  District,
-  Home,
-  HomeAddress,
-  Locality,
-  Occasion,
-  Recipient,
-  Region,
-  Senior,
-  SeniorSearch,
-} from '../../models/index.js';
+import { Recipient, Senior, SeniorSearch } from '../../models/index.js';
 
 import { OCCASION_STATUS } from '../../../shared/dist/constants/occasions.js';
 
-import { createRole } from './factories/role.js';
+import { createRoleWithOperations } from './factories/role.js';
 
-import { createOperation } from './factories/operation.js';
+import { createLocation } from './factories/toponym.js';
+import { createHomeFixture } from './factories/home.js';
+import { createRecipient as createRecipientRow } from './factories/recipient.js';
+import { createOccasion } from './factories/occasion.js';
 
 function makeAccessToken(roleId) {
   return jwt.sign(
@@ -28,11 +20,9 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedActor(operationNames = []) {
-  const role = await createRole({ name: 'Seniors Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Seniors Test Role',
+  });
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -41,75 +31,44 @@ function auth(request, token) {
   return request.set('Authorization', `Bearer ${token}`);
 }
 
-async function createLocation() {
-  const country = await Country.create({
-    id: 143,
-    name: 'Russia',
-    shortName: 'RU',
-    isRestricted: false,
-  });
-
-  const region = await Region.create({
-    name: 'Senior Test Region',
-    shortName: 'STR',
-    countryId: country.id,
-    isRestricted: false,
-  });
-
-  const district = await District.create({
+const LOCATION = {
+  country: { id: 143, name: 'Russia', shortName: 'RU', isRestricted: false },
+  region: { name: 'Senior Test Region', shortName: 'STR', isRestricted: false },
+  district: {
     name: 'Senior Test District',
     shortName: 'STD',
     postName: 'Senior Test District',
     shortPostName: 'STD',
-    regionId: region.id,
     isRestricted: false,
-  });
-
-  const locality = await Locality.create({
+  },
+  locality: {
     name: 'Senior Test Locality',
     shortName: 'STL',
     isFederalCity: false,
     isCapitalOfRegion: false,
     isCapitalOfDistrict: false,
-    districtId: district.id,
     isRestricted: false,
-  });
+  },
+};
 
-  return { country, region, district, locality };
-}
-
-async function createHomeFixture(location, overrides = {}) {
-  const home = await Home.create({
-    homeName: overrides.homeName ?? 'Senior Test Home',
-    officialName: overrides.officialName ?? 'Senior Test Home Official',
-    noAddress: overrides.noAddress ?? false,
-    specialHome: overrides.specialHome ?? false,
-    acceptableForSchool: overrides.acceptableForSchool ?? true,
-    comment: null,
-    infoNote: null,
-    isRestricted: overrides.isRestricted ?? false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-    isClose: overrides.isClose ?? false,
-    dateOfClose: null,
-  });
-
-  const address = await HomeAddress.create({
-    homeId: home.id,
-    countryId: location.country.id,
-    regionId: location.region.id,
-    districtId: location.district.id,
-    localityId: location.locality.id,
-    postalName: home.homeName,
+const HOME_FIXTURE = {
+  home: {
+    homeName: 'Senior Test Home',
+    officialName: 'Senior Test Home Official',
+    noAddress: false,
+    specialHome: false,
+    acceptableForSchool: true,
+    isRestricted: false,
+    isClose: false,
+  },
+  address: {
     postalCode: '123456',
     postalAddressPart: '10 Senior Street',
     fullPostalAddress: '123456, Senior Test Region, 10 Senior Street',
     isRestricted: false,
     isRecoverable: true,
-  });
-
-  return { home, address };
-}
+  },
+};
 
 function seniorDraft(homeId, overrides = {}) {
   const isRestricted = overrides.isRestricted ?? false;
@@ -186,18 +145,10 @@ function seniorsQuery(overrides = {}) {
   };
 }
 
-async function createOccasionFixture(overrides = {}) {
-  return Occasion.create({
-    type: overrides.type ?? 1,
-    month: overrides.month ?? 11,
-    year: overrides.year ?? 2027,
-    status: overrides.status ?? OCCASION_STATUS.OPEN,
-    amount: overrides.amount ?? 0,
-  });
-}
+const OCCASION = { type: 1, month: 11, year: 2027, status: OCCASION_STATUS.OPEN, amount: 0 };
 
 async function createRecipientFixture(fixture, senior, occasion, overrides = {}) {
-  return Recipient.create({
+  return createRecipientRow({
     fullNameSnapshot:
       overrides.fullNameSnapshot ?? `${senior.lastName ?? ''} ${senior.firstName}`.trim(),
     daySnapshot: overrides.daySnapshot ?? 15,
@@ -217,9 +168,9 @@ async function createRecipientFixture(fixture, senior, occasion, overrides = {})
 }
 
 async function createBasicFixture(actor) {
-  const location = await createLocation();
+  const location = await createLocation(LOCATION);
 
-  const { home, address } = await createHomeFixture(location);
+  const { home, address } = await createHomeFixture(location, HOME_FIXTURE);
 
   return { actor, location, home, address };
 }
@@ -520,7 +471,7 @@ describe('seniors API', () => {
 
     const { senior } = await createSeniorThroughApi(actor.token, fixture.home.id);
 
-    const occasion = await createOccasionFixture();
+    const occasion = await createOccasion(OCCASION);
 
     await createRecipientFixture(fixture, senior, occasion);
 
@@ -548,7 +499,7 @@ describe('seniors API', () => {
 
     const { senior } = await createSeniorThroughApi(actor.token, fixture.home.id);
 
-    const occasion = await createOccasionFixture({ month: 11 });
+    const occasion = await createOccasion({ ...OCCASION, month: 11 });
 
     const recipient = await createRecipientFixture(fixture, senior, occasion);
 
@@ -583,7 +534,7 @@ describe('seniors API', () => {
 
     const { senior } = await createSeniorThroughApi(actor.token, fixture.home.id);
 
-    const occasion = await createOccasionFixture({ month: 11 });
+    const occasion = await createOccasion({ ...OCCASION, month: 11 });
 
     const recipient = await createRecipientFixture(fixture, senior, occasion);
 
@@ -629,7 +580,7 @@ describe('seniors API', () => {
       birthDate: '1950-12-20',
     });
 
-    const occasion = await createOccasionFixture({ month: 11 });
+    const occasion = await createOccasion({ ...OCCASION, month: 11 });
 
     await createRecipientFixture(fixture, existing.senior, occasion, {
       daySnapshot: 20,

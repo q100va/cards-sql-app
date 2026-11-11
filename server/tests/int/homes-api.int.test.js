@@ -2,14 +2,9 @@ import jwt from 'jsonwebtoken';
 
 import { Home, HomeAddress, HomeSearch, Senior } from '../../models/index.js';
 
-import { createRole } from './factories/role.js';
-import { createOperation } from './factories/operation.js';
-import {
-  createCountry,
-  createRegion,
-  createDistrict,
-  createLocality,
-} from './factories/toponym.js';
+import { createRole, createRoleWithOperations } from './factories/role.js';
+
+import { createLocation } from './factories/toponym.js';
 
 function makeAccessToken(roleId) {
   return jwt.sign(
@@ -20,11 +15,7 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedRole(operationNames = []) {
-  const role = await createRole({ name: 'Homes Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), { name: 'Homes Test Role' });
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -33,34 +24,17 @@ function auth(request, token) {
   return request.set('Authorization', `Bearer ${token}`);
 }
 
-async function createLocation(overrides = {}) {
-  const country = await createCountry({
-    name: overrides.countryName ?? 'Test Country',
-    shortName: overrides.countryShortName ?? 'TC',
-  });
-
-  const region = await createRegion({
-    countryId: country.id,
-    name: overrides.regionName ?? 'Test Region',
-    shortName: overrides.regionShortName ?? 'TR',
-  });
-
-  const district = await createDistrict({
-    regionId: region.id,
-    name: overrides.districtName ?? 'Test District',
-    shortName: overrides.districtShortName ?? 'TD',
-    postName: overrides.districtPostName ?? 'Test District',
-    shortPostName: overrides.districtShortPostName ?? 'TD',
-  });
-
-  const locality = await createLocality({
-    districtId: district.id,
-    name: overrides.localityName ?? 'Test Locality',
-    shortName: overrides.localityShortName ?? 'TL',
-  });
-
-  return { country, region, district, locality };
-}
+const LOCATION = {
+  country: { name: 'Test Country', shortName: 'TC' },
+  region: { name: 'Test Region', shortName: 'TR' },
+  district: {
+    name: 'Test District',
+    shortName: 'TD',
+    postName: 'Test District',
+    shortPostName: 'TD',
+  },
+  locality: { name: 'Test Locality', shortName: 'TL' },
+};
 
 function emptyContacts() {
   return {
@@ -150,7 +124,7 @@ describe('homes API', () => {
 
     const token = makeAccessToken(role.id);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const res = await auth(global.api.post('/api/homes/create-home'), token).send(
       homeDraft(location),
@@ -162,7 +136,7 @@ describe('homes API', () => {
   test('checks home names case-insensitively and excludes the current home', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, { homeName: 'Case Home' });
 
@@ -185,7 +159,7 @@ describe('homes API', () => {
   test('creates a home with address and search row', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const draft = homeDraft(location, { homeName: 'Created Home', comment: 'Integration home' });
 
@@ -222,7 +196,7 @@ describe('homes API', () => {
   test('updates main home data', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'EDIT_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, { homeName: 'Update Home' });
 
@@ -253,7 +227,7 @@ describe('homes API', () => {
   test('returns a home by id', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'VIEW_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, {
       homeName: 'View Home',
@@ -279,7 +253,7 @@ describe('homes API', () => {
   test('returns only active homes and preserves total count during pagination', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'VIEW_LIMITED_HOMES_LIST']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     await createHomeThroughApi(token, location, { homeName: 'Active Alpha' });
 
@@ -302,7 +276,7 @@ describe('homes API', () => {
   test('searches homes using the generated search row', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'VIEW_LIMITED_HOMES_LIST']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     await createHomeThroughApi(token, location, { homeName: 'Searchable Residence' });
 
@@ -323,7 +297,7 @@ describe('homes API', () => {
   test('returns only active homes in the active homes list', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'VIEW_SENIOR']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     await createHomeThroughApi(token, location, { homeName: 'Active Home' });
 
@@ -341,7 +315,7 @@ describe('homes API', () => {
   test('returns active and blocked homes but excludes closed homes from potential homes', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'VIEW_SENIOR']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     await createHomeThroughApi(token, location, { homeName: 'Potential Active' });
 
@@ -366,7 +340,7 @@ describe('homes API', () => {
   test('returns active, blocked, and closed homes in the general homes list', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'VIEW_SENIOR']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     await createHomeThroughApi(token, location, { homeName: 'List Active' });
 
@@ -389,7 +363,7 @@ describe('homes API', () => {
   test('blocks a home', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'BLOCK_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, { homeName: 'Block Home' });
 
@@ -411,7 +385,7 @@ describe('homes API', () => {
   test('unblocks a home and clears restriction data', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'UNBLOCK_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, {
       homeName: 'Unblock Home',
@@ -434,7 +408,7 @@ describe('homes API', () => {
   test('reports no dependencies for an unused home and deletes it', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'DELETE_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, { homeName: 'Delete Home' });
 
@@ -456,7 +430,7 @@ describe('homes API', () => {
   test('does not delete a home that has a senior dependency', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'DELETE_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const home = await createHomeThroughApi(token, location, { homeName: 'Dependent Home' });
 
@@ -487,8 +461,8 @@ describe('homes API', () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_HOME', 'ADD_NEW_RECIPIENT']);
 
     const location = await createLocation({
-      regionName: 'Integration Region',
-      regionShortName: 'IR',
+      ...LOCATION,
+      region: { ...LOCATION.region, name: 'Integration Region', shortName: 'IR' },
     });
 
     await createHomeThroughApi(token, location, { homeName: 'Beta Home' });

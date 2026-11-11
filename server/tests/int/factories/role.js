@@ -1,5 +1,6 @@
-import { RolePermission, Role } from '../../../models/index.js';
-import { OPERATIONS } from '../../../shared/operations.js';
+import { Role } from '../../../models/index.js';
+import { grantOperationsForRole } from './operation.js';
+export { seedDefaultOperationsForRole as seedOperationsForRole } from './operation.js';
 
 /**
  * Create a role with sensible test defaults.
@@ -23,32 +24,8 @@ export async function findRoleById(id) {
   return Role.findByPk(id, { raw: true });
 }
 
-/**
- * Delete a role by id.
- */
-export async function destroyRoleById(id) {
-  return Role.destroy({ where: { id } });
-}
-
-/**
- * Seed the default permission set for a role.
- */
-export async function seedOperationsForRole(roleId) {
-  const rows = OPERATIONS.map((op) => ({
-    name: op.operation,
-    roleId,
-    access: false,
-    disabled: op.flag === 'FULL',
-  }));
-
-  await RolePermission.bulkCreate(rows);
-}
-
-/**
- * Truncate role and permission tables.
- * Intended for integration tests only.
- */
-export async function truncateRolesAndOperations({ cascade = true } = {}) {
-  await RolePermission.destroy({ where: {}, truncate: true, cascade });
-  await Role.destroy({ where: {}, truncate: true, cascade });
+export async function createRoleWithOperations(operationNames = [], overrides = {}) {
+  const role = await createRole(overrides);
+  await grantOperationsForRole(role.id, operationNames);
+  return role;
 }

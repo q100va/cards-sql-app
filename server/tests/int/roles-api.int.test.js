@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 
-import { Role, RolePermission, User } from '../../models/index.js';
+import { Role, RolePermission } from '../../models/index.js';
 
-import { OPERATIONS, OPERATION_FLAG } from '../../shared/operations.js';
+import { OPERATIONS } from '../../shared/operations.js';
 
-import { createRole, seedOperationsForRole } from './factories/role.js';
-import { createOperation } from './factories/operation.js';
+import { createRole, seedOperationsForRole, createRoleWithOperations } from './factories/role.js';
+import { createUserInstance } from './factories/user.js';
 
 function makeAccessToken(roleId) {
   return jwt.sign(
@@ -16,11 +16,7 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedRole(operationNames = []) {
-  const role = await createRole();
-
-  for (const name of operationNames) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(operationNames);
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -195,7 +191,7 @@ describe('roles API', () => {
 
     const targetRole = await createRole({ name: 'Role With User' });
 
-    await User.create({
+    await createUserInstance({
       userName: 'role_dependency_user',
       password: 'not-used-in-this-test',
       firstName: 'Test',
@@ -217,7 +213,7 @@ describe('roles API', () => {
 
     const targetRole = await createRole({ name: 'Protected Role' });
 
-    await User.create({
+    await createUserInstance({
       userName: 'protected_role_user',
       password: 'not-used-in-this-test',
       firstName: 'Test',

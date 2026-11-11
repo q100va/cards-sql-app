@@ -1,24 +1,19 @@
 import jwt from 'jsonwebtoken';
 
 import {
-  Country,
-  District,
-  Home,
-  HomeAddress,
   HomeCoordination,
-  Locality,
   Partner,
   PartnerAddress,
   PartnerContact,
   PartnerSearch,
-  Region,
 } from '../../models/index.js';
 
 import { PARTNER_AFFILIATION } from '../../../shared/dist/constants/partners.js';
 
-import { createRole } from './factories/role.js';
+import { createRoleWithOperations } from './factories/role.js';
 
-import { createOperation } from './factories/operation.js';
+import { createLocation } from './factories/toponym.js';
+import { createHomeFixture } from './factories/home.js';
 
 function makeAccessToken(roleId) {
   return jwt.sign(
@@ -29,11 +24,9 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedRole(operationNames = []) {
-  const role = await createRole({ name: 'Partners Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Partners Test Role',
+  });
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -58,75 +51,44 @@ function draftContacts(email = 'partner@example.com') {
   };
 }
 
-async function createLocation() {
-  const country = await Country.create({
-    id: 143,
-    name: 'Russia',
-    shortName: 'RU',
-    isRestricted: false,
-  });
-
-  const region = await Region.create({
-    name: 'Partner Test Region',
-    shortName: 'PTR',
-    countryId: country.id,
-    isRestricted: false,
-  });
-
-  const district = await District.create({
+const LOCATION = {
+  country: { id: 143, name: 'Russia', shortName: 'RU', isRestricted: false },
+  region: { name: 'Partner Test Region', shortName: 'PTR', isRestricted: false },
+  district: {
     name: 'Partner Test District',
     shortName: 'PTD',
     postName: 'Partner Test District',
     shortPostName: 'PTD',
-    regionId: region.id,
     isRestricted: false,
-  });
-
-  const locality = await Locality.create({
+  },
+  locality: {
     name: 'Partner Test Locality',
     shortName: 'PTL',
     isFederalCity: false,
     isCapitalOfRegion: false,
     isCapitalOfDistrict: false,
-    districtId: district.id,
     isRestricted: false,
-  });
+  },
+};
 
-  return { country, region, district, locality };
-}
-
-async function createHomeFixture(location, overrides = {}) {
-  const home = await Home.create({
-    homeName: overrides.homeName ?? 'Partner Test Home',
-    officialName: overrides.officialName ?? 'Partner Test Home Official',
+const HOME_FIXTURE = {
+  home: {
+    homeName: 'Partner Test Home',
+    officialName: 'Partner Test Home Official',
     noAddress: false,
     specialHome: false,
     acceptableForSchool: true,
-    comment: null,
-    infoNote: null,
-    isRestricted: overrides.isRestricted ?? false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-    isClose: overrides.isClose ?? false,
-    dateOfClose: null,
-  });
-
-  const address = await HomeAddress.create({
-    homeId: home.id,
-    countryId: location.country.id,
-    regionId: location.region.id,
-    districtId: location.district.id,
-    localityId: location.locality.id,
-    postalName: home.homeName,
+    isRestricted: false,
+    isClose: false,
+  },
+  address: {
     postalCode: '123456',
     postalAddressPart: '10 Test Street',
     fullPostalAddress: '123456, Partner Test Region, 10 Test Street',
     isRestricted: false,
     isRecoverable: true,
-  });
-
-  return { home, address };
-}
+  },
+};
 
 function partnerDraft(location, overrides = {}) {
   return {
@@ -199,7 +161,7 @@ describe('partners API', () => {
   test('returns 403 when the role lacks create permission', async () => {
     const { token } = await createAuthorizedRole();
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const res = await auth(global.api.post('/api/partners/create-partner'), token).send(
       partnerDraft(location),
@@ -222,7 +184,7 @@ describe('partners API', () => {
   test('detects duplicate name and contact and excludes the current partner', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'EDIT_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const { partner } = await createPartnerThroughApi(token, location);
 
@@ -252,9 +214,9 @@ describe('partners API', () => {
   test('creates partner with contact, address, coordination, and search row', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
-    const { home } = await createHomeFixture(location);
+    const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
     const { partner } = await createPartnerThroughApi(token, location, {
       draftCoordinations: [home.id],
@@ -297,9 +259,9 @@ describe('partners API', () => {
   test('returns partner details by id', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'VIEW_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
-    const { home } = await createHomeFixture(location);
+    const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
     const { partner } = await createPartnerThroughApi(token, location, {
       draftCoordinations: [home.id],
@@ -323,7 +285,7 @@ describe('partners API', () => {
   test('updates partner main data and refreshes search content', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'EDIT_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const { partner } = await createPartnerThroughApi(token, location);
 
@@ -362,7 +324,7 @@ describe('partners API', () => {
   test('returns paginated partners and respects only-active view', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'VIEW_LIMITED_PARTNERS_LIST']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const first = await createPartnerThroughApi(token, location, {
       firstName: 'Active',
@@ -392,7 +354,7 @@ describe('partners API', () => {
   test('searches partners through PartnerSearch content', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'VIEW_LIMITED_PARTNERS_LIST']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     await createPartnerThroughApi(token, location, {
       firstName: 'Searchable',
@@ -418,7 +380,7 @@ describe('partners API', () => {
   test('returns only active partners in active-partners list', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'VIEW_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const active = await createPartnerThroughApi(token, location, {
       firstName: 'Active',
@@ -442,7 +404,7 @@ describe('partners API', () => {
   test('returns active and blocked partners in general partner list', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'VIEW_HOME']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const active = await createPartnerThroughApi(token, location, {
       firstName: 'Active',
@@ -472,9 +434,9 @@ describe('partners API', () => {
   test('reports active coordination before blocking partner', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'BLOCK_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
-    const { home } = await createHomeFixture(location);
+    const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
     const { partner } = await createPartnerThroughApi(token, location, {
       draftCoordinations: [home.id],
@@ -492,9 +454,9 @@ describe('partners API', () => {
   test('blocks partner and restricts its coordinations', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'BLOCK_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
-    const { home } = await createHomeFixture(location);
+    const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
     const { partner } = await createPartnerThroughApi(token, location, {
       draftCoordinations: [home.id],
@@ -528,9 +490,9 @@ describe('partners API', () => {
       'UNBLOCK_PARTNER',
     ]);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
-    const { home } = await createHomeFixture(location);
+    const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
     const { partner } = await createPartnerThroughApi(token, location, {
       draftCoordinations: [home.id],
@@ -565,7 +527,7 @@ describe('partners API', () => {
   test('checks and deletes a partner without dependencies', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'DELETE_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
     const { partner } = await createPartnerThroughApi(token, location);
 
@@ -590,9 +552,9 @@ describe('partners API', () => {
   test('does not delete a partner that has home coordination dependency', async () => {
     const { token } = await createAuthorizedRole(['ADD_NEW_PARTNER', 'DELETE_PARTNER']);
 
-    const location = await createLocation();
+    const location = await createLocation(LOCATION);
 
-    const { home } = await createHomeFixture(location);
+    const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
     const { partner } = await createPartnerThroughApi(token, location, {
       draftCoordinations: [home.id],

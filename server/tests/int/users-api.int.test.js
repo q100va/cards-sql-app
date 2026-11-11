@@ -6,14 +6,15 @@ import {
   User,
   UserContact,
   UserSearch,
-  Volunteer,
   VolunteerSubscription,
 } from '../../models/index.js';
 
 import { hashPassword, verify } from '../../security/passwords.mjs';
 
-import { createRole } from './factories/role.js';
+import { createRole, createRoleWithOperations } from './factories/role.js';
 import { createOperation } from './factories/operation.js';
+import { createVolunteer } from './factories/volunteer.js';
+import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
 const NEW_PASSWORD = 'NewPassword456';
@@ -33,27 +34,19 @@ function makeAccessToken(roleId, userId = 42) {
 }
 
 async function createAuthorizedRole(operationNames = [], userId = 42) {
-  const role = await createRole({ name: 'Users Test Role' });
-
-  for (const name of operationNames) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(operationNames, { name: 'Users Test Role' });
 
   return { role, token: makeAccessToken(role.id, userId) };
 }
 
 async function createStoredUser({ roleId, userName = 'stored_user', ...overrides } = {}) {
-  const user = await User.create({
+  const user = await createUserInstance({
     userName,
     password: passwordHash,
     firstName: 'John',
-    patronymic: null,
     lastName: 'Fox',
     roleId,
-    comment: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
     ...overrides,
   });
 
@@ -443,7 +436,7 @@ describe('users API', () => {
 
     const user = await createStoredUser({ roleId: role.id, userName: 'dependent_user' });
 
-    const volunteer = await Volunteer.create({
+    const volunteer = await createVolunteer({
       firstName: 'Dependency',
       patronymic: null,
       lastName: 'Volunteer',

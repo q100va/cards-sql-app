@@ -1,21 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-import {
-  Country,
-  District,
-  Home,
-  HomeAddress,
-  Locality,
-  Occasion,
-  Order,
-  OrderRecipient,
-  Recipient,
-  Region,
-  Senior,
-  User,
-  Volunteer,
-  VolunteerContact,
-} from '../../models/index.js';
+import { Occasion, Order, OrderRecipient, Recipient } from '../../models/index.js';
 
 import {
   ORDER_RECIPIENT_STATUS,
@@ -25,9 +10,14 @@ import {
 
 import { hashPassword } from '../../security/passwords.mjs';
 
-import { createRole } from './factories/role.js';
+import { createRoleWithOperations } from './factories/role.js';
 
-import { createOperation } from './factories/operation.js';
+import { createLocation } from './factories/toponym.js';
+import { createHomeFixture } from './factories/home.js';
+import { createSenior } from './factories/senior.js';
+import { createOccasion } from './factories/occasion.js';
+import { createVolunteerWithContact } from './factories/volunteer.js';
+import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
 
@@ -40,11 +30,9 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedActor(operationNames = []) {
-  const role = await createRole({ name: 'Recipients Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Recipients Test Role',
+  });
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -53,130 +41,72 @@ function auth(request, token) {
   return request.set('Authorization', `Bearer ${token}`);
 }
 
-async function createLocation() {
-  const country = await Country.create({
-    id: 143,
-    name: 'Russia',
-    shortName: 'RU',
-    isRestricted: false,
-  });
-
-  const region = await Region.create({
-    name: 'Recipient Test Region',
-    shortName: 'RTR',
-    countryId: country.id,
-    isRestricted: false,
-  });
-
-  const district = await District.create({
+const LOCATION = {
+  country: { id: 143, name: 'Russia', shortName: 'RU', isRestricted: false },
+  region: { name: 'Recipient Test Region', shortName: 'RTR', isRestricted: false },
+  district: {
     name: 'Recipient Test District',
     shortName: 'RTD',
     postName: 'Recipient Test District',
     shortPostName: 'RTD',
-    regionId: region.id,
     isRestricted: false,
-  });
-
-  const locality = await Locality.create({
+  },
+  locality: {
     name: 'Recipient Test Locality',
     shortName: 'RTL',
     isFederalCity: false,
     isCapitalOfRegion: false,
     isCapitalOfDistrict: false,
-    districtId: district.id,
     isRestricted: false,
-  });
+  },
+};
 
-  return { country, region, district, locality };
-}
-
-async function createHomeFixture(location, overrides = {}) {
-  const home = await Home.create({
-    homeName: overrides.homeName ?? 'Recipient Test Home',
-    officialName: overrides.officialName ?? 'Recipient Test Home Official',
-    noAddress: overrides.noAddress ?? false,
-    specialHome: overrides.specialHome ?? false,
-    acceptableForSchool: overrides.acceptableForSchool ?? true,
-    comment: null,
-    infoNote: null,
+const HOME_FIXTURE = {
+  home: {
+    homeName: 'Recipient Test Home',
+    officialName: 'Recipient Test Home Official',
+    noAddress: false,
+    specialHome: false,
+    acceptableForSchool: true,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
     isClose: false,
-    dateOfClose: null,
-  });
-
-  const address = await HomeAddress.create({
-    homeId: home.id,
-    countryId: location.country.id,
-    regionId: location.region.id,
-    districtId: location.district.id,
-    localityId: location.locality.id,
-    postalName: home.homeName,
+  },
+  address: {
     postalCode: '123456',
     postalAddressPart: '10 Test Street',
     fullPostalAddress: '123456, Recipient Test Region, 10 Test Street',
     isRestricted: false,
     isRecoverable: true,
-  });
+  },
+};
 
-  return { home, address };
-}
+const SENIOR_FIXTURE = {
+  firstName: 'Alice',
+  patronymic: null,
+  lastName: 'Senior',
+  birthDate: '1940-11-15',
+  gender: 'female',
+  personalNoAddr: false,
+  isRestricted: false,
+  dateOfExit: null,
+};
 
-async function createSeniorFixture(home, overrides = {}) {
-  return Senior.create({
-    firstName: overrides.firstName ?? 'Alice',
-    patronymic: overrides.patronymic ?? null,
-    lastName: overrides.lastName ?? 'Senior',
-    birthDate: overrides.birthDate ?? '1940-11-15',
-    gender: overrides.gender ?? 'female',
-    confirmedFirstName: false,
-    confirmedPatronymic: false,
-    confirmedLastName: false,
-    confirmedBirthDate: false,
-    infoNote: null,
-    photoLink: null,
-    dateOfConsent: null,
-    personalNoAddr: false,
-    kindergarten: null,
-    teacher: null,
-    veteran: null,
-    childOfWar: null,
-    profession: null,
-    honoraryStatus: null,
-    interests: null,
-    orthodoxBeliever: null,
-    comment: null,
-    isRestricted: overrides.isRestricted ?? false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-    dateOfExit: overrides.dateOfExit ?? null,
-    homeId: home.id,
-  });
-}
-
-async function createOccasionFixture(overrides = {}) {
-  return Occasion.create({
-    type: 1,
-    month: overrides.month ?? 11,
-    year: overrides.year ?? 2027,
-    status: overrides.status ?? 1,
-    amount: overrides.amount ?? 0,
-  });
-}
+const OCCASION = { type: 1, month: 11, year: 2027, status: 1, amount: 0 };
 
 async function createBasicFixture(actor, { seniorCount = 2 } = {}) {
-  const location = await createLocation();
+  const location = await createLocation(LOCATION);
 
-  const { home } = await createHomeFixture(location);
+  const { home } = await createHomeFixture(location, HOME_FIXTURE);
 
-  const occasion = await createOccasionFixture();
+  const occasion = await createOccasion(OCCASION);
 
   const seniors = [];
 
   if (seniorCount >= 1) {
     seniors.push(
-      await createSeniorFixture(home, {
+      await createSenior({
+        ...SENIOR_FIXTURE,
+        homeId: home.id,
         firstName: 'Alice',
         lastName: 'Senior',
         birthDate: '1940-11-15',
@@ -187,7 +117,9 @@ async function createBasicFixture(actor, { seniorCount = 2 } = {}) {
 
   if (seniorCount >= 2) {
     seniors.push(
-      await createSeniorFixture(home, {
+      await createSenior({
+        ...SENIOR_FIXTURE,
+        homeId: home.id,
         firstName: 'Bob',
         lastName: 'Recipient',
         birthDate: '1950-11-20',
@@ -223,35 +155,19 @@ function recipientsQuery(occasionId, overrides = {}) {
 }
 
 async function createDependencyOrder(fixture, recipient = null) {
-  const user = await User.create({
+  const user = await createUserInstance({
     userName: 'recipients_order_user',
     password: await hashPassword(PASSWORD),
     firstName: 'Recipient',
-    patronymic: null,
     lastName: 'Order User',
     roleId: fixture.actor.role.id,
-    comment: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
   });
 
-  const volunteer = await Volunteer.create({
-    firstName: 'Dependency',
-    patronymic: null,
-    lastName: 'Volunteer',
-    comment: null,
-    isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-  });
-
-  const contact = await VolunteerContact.create({
-    volunteerId: volunteer.id,
-    type: 'email',
-    content: 'recipient.order@example.com',
-    isRestricted: false,
-  });
+  const { volunteer, contact } = await createVolunteerWithContact(
+    { firstName: 'Dependency', lastName: 'Volunteer', isRestricted: false },
+    { type: 'email', content: 'recipient.order@example.com', isRestricted: false },
+  );
 
   const order = await Order.create({
     occasionId: fixture.occasion.id,
@@ -312,7 +228,9 @@ describe('recipients API', () => {
 
     const fixture = await createBasicFixture(actor);
 
-    await createSeniorFixture(fixture.home, {
+    await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
       firstName: 'December',
       lastName: 'Senior',
       birthDate: '1945-12-10',
@@ -560,7 +478,9 @@ describe('recipients API', () => {
 
     await fixture.seniors[0].update({ dateOfExit: new Date('2026-11-01') });
 
-    const newSenior = await createSeniorFixture(fixture.home, {
+    const newSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
       firstName: 'New',
       lastName: 'Senior',
       birthDate: '1960-11-25',

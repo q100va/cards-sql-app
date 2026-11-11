@@ -1,19 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-import {
-  Country,
-  Home,
-  Occasion,
-  Order,
-  OrderRecipient,
-  Recipient,
-  Region,
-  Senior,
-  User,
-  Volunteer,
-  VolunteerContact,
-  VolunteerInstitute,
-} from '../../models/index.js';
+import { Country, Order, Region, VolunteerInstitute, OrderRecipient } from '../../models/index.js';
 
 import { COLUMNS, REPORT_FREQUENCY, REPORT_TYPE } from '../../../shared/dist/constants/reports.js';
 
@@ -29,9 +16,14 @@ import { INSTITUTE_CATEGORY } from '../../../shared/dist/constants/volunteers.js
 
 import { hashPassword } from '../../security/passwords.mjs';
 
-import { createRole } from './factories/role.js';
+import { createRoleWithOperations } from './factories/role.js';
 
-import { createOperation } from './factories/operation.js';
+import { createHome } from './factories/home.js';
+import { createSenior } from './factories/senior.js';
+import { createRecipient as createRecipientRow } from './factories/recipient.js';
+import { createOccasion } from './factories/occasion.js';
+import { createVolunteerWithContact } from './factories/volunteer.js';
+import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
 
@@ -44,11 +36,9 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedActor(operationNames = []) {
-  const role = await createRole({ name: 'Reports Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Reports Test Role',
+  });
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -58,17 +48,13 @@ function auth(request, token) {
 }
 
 async function createUser(roleId, userName) {
-  return User.create({
+  return createUserInstance({
     userName,
     password: await hashPassword(PASSWORD),
     firstName: 'Report',
-    patronymic: null,
     lastName: 'User',
     roleId,
-    comment: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
   });
 }
 
@@ -87,7 +73,7 @@ async function createBaseFixture(actor) {
     isRestricted: false,
   });
 
-  const home = await Home.create({
+  const home = await createHome({
     homeName: 'Report Test Home',
     officialName: 'Report Test Home Official',
     noAddress: false,
@@ -102,99 +88,38 @@ async function createBaseFixture(actor) {
     dateOfClose: null,
   });
 
-  const senior = await Senior.create({
+  const senior = await createSenior({
     firstName: 'Report',
-    patronymic: null,
     lastName: 'Senior',
     birthDate: '1940-11-15',
     gender: 'female',
-    confirmedFirstName: false,
-    confirmedPatronymic: false,
-    confirmedLastName: false,
-    confirmedBirthDate: false,
-    infoNote: null,
-    photoLink: null,
-    dateOfConsent: null,
     personalNoAddr: false,
-    kindergarten: null,
-    teacher: null,
-    veteran: null,
-    childOfWar: null,
-    profession: null,
-    honoraryStatus: null,
-    interests: null,
-    orthodoxBeliever: null,
-    comment: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
     dateOfExit: null,
     homeId: home.id,
   });
 
-  const volunteer = await Volunteer.create({
-    firstName: 'Report',
-    patronymic: null,
-    lastName: 'Volunteer',
-    comment: null,
-    isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-  });
-
-  const contact = await VolunteerContact.create({
-    volunteerId: volunteer.id,
-    type: 'email',
-    content: 'report.volunteer@example.com',
-    isRestricted: false,
-  });
+  const { volunteer, contact } = await createVolunteerWithContact(
+    { firstName: 'Report', lastName: 'Volunteer', isRestricted: false },
+    { type: 'email', content: 'report.volunteer@example.com', isRestricted: false },
+  );
 
   const user = await createUser(actor.role.id, 'report_user_1');
 
   return { actor, country, region, home, senior, volunteer, contact, user };
 }
 
-async function createReportSenior(fixture, overrides = {}) {
-  return Senior.create({
-    firstName: overrides.firstName ?? 'Extra',
-    patronymic: null,
-    lastName: overrides.lastName ?? 'Senior',
-    birthDate: overrides.birthDate ?? '1950-11-20',
-    gender: overrides.gender ?? 'female',
-    confirmedFirstName: false,
-    confirmedPatronymic: false,
-    confirmedLastName: false,
-    confirmedBirthDate: false,
-    infoNote: null,
-    photoLink: null,
-    dateOfConsent: null,
-    personalNoAddr: false,
-    kindergarten: null,
-    teacher: null,
-    veteran: null,
-    childOfWar: null,
-    profession: null,
-    honoraryStatus: null,
-    interests: null,
-    orthodoxBeliever: null,
-    comment: null,
-    isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
-    dateOfExit: null,
-    homeId: fixture.home.id,
-  });
-}
+const SENIOR_FIXTURE = {
+  firstName: 'Extra',
+  lastName: 'Senior',
+  birthDate: '1950-11-20',
+  gender: 'female',
+  personalNoAddr: false,
+  isRestricted: false,
+  dateOfExit: null,
+};
 
-async function createOccasion(overrides = {}) {
-  return Occasion.create({
-    type: overrides.type ?? 1,
-    month: overrides.month ?? 11,
-    year: overrides.year ?? 2026,
-    amount: overrides.amount ?? 0,
-    status: overrides.status ?? OCCASION_STATUS.OPEN,
-  });
-}
+const OCCASION = { type: 1, month: 11, year: 2026, amount: 0, status: OCCASION_STATUS.OPEN };
 
 async function createInstitute(volunteerId, overrides = {}) {
   return VolunteerInstitute.create({
@@ -209,7 +134,7 @@ async function createInstitute(volunteerId, overrides = {}) {
 async function createRecipient(fixture, occasion, overrides = {}) {
   const senior = overrides.senior ?? fixture.senior;
 
-  return Recipient.create({
+  return createRecipientRow({
     fullNameSnapshot: overrides.fullNameSnapshot ?? `${senior.lastName} ${senior.firstName}`,
     daySnapshot: overrides.daySnapshot ?? 15,
     monthSnapshot: overrides.monthSnapshot ?? 11,
@@ -323,14 +248,18 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
-    const occasion = await createOccasion();
+    const occasion = await createOccasion(OCCASION);
 
     const institute = await createInstitute(fixture.volunteer.id);
 
     const activeRecipient = await createRecipient(fixture, occasion);
 
     await createOrderFixture(fixture, { occasion, recipient: activeRecipient, institute });
-    const returnedSenior = await createReportSenior(fixture, { firstName: 'Returned' });
+    const returnedSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Returned',
+    });
 
     const returnedRecipient = await createRecipient(fixture, occasion, {
       senior: returnedSenior,
@@ -344,7 +273,11 @@ describe('reports API', () => {
       status: ORDER_STATUS.RETURNED,
     });
 
-    const deletedSenior = await createReportSenior(fixture, { firstName: 'Deleted' });
+    const deletedSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Deleted',
+    });
 
     const deletedRecipient = await createRecipient(fixture, occasion, {
       senior: deletedSenior,
@@ -390,7 +323,7 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
-    const occasion = await createOccasion();
+    const occasion = await createOccasion(OCCASION);
 
     const mayRecipient = await createRecipient(fixture, occasion);
 
@@ -400,7 +333,11 @@ describe('reports API', () => {
       createdAt: new Date('2026-05-15T12:00:00.000Z'),
     });
 
-    const septemberSenior = await createReportSenior(fixture, { firstName: 'September' });
+    const septemberSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'September',
+    });
 
     const septemberRecipient = await createRecipient(fixture, occasion, {
       senior: septemberSenior,
@@ -428,7 +365,7 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
-    const occasion = await createOccasion();
+    const occasion = await createOccasion(OCCASION);
 
     const firstRecipient = await createRecipient(fixture, occasion);
 
@@ -438,37 +375,22 @@ describe('reports API', () => {
       createdAt: new Date('2026-02-10T12:00:00.000Z'),
     });
 
-    const secondSenior = await Senior.create({
+    const secondSenior = await createSenior({
       firstName: 'Second',
-      patronymic: null,
       lastName: 'Senior',
       birthDate: '1950-11-20',
       gender: 'male',
-      confirmedFirstName: false,
-      confirmedPatronymic: false,
-      confirmedLastName: false,
-      confirmedBirthDate: false,
-      infoNote: null,
-      photoLink: null,
-      dateOfConsent: null,
       personalNoAddr: false,
-      kindergarten: null,
-      teacher: null,
-      veteran: null,
-      childOfWar: null,
-      profession: null,
-      honoraryStatus: null,
-      interests: null,
-      orthodoxBeliever: null,
-      comment: null,
       isRestricted: false,
-      causeOfRestriction: null,
-      dateOfRestriction: null,
       dateOfExit: null,
       homeId: fixture.home.id,
     });
 
-    const otherSenior = await createReportSenior(fixture, { firstName: 'Other' });
+    const otherSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Other',
+    });
 
     const secondRecipient = await createRecipient(fixture, occasion, {
       senior: otherSenior,
@@ -510,13 +432,17 @@ describe('reports API', () => {
 
     const secondUser = await createUser(actor.role.id, 'report_user_2');
 
-    const occasion = await createOccasion();
+    const occasion = await createOccasion(OCCASION);
 
     const firstRecipient = await createRecipient(fixture, occasion);
 
     await createOrderFixture(fixture, { occasion, recipient: firstRecipient, user: fixture.user });
 
-    const otherSenior = await createReportSenior(fixture, { firstName: 'Other' });
+    const otherSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Other',
+    });
 
     const secondRecipient = await createRecipient(fixture, occasion, {
       senior: otherSenior,
@@ -540,7 +466,7 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
-    const occasion = await createOccasion();
+    const occasion = await createOccasion(OCCASION);
 
     const institute = await createInstitute(fixture.volunteer.id, {
       createdAt: new Date('2026-05-05T12:00:00.000Z'),
@@ -579,7 +505,7 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
-    const occasion2027 = await createOccasion({ year: 2027 });
+    const occasion2027 = await createOccasion({ ...OCCASION, year: 2027 });
 
     const institute = await createInstitute(fixture.volunteer.id);
 
@@ -592,7 +518,7 @@ describe('reports API', () => {
       createdAt: new Date('2026-05-15T12:00:00.000Z'),
     });
 
-    const occasion2026 = await createOccasion({ month: 12, year: 2026 });
+    const occasion2026 = await createOccasion({ ...OCCASION, month: 12, year: 2026 });
 
     const recipient2026 = await createRecipient(fixture, occasion2026, {
       fullNameSnapshot: '2026 Senior',
@@ -636,13 +562,21 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
-    const openOccasion = await createOccasion({ status: OCCASION_STATUS.OPEN });
+    const openOccasion = await createOccasion({ ...OCCASION, status: OCCASION_STATUS.OPEN });
 
-    const closedOccasion = await createOccasion({ month: 12, status: OCCASION_STATUS.CLOSED });
+    const closedOccasion = await createOccasion({
+      ...OCCASION,
+      month: 12,
+      status: OCCASION_STATUS.CLOSED,
+    });
 
     await createRecipient(fixture, openOccasion, { category: 'gen_old_female', plusAmount: 0 });
 
-    const mentalSenior = await createReportSenior(fixture, { firstName: 'Mental' });
+    const mentalSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Mental',
+    });
 
     await createRecipient(fixture, openOccasion, {
       senior: mentalSenior,
@@ -651,7 +585,11 @@ describe('reports API', () => {
       plusAmount: 1,
     });
 
-    const specialSenior = await createReportSenior(fixture, { firstName: 'Special' });
+    const specialSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Special',
+    });
 
     await createRecipient(fixture, openOccasion, {
       senior: specialSenior,
@@ -660,7 +598,11 @@ describe('reports API', () => {
       plusAmount: 4,
     });
 
-    const absentSenior = await createReportSenior(fixture, { firstName: 'Absent' });
+    const absentSenior = await createSenior({
+      ...SENIOR_FIXTURE,
+      homeId: fixture.home.id,
+      firstName: 'Absent',
+    });
 
     await createRecipient(fixture, openOccasion, {
       senior: absentSenior,

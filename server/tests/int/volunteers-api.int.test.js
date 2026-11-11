@@ -1,13 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 import {
-  Country,
-  District,
-  Locality,
-  Occasion,
   Order,
-  Region,
-  User,
   Volunteer,
   VolunteerAddress,
   VolunteerContact,
@@ -23,9 +17,11 @@ import { ORDER_SOURCE, ORDER_STATUS } from '../../../shared/dist/constants/order
 
 import { hashPassword } from '../../security/passwords.mjs';
 
-import { createRole } from './factories/role.js';
+import { createRoleWithOperations } from './factories/role.js';
 
-import { createOperation } from './factories/operation.js';
+import { createLocation } from './factories/toponym.js';
+import { createOccasion } from './factories/occasion.js';
+import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
 
@@ -38,11 +34,9 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedActor(operationNames = []) {
-  const role = await createRole({ name: 'Volunteers Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Volunteers Test Role',
+  });
 
   return { role, token: makeAccessToken(role.id) };
 }
@@ -51,55 +45,34 @@ function auth(request, token) {
   return request.set('Authorization', `Bearer ${token}`);
 }
 
-async function createLocation() {
-  const country = await Country.create({
-    id: 143,
-    name: 'Russia',
-    shortName: 'RU',
-    isRestricted: false,
-  });
-
-  const region = await Region.create({
-    name: 'Volunteer Test Region',
-    shortName: 'VTR',
-    countryId: country.id,
-    isRestricted: false,
-  });
-
-  const district = await District.create({
+const LOCATION = {
+  country: { id: 143, name: 'Russia', shortName: 'RU', isRestricted: false },
+  region: { name: 'Volunteer Test Region', shortName: 'VTR', isRestricted: false },
+  district: {
     name: 'Volunteer Test District',
     shortName: 'VTD',
     postName: 'Volunteer Test District',
     shortPostName: 'VTD',
-    regionId: region.id,
     isRestricted: false,
-  });
-
-  const locality = await Locality.create({
+  },
+  locality: {
     name: 'Volunteer Test Locality',
     shortName: 'VTL',
     isFederalCity: false,
     isCapitalOfRegion: false,
     isCapitalOfDistrict: false,
-    districtId: district.id,
     isRestricted: false,
-  });
-
-  return { country, region, district, locality };
-}
+  },
+};
 
 async function createUserFixture(roleId, userName) {
-  return User.create({
+  return createUserInstance({
     userName,
     password: await hashPassword(PASSWORD),
     firstName: 'Volunteer',
-    patronymic: null,
     lastName: 'User',
     roleId,
-    comment: null,
     isRestricted: false,
-    causeOfRestriction: null,
-    dateOfRestriction: null,
   });
 }
 
@@ -200,7 +173,7 @@ function volunteersQuery(overrides = {}) {
 }
 
 async function createBasicFixture(actor) {
-  const location = await createLocation();
+  const location = await createLocation(LOCATION);
 
   return { actor, location };
 }
@@ -208,7 +181,7 @@ async function createBasicFixture(actor) {
 async function createOrderDependency(actor, volunteer) {
   const user = await createUserFixture(actor.role.id, 'order_dependency_user');
 
-  const occasion = await Occasion.create({ type: 1, month: 11, year: 2027, status: 1, amount: 0 });
+  const occasion = await createOccasion({ type: 1, month: 11, year: 2027, status: 1, amount: 0 });
 
   const contact = await VolunteerContact.findOne({
     where: { volunteerId: volunteer.id, isRestricted: false },

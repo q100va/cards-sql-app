@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User, RefreshToken } from '../../models/index.js';
 import { hashPassword } from '../../security/passwords.mjs';
 import { createRole } from './factories/role.js';
+import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'password2025';
 const USER_AGENT = 'session-api-integration-test';
@@ -20,7 +21,7 @@ async function createSessionUser({
 } = {}) {
   const role = await createRole({ name: roleName });
 
-  const user = await User.create({
+  const user = await createUserInstance({
     userName,
     password: passwordHash,
     roleId: role.id,

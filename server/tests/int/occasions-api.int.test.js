@@ -2,8 +2,7 @@ import jwt from 'jsonwebtoken';
 
 import { Occasion } from '../../models/index.js';
 
-import { createRole } from './factories/role.js';
-import { createOperation } from './factories/operation.js';
+import { createRole, createRoleWithOperations } from './factories/role.js';
 
 function makeAccessToken(roleId) {
   return jwt.sign(
@@ -14,11 +13,9 @@ function makeAccessToken(roleId) {
 }
 
 async function createAuthorizedRole(operationNames = []) {
-  const role = await createRole({ name: 'Occasions Test Role' });
-
-  for (const name of new Set(operationNames)) {
-    await createOperation({ roleId: role.id, name, access: true, disabled: false });
-  }
+  const role = await createRoleWithOperations(new Set(operationNames), {
+    name: 'Occasions Test Role',
+  });
 
   return { role, token: makeAccessToken(role.id) };
 }

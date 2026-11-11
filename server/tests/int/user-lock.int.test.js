@@ -2,25 +2,23 @@ import { SECURITY } from '../../domain/auth-throttle.js';
 
 const NOW = new Date('2026-11-11T12:00:00.000Z');
 
-let User;
+let createUserInstance;
 let createRole;
 
 beforeAll(async () => {
-  ({ User } = await import('../../models/index.js'));
+  ({ createUserInstance } = await import('./factories/user.js'));
   ({ createRole } = await import('./factories/role.js'));
 });
 
 async function createUser(overrides = {}) {
   const role = await createRole({ name: 'User Lock Test Role' });
 
-  return User.create({
+  return createUserInstance({
     userName: overrides.userName ?? 'lock_test_user',
     password: 'not-used-in-this-test',
     firstName: 'Lock',
-    patronymic: null,
     lastName: 'User',
     roleId: role.id,
-    comment: null,
     failedLoginCount: overrides.failedLoginCount ?? 0,
     lockedUntil: overrides.lockedUntil ?? null,
     bruteWindowStart: overrides.bruteWindowStart ?? null,
