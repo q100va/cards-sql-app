@@ -1,81 +1,107 @@
-// server/tests/unit/error-handler.unit.test.js
 import { jest } from '@jest/globals';
+import { Router } from 'express';
+import request from 'supertest';
 
-// Мокаем логгер ДО импорта миддлвара
-const loggerMock = {
-  default: {
-    error: jest.fn(),
-  },
-};
+const loggerMock = { default: { error: jest.fn() } };
+
 jest.unstable_mockModule('../../logging/logger.js', () => loggerMock);
 
-const { handleError, notFound } = await import('../../middlewares/error-handler.js');
+const {
+  handleError,
+  notFound,
+} = await import('../../middlewares/error-handler.js');
+
 const { default: logger } = await import('../../logging/logger.js');
 
-const makeRes = () => {
-  const res = {
-    headersSent: false,
-    _status: null,
-    _body: null,
-    status: jest.fn(function (s) { this._status = s; return this; }),
-    json:   jest.fn(function (b) { this._body = b;  return this; }),
-  };
-  return res;
-};
+const { makeTestApp } = await import('./makeApp.js');
 
-describe('handleError (unit)', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+describe('handleError', () => {
+  it('maps status to default code and returns the standard error response', async () => {
+    const router = Router();
 
-  it('maps status to default code when err.code not provided', () => {
-    const req = { method: 'GET', originalUrl: '/x', correlationId: 'cid-1' };
-    const res = makeRes();
+    router.get('/x', (req, res, next) => {
+      req.correlationId = 'cid-1';
 
-    handleError({ status: 400, message: 'bad req' }, req, res);
+      const error = new Error('bad req');
 
-    expect(res._status).toBe(400);
-    expect(res._body).toEqual({
+      error.status = 400;
+
+      next(error);
+    });
+
+    const app = makeTestApp(router);
+
+    const response = await request(app).get('/x?foo=bar').expect(400);
+
+    expect(response.body).toEqual({
       code: 'ERRORS.BAD_REQUEST',
       data: null,
       correlationId: 'cid-1',
     });
-    // лог содержит полезный payload
-    expect(logger.error).toHaveBeenCalled();
-    const [payload, msg] = logger.error.mock.calls[0];
+
+    expect(logger.error).toHaveBeenCalledTimes(1);
+
+    const [payload, message] = logger.error.mock.calls[0];
+
     expect(payload).toMatchObject({
       code: 'ERRORS.BAD_REQUEST',
       status: 400,
       correlationId: 'cid-1',
       route: 'GET /x',
     });
-    expect(msg).toBe('bad req');
+
+    expect(message).toBe('bad req');
   });
 
-  it('uses err.code when provided', () => {
-    const req = { method: 'POST', originalUrl: '/y' };
-    const res = makeRes();
+  it('uses error code when one is provided', async () => {
+    const router = Router();
 
-    handleError({ status: 500, code: 'FOO.BAR', message: 'boom' }, req, res);
+    router.post('/y', (req, res, next) => {
+      const error = new Error('boom');
 
-    expect(res._status).toBe(500);
-    expect(res._body.code).toBe('FOO.BAR');
+      error.status = 500;
+      error.code = 'FOO.BAR';
+
+      next(error);
+    });
+
+    const app = makeTestApp(router);
+
+    const response = await request(app).post('/y').expect(500);
+
+    expect(response.body).toEqual({
+      code: 'FOO.BAR',
+      data: null,
+      correlationId: null,
+    });
   });
 
-  it('422: includes validation details in log payload and returns JSON', () => {
-    const req = { method: 'POST', originalUrl: '/z', correlationId: 'cid-422' };
-    const res = makeRes();
+  it('logs validation details for 422 errors', async () => {
+    const router = Router();
 
-    handleError({ status: 422, message: 'invalid', details: { field: 'REQUIRED' } }, req, res);
+    router.post('/z', (req, res, next) => {
+      req.correlationId = 'cid-422';
 
-    expect(res._status).toBe(422);
-    expect(res._body).toEqual({
+      const error = new Error('invalid');
+
+      error.status = 422;
+      error.details = { field: 'REQUIRED' };
+
+      next(error);
+    });
+
+    const app = makeTestApp(router);
+
+    const response = await request(app).post('/z').expect(422);
+
+    expect(response.body).toEqual({
       code: 'ERRORS.VALIDATION',
       data: null,
       correlationId: 'cid-422',
     });
 
     const [payload] = logger.error.mock.calls[0];
+
     expect(payload).toMatchObject({
       code: 'ERRORS.VALIDATION',
       status: 422,
@@ -84,30 +110,70 @@ describe('handleError (unit)', () => {
     });
   });
 
-  it('does nothing if headers already sent (short-circuit), but logs error', () => {
-    const req = { method: 'GET', originalUrl: '/already' };
-    const res = makeRes();
-    res.headersSent = true;
+  it('normalizes invalid status values to 500', async () => {
+    const router = Router();
 
-    handleError({ status: 500, message: 'late' }, req, res);
+    router.get('/bad-status', (req, res, next) => {
+      const error = new Error('unexpected');
 
-    expect(logger.error).toHaveBeenCalled();
+      error.status = 999;
+
+      next(error);
+    });
+
+    const app = makeTestApp(router);
+
+    const response = await request(app).get('/bad-status').expect(500);
+
+    expect(response.body.code).toBe('ERRORS.UNKNOWN');
+  });
+
+  it('forwards the error when headers were already sent', () => {
+    const error = new Error('late');
+
+    error.status = 500;
+
+    const req = {
+      method: 'GET',
+      originalUrl: '/already',
+    };
+
+    const res = {
+      headersSent: true,
+      status: jest.fn(),
+      json: jest.fn(),
+    };
+
+    const next = jest.fn();
+
+    handleError(error, req, res, next);
+
+    expect(logger.error).toHaveBeenCalledTimes(1);
+
     expect(res.status).not.toHaveBeenCalled();
+
     expect(res.json).not.toHaveBeenCalled();
+
+    expect(next).toHaveBeenCalledTimes(1);
+
+    expect(next).toHaveBeenCalledWith(error);
   });
 });
 
-describe('notFound (unit)', () => {
-  it('passes 404 error with code ERRORS.NOT_FOUND to next', () => {
-    const req = { method: 'GET', originalUrl: '/missing' };
-    const next = jest.fn();
+describe('notFound', () => {
+  it('returns the standard 404 response for an unknown route', async () => {
+    const router = Router();
 
-    notFound(req, {}, next);
+    router.use(notFound);
 
-    expect(next).toHaveBeenCalledTimes(1);
-    const err = next.mock.calls[0][0];
-    expect(err).toBeInstanceOf(Error);
-    expect(err.status).toBe(404);
-    expect(err.code).toBe('ERRORS.NOT_FOUND');
+    const app = makeTestApp(router);
+
+    const response = await request(app).get('/missing').expect(404);
+
+    expect(response.body).toEqual({
+      code: 'ERRORS.NOT_FOUND',
+      data: null,
+      correlationId: null,
+    });
   });
 });

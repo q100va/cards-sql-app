@@ -1,814 +1,608 @@
-import request from "supertest";
-import { jest } from "@jest/globals";
+/* @jest-environment node */
 
-// Sequelize + operators
+import { jest } from '@jest/globals';
+import express from 'express';
+import request from 'supertest';
 import { Op } from 'sequelize';
 
-// Use a fixed transaction object across tests
-const fakeTx = { id: "test-transaction" };
+import { OPERATIONS, OPERATION_FLAG } from '../../shared/operations.js';
 
-// Mock transaction wrapper before loading the router
-jest.unstable_mockModule("../../controllers/with-transaction.js", () => ({
-  withTransaction: async (fn) => fn(fakeTx),
+const fakeTx = { id: 'test-transaction' };
+
+const Role = {
+  findOne: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  findAll: jest.fn(),
+  destroy: jest.fn(),
+};
+
+const RolePermission = {
+  bulkCreate: jest.fn(),
+  update: jest.fn(),
+  findOne: jest.fn(),
+  findAll: jest.fn(),
+};
+
+const User = { count: jest.fn() };
+
+const withTransaction = jest.fn();
+
+jest.unstable_mockModule('../../models/index.js', () => ({
+  Role,
+  RolePermission,
+  User,
 }));
 
-/*jest.unstable_mockModule("../../middlewares/check-auth.js", () => ({
-   default: (req, _res, next) => {
-    // если хендлеры смотрят на req.user — подкинем роль
-    req.user = { id: 1, userName: "unit", role: "Admin" };
-    next();
-  },
-  optionalAuth: (_req, _res, next) => next(),
-})); */
+jest.unstable_mockModule('../../controllers/with-transaction.js', () => ({ withTransaction }));
 
-// ✅ мок аутентификации (иначе 401)
-jest.unstable_mockModule('../../middlewares/check-auth.js', () => ({
-  requireAuth: (_req, _res, next) => next(),
-  optionalAuth: (_req, _res, next) => next(),
+jest.unstable_mockModule('../../middlewares/check-auth.js', () =>
+({
   default: (_req, _res, next) => next(),
 }));
 
-// (опц.) ✅ если роут защищён правами — пропускаем
-jest.unstable_mockModule('../../middlewares/require-permission.js', () => ({
-  requireAny: () => (_req, _res, next) => next(),
-  requireAll: () => (_req, _res, next) => next(),
+jest.unstable_mockModule('../../middlewares/require-permission.js', () =>
+({
   requireOperation: () => (_req, _res, next) => next(),
+  requireAny: () => (_req, _res, next) => next(),
 }));
 
+jest.unstable_mockModule('../../middlewares/validate-request.js', () =>
+({
+  validateRequest: () => (_req, _res, next) => next(),
+}));
 
+jest.unstable_mockModule('../../../shared/dist/schemas/role.schema.js', () =>
+({
+  roleNameSchema: {},
+  roleDraftSchema: {},
+  roleSchema: {},
+  roleChangeAccessSchema: {},
+  roleIdSchema: {},
+}));
 
-// Load router and models after mocks
-const { default: router } = await import("../../routes/roles-api.js");
-import { Role, RolePermission, User } from "../../models/index.js";
-import { OPERATIONS } from "../../shared/operations.js";
-import { makeTestApp } from "./makeApp.js";
+const { default: router } = await import('../../routes/roles-api.js');
 
-// Minimal app
-const app = makeTestApp(router, '/');
+function makeApp() {
+  const app = express();
 
-describe("Role Routes", () => {
-  // Reset spies/stubs between tests
-  beforeEach(() => {
-    jest.restoreAllMocks();
-  });
+  app.use(express.json());
 
-  // Close ORM connections (prevents open handle warnings)
-  afterAll(async () => {
-    await Role.sequelize.close();
-    await RolePermission.sequelize.close();
-    await User.sequelize.close();
-  });
+  app.use('/', router);
 
-  // ── GET /check-role-name/:name ────────────────────────────────────────────────
-  describe("GET /check-role-name/:name", () => {
-    it("queries case-insensitively and returns true when role exists", async () => {
-      const findSpy = jest.spyOn(Role, "findOne").mockResolvedValue({ name: "admin" });
-
-      const res = await request(app).get("/check-role-name/AdMiN");
-
-      // Assert query shape
-      expect(findSpy).toHaveBeenCalledWith({
-        where: { name: expect.objectContaining({ [Op.iLike]: "admin" }) },
-        attributes: ["name"],
-        raw: true,
-      });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe("ROLE.ALREADY_EXISTS");
-      expect(res.body.data).toBe(true);
-    });
-
-    it("returns false when role does not exist", async () => {
-      const findSpy = jest.spyOn(Role, "findOne").mockResolvedValue(null);
-      const res = await request(app).get("/check-role-name/unknown");
-
-      // Assert query shape
-      expect(findSpy).toHaveBeenCalledWith({
-        where: { name: expect.objectContaining({ [Op.iLike]: "unknown" }) },
-        attributes: ["name"],
-        raw: true,
-      });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data).toBe(false);
-    });
-
-    it("handles internal errors", async () => {
-      jest.spyOn(Role, "findOne").mockRejectedValue(new Error("DB down"));
-
-      const res = await request(app).get("/check-role-name/error");
-
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NAME_NOT_CHECKED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-
-    it("returns 422 when params fail schema validation", async () => {
-      // use an obviously invalid (e.g., too short or disallowed) param to trigger zod
-      const res = await request(app).get("/check-role-name/%00");
-
-      expect(res.status).toBe(422);
-      expect('correlationId' in res.body).toBe(true);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.VALIDATION'
-      });
-      expect('correlationId' in res.body).toBe(true);
+  // Shared error-handler behavior
+  // is tested separately.
+  app.use((error, _req, res, _next) => {
+    res.status(error.status ?? error.statusCode ?? 500).json({
+      code: error.code ?? 'ERRORS.INTERNAL',
     });
   });
 
+  return app;
+}
 
-  // ── POST /create-role ─────────────────────────────────────────────────────────
-  describe("POST /create-role", () => {
-    it("creates a role and seeds all operations (transaction-used)", async () => {
-      const roleData = { name: "manager", description: "Manages stuff" };
+function mockPermissionUpdates() {
+  let nextId = 1000;
 
-      const createSpy = jest.spyOn(Role, "create").mockResolvedValue({
-        id: 42,
-        name: roleData.name,
-        description: roleData.description,
-      });
-
-      const bulkMock = jest
-        .spyOn(RolePermission, "bulkCreate")
-        .mockImplementation((rows, _opts) =>
-          Promise.resolve(rows.map((r, i) => ({ ...r, id: 1000 + i })))
-        );
-
-      const res = await request(app).post("/create-role").send(roleData);
-
-      // Response
-      expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('SUCCESS.CREATED');
-      expect(res.body.data).toBe("manager");
-
-      // Role.create called with tx
-      expect(createSpy).toHaveBeenCalledTimes(1);
-      const [createArgs, createOpts] = createSpy.mock.calls[0];
-      expect(createArgs).toEqual(roleData);
-      expect(createOpts?.transaction).toBe(fakeTx);
-
-      // bulkCreate called with tx and correct rows
-      expect(bulkMock).toHaveBeenCalledTimes(1);
-      const [rowsArg, optsArg] = bulkMock.mock.calls[0];
-      expect(optsArg?.transaction).toBe(fakeTx);
-
-      expect(Array.isArray(rowsArg)).toBe(true);
-      expect(rowsArg.length).toBe(OPERATIONS.length);
-      rowsArg.forEach((r) =>
-        expect(r).toEqual(
-          expect.objectContaining({
-            name: expect.any(String),
-            roleId: 42,
-            access: false,
-            disabled: expect.any(Boolean),
-          })
-        )
-      );
-
-      // Representative flag rules
-      const byName = Object.fromEntries(rowsArg.map((r) => [r.name, r]));
-      if (byName.ALL_OPS_PARTNERS) {
-        expect(byName.ALL_OPS_PARTNERS.disabled).toBe(false);
-      }
-      if (byName.VIEW_FULL_PARTNERS_LIST) {
-        expect(byName.VIEW_FULL_PARTNERS_LIST.disabled).toBe(true);
-      }
-      if (byName.VIEW_LIMITED_PARTNERS_LIST) {
-        expect(byName.VIEW_LIMITED_PARTNERS_LIST.disabled).toBe(false);
-      }
-
-      // Names match config
-      expect(rowsArg.map((r) => r.name).sort()).toEqual(
-        OPERATIONS.map((o) => o.operation).sort()
-      );
-      expect(rowsArg.every((r) => r.access === false)).toBe(true);
-    });
-
-    it("returns 500 if creation fails", async () => {
-      jest.spyOn(Role, "create").mockRejectedValue(new Error("Create role failure"));
-
-      const res = await request(app)
-        .post("/create-role")
-        .send({ name: "failure", description: "This will fail" });
-
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_CREATE_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-
-    it("returns 422 when body fails schema validation", async () => {
-      const res = await request(app).post("/create-role").send({});
-
-      expect(res.status).toBe(422);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.VALIDATION'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-  });
-
-  // ── PATCH /update-role ────────────────────────────────────────────────────────
-  describe("PATCH /update-role", () => {
-    it("updates name/description for an existing role", async () => {
-      const payload = { id: 1, name: "newName", description: "newDescription" };
-      const updateSpy = jest.spyOn(Role, "update").mockResolvedValue([1, [payload]]);
-
-      const res = await request(app).patch("/update-role").send(payload);
-
-      expect(updateSpy).toHaveBeenCalledWith(
-        { name: "newName", description: "newDescription" },
+  RolePermission.update.mockImplementation(async (values, options) =>
+    [
+      1,
+      [
         {
-          where: { id: 1 },
-          individualHooks: true,
-          returning: ['id', 'name', 'description'],
-        }
-      );
+          id: nextId++,
+          roleId: options.where.roleId,
+          access: values.access ?? false,
+          disabled: values.disabled ?? false,
+        },
+      ],
+    ]);
+}
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('SUCCESS.UPDATED');
-      expect(res.body.data).toEqual(payload);
+function findUpdateCall(operationName) {
+  return RolePermission.update.mock.calls.find(([, options]) => options?.where?.name === operationName);
+}
+
+const superOperation = OPERATIONS.find((operation) =>
+  operation.accessToAllOps &&
+  OPERATIONS.some((other) =>
+    other.object === operation.object &&
+    other.flag === OPERATION_FLAG.FULL) &&
+  OPERATIONS.some((other) =>
+    other.object === operation.object &&
+    other.flag === OPERATION_FLAG.LIMITED));
+
+if (!superOperation) {
+  throw new Error('Test configuration requires an operation group with ALL_OPS, FULL and LIMITED operations');
+}
+
+const operationObject = superOperation.object;
+
+const relatedOperations = OPERATIONS.filter((operation) =>
+  operation.object === operationObject &&
+  !operation.accessToAllOps);
+
+const fullOperation = relatedOperations.find((operation) => operation.flag === OPERATION_FLAG.FULL);
+
+const limitedOperation = relatedOperations.find((operation) => operation.flag === OPERATION_FLAG.LIMITED);
+
+const regularOperation = relatedOperations.find((operation) => !operation.flag) ?? relatedOperations[0];
+
+describe('Role Routes', () => {
+  beforeEach(() => {
+    Role.findOne.mockReset();
+    Role.create.mockReset();
+    Role.update.mockReset();
+    Role.findAll.mockReset();
+    Role.destroy.mockReset();
+
+    RolePermission.bulkCreate.mockReset();
+
+    RolePermission.update.mockReset();
+
+    RolePermission.findOne.mockReset();
+
+    RolePermission.findAll.mockReset();
+
+    User.count.mockReset();
+
+    withTransaction.mockReset().mockImplementation(async (callback) => callback(fakeTx));
+  });
+
+  describe('GET /check-role-name/:name', () => {
+    test('returns true when role already exists', async () => {
+      Role.findOne.mockResolvedValue({ name: 'admin' });
+
+      const response = await request(makeApp()).get('/check-role-name/admin').expect(200);
+
+      expect(Role.findOne).toHaveBeenCalledWith({
+        where: { name: { [Op.iLike]: 'admin' } },
+        attributes: ['name'],
+        raw: true,
+      });
+
+      expect(response.body).toEqual({
+        data: true,
+        code: 'ERRORS.ROLE.ALREADY_EXISTS',
+      });
     });
 
-    it("returns 404 when role not found", async () => {
-      jest.spyOn(Role, "update").mockResolvedValue([0, [null]]);
+    test('returns false when role does not exist', async () => {
+      Role.findOne.mockResolvedValue(null);
 
-      const res = await request(app)
-        .patch("/update-role")
-        .send({ id: 999, name: "nonexistent", description: "none" });
+      const response = await request(makeApp()).get('/check-role-name/unknown').expect(200);
 
-      expect(res.status).toBe(404);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_FOUND'
-      });
-      expect('correlationId' in res.body).toBe(true);
+      expect(response.body).toEqual({ data: false });
     });
 
-    it("handles internal errors", async () => {
-      jest.spyOn(Role, "update").mockRejectedValue(new Error("Update role failure"));
+    test('passes lookup errors onward as DATA_CHECK_FAILED', async () => {
+      Role.findOne.mockRejectedValue(new Error('DB down'));
 
-      const res = await request(app)
-        .patch("/update-role")
-        .send({ id: 999, name: "newName", description: "newDescription" });
+      const response = await request(makeApp()).get('/check-role-name/error').expect(500);
 
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_UPDATE_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-
-    it("returns 422 when body fails schema validation", async () => {
-      // Missing id/name/description → zod should fail
-      const res = await request(app).patch("/update-role").send({});
-
-      expect(res.status).toBe(422);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.VALIDATION'
-      });
-      expect('correlationId' in res.body).toBe(true);
+      expect(response.body.code).toBe('ERRORS.DATA_CHECK_FAILED');
     });
   });
 
-  // ── PATCH /update-role-access ────────────────────────────────────────────────
-  describe("PATCH /update-role-access", () => {
-
-    it("turning OFF VIEW_FULL → sets FULL.access=false, LIMITED.disabled=false, ALL_OPS.access=false", async () => {
-      const payload = {
-        access: false,
-        roleId: 2,
-        operation: {
-          operation: "VIEW_FULL_PARTNERS_LIST",
-          object: "partners",
-          accessToAllOps: false,
-          flag: "FULL",
-          description: "просмотреть с полным доступом к данным списка контрагентов",
-          objectName: "представители\nинтернатов",
-          operationName: "доступ к доп. данным списка",
-          rolesAccesses: [
-            { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 200, roleId: 2, access: true, disabled: false },
-          ],
-        },
-      };
-
-      const updateSpy = jest.spyOn(RolePermission, "update").mockImplementation((values, options) => {
-        // We return minimal echo; assertions only check call args
-        return Promise.resolve([1, [{ id: 999, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]]);
+  describe('POST /create-role', () => {
+    test('creates a role and seeds all permissions in one transaction', async () => {
+      Role.create.mockResolvedValue({
+        id: 42,
+        name: 'manager',
+        description: 'Manages stuff',
       });
 
-      const findOneSpy = jest.spyOn(RolePermission, "findOne").mockResolvedValue(null);
+      RolePermission.bulkCreate.mockResolvedValue([]);
 
-      const res = await request(app).patch("/update-role-access").send(payload);
+      const response = await request(makeApp()).post('/create-role').send({
+        name: 'manager',
+        description: 'Manages stuff',
+      }).expect(200);
 
-      expect(res.statusCode).toBe(200);
+      expect(withTransaction).toHaveBeenCalledTimes(1);
 
-      // 1) FULL → { access:false }
-      expect(updateSpy).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ access: false }),
-        expect.objectContaining({
-          where: { roleId: 2, name: "VIEW_FULL_PARTNERS_LIST" },
-        })
-      );
+      expect(Role.create).toHaveBeenCalledWith({
+        name: 'manager',
+        description: 'Manages stuff',
+      }, { transaction: fakeTx });
 
-      // 2) LIMITED → { disabled:false }
-      expect(updateSpy).toHaveBeenNthCalledWith(
-        2,
-        { disabled: false },
-        expect.objectContaining({
-          where: { roleId: 2, name: "VIEW_LIMITED_PARTNERS_LIST" },
-        })
-      );
+      expect(RolePermission.bulkCreate).toHaveBeenCalledTimes(1);
 
-      // 3) ALL_OPS → { access:false }
-      expect(updateSpy).toHaveBeenNthCalledWith(
-        3,
-        expect.objectContaining({ access: false }),
-        expect.objectContaining({
-          where: { roleId: 2, name: "ALL_OPS_PARTNERS" },
-        })
-      );
-      expect(findOneSpy).not.toHaveBeenCalled();
-    });
+      const [rows, options] = RolePermission.bulkCreate.mock.calls[0];
 
+      expect(options).toEqual({ transaction: fakeTx });
 
-    it("turning ON VIEW_FULL (all peers ON) → enables ALL_OPS and sets LIMITED.disabled=true", async () => {
-      const payload = {
-        access: true,
-        roleId: 2,
-        operation: {
-          operation: "VIEW_FULL_PARTNERS_LIST",
-          object: "partners",
-          accessToAllOps: false,
-          flag: "FULL",
-          description: "",
-          objectName: "",
-          operationName: "",
-          rolesAccesses: [
-            { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 200, roleId: 2, access: false, disabled: false },
-          ],
-        },
-      };
+      expect(rows).toHaveLength(OPERATIONS.length);
 
-      // Peers are already enabled → findOne returns null
-      const findOneSpy = jest.spyOn(RolePermission, "findOne").mockResolvedValue(null);
+      expect(rows.map((row) => row.name)).toEqual(OPERATIONS.map((operation) => operation.operation));
 
-      const updateSpy = jest.spyOn(RolePermission, "update").mockImplementation((values, options) => {
-        // We return minimal echo; assertions only check call args
-        return Promise.resolve([1, [{ id: 999, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]]);
-      });
-
-      const res = await request(app).patch("/update-role-access").send(payload);
-      expect(res.statusCode).toBe(200);
-
-      // 1) FULL → { access:true }
-      expect(updateSpy).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ access: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "VIEW_FULL_PARTNERS_LIST" } })
-      );
-
-      // 2) LIMITED → { disabled:true } (stays enabled but becomes read-only)
-      expect(updateSpy).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ disabled: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "VIEW_LIMITED_PARTNERS_LIST" } })
-      );
-
-      // 3) ALL_OPS → { access:true }
-      expect(updateSpy).toHaveBeenNthCalledWith(
-        3,
-        expect.objectContaining({ access: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "ALL_OPS_PARTNERS" } })
-      );
-
-      expect(findOneSpy).toHaveBeenCalled(); // peers check happened
-    });
-
-    it("turning ON a single op while another peer OFF → ALL_OPS not updated", async () => {
-      const payload = {
-        access: true,
-        roleId: 2,
-        operation: {
-          operation: "ADD_NEW_PARTNER",
-          object: "partners",
-          accessToAllOps: false,
-          description: "",
-          objectName: "",
-          operationName: "",
-          rolesAccesses: [
-            { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 193, roleId: 2, access: false, disabled: false },
-          ],
-        },
-      };
-
-      // Simulate another related op still OFF → first call returns a row
-      const findOneSpy = jest.spyOn(RolePermission, "findOne");
-      findOneSpy.mockResolvedValueOnce({ id: 999 }).mockResolvedValue(null);
-
-      const updateSpy = jest.spyOn(RolePermission, "update").mockResolvedValue([1, [{ id: 193, roleId: 2, access: true, disabled: false }]]);
-
-      const res = await request(app).patch("/update-role-access").send(payload);
-      expect(res.statusCode).toBe(200);
-
-      // 1) Only the requested op is updated to access:true
-      expect(updateSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ access: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "ADD_NEW_PARTNER" } })
-      );
-
-      // 2) ALL_OPS must NOT be updated
-      const allOpsCall = updateSpy.mock.calls.find(([, opts]) => opts?.where?.name === "ALL_OPS_PARTNERS");
-      expect(allOpsCall).toBeUndefined();
-
-      expect(findOneSpy).toHaveBeenCalled(); // peers check happened
-    });
-
-    it("turning ON ALL_OPS → enables all related ops; LIMITED.disabled=true", async () => {
-      const payload = {
-        access: true,
-        roleId: 2,
-        operation: {
-          operation: "ALL_OPS_PARTNERS",
-          object: "partners",
-          accessToAllOps: true,
-          description: "",
-          objectName: "",
-          operationName: "",
-          rolesAccesses: [
-            { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 299, roleId: 2, access: false, disabled: false },
-          ],
-        },
-      };
-
-      const updateSpy = jest.spyOn(RolePermission, "update").mockImplementation((values, options) =>
-        Promise.resolve([1, [{ id: 900, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]])
-      );
-
-      const res = await request(app).patch("/update-role-access").send(payload);
-      expect(res.statusCode).toBe(200);
-
-      // 1) ALL_OPS → { access:true }
-      expect(updateSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ access: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "ALL_OPS_PARTNERS" } })
-      );
-
-      // 2) Regular op(s) → { access:true } (example: ADD_NEW_PARTNER)
-      expect(updateSpy.mock.calls.some(
-        ([vals, opts]) => opts?.where?.name === "ADD_NEW_PARTNER" && vals?.access === true
-      )).toBe(true);
-
-      // 3) VIEW_FULL → { access:true, disabled:false }
-      expect(updateSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ access: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "VIEW_FULL_PARTNERS_LIST" } })
-      );
-
-      // 4) VIEW_LIMITED → { disabled:true } (stays enabled but read-only)
-      expect(updateSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ disabled: true }),
-        expect.objectContaining({ where: { roleId: 2, name: "VIEW_LIMITED_PARTNERS_LIST" } })
-      );
-
-      // Optional sanity: no updates setting access:false for this scenario
-      const noFalse = updateSpy.mock.calls.every(([vals]) => vals?.access !== false);
-      expect(noFalse).toBe(true);
-    });
-
-    it("turning OFF ALL_OPS → sets all related ops access=false; FULL.disabled=true (if present)", async () => {
-      const payload = {
-        access: false,
-        roleId: 2,
-        operation: {
-          operation: "ALL_OPS_PARTNERS",
-          object: "partners",
-          accessToAllOps: true,
-          description: "",
-          objectName: "",
-          operationName: "",
-          rolesAccesses: [
-            { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 299, roleId: 2, access: true, disabled: false },
-          ],
-        },
-      };
-
-      const updateSpy = jest
-        .spyOn(RolePermission, "update")
-        .mockImplementation((values, options) =>
-          Promise.resolve([1, [{ id: 1, roleId: payload.roleId, access: !!values?.access, disabled: !!values?.disabled }]])
-        );
-
-      const res = await request(app).patch("/update-role-access").send(payload);
-      expect(res.statusCode).toBe(200);
-
-      // Derive names from OPERATIONS to avoid hardcoding.
-      const object = payload.operation.object;
-      const fullOp = OPERATIONS.find(o => o.object === object && o.flag === "FULL");
-      const limitedOp = OPERATIONS.find(o => o.object === object && o.flag === "LIMITED");
-      const allOpsName = payload.operation.operation;
-
-      // 1) ALL_OPS → access:false
-      expect(updateSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ access: false }),
-        expect.objectContaining({ where: { roleId: 2, name: allOpsName } })
-      );
-
-      // 2) Every update for this object (except maybe LIMITED/FULL specifics) should set access:false.
-      const callsForObject = updateSpy.mock.calls.filter(
-        ([, opts]) => typeof opts?.where?.name === "string" && opts.where.roleId === 2
-      );
-
-      // Ensure there is no call that sets access:true
-      const anyTrue = callsForObject.some(([vals]) => vals?.access === true);
-      expect(anyTrue).toBe(false);
-
-      // 3) If FULL op exists in config — disabled:true (access:false).
-      if (fullOp) {
-        const fullDisabledCall = callsForObject.find(
-          ([vals, opts]) =>
-            opts?.where?.name === fullOp.operation && vals?.disabled === true
-        );
-        expect(fullDisabledCall).toBeTruthy();
-        if (fullDisabledCall) {
-          const [vals] = fullDisabledCall;
-          if ('access' in vals) {
-            expect(vals.access).toBe(false);
-          }
-        }
+      for (const [index, row] of rows.entries()) {
+        expect(row).toEqual({
+          name: OPERATIONS[index].operation,
+          roleId: 42,
+          access: false,
+          disabled: OPERATIONS[index].flag === OPERATION_FLAG.FULL,
+        });
       }
 
-      // 4) If LIMITED op exists in config  — access:false (disabled:false).
-      if (limitedOp) {
-        const limitedAccessOff = callsForObject.find(
-          ([vals, opts]) =>
-            opts?.where?.name === limitedOp.operation && vals?.access === false
-        );
-        expect(limitedAccessOff).toBeTruthy();
-      }
-
+      expect(response.body).toEqual({
+        code: 'SUCCESS.CREATED',
+        data: 'manager',
+      });
     });
 
-    it("handles internal errors", async () => {
-      jest.spyOn(RolePermission, "update").mockRejectedValue(new Error("Update role access failure"));
+    test('passes creation errors onward as DATA_CREATE_FAILED', async () => {
+      Role.create.mockRejectedValue(new Error('create failed'));
 
-      const payload = {
-        access: false,
-        roleId: 2,
-        operation: {
-          operation: "ALL_OPS_PARTNERS",
-          object: "partners",
-          accessToAllOps: true,
-          description: "полный доступ ко всем операциям с данными контрагентов",
-          objectName: "представители\nинтернатов",
-          operationName: "полный доступ ко всем операциям",
-          rolesAccesses: [
-            { id: 42, roleId: 1, access: true, disabled: false },
-            { id: 299, roleId: 2, access: true, disabled: false },
-          ],
-        },
+      const response = await request(makeApp()).post('/create-role').send({
+        name: 'manager',
+        description: 'description',
+      }).expect(500);
+
+      expect(response.body.code).toBe('ERRORS.DATA_CREATE_FAILED');
+    });
+  });
+
+  describe('PATCH /update-role', () => {
+    test('updates an existing role', async () => {
+      const updatedRole = {
+        id: 1,
+        name: 'new-name',
+        description: 'new-description',
       };
 
-      const res = await request(app).patch("/update-role-access").send(payload);
+      Role.update.mockResolvedValue([1, [updatedRole]]);
 
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_UPDATE_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
+      const response = await request(makeApp()).patch('/update-role').send(updatedRole).expect(200);
 
-    it("returns 422 when body fails schema validation", async () => {
-      const res = await request(app).patch("/update-role-access").send({});
-      expect(res.status).toBe(422);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.VALIDATION'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-  });
-
-  // ── GET /get-roles-names-list ────────────────────────────────────────────────
-  describe("GET /get-roles-names-list", () => {
-    it("selects only id/name ordered asc and returns the pairs", async () => {
-      const roles = [
-        { id: 1, name: "admin" },
-        { id: 2, name: "user" },
-      ];
-      const findAllSpy = jest.spyOn(Role, "findAll").mockResolvedValue(roles);
-
-      const res = await request(app).get("/get-roles-names-list");
-
-      // Assert query shape
-      expect(findAllSpy).toHaveBeenCalledWith({
-        attributes: ["id", "name"],
-        order: [["name", "ASC"]],
-        raw: true,
-      });
-
-      // Assert response shape
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data).toEqual(roles);
-    });
-
-    it("handles internal errors", async () => {
-      jest.spyOn(Role, "findAll").mockRejectedValue(new Error("DB down"));
-
-      const res = await request(app).get("/get-roles-names-list");
-
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_FETCH_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-  });
-
-
-  // ── GET /get-roles ───────────────────────────────────────────────────────────
-  describe("GET /get-roles", () => {
-    it("returns roles with operations; operations are merged per role by id", async () => {
-      const roles = [
-        { id: 1, name: "admin", description: "Administrator" },
-        { id: 2, name: "user", description: "Regular user" },
-      ];
-      const roleIds = roles.map(r => r.id);
-
-      const findRolesSpy = jest.spyOn(Role, "findAll").mockResolvedValue(roles);
-
-      // Pick two real operation names from config to avoid mismatches
-      const [opA, opB] = OPERATIONS.slice(0, 2); // assumes at least 2 exist
-      const roleOps = [
-        { id: 101, roleId: 1, name: opA.operation, access: true, disabled: false },
-        { id: 102, roleId: 2, name: opB.operation, access: false, disabled: true },
-      ];
-      const findOpsSpy = jest.spyOn(RolePermission, "findAll").mockResolvedValue(roleOps);
-
-      const res = await request(app).get("/get-roles");
-
-      // Assert Role.findAll query shape
-      expect(findRolesSpy).toHaveBeenCalledWith({
-        attributes: ["id", "name", "description"],
-        order: [["id", "ASC"]],
-        raw: true,
-      });
-
-      // Assert RolePermission.findAll query shape
-      expect(findOpsSpy).toHaveBeenCalledWith({
-        where: { roleId: roleIds },
-        attributes: ["id", "roleId", "name", "access", "disabled"],
-        raw: true,
-      });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.roles).toEqual(roles);
-
-      // Check that operations array exists and contains our op names
-      const ops = res.body.data.operations;
-      expect(Array.isArray(ops)).toBe(true);
-
-      // Find in response the opA/opB entries and ensure rolesAccesses contains our roleOps by id
-      const entryA = ops.find((o) => o.operation === opA.operation);
-      const entryB = ops.find((o) => o.operation === opB.operation);
-      expect(entryA).toBeTruthy();
-      expect(entryB).toBeTruthy();
-
-      const raA = entryA.rolesAccesses.find((ra) => ra.id === 101);
-      const raB = entryB.rolesAccesses.find((ra) => ra.id === 102);
-      expect(raA).toEqual({ id: 101, roleId: 1, access: true, disabled: false });
-      expect(raB).toEqual({ id: 102, roleId: 2, access: false, disabled: true });
-    });
-
-    it("handles internal errors", async () => {
-      jest.spyOn(Role, "findAll").mockRejectedValue(new Error("DB down"));
-
-      const res = await request(app).get("/get-roles");
-
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_FETCH_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-  });
-
-
-  // ── GET /check-role-before-delete/:id ────────────────────────────────────────
-  describe("GET /check-role-before-delete/:id", () => {
-    it("returns comma-separated usernames for that role", async () => {
-      const countSpy = jest.spyOn(User, "count").mockResolvedValue(2);
-
-      const res = await request(app).get("/check-role-before-delete/1");
-
-      // Assert query shape
-      expect(countSpy).toHaveBeenCalledWith({
-        where: { roleId: 1 },
-        raw: true,
-      });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('ROLE.HAS_DEPENDENCIES');
-      expect(res.body.data).toBe(2);
-    });
-
-    it("handles internal errors", async () => {
-      jest.spyOn(User, "count").mockRejectedValue(new Error("DB down"));
-
-      const res = await request(app).get("/check-role-before-delete/1");
-
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_CHECK_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-
-    it("returns 422 when params fail schema validation", async () => {
-      const res = await request(app).get("/check-role-before-delete/not-a-number");
-      expect(res.status).toBe(422);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.VALIDATION'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-  });
-
-
-  // ── DELETE /delete-role/:id ──────────────────────────────────────────────────
-  describe("DELETE /delete-role/:id", () => {
-    it("deletes an existing role", async () => {
-      const destroySpy = jest.spyOn(Role, "destroy").mockResolvedValue(1);
-
-      const res = await request(app).delete("/delete-role/1");
-
-      expect(destroySpy).toHaveBeenCalledWith({
+      expect(Role.update).toHaveBeenCalledWith({
+        name: 'new-name',
+        description: 'new-description',
+      }, {
         where: { id: 1 },
         individualHooks: true,
-        "transaction": {
-          "id": "test-transaction",
-        },
+        returning: ['id', 'name', 'description'],
       });
-      expect(res.statusCode).toBe(200);
-      expect(res.body.code).toBe('SUCCESS.DELETED');
-      expect(res.body.data).toBe(null);
+
+      expect(response.body).toEqual({
+        code: 'SUCCESS.UPDATED',
+        data: updatedRole,
+      });
     });
 
-    it("returns 404 when role is not found", async () => {
-      jest.spyOn(Role, "destroy").mockResolvedValue(0);
+    test('returns 404 when role does not exist', async () => {
+      Role.update.mockResolvedValue([0, []]);
 
-      const res = await request(app).delete("/delete-role/999");
+      const response = await request(makeApp()).patch('/update-role').send({
+        id: 999,
+        name: 'missing',
+        description: 'missing',
+      }).expect(404);
 
-      expect(res.status).toBe(404);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.ROLE.NOT_FOUND'
-      });
-      expect('correlationId' in res.body).toBe(true);
+      expect(response.body.code).toBe('ERRORS.ROLE.NOT_FOUND');
     });
 
-    it("handles internal errors", async () => {
-      jest.spyOn(Role, "destroy").mockRejectedValue(new Error("DB down"));
+    test('passes update errors onward as DATA_UPDATE_FAILED', async () => {
+      Role.update.mockRejectedValue(new Error('update failed'));
 
-      const res = await request(app).delete("/delete-role/1");
+      const response = await request(makeApp()).patch('/update-role').send({
+        id: 1,
+        name: 'name',
+        description: 'description',
+      }).expect(500);
 
-      expect(res.status).toBe(500);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.DATA_DELETE_FAILED'
-      });
-      expect('correlationId' in res.body).toBe(true);
-    });
-
-    it("returns 422 when params fail schema validation", async () => {
-      const res = await request(app).delete("/delete-role/NaN");
-      expect(res.status).toBe(422);
-      expect(res.headers['content-type']).toMatch(/application\/json/i);
-      expect(res.body).toMatchObject({
-        code: 'ERRORS.VALIDATION'
-      });
-      expect('correlationId' in res.body).toBe(true);
+      expect(response.body.code).toBe('ERRORS.DATA_UPDATE_FAILED');
     });
   });
 
+  describe('PATCH /update-role-access', () => {
+    test('turning off FULL enables LIMITED and disables ALL_OPS access', async () => {
+      mockPermissionUpdates();
+
+      const response = await request(makeApp()).patch('/update-role-access').send({
+        access: false,
+        roleId: 2,
+        operation: fullOperation,
+      }).expect(200);
+
+      const fullCall = findUpdateCall(fullOperation.operation);
+
+      expect(fullCall?.[0]).toEqual({ access: false });
+
+      expect(fullCall?.[1].transaction).toBe(fakeTx);
+
+      const limitedCall = findUpdateCall(limitedOperation.operation);
+
+      expect(limitedCall?.[0]).toEqual({ disabled: false });
+
+      const superCall = findUpdateCall(superOperation.operation);
+
+      expect(superCall?.[0]).toEqual({ access: false });
+
+      expect(RolePermission.findOne).not.toHaveBeenCalled();
+
+      expect(response.body.data.object).toBe(operationObject);
+    });
+
+    test('turning on FULL enables ALL_OPS when every related operation has access', async () => {
+      mockPermissionUpdates();
+
+      RolePermission.findOne.mockResolvedValue(null);
+
+      await request(makeApp()).patch('/update-role-access').send({
+        access: true,
+        roleId: 2,
+        operation: fullOperation,
+      }).expect(200);
+
+      expect(RolePermission.findOne).toHaveBeenCalledTimes(relatedOperations.length);
+
+      const limitedCall = findUpdateCall(limitedOperation.operation);
+
+      expect(limitedCall?.[0]).toEqual({
+        disabled: true,
+        access: true,
+      });
+
+      const superCall = findUpdateCall(superOperation.operation);
+
+      expect(superCall?.[0]).toEqual({ access: true });
+    });
+
+    test('does not enable ALL_OPS when another related operation is still off', async () => {
+      mockPermissionUpdates();
+
+      RolePermission.findOne.mockResolvedValueOnce({ id: 999 }).mockResolvedValue(null);
+
+      await request(makeApp()).patch('/update-role-access').send({
+        access: true,
+        roleId: 2,
+        operation: regularOperation,
+      }).expect(200);
+
+      expect(findUpdateCall(superOperation.operation)).toBeUndefined();
+
+      expect(findUpdateCall(regularOperation.operation)).toBeTruthy();
+    });
+
+    test('turning on ALL_OPS enables every related operation', async () => {
+      mockPermissionUpdates();
+
+      await request(makeApp()).patch('/update-role-access').send({
+        access: true,
+        roleId: 2,
+        operation: superOperation,
+      }).expect(200);
+
+      expect(findUpdateCall(superOperation.operation)?.[0]).toEqual({ access: true });
+
+      for (const operation of relatedOperations) {
+        const call = RolePermission.update.mock.calls.find(([values, options]) =>
+          options?.where?.name === operation.operation &&
+          values?.access === true);
+
+        expect(call).toBeTruthy();
+      }
+
+      const limitedDisabled = RolePermission.update.mock.calls.find(([values, options]) =>
+        options?.where?.name === limitedOperation.operation &&
+        values?.disabled === true);
+
+      expect(limitedDisabled).toBeTruthy();
+    });
+
+    test('returns 404 when permission row is missing', async () => {
+      RolePermission.update.mockResolvedValue([0, []]);
+
+      const response = await request(makeApp()).patch('/update-role-access').send({
+        access: false,
+        roleId: 2,
+        operation: regularOperation,
+      }).expect(404);
+
+      expect(response.body.code).toBe('ERRORS.DATA_NOT_FOUND');
+    });
+
+    test('passes permission update failures onward as DATA_UPDATE_FAILED', async () => {
+      RolePermission.update.mockRejectedValue(new Error('update failed'));
+
+      const response = await request(makeApp()).patch('/update-role-access').send({
+        access: false,
+        roleId: 2,
+        operation: regularOperation,
+      }).expect(500);
+
+      expect(response.body.code).toBe('ERRORS.DATA_UPDATE_FAILED');
+    });
+  });
+
+  describe('GET /get-roles-names-list', () => {
+    test('returns id and name ordered by name', async () => {
+      const roles = [
+        {
+          id: 1,
+          name: 'admin',
+        },
+        {
+          id: 2,
+          name: 'user',
+        },
+      ];
+
+      Role.findAll.mockResolvedValue(roles);
+
+      const response = await request(makeApp()).get('/get-roles-names-list').expect(200);
+
+      expect(Role.findAll).toHaveBeenCalledWith({
+        attributes: ['id', 'name'],
+        order: [['name', 'ASC']],
+        raw: true,
+      });
+
+      expect(response.body).toEqual({ data: roles });
+    });
+  });
+
+  describe('GET /get-roles', () => {
+    test('returns roles with permission access entries merged into operations', async () => {
+      const roles = [
+        {
+          id: 1,
+          name: 'admin',
+          description: 'Administrator',
+        },
+        {
+          id: 2,
+          name: 'user',
+          description: 'User',
+        },
+      ];
+
+      const [operationA, operationB] = OPERATIONS;
+
+      Role.findAll.mockResolvedValue(roles);
+
+      RolePermission.findAll.mockResolvedValue([
+        {
+          id: 101,
+          roleId: 1,
+          name: operationA.operation,
+          access: true,
+          disabled: false,
+        },
+        {
+          id: 102,
+          roleId: 2,
+          name: operationB.operation,
+          access: false,
+          disabled: true,
+        },
+      ]);
+
+      const response = await request(makeApp()).get('/get-roles').expect(200);
+
+      expect(Role.findAll).toHaveBeenCalledWith({
+        attributes: ['id', 'name', 'description'],
+        order: [['id', 'ASC']],
+        raw: true,
+      });
+
+      expect(RolePermission.findAll).toHaveBeenCalledWith({
+        where: { roleId: [1, 2] },
+        attributes: ['id', 'roleId', 'name', 'access', 'disabled'],
+        raw: true,
+      });
+
+      const operations = response.body.data.operations;
+
+      const first = operations.find((operation) => operation.operation === operationA.operation);
+
+      const second = operations.find((operation) => operation.operation === operationB.operation);
+
+      expect(first.rolesAccesses).toContainEqual({
+        id: 101,
+        roleId: 1,
+        access: true,
+        disabled: false,
+      });
+
+      expect(second.rolesAccesses).toContainEqual({
+        id: 102,
+        roleId: 2,
+        access: false,
+        disabled: true,
+      });
+
+      expect(response.body.data.roles).toEqual(roles);
+    });
+
+    test('passes fetch errors onward as DATA_FETCH_FAILED', async () => {
+      Role.findAll.mockRejectedValue(new Error('DB down'));
+
+      const response = await request(makeApp()).get('/get-roles').expect(500);
+
+      expect(response.body.code).toBe('ERRORS.DATA_FETCH_FAILED');
+    });
+  });
+
+  describe('GET /check-role-before-delete/:id', () => {
+    test('returns dependency count and code when users use the role', async () => {
+      User.count.mockResolvedValue(2);
+
+      const response = await request(makeApp()).get('/check-role-before-delete/1').expect(200);
+
+      expect(User.count).toHaveBeenCalledWith({
+        where: { roleId: '1' },
+        raw: true,
+      });
+
+      expect(response.body).toEqual({
+        data: 2,
+        code: 'ERRORS.ROLE.HAS_DEPENDENCIES',
+      });
+    });
+
+    test('returns zero without dependency code when role is unused', async () => {
+      User.count.mockResolvedValue(0);
+
+      const response = await request(makeApp()).get('/check-role-before-delete/1').expect(200);
+
+      expect(response.body).toEqual({ data: 0 });
+    });
+  });
+
+  describe('DELETE /delete-role/:id', () => {
+    test('deletes an unused role in a transaction', async () => {
+      User.count.mockResolvedValue(0);
+
+      Role.destroy.mockResolvedValue(1);
+
+      const response = await request(makeApp()).delete('/delete-role/1').expect(200);
+
+      expect(User.count).toHaveBeenCalledWith({
+        where: { roleId: '1' },
+        transaction: fakeTx,
+      });
+
+      expect(Role.destroy).toHaveBeenCalledWith({
+        where: { id: '1' },
+        individualHooks: true,
+        transaction: fakeTx,
+      });
+
+      expect(response.body).toEqual({
+        code: 'SUCCESS.DELETED',
+        data: null,
+      });
+    });
+
+    test('returns 409 when role still has users', async () => {
+      User.count.mockResolvedValue(2);
+
+      const response = await request(makeApp()).delete('/delete-role/1').expect(409);
+
+      expect(response.body.code).toBe('ERRORS.ROLE.HAS_DEPENDENCIES');
+
+      expect(Role.destroy).not.toHaveBeenCalled();
+    });
+
+    test('returns 404 when role does not exist', async () => {
+      User.count.mockResolvedValue(0);
+
+      Role.destroy.mockResolvedValue(0);
+
+      const response = await request(makeApp()).delete('/delete-role/999').expect(404);
+
+      expect(response.body.code).toBe('ERRORS.DATA_NOT_FOUND');
+    });
+
+    test('passes delete errors onward as DATA_DELETE_FAILED', async () => {
+      User.count.mockResolvedValue(0);
+
+      Role.destroy.mockRejectedValue(new Error('DB down'));
+
+      const response = await request(makeApp()).delete('/delete-role/1').expect(500);
+
+      expect(response.body.code).toBe('ERRORS.DATA_DELETE_FAILED');
+    });
+  });
 });

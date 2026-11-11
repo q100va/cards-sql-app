@@ -22,14 +22,20 @@ function forbidden(details) {
   );
 }
 
-function getOperationCodes(opCodes) {
+function getOperationCodes(
+  opCodes,
+) {
   return [
     ...new Set(
-      opCodes.filter(
-        (code) =>
-          typeof code === 'string' &&
-          code.trim() !== '',
-      ),
+      opCodes
+        .filter(
+          (code) =>
+            typeof code === 'string',
+        )
+        .map(
+          (code) => code.trim(),
+        )
+        .filter(Boolean),
     ),
   ];
 }

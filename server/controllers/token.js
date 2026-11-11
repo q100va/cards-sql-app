@@ -107,9 +107,14 @@ function assertUserHasRole(user) {
   const roleName =
     user?.role?.name;
 
+  const roleId =
+    Number(user?.roleId);
+
   if (
     typeof roleName !== 'string' ||
-    roleName.trim() === ''
+    roleName.trim() === '' ||
+    !Number.isInteger(roleId) ||
+    roleId <= 0
   ) {
     const error =
       new Error(
@@ -124,7 +129,10 @@ function assertUserHasRole(user) {
     throw error;
   }
 
-  return roleName;
+  return {
+    roleName,
+    roleId,
+  };
 }
 
 export async function mintTokenPair(
@@ -135,8 +143,10 @@ export async function mintTokenPair(
     transaction = undefined,
   } = {},
 ) {
-  const roleName =
-    assertUserHasRole(user);
+  const {
+    roleName,
+    roleId,
+  } = assertUserHasRole(user);
 
   const jti = uuidv4();
   const now = new Date();
@@ -151,8 +161,8 @@ export async function mintTokenPair(
         expiresAt:
           new Date(
             now.getTime() +
-              REFRESH_TTL_SEC *
-                1000,
+            REFRESH_TTL_SEC *
+            1000,
           ),
       },
       {
@@ -165,7 +175,7 @@ export async function mintTokenPair(
       sub: String(user.id),
       uname: user.userName,
       role: roleName,
-      roleId: user.roleId,
+      roleId: roleId,
     });
 
   const refreshToken =
@@ -173,7 +183,7 @@ export async function mintTokenPair(
       sub: String(user.id),
       uname: user.userName,
       role: roleName,
-      roleId: user.roleId,
+      roleId: roleId,
       jti: refresh.id,
     });
 

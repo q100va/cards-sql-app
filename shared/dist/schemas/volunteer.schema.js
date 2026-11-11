@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { toTrim, emptyToNull, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, positiveIntParam, emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, draftAddressSchema, addressSchema, contactType, optionalContactsSchema, changingContactsSchema, outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
 import { INSTITUTE_CATEGORY } from '../constants/volunteers.js';
-const instituteCategorySchema = z.union([
+export const instituteCategorySchema = z.union([
     z.literal(INSTITUTE_CATEGORY.SCHOOL),
     z.literal(INSTITUTE_CATEGORY.KINDERGARTEN),
     z.literal(INSTITUTE_CATEGORY.COLLEGE),

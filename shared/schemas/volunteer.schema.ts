@@ -31,7 +31,7 @@ import {
 } from './common.schema.js';
 import { INSTITUTE_CATEGORY } from '../constants/volunteers.js';
 
-const instituteCategorySchema = z.union([
+export const instituteCategorySchema = z.union([
   z.literal(INSTITUTE_CATEGORY.SCHOOL),
   z.literal(INSTITUTE_CATEGORY.KINDERGARTEN),
   z.literal(INSTITUTE_CATEGORY.COLLEGE),

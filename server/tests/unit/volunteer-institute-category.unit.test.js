@@ -1,10 +1,5 @@
-import {
-  INSTITUTE_CATEGORIES,
-  INSTITUTE_CATEGORY,
-} from '../../../shared/dist/constants/volunteers.js';
-import {
-  instituteCategoryControlSchema,
-} from '../../../shared/dist/schemas/volunteer.schema.js';
+import { INSTITUTE_CATEGORIES, INSTITUTE_CATEGORY } from '../../../shared/dist/constants/volunteers.js';
+import { instituteCategorySchema } from '../../../shared/dist/schemas/volunteer.schema.js';
 
 describe('volunteer institute categories', () => {
   test('defines a localized entry for every stable numeric category ID', () => {
@@ -22,17 +17,11 @@ describe('volunteer institute categories', () => {
     }
   });
 
-  test.each(Object.values(INSTITUTE_CATEGORY))(
-    'accepts category ID %s',
-    (categoryId) => {
-      expect(instituteCategoryControlSchema.parse(categoryId)).toBe(categoryId);
-    },
-  );
+  test.each(Object.values(INSTITUTE_CATEGORY))('accepts category ID %s', (categoryId) => {
+    expect(instituteCategorySchema.parse(categoryId)).toBe(categoryId);
+  });
 
-  test.each(['School', 'школа', 0, 13, 1.5])(
-    'rejects invalid stored category value %p',
-    (category) => {
-      expect(instituteCategoryControlSchema.safeParse(category).success).toBe(false);
-    },
-  );
+  test.each(['School', 'школа', 0, 13, 1.5])('rejects invalid stored category value %p', (category) => {
+    expect(instituteCategorySchema.safeParse(category).success).toBe(false);
+  });
 });

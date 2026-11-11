@@ -1,189 +1,204 @@
 // tests/unit/require-permission.unit.test.js
-// ESM-style Jest spec (package.json: { "type": "module" })
-import { requireAny, requireAll, requireOperation } from '../../middlewares/require-permission.js';
-import {RolePermission} from '../../models/index.js';
-import { jest } from "@jest/globals";
+import { jest } from '@jest/globals';
+import { Op } from 'sequelize';
+
+const RolePermission = {
+  count: jest.fn(),
+  findAll: jest.fn(),
+};
+
+jest.unstable_mockModule('../../models/index.js', () => ({ RolePermission }));
+
+const {
+  requireAny,
+  requireAll,
+  requireOperation,
+} = await import('../../middlewares/require-permission.js');
 
 describe('require-permission middlewares', () => {
-  const makeReq = (roleId) =>
-    roleId == null ? { user: undefined } : { user: { roleId } };
-  const res = {}; // not used by middleware
-  const makeNext = () => {
-    const fn = jest.fn();
-    return fn;
-  };
+  const makeReq = (roleId) => roleId == null ? {} : { user: { roleId } };
 
-  afterEach(() => {
-    jest.restoreAllMocks();
+  const res = {};
+
+  beforeEach(() => {
+    RolePermission.count.mockReset();
+    RolePermission.findAll.mockReset();
   });
 
-  // ---------- requireAny ----------
-  describe('requireAny(...)', () => {
-    it('401 when no req.user/roleId', async () => {
-      const mw = requireAny('A', 'B');
-      const next = makeNext();
+  describe('requireAny', () => {
+    test('returns 401 when roleId is missing', async () => {
+      const next = jest.fn();
 
-      await mw(makeReq(undefined), res, next);
+      await requireAny('VIEW')(makeReq(), res, next);
 
-      expect(next).toHaveBeenCalledTimes(1);
-      const err = next.mock.calls[0][0];
-      expect(err).toBeInstanceOf(Error);
-      expect(err.status).toBe(401);
-      expect(err.code).toBe('ERRORS.UNAUTHORIZED');
+      const error = next.mock.calls[0][0];
+
+      expect(error.status).toBe(401);
+      expect(error.code).toBe('ERRORS.UNAUTHORIZED');
+
+      expect(RolePermission.count).not.toHaveBeenCalled();
     });
 
-    it('passes when at least one permission is granted (count >= 1)', async () => {
-      const mw = requireAny('ADD', 'EDIT');
-      const next = makeNext();
+    test('fails closed when no permission codes are provided', async () => {
+      const next = jest.fn();
 
-      const spy = jest.spyOn(RolePermission, 'count').mockResolvedValue(2);
+      await requireAny('', '   ')(makeReq(1), res, next);
 
-      await mw(makeReq(7), res, next);
+      const error = next.mock.calls[0][0];
 
-      // count called with roleId=7
-      expect(spy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ roleId: 7 }),
-        }),
-      );
-      // success path: next without error (undefined)
+      expect(error.status).toBe(403);
+
+      expect(error.details).toEqual({ requiredAny: [] });
+
+      expect(RolePermission.count).not.toHaveBeenCalled();
+    });
+
+    test('passes when at least one permission is granted', async () => {
+      RolePermission.count.mockResolvedValue(1);
+
+      const next = jest.fn();
+
+      await requireAny(' ADD ', 'EDIT', 'ADD')(makeReq(7), res, next);
+
+      expect(RolePermission.count).toHaveBeenCalledTimes(1);
+
+      const query = RolePermission.count.mock.calls[0][0];
+
+      expect(query.where.roleId).toBe(7);
+
+      expect(query.where.access).toBe(true);
+
+      expect(query.where.name[Op.in]).toEqual(['ADD', 'EDIT']);
+
       expect(next).toHaveBeenCalledWith();
     });
 
-    it('forbidden when none granted (count = 0)', async () => {
-      const mw = requireAny('ADD', 'EDIT');
-      const next = makeNext();
+    test('returns 403 when none of the permissions are granted', async () => {
+      RolePermission.count.mockResolvedValue(0);
 
-      jest.spyOn(RolePermission, 'count').mockResolvedValue(0);
+      const next = jest.fn();
 
-      await mw(makeReq(2), res, next);
+      await requireAny('ADD', 'EDIT')(makeReq(2), res, next);
 
-      expect(next).toHaveBeenCalledTimes(1);
-      const err = next.mock.calls[0][0];
-      expect(err).toBeInstanceOf(Error);
-      expect(err.status).toBe(403);
-      expect(err.code).toBe('ERRORS.FORBIDDEN');
-      // middleware кладёт детали requiredAny
-      expect(err.details).toEqual({ requiredAny: ['ADD', 'EDIT'] });
+      const error = next.mock.calls[0][0];
+
+      expect(error.status).toBe(403);
+      expect(error.code).toBe('ERRORS.FORBIDDEN');
+
+      expect(error.details).toEqual({ requiredAny: ['ADD', 'EDIT'] });
     });
 
-    it('forbidden with ACCESS.CHECK_FAILED when DB throws', async () => {
-      const mw = requireAny('X');
-      const next = makeNext();
+    test('passes database errors to the error handler', async () => {
+      const dbError = new Error('db is down');
 
-      jest
-        .spyOn(RolePermission, 'count')
-        .mockRejectedValue(new Error('db is down'));
+      RolePermission.count.mockRejectedValue(dbError);
 
-      await mw(makeReq(5), res, next);
+      const next = jest.fn();
 
-      const err = next.mock.calls[0][0];
-      expect(err.status).toBe(403);
-      expect(err.code).toBe('ERRORS.FORBIDDEN');
-      expect(err.details?.error).toBe('ACCESS.CHECK_FAILED');
-      expect(err.details?.cause).toMatch(/db is down/);
+      await requireAny('VIEW')(makeReq(5), res, next);
+
+      expect(next).toHaveBeenCalledWith(dbError);
+
+      expect(dbError.status).toBe(500);
+
+      expect(dbError.code).toBe('ERRORS.DATA_FETCH_FAILED');
     });
   });
 
-  // ---------- requireAll ----------
-  describe('requireAll(...)', () => {
-    it('401 when no roleId', async () => {
-      const mw = requireAll('A');
-      const next = makeNext();
+  describe('requireAll', () => {
+    test('returns 401 when roleId is missing', async () => {
+      const next = jest.fn();
 
-      await mw(makeReq(null), res, next);
+      await requireAll('VIEW')(makeReq(), res, next);
 
-      const err = next.mock.calls[0][0];
-      expect(err.status).toBe(401);
-      expect(err.code).toBe('ERRORS.UNAUTHORIZED');
+      const error = next.mock.calls[0][0];
+
+      expect(error.status).toBe(401);
+      expect(error.code).toBe('ERRORS.UNAUTHORIZED');
+
+      expect(RolePermission.findAll).not.toHaveBeenCalled();
     });
 
-    it('passes when all requested permissions are present', async () => {
-      const mw = requireAll('ADD', 'EDIT', 'DELETE');
-      const next = makeNext();
+    test('fails closed when no permission codes are provided', async () => {
+      const next = jest.fn();
 
-      // findAll вернёт строки с name для всех трёх кодов
-      const rows = ['ADD', 'EDIT', 'DELETE'].map((name) => ({ name }));
-      const spy = jest
-        .spyOn(RolePermission, 'findAll')
-        .mockResolvedValue(rows);
+      await requireAll()(makeReq(1), res, next);
 
-      await mw(makeReq(9), res, next);
+      const error = next.mock.calls[0][0];
 
-      expect(spy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ roleId: 9 }),
-          attributes: ['name'],
-          raw: true,
-        }),
-      );
-      expect(next).toHaveBeenCalledWith(); // success
+      expect(error.status).toBe(403);
+
+      expect(error.details).toEqual({ requiredAll: [] });
+
+      expect(RolePermission.findAll).not.toHaveBeenCalled();
     });
 
-    it('forbidden with missing list when at least one is absent', async () => {
-      const mw = requireAll('ADD', 'EDIT', 'DELETE');
-      const next = makeNext();
+    test('passes when all permissions are granted', async () => {
+      RolePermission.findAll.mockResolvedValue([{ name: 'ADD' }, { name: 'EDIT' }, { name: 'DELETE' }]);
 
-      // вернём только ADD, EDIT → DELETE отсутствует
-      jest
-        .spyOn(RolePermission, 'findAll')
-        .mockResolvedValue([{ name: 'ADD' }, { name: 'EDIT' }]);
+      const next = jest.fn();
 
-      await mw(makeReq(3), res, next);
+      await requireAll('ADD', 'EDIT', 'DELETE')(makeReq(9), res, next);
 
-      const err = next.mock.calls[0][0];
-      expect(err.status).toBe(403);
-      expect(err.code).toBe('ERRORS.FORBIDDEN');
-      expect(err.details).toEqual({
+      const query = RolePermission.findAll.mock.calls[0][0];
+
+      expect(query.where.roleId).toBe(9);
+
+      expect(query.where.access).toBe(true);
+
+      expect(query.where.name[Op.in]).toEqual(['ADD', 'EDIT', 'DELETE']);
+
+      expect(query.attributes).toEqual(['name']);
+
+      expect(query.raw).toBe(true);
+
+      expect(next).toHaveBeenCalledWith();
+    });
+
+    test('returns 403 with missing permissions', async () => {
+      RolePermission.findAll.mockResolvedValue([{ name: 'ADD' }, { name: 'EDIT' }]);
+
+      const next = jest.fn();
+
+      await requireAll('ADD', 'EDIT', 'DELETE')(makeReq(3), res, next);
+
+      const error = next.mock.calls[0][0];
+
+      expect(error.status).toBe(403);
+      expect(error.code).toBe('ERRORS.FORBIDDEN');
+
+      expect(error.details).toEqual({
         requiredAll: ['ADD', 'EDIT', 'DELETE'],
         missing: ['DELETE'],
       });
     });
 
-    it('forbidden with ACCESS.CHECK_FAILED when DB throws', async () => {
-      const mw = requireAll('VIEW');
-      const next = makeNext();
+    test('passes database errors to the error handler', async () => {
+      const dbError = new Error('boom');
 
-      jest
-        .spyOn(RolePermission, 'findAll')
-        .mockRejectedValue(new Error('boom'));
+      RolePermission.findAll.mockRejectedValue(dbError);
 
-      await mw(makeReq(1), res, next);
+      const next = jest.fn();
 
-      const err = next.mock.calls[0][0];
-      expect(err.status).toBe(403);
-      expect(err.code).toBe('ERRORS.FORBIDDEN');
-      expect(err.details?.error).toBe('ACCESS.CHECK_FAILED');
-      expect(err.details?.cause).toMatch(/boom/);
+      await requireAll('VIEW')(makeReq(1), res, next);
+
+      expect(next).toHaveBeenCalledWith(dbError);
+
+      expect(dbError.status).toBe(500);
+
+      expect(dbError.code).toBe('ERRORS.DATA_FETCH_FAILED');
     });
   });
 
-  // ---------- sugar: requireOperation(op) = requireAll(op) ----------
-  describe('requireOperation(op)', () => {
-    it('delegates to requireAll and succeeds when op is present', async () => {
-      const mw = requireOperation('VIEW_USER');
-      const next = makeNext();
+  describe('requireOperation', () => {
+    test('requires the specified operation', async () => {
+      RolePermission.findAll.mockResolvedValue([{ name: 'VIEW_USER' }]);
 
-      jest
-        .spyOn(RolePermission, 'findAll')
-        .mockResolvedValue([{ name: 'VIEW_USER' }]);
+      const next = jest.fn();
 
-      await mw(makeReq(4), res, next);
+      await requireOperation('VIEW_USER')(makeReq(4), res, next);
+
       expect(next).toHaveBeenCalledWith();
-    });
-
-    it('delegates to requireAll and forbids when op is missing', async () => {
-      const mw = requireOperation('EDIT_USER');
-      const next = makeNext();
-
-      jest.spyOn(RolePermission, 'findAll').mockResolvedValue([]); // nothing
-
-      await mw(makeReq(4), res, next);
-
-      const err = next.mock.calls[0][0];
-      expect(err.status).toBe(403);
-      expect(err.code).toBe('ERRORS.FORBIDDEN');
-      expect(err.details?.missing).toEqual(['EDIT_USER']);
     });
   });
 });

@@ -1,49 +1,57 @@
 import { jest } from '@jest/globals';
-import * as db from '../../database.js';
-import { withTransaction } from '../../controllers/with-transaction.js';
 
-describe('withTransaction - hard failure paths', () => {
+const transactionMock = jest.fn();
+
+jest.unstable_mockModule('../../database.js', () => ({ default: { transaction: transactionMock } }));
+
+const { withTransaction } = await import('../../controllers/with-transaction.js');
+
+describe('withTransaction', () => {
   beforeEach(() => {
-    jest.resetModules();
-    jest.clearAllMocks();
+    transactionMock.mockReset();
   });
 
-  it('propagates the original commit error even if rollback throws', async () => {
-    // fresh tx per test
-    const tx = {
-      commit: jest.fn().mockRejectedValueOnce(new Error('commit failed')),
-      rollback: jest.fn().mockRejectedValueOnce(new Error('rollback failed')),
-    };
+  it('runs the callback inside a managed transaction and returns its result', async () => {
+    const transaction = { id: 'test-transaction' };
 
-    // sequelize.transaction returns our fresh tx once
-    jest.spyOn(db.default, 'transaction').mockImplementationOnce(async () => tx);
+    transactionMock.mockImplementationOnce(async (managedCallback) => managedCallback(transaction));
 
-    await expect(
-      withTransaction(async (_t) => {
-        // callback ok -> commit will fail
-        return 123;
-      })
-    ).rejects.toThrow('commit failed');
+    const callback = jest.fn().mockResolvedValue(123);
 
-    // exactly once per this test
-    expect(tx.commit).toHaveBeenCalledTimes(1);
-    expect(tx.rollback).toHaveBeenCalledTimes(1);
+    const result = await withTransaction(callback);
+
+    expect(transactionMock).toHaveBeenCalledTimes(1);
+
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function));
+
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    expect(callback).toHaveBeenCalledWith(transaction);
+
+    expect(result).toBe(123);
   });
 
-  it('propagates the original callback error even if rollback throws', async () => {
-    const tx = {
-      commit: jest.fn().mockResolvedValueOnce(undefined),
-      rollback: jest.fn().mockRejectedValueOnce(new Error('rollback failed')),
-    };
-    jest.spyOn(db.default, 'transaction').mockImplementationOnce(async () => tx);
+  it('propagates the callback error', async () => {
+    const transaction = { id: 'test-transaction' };
 
-    await expect(
-      withTransaction(async (_t) => {
-        throw new Error('callback failed');
-      })
-    ).rejects.toThrow('callback failed');
+    transactionMock.mockImplementationOnce(async (managedCallback) => managedCallback(transaction));
 
-    expect(tx.commit).not.toHaveBeenCalled();
-    expect(tx.rollback).toHaveBeenCalledTimes(1);
+    const error = new Error('callback failed');
+
+    await expect(withTransaction(async () => {
+      throw error;
+    })).rejects.toBe(error);
+  });
+
+  it('propagates an error from Sequelize transaction handling', async () => {
+    const error = new Error('transaction failed');
+
+    transactionMock.mockRejectedValueOnce(error);
+
+    const callback = jest.fn();
+
+    await expect(withTransaction(callback)).rejects.toBe(error);
+
+    expect(callback).not.toHaveBeenCalled();
   });
 });

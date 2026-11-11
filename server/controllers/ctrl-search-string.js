@@ -1,13 +1,17 @@
 import {
   Volunteer,
   VolunteerAddress,
+  VolunteerContact,
   VolunteerInstitute,
   VolunteerSubscription,
   VolunteerCooperation,
   VolunteerSearch,
   Country,
+  Region,
   District,
   Locality,
+  User,
+  Order,
 } from '../models/index.js';
 import CustomError from '../shared/customError.js';
 import { fullName } from './ctrl-create-owner-contacts-address.js';

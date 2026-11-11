@@ -4,9 +4,12 @@ import {
 } from 'rate-limiter-flexible';
 import logger from '../logging/logger.js';
 
+const REDIS_URL =
+  process.env.REDIS_URL;
+
 const useRedis =
   process.env.NODE_ENV === 'production' &&
-  Boolean(process.env.REDIS_URL);
+  Boolean(REDIS_URL);
 
 let redis = null;
 let redisPromise = null;
@@ -20,7 +23,7 @@ async function getRedis() {
     redisPromise = import('ioredis')
       .then(({ default: Redis }) => {
         redis = new Redis(
-          process.env.REDIS_URL,
+          REDIS_URL,
           {
             enableOfflineQueue: false,
             maxRetriesPerRequest: 1,
