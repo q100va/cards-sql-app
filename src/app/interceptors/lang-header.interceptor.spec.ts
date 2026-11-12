@@ -53,6 +53,19 @@ describe('langHeaderInterceptor', () => {
     req.flush({ ok: true });
   });
 
+  it('does not let an unsupported stored language override a valid document language', () => {
+    localStorage.setItem(LS_KEY, 'de');
+    document.documentElement.lang = 'ru';
+    try {
+      http.get('/api/corrupted-language').subscribe();
+      const req = httpMock.expectOne('/api/corrupted-language');
+      expect(req.request.headers.get('x-lang')).toBe('ru');
+      req.flush({ ok: true });
+    } finally {
+      localStorage.removeItem(LS_KEY);
+    }
+  });
+
   it('uses document.documentElement.lang when localStorage is empty', () => {
     document.documentElement.lang = 'uk';
 
