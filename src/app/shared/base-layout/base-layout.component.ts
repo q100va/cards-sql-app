@@ -236,7 +236,7 @@ export class BaseLayoutComponent {
     },
     {
       params: {
-        codes: ['VIEW_FULL_ROLES_LIST'], //TODO: create operations for audit
+        codes: ['VIEW_AUDIT_LOG'],
         mode: 'all',
       },
       dataCy: 'nav-audit',

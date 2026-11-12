@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import type { Routes } from '@angular/router';
+import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
 import { AuthLayoutComponent } from './shared/auth-layout/auth-layout.component';
 import { SignInComponent } from './pages/sign-in/sign-in.component';
 import { BaseLayoutComponent } from './shared/base-layout/base-layout.component';
@@ -26,16 +27,14 @@ import { ReportsComponent } from './pages/reports/reports.component';
 import { StatisticComponent } from './pages/statistic/statistic.component';
 
 export const routes: Routes = [
-  // Публичные маршруты (без гарда)
+  // Permission denial must have an unguarded terminal destination.
+  { path: 'forbidden', component: ForbiddenComponent },
   {
     path: 'session',
     component: AuthLayoutComponent,
-    children: [
-      { path: 'sign-in', component: SignInComponent }, //{ path: "404", component: NotFoundComponent, },
-    ],
+    children: [{ path: 'sign-in', component: SignInComponent }],
   },
 
-  // Защищённая зона
   {
     path: '',
     component: BaseLayoutComponent,
@@ -43,33 +42,25 @@ export const routes: Routes = [
     canActivateChild: [authGuard],
     canMatch: [waitAuthReady],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'users' }, // дефолт
+      { path: '', pathMatch: 'full', redirectTo: 'users' },
       {
         path: 'users',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_USERS_LIST', 'VIEW_LIMITED_USERS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_USERS_LIST', 'VIEW_LIMITED_USERS_LIST')],
         component: UsersListComponent,
       },
       {
         path: 'partners',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_PARTNERS_LIST', 'VIEW_LIMITED_PARTNERS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_PARTNERS_LIST', 'VIEW_LIMITED_PARTNERS_LIST')],
         component: PartnersListComponent,
       },
       {
         path: 'homes',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_HOMES_LIST', 'VIEW_LIMITED_HOMES_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_HOMES_LIST', 'VIEW_LIMITED_HOMES_LIST')],
         component: HomesListComponent,
       },
       {
         path: 'seniors',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_SENIORS_LIST', 'VIEW_LIMITED_SENIORS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_SENIORS_LIST', 'VIEW_LIMITED_SENIORS_LIST')],
         component: SeniorsListComponent,
       },
       {
@@ -79,12 +70,7 @@ export const routes: Routes = [
       },
       {
         path: 'volunteers',
-        canMatch: [
-          requireAnyOp(
-            'VIEW_FULL_VOLUNTEERS_LIST',
-            'VIEW_LIMITED_VOLUNTEERS_LIST',
-          ),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_VOLUNTEERS_LIST', 'VIEW_LIMITED_VOLUNTEERS_LIST')],
         component: VolunteersListComponent,
       },
       {
@@ -99,38 +85,38 @@ export const routes: Routes = [
       },
       {
         path: 'recipients/:occasionId',
-        canMatch: [
-          requireAnyOp(
-            'VIEW_LIMITED_RECIPIENTS_LIST',
-            'VIEW_FULL_RECIPIENTS_LIST',
-          ),
-        ],
+        canMatch: [requireAnyOp('VIEW_LIMITED_RECIPIENTS_LIST', 'VIEW_FULL_RECIPIENTS_LIST')],
         component: RecipientsListComponent,
       },
+      // Match order pages fully so list guards cannot gate a different order URL.
       {
         path: 'orders',
+        pathMatch: 'full',
         canMatch: [requireAnyOp('VIEW_FULL_ORDERS_LIST')],
         component: OrdersListComponent,
       },
       {
         path: 'orders/:userId',
-        canMatch: [
-          requireAnyOp('VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'),
-        ],
+        pathMatch: 'full',
+        canMatch: [requireAnyOp('VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST')],
         component: OrdersListComponent,
       },
       {
         path: 'orders/new-order/:typeId',
+        pathMatch: 'full',
         canMatch: [requireAnyOp('ADD_NEW_ORDER')],
         component: OrderCardComponent,
       },
       {
         path: 'orders/order/:orderId',
-        canMatch: [requireAnyOp('VIEW_ORDER')],
+        pathMatch: 'full',
+        canMatch: [requireAnyOp('VIEW_ORDER', 'EDIT_ORDER')],
         component: OrderDetailsComponent,
       },
       {
         path: 'orders/order/:orderId/:userId',
+        pathMatch: 'full',
+        canMatch: [requireAnyOp('VIEW_ORDER', 'EDIT_ORDER')],
         component: OrderDetailsComponent,
       },
       {
@@ -138,47 +124,38 @@ export const routes: Routes = [
         canMatch: [requireAnyOp('VIEW_FULL_REPORTS', 'VIEW_LIMITED_REPORTS')],
         component: ReportsComponent,
       },
-            {
+      {
         path: 'statistic',
         canMatch: [requireAnyOp('VIEW_CURRENT_STATISTIC')],
         component: StatisticComponent,
       },
       {
         path: 'countries',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
         component: CountriesListComponent,
       },
       {
         path: 'regions',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
         component: RegionsListComponent,
       },
       {
         path: 'districts',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
         component: DistrictsListComponent,
       },
       {
         path: 'localities',
-        canMatch: [
-          requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST'),
-        ],
+        canMatch: [requireAnyOp('VIEW_FULL_TOPONYMS_LIST', 'VIEW_LIMITED_TOPONYMS_LIST')],
         component: LocalitiesListComponent,
       },
       {
         path: 'audit',
-        canMatch: [requireOp('VIEW_FULL_ROLES_LIST')], //TODO: create operations for audit
+        canMatch: [requireOp('VIEW_AUDIT_LOG')],
         component: AuditTableComponent,
       },
     ],
   },
 
-  // Фоллбек
   { path: '**', redirectTo: '' },
 ];
