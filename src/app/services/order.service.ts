@@ -117,7 +117,6 @@ export class OrderService {
   }
 
   getOrderById(id: number): Observable<ApiResponse<OrderDetails>> {
-    console.log('id', id);
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/order/${id}`)
       .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));

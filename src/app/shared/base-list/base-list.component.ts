@@ -170,8 +170,6 @@ export class BaseListComponent {
 
     // View option label
 
-    console.log('ap.viewOption', ap.viewOption);
-    console.log('this.params().viewOptions', this.params().viewOptions);
 
     const vo = this.params().viewOptions.find(
       (v) => v.id === ap.viewOption,
@@ -201,7 +199,6 @@ export class BaseListComponent {
     // GeneralFilter
     const gf: GeneralFilter = ap.filter;
 
-    console.log('GeneralFilter', gf);
 
     if (gf.birthDate.dayRange.length) {
       pieces.push(

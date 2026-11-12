@@ -364,11 +364,9 @@ export class TableComponent<K extends Kind> implements OnChanges {
             this.fetchList(kind as K, q.filter, q.pageSize, q.page).pipe(
               tap({
                 next: ({ list, length }) => {
-                  console.log('list', list);
                   this.owners = list as OwnerByKind<K>[];
                   this.length.set(length ?? 0);
                   this.dataSource.data = list as OwnerByKind<K>[];
-                  console.log(' this.dataSource.data', this.dataSource.data);
                   //this.dataSource.sort = this.sort;
                 },
                 complete: () => {},
@@ -391,7 +389,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   }
   ngOnInit() {
     this.displayedColumns = this.params().columns.map((c) => c.columnName);
-    console.log('this.displayedColumns', this.displayedColumns);
     this.dialogProps = this.ownerDialogConfig();
     this.permissions = PERMISSIONS_COMPONENT_REGISTRY[
       this.kind()
@@ -399,7 +396,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   }
   ngOnChanges(changes: SimpleChanges) {
     if (changes['kind'] && this.kind) {
-      console.log('this.kind', this.kind());
       this.kind$.next(this.kind());
     }
   }

@@ -375,8 +375,6 @@ export class AdvancedDetailsComponent<
   override ngOnInit(): void {
     super.ngOnInit();
     this.kind = this.data().componentType as K;
-    // console.log(' this.object', structuredClone(this.object));
-    // console.log('this.existingOwner', structuredClone(this.existingOwner));
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(
         this.existingOwner!.outdatedData,
@@ -507,7 +505,6 @@ export class AdvancedDetailsComponent<
   }
 
   onChangeDateOfExit() {
-    console.log('onChangeDateOfExit');
     this.showRestrictedToggle = !!!this.mainForm.controls['dateOfExit'].value;
     this.onChangeValidation();
   }
@@ -623,9 +620,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         !this.deletingSignal() &&
         this.data().operation === 'view-edit');
 
-    //  console.log('disabled', disabled);
-    // console.log('FORM status:', this.mainForm.status);
-    // console.log('FORM errors:', this.mainForm.errors);
 
     const controls = this.mainForm.controls;
     for (const name of Object.keys(controls)) {
@@ -655,8 +649,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           .getRawValue()
           .filter(Boolean);
 
-        // console.log('original', original);
-        //  console.log('current', current);
 
         // lengths differ -> changed
         if (original.length !== current.length) return true;
@@ -710,7 +702,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   // Seed form with initial values; transform contacts for view-mode
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
     super.setInitialValues(mode);
-    console.log('setInitialValues');
     if ('orderedContacts' in this.existingOwner!) {
       const ordered: OwnerContacts = this.existingOwner![
         'orderedContacts'
@@ -764,7 +755,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       'names' in this.restoringDataDraft &&
       'names' in this.existingOwner!.outdatedData
     ) {
-      console.log('INDEX - onRestoreOutdatedName ', this.outdatedDataDraft);
 
       if (this.restoringDataDraft.names !== null) {
         const nameId = this.restoringDataDraft.names![0];
@@ -786,7 +776,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         patronymic: data.patronymic,
         lastName: data.lastName,
       });
-      console.log('INDEX - onRestoreOutdatedName 2', this.outdatedDataDraft);
       //восстанавливаемые значения удаляем из outdatingDataDraft
       this.deleteFromOutdatedDataDraft(
         'names' as unknown as keyof OutdatedByKind<K>,
@@ -902,10 +891,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   deleteFromOutdatedDataDraft(type: keyof OutdatedByKind<K>, id: number) {
-    console.log(
-      'INDEX - deleteFromOutdatedDataDraft',
-      this.outdatedDataDraft[type],
-    );
     if (type === 'contacts' && 'contacts' in this.outdatedDataDraft) {
       for (const key of typedKeys(this.outdatedDataDraft.contacts)) {
         const idx = this.outdatedDataDraft.contacts[key]!.findIndex(
@@ -918,12 +903,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     } else if (Array.isArray(this.outdatedDataDraft[type])) {
       const idx = this.outdatedDataDraft[type].findIndex((c) => c.id === id);
-      console.log('INDEX', idx);
       if (idx !== -1) this.outdatedDataDraft[type].splice(idx, 1);
-      console.log(
-        'INDEX - deleteFromOutdatedDataDraft this.outdatedDataDraft',
-        this.outdatedDataDraft,
-      );
     }
   }
 
@@ -1080,14 +1060,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
     // Names
     if (this.isPersonContext()) {
-      /*       console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.names',
-        this.restoringDataDraft.names,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.names',
-        this.outdatedDataDraft.names,
-      ); */
       const { restoring, outdating } = reconcileRestoredNames(
         this.restoringDataDraft.names ?? [],
         this.outdatedDataDraft.names,
@@ -1100,14 +1072,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       );
       this.restoringDataDraft.names = structuredClone(restoring);
       this.outdatedDataDraft.names = structuredClone(outdating);
-      console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.names',
-        this.restoringDataDraft.names,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.names',
-        this.outdatedDataDraft.names,
-      );
     }
 
     if (this.isUserContext()) {
@@ -1145,14 +1109,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
     //Coordinations
     if (this.isCoordinationsOwnerContext()) {
-      console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.coordinations',
-        this.restoringDataDraft.coordinations,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.coordinations',
-        this.outdatedDataDraft.coordinations,
-      );
       const { restoring, outdating } = reconcileRestoredCoordinations(
         this.kind,
         this.restoringDataDraft.coordinations ?? [],
@@ -1162,14 +1118,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       );
       this.restoringDataDraft.coordinations = structuredClone(restoring);
       this.outdatedDataDraft.coordinations = structuredClone(outdating);
-      console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.coordinations AFTER',
-        this.restoringDataDraft.coordinations,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.coordinations AFTER',
-        this.outdatedDataDraft.coordinations,
-      );
     }
 
     //Institutes
@@ -1219,10 +1167,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
     // Names
     if (this.isPersonContext()) {
-      /*       console.log(
-        'INDEX - checkOutdatedDataDuplicates this.outdatedDataDraft.names',
-        this.outdatedDataDraft,
-      ); */
 
       const res = await this.ownerRestorationGuardService.checkNames(
         this.outdatedDataDraft.names,
@@ -1285,10 +1229,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     //Coordinations
 
     if (this.isCoordinationsOwnerContext()) {
-      console.log(
-        'INDEX - checkOutdatedDataDuplicates this.outdatedDataDraft',
-        this.outdatedDataDraft,
-      );
       const res = await this.ownerRestorationGuardService.checkCoordinations(
         this.kind,
         this.outdatedDataDraft.coordinations,
@@ -1488,8 +1428,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     for (const key of this.mainProps) {
       const existing = this.existingOwner as Record<string, unknown>;
       const draft = this.ownerDraft as Record<string, unknown>;
-      //console.log(key, existing[key as string]);
-      // console.log(key, draft[key as string]);
       if (existing[key as string] !== draft[key as string]) {
         const currentMain =
           (this.changingData.main as NonNullable<
@@ -1502,12 +1440,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         } as NonNullable<ChangingByKind<K>['main']>;
       }
     }
-    console.log('{ changes, restoringData, outdatingData, deletingData }', {
-      changingData: this.changingData,
-      restoringData: this.restoringDataDraft,
-      outdatingData: this.outdatingData,
-      deletingData: this.deletingDataDraft,
-    });
     return {
       changingData: this.changingData,
       restoringData: this.restoringDataDraft,
@@ -1518,7 +1450,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   saveOwner() {
     const service = this.getService();
-    console.log('this.ownerDraft', this.ownerDraft);
     service
       .saveOwner(this.ownerDraft)
       .pipe(
@@ -1593,17 +1524,12 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               : null,
           };
           // this.existingOwner = this.data().object;
-          console.log(
-            'this.existingOwner',
-            structuredClone(this.existingOwner),
-          );
           if (this.existingOwner) {
             this.outdatedDataDraft = structuredClone(
               this.existingOwner!.outdatedData,
             ) as OutdatedByKind<K>;
           }
 
-          console.log('OOO - this.outdatedDataDraft', this.outdatedDataDraft);
 
           this.setHasOutdatedUserNames();
           //this.setHasOutdatedHomes();
@@ -1622,7 +1548,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               this.outdatedDataDraft.addresses.length > 0,
           );
 
-          console.log('this.hasOutdatedContacts', this.hasOutdatedContacts());
 
           this.addressFilterComponent.onChangeMode(
             'view',

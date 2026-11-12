@@ -136,8 +136,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
     const idx = this.existingOwner!.subscriptions.findIndex(
       (s) => s.userId === this.user()!.id,
     );
-    console.log('this.existingOwner', structuredClone(this.existingOwner));
-    console.log('idx', idx);
     return idx !== -1;
   }
 
@@ -458,10 +456,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
             x.instituteName.localeCompare(y.instituteName) ||
             x.category - y.category,
         );
-    /*     console.log(
-      'JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))',
-      JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))
-    ); */
 
     return !(
       JSON.stringify(normalize(original)) === JSON.stringify(normalize(current))
@@ -471,8 +465,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
   private subscriptionChangeValidation(): boolean {
     const original = this.getSubsValue();
     const current = this.mainForm.get('subscription')!.getRawValue();
-    console.log('original', original);
-    console.log('current', current);
     return original !== current;
   }
 
@@ -488,7 +480,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
 
   override getRowSpanForCoops() {
     const rowSpan = Math.max(this.subscriptions?.length || 1, this.cooperations?.length || 1);
-    console.log('rowSpan', rowSpan);
     return rowSpan;
   }
 }

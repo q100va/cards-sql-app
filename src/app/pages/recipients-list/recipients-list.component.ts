@@ -108,19 +108,16 @@ export class RecipientsListComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    console.log('RecipientsListComponent');
     this.route.paramMap
       .pipe(
         map((params) => Number(params.get('occasionId'))),
         switchMap((occasionId) => {
           this.occasionId = occasionId;
-          console.log('this.occasionId:', occasionId);
           return this.occasionService.getOccasionById(occasionId);
         }),
       )
       .subscribe({
         next: (res) => {
-          console.log('res.data:', res.data);
           this.occasion = res.data;
         },
         error: (err) => {
@@ -134,7 +131,6 @@ export class RecipientsListComponent implements OnInit {
   }
 
   loadRecipients(event: TableLazyLoadEvent): void {
-    console.log('event:', event);
 
     /*     Object
     filters:
@@ -168,7 +164,6 @@ export class RecipientsListComponent implements OnInit {
       filters: this.normalizePrimeFilters(event.filters),
     };
     this.isLoading.set(true);
-    //console.log('FILTERS:', query.filters);
     this.recipientService
       .getRecipientsByOccasion(query)
       .pipe(
@@ -201,7 +196,6 @@ export class RecipientsListComponent implements OnInit {
   }
 
   private normalizePrimeFilters(filters: any) {
-    //console.log('normalizePrimeFilters');
     const result: Record<
       string,
       {
@@ -212,13 +206,11 @@ export class RecipientsListComponent implements OnInit {
     > = {};
 
     for (const [field, meta] of Object.entries(filters ?? {})) {
-      //console.log('Object.entries(filters ?? {})');
       const metaArray = Array.isArray(meta)
         ? meta.filter(
             (m) => m.value !== null && m.value !== undefined && m.value !== '',
           )
         : [];
-      //console.log('metaArray:', metaArray);
       if (metaArray.length) {
         result[field] = [...metaArray];
       }
@@ -309,7 +301,6 @@ export class RecipientsListComponent implements OnInit {
   }
 
   deleteRecipient(selectedRecipients: Recipient[], dt: Table) {
-    // console.log('selectedRecipients', selectedRecipients);
     this.isLoading.set(true);
     const selectedRecipientIds = selectedRecipients.map((r) => r.id);
     this.recipientService

@@ -74,8 +74,6 @@ function reconcileRestoringIds<TOutdated extends { id: number }>(
   for (const id of ids) {
     const candidate = byId.get(id);
     if (!candidate) continue; // если запись пропала — просто выкинули id
-    console.log('candidate', candidate);
-    console.log('shouldRemove(candidate)', shouldRemove(candidate));
     if (shouldRemove(candidate)) {
       nextOutdating.push(candidate);
     } else {
@@ -158,7 +156,6 @@ export function reconcileRestoredNames(
   draftNames: Names,
   outdatedAll: readonly OutdatedFullName[],
 ) {
-  console.log('draftNames', draftNames);
   return reconcileRestoringIds(
     restoringIds,
     outdating,

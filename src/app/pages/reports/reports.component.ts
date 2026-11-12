@@ -238,7 +238,6 @@ export class ReportsComponent {
             ? ''
             : 'REPORTS.TABLE.EMPTY_MESSAGE';
           this.report = res.data.report;
-          console.log('this.report', res.data);
           this.cols = res.data.cols;
           this.reportName = this.types[res.data.type - 1].name;
           this.reportType = res.data.type;
@@ -276,7 +275,6 @@ export class ReportsComponent {
   }
 
   onChangeTypeSelection(event: ListboxChangeEvent) {
-    console.log('event', event);
     if (event.value?.code === 4) {
       /*
 TODO: absent check mark
@@ -293,7 +291,6 @@ this.formGroup.controls['selectedFrequency'].setValue({
   }
 
   onChangeFrequenciesSelection(event: ListboxChangeEvent) {
-    console.log('event', event);
     if (event.value?.code === 'ANNUAL') {
       this.formGroup.controls['selectedMonths'].setValue([]);
       this.formGroup.controls['selectedQuarters'].setValue([]);

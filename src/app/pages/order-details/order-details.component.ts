@@ -139,13 +139,11 @@ export class OrderDetailsComponent {
   private setOrder(order: OrderDetails): void {
     this.order.set(order);
     //this.patchForm(order);
-    console.log('this.order', this.order());
   }
 
   changeRecipientsList(deletingIds: number[]) {
     if (!this.order()) return;
     this.isLoading.set(true);
-    console.log('deletingIds', deletingIds);
     this.orderService
       .editOrderRecipientsList(this.order()!.id, deletingIds)
       .pipe(

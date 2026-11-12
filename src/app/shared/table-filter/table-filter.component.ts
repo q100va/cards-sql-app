@@ -351,7 +351,6 @@ export class TableFilterComponent implements OnInit {
   }));
 
   ngOnInit() {
-    console.log('this.currentYear', this.currentYear);
     this.params = {
       source: this.source(),
       multiple: true,
@@ -508,8 +507,6 @@ export class TableFilterComponent implements OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log("changes['viewOption']", changes['viewOption']);
-    console.log('this.viewOption', this.viewOption());
     // if (changes['viewOption']) this.upgradeActiveHomesList();
     if (changes['includeOutdatedOption']) {
       this.upgradeActiveHomesList();
@@ -639,17 +636,11 @@ export class TableFilterComponent implements OnInit {
         this.form.controls.homes.setValue(chosenValues);
       }
 
-      console.log('HERE - this.accessibleHomesList', this.accessibleHomesList);
     }
   }
 
   upgradeActivePartnersList() {
     if (this.partnersList.length && this.source() === 'homeList') {
-      console.log('HERE - this.partnersList', this.partnersList);
-      console.log(
-        'HERE - this.accessiblePartnersList',
-        this.accessiblePartnersList,
-      );
       if (!this.includeOutdatedOption()) {
         this.accessiblePartnersList = this.partnersList.filter(
           (p) => p.isRestricted === false,
@@ -662,17 +653,11 @@ export class TableFilterComponent implements OnInit {
       } else {
         this.accessiblePartnersList = [...this.partnersList];
       }
-      console.log(
-        'HERE - this.accessiblePartnersList',
-        this.accessiblePartnersList,
-      );
     }
   }
 
   upgradeActiveUsersList() {
     if (this.usersList.length && this.source() === 'volunteerList') {
-      console.log('HERE - this.usersList', this.usersList);
-      console.log('HERE - this.accessibleUsersList', this.accessibleUsersList);
       if (!this.includeOutdatedOption()) {
         this.accessibleUsersList = this.usersList.filter(
           (u) => u.isRestricted === false,
@@ -689,7 +674,6 @@ export class TableFilterComponent implements OnInit {
       } else {
         this.accessibleUsersList = [...this.usersList];
       }
-      console.log('HERE - this.accessibleUsersList', this.accessibleUsersList);
     }
   }
 
@@ -762,7 +746,6 @@ export class TableFilterComponent implements OnInit {
           : this.source() === 'volunteerList'
             ? forVolunteers
             : true;
-    console.log('RES', res);
 
     this.lessThanTwoDetails.set(res);
     /*
@@ -838,7 +821,6 @@ export class TableFilterComponent implements OnInit {
       hideWithoutYear: form.hideWithoutYear,
       hideWithoutBirthday: form.hideWithoutBirthday,
     };
-    console.log('filter.gender', filter.gender, form.gender);
 
     // Count active filters
     if (filter.dateBeginningRange.length) count++;
@@ -888,7 +870,6 @@ export class TableFilterComponent implements OnInit {
     this.strongAddressFilter.emit(this.form.controls.strongAddressFilter.value);
     this.strongContactFilter.emit(this.form.controls.strongContactFilter.value);
     this.strongDetailFilter.emit(this.form.controls.strongDetailFilter.value);
-    console.log('emitSelectedFilters', filter.homes);
   }
 
   clearForm() {

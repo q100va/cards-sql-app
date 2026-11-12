@@ -185,7 +185,6 @@ export class OccasionsListComponent implements OnInit {
     selectedSignal: WritableSignal<string[]>,
     filter: (value: string[] | null) => void,
   ): void {
-    console.log('selectedSignal', selectedSignal);
     const next = value ?? [];
     selectedSignal.set(next);
     filter(next.length ? next : null);
@@ -247,7 +246,6 @@ export class OccasionsListComponent implements OnInit {
   }
 
   customSort(event: SortEvent) {
-    console.log('event', event);
     event.data?.sort((a: any, b: any) => {
       let value1;
       let value2;
@@ -413,7 +411,6 @@ export class OccasionsListComponent implements OnInit {
   }
 
   onOpenListClick(id: number): void {
-    console.log('occasionId:', id);
     this.router.navigate(['/recipients', id]);
   }
   onCreateListClick(id: number): void {
@@ -479,7 +476,6 @@ export class OccasionsListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          console.log('res.data', res.data);
           const dialogRef = this.dialog.open(CheckResultDialogComponent, {
             disableClose: true,
             minWidth: '400px',

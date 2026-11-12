@@ -191,7 +191,6 @@ export class HomeService implements HomeMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-homes`, dto)
       .pipe(validateResponse(homesSchema), catchError(this.handleError));

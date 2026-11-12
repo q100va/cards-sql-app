@@ -1,4 +1,3 @@
-// Zod for schema validation
 import { z, ZodType } from 'zod';
 import { Observable, map } from 'rxjs';
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
@@ -8,7 +7,7 @@ export class ValidationError extends Error {
   status?: number;
 
   constructor(code: string, status?: number) {
-    super(code); // message = code
+    super(code);
     this.code = code;
     this.status = status;
   }
@@ -17,25 +16,22 @@ export class ValidationError extends Error {
 /**
  * RxJS operator that validates `response.data` using a Zod schema.
  */
-export function validateResponse<TSchema extends ZodType<any, any>>(
+export function validateResponse<TSchema extends ZodType>(
   schema: TSchema,
 ): (
   source$: Observable<RawApiResponse>,
 ) => Observable<ApiResponse<z.infer<TSchema>>> {
-  //console.log('validateResponse');
   return (source$) =>
     source$.pipe(
       map((response) => {
-        // console.log('response', response);
         const parseResult = schema.safeParse(response.data);
-        // console.log('parseResult', parseResult);
         if (!parseResult.success) {
-         //  console.log('if (!parseResult.success) parseResult.data', parseResult.data);
-          console.error('Schema validation failed:', parseResult);
-          console.error('response.data:', response.data);
+          // Console diagnostics may be captured; payloads and issue messages must stay out.
+          console.error('Response validation failed.', {
+            code: 'ERRORS.INVALID_SCHEMA', stage: 'schema', issueCount: parseResult.error.issues.length,
+          });
           throw new ValidationError('ERRORS.INVALID_SCHEMA');
         }
-        //console.log('parseResult.data', parseResult.data);
 
         return {
           data: parseResult.data,
@@ -64,12 +60,15 @@ function validateResponseOperator<T>(
   response: RawApiResponse,
   validatorName: keyof typeof validators,
 ): ApiResponse<T> {
-  console.log('response.data:', response.data);
   const validator = validators[validatorName];
   if (!validator) {
+    console.error('Response validation failed.', { code: 'ERRORS.NO_VALIDATOR', stage: 'type' });
     throw new ValidationError('ERRORS.NO_VALIDATOR');
   }
   if (!validator(response.data)) {
+    console.error('Response validation failed.', {
+      code: 'ERRORS.INVALID_TYPE', stage: 'type', validator: validatorName,
+    });
     throw new ValidationError('ERRORS.INVALID_TYPE');
   }
   return {
@@ -78,7 +77,6 @@ function validateResponseOperator<T>(
   };
 }
 
-// --- Type guards ---
 const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean';
 const isString = (v: unknown): v is string => typeof v === 'string';
 const isNumber = (v: unknown): v is number => typeof v === 'number';

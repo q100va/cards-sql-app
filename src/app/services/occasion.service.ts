@@ -94,7 +94,6 @@ export class OccasionService {
 
   // Delete occasion by id.
   deleteOccasion(id: number): Observable<ApiResponse<null>> {
-    console.log('id', id);
     return this.http
       .delete<RawApiResponse>(
         `${this.BASE_URL}/delete-occasion/${encodeURIComponent(String(id))}`,
@@ -110,7 +109,6 @@ export class OccasionService {
     id: number,
     status: number,
   ): Observable<ApiResponse<null>> {
-    console.log('id', id);
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/edit-occasion/`, {
         id,

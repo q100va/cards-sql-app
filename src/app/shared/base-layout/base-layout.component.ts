@@ -249,7 +249,6 @@ export class BaseLayoutComponent {
   menuItems: Menu = [];
 
   ngOnInit(): void {
-    console.log('userId', this.userId);
     this.menuItems = [...this.menu];
   }
 

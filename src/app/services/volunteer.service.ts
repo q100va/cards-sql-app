@@ -178,7 +178,6 @@ export class VolunteerService implements VolunteerMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-volunteers`, dto)
       .pipe(validateResponse(volunteersSchema), catchError(this.handleError));

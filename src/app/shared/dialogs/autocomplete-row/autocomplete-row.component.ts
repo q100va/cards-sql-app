@@ -92,7 +92,6 @@ export class AutocompleteRowComponent implements OnInit {
   }
 
   onSelectOption(e: MatAutocompleteSelectedEvent) {
-    console.log('this.ctrl().value', e.option.value);
     this.selectOption.emit(e.option.value as RelationPick);
     //  this.setHomeStatusValue(e.option.value as RelationPick);
    // console.log('this.ctrl().value', this.ctrl().value);

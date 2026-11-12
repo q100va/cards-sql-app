@@ -156,10 +156,6 @@ export class UserService implements UserMainService {
   }
 
   formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    console.log(
-      "this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')",
-      this.translateService.instant('NAV.FILTER.TELEGRAM_NICKNAME_OPT')
-    );
 
     if (commentFilter.length === 1) {
       return (
@@ -216,7 +212,6 @@ export class UserService implements UserMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-users`, dto)
       .pipe(validateResponse(usersSchema), catchError(this.handleError));

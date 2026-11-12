@@ -205,7 +205,6 @@ export class RolesListComponent implements OnInit {
                   : roleAccess
               );
             });
-            console.log(this.operations.filter((op) => op.object === updatedObject));
         },
         error: (err) =>
           this.msgWrapper.handle(err, {

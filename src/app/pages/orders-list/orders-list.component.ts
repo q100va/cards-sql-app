@@ -128,13 +128,11 @@ export class OrdersListComponent {
   ngOnInit() {
     const userIdParam = this.route.snapshot.paramMap.get('userId');
     this.userId = userIdParam ? Number(userIdParam) : null;
-    console.log('userIdParam', userIdParam);
   }
 
   loadOrders(event: TableLazyLoadEvent): void {
     //const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
     //if (!this.userId) return;
-    console.log('event:', event);
     this.filters = this.normalizePrimeFilters(event.filters);
 
     const query = {
@@ -147,7 +145,6 @@ export class OrdersListComponent {
       filters: this.filters,
     };
     this.isLoading.set(true);
-    //console.log('FILTERS:', query.filters);
     this.orderService
       .getOrders(query)
       .pipe(
@@ -162,7 +159,6 @@ export class OrdersListComponent {
           this.rawStatusOptions$.next(res.data.options.statuses);
           this.rawSourceOptions$.next(res.data.options.sources);
           this.rawOccasionNodes$.next(res.data.options.nodes);
-          console.log('res.data.options.nodes', res.data.options.nodes);
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
@@ -188,9 +184,6 @@ export class OrdersListComponent {
     selectedSignal: WritableSignal<number[]>,
     filter: (value: number[] | null) => void,
   ): void {
-    //console.log('value', value);
-    //console.log('selectedSignal', selectedSignal);
-    //console.log('filter', filter);
     const next = value ?? [];
     selectedSignal.set(next);
     //next.forEach(item => filter(item))
@@ -203,17 +196,13 @@ export class OrdersListComponent {
     filter: (value: TreeNode[] | null) => void,
   ): void {
     const next = value ?? [];
-    console.log('value', value);
     selectedNodes.set(next);
     const selectedOccasions = value?.map((node) => node.data) ?? [];
-    console.log('selectedOccasions', selectedOccasions);
 
     filter(selectedOccasions.length ? selectedOccasions : null);
-    console.log('this.selectedNodes', this.selectedNodes);
   }
 
   private normalizePrimeFilters(filters: any) {
-    console.log('filters', filters);
     const result: Record<
       string,
       {
@@ -235,7 +224,6 @@ export class OrdersListComponent {
     }
 
     for (const [field, meta] of Object.entries(normalizedFilters)) {
-      //console.log('Object.entries(filters ?? {})');
       const metaArray = Array.isArray(meta)
         ? meta.filter(
             (m) => m.value !== null && m.value !== undefined && m.value !== '',
@@ -246,7 +234,6 @@ export class OrdersListComponent {
         result[field] = [...metaArray];
       }
     }
-    console.log('result:', result);
     return result;
   }
 

@@ -255,8 +255,6 @@ export class AuditTableComponent {
   /** Called from `<p-table (onFilter)>` */
   onFilter(meta?: Record<string, FilterMetadata | undefined>) {
     if (!meta) return;
-    console.log('Filters changed:', meta);
-    console.log('Filters changed:', this.readFilters(meta));
     this.filters$.next(this.readFilters(meta));
   }
 
@@ -293,7 +291,6 @@ export class AuditTableComponent {
   }
 
   onRangeSelect(filterCb: (v: any) => void) {
-    console.log('onRangeSelect', this.rangeDates);
     const [a, b] = this.rangeDates ?? [null, null];
     if (a && b) {
       filterCb(this.packRange(a, b));

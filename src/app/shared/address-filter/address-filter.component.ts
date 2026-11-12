@@ -98,7 +98,6 @@ export class AddressFilterComponent {
     this.addControl('district', this.params().source === 'toponymCard', true);
     this.addControl('locality', false, true);
 
-    console.log('this.params()', this.params());
 
     if (this.params().readonly) this.form.get('country')?.disable();
 
@@ -168,7 +167,6 @@ export class AddressFilterComponent {
       ) {
         // enable all controls if not userCard
         this.enableChain(['country', 'region', 'district', 'locality']);
-        console.log('onChangeMode ', this.form.controls['country'].value);
       }
 
       if (

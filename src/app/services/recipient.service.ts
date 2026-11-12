@@ -52,7 +52,6 @@ export class RecipientService {
   }
 
   clearList(occasionId: number): Observable<ApiResponse<null>> {
-    console.log('id', occasionId);
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/clear-list/`, { occasionId })
       .pipe(
@@ -67,7 +66,6 @@ export class RecipientService {
     returned: RecipientsShortList;
     absent: RecipientsShortList;
   }>> {
-    console.log('id', occasionId);
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/check-list/`, { occasionId })
       .pipe(
@@ -130,7 +128,6 @@ export class RecipientService {
     recipientIds: number[],
     occasionId: number,
   ): Observable<ApiResponse<null>> {
-    console.log('id', recipientIds);
     return this.http
       .delete<RawApiResponse>(`${this.BASE_URL}/delete-recipients/`, {
         body: { recipientIds, occasionId },

@@ -179,7 +179,6 @@ export class SeniorsBulkUpdateComponent {
   }
 
   private async processHome(): Promise<void> {
-    console.log('processHomes', this.index, this.arrayOfLists[this.index]);
     if (this.index > this.arrayOfLists.length - 1) {
       this.commentsMode.enable();
       this.isCompleted = true;
@@ -237,7 +236,6 @@ export class SeniorsBulkUpdateComponent {
       this.returnedSeniors.length === 0
     )
       this.noChanges = true;
-    console.log('this.newSeniors', this.newSeniors);
   }
 
   private normalizeName(name: string | null): string | null {
@@ -521,7 +519,6 @@ export class SeniorsBulkUpdateComponent {
               }
             | false,
         ) => {
-          console.log('result', result);
           if (result === false) return false;
 
           if (result.action === 'custom') {
@@ -568,7 +565,6 @@ export class SeniorsBulkUpdateComponent {
 
     return dialogRef.afterClosed().pipe(
       map((result) => {
-        console.log('result', result);
         return result;
       }),
     );
@@ -646,7 +642,6 @@ export class SeniorsBulkUpdateComponent {
           )
           .pipe(takeUntilDestroyed(this.destroyRef)),
       );
-      console.log('res', res.data);
       this.showSpinner.set(false);
       return res.data;
     } catch (err) {
@@ -675,7 +670,6 @@ export class SeniorsBulkUpdateComponent {
       );
       lengthOfTable = this.returnedSeniors.length + 10 + totalChanges;
     }
-    //console.log('lengthOfTable', lengthOfTable);
     return lengthOfTable;
   }
 
@@ -705,20 +699,12 @@ export class SeniorsBulkUpdateComponent {
   }
 
   moveToUpdated() {
-    console.log('this.selectedNewSeniorIndex', this.selectedNewSeniorIndex);
-    console.log(
-      'this.selectedRemovedSeniorIndex',
-      this.selectedRemovedSeniorIndex,
-    );
-    console.log('this.selectedNewSenior', this.selectedNewSenior);
-    console.log('this.selectedRemovedSenior', this.selectedRemovedSenior);
     if (
       this.selectedNewSenior &&
       this.selectedRemovedSenior &&
       this.selectedNewSeniorIndex !== null &&
       this.selectedRemovedSeniorIndex !== null
     ) {
-      console.log('this.updatedSeniors', this.updatedSeniors);
       const changes = this.compareData(
         this.selectedNewSenior,
         this.selectedRemovedSenior,
@@ -732,9 +718,6 @@ export class SeniorsBulkUpdateComponent {
       this.newSeniors.splice(this.selectedNewSeniorIndex, 1);
       this.removedSeniors.splice(this.selectedRemovedSeniorIndex, 1);
 
-      console.log('this.newSeniors', this.newSeniors);
-      console.log('this.updatedSeniors', this.updatedSeniors);
-      console.log('this.removedSeniors', this.removedSeniors);
 
       this.selectedNewSenior = null;
       this.selectedRemovedSenior = null;
@@ -785,8 +768,6 @@ export class SeniorsBulkUpdateComponent {
 
     sourceMap[source].splice(rowIndex, 1);
 
-    console.log('this.possibleDuplicates', this.possibleDuplicates);
-    console.log('this.updated', this.updated);
   }
 
   private compareData(newData: SeniorRaw, oldData: SeniorRaw) {
@@ -911,7 +892,6 @@ export class SeniorsBulkUpdateComponent {
 
   applyChanges() {
     this.showSpinner.set(true);
-    console.log('applyChanges');
     this.admitted = [...this.newSeniors];
     this.removed = [...this.removedSeniors];
     const dateOfUpdate = this.dateOfUpdate.getRawValue();

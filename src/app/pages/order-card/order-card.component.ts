@@ -263,7 +263,6 @@ export class OrderCardComponent {
         this.message = '';
         this.contactReminder = '';
         this.list = [];
-        console.log('value-contact', value);
       });
   }
 
@@ -469,7 +468,6 @@ export class OrderCardComponent {
       comment: this.orderForm.controls.comment.value,
       instituteId: this.orderForm.controls.instituteId.value,
     });
-    console.log('this.volunteer!.id', this.volunteer!.id);
 
     const filtersDraft = orderFilterSchema.parse({
       addressCategory: this.filterForm.controls.addressCategory.value,
@@ -587,7 +585,6 @@ export class OrderCardComponent {
       .subscribe({
         next: (res) => {
           this.filteredContacts = res.data;
-          console.log(this.filteredContacts);
         },
         error: (err) => {
           this.filteredContacts = [];
@@ -603,7 +600,6 @@ export class OrderCardComponent {
     this.message = '';
     this.contactReminder = '';
     this.list = [];
-    console.log('volunteerId', volunteerId);
     this.volunteerService
       .getById(volunteerId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -632,7 +628,6 @@ export class OrderCardComponent {
           }
           //this.addCheckboxes();
           //  console.log(this.filteredContacts);
-          console.log('this.volunteer', this.volunteer.id);
         },
         error: (err) => {
           //this.filteredContacts = [];

@@ -181,7 +181,6 @@ export class PartnerService implements PartnerMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-partners`, dto)
       .pipe(validateResponse(partnersSchema), catchError(this.handleError));

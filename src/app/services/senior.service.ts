@@ -194,7 +194,6 @@ export class SeniorService implements SeniorMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-seniors`, dto)
       .pipe(validateResponse(seniorsSchema), catchError(this.handleError));
@@ -324,7 +323,6 @@ export class SeniorService implements SeniorMainService {
       updatedCount: number;
     }>
   > {
-    console.log('updateList');
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-seniors-list/`, {
         admitted,

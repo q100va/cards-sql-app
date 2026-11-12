@@ -180,7 +180,6 @@ export class CreateRecipientDialogComponent {
     this.isLoading = true;
 
    const recipientsIds = options.map(o => o.value);
-console.log('recipientsIds', recipientsIds);
     this.recipientService
       .createRecipients(recipientsIds, this.data.id)
       .pipe(

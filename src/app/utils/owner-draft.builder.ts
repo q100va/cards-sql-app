@@ -30,7 +30,6 @@ const getIds = (form: FormGroup, ctrlName: string) => {
 };
 const getId = (form: FormGroup, ctrlName: string) => {
   const v = form.get(ctrlName)!.getRawValue();
-  console.log('V', v);
   if (v === null) return v;
   return v.id;
 };
@@ -306,8 +305,6 @@ export function buildDraft<K extends Kind>(
     now,
   );
 
-  console.log('base, extras');
-  console.log(base, extras);
   return mergeDraft(base, extras);
 
   /*   const draft: DraftByKind[K] = { ...base, ...extras };

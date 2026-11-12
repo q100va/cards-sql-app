@@ -79,7 +79,6 @@ export class CheckDateDialogComponent {
       return null;
     }
 
-    console.log('birthDate', birthDate);
 
     if (!birthDate) {
       return { birthDateRequired: true };

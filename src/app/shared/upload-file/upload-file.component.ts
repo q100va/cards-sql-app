@@ -111,12 +111,8 @@ export class UploadFileComponent {
 
     const schema = schemas[this.typeOfData()];
 
-    console.log('file', file);
     readXlsxFile(file, { schema })
       .then(({ rows, errors }) => {
-        console.log('errors');
-        console.log(errors);
-        console.log('rows', rows);
         if (!rows?.length) throw new CustomError('ERRORS.FILE.EMPTY');
         /*         if (
           schema &&

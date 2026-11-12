@@ -57,7 +57,6 @@ export class SeniorChangesTableComponent {
 
     this.accepted[seniorId][field] = value;
 
-    console.log(this.accepted);
     //this.valueSelected.emit({ seniorId, field, value });
   }
 

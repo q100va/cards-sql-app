@@ -48,7 +48,6 @@ export class AddressService {
     let params = new HttpParams().set('type', type).set('name', name);
     if (id != null) params = params.set('id', String(id));
     if (addressFilter.countries[0]){
-       console.log('HttpParams ', addressFilter.countries[0]);
       params = params.set('countryId', String(addressFilter.countries[0]));}
     if (addressFilter.regions[0])
       params = params.set('regionId', String(addressFilter.regions[0]));
@@ -148,7 +147,6 @@ export class AddressService {
     pageSize: number,
     currentPage: number
   ): Observable<ApiResponse<{ toponyms: Toponym[]; length: number }>> {
-    console.log('getToponyms filter', filter.exactMatch);
     let params = new HttpParams()
       .set('type', type)
       .set('search', filter.searchValue)

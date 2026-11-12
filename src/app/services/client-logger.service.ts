@@ -1,9 +1,9 @@
 import { Injectable, OnDestroy, inject } from '@angular/core';
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { ClientLogBatch, ClientLogItem, ClientLogLevel } from '../interfaces/client-log';
 import { environment } from '../../environments/environment';
-import { CLIENT_LOG_TRANSPORT } from '../utils/http-diagnostics';
+import { CLIENT_LOG_TRANSPORT, diagnosticPath } from '../utils/http-diagnostics';
 import { errorRecord } from '../utils/error-diagnostics';
 
 function uuid(): string {
@@ -66,7 +66,21 @@ export class ClientLoggerService implements OnDestroy {
   }
 
   writeErrorToConsole(error: unknown): void {
-    this.originalError.call(console, error);
+    // Output-only diagnostics still need a privacy boundary for HTTP bodies and arbitrary objects.
+    if (error instanceof HttpErrorResponse) {
+      const body = errorRecord(error.error);
+      this.originalError.call(console, 'HTTP request failed.', {
+        stage: 'global-error', status: error.status,
+        endpoint: error.url ? diagnosticPath(error.url) : undefined,
+        code: typeof body['code'] === 'string' ? body['code'] : undefined,
+        correlationId: error.headers.get('X-Request-Id')
+          || (typeof body['correlationId'] === 'string' ? body['correlationId'] : null),
+      });
+    } else if (error instanceof Error) {
+      this.originalError.call(console, error);
+    } else {
+      this.originalError.call(console, 'Uncaught application error.', { code: 'ERRORS.UNKNOWN', stage: 'global-error' });
+    }
   }
 
   warn(message: unknown, context?: Record<string, unknown>): void {
