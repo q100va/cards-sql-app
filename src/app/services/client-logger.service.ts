@@ -1,11 +1,10 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import {
-  ClientLogBatch,
-  ClientLogItem,
-  ClientLogLevel,
-} from '../interfaces/client-log';
+import { Injectable, OnDestroy, inject } from '@angular/core';
+import { HttpClient, HttpContext } from '@angular/common/http';
+import { Subscription } from 'rxjs';
+import { ClientLogBatch, ClientLogItem, ClientLogLevel } from '../interfaces/client-log';
 import { environment } from '../../environments/environment';
+import { CLIENT_LOG_TRANSPORT } from '../utils/http-diagnostics';
+import { errorRecord } from '../utils/error-diagnostics';
 
 function uuid(): string {
   const c = crypto?.getRandomValues?.(new Uint8Array(16));
@@ -17,8 +16,13 @@ function uuid(): string {
 }
 
 @Injectable({ providedIn: 'root' })
-export class ClientLoggerService {
-  private http = inject(HttpClient);
+export class ClientLoggerService implements OnDestroy {
+  private readonly http = inject(HttpClient);
+  private readonly originalWarn = console.warn;
+  private readonly originalError = console.error;
+  private readonly transportSubscriptions = new Subscription();
+  private readonly flushTimer: ReturnType<typeof setInterval>;
+  private destroyed = false;
 
   private readonly endpoint = `${environment.apiUrl}/api/client-logs`;
   private readonly app = 'cards-sql-app';
@@ -35,42 +39,57 @@ export class ClientLoggerService {
   private windowStart = Date.now();
 
   constructor() {
-    this.patchConsole();
-    this.patchGlobalHandlers();
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') this.flush(true);
-    });
-    setInterval(() => this.flush(), this.flushIntervalMs);
+    console.warn = this.consoleWarn;
+    console.error = this.consoleError;
+    window.addEventListener('error', this.onWindowError);
+    window.addEventListener('unhandledrejection', this.onUnhandledRejection);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.flushTimer = setInterval(() => this.flush(), this.flushIntervalMs);
   }
 
-  setUser(id: string | number | null) {
+  ngOnDestroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    // Release owned hooks so TestBed and app reinitialization cannot stack logger instances.
+    clearInterval(this.flushTimer);
+    window.removeEventListener('error', this.onWindowError);
+    window.removeEventListener('unhandledrejection', this.onUnhandledRejection);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    if (console.warn === this.consoleWarn) console.warn = this.originalWarn;
+    if (console.error === this.consoleError) console.error = this.originalError;
+    this.transportSubscriptions.unsubscribe();
+    this.buf = [];
+  }
+
+  setUser(id: string | number | null): void {
     this.userId = id ?? null;
   }
 
-  warn(message: any, context?: Record<string, unknown>) {
+  writeErrorToConsole(error: unknown): void {
+    this.originalError.call(console, error);
+  }
+
+  warn(message: unknown, context?: Record<string, unknown>): void {
     this.push('warn', message, context);
   }
 
-  error(err: any, context?: Record<string, unknown>) {
+  error(err: unknown, context?: Record<string, unknown>): void {
+    const details = errorRecord(err);
     const message =
       typeof err === 'string'
         ? err
-        : (err?.error?.message ?? err?.message ?? 'Client error');
-
-    const stack = typeof err?.stack === 'string' ? err.stack : undefined;
-
+        : (errorRecord(details['error'])['message'] ?? details['message'] ?? 'Client error');
+    const stack = typeof details['stack'] === 'string' ? details['stack'] : undefined;
     this.push('error', message, context, stack);
   }
 
-  // ---- internals ------------------------------------------------------------
-
   private push(
     level: ClientLogLevel,
-    message: any,
+    message: unknown,
     context?: Record<string, unknown>,
     stack?: string,
-  ) {
-    if (!message) return;
+  ): void {
+    if (this.destroyed || !message) return;
 
     const now = Date.now();
 
@@ -85,13 +104,8 @@ export class ClientLoggerService {
 
     const contextCopy = context ? { ...context } : undefined;
 
-    const corrIdValue =
-      contextCopy?.['correlationId'] ?? contextCopy?.['corrId'];
-
-    const corrId =
-      typeof corrIdValue === 'string' && corrIdValue.trim()
-        ? corrIdValue
-        : null;
+    const corrIdValue = contextCopy?.['correlationId'] ?? contextCopy?.['corrId'];
+    const corrId = typeof corrIdValue === 'string' && corrIdValue.trim() ? corrIdValue : null;
 
     if (contextCopy) {
       delete contextCopy['correlationId'];
@@ -123,8 +137,8 @@ export class ClientLoggerService {
     }
   }
 
-  private flush(useBeacon = false) {
-    if (this.buf.length === 0) return;
+  private flush(useBeacon = false): void {
+    if (this.destroyed || this.buf.length === 0) return;
 
     const batch: ClientLogBatch = {
       app: this.app,
@@ -145,11 +159,14 @@ export class ClientLoggerService {
       }
     }
 
-    this.http.post(this.endpoint, batch).subscribe({
+    // Log transport bypasses HTTP diagnostics and auth recovery to prevent recursive logging.
+    this.transportSubscriptions.add(this.http.post(this.endpoint, batch, {
+      context: new HttpContext().set(CLIENT_LOG_TRANSPORT, true),
+    }).subscribe({
       error: () => {
         // Logging failures must not affect the application.
       },
-    });
+    }));
   }
 
   private restoreSessionId(): string {
@@ -165,46 +182,36 @@ export class ClientLoggerService {
     }
   }
 
-  // --- hooks -----------------------------------------------------------------
+  private readonly consoleWarn = (...args: unknown[]): void => {
+    this.originalWarn.apply(console, args);
+    if (!this.destroyed) this.warn(this.joinArgs(args));
+  };
 
-  private patchConsole() {
-    const origWarn = console.warn.bind(console);
-    const origError = console.error.bind(console);
+  private readonly consoleError = (...args: unknown[]): void => {
+    this.originalError.apply(console, args);
+    if (this.destroyed) return;
+    const [first] = args;
+    this.error(first instanceof Error ? first : this.joinArgs(args));
+  };
 
-    console.warn = (...args: any[]) => {
-      origWarn(...args);
-      this.warn(this.joinArgs(args));
-    };
-    console.error = (...args: any[]) => {
-      origError(...args);
-      const [first] = args;
-      if (first instanceof Error) this.error(first);
-      else this.error(this.joinArgs(args));
-    };
-  }
-
-  private patchGlobalHandlers() {
-    window.addEventListener('error', (e) => {
-      this.error(e.error || e.message || 'window.onerror', {
-        lineno: (e as ErrorEvent).lineno,
-        colno: (e as ErrorEvent).colno,
-        filename: (e as ErrorEvent).filename,
-      });
+  private readonly onWindowError = (event: ErrorEvent): void => {
+    this.error(event.error || event.message || 'window.onerror', {
+      lineno: event.lineno, colno: event.colno, filename: event.filename,
     });
+  };
 
-    window.addEventListener('unhandledrejection', (e) => {
-      const r: any = e.reason;
-      if (r instanceof Error) this.error(r, { from: 'unhandledrejection' });
-      else
-        this.error(String(r ?? 'unhandledrejection'), {
-          from: 'unhandledrejection',
-        });
+  private readonly onUnhandledRejection = (event: PromiseRejectionEvent): void => {
+    const reason: unknown = event.reason;
+    this.error(reason instanceof Error ? reason : String(reason ?? 'unhandledrejection'), {
+      from: 'unhandledrejection',
     });
-  }
+  };
 
-  // --- helpers ---------------------------------------------------------------
+  private readonly onVisibilityChange = (): void => {
+    if (document.visibilityState === 'hidden') this.flush(true);
+  };
 
-  private joinArgs(args: any[]): string {
+  private joinArgs(args: unknown[]): string {
     return args
       .map((a) => {
         if (a instanceof Error) return `${a.name}: ${a.message}`;
@@ -225,13 +232,13 @@ export class ClientLoggerService {
       /\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g;
     const phone = /\b(\+?\d{1,3}[-.\s]?)?(\d{2,3}[-.\s]?){2,4}\d\b/g;
     return s
-      .replace(email, (_, a, domain) => `${a}***@${domain}`)
-      .replace(phone, (m) =>
+      .replace(email, (_: string, a: string, domain: string) => `${a}***@${domain}`)
+      .replace(phone, (m: string) =>
         m.length <= 6 ? '***' : m.slice(0, 3) + '***' + m.slice(-2),
       );
   }
 
-  private maskCtx(obj: Record<string, unknown>): Record<string, unknown> {
+  private maskCtx(obj: unknown): Record<string, unknown> {
     const secretKeys = ['password', 'token', 'authorization', 'cookie'];
 
     const seen = new WeakSet<object>();

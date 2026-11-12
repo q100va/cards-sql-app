@@ -44,7 +44,7 @@ describe('httpErrorInterceptor', () => {
     loggerSpy.error.calls.reset();
   });
 
-  it('logs HttpErrorResponse: pulls corrId from header, scrubs password/email, and rethrows', (done) => {
+  it('logs HTTP metadata and header corrId without copying payloads, and rethrows', (done) => {
     const body = {
       email: 'alice@example.com',
       password: 'secret',
@@ -55,25 +55,20 @@ describe('httpErrorInterceptor', () => {
       next: () => done.fail('should error'),
       error: (err: HttpErrorResponse) => {
         expect(err).toBeTruthy();
+        expect(err.status).toBe(400);
+        expect(err.error).toEqual({ code: 'ERR.BAD', detail: 'oops' });
 
         // logger called with expected message + metadata
         expect(loggerSpy.error).toHaveBeenCalledTimes(1);
-        const [msg, meta] = loggerSpy.error.calls.mostRecent().args as [string, any];
+        const [msg, meta] = loggerSpy.error.calls.mostRecent().args;
         expect(msg).toBe('HTTP 400 POST /api/thing');
 
-        // corrId from response header
-        expect(meta.corrId).toBe('REQ-123');
-
-        // request body is scrubbed
-        expect(meta.request).toEqual({
-          method: 'POST',
-          url: '/api/thing',
-          body: { email: '***', password: '***', note: 'keep' },
+        expect(meta).toEqual({
+          corrId: 'REQ-123',
+          code: 'ERR.BAD',
+          request: { method: 'POST', url: '/api/thing' },
+          response: { status: 400 },
         });
-
-        // response body is a safe-serialized copy
-        expect(meta.response.status).toBe(400);
-        expect(meta.response.body).toEqual({ code: 'ERR.BAD', detail: 'oops' });
 
         done();
       },

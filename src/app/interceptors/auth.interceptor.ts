@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService, SKIP_AUTH_RECOVERY } from '../services/auth.service';
+import { isClientLogTransport } from '../utils/http-diagnostics';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -17,7 +18,7 @@ export class AuthInterceptor implements HttpInterceptor {
     const generation = this.auth.getAuthGeneration();
     const token = this.auth.getToken();
     const authenticated = token ? this.withAuth(credentialed, token) : credentialed;
-    if (req.context.get(SKIP_AUTH_RECOVERY)) return next.handle(authenticated);
+    if (req.context.get(SKIP_AUTH_RECOVERY) || isClientLogTransport(req)) return next.handle(authenticated);
 
     return next.handle(authenticated).pipe(
       catchError((error: unknown) => {
