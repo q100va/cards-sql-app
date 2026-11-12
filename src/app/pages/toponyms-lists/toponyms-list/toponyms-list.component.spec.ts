@@ -16,7 +16,8 @@ import { MessageWrapperService } from '../../../services/message.service';
 import { AuthService } from '../../../services/auth.service';
 import { AuthServiceHarness } from '../../../utils/auth-harness';
 import { ConfirmationService } from 'primeng/api';
-import { MatDialog } from '@angular/material/dialog';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 
 import fileSaver from 'file-saver';
@@ -49,7 +50,8 @@ describe('ToponymsListComponent', () => {
     auth.setAuthReady(true);
     auth.setPermsReady(true);
     auth.getCurrentUserSnapshot(999);
-    addressSpy = jasmine.createSpyObj('AddressService', [
+    addressSpy = jasmine.createSpyObj<AddressService>('AddressService', [
+      'createListOfToponyms',
       'getListOfToponyms',
       'getToponyms',
       'getToponym',
@@ -265,9 +267,9 @@ describe('ToponymsListComponent', () => {
     } as any;
 
     addressSpy.getToponym.and.returnValue(of({ data: obj }));
-    // Dialog open → afterClosed emits a result with name → component.resetTable must be called
-    const afterClosed$ = of({ name: 'ok' });
-    dialogSpy.open.and.returnValue({ afterClosed: () => afterClosed$ } as any);
+    const dialogRef = jasmine.createSpyObj<MatDialogRef<unknown, { refresh: boolean }>>('MatDialogRef', ['afterClosed']);
+    dialogRef.afterClosed.and.returnValue(of({ refresh: true }));
+    dialogSpy.open.and.returnValue(dialogRef);
 
     spyOn(component as any, 'openToponymDialog').and.callThrough();
     spyOn(component, 'resetTable');
@@ -420,5 +422,35 @@ describe('ToponymsListComponent', () => {
     expect(qp.addressFilterString).toContain('Регион');
     expect(qp.addressFilterString).toContain('Район');
     expect(qp.addressFilterString).toContain('Город');
+  });
+
+  it('saveData: posts imported rows and refreshes the toponym list on success', () => {
+    const rows = [{ name: 'Test Region', shortName: 'T. Region', country: 'Test Country' }];
+    addressSpy.createListOfToponyms.and.returnValue(of({ data: 1 }));
+    const reset = spyOn(component, 'resetTable');
+    component.showSpinner.set(true);
+
+    component.saveData(rows);
+
+    expect(addressSpy.createListOfToponyms).toHaveBeenCalledOnceWith(rows, 'region');
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(component.showSpinner()).toBeFalse();
+  });
+
+  it('saveData: forwards backend errors without refreshing and stops the spinner', () => {
+    const rows = [{ name: 'Test Region', shortName: 'T. Region', country: 'Test Country' }];
+    const error = new HttpErrorResponse({ status: 422, statusText: 'Unprocessable Entity' });
+    addressSpy.createListOfToponyms.and.returnValue(throwError(() => error));
+    const reset = spyOn(component, 'resetTable');
+    component.showSpinner.set(true);
+
+    component.saveData(rows);
+
+    expect(addressSpy.createListOfToponyms).toHaveBeenCalledOnceWith(rows, 'region');
+    expect(msgSpy.handle).toHaveBeenCalledOnceWith(error, {
+      source: 'UploadFileComponent', stage: 'saveData', type: 'region',
+    });
+    expect(reset).not.toHaveBeenCalled();
+    expect(component.showSpinner()).toBeFalse();
   });
 });

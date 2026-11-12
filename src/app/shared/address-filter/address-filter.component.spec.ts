@@ -51,8 +51,8 @@ describe('AddressFilterComponent', () => {
   };
 
   beforeEach(async () => {
-    addressSpy = jasmine.createSpyObj('AddressService', ['getListOfToponyms']);
-    msgSpy = jasmine.createSpyObj('MessageWrapperService', ['handle']);
+    addressSpy = jasmine.createSpyObj<AddressService>('AddressService', ['getListOfToponyms']);
+    msgSpy = jasmine.createSpyObj<MessageWrapperService>('MessageWrapperService', ['handle']);
 
     // default countries load
     addressSpy.getListOfToponyms.and.returnValue(
@@ -135,13 +135,16 @@ describe('AddressFilterComponent', () => {
   // --------------------------------------------------------------------------
   // edit/view modes toggle enabling/disabling chain
   // --------------------------------------------------------------------------
-  it('onChangeMode edit/view toggles controls enabling', () => {
-    // initial state (region/district/locality disabled by design)
+  it('onChangeMode toggles card controls between edit and view', () => {
+    fixture.componentRef.setInput('params', { ...params, source: 'toponymCard' } satisfies AddressFilterParams);
+    component.onChangeMode('view', null);
+
+    expect(component.form.get('country')!.disabled).toBeTrue();
     expect(component.form.get('region')!.disabled).toBeTrue();
     expect(component.form.get('district')!.disabled).toBeTrue();
     expect(component.form.get('locality')!.disabled).toBeTrue();
 
-    // edit mode enables all in list-mode
+    // Card editing enables the full address hierarchy.
     component.onChangeMode('edit', null);
     expect(component.form.get('country')!.enabled).toBeTrue();
     expect(component.form.get('region')!.enabled).toBeTrue();
