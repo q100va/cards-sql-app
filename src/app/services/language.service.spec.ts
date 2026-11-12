@@ -164,6 +164,26 @@ describe('LanguageService runtime consistency', () => {
     expect(language.current).toBe('en');
     expect(TestBed.inject(TranslateService).getCurrentLang()).toBe('en');
   });
+
+  it('keeps Russian when a pending English switch is superseded by selecting Russian again', () => {
+    createLanguage();
+    language.set('en');
+    language.set('ru');
+    loader.completeAll();
+    expectCoherentLanguage('ru');
+    expect(TestBed.inject(PrimeNG).getTranslation('accept')).toBe('Да');
+  });
+
+  it('switches PrimeNG filter labels from Russian to English with the runtime language', () => {
+    createLanguage();
+    const prime = TestBed.inject(PrimeNG);
+    expect(prime.getTranslation('contains')).toBe('Содержит');
+    language.set('en');
+    loader.completeAll();
+    expect(prime.getTranslation('contains')).toBe('Contains');
+    expect(prime.getTranslation('dateIs')).toBe('Date is');
+    expect(prime.getTranslation('apply')).toBe('Apply');
+  });
 });
 
 describe('Language initialization through the production app configuration', () => {

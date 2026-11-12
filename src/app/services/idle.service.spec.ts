@@ -239,4 +239,25 @@ describe('IdleService session lifecycle', () => {
       expect(confirmation.confirm).toHaveBeenCalledTimes(2);
     } finally { cleanup(); }
   }));
+
+  it('does not let an old restoration result replace a newer monitoring cycle', fakeAsync(() => {
+    createIdle();
+    try {
+      idle.start(1000, 5000);
+      tick(1000);
+      idle.confirmAccept();
+      flushMicrotasks();
+      expect(session.hydrateFromSession).toHaveBeenCalledTimes(1);
+      idle.stop();
+      idle.start(2000, 4000);
+      const restart = spyOn(idle, 'start').and.callThrough();
+      session.restoration.next();
+      session.restoration.complete();
+      flushMicrotasks();
+      expect(restart).not.toHaveBeenCalled();
+      tick(2000);
+      expect(confirmation.confirm).toHaveBeenCalledTimes(2);
+      expect(countdown).toBe(4);
+    } finally { cleanup(); }
+  }));
 });

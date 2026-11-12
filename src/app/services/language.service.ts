@@ -1,18 +1,16 @@
-import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, OnDestroy, inject } from '@angular/core';
+import { BehaviorSubject, Observable, ReplaySubject, Subscription, take } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { DateAdapter } from '@angular/material/core';
-import { PRIME_NG_CONFIG, PrimeNGConfigType } from 'primeng/config';
+import { PrimeNG } from 'primeng/config';
+import type { Translation } from 'primeng/api';
+import {
+  DEFAULT_LANGUAGE, LANGUAGE_STORAGE_KEY, isLang, readPersistedLanguage, type Lang,
+} from '../utils/language-preference';
 
-export type Lang = 'en' | 'ru';
-const LS_KEY = 'app.lang';
+export type { Lang } from '../utils/language-preference';
 
-//const LOCALE_MAP: Record<Lang, string> = { en: 'en-US', ru: 'ru-RU' };
-//const ANGULAR_LOCALE_MAP: Record<Lang, string> = { en: 'en-US', ru: 'ru-RU' };
-const MOMENT_LOCALE_MAP: Record<Lang, string> = { en: 'en', ru: 'ru' };
-type PrimeTranslation = Record<string, any>;
-
-export const enPrime: PrimeTranslation = {
+export const enPrime: Translation = {
   accept: 'Yes',
   reject: 'No',
   choose: 'Choose',
@@ -59,6 +57,26 @@ export const enPrime: PrimeTranslation = {
   ],
   today: 'Today',
   clear: 'Clear',
+  startsWith: 'Starts with',
+  contains: 'Contains',
+  notContains: 'Does not contain',
+  endsWith: 'Ends with',
+  equals: 'Equals',
+  notEquals: 'Does not equal',
+  noFilter: 'No filter',
+  lt: 'Less than',
+  lte: 'Less than or equal to',
+  gt: 'Greater than',
+  gte: 'Greater than or equal to',
+  dateIs: 'Date is',
+  dateIsNot: 'Date is not',
+  dateBefore: 'Date is before',
+  dateAfter: 'Date is after',
+  apply: 'Apply',
+  matchAll: 'Match all',
+  matchAny: 'Match any',
+  addRule: 'Add rule',
+  removeRule: 'Remove rule',
   weekHeader: 'Wk',
   firstDayOfWeek: 0,
   aria: {
@@ -79,7 +97,7 @@ export const enPrime: PrimeTranslation = {
   },
 };
 
-export const ruPrime: PrimeTranslation = {
+export const ruPrime: Translation = {
   accept: 'Да',
   reject: 'Нет',
   choose: 'Выбрать',
@@ -140,8 +158,8 @@ export const ruPrime: PrimeTranslation = {
     lastPageLabel: 'Последняя страница',
     nextPageLabel: 'Следующая страница',
     previousPageLabel: 'Предыдущая страница',
-    pageLabel: 'Страница {page}', // <-- критично, иначе .replace падает
-    rowsPerPageLabel: 'Строк на странице', // некоторые компоненты тоже читают
+    pageLabel: 'Страница {page}',
+    rowsPerPageLabel: 'Строк на странице',
   },
   startsWith: 'Начинается с',
   contains: 'Содержит',
@@ -172,46 +190,88 @@ export const ruPrime: PrimeTranslation = {
 };
 
 @Injectable({ providedIn: 'root' })
-export class LanguageService {
-  private _lang$ = new BehaviorSubject<Lang>('ru');
-  readonly lang$ = this._lang$.asObservable();
-
-  private translateService = inject(TranslateService);
-  private dateAdapter = inject<DateAdapter<any>>(DateAdapter as any);
-  private primeng = inject<PrimeNGConfigType>(PRIME_NG_CONFIG);
+export class LanguageService implements OnDestroy {
+  private readonly translateService = inject(TranslateService);
+  private readonly dateAdapter = inject<DateAdapter<unknown>>(DateAdapter);
+  private readonly primeng = inject(PrimeNG);
+  private readonly initialLanguage = readPersistedLanguage() ?? DEFAULT_LANGUAGE;
+  private readonly languageState = new BehaviorSubject<Lang>(this.initialLanguage);
+  readonly lang$ = this.languageState.asObservable();
+  private readonly ready = new ReplaySubject<void>(1);
+  private initializationStarted = false;
+  private committed = false;
+  private revision = 0;
+  private pendingLanguage?: Lang;
+  private pending?: Subscription;
 
   constructor() {
-    this.translateService.addLangs(['en', 'ru']);
-    const saved = localStorage.getItem(LS_KEY) as Lang | null;
-    const browser = this.translateService.getBrowserLang?.() as
-      | Lang
-      | undefined;
-    const initial: Lang = saved ?? (browser === 'ru' ? 'ru' : 'en');
-    this.apply(initial);
+    this.initialize();
   }
 
-  get current(): Lang {
-    return this._lang$.value;
+  initialize(): Observable<void> {
+    if (!this.initializationStarted) {
+      this.initializationStarted = true;
+      this.translateService.addLangs(['en', 'ru']);
+      this.translateService.setFallbackLang(DEFAULT_LANGUAGE);
+      this.apply(this.initialLanguage);
+    }
+    return this.ready.asObservable();
   }
-  get locale(): string {
-    return MOMENT_LOCALE_MAP[this.current];
-  }
+
+  get current(): Lang { return this.languageState.value; }
+  get locale(): string { return this.current; }
 
   set(lang: Lang): void {
-    if (lang === this.current) return;
+    if (!isLang(lang) || (this.committed && lang === this.current && !this.pendingLanguage)) return;
     this.apply(lang);
   }
 
+  ngOnDestroy(): void {
+    this.revision++;
+    this.pending?.unsubscribe();
+    this.ready.complete();
+    this.languageState.complete();
+  }
+
   private apply(lang: Lang): void {
-    this.translateService.use(lang);
-    localStorage.setItem(LS_KEY, lang);
-    document.documentElement.setAttribute('lang', lang);
+    const revision = ++this.revision;
+    this.pending?.unsubscribe();
+    this.pendingLanguage = lang;
+    this.pending = this.translateService.use(lang).pipe(take(1)).subscribe({
+      next: () => {
+        if (revision !== this.revision) return;
+        this.pendingLanguage = undefined;
+        this.commit(lang);
+      },
+      error: (error: unknown) => {
+        if (revision !== this.revision) return;
+        this.pendingLanguage = undefined;
+        if (this.committed) {
+          this.translateService.use(this.current);
+        } else if (lang !== DEFAULT_LANGUAGE) {
+          this.apply(DEFAULT_LANGUAGE);
+        } else {
+          this.ready.error(error);
+        }
+      },
+    });
+  }
 
-    this._lang$.next(lang);
-    this.dateAdapter.setLocale(MOMENT_LOCALE_MAP[lang]);
-
-    this.primeng.translation = { ...(lang === 'ru' ? ruPrime : enPrime) };
-    /*      const tr = lang === 'ru' ? ruPrime : enPrime;
-    this.primeng.translation = { ...tr }; // <-- вот ключевая строка */
+  private commit(lang: Lang): void {
+    // Commit persisted/runtime state only after translation activation succeeds.
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    document.documentElement.lang = lang;
+    this.dateAdapter.setLocale(lang);
+    const translation = lang === 'ru' ? ruPrime : enPrime;
+    this.primeng.setTranslation({
+      ...translation,
+      aria: { ...this.primeng.translation.aria, ...translation.aria },
+    });
+    this.languageState.next(lang);
+    if (!this.committed) {
+      this.committed = true;
+      this.ready.next();
+      this.ready.complete();
+    }
   }
 }
