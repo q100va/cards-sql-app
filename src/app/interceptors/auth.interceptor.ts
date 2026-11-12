@@ -1,81 +1,44 @@
-// src/app/interceptors/auth.interceptor.ts
 import { Injectable, inject } from '@angular/core';
-import {
-  HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse,
-} from '@angular/common/http';
-import { Observable, ReplaySubject, throwError } from 'rxjs';
-import { catchError, finalize, switchMap, filter, take } from 'rxjs/operators';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { AuthService } from '../services/auth.service';
+import { AuthService, SKIP_AUTH_RECOVERY } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  private readonly signIn = inject(AuthService);
+  private readonly auth = inject(AuthService);
 
-  private refreshInProgress = false;
-  private refresh$ = new ReplaySubject<boolean>(1);
+  intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    if (!this.isApiCall(req.url)) return next.handle(req);
+    const credentialed = req.clone({ withCredentials: true });
+    if (this.isAuthRoute(req.url)) return next.handle(credentialed);
 
-/*   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // 1) Auth-роуты не трогаем (ни bearer, ни ретраи)
-    if (this.isAuthRoute(req.url) || !this.isApiCall(req.url)) {
-      return next.handle(req);
-    }
+    const generation = this.auth.getAuthGeneration();
+    const token = this.auth.getToken();
+    const authenticated = token ? this.withAuth(credentialed, token) : credentialed;
+    if (req.context.get(SKIP_AUTH_RECOVERY)) return next.handle(authenticated);
 
-    // 2) Подкладываем токен, если есть
-    const token = this.signIn.getToken();
-    //console.log('token', token)
-    const authedReq = token ? this.withAuth(req, token) : req;
-
-    return next.handle(authedReq).pipe(
-      catchError((err: unknown) => {
-        if (!this.isAuthError(err)) return throwError(() => err);
-        // не рефрешим для самих auth-роутов (на всякий случай)
-        if (this.isAuthRoute(req.url)) return throwError(() => err);
-
-        return this.handleAuthError(authedReq, next);
-      })
+    return next.handle(authenticated).pipe(
+      catchError((error: unknown) => {
+        if (!this.isAuthError(error) || generation !== this.auth.getAuthGeneration()) {
+          return throwError(() => error);
+        }
+        return this.recoverAndRetry(authenticated, next, error, generation);
+      }),
     );
   }
- */
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-  const isApi = this.isApiCall(req.url);
-
-  // 🔹 Всегда отправляем куки на API (включая /api/session/*)
-  const reqWithCreds = isApi ? req.clone({ withCredentials: true }) : req;
-
-  // 1) Auth-роуты не трогаем (ни bearer, ни ретраи)
-  if (this.isAuthRoute(reqWithCreds.url) || !isApi) {
-    return next.handle(reqWithCreds);
-  }
-
-  // 2) Подкладываем bearer, если есть
-  const token = this.signIn.getToken();
-  const authedReq = token ? this.withAuth(reqWithCreds, token) : reqWithCreds;
-
-  return next.handle(authedReq).pipe(
-    catchError((err: unknown) => {
-      if (!this.isAuthError(err)) return throwError(() => err);
-      if (this.isAuthRoute(reqWithCreds.url)) return throwError(() => err);
-      return this.handleAuthError(authedReq, next);
-    })
-  );
-}
-
-  // ==== helpers ====
 
   private isApiCall(url: string): boolean {
-    // поддержка абсолютного и относительного '/api/...'
     return url.startsWith(environment.apiUrl) || url.startsWith('/api/');
   }
 
   private isAuthRoute(url: string): boolean {
     try {
-      const base = environment.apiUrl;
-      const u = url.startsWith('http') ? new URL(url) : new URL(url, base);
-      const p = u.pathname;
-      return p === '/api/session/sign-in'
-          || p === '/api/session/refresh'
-          || p === '/api/session/sign-out';
+      const path = new URL(url, environment.apiUrl).pathname;
+      return path === '/api/session/sign-in'
+        || path === '/api/session/refresh'
+        || path === '/api/session/sign-out';
     } catch {
       return false;
     }
@@ -85,45 +48,35 @@ export class AuthInterceptor implements HttpInterceptor {
     return req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
   }
 
-  private isAuthError(err: unknown): boolean {
-  return err instanceof HttpErrorResponse && err.status === 401; // только 401!
-}
+  private isAuthError(error: unknown): error is HttpErrorResponse {
+    return error instanceof HttpErrorResponse && error.status === 401;
+  }
 
-  private handleAuthError(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Если рефреш уже идёт — ждём результат
-    if (this.refreshInProgress) {
-      return this.refresh$.pipe(
-        filter(Boolean),
-        take(1),
-        switchMap(() => {
-          const t = this.signIn.getToken();
-          const retried = t ? this.withAuth(req, t) : req;
-          return next.handle(retried);
-        })
-      );
-    }
-
-    // Стартуем единичный refresh
-    this.refreshInProgress = true;
-
-    return this.signIn.hydrateFromSession().pipe(
+  private recoverAndRetry(
+    req: HttpRequest<unknown>, next: HttpHandler, originalError: HttpErrorResponse, generation: number,
+  ): Observable<HttpEvent<unknown>> {
+    return this.auth.recoverSession().pipe(
+      // Keep recovery's error boundary before the retried business request.
+      catchError((error: unknown) => {
+        this.logoutIfCurrent(generation);
+        return throwError(() => error);
+      }),
       switchMap(() => {
-        this.refresh$.next(true);
-        const t = this.signIn.getToken();
-        const retried = t ? this.withAuth(req, t) : req;
-        return next.handle(retried);
+        const token = this.auth.getToken();
+        if (generation !== this.auth.getAuthGeneration() || !token) {
+          this.logoutIfCurrent(generation);
+          return throwError(() => originalError);
+        }
+        return next.handle(this.withAuth(req, token)).pipe(
+          tap({ error: (error: unknown) => {
+            if (this.isAuthError(error)) this.logoutIfCurrent(generation);
+          } }),
+        );
       }),
-      catchError((e) => {
-        // refresh провалился — выходим из сессии
-        this.refresh$.next(false);
-        this.refresh$.complete();
-        this.signIn.logout().subscribe(); // fire-and-forget
-        return throwError(() => e);
-      }),
-      finalize(() => {
-        this.refreshInProgress = false;
-        this.refresh$ = new ReplaySubject<boolean>(1); // «чистый» стрим на следующий раз
-      })
     );
+  }
+
+  private logoutIfCurrent(generation: number): void {
+    if (generation === this.auth.getAuthGeneration()) this.auth.logout().subscribe();
   }
 }
