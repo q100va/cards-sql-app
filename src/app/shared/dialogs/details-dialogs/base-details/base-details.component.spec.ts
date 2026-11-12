@@ -277,9 +277,9 @@ describe('BaseDetailsComponent', () => {
   });
 
   /* ------------------------------------------------------------------------ */
-  /* onCancelClick: in create mode asks confirm; on accept emits close=true    */
+  /* onCancelClick: in create mode asks confirm; on accept emits refresh    */
   /* ------------------------------------------------------------------------ */
-  it('onCancelClick: create mode → confirm; accept emits close=true', () => {
+  it('onCancelClick: create mode → confirm; accept emits refresh', () => {
     // Re-provide input as create mode
     fixture.componentRef.setInput('data', makeData('create', 'locality', null));
     fixture.detectChanges();
@@ -289,8 +289,8 @@ describe('BaseDetailsComponent', () => {
     confirmSpy.confirm.and.callFake((cfg: any) => cfg.accept());
     component.onCancelClick();
 
-    expect(component.closeDialogDataSignal()).toBeTrue();
-    expect(component.emittedCloseDialogData.emit).toHaveBeenCalledWith(true);
+    expect(component.closeDialogDataSignal()).toBe('refresh');
+    expect(component.emittedCloseDialogData.emit).toHaveBeenCalledWith('refresh');
   });
 
   /* ------------------------------------------------------------------------ */

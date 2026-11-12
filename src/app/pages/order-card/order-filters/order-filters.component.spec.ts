@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { OrderFiltersComponent } from './order-filters/order-filters.component';
+import { OrderFiltersComponent } from './order-filters.component';
 
 describe('OrderFiltersComponent', () => {
   let component: OrderFiltersComponent;

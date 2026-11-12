@@ -198,10 +198,10 @@ describe('ToponymsListComponent', () => {
   // --------------------------------------------------------------------------
   it('onChangedPage: changing pageSize resets to first page; same pageSize updates index', () => {
     component.pageIndex.set(3);
-    component['pageSize'] = 10;
+    component.pageSize.set(10);
 
     component.onChangedPage({ pageIndex: 1, pageSize: 25, length: 0 } as any);
-    expect(component['pageSize']).toBe(25);
+    expect(component.pageSize()).toBe(25);
     expect(component.pageIndex()).toBe(0);
 
     component.onChangedPage({ pageIndex: 2, pageSize: 25, length: 0 } as any);
