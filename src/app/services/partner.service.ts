@@ -148,10 +148,7 @@ export class PartnerService implements PartnerMainService {
               },
             ]
           : undefined,
-      search: ctrl.omitEmpty({
-        value: p.searchValue,
-        exact: p.exactMatch || undefined,
-      }),
+      search: ctrl.buildSearch(p.searchValue, p.exactMatch),
       view: ctrl.omitEmpty({
         option: p.viewOption,
         includeOutdated: p.includeOutdated,
