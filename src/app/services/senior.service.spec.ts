@@ -240,10 +240,11 @@ describe('SeniorService domain contracts', () => {
     expect(received?.outdatedData.names).toEqual(seniorResponse().outdatedData.names);
   });
 
-  it('rejects missing confirmation fields even though the frontend Senior type permits them', () => {
+  it('rejects missing confirmation fields at the type and response-validation boundaries', () => {
     spyOn(console, 'error');
     const { confirmedFirstName, confirmedPatronymic, confirmedLastName, confirmedBirthDate, ...withoutConfirmations } =
       seniorSchema.parse(seniorResponse());
+    // @ts-expect-error Intentionally malformed response: required Senior confirmation fields are omitted to verify runtime validation.
     const frontendPermitted: Senior = withoutConfirmations;
     let received: unknown;
     service.getById(10).subscribe({ next: () => fail('Expected schema rejection'), error: (error: unknown) => { received = error; } });

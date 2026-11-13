@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -19,8 +18,7 @@ import {
   UpdatedOwnerData,
   RelationPick,
 } from '../interfaces/advanced-model';
-import { AddressFilter } from '../interfaces/toponym';
-import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -76,8 +74,8 @@ export class SeniorService implements SeniorMainService {
   }
 
   checkOwnerData(ownerDraft: SeniorDraft): Observable<ApiResponse<Duplicates>> {
-    let body = {
-      id: ownerDraft.id,
+    const body = {
+      ...(ownerDraft.id != null ? { id: ownerDraft.id } : {}),
       firstName: ownerDraft.firstName,
       patronymic: ownerDraft.patronymic,
       lastName: ownerDraft.lastName,

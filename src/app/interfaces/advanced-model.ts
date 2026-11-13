@@ -23,7 +23,8 @@ import type {
   HomeOutdatingData,
 } from '../../../shared/schemas/home.schema';
 
-import type { SeniorAddress } from '../../../shared/schemas/senior.schema';
+import type { z } from 'zod';
+import type { SeniorAddress, seniorSchema } from '../../../shared/schemas/senior.schema';
 import type { PartnerAffiliationId } from '../../../shared/constants/partners';
 
 import type {
@@ -452,7 +453,10 @@ export type Home = Owner & {
   isClose: boolean;
   dateOfClose: Date | null;
 };
-export type Senior = Person & {
+export type Senior = Person & Pick<
+  z.infer<typeof seniorSchema>,
+  'confirmedFirstName' | 'confirmedPatronymic' | 'confirmedLastName' | 'confirmedBirthDate'
+> & {
   address: SeniorAddress;
   outdatedData: SeniorOutdatedData;
   birthDate: Date | null;
@@ -470,10 +474,6 @@ export type Senior = Person & {
   interests: string | null;
   orthodoxBeliever: string | null;
   dateOfExit: Date | null;
-  confirmedFirstName?: boolean;
-  confirmedPatronymic?: boolean;
-  confirmedLastName?: boolean;
-  confirmedBirthDate?: boolean;
   spouseId: number | null;
   spouseFullName: string | null;
   homeId: number;
