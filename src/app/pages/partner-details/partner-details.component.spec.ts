@@ -237,6 +237,33 @@ describe('PartnerDetailsComponent edit-session rollback', () => {
     tick();
   }));
 
+  it('retains pending history deletion and scalar changes when a failed save is retried without leaving edit', fakeAsync(() => {
+    enterEdit();
+    component.onDeleteOutdatedData('names', 81);
+    component.mainForm.controls['comment'].setValue('Keep these edits');
+    const expected = {
+      ...expectedUpdate({ comment: 'Keep these edits' }),
+      deletingData: { names: [81], addresses: null, contacts: null, coordinations: null },
+    };
+    const failed = save();
+    expect(failed.request.body).toEqual(expected);
+    failed.flush({ code: 'ERRORS.UPDATE_FAILED' }, { status: 500, statusText: 'Server Error' });
+    tick();
+    expect(component.showSpinner()).toBeFalse();
+    expect(component.isEditModeSignal()).toBeTrue();
+    expect(component.mainForm.controls['comment'].value).toBe('Keep these edits');
+    expect(component.outdatedNames).toEqual([]);
+    expect(TestBed.inject(ConfirmationService).confirm).not.toHaveBeenCalled();
+
+    const retry = save();
+    expect(retry.request.body).toEqual(expected);
+    retry.flush({ data: {
+      ...persisted, comment: 'Keep these edits', outdatedData: { ...persisted.outdatedData, names: [] },
+    } });
+    tick();
+    expect(component.isEditModeSignal()).toBeFalse();
+  }));
+
   it('starts a later edit from the refreshed history after a successful save-and-stay', fakeAsync(() => {
     enterEdit();
     component.onDeleteOutdatedData('names', 81);

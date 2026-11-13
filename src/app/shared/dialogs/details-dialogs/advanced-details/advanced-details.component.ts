@@ -382,10 +382,7 @@ export class AdvancedDetailsComponent<
     } else {
       this.setEmptyOutdatedDataDraft();
     }
-    this.setRestoringDataDraft();
-    this.setDeletingDataDraft();
-    this.setChangingData();
-    this.setOutdatingData();
+    this.resetPendingEditState();
     this.mainForm.setValidators(this.data().mainContactsValidator!);
     this.mainForm.valueChanges
       .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
@@ -1475,10 +1472,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           }),
       });
   }
+  private resetPendingEditState() {
+    this.setRestoringDataDraft();
+    this.setDeletingDataDraft();
+    this.setChangingData();
+    this.setOutdatingData();
+  }
+
   // View-mode: set outdated data
   protected override changeToViewMode(
     addressParams: DefaultAddressParams | null,
   ) {
+    // Pending mutations must not survive the edit session that produced them.
+    this.resetPendingEditState();
     super.changeToViewMode(addressParams);
     this.outdatedDataDraft = structuredClone(
       this.existingOwner!.outdatedData,
@@ -1554,11 +1560,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             'view',
             this.data().defaultAddressParams!,
           );
-
-          this.setRestoringDataDraft();
-          this.setDeletingDataDraft();
-          this.setChangingData();
-          this.setOutdatingData();
 
           this.changeToViewMode(null);
           this.setInitialValues('view');
