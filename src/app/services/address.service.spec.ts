@@ -134,7 +134,7 @@ describe('AddressService', () => {
   // --------------------------------------------------------------------------
   // saveToponym
   // --------------------------------------------------------------------------
-  it('saveToponym: uses create endpoint and sends merged payload', () => {
+  it('saveToponym: uses create endpoint and sends a schema-valid Region payload', () => {
     const mainValues: ToponymFormControlsValues = {
       name: 'Тверская',
       shortName: 'Твер.',
@@ -160,15 +160,21 @@ describe('AddressService', () => {
     const req = httpMock.expectOne(`${BASE_URL}/create-toponym`);
     expect(req.request.method).toBe('POST');
 
-    // POST body should include type + mainValues + parent ids from addressFilter
     const body = req.request.body;
     expect(body.type).toBe('region' as ToponymType);
     expect(body.name).toBe('Тверская');
     expect(body.shortName).toBe('Твер.');
     expect(body.countryId).toBe(1);
-    expect(body.regionId).toBe(7);
-    expect(body.districtId).toBe(9);
+    expect(Object.keys(body)).not.toContain('regionId');
+    expect(Object.keys(body)).not.toContain('districtId');
+    expect(Object.keys(body)).not.toContain('localityId');
+    expect(Object.keys(body)).not.toContain('postName');
+    expect(Object.keys(body)).not.toContain('shortPostName');
+    expect(Object.keys(body)).not.toContain('isFederalCity');
+    expect(Object.keys(body)).not.toContain('isCapitalOfRegion');
+    expect(Object.keys(body)).not.toContain('isCapitalOfDistrict');
     expect(body.id).toBeUndefined();
+    expect(toponymCreateSchema.safeParse(body).success).toBeTrue();
 
     // Respond with a RawApiResponse matching the toponymSchema (simplified)
     req.flush({ data: { id: 100, name: 'Тверская', shortName: 'Твер.' } });
@@ -186,8 +192,8 @@ describe('AddressService', () => {
       isCapitalOfDistrict: false,
     };
     const filter: AddressFilter = {
-      countries: [],
-      regions: [],
+      countries: [1],
+      regions: [55],
       districts: [],
       localities: [],
     };
@@ -201,6 +207,18 @@ describe('AddressService', () => {
     expect(req.request.body.id).toBe(55);
     expect(req.request.body.type).toBe('region');
     expect(req.request.body.name).toBe('Обновлена');
+    const body = req.request.body;
+    expect(body.shortName).toBe('Обн.');
+    expect(body.countryId).toBe(1);
+    expect(Object.keys(body)).not.toContain('regionId');
+    expect(Object.keys(body)).not.toContain('districtId');
+    expect(Object.keys(body)).not.toContain('localityId');
+    expect(Object.keys(body)).not.toContain('postName');
+    expect(Object.keys(body)).not.toContain('shortPostName');
+    expect(Object.keys(body)).not.toContain('isFederalCity');
+    expect(Object.keys(body)).not.toContain('isCapitalOfRegion');
+    expect(Object.keys(body)).not.toContain('isCapitalOfDistrict');
+    expect(toponymUpdateSchema.safeParse(body).success).toBeTrue();
 
     req.flush({ data: { id: 55, name: 'Обновлена', shortName: 'Обн.' } });
   });
