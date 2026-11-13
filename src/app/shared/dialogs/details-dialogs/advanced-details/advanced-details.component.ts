@@ -1352,7 +1352,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           ...(this.changingData.main ?? {}),
           ...changes,
         };
-      this.outdatingData.officialName = outdating;
+      // The planner keeps a form string; archival requests use the schema's object wrapper.
+      this.outdatingData.officialName = outdating === null ? null : { officialName: outdating };
     }
 
     // Contacts

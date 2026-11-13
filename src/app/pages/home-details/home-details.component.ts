@@ -380,50 +380,6 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.onChangeValidation();
   }
 
-  /*   override async checkAllChanges() {
-    const address = await this.ownerDiffService.diffHomeAddress(
-      this.existingOwner!,
-      this.ownerDraft,
-      this.restoringDataDraft.addresses == null
-        ? null
-        : this.restoringDataDraft.addresses![0]
-    );
-    if (address.changes) this.changingData.address = address.changes;
-    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
-    if (address.deletingId) {
-      this.deletingDataDraft.addresses ??= [];
-      this.deletingDataDraft.addresses.push(address.deletingId);
-    }
-
-    const officialName = await this.ownerDiffService.diffOfficialName(
-      this.existingOwner!,
-      this.ownerDraft
-    );
-    if (officialName.changes)
-      this.changingData.main = {
-        ...(this.changingData.main ?? {}),
-        ...{ officialName: officialName.changes },
-      };
-    if (officialName.outdating)
-      this.outdatingData.officialName = officialName.outdating;
-
-    const coordinations = await this.ownerDiffService.diffCoordinations(
-      this.kind,
-      this.existingOwner!.coordinations,
-      this.ownerDraft.draftCoordinations ?? [],
-      this.restoringDataDraft.coordinations ?? [],
-      this.existingOwner!.outdatedData.coordinations ?? []
-    );
-    if (coordinations.changes)
-      this.changingData.coordinations = coordinations.changes;
-    if (coordinations.outdating)
-      this.outdatingData.coordinations = coordinations.outdating;
-    if (coordinations.deleting)
-      this.deletingDataDraft.coordinations = coordinations.deleting;
-
-    return await super.checkAllChanges();
-  } */
-
   override getPostalAddress(): string {
     return this.existingOwner!.address.fullPostalAddress;
   }

@@ -19,6 +19,8 @@ import type {
   OutdatedCoordination,
   OutdatedOfficialName,
   OutdatedHomeAddress,
+  HomeChangingData as SharedHomeChangingData,
+  HomeOutdatingData,
 } from '../../../shared/schemas/home.schema';
 
 import type { SeniorAddress } from '../../../shared/schemas/senior.schema';
@@ -58,6 +60,7 @@ export type {
   ChangePassword,
   Institute,
   DraftAddress,
+  HomeOutdatingData,
 };
 
 /* export interface AdvancedModel extends BaseModel {
@@ -182,18 +185,13 @@ export type VolunteerChangingData = AdvancedChangingData<PersonChangingMain> & {
   cooperations: number[] | null;
 };
 
-export type HomeChangingMain = BaseChangingMain & {
-  homeName?: string;
-  officialName?: string;
-  noAddress?: boolean;
-  specialHome?: boolean;
-  acceptableForSchool?: boolean;
-  isClose?: boolean;
-  dateOfClose?: Date | null;
-  infoNote?: string | null;
-};
-export type HomeChangingData = AdvancedChangingData<HomeChangingMain> & {
-  coordinations: number[] | null;
+export type HomeChangingMain = NonNullable<SharedHomeChangingData['main']>;
+type HomeAddressChange = NonNullable<SharedHomeChangingData['address']>;
+export type HomeChangingData = Omit<SharedHomeChangingData, 'address'> & {
+  // The schema normalizes an omitted postalAddressPart to null; preserve that wire contract.
+  address: (Omit<HomeAddressChange, 'postalAddressPart'> & {
+    postalAddressPart?: HomeAddressChange['postalAddressPart'];
+  }) | null;
 };
 export type SeniorChangingMain = PersonChangingMain & {
   birthDate?: Date | null;
@@ -241,10 +239,6 @@ export type PartnerOutdatingData = PersonOutdatingData & {
 };
 export type VolunteerOutdatingData = PersonOutdatingData & {
   institutes: number[] | null;
-};
-export type HomeOutdatingData = BaseOutdatingData & {
-  officialName: string | null;
-  coordinations: number[] | null;
 };
 export type SeniorOutdatingData = {
   names: BaseOutdatingNames | null;

@@ -204,7 +204,6 @@ describe('HomeService update request contract', () => {
       changingData: { main: null, address: null, contacts: null, coordinations: null },
       outdatingData: { address: null, officialName: { officialName: 'Previous Official Home' }, contacts: null, coordinations: null },
     };
-    // @ts-expect-error The current frontend DTO rejects this valid backend official-name wrapper.
     const body = sendUpdate(update);
     expect(body).toEqual({ id: 10, ...update });
     expect(updateHomeDataSchema.safeParse(body).success).toBeTrue();
@@ -216,7 +215,6 @@ describe('HomeService update request contract', () => {
       changingData: { main: { officialName: 'Updated Official Home' }, address: postalAddress, contacts: null, coordinations: null },
       outdatingData: { address: 50, officialName: { officialName: 'Previous Official Home' }, contacts: null, coordinations: null },
     };
-    // @ts-expect-error The current frontend DTO rejects this valid backend official-name wrapper.
     const body = sendUpdate(update);
     expect(body).toEqual({ id: 10, ...update });
     expect(updateHomeDataSchema.safeParse(body).success).toBeTrue();
@@ -248,10 +246,11 @@ describe('HomeService update request contract', () => {
     }
   }
 
-  // Current frontend DTOs accept these counterexamples; the authoritative backend contract must reject them.
+  // Keep malformed runtime fixtures local and verify that the DTO and backend both reject them.
   it('rejects missing postalCode despite its representability through the frontend address DTO', () => {
     const { postalCode: _postalCode, ...address } = postalAddress;
     const update = emptyUpdate();
+    // @ts-expect-error Home address requests require postalCode.
     update.changingData.address = address;
     expectBackendRejection(update, ['changingData.address.postalCode']);
   });
@@ -259,11 +258,13 @@ describe('HomeService update request contract', () => {
   it('rejects missing postalName despite its representability through the frontend address DTO', () => {
     const { postalName: _postalName, ...address } = postalAddress;
     const update = emptyUpdate();
+    // @ts-expect-error Home address requests require postalName.
     update.changingData.address = address;
     expectBackendRejection(update, ['changingData.address.postalName']);
   });
 
   it('rejects the general-address-only shape currently permitted by the frontend Home DTO', () => {
+    // @ts-expect-error A general address lacks the required Home postal fields.
     const address: NonNullable<HomeChangingData['address']> = { countryId: 143, regionId: 20, districtId: 30, localityId: 40 };
     const update = emptyUpdate();
     update.changingData.address = address;
@@ -272,7 +273,9 @@ describe('HomeService update request contract', () => {
 
   for (const field of ['countryId', 'regionId', 'districtId', 'localityId'] as const) {
     it(`rejects null ${field} despite its representability through the frontend Home DTO`, () => {
-      const address: NonNullable<HomeChangingData['address']> = { ...postalAddress, [field]: null };
+      const address: NonNullable<HomeChangingData['address']> = { ...postalAddress };
+      // @ts-expect-error Home hierarchy IDs cannot be null.
+      address[field] = null;
       const update = emptyUpdate();
       update.changingData.address = address;
       expectBackendRejection(update, ['changingData.address.' + field]);
@@ -280,6 +283,7 @@ describe('HomeService update request contract', () => {
   }
 
   it('rejects the string-only official-name archival shape declared by the frontend DTO', () => {
+    // @ts-expect-error Official-name archival requires the shared object wrapper.
     const outdating: HomeOutdatingData = { address: null, officialName: 'Previous Official Home', contacts: null, coordinations: null };
     const update = { ...emptyUpdate(), outdatingData: outdating };
     expectBackendRejection(update, ['outdatingData.officialName']);

@@ -6,10 +6,10 @@ import {
   ContactType,
   Home,
   HomeDraft,
+  HomeChangingData,
   NonTelegram,
   OutdatedContacts,
   OutdatedCoordination,
-  OutdatedHomeAddress,
   OutdatedInstitute,
   Partner,
   PartnerDraft,
@@ -49,7 +49,7 @@ export type AddressDiff = {
 };
 
 export type HomeAddressDiff = {
-  changes: HomeDraft['draftAddress'] | null;
+  changes: HomeChangingData['address'];
   outdatingId: number | null;
   deletingId: number | null;
 };
@@ -88,8 +88,8 @@ function currentCoordinationTargetId(
 function buildHomeAddressComparable(draft: HomeDraft) {
   return {
     ...draft.draftAddress,
-    postalCode: lightNormalize(draft.postalCode),
-    postalName: lightNormalize(draft.postalName),
+    postalCode: normalize(draft.postalCode),
+    postalName: normalize(draft.postalName),
     postalAddressPart: lightNormalize(draft.postalAddressPart),
   };
 }
@@ -232,18 +232,18 @@ export class OwnerChangesPlannerService {
       (newA.postalName ?? null) !== (oldA.postalName ?? null) ||
       (newA.postalCode ?? null) !== (oldA.postalCode ?? null);
 
-    let changes: HomeDraft['draftAddress'] | null = null;
+    let changes: HomeChangingData['address'] = null;
 
     if (changed) {
       if (!restoringId) {
-        changes = newA as HomeDraft['draftAddress'];
+        changes = newA;
       } else {
         const restoringAddr = existing.outdatedData.addresses.find(
           (a) => a.id === restoringId,
-        ) as OutdatedHomeAddress | undefined;
+        );
 
         if (restoringAddr && !isSameHomeAddress(newA, restoringAddr)) {
-          changes = newA as HomeDraft['draftAddress'];
+          changes = newA;
         }
       }
     }

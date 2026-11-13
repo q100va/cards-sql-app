@@ -104,4 +104,33 @@ describe('HomeDetailsComponent', () => {
     expect(updateHomeDataSchema.safeParse({ id: home.id, ...update }).success).toBeTrue();
     expect(confirm).toHaveBeenCalledWith('officialName', home.officialName);
   });
+
+  it('keeps official-name archival null when the user declines to archive the old name', async () => {
+    const home = prepareHomeEdit();
+    const confirm = spyOn(TestBed.inject(DiffConfirmService), 'confirmOutdateOrDelete').and.resolveTo(false);
+    component.mainForm.controls['officialName'].setValue('Updated Official Home');
+    component.ownerDraft = buildDraft('home', component.mainForm, component.addressFilter(), component.contactTypes, home, 7);
+
+    const update = await component.checkAllChanges();
+    expect(update.changingData.main).toEqual({ officialName: 'Updated Official Home' });
+    expect(update.outdatingData).toEqual({ address: null, officialName: null, contacts: null, coordinations: null });
+    expect(updateHomeDataSchema.safeParse({ id: home.id, ...update }).success).toBeTrue();
+    expect(confirm).toHaveBeenCalledWith('officialName', home.officialName);
+  });
+
+  it('preserves blank optional postal text as null in the request while retaining the form representation', async () => {
+    const home = prepareHomeEdit();
+    spyOn(TestBed.inject(DiffConfirmService), 'confirmOutdateOrDelete').and.resolveTo(true);
+    component.mainForm.controls['postalAddressPart'].setValue('   ');
+    component.ownerDraft = buildDraft('home', component.mainForm, component.addressFilter(), component.contactTypes, home, 7);
+
+    const update = await component.checkAllChanges();
+    expect(component.ownerDraft.postalAddressPart).toBe('');
+    expect(update.changingData.address).toEqual({
+      countryId: 143, regionId: 20, districtId: 30, localityId: 40,
+      postalCode: '123456', postalName: 'Example Home', postalAddressPart: null,
+    });
+    expect(update.outdatingData.address).toBe(50);
+    expect(updateHomeDataSchema.safeParse({ id: home.id, ...update }).success).toBeTrue();
+  });
 });
