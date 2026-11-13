@@ -9,7 +9,9 @@ import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks, tick } from '@an
 import { ConfirmationService } from 'primeng/api';
 
 import { HomeDetailsComponent } from './home-details.component';
-import { homeSchema, updateHomeDataSchema } from '../../../../shared/schemas/home.schema';
+import {
+  homeSchema, updateHomeDataSchema, outdatedAddressItemSchema, OutdatedHomeAddress, OutdatedOfficialName,
+} from '../../../../shared/schemas/home.schema';
 import { DiffConfirmService } from '../../services/diff-confirm.service';
 import { buildDraft } from '../../utils/owner-draft.builder';
 import { AuthUser } from '../../../../shared/schemas/auth.schema';
@@ -139,6 +141,193 @@ describe('HomeDetailsComponent', () => {
     expect(update.outdatingData.address).toBe(50);
     expect(updateHomeDataSchema.safeParse({ id: home.id, ...update }).success).toBeTrue();
   });
+});
+
+describe('HomeDetailsComponent archived-value restoration', () => {
+  let fixture: ComponentFixture<HomeDetailsComponent>;
+  let component: HomeDetailsComponent;
+  let http: HttpTestingController;
+  let persisted: Home;
+  const actor: AuthUser = {
+    id: 7, userName: 'editor', firstName: 'Test', lastName: 'Editor', roleId: 1, roleName: 'Editor',
+  };
+  const archivedName: OutdatedOfficialName = { id: 81, officialName: 'Archived Official Home' };
+  const currentAddress: Home['address'] = {
+    id: 50, country: { id: 143, name: 'Current Country' }, region: { id: 20, shortName: 'Current Region' },
+    district: { id: 30, shortName: 'Current District' }, locality: { id: 40, shortName: 'Current Locality' },
+    postalCode: '123456', postalName: 'Current Postal Recipient', postalAddressPart: 'Current Street 1',
+    fullPostalAddress: '123456 Current Country, Current Region, Current District, Current Locality, Current Street 1',
+    isRecoverable: true,
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [HomeDetailsComponent],
+      providers: [
+        ...provideComponentTesting(),
+        { provide: AuthService, useValue: { currentUser$: of(actor) } satisfies Pick<AuthService, 'currentUser$'> },
+      ],
+    }).compileComponents();
+    spyOn(TestBed.inject(RoleService), 'getRolesNamesList').and.returnValue(of({ data: [] }));
+    spyOn(TestBed.inject(PartnerService), 'getActivePartnersPickList').and.returnValue(of([]));
+    const choices = {
+      countries: [{ id: 143, name: 'Current Country' }, { id: 144, name: 'Archived Country' }],
+      regions: [{ id: 20, name: 'Current Region' }, { id: 21, name: 'Archived Region' }],
+      districts: [{ id: 30, name: 'Current District' }, { id: 31, name: 'Archived District' }],
+      localities: [{ id: 40, name: 'Current Locality' }, { id: 41, name: 'Archived Locality' }],
+    };
+    spyOn(TestBed.inject(AddressService), 'getListOfToponyms').and.callFake((ids, type) => {
+      const archived = ids.includes(144) || ids.includes(21) || ids.includes(31);
+      return of({ data: type === 'countries' ? choices[type] : [choices[type][archived ? 1 : 0]] });
+    });
+    spyOn(TestBed.inject(DiffConfirmService), 'confirmOutdateOrDelete').and.resolveTo(true);
+    spyOn(TestBed.inject(MessageWrapperService), 'handle').and.stub();
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  function openHome(address: OutdatedHomeAddress | null = null) {
+    persisted = homeSchema.parse({
+      id: 10, homeName: 'Example Home', officialName: 'Current Official Home',
+      noAddress: false, specialHome: false, acceptableForSchool: true,
+      isRestricted: false, causeOfRestriction: null, dateOfRestriction: null,
+      dateOfStart: '2026-01-15T00:00:00.000Z', comment: null, infoNote: null,
+      address: currentAddress, orderedContacts: { email: [{ id: 61, content: 'current@example.com' }] },
+      outdatedData: { contacts: {}, addresses: address ? [address] : [], officialNames: [archivedName], coordinations: [] },
+      coordinations: [], dateOfLastUpdate: null, isClose: false, dateOfClose: null,
+    });
+    fixture = TestBed.createComponent(HomeDetailsComponent);
+    component = fixture.componentInstance;
+    const config = new HomesListComponent().homeDialogConfig;
+    fixture.componentRef.setInput('data', {
+      ...config, operation: 'view-edit', controlsDisable: true, object: persisted,
+      addressFilterParams: { ...config.addressFilterParams, readonly: true },
+      defaultAddressParams: { countryId: 143, regionId: 20, districtId: 30, localityId: 40 },
+    } satisfies typeof config);
+    fixture.detectChanges();
+    component.onEditClick();
+    tick();
+    expect(component.isEditModeSignal()).toBeTrue();
+    expect(component.mainForm.valid).toBeTrue();
+  }
+
+  function archivedAddress(overrides: Partial<OutdatedHomeAddress> = {}): OutdatedHomeAddress {
+    return outdatedAddressItemSchema.parse({
+      id: 82, country: { id: 144, name: 'Archived Country' }, region: { id: 21, shortName: 'Archived Region' },
+      district: { id: 31, shortName: 'Archived District' }, locality: { id: 41, shortName: 'Archived Locality' },
+      postalCode: '654321', postalName: 'Archived Postal Recipient', postalAddressPart: 'Archived Street 9',
+      fullPostalAddress: '654321 Archived Country, Archived Region, Archived District, Archived Locality, Archived Street 9',
+      isRecoverable: true, ...overrides,
+    });
+  }
+
+  function emptyUpdate() {
+    return {
+      id: 10,
+      changingData: { main: null, address: null, contacts: null, coordinations: null },
+      restoringData: { addresses: null, officialNames: null, contacts: {}, coordinations: null },
+      outdatingData: { address: null, officialName: null, contacts: null, coordinations: null },
+      deletingData: { addresses: null, officialNames: null, contacts: null, coordinations: null },
+    };
+  }
+
+  function save(): TestRequest {
+    tick();
+    expect(component.mainForm.valid).toBeTrue();
+    expect(component.IsSaveDisabledSignal()).toBeFalse();
+    component.onSaveClick('justSave');
+    flushMicrotasks();
+    const request = http.expectOne(`${environment.apiUrl}/api/homes/update-home`);
+    expect(request.request.method).toBe('POST');
+    expect(updateHomeDataSchema.safeParse(request.request.body).success).toBeTrue();
+    return request;
+  }
+
+  function expectAddressRestoration(address: OutdatedHomeAddress) {
+    openHome(address);
+    const sourceHistory = structuredClone(persisted.outdatedData);
+    const sourceAddress = structuredClone(address);
+    component.onRestoreOutdatedData('addresses', address);
+    tick();
+
+    expect(component.addressFilter()).toEqual({
+      countries: [address.country.id], regions: [address.region.id],
+      districts: [address.district.id], localities: [address.locality.id],
+    });
+    expect(component.mainForm.controls['postalCode'].value).toBe(address.postalCode);
+    expect(component.mainForm.controls['postalName'].value).toBe(address.postalName);
+    expect(component.mainForm.controls['postalAddressPart'].value).toBe(address.postalAddressPart);
+    expect(component.outdatedAddresses).toEqual([]);
+    expect(persisted.outdatedData).toEqual(sourceHistory);
+    expect(address).toEqual(sourceAddress);
+
+    const request = save();
+    expect(component.ownerDraft.draftAddress).toEqual({
+      countryId: address.country.id, regionId: address.region.id,
+      districtId: address.district.id, localityId: address.locality.id,
+    });
+    expect(component.ownerDraft.postalCode).toBe(address.postalCode);
+    expect(component.ownerDraft.postalName).toBe(address.postalName);
+    expect(component.ownerDraft.postalAddressPart).toBe(address.postalAddressPart ?? '');
+    const expected = emptyUpdate();
+    expect(request.request.body).toEqual({
+      ...expected,
+      restoringData: { ...expected.restoringData, addresses: [address.id] },
+      outdatingData: { ...expected.outdatingData, address: currentAddress.id },
+    });
+    request.flush({ data: {
+      ...persisted, address,
+      outdatedData: { ...persisted.outdatedData, addresses: [currentAddress] },
+    } });
+    tick();
+  }
+
+  it('restores an archived official name into officialName and preserves the restore/archive request boundary', fakeAsync(() => {
+    openHome();
+    const sourceHistory = structuredClone(persisted.outdatedData);
+    component.onRestoreOutdatedOfficialName(archivedName);
+    tick();
+    expect(component.mainForm.controls['officialName'].value).toBe(archivedName.officialName);
+    expect(component.outdatedOfficialNames).toEqual([]);
+    expect(persisted.outdatedData).toEqual(sourceHistory);
+
+    const request = save();
+    expect(component.ownerDraft.officialName).toBe(archivedName.officialName);
+    const expected = emptyUpdate();
+    expect(request.request.body).toEqual({
+      ...expected,
+      changingData: { ...expected.changingData, main: { officialName: archivedName.officialName } },
+      restoringData: { ...expected.restoringData, officialNames: [archivedName.id] },
+      outdatingData: { ...expected.outdatingData, officialName: { officialName: persisted.officialName } },
+    });
+    request.flush({ data: {
+      ...persisted, officialName: archivedName.officialName,
+      outdatedData: { ...persisted.outdatedData, officialNames: [{ id: 90, officialName: persisted.officialName }] },
+    } });
+    tick();
+  }));
+
+  it('restores every geographic and postal field from an archived Home address before saving its history ID', fakeAsync(() => {
+    expectAddressRestoration(archivedAddress());
+  }));
+
+  it('restores archived postal values even when the geographic hierarchy is unchanged', fakeAsync(() => {
+    expectAddressRestoration(archivedAddress({
+      country: currentAddress.country, region: currentAddress.region,
+      district: currentAddress.district, locality: currentAddress.locality,
+      fullPostalAddress: '654321 Current Country, Current Region, Current District, Current Locality, Archived Street 9',
+    }));
+  }));
+
+  it('preserves an intentionally absent archived postalAddressPart through restoration and the save plan', fakeAsync(() => {
+    expectAddressRestoration(archivedAddress({
+      country: currentAddress.country, region: currentAddress.region,
+      district: currentAddress.district, locality: currentAddress.locality,
+      postalAddressPart: null,
+      fullPostalAddress: '654321 Current Country, Current Region, Current District, Current Locality',
+    }));
+  }));
 });
 
 describe('HomeDetailsComponent failed edit-session recovery', () => {
