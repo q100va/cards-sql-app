@@ -214,7 +214,6 @@ export type SeniorChangingMain = PersonChangingMain & {
   interests?: string | null;
   orthodoxBeliever?: string | null;
   dateOfExit?: Date | null;
-  homeId?: number;
   spouseId?: number | null;
 };
 export type SeniorChangingData = BaseChangingData<SeniorChangingMain>;

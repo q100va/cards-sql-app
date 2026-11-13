@@ -9,7 +9,7 @@ import { MessageWrapperService } from './message.service';
 import { SeniorService } from './senior.service';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../interfaces/api-response';
-import { Senior, SeniorDraft } from '../interfaces/advanced-model';
+import { Senior, SeniorChangingMain, SeniorDraft } from '../interfaces/advanced-model';
 import { ValidationError } from '../utils/validate-response';
 import {
   bulkUpdateSchema, checkSeniorDataSchema, seniorBlockingSchema, seniorDraftSchema,
@@ -308,20 +308,22 @@ describe('SeniorService domain contracts', () => {
     expect(update).toEqual(original);
   });
 
-  it('keeps an editor-supported homeId change through backend request-schema parsing', () => {
+  it('updates supported main fields without allowing Home reassignment in the request contract', () => {
+    // @ts-expect-error Home assignment belongs to creation/read data, not editable main fields.
+    const forbiddenField: keyof SeniorChangingMain = 'homeId';
     const update: Parameters<SeniorService['saveUpdatedOwner']>[1] = {
-      changingData: { main: { homeId: 21 } }, restoringData: { names: null },
+      changingData: { main: { comment: 'Обновлено', spouseId: null } }, restoringData: { names: null },
       outdatingData: { names: null }, deletingData: { names: null },
     };
     service.saveUpdatedOwner(10, update).subscribe();
     const request = http.expectOne(base + '/update-senior');
+    expect(request.request.method).toBe('POST');
     const body = bodyOf(request);
     request.flush({ data: seniorResponse() });
     expect(body).toEqual({ id: 10, ...update });
-    // The middleware replaces req.body with parsed data, so acceptance alone is insufficient.
+    expect(Object.keys(request.request.body.changingData.main)).not.toContain(forbiddenField);
     const parsed = updateSeniorDataSchema.parse(body);
-    const parsedMain: unknown = parsed.changingData.main;
-    expect(parsedMain).toEqual({ homeId: 21 });
+    expect(parsed.changingData.main).toEqual({ comment: 'Обновлено', spouseId: null });
   });
 
   it('sends schema-valid restriction and unrestriction PATCH bodies', () => {

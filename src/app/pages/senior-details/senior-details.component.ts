@@ -104,7 +104,6 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
       'profession',
       'teacher',
       'veteran',
-      'homeId',
       'spouseId',
     ];
     this.showRestrictedToggle = !this.existingOwner?.dateOfExit;
