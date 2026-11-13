@@ -245,7 +245,7 @@ export class VolunteerService implements VolunteerMainService {
 
   searchContacts(query: string): Observable<ApiResponse<ContactOption[]>> {
     return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/search-contacts/${query}`)
+      .get<RawApiResponse>(`${this.BASE_URL}/search-contacts/${encodeURIComponent(query)}`)
       .pipe(
         validateResponse(z.array(contactOptionSchema)),
         catchError(this.handleError),
