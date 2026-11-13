@@ -36,10 +36,8 @@ import {
   seniorsSchema,
 } from '../../../shared/schemas/senior.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 import { recipientsShortSchema } from '../../../shared/schemas/recipient.schema';
-//import { SeniorRow } from '../pages/seniors-bulk-update/seniors-bulk-update.component';
 
 export interface SeniorMainService extends OwnerMainService<
   Senior,
@@ -61,10 +59,7 @@ export class SeniorService implements SeniorMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/seniors`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Senior) {
     const fn = owner['firstName'] ?? '';
@@ -122,18 +117,6 @@ export class SeniorService implements SeniorMainService {
       );
   }
 
-  formCommentFilterValue(
-    commentFilter: string[] | undefined,
-  ): boolean | undefined {
-    if (commentFilter && commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
-  }
-
   getList(
     allFilterParameters: AllFilterParameters,
     pageSize: number,
@@ -183,8 +166,6 @@ export class SeniorService implements SeniorMainService {
         }),
 
         mode: ctrl.omitEmpty({
-          //strictAddress: p.strongAddressFilter,
-          //strictContact: p.strongContactFilter,
           strictDetail: p.strongDetailFilter,
         }),
       }),
@@ -327,7 +308,6 @@ export class SeniorService implements SeniorMainService {
         dateOfUpdate
       })
       .pipe(
-        //validateNoSchemaResponse<null>('isNull'),
         validateResponse(
           z.object({
             createdCount: z.number(),

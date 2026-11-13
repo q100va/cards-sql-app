@@ -31,7 +31,6 @@ import {
   partnersSchema,
 } from '../../../shared/schemas/partner.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
 export interface PartnerMainService extends OwnerMainService<
@@ -56,10 +55,7 @@ export class PartnerService implements PartnerMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/partners`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Partner) {
     const fn = owner['firstName'] ?? '';
@@ -115,18 +111,6 @@ export class PartnerService implements PartnerMainService {
         })),
         catchError(this.handleError),
       );
-  }
-
-  formCommentFilterValue(
-    commentFilter: string[] | undefined,
-  ): boolean | undefined {
-    if (commentFilter && commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
   }
 
   getList(

@@ -1,4 +1,3 @@
-//import { BaseModel } from './base-model';
 import {
   UserContacts,
   OutdatedUserName,
@@ -63,18 +62,6 @@ export type {
   DraftAddress,
   HomeOutdatingData,
 };
-
-/* export interface AdvancedModel extends BaseModel {
-  address: Address | HomeAddress | SeniorAddress;
-  comment: string | null;
-  orderedContacts: UserContacts | OptionalContacts;
-  outdatedData:
-    | UserOutdatedData
-    | PartnerOutdatedData
-    | VolunteerOutdatedData
-    | HomeOutdatedData
-    | SeniorOutdatedData;
-} */
 
 export type InstituteFormGroup = FormGroup<{
   instituteName: FormControl<string | null>;
@@ -476,7 +463,6 @@ export type Senior = Person & Pick<
   spouseId: number | null;
   spouseFullName: string | null;
   homeId: number;
-  //homeName: string;
   home: {
     homeName: string;
     noAddress: boolean;
@@ -497,18 +483,7 @@ export type ConfOwnerByKind = {
   senior: Senior;
 };
 
-export type OwnerByKind<K extends Kind> =
-  ConfOwnerByKind[K]; /* K extends 'user'
-  ? User
-  : K extends 'partner'
-    ? Partner
-    : K extends 'volunteer'
-      ? Volunteer
-      : K extends 'home'
-        ? Home
-        : K extends 'senior'
-          ? Senior
-          : never; */
+export type OwnerByKind<K extends Kind> = ConfOwnerByKind[K];
 
 export type ConfOwnerDraftByKind = {
   user: UserDraft;
@@ -519,18 +494,6 @@ export type ConfOwnerDraftByKind = {
 };
 export type OwnerDraftByKind<K extends Kind> = ConfOwnerDraftByKind[K];
 
-/* export type OwnerDraftByKind<K extends Kind> = K extends 'user'
-  ? UserDraft
-  : K extends 'partner'
-    ? PartnerDraft
-    : K extends 'volunteer'
-      ? VolunteerDraft
-      : K extends 'home'
-        ? HomeDraft
-        : K extends 'senior'
-          ? SeniorDraft
-          : never; */
-
 export type ConfChangingByKind = {
   user: UserChangingData;
   partner: PartnerChangingData;
@@ -540,18 +503,6 @@ export type ConfChangingByKind = {
 };
 
 export type ChangingByKind<K extends Kind> = ConfChangingByKind[K];
-/* K extends 'user'
-  ? UserChangingData
-  : K extends 'partner'
-    ? PartnerChangingData
-    : K extends 'volunteer'
-      ? VolunteerChangingData
-      : K extends 'home'
-        ? HomeChangingData
-        : K extends 'senior'
-          ? SeniorChangingData
-          : never;
- */
 export type RestoringByKind<K extends Kind> = K extends 'user'
   ? UserRestoringData
   : K extends 'partner'
@@ -609,18 +560,6 @@ export type ConfListDto = {
 };
 
 export type ListDto<K extends Kind> = ConfListDto[K];
-
-/* K extends 'user'
-  ? { list: User[]; length: number }
-  : K extends 'partner'
-    ? { list: Partner[]; length: number }
-    : K extends 'volunteer'
-      ? { list: Volunteer[]; length: number }
-      : K extends 'home'
-        ? { list: Home[]; length: number }
-        : K extends 'senior'
-          ? { list: Senior[]; length: number }
-          : never; */
 
 export type RelationPick = {
   id: number;

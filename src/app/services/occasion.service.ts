@@ -49,7 +49,6 @@ export class OccasionService {
         params,
       })
       .pipe(
-        //validateResponse(z.boolean()),
         validateNoSchemaResponse<boolean>('isBoolean'),
         this.msgWrapper.messageTap('error', {
           source: 'CreateOccasionDialog',
@@ -65,7 +64,6 @@ export class OccasionService {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/create-occasion`, occasion)
       .pipe(
-        //validateResponse(z.string().trim()),
         validateNoSchemaResponse<string>('isString'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           name: res.data,

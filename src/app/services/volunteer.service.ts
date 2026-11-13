@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -18,8 +17,7 @@ import {
   OwnerMainService,
   UpdatedOwnerData,
 } from '../interfaces/advanced-model';
-import { AddressFilter } from '../interfaces/toponym';
-import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -34,7 +32,6 @@ import {
   volunteersSchema,
 } from '../../../shared/schemas/volunteer.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
 export interface VolunteerMainService extends OwnerMainService<
@@ -55,10 +52,7 @@ export class VolunteerService implements VolunteerMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/volunteers`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Volunteer) {
     const fn = owner['firstName'] ?? '';
@@ -114,16 +108,6 @@ export class VolunteerService implements VolunteerMainService {
         })),
         catchError(this.handleError),
       );
-  }
-
-  formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    if (commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
   }
 
   getList(

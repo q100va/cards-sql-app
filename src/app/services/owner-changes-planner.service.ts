@@ -1,4 +1,3 @@
-// src/app/services/owner-diff-planner.service.ts
 import { Injectable } from '@angular/core';
 
 import {
@@ -24,7 +23,7 @@ import {
 } from '../interfaces/advanced-model';
 
 import { DiffConfirmService } from './diff-confirm.service';
-import { isFieldEqual, lightNormalize, normalize } from '../utils/owner-ctrls'; // <-- поправь путь под себя
+import { isFieldEqual, lightNormalize, normalize } from '../utils/owner-ctrls';
 
 // -----------------------------------------------------------------------------
 // Common contracts

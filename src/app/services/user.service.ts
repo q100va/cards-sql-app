@@ -20,8 +20,7 @@ import {
   RelationPick
 } from '../interfaces/advanced-model';
 
-import { AddressFilter } from '../interfaces/toponym';
-import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters } from '../interfaces/base-list';
 
 import {
   validateNoSchemaResponse,
@@ -32,7 +31,6 @@ import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import { userSchema, usersSchema } from '../../../shared/schemas/user.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
 export interface UserMainService
@@ -59,10 +57,7 @@ export class UserService implements UserMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/users`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: User) {
     return owner.userName;
@@ -155,17 +150,6 @@ export class UserService implements UserMainService {
       );
   }
 
-  formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-
-    if (commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
-  }
-
   getList(
     allFilterParameters: AllFilterParameters,
     pageSize: number,
@@ -192,7 +176,6 @@ export class UserService implements UserMainService {
         general: ctrl.omitEmpty({
           roles: p.filter.roles!.map((r) => r.id),
           details: p.filter.details.map((d) => d.value),
-         // comment: this.formCommentFilterValue(p.filter.comment),
           dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
           dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
           contactTypes: p.filter.contactTypes.map((c) => c.type),

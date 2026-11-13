@@ -27,7 +27,6 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 import {
   homeSchema,
@@ -60,10 +59,7 @@ export class HomeService implements HomeMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/homes`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Home) {
     return owner['homeName'].trim();
@@ -129,16 +125,6 @@ export class HomeService implements HomeMainService {
       );
   }
 
-  formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    if (commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
-  }
-
   getList(
     allFilterParameters: AllFilterParameters,
     pageSize: number,
@@ -199,19 +185,6 @@ export class HomeService implements HomeMainService {
       .pipe(validateResponse(homeSchema), catchError(this.handleError));
   }
 
-  /*   getActiveHomesPickList(): Observable<ApiResponse<RelationPick[]>> {
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
-      .pipe(
-        validateResponse(
-          z.array(
-            z.object({ id: z.number().int().positive(), name: z.string() })
-          )
-        ),
-        catchError(this.handleError)
-      );
-  }
- */
   getActiveHomesPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-active-homes`)
