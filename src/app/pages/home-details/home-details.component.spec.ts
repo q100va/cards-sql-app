@@ -1,16 +1,22 @@
-import { HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import { provideComponentTesting } from '../../testing/component-test-providers';
 import { HomesListComponent } from '../homes-list/homes-list.component';
 import { RoleService } from '../../services/role.service';
 import { AddressService } from '../../services/address.service';
 import { PartnerService } from '../../services/partner.service';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
+import { ConfirmationService } from 'primeng/api';
 
 import { HomeDetailsComponent } from './home-details.component';
 import { homeSchema, updateHomeDataSchema } from '../../../../shared/schemas/home.schema';
 import { DiffConfirmService } from '../../services/diff-confirm.service';
 import { buildDraft } from '../../utils/owner-draft.builder';
+import { AuthUser } from '../../../../shared/schemas/auth.schema';
+import { Home } from '../../interfaces/advanced-model';
+import { AuthService } from '../../services/auth.service';
+import { MessageWrapperService } from '../../services/message.service';
+import { environment } from '../../../environments/environment';
 
 describe('HomeDetailsComponent', () => {
   let component: HomeDetailsComponent;
@@ -133,4 +139,113 @@ describe('HomeDetailsComponent', () => {
     expect(update.outdatingData.address).toBe(50);
     expect(updateHomeDataSchema.safeParse({ id: home.id, ...update }).success).toBeTrue();
   });
+});
+
+describe('HomeDetailsComponent failed edit-session recovery', () => {
+  let fixture: ComponentFixture<HomeDetailsComponent>;
+  let component: HomeDetailsComponent;
+  let http: HttpTestingController;
+  let persisted: Home;
+  const actor: AuthUser = {
+    id: 7, userName: 'editor', firstName: 'Test', lastName: 'Editor', roleId: 1, roleName: 'Editor',
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [HomeDetailsComponent],
+      providers: [
+        ...provideComponentTesting(),
+        { provide: AuthService, useValue: { currentUser$: of(actor) } satisfies Pick<AuthService, 'currentUser$'> },
+      ],
+    }).compileComponents();
+    spyOn(TestBed.inject(RoleService), 'getRolesNamesList').and.returnValue(of({ data: [] }));
+    spyOn(TestBed.inject(PartnerService), 'getActivePartnersPickList').and.returnValue(of([]));
+    spyOn(TestBed.inject(AddressService), 'getListOfToponyms').and.callFake((_ids, type) => of({
+      data: [{ id: { countries: 143, regions: 20, districts: 30, localities: 40 }[type], name: type }],
+    }));
+    spyOn(TestBed.inject(ConfirmationService), 'confirm').and.callFake(confirmation => {
+      confirmation.accept?.();
+      return TestBed.inject(ConfirmationService);
+    });
+    spyOn(TestBed.inject(DiffConfirmService), 'confirmOutdateOrDelete').and.resolveTo(true);
+    spyOn(TestBed.inject(MessageWrapperService), 'handle').and.stub();
+    persisted = homeSchema.parse({
+      id: 10, homeName: 'Example Home', officialName: 'Persisted Official Home',
+      noAddress: false, specialHome: false, acceptableForSchool: true,
+      isRestricted: false, causeOfRestriction: null, dateOfRestriction: null,
+      dateOfStart: '2026-01-15T00:00:00.000Z', comment: null, infoNote: null,
+      address: {
+        id: 50, country: { id: 143, name: 'Country' }, region: { id: 20, shortName: 'Region' },
+        district: { id: 30, shortName: 'District' }, locality: { id: 40, shortName: 'Locality' },
+        postalCode: '123456', postalName: 'Example Home', postalAddressPart: 'Building 1',
+        fullPostalAddress: 'Country, Region, District, Locality, Building 1', isRecoverable: true,
+      },
+      orderedContacts: { email: [{ id: 61, content: 'current@example.com' }] },
+      outdatedData: { contacts: {}, addresses: [], officialNames: [], coordinations: [] },
+      coordinations: [], dateOfLastUpdate: null, isClose: false, dateOfClose: null,
+    });
+    fixture = TestBed.createComponent(HomeDetailsComponent);
+    component = fixture.componentInstance;
+    const config = new HomesListComponent().homeDialogConfig;
+    fixture.componentRef.setInput('data', {
+      ...config, operation: 'view-edit', controlsDisable: true, object: persisted,
+      addressFilterParams: { ...config.addressFilterParams, readonly: true },
+      defaultAddressParams: { countryId: 143, regionId: 20, districtId: 30, localityId: 40 },
+    } satisfies typeof config);
+    http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => http.verify());
+
+  function save(): TestRequest {
+    tick();
+    expect(component.mainForm.valid).toBeTrue();
+    expect(component.IsSaveDisabledSignal()).toBeFalse();
+    component.onSaveClick('justSave');
+    flushMicrotasks();
+    const request = http.expectOne(`${environment.apiUrl}/api/homes/update-home`);
+    expect(request.request.method).toBe('POST');
+    expect(updateHomeDataSchema.safeParse(request.request.body).success).toBeTrue();
+    return request;
+  }
+
+  it('does not carry a failed official-name change or its archive plan into a later comment-only save', fakeAsync(() => {
+    component.onEditClick();
+    tick();
+    component.mainForm.controls['officialName'].setValue('Discarded Official Home');
+    const failed = save();
+    expect(failed.request.body).toEqual({
+      id: 10,
+      changingData: { main: { officialName: 'Discarded Official Home' }, address: null, contacts: null, coordinations: null },
+      restoringData: { addresses: null, officialNames: null, contacts: {}, coordinations: null },
+      outdatingData: {
+        address: null, officialName: { officialName: 'Persisted Official Home' }, contacts: null, coordinations: null,
+      },
+      deletingData: { addresses: null, officialNames: null, contacts: null, coordinations: null },
+    });
+    failed.flush({ code: 'ERRORS.UPDATE_FAILED' }, { status: 500, statusText: 'Server Error' });
+    tick();
+    expect(TestBed.inject(MessageWrapperService).handle).toHaveBeenCalled();
+    expect(component.showSpinner()).toBeFalse();
+    component.onViewClick();
+    tick();
+    expect(TestBed.inject(ConfirmationService).confirm).toHaveBeenCalled();
+    expect(component.isEditModeSignal()).toBeFalse();
+    component.onEditClick();
+    tick();
+    expect(component.mainForm.controls['officialName'].value).toBe('Persisted Official Home');
+    component.mainForm.controls['comment'].setValue('Current session');
+
+    const retry = save();
+    expect(retry.request.body).toEqual({
+      id: 10,
+      changingData: { main: { comment: 'Current session' }, address: null, contacts: null, coordinations: null },
+      restoringData: { addresses: null, officialNames: null, contacts: {}, coordinations: null },
+      outdatingData: { address: null, officialName: null, contacts: null, coordinations: null },
+      deletingData: { addresses: null, officialNames: null, contacts: null, coordinations: null },
+    });
+    retry.flush({ data: { ...persisted, comment: 'Current session' } });
+    tick();
+  }));
 });
