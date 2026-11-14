@@ -94,7 +94,7 @@ describe('UploadFileComponent read ownership', () => {
     expect(result).toHaveBeenCalledOnceWith([{ name: 'Country B' }]);
     first.resolve(workbookA);
     flushMicrotasks();
-    expect<unknown>(result.calls.allArgs()).toEqual([[{ name: 'Country B' }]]);
+    expect<unknown>(result.calls.allArgs()).toEqual([[[{ name: 'Country B' }]]]);
     expect(component.fileName).toBe('b.xlsx');
   }));
 
@@ -119,5 +119,50 @@ describe('UploadFileComponent read ownership', () => {
     flushMicrotasks();
     expect(handleError).not.toHaveBeenCalled();
     expect(result).toHaveBeenCalledOnceWith([{ name: 'Country B' }]);
+  }));
+
+  it('keeps repeated A selections distinct across A, B and A again', fakeAsync(() => {
+    const firstA = select('a.xlsx');
+    const requestB = select('b.xlsx');
+    const currentA = select('a.xlsx');
+    const resetInput = spyOnProperty(input, 'value', 'set').and.callThrough();
+    currentA.resolve(workbookA);
+    flushMicrotasks();
+    requestB.resolve(workbookB);
+    firstA.resolve(workbookA);
+    flushMicrotasks();
+    expect(result).toHaveBeenCalledOnceWith([{ name: 'Country A' }]);
+    expect(spinner.calls.allArgs()).toEqual([[true], [true], [true], [false]]);
+    expect(resetInput).toHaveBeenCalledOnceWith('');
+    expect(component.fileName).toBe('a.xlsx');
+    expect(handleError).not.toHaveBeenCalled();
+  }));
+
+  it('notifies a current arrayBuffer failure once and releases its loading and input', fakeAsync(() => {
+    const current = select('current.xlsx');
+    const resetInput = spyOnProperty(input, 'value', 'set').and.callThrough();
+    current.reject(new Error('Read failed'));
+    flushMicrotasks();
+    expect(handleError).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({ code: 'ERRORS.FILE.NOT_UPLOADED' }),
+      { source: 'UploadFileComponent', stage: 'readXlsxFile', type: 'country' },
+    );
+    expect(result).not.toHaveBeenCalled();
+    expect(spinner.calls.allArgs()).toEqual([[true], [false]]);
+    expect(resetInput).toHaveBeenCalledOnceWith('');
+  }));
+
+  it('notifies a current malformed spreadsheet once through the existing error path', fakeAsync(() => {
+    const current = select('invalid.xlsx');
+    const resetInput = spyOnProperty(input, 'value', 'set').and.callThrough();
+    current.resolve(new Uint8Array([0, 1, 2]).buffer);
+    flushMicrotasks();
+    expect(handleError).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({ code: 'ERRORS.FILE.INVALID_FORMAT_XLSX' }),
+      { source: 'UploadFileComponent', stage: 'readXlsxFile', type: 'country' },
+    );
+    expect(result).not.toHaveBeenCalled();
+    expect(spinner.calls.allArgs()).toEqual([[true], [false]]);
+    expect(resetInput).toHaveBeenCalledOnceWith('');
   }));
 });

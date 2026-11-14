@@ -37,6 +37,8 @@ import { CustomError } from './custom-error';
 })
 export class UploadFileComponent {
   private readonly destroyRef = inject(DestroyRef);
+  private fileSelectionVersion = 0;
+  private ownerDestroyed = false;
   private addressService = inject(AddressService);
   private msgWrapper = inject(MessageWrapperService);
 
@@ -52,12 +54,18 @@ export class UploadFileComponent {
   result = output<any[]>();
 
   constructor() {
+    this.destroyRef.onDestroy(() => { this.ownerDestroyed = true; });
     effect(() => {
       if (this.isCompleted()) this.fileName = '';
     });
   }
 
   // --- utils ---
+  // File reads may finish late; only the current live selection owns UI side effects.
+  private ownsSelection(version: number): boolean {
+    return !this.ownerDestroyed && version === this.fileSelectionVersion;
+  }
+
   private isExcelFile(f: File) {
     const okMime = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -82,6 +90,8 @@ export class UploadFileComponent {
   }
 
   addFile(event: Event) {
+    if (this.ownerDestroyed) return;
+    const version = ++this.fileSelectionVersion;
     this.showSpinner.emit(true);
     this.fileName = '';
     const inputEl = event.target as HTMLInputElement;
@@ -113,6 +123,7 @@ export class UploadFileComponent {
 
     readXlsxFile(file, { schema })
       .then(({ rows, errors }) => {
+        if (!this.ownsSelection(version)) return;
         if (!rows?.length) throw new CustomError('ERRORS.FILE.EMPTY');
         /*         if (
           schema &&
@@ -130,6 +141,7 @@ export class UploadFileComponent {
         this.result.emit(rows);
       })
       .catch((e) => {
+        if (!this.ownsSelection(version)) return;
         const err = this.normalizeXlsxError(e);
         this.msgWrapper.handle(err, {
           source: 'UploadFileComponent',
@@ -138,6 +150,7 @@ export class UploadFileComponent {
         });
       })
       .finally(() => {
+        if (!this.ownsSelection(version)) return;
         this.showSpinner.emit(false);
         this.hiddenfileinput.nativeElement.value = '';
         //this.fileName='';
