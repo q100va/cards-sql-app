@@ -357,6 +357,7 @@ export class OwnerChangesPlannerService {
     draft: UserDraft | PartnerDraft | VolunteerDraft | HomeDraft,
     contactTypes: NonTelegram[],
     restoringContacts: OutdatedContacts | null,
+    isCurrent: () => boolean = () => true,
   ): Promise<{
     changes: Partial<Record<ContactType, string[]>> | null;
     outdatingIds: number[] | null;
@@ -393,6 +394,7 @@ export class OwnerChangesPlannerService {
           'contact',
           `${type} ${c.content}`,
         );
+        if (!isCurrent()) return { changes: null, outdatingIds: null, deletingIds: null };
 
         if (moveToOutdated) {
           outdatingIds ??= [];
@@ -423,6 +425,7 @@ export class OwnerChangesPlannerService {
       | PartnerDraft['draftCoordinations'],
     restoringIds: number[] | null,
     outdatedAll: OutdatedCoordination[],
+    isCurrent: () => boolean = () => true,
   ): Promise<DiffSet<number[]>> {
     const outdating: number[] = [];
     const deleting: number[] = [];
@@ -443,6 +446,7 @@ export class OwnerChangesPlannerService {
         'coordination',
         label,
       );
+      if (!isCurrent()) return { changes: null, outdating: null, deleting: null };
 
       if (moveToOutdated) outdating.push(c.id);
       else deleting.push(c.id);
@@ -477,6 +481,7 @@ export class OwnerChangesPlannerService {
     draft: VolunteerDraft['draftInstitutes'],
     restoringIds: number[] | null,
     outdatedAll: OutdatedInstitute[],
+    isCurrent: () => boolean = () => true,
   ): Promise<DiffSet<VolunteerDraft['draftInstitutes']>> {
     const outdating: number[] = [];
     const deleting: number[] = [];
@@ -502,6 +507,7 @@ export class OwnerChangesPlannerService {
         'institute',
         i.instituteName,
       ) : true;
+      if (!isCurrent()) return { changes: null, outdating: null, deleting: null };
       if (moveToOutdated) outdating.push(i.id);
       else deleting.push(i.id);
     }

@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   ViewChild,
   inject,
   input,
@@ -41,6 +42,22 @@ import { startWith } from 'rxjs';
   styleUrl: './base-details.component.css',
 })
 export class BaseDetailsComponent<T extends BaseModel> {
+  private ownerDestroyed = false;
+  protected saveIntent = 0;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => { this.ownerDestroyed = true; });
+  }
+
+  // Confirmations can outlive their owner or be superseded by another save/edit context.
+  protected isCurrentSaveIntent(intent: number): boolean {
+    return !this.ownerDestroyed && intent === this.saveIntent;
+  }
+
+  protected invalidateSaveIntent() {
+    this.saveIntent++;
+  }
+
   get object(): T | null {
     return this.data().object;
   }
@@ -180,6 +197,8 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Switch to edit mode
   onEditClick() {
+    if (!this.isCurrentSaveIntent(this.saveIntent)) return;
+    this.invalidateSaveIntent();
     this.isEditModeSignal.set(true);
     this.emittedIsEditMode.emit(true);
     this.changesSignal.set(false);
@@ -193,6 +212,8 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Switch to view mode (with confirm if there are changes)
   onViewClick() {
+    const intent = this.saveIntent;
+    if (!this.isCurrentSaveIntent(intent)) return;
     if (this.changesSignal() || this.deletingSignal()) {
       this.confirmationService.confirm({
         message: this.translateService.instant(
@@ -209,6 +230,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
           outlined: true,
         },
         accept: () => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.setInitialValues('view');
           this.changeToViewMode(this.data().defaultAddressParams!);
         },
@@ -222,6 +244,8 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Cancel dialog (with confirm if dirty or create mode)
   onCancelClick() {
+    const intent = this.saveIntent;
+    if (!this.isCurrentSaveIntent(intent)) return;
     /*     console.log('this.changesSignal()', this.changesSignal());
     console.log('this.deletingSignal()', this.deletingSignal());
     console.log('this.data().operation', this.data().operation); */
@@ -245,12 +269,15 @@ export class BaseDetailsComponent<T extends BaseModel> {
           outlined: true,
         },
         accept: () => {
+          if (!this.isCurrentSaveIntent(intent)) return;
+          this.invalidateSaveIntent();
           this.closeDialogDataSignal.set('refresh');
           this.emittedCloseDialogData.emit('refresh');
         },
         reject: () => {},
       });
     } else {
+      this.invalidateSaveIntent();
       this.closeDialogDataSignal.set('refresh');
       this.emittedCloseDialogData.emit('refresh');
     }
@@ -305,6 +332,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // View-mode: disable controls and sync address-filter child
   protected changeToViewMode(addressParams: DefaultAddressParams | null) {
+    this.invalidateSaveIntent();
     this.changesSignal.set(false);
     this.deletingSignal.set(false);
     this.isEditModeSignal.set(false);

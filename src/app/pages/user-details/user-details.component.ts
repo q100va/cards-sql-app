@@ -137,17 +137,20 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
       .subscribe(() => {});
   }
 
-  override checkUserName() {
+  override checkUserName(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const userDraft = this.ownerDraft;
     this.userService
       .checkUserName(userDraft.userName ?? '', this.ownerDraft.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          if (!res.data) this.checkDuplicates();
+          if (!this.isCurrentSaveIntent(intent)) return;
+          if (!res.data) this.checkDuplicates(intent);
           else this.emitShowSpinner(false);
         },
         error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.emitShowSpinner(false);
           this.msgWrapper.handle(err, {
             source: 'CreateUserDialog',

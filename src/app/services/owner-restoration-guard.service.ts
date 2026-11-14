@@ -218,6 +218,7 @@ async checkContacts(
   contactTypes: NonTelegram[],
   outdated: OutdatedContacts,
   draft: Record<NonTelegram, string[]>,
+  isCurrent: () => boolean = () => true,
 ): Promise<CheckResult<Partial<Record<ContactType, Contact[]>>>> {
   const restoring: Partial<Record<ContactType, Contact[]>> = {};
 
@@ -230,6 +231,7 @@ async checkContacts(
 
     const contentString = `${type} ${matches.map((m) => m.content).join(', ')}`;
     const confirmed = await this.diffConfirmService.confirmDataCorrectness('contacts', contentString);
+    if (!isCurrent()) return { ok: false, restoring: null };
     if (!confirmed) return { ok: false, restoring: null };
 
     restoring[type] = [...(restoring[type] ?? []), ...matches];

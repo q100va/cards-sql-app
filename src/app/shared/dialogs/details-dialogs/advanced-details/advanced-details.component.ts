@@ -464,6 +464,7 @@ export class AdvancedDetailsComponent<
 
   // bridge spinner to parent
   emitShowSpinner(value: boolean) {
+    if (!this.isCurrentSaveIntent(this.saveIntent)) return;
     this.showSpinner.set(value);
     this.emittedShowSpinner.emit(value);
   }
@@ -919,6 +920,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // --- Save flows
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
+    if (!this.isCurrentSaveIntent(this.saveIntent)) return;
+    const intent = ++this.saveIntent;
     this.emitShowSpinner(true);
     this.action = action;
     this.ownerDraft = buildDraft(
@@ -930,13 +933,14 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.user()!.id,
     );
     if ('userName' in this.ownerDraft) {
-      this.checkUserName();
+      this.checkUserName(intent);
     } else {
-      this.checkDuplicates();
+      this.checkDuplicates(intent);
     }
   }
 
-  checkDuplicates() {
+  checkDuplicates(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const contactDuplicates = {} as Record<
       Exclude<ContactType, 'telegram'>,
       string[]
@@ -963,17 +967,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       });
       this.emitShowSpinner(false);
     } else {
-      this.checkOwnerData();
+      this.checkOwnerData(intent);
     }
   }
 
-  checkOwnerData() {
+  checkOwnerData(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const service = this.getService();
     service
       .checkOwnerData(this.ownerDraft)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: async (res) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           const { duplicatesName = [], duplicatesContact = [] } =
             res.data ?? {};
           const hasNameDup = duplicatesName.length > 0;
@@ -1005,15 +1011,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
                 outlined: true,
               },
               accept: async () => {
-                await this.savingFlow();
+                if (!this.isCurrentSaveIntent(intent)) return;
+                await this.savingFlow(intent);
               },
-              reject: () => this.emitShowSpinner(false),
+              reject: () => {
+                if (this.isCurrentSaveIntent(intent)) this.emitShowSpinner(false);
+              },
             });
           } else {
-            await this.savingFlow();
+            await this.savingFlow(intent);
           }
         },
         error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.emitShowSpinner(false);
           this.msgWrapper.handle(err, {
             source: 'CreateOwnerDialog',
@@ -1026,14 +1036,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       });
   }
 
-  async savingFlow() {
+  async savingFlow(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     if (this.data().operation === 'create') {
-      this.saveOwner();
+      this.saveOwner(intent);
     } else {
-      await this.correctRestoringData();
-      if (await this.checkOutdatedDataDuplicates()) {
-        const updatingOwnerData = await this.checkAllChanges();
-        this.saveUpdatedOwner(updatingOwnerData);
+      await this.correctRestoringData(intent);
+      if (!this.isCurrentSaveIntent(intent)) return;
+      const canSave = await this.checkOutdatedDataDuplicates(intent);
+      if (!this.isCurrentSaveIntent(intent)) return;
+      if (canSave) {
+        const updatingOwnerData = await this.checkAllChanges(intent);
+        if (!this.isCurrentSaveIntent(intent)) return;
+        this.saveUpdatedOwner(updatingOwnerData, intent);
       } else {
         this.emitShowSpinner(false);
       }
@@ -1044,7 +1059,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   //проверяем не изменил ли пользователь восстановленные данные
   //если изменил,
   // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
-  async correctRestoringData() {
+  async correctRestoringData(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     // Addresses
     if (this.isCommonAddressOwnerContext()) {
       const { restoring, outdating } = reconcileRestoredAddress(
@@ -1145,13 +1161,15 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   //если введенные данные совпадают с outdatingDataDraft данными,
   //то добавляем их с согласия пользователя в restoringDataDraft
-  async checkOutdatedDataDuplicates() {
+  async checkOutdatedDataDuplicates(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return false;
     // Addresses
     if (this.isCommonAddressOwnerContext()) {
       const res = await this.ownerRestorationGuardService.checkAddress(
         this.outdatedDataDraft.addresses,
         this.ownerDraft.draftAddress,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1166,6 +1184,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.addresses,
         this.ownerDraft,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1182,6 +1201,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.names,
         this.ownerDraft,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1196,6 +1216,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.userNames,
         this.ownerDraft.userName,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1210,6 +1231,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.officialNames,
         this.ownerDraft.officialName,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1225,6 +1247,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.institutes,
         this.ownerDraft.draftInstitutes,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1244,6 +1267,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.coordinations,
         this.ownerDraft.draftCoordinations,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1262,7 +1286,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.contactTypes,
         this.outdatedDataDraft.contacts,
         this.ownerDraft.draftContacts,
+        () => this.isCurrentSaveIntent(intent),
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1280,7 +1306,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
-  async checkAllChanges() {
+  async checkAllChanges(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
     /*  this.deletingData = structuredClone(this.deletingDataDraft); //clone deleting data in case saving cancellation
         const restoringData: RestoringByKind<K> = structuredClone(
       this.restoringDataDraft,
@@ -1297,6 +1324,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             ? null
             : this.restoringDataDraft.addresses![0],
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.address = changes;
       this.outdatingData.address = outdatingId;
       if (deletingId) {
@@ -1314,6 +1342,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             ? null
             : this.restoringDataDraft.addresses![0],
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.address = changes;
       this.outdatingData.address = outdatingId;
       if (deletingId) {
@@ -1329,6 +1358,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.existingOwner!,
           this.ownerDraft,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       if (changes)
         this.changingData.main = {
           ...(this.changingData.main ?? {}),
@@ -1343,6 +1373,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.existingOwner!,
           this.ownerDraft,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       if (changes)
         this.changingData.main = {
           ...(this.changingData.main ?? {}),
@@ -1357,6 +1388,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.existingOwner!,
           this.ownerDraft,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       if (changes)
         this.changingData.main = {
           ...(this.changingData.main ?? {}),
@@ -1375,7 +1407,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft,
           this.contactTypes,
           this.restoringDataDraft.contacts,
+          () => this.isCurrentSaveIntent(intent),
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.contacts = changes;
       this.outdatingData.contacts = outdatingIds;
       if (deletingIds) {
@@ -1394,7 +1428,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft.draftCoordinations ?? [],
           this.restoringDataDraft.coordinations ?? [],
           this.existingOwner!.outdatedData.coordinations ?? [],
+          () => this.isCurrentSaveIntent(intent),
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
 
       this.changingData.coordinations = changes;
       this.outdatingData.coordinations = outdating;
@@ -1412,7 +1448,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft.draftInstitutes ?? [],
           this.restoringDataDraft.institutes ?? [],
           this.existingOwner!.outdatedData.institutes ?? [],
+          () => this.isCurrentSaveIntent(intent),
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.institutes = changes;
       this.outdatingData.institutes = outdating;
       if (deleting) {
@@ -1427,6 +1465,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft.draftSubscriptions ?? [],
           this.user()!.id,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.subscriptions = changes;
       if (deleting) {
         this.deletingDataDraft.subscriptions ??= [];
@@ -1451,6 +1490,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         } as NonNullable<ChangingByKind<K>['main']>;
       }
     }
+    return this.pendingUpdateData();
+  }
+
+  private pendingUpdateData() {
     return {
       changingData: this.changingData,
       restoringData: this.restoringDataDraft,
@@ -1459,30 +1502,38 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     };
   }
 
-  saveOwner() {
+  saveOwner(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const service = this.getService();
     service
       .saveOwner(this.ownerDraft)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.emitShowSpinner(false)),
+        finalize(() => {
+          if (this.isCurrentSaveIntent(intent)) this.emitShowSpinner(false);
+        }),
       )
       .subscribe({
         next: (res) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           if (this.action === 'saveAndExit') {
+            this.emitShowSpinner(false);
+            this.invalidateSaveIntent();
             this.closeDialogDataSignal.set(res.data);
             this.emittedCloseDialogData.emit(res.data);
           } else {
             // keep dialog open, could re-load owner data if needed
           }
         },
-        error: (err) =>
+        error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.msgWrapper.handle(err, {
             source: 'CreateOwnerDialog',
             stage: 'saveOwner',
             kind: this.kind,
             owner: this.ownerDraft,
-          }),
+          });
+        },
       });
   }
   private resetPendingEditState() {
@@ -1509,17 +1560,23 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     restoringData: RestoringByKind<K>;
     outdatingData: OutdatingByKind<K>;
     deletingData: DeletingByKind<K>;
-  }) {
+  }, intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const service = this.getService();
     service
       .saveUpdatedOwner(this.existingOwner!.id, upgradedOwnerData)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.emitShowSpinner(false)),
+        finalize(() => {
+          if (this.isCurrentSaveIntent(intent)) this.emitShowSpinner(false);
+        }),
       )
       .subscribe({
         next: (res) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           if (this.action === 'saveAndExit') {
+            this.emitShowSpinner(false);
+            this.invalidateSaveIntent();
             this.closeDialogDataSignal.set('close'); //TODO: change?
             this.emittedCloseDialogData.emit('close');
             return;
@@ -1574,16 +1631,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             this.data().defaultAddressParams!,
           );
 
+          this.emitShowSpinner(false);
           this.changeToViewMode(null);
           this.setInitialValues('view');
         },
-        error: (err) =>
+        error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.msgWrapper.handle(err, {
             source: 'EditOwnerDialog',
             stage: 'saveUpdatedOwner',
             kind: this.kind,
             ownerId: this.existingOwner!.id,
-          }),
+          });
+        },
       });
   }
 
@@ -1627,7 +1687,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return false;
   }
 
-  checkUserName() {}
+  checkUserName(_intent = this.saveIntent) {}
   onChangePasswordClick() {}
   onAddInstituteClick() {}
   getRowSpanForUserNames() {
