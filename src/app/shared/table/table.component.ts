@@ -359,18 +359,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
 
       combineLatest([this.kind$, query$])
         .pipe(
-          tap(() => this.loading.set(true)),
-          switchMap(([kind, q]) =>
-            this.fetchList(kind as K, q.filter, q.pageSize, q.page).pipe(
-              tap({
-                next: ({ list, length }) => {
-                  this.owners = list as OwnerByKind<K>[];
-                  this.length.set(length ?? 0);
-                  this.dataSource.data = list as OwnerByKind<K>[];
-                  //this.dataSource.sort = this.sort;
-                },
-                complete: () => {},
-              }),
+          switchMap(([kind, q]) => {
+            // switchMap finalizes the previous request before starting this one's loading.
+            this.loading.set(true);
+            return this.fetchList(kind as K, q.filter, q.pageSize, q.page).pipe(
               catchError((err) => {
                 this.msg.handle(err, {
                   source: `${kind}-list`,
@@ -379,9 +371,14 @@ export class TableComponent<K extends Kind> implements OnChanges {
                 });
                 return of({ list: [], length: 0 });
               }),
+              tap(({ list, length }) => {
+                this.owners = list as OwnerByKind<K>[];
+                this.length.set(length ?? 0);
+                this.dataSource.data = list as OwnerByKind<K>[];
+              }),
               finalize(() => this.loading.set(false)),
-            ),
-          ),
+            );
+          }),
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({ next: () => {} });
