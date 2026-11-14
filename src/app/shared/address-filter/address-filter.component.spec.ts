@@ -372,6 +372,26 @@ describe('AddressFilterComponent async hierarchy and loading', () => {
     expect(component.form.getRawValue()).toEqual({ country: 1, region: 20, district: 200, locality: 2000 });
   });
 
+  it('rejects the first country A response after A is selected again as a newer intent', () => {
+    open();
+    select('country', 1);
+    const firstA = takeRequest('regions', 1);
+    select('country', 2);
+    const oldB = takeRequest('regions', 2);
+    select('country', 1);
+    const currentRegions: ToponymNamesList = [{ id: 11, name: 'Current Region A' }];
+    takeRequest('regions', 1).flush({ data: currentRegions });
+    select('region', 11);
+    takeRequest('districts', 11).flush({ data: [] });
+    completeIfActive(oldB, regionsB);
+    completeIfActive(firstA, regionsA);
+
+    expect(component.toponymsList.regionsList).toEqual(currentRegions);
+    expect(component.form.getRawValue()).toEqual({ country: 1, region: 11, district: null, locality: null });
+    expect(component.toponymsList.districtsList).toEqual([]);
+    expect(component.toponymsList.localitiesList).toEqual([]);
+  });
+
   it('keeps district B locality options and selection when district A responds late', () => {
     open();
     select('country', 1);
