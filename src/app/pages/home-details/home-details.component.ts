@@ -142,15 +142,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     }
 
     //postal address
-    this.mainForm.controls['postalAddressPart'].setValue(
-      this.existingOwner?.address.postalAddressPart,
-    );
-    this.mainForm.controls['postalName'].setValue(
-      this.existingOwner?.address.postalName,
-    );
-    this.mainForm.controls['postalCode'].setValue(
-      this.existingOwner?.address.postalCode,
-    );
+    this.setHomePostalAddress(this.existingOwner!.address);
   }
 
   override setEmptyOutdatedDataDraft() {
@@ -291,7 +283,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       this.restoringDataDraft['officialNames'] = [];
     }
     this.restoringDataDraft['officialNames'] = [data.id];
-    this.mainForm.controls['officialNames'].setValue(data.officialName);
+    this.mainForm.controls['officialName'].setValue(data.officialName);
     this.deleteFromOutdatedDataDraft('officialNames', data.id);
     this.onChangeValidation();
   }

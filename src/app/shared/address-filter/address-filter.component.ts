@@ -172,7 +172,8 @@ export class AddressFilterComponent {
       if (
         this.params().source === 'userCard' ||
         this.params().source === 'partnerCard' ||
-        this.params().source === 'volunteerCard'
+        this.params().source === 'volunteerCard' ||
+        (this.params().source === 'homeCard' && data !== null)
       ) {
         if (data) {
           this.form.controls['country'].setValue(data.countryId);

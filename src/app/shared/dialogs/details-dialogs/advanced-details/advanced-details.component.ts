@@ -784,6 +784,16 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
+  protected setHomePostalAddress(
+    address: Pick<Home['address'], 'postalCode' | 'postalName' | 'postalAddressPart'>,
+  ) {
+    this.mainForm.patchValue({
+      postalCode: address.postalCode,
+      postalName: address.postalName,
+      postalAddressPart: address.postalAddressPart,
+    });
+  }
+
   onRestoreOutdatedData(
     type:
       | 'names'
@@ -844,6 +854,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.restoringDataDraft.addresses = [data.id];
 
       if ('country' in data) {
+        if (this.kind === 'home' && 'postalCode' in data) {
+          this.setHomePostalAddress(data);
+        }
         this.addressFilterComponent.onChangeMode('edit', {
           localityId: data.locality?.id ?? null,
           districtId: data.district?.id ?? null,
