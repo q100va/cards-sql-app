@@ -1348,6 +1348,13 @@
   "REPORTS": {
     "CARD_TITLE": "Reports",
     "BUTTON_GENERATE": "Generate report",
+    "FORM": {
+      "TYPE": "Report type",
+      "FREQUENCY": "Frequency",
+      "YEARS": "Years",
+      "MONTHS": "Months",
+      "QUARTERS": "Quarters"
+    },
     "TYPES": {
       "GENERAL": "General report",
       "PERSONAL": "Personal report",
@@ -1393,6 +1400,7 @@
       "HOMES_COUNT": "Number of care homes",
       "REGIONS_COUNT": "Number of regions",
       "OCCASIONS_TITLE": "By occasion",
+      "TOGGLE_OCCASIONS": "Show or hide occasion details",
       "EMPTY_MESSAGE": "No data"
     }
   },

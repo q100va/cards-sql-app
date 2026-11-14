@@ -76,11 +76,17 @@ describe('ReportsComponent form, results and export', () => {
   }
 
   function choose(control: 'selectedType' | 'selectedFrequency', code: number | string) {
-    const options = control === 'selectedType' ? component.types : component.frequencies;
-    const option = options.find(item => item.code === code);
-    if (!option) throw new Error(`Missing ${control} option ${code}`);
-    component.formGroup.controls[control].setValue(option);
-    listbox(control).onChange.emit({ originalEvent: new Event('change'), value: option });
+    if (control === 'selectedType') {
+      const option = component.types.find(item => item.code === code);
+      if (!option) throw new Error(`Missing ${control} option ${code}`);
+      component.formGroup.controls.selectedType.setValue(option);
+      listbox(control).onChange.emit({ originalEvent: new Event('change'), value: option });
+    } else {
+      const option = component.frequencies.find(item => item.code === code);
+      if (!option) throw new Error(`Missing ${control} option ${code}`);
+      component.formGroup.controls.selectedFrequency.setValue(option);
+      listbox(control).onChange.emit({ originalEvent: new Event('change'), value: option });
+    }
     fixture.detectChanges();
   }
 
@@ -404,5 +410,59 @@ describe('ReportsComponent form, results and export', () => {
       const name = box.getAttribute('aria-label') || references.map(id => element.querySelector(`[id="${id}"]`)?.textContent ?? '').join(' ');
       expect(name.trim()).withContext('Report selection group needs an accessible name').not.toBe('');
     }
+  });
+
+  it('updates option, preview and export labels after a runtime language change without changing selections', async () => {
+    load(personalReport);
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('ru', {
+      REPORTS: {
+        TYPES: { PERSONAL: 'Личный отчёт' }, FREQUENCIES: { MONTHLY: 'Ежемесячно' },
+        MONTHS: { JANUARY: 'Январь' }, TABLE: { PERIOD: 'Период' },
+      },
+    });
+    translate.use('ru');
+    fixture.detectChanges();
+
+    expect(component.types.find(option => option.code === REPORT_TYPE.PERSONAL)?.name).toBe('Личный отчёт');
+    expect(component.frequencies.find(option => option.code === 'MONTHLY')?.name).toBe('Ежемесячно');
+    expect(component.months.find(option => option.code === 1)?.name).toBe('Январь');
+    expect(component.formGroup.controls['selectedType'].value?.code).toBe(REPORT_TYPE.PERSONAL);
+    expect(component.formGroup.controls['selectedFrequency'].value?.code).toBe('MONTHLY');
+    expect(component.formGroup.controls['selectedMonths'].value?.map((option: ReportsComponent['months'][number]) => option.code)).toEqual([1]);
+    expect(component.report).toEqual(personalReport.report);
+    expect(component.reportName).toBe('Личный отчёт');
+    expect(listbox('selectedType').el.nativeElement.textContent).toContain('Личный отчёт');
+    http.expectNone(url);
+
+    await component.exportToExcel();
+    const [data, columns, options] = exportFile.calls.mostRecent().args;
+    const exportedRows: unknown = data;
+    expect(exportedRows).toEqual([{ ...personalReport.report[0], periodData: 'Январь 2026', occasionName: null }]);
+    expect(columns[0]).toEqual({ field: 'periodData', header: 'Период' });
+    expect(options?.fileName).toMatch(/^Личный отчёт-\d{4}-\d{2}-\d{2}\.xlsx$/);
+  });
+
+  it('keeps identical Generate actions distinct across A, B and A again', () => {
+    prepare();
+    const firstA = generate();
+    chooseMany('selectedYears', [2025]);
+    const requestB = generate();
+    chooseMany('selectedYears', [2026]);
+    const currentA = generate();
+    expect(currentA.request.body).toEqual(firstA.request.body);
+    finish(currentA, { ...annualPersonalReport, report: [] });
+    if (!requestB.cancelled) finish(requestB, { ...annualPersonalReport, report: [] });
+    if (!firstA.cancelled) finish(firstA, annualPersonalReport);
+    expect(component.report).toEqual([]);
+    expect(component.emptyMessage).toBe('REPORTS.TABLE.EMPTY_MESSAGE');
+    expect(component.showSpinner()).toBeFalse();
+  });
+
+  it('releases the export latch without writing a general report row that lacks occasion data', async () => {
+    load({ ...generalReport, report: personalReport.report });
+    await expectAsync(component.exportToExcel()).toBeRejectedWithError();
+    expect(component.isExporting).toBeFalse();
+    expect(exportFile).not.toHaveBeenCalled();
   });
 });

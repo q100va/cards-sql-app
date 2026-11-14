@@ -47,6 +47,7 @@ export const statistics: StatisticResponse = {
 
 export const reportingTranslations = {
   REPORTS: {
+    FORM: { TYPE: 'Report type', FREQUENCY: 'Frequency', YEARS: 'Years', MONTHS: 'Months', QUARTERS: 'Quarters' },
     TYPES: { GENERAL: 'General report', PERSONAL: 'Personal report', SCHOOL_COORDINATION: 'School coordination', BY_OCCASION: 'Report by occasion' },
     FREQUENCIES: { MONTHLY: 'Monthly', QUARTERLY: 'Quarterly', ANNUAL: 'Annually' },
     MONTHS: { JANUARY: 'January', FEBRUARY: 'February' },

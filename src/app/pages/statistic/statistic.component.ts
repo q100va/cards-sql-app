@@ -6,7 +6,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { HasOpDirective } from '../../directives/has-op.directive';
 import { MessageWrapperService } from '../../services/message.service';
 import { ReportsService } from '../../services/reports.service';
 import { finalize } from 'rxjs';
@@ -21,7 +20,6 @@ import { FileService } from '../../services/file.service';
     TranslateModule,
     MatGridListModule,
     ProgressSpinner,
-    HasOpDirective,
     TableModule,
     MatIconModule,
     MatButtonModule,
