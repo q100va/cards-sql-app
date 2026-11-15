@@ -84,7 +84,7 @@ import {
   PARTNER_AFFILIATION_OPTIONS,
   PartnerAffiliationId,
 } from '../../../../../../shared/constants/partners';
-import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
+import { typedKeys } from '../../../../interfaces/toponym';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -109,6 +109,8 @@ import { DateUtilsService } from '../../../../services/date-utils.service';
 
 import {
   buildDuplicateInfoMessage,
+  hasAddressSelectionChanges,
+  hasContactChanges,
   normalize,
 } from '../../../../utils/owner-ctrls';
 
@@ -619,7 +621,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.IsSaveDisabledSignal.set(disabled);
     this.emittedIsSaveDisabled.emit(disabled);
   }
-  //TODO: вынести хелперы в отдельный файл по адресам и контактам
   // Optional extra validation gates (true => changes detected)
   protected override additionalValidationHooks(): boolean {
     return this.contactsChangeValidation() || this.addressChangeValidation();
@@ -633,24 +634,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       ] as OwnerContacts;
 
       for (const type of this.contactTypes) {
-        const original = ordered?.[type] ?? [];
-        const current: string[] = this.getFormArray(type)
-          .getRawValue()
-          .filter(Boolean);
-
-
-        // lengths differ -> changed
-        if (original.length !== current.length) return true;
-
-        // content differs -> changed
-        const originalSet = new Set(original.map((c) => c.content));
-        const currentSet = new Set(current);
-
-        if (originalSet.size !== currentSet.size) return true;
-
-        for (const v of currentSet) {
-          if (!originalSet.has(v)) return true;
-        }
+        const current: (string | null | undefined)[] = this.getFormArray(type).getRawValue();
+        if (hasContactChanges(ordered?.[type] ?? [], current)) return true;
       }
       return false;
     }
@@ -659,29 +644,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Compare address selection against original address (country/region/district/locality)
   addressChangeValidation(): boolean {
-    const address = this.existingOwner!['address'];
-    const filter = this.addressFilter();
-
-    const keyMap: Record<
-      'country' | 'region' | 'district' | 'locality',
-      AddressKey
-    > = {
-      country: 'countries',
-      region: 'regions',
-      district: 'districts',
-      locality: 'localities',
-    };
-
-    for (const key of typedKeys(keyMap)) {
-      const originalId = address[key]?.id ?? null;
-      const selectedIds = filter[keyMap[key]];
-      const selectedId = Array.isArray(selectedIds)
-        ? (selectedIds[0] ?? null)
-        : null;
-
-      if (originalId !== selectedId) return true;
-    }
-    return this.homeAddressChangeValidation();
+    return hasAddressSelectionChanges(this.existingOwner!.address, this.addressFilter()) ||
+      this.homeAddressChangeValidation();
   }
 
   homeAddressChangeValidation() {
