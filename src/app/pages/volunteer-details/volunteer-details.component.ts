@@ -38,7 +38,7 @@ import {
 import { DateUtilsService } from '../../services/date-utils.service';
 import { zodValidator } from '../../utils/zod-validator';
 import {
-  instituteCategoryControlSchema,
+  instituteCategorySchema,
   instituteNameControlSchema,
 } from '../../../../shared/schemas/volunteer.schema';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
@@ -376,7 +376,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       ),
       category: new FormControl<number | null>(
         { value: null, disabled: mode === 'view' },
-        [zodValidator(instituteCategoryControlSchema)],
+        [zodValidator(instituteCategorySchema)],
       ),
     });
   }
