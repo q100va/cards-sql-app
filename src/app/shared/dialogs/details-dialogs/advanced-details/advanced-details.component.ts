@@ -140,16 +140,7 @@ import { HomeService } from '../../../../services/home.service';
 import { coordinationNameControlSchema } from '../../../../../../shared/schemas/common.schema';
 import { SeniorService } from '../../../../services/senior.service';
 import { buildDraft } from '../../../../utils/owner-draft.builder';
-import {
-  reconcileRestoredAddress,
-  reconcileRestoredContacts,
-  reconcileRestoredCoordinations,
-  reconcileRestoredHomeAddress,
-  reconcileRestoredInstitutes,
-  reconcileRestoredNames,
-  reconcileRestoredOfficialNames,
-  reconcileRestoredUserNames,
-} from '../../../../utils/owner-restoration-reconcile.util';
+import { reconcileOwnerRestoration } from '../../../../utils/owner-restoration-reconcile.util';
 import { OwnerRestorationGuardService } from '../../../../services/owner-restoration-guard.service';
 import { OwnerChangesPlannerService } from '../../../../services/owner-changes-planner.service';
 
@@ -1055,108 +1046,17 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
-  // --- Compare draft vs restoring/outdated
-  //проверяем не изменил ли пользователь восстановленные данные
-  //если изменил,
-  // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
   async correctRestoringData(intent = this.saveIntent) {
     if (!this.isCurrentSaveIntent(intent)) return;
-    // Addresses
-    if (this.isCommonAddressOwnerContext()) {
-      const { restoring, outdating } = reconcileRestoredAddress(
-        this.restoringDataDraft.addresses ?? [],
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft.draftAddress,
-        this.existingOwner!.outdatedData.addresses,
-      );
-      this.restoringDataDraft.addresses = structuredClone(restoring);
-      this.outdatedDataDraft.addresses = structuredClone(outdating);
-    }
-
-    if (this.isHomeContext()) {
-      const { restoring, outdating } = reconcileRestoredHomeAddress(
-        this.restoringDataDraft.addresses ?? [],
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft,
-        this.existingOwner!.outdatedData.addresses,
-      );
-      this.restoringDataDraft.addresses = structuredClone(restoring);
-      this.outdatedDataDraft.addresses = structuredClone(outdating);
-    }
-
-    // Names
-    if (this.isPersonContext()) {
-      const { restoring, outdating } = reconcileRestoredNames(
-        this.restoringDataDraft.names ?? [],
-        this.outdatedDataDraft.names,
-        {
-          firstName: this.ownerDraft.firstName,
-          patronymic: this.ownerDraft.patronymic,
-          lastName: this.ownerDraft.lastName,
-        },
-        this.existingOwner!.outdatedData.names,
-      );
-      this.restoringDataDraft.names = structuredClone(restoring);
-      this.outdatedDataDraft.names = structuredClone(outdating);
-    }
-
-    if (this.isUserContext()) {
-      const { restoring, outdating } = reconcileRestoredUserNames(
-        this.restoringDataDraft.userNames ?? [],
-        this.outdatedDataDraft.userNames,
-        this.ownerDraft.userName,
-        this.existingOwner!.outdatedData.userNames,
-      );
-      this.restoringDataDraft.userNames = structuredClone(restoring);
-      this.outdatedDataDraft.userNames = structuredClone(outdating);
-    }
-
-    if (this.isHomeContext()) {
-      const { restoring, outdating } = reconcileRestoredOfficialNames(
-        this.restoringDataDraft.officialNames ?? [],
-        this.outdatedDataDraft.officialNames,
-        this.ownerDraft.officialName,
-        this.existingOwner!.outdatedData.officialNames,
-      );
-      this.restoringDataDraft.officialNames = structuredClone(restoring);
-      this.outdatedDataDraft.officialNames = structuredClone(outdating);
-    }
-
-    // Contacts
-    if (this.isContactsOwnerContext()) {
-      const { restoring, outdating } = reconcileRestoredContacts(
-        this.restoringDataDraft.contacts ?? {},
-        this.outdatedDataDraft.contacts,
-        this.ownerDraft.draftContacts,
-      );
-      this.restoringDataDraft.contacts = structuredClone(restoring);
-      this.outdatedDataDraft.contacts = structuredClone(outdating);
-    }
-
-    //Coordinations
-    if (this.isCoordinationsOwnerContext()) {
-      const { restoring, outdating } = reconcileRestoredCoordinations(
-        this.kind,
-        this.restoringDataDraft.coordinations ?? [],
-        this.outdatedDataDraft.coordinations,
-        this.ownerDraft.draftCoordinations,
-        this.existingOwner!.outdatedData.coordinations,
-      );
-      this.restoringDataDraft.coordinations = structuredClone(restoring);
-      this.outdatedDataDraft.coordinations = structuredClone(outdating);
-    }
-
-    //Institutes
-    if (this.isVolunteerContext()) {
-      const { restoring, outdating } = reconcileRestoredInstitutes(
-        this.restoringDataDraft.institutes ?? [],
-        this.outdatedDataDraft.institutes,
-        this.ownerDraft.draftInstitutes,
-        this.existingOwner!.outdatedData.institutes,
-      );
-      this.restoringDataDraft.institutes = structuredClone(restoring);
-      this.outdatedDataDraft.institutes = structuredClone(outdating);
-    }
+    const { restoring, history } = reconcileOwnerRestoration({
+      kind: this.kind,
+      draft: this.ownerDraft,
+      restoring: this.restoringDataDraft,
+      history: this.outdatedDataDraft,
+      persistedHistory: this.existingOwner!.outdatedData,
+    });
+    this.restoringDataDraft = restoring;
+    this.outdatedDataDraft = history;
   }
 
   //если введенные данные совпадают с outdatingDataDraft данными,
