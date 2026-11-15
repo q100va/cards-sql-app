@@ -131,6 +131,8 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
         id: this.existingOwner!.spouseId,
         name: this.existingOwner!.spouseFullName,
       });
+    } else {
+      this.mainForm.controls['spouse'].setValue(null);
     }
   }
 

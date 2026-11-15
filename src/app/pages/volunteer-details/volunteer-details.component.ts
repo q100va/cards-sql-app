@@ -89,11 +89,6 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       'dateOfRestriction',
     ];
     this.hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
-    this.hasOutdatedInstitutes.set(
-      this.outdatedDataDraft.institutes.length > 0,
-    );
-    this.hasOutdatedSubs.set(this.outdatedDataDraft.subscriptions.length > 0);
-    this.hasOutdatedCoops.set(this.outdatedDataDraft.cooperations.length > 0);
   }
 
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
@@ -107,7 +102,7 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       formArray.push(this.createInstituteGroup(mode));
       diff--;
     }
-    while (diff < 0 && formArray.length > 1) {
+    while (diff < 0 && formArray.length > 0) {
       formArray.removeAt(formArray.length - 1);
       diff++;
     }
@@ -128,9 +123,12 @@ export class VolunteerDetailsComponent extends AdvancedDetailsComponent<'volunte
       SUBOWNER
     ); */
     //subscription
-    if (this.existingOwner!.subscriptions.length) {
-      this.mainForm.controls['subscription'].setValue(this.getSubsValue());
-    }
+    this.mainForm.controls['subscription'].setValue(this.getSubsValue());
+
+    const history = this.existingOwner!.outdatedData;
+    this.hasOutdatedInstitutes.set(history.institutes.length > 0);
+    this.hasOutdatedSubs.set(history.subscriptions.length > 0);
+    this.hasOutdatedCoops.set(history.cooperations.length > 0);
   }
   private getSubsValue() {
     const idx = this.existingOwner!.subscriptions.findIndex(

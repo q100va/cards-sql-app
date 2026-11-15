@@ -115,7 +115,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
       );
       diff--;
     }
-    while (diff < 0 && formArray.length > 1) {
+    while (diff < 0 && formArray.length > 0) {
       formArray.removeAt(formArray.length - 1);
       diff++;
     }

@@ -128,7 +128,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       );
       diff--;
     }
-    while (diff < 0 && formArray.length > 1) {
+    while (diff < 0 && formArray.length > 0) {
       formArray.removeAt(formArray.length - 1);
       diff++;
     }
