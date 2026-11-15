@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { provideComponentTesting } from '../../testing/component-test-providers';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 
 import { ReportsComponent } from './reports.component';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,7 +18,13 @@ import { AuthUser } from '../../../../shared/schemas/auth.schema';
 import { COLUMNS, REPORT_TYPE } from '../../../../shared/constants/reports';
 import { ReportResponse } from '../../../../shared/schemas/report.schema';
 import { environment } from '../../../environments/environment';
-import { generalReport, personalReport, annualPersonalReport, occasionReport, reportingTranslations } from './reporting.spec-fixtures';
+import {
+  generalReport,
+  personalReport,
+  annualPersonalReport,
+  occasionReport,
+  reportingTranslations,
+} from './reporting.spec-fixtures';
 
 describe('ReportsComponent', () => {
   let component: ReportsComponent;
@@ -48,21 +55,39 @@ describe('ReportsComponent form, results and export', () => {
   let handleError: jasmine.Spy<MessageWrapperService['handle']>;
   let exportFile: jasmine.Spy<FileService['export']>;
   const url = `${environment.apiUrl}/api/reports/get-report/`;
-  const actor: AuthUser = { id: 42, userName: 'editor', firstName: 'Test', lastName: 'Editor', roleId: 1, roleName: 'Editor' };
+  const actor: AuthUser = {
+    id: 42,
+    userName: 'editor',
+    firstName: 'Test',
+    lastName: 'Editor',
+    roleId: 1,
+    roleName: 'Editor',
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ReportsComponent],
       providers: [
         ...provideComponentTesting(),
-        { provide: AuthService, useValue: { currentUser$: of(actor), has: () => true } satisfies Pick<AuthService, 'currentUser$' | 'has'> },
+        {
+          provide: AuthService,
+          useValue: { currentUser$: of(actor), has: () => true } satisfies Pick<
+            AuthService,
+            'currentUser$' | 'has'
+          >,
+        },
       ],
     }).compileComponents();
     const translate = TestBed.inject(TranslateService);
     translate.setTranslation('en', reportingTranslations);
     translate.use('en');
-    handleError = spyOn(TestBed.inject(MessageWrapperService), 'handle').and.stub();
-    exportFile = spyOn(TestBed.inject(FileService), 'export').and.returnValue(Promise.resolve());
+    handleError = spyOn(
+      TestBed.inject(MessageWrapperService),
+      'handle',
+    ).and.stub();
+    exportFile = spyOn(TestBed.inject(FileService), 'export').and.returnValue(
+      Promise.resolve(),
+    );
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ReportsComponent);
     component = fixture.componentInstance;
@@ -72,42 +97,68 @@ describe('ReportsComponent form, results and export', () => {
   afterEach(() => http.verify());
 
   function listbox(control: string): Listbox {
-    return fixture.debugElement.query(By.css(`p-listbox[formControlName="${control}"]`)).injector.get(Listbox);
+    return fixture.debugElement
+      .query(By.css(`p-listbox[formControlName="${control}"]`))
+      .injector.get(Listbox);
   }
 
-  function choose(control: 'selectedType' | 'selectedFrequency', code: number | string) {
+  function choose(
+    control: 'selectedType' | 'selectedFrequency',
+    code: number | string,
+  ) {
     if (control === 'selectedType') {
-      const option = component.types.find(item => item.code === code);
+      const option = component.types().find((item) => item.code === code);
       if (!option) throw new Error(`Missing ${control} option ${code}`);
       component.formGroup.controls.selectedType.setValue(option);
-      listbox(control).onChange.emit({ originalEvent: new Event('change'), value: option });
+      listbox(control).onChange.emit({
+        originalEvent: new Event('change'),
+        value: option,
+      });
     } else {
-      const option = component.frequencies.find(item => item.code === code);
+      const option = component.frequencies.find((item) => item.code === code);
       if (!option) throw new Error(`Missing ${control} option ${code}`);
       component.formGroup.controls.selectedFrequency.setValue(option);
-      listbox(control).onChange.emit({ originalEvent: new Event('change'), value: option });
+      listbox(control).onChange.emit({
+        originalEvent: new Event('change'),
+        value: option,
+      });
     }
     fixture.detectChanges();
   }
 
-  function chooseMany(control: 'selectedYears' | 'selectedMonths' | 'selectedQuarters', codes: number[]) {
-    const options = control === 'selectedYears' ? component.years : control === 'selectedMonths' ? component.months : component.quarters;
-    component.formGroup.controls[control].setValue(codes.map(code => {
-      const option = options.find(item => item.code === code);
-      if (!option) throw new Error(`Missing ${control} option ${code}`);
-      return option;
-    }));
+  function chooseMany(
+    control: 'selectedYears' | 'selectedMonths' | 'selectedQuarters',
+    codes: number[],
+  ) {
+    const options =
+      control === 'selectedYears'
+        ? component.years
+        : control === 'selectedMonths'
+          ? component.months
+          : component.quarters;
+    component.formGroup.controls[control].setValue(
+      codes.map((code) => {
+        const option = options.find((item) => item.code === code);
+        if (!option) throw new Error(`Missing ${control} option ${code}`);
+        return option;
+      }),
+    );
     fixture.detectChanges();
   }
 
-  function prepare(type: ReportResponse['type'] = REPORT_TYPE.PERSONAL, frequency = 'ANNUAL', year = 2026) {
+  function prepare(
+    type: ReportResponse['type'] = REPORT_TYPE.PERSONAL,
+    frequency = 'ANNUAL',
+    year = 2026,
+  ) {
     choose('selectedType', type);
     choose('selectedFrequency', frequency);
     chooseMany('selectedYears', [year]);
   }
 
   function generateButton(): HTMLButtonElement {
-    return fixture.debugElement.query(By.css('mat-card-actions button')).nativeElement;
+    return fixture.debugElement.query(By.css('mat-card-actions button'))
+      .nativeElement;
   }
 
   function generate() {
@@ -124,8 +175,12 @@ describe('ReportsComponent form, results and export', () => {
   }
 
   function load(response: ReportResponse) {
-    prepare(response.type, response.type === REPORT_TYPE.BY_OCCASION ? 'ANNUAL' : 'MONTHLY');
-    if (response.type !== REPORT_TYPE.BY_OCCASION) chooseMany('selectedMonths', [1]);
+    prepare(
+      response.type,
+      response.type === REPORT_TYPE.BY_OCCASION ? 'ANNUAL' : 'MONTHLY',
+    );
+    if (response.type !== REPORT_TYPE.BY_OCCASION)
+      chooseMany('selectedMonths', [1]);
     finish(generate(), response);
   }
 
@@ -165,7 +220,14 @@ describe('ReportsComponent form, results and export', () => {
     chooseMany('selectedMonths', [2, 1]);
     chooseMany('selectedYears', [2025, 2026]);
     const request = generate();
-    expect(request.request.body).toEqual({ userId: null, type: 1, frequency: 'MONTHLY', months: [2, 1], quarters: null, years: [2025, 2026] });
+    expect(request.request.body).toEqual({
+      userId: null,
+      type: 1,
+      frequency: 'MONTHLY',
+      months: [2, 1],
+      quarters: null,
+      years: [2025, 2026],
+    });
     finish(request, { ...generalReport, report: [] });
   });
 
@@ -176,7 +238,14 @@ describe('ReportsComponent form, results and export', () => {
     expect(component.formGroup.controls['selectedMonths'].value).toEqual([]);
     expect(component.formGroup.controls['selectedQuarters'].value).toEqual([]);
     const request = generate();
-    expect(request.request.body).toEqual({ userId: 42, type: 2, frequency: 'ANNUAL', months: null, quarters: null, years: [2026] });
+    expect(request.request.body).toEqual({
+      userId: 42,
+      type: 2,
+      frequency: 'ANNUAL',
+      months: null,
+      quarters: null,
+      years: [2026],
+    });
     finish(request, { ...personalReport, report: [] });
   });
 
@@ -188,7 +257,14 @@ describe('ReportsComponent form, results and export', () => {
     expect(component.formGroup.controls['selectedMonths'].value).toEqual([]);
     chooseMany('selectedQuarters', [2]);
     const request = generate();
-    expect(request.request.body).toEqual({ userId: 42, type: 2, frequency: 'QUARTERLY', months: null, quarters: [2], years: [2026] });
+    expect(request.request.body).toEqual({
+      userId: 42,
+      type: 2,
+      frequency: 'QUARTERLY',
+      months: null,
+      quarters: [2],
+      years: [2026],
+    });
     finish(request, { ...personalReport, report: [] });
   });
 
@@ -200,7 +276,14 @@ describe('ReportsComponent form, results and export', () => {
     expect(component.formGroup.controls['selectedQuarters'].value).toEqual([]);
     chooseMany('selectedMonths', [2]);
     const request = generate();
-    expect(request.request.body).toEqual({ userId: 42, type: 2, frequency: 'MONTHLY', months: [2], quarters: null, years: [2026] });
+    expect(request.request.body).toEqual({
+      userId: 42,
+      type: 2,
+      frequency: 'MONTHLY',
+      months: [2],
+      quarters: null,
+      years: [2026],
+    });
     finish(request, { ...personalReport, report: [] });
   });
 
@@ -209,38 +292,87 @@ describe('ReportsComponent form, results and export', () => {
     chooseMany('selectedMonths', [1]);
     choose('selectedType', REPORT_TYPE.SCHOOL_COORDINATION);
     const school = generate();
-    expect(school.request.body).toEqual({ userId: 42, type: 3, frequency: 'MONTHLY', months: [1], quarters: null, years: [2026] });
-    finish(school, { type: REPORT_TYPE.SCHOOL_COORDINATION, report: [], cols: COLUMNS[3] });
+    expect(school.request.body).toEqual({
+      userId: null,
+      type: 3,
+      frequency: 'MONTHLY',
+      months: [1],
+      quarters: null,
+      years: [2026],
+    });
+    finish(school, {
+      type: REPORT_TYPE.SCHOOL_COORDINATION,
+      report: [],
+      cols: COLUMNS[3],
+    });
     choose('selectedType', REPORT_TYPE.BY_OCCASION);
     expect(component.formGroup.controls['selectedFrequency'].value).toBeNull();
     expect(component.formGroup.controls['selectedMonths'].value).toEqual([]);
     expect(component.formGroup.controls['selectedQuarters'].value).toEqual([]);
     expect(generateButton().disabled).toBeTrue();
-    expect(listbox('selectedFrequency').optionDisabled).toBe('disabledForOccasion');
-    expect(component.frequencies.filter(item => item.disabledForOccasion).map(item => item.code)).toEqual(['MONTHLY', 'QUARTERLY']);
+    expect(listbox('selectedFrequency').optionDisabled).toBe(
+      'disabledForOccasion',
+    );
+    expect(
+      component.frequencies
+        .filter((item) => item.disabledForOccasion)
+        .map((item) => item.code),
+    ).toEqual(['MONTHLY', 'QUARTERLY']);
     choose('selectedFrequency', 'ANNUAL');
-    expect(fixture.debugElement.query(By.css('p-listbox[formControlName="selectedMonths"]'))).toBeNull();
-    expect(fixture.debugElement.query(By.css('p-listbox[formControlName="selectedQuarters"]'))).toBeNull();
+    expect(
+      fixture.debugElement.query(
+        By.css('p-listbox[formControlName="selectedMonths"]'),
+      ),
+    ).toBeNull();
+    expect(
+      fixture.debugElement.query(
+        By.css('p-listbox[formControlName="selectedQuarters"]'),
+      ),
+    ).toBeNull();
     const occasion = generate();
-    expect(occasion.request.body).toEqual({ userId: null, type: 4, frequency: 'ANNUAL', months: null, quarters: null, years: [2026] });
+    expect(occasion.request.body).toEqual({
+      userId: null,
+      type: 4,
+      frequency: 'ANNUAL',
+      months: null,
+      quarters: null,
+      years: [2026],
+    });
     finish(occasion, occasionReport);
     choose('selectedType', REPORT_TYPE.PERSONAL);
     choose('selectedFrequency', 'MONTHLY');
-    expect(fixture.debugElement.query(By.css('p-listbox[formControlName="selectedMonths"]'))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(
+        By.css('p-listbox[formControlName="selectedMonths"]'),
+      ),
+    ).not.toBeNull();
   });
 
   it('releases loading on HTTP failure and supplies the numeric actor ID to error handling', () => {
     prepare();
     const request = generate();
     expect(component.showSpinner()).toBeTrue();
-    request.flush({ code: 'ERRORS.REPORT_GENERATE_FAILED' }, { status: 500, statusText: 'Server Error' });
+    request.flush(
+      { code: 'ERRORS.REPORT_GENERATE_FAILED' },
+      { status: 500, statusText: 'Server Error' },
+    );
     fixture.detectChanges();
     expect(component.showSpinner()).toBeFalse();
     expect(component.report).toEqual([]);
-    expect(handleError).toHaveBeenCalledOnceWith(jasmine.any(HttpErrorResponse), jasmine.objectContaining({
-      source: 'ReportsComponent', stage: 'getReport',
-      data: { userId: 42, frequency: 'ANNUAL', months: null, quarters: null, years: [2026] },
-    }));
+    expect(handleError).toHaveBeenCalledOnceWith(
+      jasmine.any(HttpErrorResponse),
+      jasmine.objectContaining({
+        source: 'ReportsComponent',
+        stage: 'getReport',
+        data: {
+          userId: 42,
+          frequency: 'ANNUAL',
+          months: null,
+          quarters: null,
+          years: [2026],
+        },
+      }),
+    );
     finish(generate(), annualPersonalReport);
     expect(component.report).toEqual(annualPersonalReport.report);
   });
@@ -254,7 +386,10 @@ describe('ReportsComponent form, results and export', () => {
     expect(component.showSpinner()).toBeFalse();
     expect(component.report).toEqual([]);
     expect(component.reportName).toBe('');
-    expect(handleError).toHaveBeenCalledOnceWith(jasmine.any(ValidationError), jasmine.objectContaining({ source: 'ReportsComponent' }));
+    expect(handleError).toHaveBeenCalledOnceWith(
+      jasmine.any(ValidationError),
+      jasmine.objectContaining({ source: 'ReportsComponent' }),
+    );
   });
 
   it('replaces an old result with the new empty result and prevents exporting stale rows', async () => {
@@ -324,17 +459,35 @@ describe('ReportsComponent form, results and export', () => {
     const exportedRows: unknown = data;
     expect(exportedRows).toEqual([
       {
-        key: '2026-1', periodData: 'January 2026', recipientsCount: 12, volunteersCount: 3,
-        institutesCount: 1, schoolsCount: 1, seniorsCount: 4, homesCount: 2, regionsCount: 1, rowType: 'period',
+        key: '2026-1',
+        periodData: 'January 2026',
+        recipientsCount: 12,
+        volunteersCount: 3,
+        institutesCount: 1,
+        schoolsCount: 1,
+        seniorsCount: 4,
+        homesCount: 2,
+        regionsCount: 1,
+        rowType: 'period',
       },
       {
-        occasionId: 20, occasionName: 'OCCASION.BIRTHDAY.NAME 2026', recipientsCount: 12, seniorsCount: 4,
-        rowType: 'occasion', periodData: 'Birthdays 2026',
+        occasionId: 20,
+        occasionName: 'OCCASION.BIRTHDAY.NAME 2026',
+        recipientsCount: 12,
+        seniorsCount: 4,
+        rowType: 'occasion',
+        periodData: 'Birthdays 2026',
       },
     ]);
-    expect(exportColumns).toEqual([{ field: 'periodData', header: 'Period' }, ...COLUMNS[1].slice(1)]);
+    expect(exportColumns).toEqual([
+      { field: 'periodData', header: 'Period' },
+      ...COLUMNS[1].slice(1),
+    ]);
     expect(options).toEqual({
-      fileName: jasmine.stringMatching(/^General report-\d{4}-\d{2}-\d{2}\.xlsx$/), sheetName: 'Report',
+      fileName: jasmine.stringMatching(
+        /^General report-\d{4}-\d{2}-\d{2}\.xlsx$/,
+      ),
+      sheetName: 'Report',
     });
     expect(component.report).toEqual(source);
     expect(component.cols).toEqual(columns);
@@ -346,10 +499,17 @@ describe('ReportsComponent form, results and export', () => {
     await component.exportToExcel();
     const data: unknown = exportFile.calls.mostRecent().args[0];
     expect(data).toEqual([
-      { ...personalReport.report[0], periodData: 'January 2026', occasionName: null },
+      {
+        ...personalReport.report[0],
+        periodData: 'January 2026',
+        occasionName: null,
+      },
     ]);
     expect(exportFile.calls.mostRecent().args[2]).toEqual({
-      fileName: jasmine.stringMatching(/^Personal report-\d{4}-\d{2}-\d{2}\.xlsx$/), sheetName: 'Report',
+      fileName: jasmine.stringMatching(
+        /^Personal report-\d{4}-\d{2}-\d{2}\.xlsx$/,
+      ),
+      sheetName: 'Report',
     });
   });
 
@@ -359,15 +519,25 @@ describe('ReportsComponent form, results and export', () => {
     await component.exportToExcel();
     const data: unknown = exportFile.calls.mostRecent().args[0];
     expect(data).toEqual([
-      { ...occasionReport.report[0], periodData: null, occasionName: 'Birthdays 2026' },
+      {
+        ...occasionReport.report[0],
+        periodData: null,
+        occasionName: 'Birthdays 2026',
+      },
     ]);
     expect(component.report).toEqual(source);
   });
 
   it('prevents duplicate exports and releases the export latch if the file writer rejects', async () => {
     load(personalReport);
-    let rejectWrite: (reason: Error) => void = () => { throw new Error('Writer not started'); };
-    exportFile.and.returnValue(new Promise<void>((_, reject) => { rejectWrite = reject; }));
+    let rejectWrite: (reason: Error) => void = () => {
+      throw new Error('Writer not started');
+    };
+    exportFile.and.returnValue(
+      new Promise<void>((_, reject) => {
+        rejectWrite = reject;
+      }),
+    );
     const pending = component.exportToExcel();
     expect(component.isExporting).toBeTrue();
     await component.exportToExcel();
@@ -390,14 +560,20 @@ describe('ReportsComponent form, results and export', () => {
   it('spans every parent column in the expanded general-report detail row', () => {
     load(generalReport);
     const element: HTMLElement = fixture.nativeElement;
-    const toggle = element.querySelector<HTMLButtonElement>('p-table tbody tr td button');
+    const toggle = element.querySelector<HTMLButtonElement>(
+      'p-table tbody tr td button',
+    );
     if (!toggle) throw new Error('General-report expansion button missing');
     toggle.click();
     fixture.detectChanges();
     const detailTable = element.querySelector('p-table p-table');
     const detailCell = detailTable?.closest('td');
-    if (!detailCell?.parentElement) throw new Error('Expanded detail row missing');
-    const span = Array.from(detailCell.parentElement.children).reduce((total, cell) => total + (cell as HTMLTableCellElement).colSpan, 0);
+    if (!detailCell?.parentElement)
+      throw new Error('Expanded detail row missing');
+    const span = Array.from(detailCell.parentElement.children).reduce(
+      (total, cell) => total + (cell as HTMLTableCellElement).colSpan,
+      0,
+    );
     expect(span).toBe(COLUMNS[REPORT_TYPE.GENERAL].length + 1);
   });
 
@@ -406,9 +582,17 @@ describe('ReportsComponent form, results and export', () => {
     const boxes = element.querySelectorAll<HTMLElement>('[role="listbox"]');
     expect(boxes.length).toBe(3);
     for (const box of boxes) {
-      const references = (box.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
-      const name = box.getAttribute('aria-label') || references.map(id => element.querySelector(`[id="${id}"]`)?.textContent ?? '').join(' ');
-      expect(name.trim()).withContext('Report selection group needs an accessible name').not.toBe('');
+      const references = (box.getAttribute('aria-labelledby') ?? '')
+        .split(/\s+/)
+        .filter(Boolean);
+      const name =
+        box.getAttribute('aria-label') ||
+        references
+          .map((id) => element.querySelector(`[id="${id}"]`)?.textContent ?? '')
+          .join(' ');
+      expect(name.trim())
+        .withContext('Report selection group needs an accessible name')
+        .not.toBe('');
     }
   });
 
@@ -417,28 +601,53 @@ describe('ReportsComponent form, results and export', () => {
     const translate = TestBed.inject(TranslateService);
     translate.setTranslation('ru', {
       REPORTS: {
-        TYPES: { PERSONAL: 'Личный отчёт' }, FREQUENCIES: { MONTHLY: 'Ежемесячно' },
-        MONTHS: { JANUARY: 'Январь' }, TABLE: { PERIOD: 'Период' },
+        TYPES: { PERSONAL: 'Личный отчёт' },
+        FREQUENCIES: { MONTHLY: 'Ежемесячно' },
+        MONTHS: { JANUARY: 'Январь' },
+        TABLE: { PERIOD: 'Период' },
       },
     });
     translate.use('ru');
     fixture.detectChanges();
 
-    expect(component.types.find(option => option.code === REPORT_TYPE.PERSONAL)?.name).toBe('Личный отчёт');
-    expect(component.frequencies.find(option => option.code === 'MONTHLY')?.name).toBe('Ежемесячно');
-    expect(component.months.find(option => option.code === 1)?.name).toBe('Январь');
-    expect(component.formGroup.controls['selectedType'].value?.code).toBe(REPORT_TYPE.PERSONAL);
-    expect(component.formGroup.controls['selectedFrequency'].value?.code).toBe('MONTHLY');
-    expect(component.formGroup.controls['selectedMonths'].value?.map((option: ReportsComponent['months'][number]) => option.code)).toEqual([1]);
+    expect(
+      component.types().find((option) => option.code === REPORT_TYPE.PERSONAL)
+        ?.name,
+    ).toBe('Личный отчёт');
+    expect(
+      component.frequencies.find((option) => option.code === 'MONTHLY')?.name,
+    ).toBe('Ежемесячно');
+    expect(component.months.find((option) => option.code === 1)?.name).toBe(
+      'Январь',
+    );
+    expect(component.formGroup.controls['selectedType'].value?.code).toBe(
+      REPORT_TYPE.PERSONAL,
+    );
+    expect(component.formGroup.controls['selectedFrequency'].value?.code).toBe(
+      'MONTHLY',
+    );
+    expect(
+      component.formGroup.controls['selectedMonths'].value?.map(
+        (option: ReportsComponent['months'][number]) => option.code,
+      ),
+    ).toEqual([1]);
     expect(component.report).toEqual(personalReport.report);
     expect(component.reportName).toBe('Личный отчёт');
-    expect(listbox('selectedType').el.nativeElement.textContent).toContain('Личный отчёт');
+    expect(listbox('selectedType').el.nativeElement.textContent).toContain(
+      'Личный отчёт',
+    );
     http.expectNone(url);
 
     await component.exportToExcel();
     const [data, columns, options] = exportFile.calls.mostRecent().args;
     const exportedRows: unknown = data;
-    expect(exportedRows).toEqual([{ ...personalReport.report[0], periodData: 'Январь 2026', occasionName: null }]);
+    expect(exportedRows).toEqual([
+      {
+        ...personalReport.report[0],
+        periodData: 'Январь 2026',
+        occasionName: null,
+      },
+    ]);
     expect(columns[0]).toEqual({ field: 'periodData', header: 'Период' });
     expect(options?.fileName).toMatch(/^Личный отчёт-\d{4}-\d{2}-\d{2}\.xlsx$/);
   });
@@ -452,7 +661,8 @@ describe('ReportsComponent form, results and export', () => {
     const currentA = generate();
     expect(currentA.request.body).toEqual(firstA.request.body);
     finish(currentA, { ...annualPersonalReport, report: [] });
-    if (!requestB.cancelled) finish(requestB, { ...annualPersonalReport, report: [] });
+    if (!requestB.cancelled)
+      finish(requestB, { ...annualPersonalReport, report: [] });
     if (!firstA.cancelled) finish(firstA, annualPersonalReport);
     expect(component.report).toEqual([]);
     expect(component.emptyMessage).toBe('REPORTS.TABLE.EMPTY_MESSAGE');
@@ -464,5 +674,163 @@ describe('ReportsComponent form, results and export', () => {
     await expectAsync(component.exportToExcel()).toBeRejectedWithError();
     expect(component.isExporting).toBeFalse();
     expect(exportFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('ReportsComponent report permissions', () => {
+  let fixture: ComponentFixture<ReportsComponent>;
+  let component: ReportsComponent;
+  let http: HttpTestingController;
+
+  const actor: AuthUser = {
+    id: 42,
+    userName: 'editor',
+    firstName: 'Test',
+    lastName: 'Editor',
+    roleId: 1,
+    roleName: 'Editor',
+  };
+
+  const permissions = signal(new Map<string, { access: boolean }>());
+
+  function setPermissions(...codes: string[]) {
+    permissions.set(new Map(codes.map((code) => [code, { access: true }])));
+    fixture.detectChanges();
+  }
+
+  function availableTypes() {
+    return component.types().map((option) => option.code);
+  }
+
+  beforeEach(async () => {
+    permissions.set(new Map());
+
+    await TestBed.configureTestingModule({
+      imports: [ReportsComponent],
+      providers: [
+        ...provideComponentTesting(),
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser$: of(actor),
+            permissions$: permissions.asReadonly(),
+            has: (code: string) => permissions().get(code)?.access === true,
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', reportingTranslations);
+    translate.use('en');
+
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(ReportsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  afterEach(() => http.verify());
+
+  it('shows only Personal report without special permissions', () => {
+    expect(availableTypes()).toEqual([REPORT_TYPE.PERSONAL]);
+  });
+
+  it('shows Personal and School Coordination with limited permission', () => {
+    setPermissions('VIEW_LIMITED_REPORTS');
+
+    expect(availableTypes()).toEqual([
+      REPORT_TYPE.PERSONAL,
+      REPORT_TYPE.SCHOOL_COORDINATION,
+    ]);
+  });
+
+  it('shows all report types with full permission', () => {
+    setPermissions('VIEW_FULL_REPORTS');
+
+    expect(availableTypes()).toEqual([
+      REPORT_TYPE.GENERAL,
+      REPORT_TYPE.PERSONAL,
+      REPORT_TYPE.SCHOOL_COORDINATION,
+      REPORT_TYPE.BY_OCCASION,
+    ]);
+  });
+
+  it('clears a selected General report and its preview when full permission is revoked', () => {
+    setPermissions('VIEW_FULL_REPORTS');
+
+    component.formGroup.controls.selectedType.setValue(
+      component.types().find((option) => option.code === REPORT_TYPE.GENERAL)!,
+    );
+    component.formGroup.controls.selectedFrequency.setValue(
+      component.frequencies.find((option) => option.code === 'MONTHLY')!,
+    );
+    component.formGroup.controls.selectedYears.setValue([
+      component.years.find((option) => option.code === 2026)!,
+    ]);
+    component.formGroup.controls.selectedMonths.setValue([
+      component.months.find((option) => option.code === 1)!,
+    ]);
+
+    fixture.detectChanges();
+    component.onGenerateClick();
+
+    const req = http.expectOne(`${environment.apiUrl}/api/reports/get-report/`);
+
+    req.flush({ data: structuredClone(generalReport) });
+    fixture.detectChanges();
+
+    expect(component.report).toEqual(generalReport.report);
+    expect(component.reportType).toBe(REPORT_TYPE.GENERAL);
+
+    setPermissions('VIEW_LIMITED_REPORTS');
+
+    expect(availableTypes()).toEqual([
+      REPORT_TYPE.PERSONAL,
+      REPORT_TYPE.SCHOOL_COORDINATION,
+    ]);
+    expect(component.formGroup.controls.selectedType.value).toBeNull();
+    expect(component.report).toEqual([]);
+    expect(component.cols).toEqual([]);
+    expect(component.reportType).toBeNull();
+    expect(component.showSpinner()).toBeFalse();
+  });
+
+  it('ignores an in-flight General report response after full permission is revoked', () => {
+    setPermissions('VIEW_FULL_REPORTS');
+
+    component.formGroup.controls.selectedType.setValue(
+      component.types().find((option) => option.code === REPORT_TYPE.GENERAL)!,
+    );
+    component.formGroup.controls.selectedFrequency.setValue(
+      component.frequencies.find((option) => option.code === 'MONTHLY')!,
+    );
+    component.formGroup.controls.selectedYears.setValue([
+      component.years.find((option) => option.code === 2026)!,
+    ]);
+    component.formGroup.controls.selectedMonths.setValue([
+      component.months.find((option) => option.code === 1)!,
+    ]);
+
+    fixture.detectChanges();
+    component.onGenerateClick();
+
+    const req = http.expectOne(`${environment.apiUrl}/api/reports/get-report/`);
+
+    expect(component.showSpinner()).toBeTrue();
+
+    setPermissions('VIEW_LIMITED_REPORTS');
+
+    expect(component.formGroup.controls.selectedType.value).toBeNull();
+    expect(component.showSpinner()).toBeFalse();
+
+    req.flush({ data: structuredClone(generalReport) });
+    fixture.detectChanges();
+
+    expect(component.report).toEqual([]);
+    expect(component.cols).toEqual([]);
+    expect(component.reportType).toBeNull();
+    expect(component.emptyMessage).toBe('');
+    expect(component.showSpinner()).toBeFalse();
   });
 });
