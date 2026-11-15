@@ -379,7 +379,14 @@ export class AdvancedDetailsComponent<
     this.mainForm.setValidators(this.data().mainContactsValidator!);
     this.mainForm.valueChanges
       .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.onChangeValidation());
+      .subscribe(() => {
+        // Debounced form events can outlive Edit; settled View must stay clean.
+        if (this.data().operation === 'create' || this.isEditModeSignal()) {
+          this.onChangeValidation();
+        } else {
+          this.checkIsSaveDisabled();
+        }
+      });
 
     // Load roles (with auto-unsubscribe)
     this.roleService
