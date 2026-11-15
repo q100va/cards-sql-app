@@ -158,6 +158,8 @@ export class TableComponent<K extends Kind> implements OnChanges {
   @ViewChild(MatSort) sort!: MatSort;
 
   private readonly destroyRef = inject(DestroyRef);
+  private cardLookupVersion = 0;
+  private cardLookupOwnerDestroyed = false;
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
   private readonly fileService = inject(FileService);
@@ -335,6 +337,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     >;
   }
   constructor(private injector: Injector) {
+    this.destroyRef.onDestroy(() => { this.cardLookupOwnerDestroyed = true; });
     const iconRegistry = inject(MatIconRegistry);
     const sanitizer = inject(DomSanitizer);
     for (const item of this.contactTypes) {
@@ -544,14 +547,22 @@ export class TableComponent<K extends Kind> implements OnChanges {
       });
   }
 
+  // Late lookups may open UI only while they are the newest live card intent.
+  private isCurrentCardLookup(version: number): boolean {
+    return !this.cardLookupOwnerDestroyed && version === this.cardLookupVersion;
+  }
+
   onOpenOwnerCardClick(id: number) {
+    if (this.cardLookupOwnerDestroyed) return;
+    const version = ++this.cardLookupVersion;
     const service = this.getService();
 
     service
       .getById(id)
-      .pipe()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (!this.isCurrentCardLookup(version)) return;
           const owner = res.data;
           const dialogProps = {
             ...this.dialogProps,
@@ -601,20 +612,23 @@ export class TableComponent<K extends Kind> implements OnChanges {
               data: dialogData,
             })
             .afterClosed()
-            .pipe()
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: (r) => {
+                if (!this.isCurrentCardLookup(version)) return;
                 if (r?.refresh) this.forceReload();
               },
             });
         },
-        error: (err) =>
+        error: (err) => {
+          if (!this.isCurrentCardLookup(version)) return;
           this.msg.handle(err, {
             source: 'TableComponent',
             stage: 'openOwnerCard',
             ownerId: id,
             kind: this.kind(),
-          }),
+          });
+        },
       });
   }
   //TODO:

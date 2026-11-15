@@ -92,4 +92,32 @@ describe('TableComponent owner-card request ownership', () => {
       data: jasmine.objectContaining({ object: lifetimePartner(20) }),
     }));
   });
+
+  it('keeps A1 stale when A2 becomes current across A, B and A again', () => {
+    const firstA = open(10);
+    const requestB = open(20);
+    const currentA = open(10);
+    const currentOwner = { ...lifetimePartner(10), firstName: 'Newest' };
+    currentA.flush({ data: currentOwner });
+    expect(openDialog).toHaveBeenCalledTimes(1);
+    if (!requestB.cancelled) requestB.flush({ data: lifetimePartner(20) });
+    if (!firstA.cancelled) firstA.flush({ data: lifetimePartner(10) });
+    expect(openDialog).toHaveBeenCalledTimes(1);
+    expect(openDialog.calls.mostRecent().args[1]).toEqual(jasmine.objectContaining({
+      data: jasmine.objectContaining({ object: currentOwner }),
+    }));
+    expect(handleError).not.toHaveBeenCalled();
+  });
+
+  it('ignores an obsolete A error while preserving the current live B error notification', () => {
+    const first = open(10);
+    const current = open(20);
+    if (!first.cancelled) first.flush({}, { status: 500, statusText: 'Server Error' });
+    expect(handleError).not.toHaveBeenCalled();
+    current.flush({}, { status: 503, statusText: 'Service Unavailable' });
+    expect(handleError).toHaveBeenCalledOnceWith(jasmine.objectContaining({ status: 503 }), {
+      source: 'TableComponent', stage: 'openOwnerCard', ownerId: 20, kind: 'partner',
+    });
+    expect(openDialog).not.toHaveBeenCalled();
+  });
 });
