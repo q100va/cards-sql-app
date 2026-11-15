@@ -77,7 +77,7 @@ describe('ReportsService HTTP contracts', () => {
     {
       name: 'school-coordination annual',
       request: {
-        userId: 42, type: REPORT_TYPE.SCHOOL_COORDINATION, frequency: REPORT_FREQUENCY.ANNUAL,
+        userId: null, type: REPORT_TYPE.SCHOOL_COORDINATION, frequency: REPORT_FREQUENCY.ANNUAL,
         months: null, quarters: null, years: [2026],
       },
       response: {
