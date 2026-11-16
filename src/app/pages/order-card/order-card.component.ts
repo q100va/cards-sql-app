@@ -219,6 +219,20 @@ export class OrderCardComponent {
   showSpinner = false;
   blockCreateButton = false;
   contactReminder = '';
+  // Only the newest intent in each lookup may commit results or report errors.
+  private volunteerLookupIntent = 0;
+  private contactLookupIntent = 0;
+  private createAttempt = 0;
+  private preflightAttempt = -1;
+  private createRequestPending = false;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.volunteerLookupIntent++;
+      this.contactLookupIntent++;
+      this.createAttempt++;
+    });
+  }
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
@@ -258,6 +272,7 @@ export class OrderCardComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         if (!value) {
+          this.volunteerLookupIntent++;
           this.volunteer = null;
         }
         this.message = '';
@@ -325,6 +340,8 @@ export class OrderCardComponent {
   }
 
   onCreateOrderClick() {
+    if (this.blockCreateButton) return;
+    const attempt = ++this.createAttempt;
     this.blockCreateButton = true;
     if (
       !this.orderForm.controls.instituteId.value &&
@@ -349,24 +366,35 @@ export class OrderCardComponent {
         },
         accept: () => {
           setTimeout(() => {
-            this.checkDuplicates();
+            if (attempt === this.createAttempt) this.checkDuplicates(attempt);
           }, 200);
         },
         reject: () => {
-          this.blockCreateButton = false;
+          this.finishCreateAttempt(attempt);
         },
       });
     } else {
-      this.checkDuplicates();
+      this.checkDuplicates(attempt);
     }
   }
 
-  checkDuplicates() {
+  private finishCreateAttempt(attempt: number) {
+    if (attempt !== this.createAttempt) return;
+    this.createAttempt++;
+    this.createRequestPending = false;
+    this.showSpinner = false;
+    this.blockCreateButton = false;
+  }
+
+  checkDuplicates(attempt = this.createAttempt) {
+    if (attempt !== this.createAttempt || attempt === this.preflightAttempt) return;
+    this.preflightAttempt = attempt;
     this.orderService
       .checkOrder(this.volunteer!.id, this.actualOccasions[this.index].id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (attempt !== this.createAttempt) return;
           const duplicates = res.data;
 
           if (duplicates.length > 0) {
@@ -406,17 +434,19 @@ export class OrderCardComponent {
                 outlined: true,
               },
               accept: () => {
-                this.createOrder();
+                this.createOrder(attempt);
               },
               reject: () => {
-                this.blockCreateButton = false;
+                this.finishCreateAttempt(attempt);
               },
             });
           } else {
-            this.createOrder();
+            this.createOrder(attempt);
           }
         },
         error: (err) => {
+          if (attempt !== this.createAttempt) return;
+          this.finishCreateAttempt(attempt);
           this.filteredContacts = [];
           this.msgWrapper.handle(err, {
             source: 'OrderCardComponent',
@@ -428,7 +458,8 @@ export class OrderCardComponent {
         },
       });
   }
-  createOrder() {
+  createOrder(attempt = this.createAttempt) {
+    if (attempt !== this.createAttempt || this.createRequestPending) return;
     this.showSpinner = true;
     this.message = '';
     this.contactReminder = '';
@@ -436,6 +467,7 @@ export class OrderCardComponent {
     this.occasionName = this.getOccasionName(this.actualOccasions[this.index]);
     if (this.orderForm.invalid) {
       this.orderForm.markAllAsTouched();
+      this.finishCreateAttempt(attempt);
       return;
     }
     const source = this.orderForm.controls.source.value;
@@ -449,6 +481,7 @@ export class OrderCardComponent {
       contact === null ||
       userId === null
     ) {
+      this.finishCreateAttempt(attempt);
       return;
     }
     const params = orderDraftSchema.parse({
@@ -504,17 +537,18 @@ export class OrderCardComponent {
       maxNoAddress: this.filterForm.controls.maxNoAddress.value,
     });
 
+    this.createRequestPending = true;
     this.orderService
       .createOrder(params, filtersDraft)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
-          this.showSpinner = false;
-          this.blockCreateButton = false;
+          this.finishCreateAttempt(attempt);
         }),
       )
       .subscribe({
         next: (res) => {
+          if (attempt !== this.createAttempt) return;
           if (res.data.recipients.length === 0) {
             this.message = 'ORDER.CARD.FAILED_MESSAGE';
           } else {
@@ -523,6 +557,7 @@ export class OrderCardComponent {
           this.contactReminder = ` ${this.translateService.instant('ORDER.CARD.FOR_NOTE')} ${res.data.contact}`;
         },
         error: (err) => {
+          if (attempt !== this.createAttempt) return;
           this.filteredContacts = [];
           this.msgWrapper.handle(err, {
             source: 'OrderCardComponent',
@@ -573,6 +608,7 @@ export class OrderCardComponent {
     this.contactReminder = '';
     this.list = []; */
     const query = event.query?.trim();
+    const intent = ++this.contactLookupIntent;
 
     if (!query || query.length < 3) {
       this.filteredContacts = [];
@@ -584,9 +620,11 @@ export class OrderCardComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (intent !== this.contactLookupIntent) return;
           this.filteredContacts = res.data;
         },
         error: (err) => {
+          if (intent !== this.contactLookupIntent) return;
           this.filteredContacts = [];
           this.msgWrapper.handle(err, {
             source: 'OrderCardComponent',
@@ -597,6 +635,7 @@ export class OrderCardComponent {
       });
   }
   getVolunteer(volunteerId: number, updateContact = false) {
+    const intent = ++this.volunteerLookupIntent;
     this.message = '';
     this.contactReminder = '';
     this.list = [];
@@ -605,6 +644,7 @@ export class OrderCardComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (intent !== this.volunteerLookupIntent) return;
           this.volunteer = res.data;
           if (updateContact) {
             const firstKey = Object.keys(this.volunteer.orderedContacts)[0] as
@@ -630,6 +670,7 @@ export class OrderCardComponent {
           //  console.log(this.filteredContacts);
         },
         error: (err) => {
+          if (intent !== this.volunteerLookupIntent) return;
           //this.filteredContacts = [];
           this.msgWrapper.handle(err, {
             source: 'OrderCardComponent',
@@ -657,21 +698,24 @@ export class OrderCardComponent {
       },
     };
 
-    this.dialog
-      .open(DetailsDialogComponent, { ...this.dialogConfig, data: dialogData })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.getVolunteer(res.id, true);
-      });
+    this.dialog.open(DetailsDialogComponent, { ...this.dialogConfig, data: dialogData });
+  }
+
+  private isRefreshResult(result: unknown): result is { refresh: true } {
+    return typeof result === 'object' && result !== null &&
+      'refresh' in result && result.refresh === true;
   }
 
   onOpenCardClick() {
+    if (!this.volunteer) return;
+    const volunteerId = this.volunteer.id;
+    const intent = this.volunteerLookupIntent;
     this.volunteerService
-      .getById(this.volunteer!.id)
+      .getById(volunteerId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (intent !== this.volunteerLookupIntent || this.volunteer?.id !== volunteerId) return;
           const owner = res.data;
           const dialogProps = {
             ...this.dialogProps,
@@ -714,19 +758,23 @@ export class OrderCardComponent {
               data: dialogData,
             })
             .afterClosed()
-            .pipe()
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-              next: () => {
-                this.getVolunteer(this.volunteer!.id, true);
+              next: (result: unknown) => {
+                if (intent !== this.volunteerLookupIntent || this.volunteer?.id !== volunteerId ||
+                  !this.isRefreshResult(result)) return;
+                this.getVolunteer(volunteerId, true);
               },
             });
         },
-        error: (err) =>
+        error: (err) => {
+          if (intent !== this.volunteerLookupIntent || this.volunteer?.id !== volunteerId) return;
           this.msgWrapper.handle(err, {
             source: 'OrderCardComponent',
             stage: 'openVolunteerCard',
-            volunteerId: this.volunteer?.id,
-          }),
+            volunteerId,
+          });
+        },
       });
   }
 }
