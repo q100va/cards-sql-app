@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -44,8 +43,6 @@ export interface HomeMainService extends OwnerMainService<
   HomeDeletingData,
   { list: Home[]; length: number }
 > {
-  checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>>;
-  checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>>;
   getActiveHomesPickList(): Observable<RelationPick[]>;
   getPotentialHomesPickList(): Observable<RelationPick[]>;
   getHomesPickList(): Observable<RelationPick[]>;
@@ -63,23 +60,6 @@ export class HomeService implements HomeMainService {
 
   getOwnerName(owner: Home) {
     return owner['homeName'].trim();
-  }
-  checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>> {
-    let params = new HttpParams().set('homeName', ownerDraft.homeName);
-    if (ownerDraft.id != null) params = params.set('id', String(ownerDraft.id));
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-home-name/`, {
-        params,
-      })
-      .pipe(
-        validateResponse(z.boolean()),
-        this.msgWrapper.messageTap('warn', {
-          source: 'CreateHomeDialog',
-          stage: 'checkHomeName',
-          name: ownerDraft.homeName,
-        }),
-        catchError(this.handleError),
-      );
   }
   checkOwnerData(ownerDraft: HomeDraft): Observable<ApiResponse<Duplicates>> {
     return of({
@@ -284,25 +264,6 @@ export class HomeService implements HomeMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError),
-      );
-  }
-
-  checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>> {
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-home-before-block/${id}`)
-      .pipe(
-        validateNoSchemaResponse<number>('isNumber'),
-        this.msgWrapper.messageTap(
-          'warn',
-          (res) => ({
-            source: 'HomesList',
-            stage: 'checkPossibilityToDeleteHome',
-            homeId: id,
-            amountOfDependencies: res.data,
-          }),
-          (res) => ({ count: res.data }),
-        ),
         catchError(this.handleError),
       );
   }
