@@ -127,6 +127,7 @@ export class CreateRecipientDialogComponent {
   nursingHomeControl = new FormControl<number | null>(null);
   homeGroups: RegionWithHomes = [];
   seniors: RecipientsShortList = [];
+  private homeLookupIntent = 0;
 
   ngOnInit(): void {
     this.isLoading = true;
@@ -149,27 +150,36 @@ export class CreateRecipientDialogComponent {
       });
   }
 
-  onHomeSelected(homeId: number) {
+  onHomeSelected(homeId: number | null | undefined) {
+    const intent = ++this.homeLookupIntent;
     this.seniors = [];
-    if (homeId === null || homeId === undefined) return;
+    if (homeId === null || homeId === undefined) {
+      this.isLoading = false;
+      return;
+    }
     this.isLoading = true;
     this.seniorService
       .getSeniorsForOccasion(this.data.id, homeId)
       .pipe(
-        finalize(() => (this.isLoading = false)),
+        finalize(() => {
+          if (intent === this.homeLookupIntent) this.isLoading = false;
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (res) => {
+          if (intent !== this.homeLookupIntent) return;
           this.seniors = res.data;
         },
-        error: (err) =>
+        error: (err) => {
+          if (intent !== this.homeLookupIntent) return;
           this.msgWrapper.handle(err, {
             source: 'CreateRecipientDialog',
             stage: 'onHomeSelected',
             occasionId: this.data.id,
             homeId,
-          }),
+          });
+        },
       });
   }
 

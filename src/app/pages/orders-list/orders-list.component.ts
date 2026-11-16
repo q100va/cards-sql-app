@@ -84,6 +84,7 @@ export class OrdersListComponent {
   userId: number | null = null;
 
   isLoading = signal<boolean>(false);
+  private pageRequestIntent = 0;
   totalRecords = 0;
   occasionId!: number;
   occasion!: Occasion;
@@ -131,6 +132,7 @@ export class OrdersListComponent {
   }
 
   loadOrders(event: TableLazyLoadEvent): void {
+    const intent = ++this.pageRequestIntent;
     //const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
     //if (!this.userId) return;
     this.filters = this.normalizePrimeFilters(event.filters);
@@ -148,11 +150,14 @@ export class OrdersListComponent {
     this.orderService
       .getOrders(query)
       .pipe(
-        finalize(() => this.isLoading.set(false)),
+        finalize(() => {
+          if (intent === this.pageRequestIntent) this.isLoading.set(false);
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (res) => {
+          if (intent !== this.pageRequestIntent) return;
           this.orders = res.data.list;
           this.totalRecords = res.data.length;
           this.rawUserOptions$.next(res.data.options.users);
@@ -160,12 +165,14 @@ export class OrdersListComponent {
           this.rawSourceOptions$.next(res.data.options.sources);
           this.rawOccasionNodes$.next(res.data.options.nodes);
         },
-        error: (err) =>
+        error: (err) => {
+          if (intent !== this.pageRequestIntent) return;
           this.msgWrapper.handle(err, {
             source: 'OrdersList',
             stage: 'getOrdersByOccasion',
             query,
-          }),
+          });
+        },
       });
   }
 

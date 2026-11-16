@@ -2,8 +2,9 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subject, merge, of } from 'rxjs';
+import { EMPTY, Observable, Subject, merge, of } from 'rxjs';
 import {
+  catchError,
   map,
   scan,
   debounceTime,
@@ -222,7 +223,14 @@ export class AuditTableComponent {
               limit: p.size,
               offset: p.index * p.size, // ← correct offset always (0 after filters change)
             })
-            .pipe(finalize(() => this.setLoadingSoft(false)))
+            .pipe(
+              // Settle this request's error without terminating future paging/filter events.
+              catchError((err: unknown) => {
+                this.msgWrapper.handle(err);
+                return EMPTY;
+              }),
+              finalize(() => this.setLoadingSoft(false))
+            )
         ),
         takeUntilDestroyed(this.destroyRef)
       )
