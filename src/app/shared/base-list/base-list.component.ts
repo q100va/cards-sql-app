@@ -3,6 +3,7 @@ import {
   Component,
   ViewChild,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -386,9 +387,6 @@ export class BaseListComponent {
     // Address as a single string
     if (this.addressStringValue()) pieces.push(this.addressStringValue());
 
-    // Emit snapshot for parent listeners
-    this.allFilterParametersChange.emit(ap);
-
     return pieces.join(', ');
   });
 
@@ -454,6 +452,9 @@ export class BaseListComponent {
         });
         this.addressStringValue.set(qp['addressFilterString'] || '');
       });
+
+    // Query publication must not depend on reading the display summary.
+    effect(() => this.allFilterParametersChange.emit(this.allFilterParameters()));
   }
 
   ngOnInit(): void {

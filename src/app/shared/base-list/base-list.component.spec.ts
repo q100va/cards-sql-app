@@ -82,4 +82,17 @@ describe('BaseListComponent summary and query publication', () => {
       });
     }
   });
+
+  it('publishes the cleared query once without reading the summary', () => {
+    const emptyQuery = component.allFilterParameters();
+    component.filterValue.set({ ...createEmptyGeneralFilter(), hasCoordination: true });
+    settle();
+    snapshots.length = 0;
+
+    component.filterValue.set(createEmptyGeneralFilter());
+    settle();
+    expect(snapshots).toEqual([emptyQuery]);
+    settle();
+    expect(snapshots).toEqual([emptyQuery]);
+  });
 });

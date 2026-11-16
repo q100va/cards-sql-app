@@ -130,4 +130,22 @@ describe('TableComponent BaseList summary/query boundary', () => {
     settle();
     expectNoListRequests();
   });
+
+  it('sends one startup request with the configured address and initial view filters', () => {
+    fixture = TestBed.createComponent(TableComponent);
+    component = fixture.componentInstance;
+    const config = new HomesListComponent();
+    fixture.componentRef.setInput('kind', 'home');
+    fixture.componentRef.setInput('params', config.params);
+    fixture.componentRef.setInput('ownerDialogConfig', config.homeDialogConfig);
+    settle();
+
+    const request = http.expectOne(url);
+    expect(request.request.body.page).toEqual({ size: 5, number: 0 });
+    expect(request.request.body.view.option).toBe('only-active');
+    expect(request.request.body.filters.address).toEqual({ countries: [143] });
+    request.flush(response);
+    settle();
+    expectNoListRequests();
+  });
 });
