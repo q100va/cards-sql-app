@@ -1,4 +1,3 @@
-// src/app/pages/users-list/users-list.component.ts
 import {
   Component,
   DestroyRef,
@@ -166,15 +165,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   private readonly msg = inject(MessageWrapperService);
   readonly dialog = inject(MatDialog);
   readonly dateUtils = inject(DateUtilsService);
-  protected service!: OwnerMainService<
-    OwnerByKind<K>,
-    OwnerDraftByKind<K>,
-    ChangingByKind<K>,
-    RestoringByKind<K>,
-    OutdatingByKind<K>,
-    DeletingByKind<K>,
-    ListDto<K>
-  >;
   protected readonly userService = inject(UserService) as OwnerMainService<
     User,
     UserDraft,

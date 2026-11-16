@@ -27,7 +27,6 @@ import {
   PartnerMainService,
 } from '../../services/partner.service';
 import { HomeService, HomeMainService } from '../../services/home.service';
-import { DateUtilsService } from '../../services/date-utils.service';
 import {
   coordinationNameControlSchema,
   OutdatedFullName,
@@ -108,7 +107,6 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
         new FormControl<RelationPick | null>(
           { value: null, disabled: true },
           {
-          //  nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
           }
         )
@@ -190,7 +188,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.partnerActive.set(!this.existingOwner?.isRestricted);
   }
 
-  // View-mode: disable institutes controls
+  // View mode: disable coordination controls.
   protected override changeToViewMode(
     addressParams: DefaultAddressParams | null
   ) {
@@ -198,7 +196,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     this.updateCoordinationsControlsValidity(false);
   }
 
-  // Edit-mode: enable institutes controls
+  // Edit mode: enable coordination controls.
   override onEditClick() {
     super.onEditClick();
     this.updateCoordinationsControlsValidity(true);
@@ -241,11 +239,6 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     if (original.length !== current.length) return true;
 
     // content differs -> changed
-    /*      console.log(
-        'JSON.stringify((original)) === JSON.stringify((current))',
-        JSON.stringify((original)),JSON.stringify((current)),
-        JSON.stringify((original)) === JSON.stringify((current))
-      ); */
 
     return !(JSON.stringify(original) === JSON.stringify(current));
   }
@@ -276,69 +269,7 @@ export class PartnerDetailsComponent extends AdvancedDetailsComponent<'partner'>
     }
 
     this.deleteFromOutdatedDataDraft('coordinations', data.id);
-    //this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
 
-/*     override async correctRestoringData() {
-    super.correctRestoringData();
-
-    // Addresses
-    if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.ownerService.corrAddress(
-        this.restoringDataDraft.addresses,
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft.draftAddress,
-        this.existingOwner!.outdatedData.addresses
-      );
-      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
-      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
-    }
-
-  } */
-
-/*     override async checkOutdatedDataDuplicates() {
-    const address = await this.ownerService.checkAddress(
-      this.outdatedDataDraft.addresses,
-      this.ownerDraft.draftAddress
-    );
-    if (!address.restoringId) return false;
-    if (address.restoringId > -1) {
-      this.restoringDataDraft.addresses ??= [];
-      this.restoringDataDraft.addresses.push(address.restoringId);
-    }
-
-    return await super.checkOutdatedDataDuplicates();
-  }
- */
-/*   override async checkAllChanges() {
-    const address = await this.ownerService.diffAddress(
-      this.existingOwner!,
-      this.ownerDraft,
-      this.restoringDataDraft.addresses == null
-        ? null
-        : this.restoringDataDraft.addresses![0]
-    );
-    if (address.changes) this.changingData.address = address.changes;
-    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
-    if (address.deletingId) {
-      this.deletingDataDraft.addresses ??= [];
-      this.deletingDataDraft.addresses.push(address.deletingId);
-    }
-
-    const coordinations = await this.ownerDiffService.diffCoordinations(
-      this.kind,
-      this.existingOwner!.coordinations,
-      this.ownerDraft.draftCoordinations ?? [],
-      this.restoringDataDraft.coordinations ?? [],
-      this.existingOwner!.outdatedData.coordinations ?? []
-    );
-    if (coordinations.changes)
-      this.changingData.coordinations = coordinations.changes;
-    if (coordinations.outdating)
-      this.outdatingData.coordinations = coordinations.outdating;
-    if (coordinations.deleting)
-      this.deletingDataDraft.coordinations = coordinations.deleting;
-    return await super.checkAllChanges();
-  } */
 }

@@ -1,4 +1,3 @@
-// src/app/shared/base-list/base-list.component.ts
 import {
   Component,
   ViewChild,
@@ -17,7 +16,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -38,7 +36,6 @@ import { TableFilterComponent } from '../table-filter/table-filter.component';
 import {
   DefaultAddressParams,
   AddressFilter,
-  typedKeys,
 } from '../../interfaces/toponym';
 import {
   ColumnDefinition,
@@ -56,8 +53,6 @@ import {
   PermissionSet,
 } from './base-list-component-registry';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ContactType, RelationPick } from '../../interfaces/advanced-model';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-base-list',
@@ -90,7 +85,6 @@ export class BaseListComponent {
   private readonly translate = inject(TranslateService);
   private readonly dateUtils = inject(DateUtilsService);
   private readonly destroyRef = inject(DestroyRef);
-  readonly dialog = inject(MatDialog);
 
   @ViewChild(TableFilterComponent) tableFilterComponent!: TableFilterComponent;
 
@@ -171,7 +165,6 @@ export class BaseListComponent {
 
     // View option label
 
-
     const vo = this.params().viewOptions.find(
       (v) => v.id === ap.viewOption,
     )?.name;
@@ -182,24 +175,16 @@ export class BaseListComponent {
     )?.name;
     if (vho && this.params().componentType === 'seniorList')
       pieces.push(
-        /* this.translate.instant('BASE_LIST.FROM_LABEL') + */
         this.translate.instant(vho) +
           (vho !== 'HOME.VIEW_OPTIONS.ALL'
             ? this.translate.instant('BASE_LIST.HOMES_LABEL')
             : ''),
       );
 
-    /*     const vo = ap.viewOption.map((v) =>
-      this.translate.instant(
-        this.params().viewOptions.find((i) => i.id === v)!.name,
-      ),
-    ); */
-
     if (ap.searchValue) pieces.push(ap.searchValue);
 
     // GeneralFilter
     const gf: GeneralFilter = ap.filter;
-
 
     if (gf.birthDate.dayRange.length) {
       pieces.push(
@@ -421,8 +406,6 @@ export class BaseListComponent {
     },
   ];
 
-  //prevViewOptionsValue: string[] = ['active'];
-
   constructor() {
     // Init address defaults from query params
     this.route.queryParams
@@ -435,7 +418,6 @@ export class BaseListComponent {
           countryId: qp['countryId'] ? +qp['countryId'] : null,
         };
         this.filterBadgeValue = qp['countryId'] ? 1 : 0;
-        // this.showSpinner = (qp['countryId'] ? true : false);
         this.addressFilterValue.set({
           countries: this.defaultAddressParams.countryId
             ? [this.defaultAddressParams.countryId]
@@ -466,8 +448,6 @@ export class BaseListComponent {
 
     this.homeViewCtrl.valueChanges
       .pipe(
-        //debounceTime(250), // ← задержка (подбери 200–300мс)
-        //distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((value) => {
@@ -483,8 +463,6 @@ export class BaseListComponent {
 
     this.viewCtrl.valueChanges
       .pipe(
-        //debounceTime(250), // ← задержка (подбери 200–300мс)
-        //distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((value) => {
@@ -511,10 +489,6 @@ export class BaseListComponent {
   }
 
   // View option
-  /*
-  onChangeViewSelection(option: string): void {
-    this.selectedViewOptionId.set(option);
-  } */
 
   // Search
   onSearchEnter(event: Event): void {

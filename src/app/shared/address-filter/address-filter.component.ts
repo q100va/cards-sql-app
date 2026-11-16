@@ -30,7 +30,6 @@ import {
 } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  AddressKey,
   ToponymListMap,
   ToponymType,
   typedKeys,
@@ -99,7 +98,6 @@ export class AddressFilterComponent {
     this.addControl('region', this.params().source === 'toponymCard', true);
     this.addControl('district', this.params().source === 'toponymCard', true);
     this.addControl('locality', false, true);
-
 
     if (this.params().readonly) this.form.get('country')?.disable();
 

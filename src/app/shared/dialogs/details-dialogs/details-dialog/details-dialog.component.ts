@@ -142,7 +142,6 @@ export class DetailsDialogComponent<T extends BaseModel>
     this.getChild().onCancelClick();
   }
 
-  // Close dialog; map true → null name per current semantics
   private closeDialog(data: string | boolean) {
     this.dialogRef.close({ refresh: !!data });
   }

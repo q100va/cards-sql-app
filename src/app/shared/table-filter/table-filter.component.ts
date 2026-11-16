@@ -1,4 +1,3 @@
-// src/app/shared/table-filter/table-filter.component.ts
 import {
   Component,
   DestroyRef,
@@ -58,7 +57,6 @@ import { PARTNER_AFFILIATION_OPTIONS } from '../../../../shared/constants/partne
 import { HomeService } from '../../services/home.service';
 import {
   debounceTime,
-  distinctUntilChanged,
   map,
   pairwise,
   startWith,
@@ -403,9 +401,6 @@ export class TableFilterComponent implements OnInit {
           next: (res) => {
             this.homesList = res;
             this.upgradeActiveHomesList();
-            /* this.accessibleHomesList = res.filter(
-              (h) => h.isRestricted !== false,
-            ); */
           },
           error: (err) =>
             this.msgWrapper.handle(err, {
@@ -476,18 +471,6 @@ export class TableFilterComponent implements OnInit {
       ];
     }
 
-    /*     this.form.valueChanges
-      .pipe(
-        startWith(this.form.getRawValue()), // чтобы отработало и на старте
-        debounceTime(150),
-        map(() => this.form.getRawValue()),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((v) => {
-        // здесь значение уже “истинное”, без бага второго клика
-        this.emitSelectedFilters(v);
-      }); */
 
     this.form.valueChanges
       .pipe(
@@ -507,7 +490,6 @@ export class TableFilterComponent implements OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    // if (changes['viewOption']) this.upgradeActiveHomesList();
     if (changes['includeOutdatedOption']) {
       this.upgradeActiveHomesList();
       this.upgradeActivePartnersList();
@@ -528,7 +510,6 @@ export class TableFilterComponent implements OnInit {
 
   readonly hasDetails = () => {
     const isChosen = (v: unknown): v is boolean => v === true || v === false;
-    //const hasCoordination = this.form.controls.hasCoordination.value;
     const { hasCoordination, hasInstitute, hasSubscription, hasCooperation } =
       this.form.controls;
     return (
@@ -696,13 +677,11 @@ export class TableFilterComponent implements OnInit {
 
   // Build/emit current filter state
   private getRange(
-    start: Date | null, //keyof FilterForm['controls'],
-    end: Date | null, //keyof FilterForm['controls'],
+    start: Date | null,
+    end: Date | null,
     fallbackStart?: Date,
     fallbackEnd?: Date,
   ): Date[] {
-    //const start = this.form.controls[startKey].value;
-    //const end = this.form.controls[endKey].value;
     const toDate = (d: any) =>
       typeof d?.toDate === 'function' ? d.toDate() : d;
 
@@ -748,22 +727,6 @@ export class TableFilterComponent implements OnInit {
             : true;
 
     this.lessThanTwoDetails.set(res);
-    /*
-    if (this.lessThanTwoContactTypes()) {
-      this.form.controls.strongContactFilter.setValue(false, {
-        emitEvent: false,
-      });
-    }
-    if (this.lessThanTwoToponyms()) {
-      this.form.controls.strongAddressFilter.setValue(false, {
-        emitEvent: false,
-      });
-    }
-       if (this.lessThanTwoDetails()) {
-      this.form.controls.strongDetailFilter.setValue(false, {
-        emitEvent: false,
-      });
-    } */
   }
 
   emitSelectedFilters(form: ReturnType<typeof this.form.getRawValue>) {
@@ -837,9 +800,6 @@ export class TableFilterComponent implements OnInit {
     if (filter.subscriptions.length) count++;
     if (filter.cooperations.length) count++;
     if (
-      /* filter.details.length ||
-      filter.hasCoordination === true ||
-      filter.hasCoordination === false */
       this.hasDetails()
     )
       count++;
@@ -861,7 +821,7 @@ export class TableFilterComponent implements OnInit {
     this.recomputeEnablers(filter);
     count += this.addressFilterBadgeValue();
 
-    // Emit everything atomically
+    // Emit each part of the current filter state.
     this.goToFirstPage.emit();
     this.filterBadgeValue.emit(count);
     this.filterValue.emit(filter);

@@ -1,14 +1,9 @@
-import { Component, input, output, EventEmitter, inject } from '@angular/core';
+import { Component, input, output, inject } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfirmationService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-
-/* export type RestoreDeletePayload<T extends string = string> = {
-  type: T;
-  id: number;
-}; */
 
 @Component({
   selector: 'app-outdated-item-menu',
@@ -17,9 +12,6 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   templateUrl: './outdated-item-menu.component.html',
 })
 export class OutdatedItemMenuComponent {
-  /*   typeOfData = input.required<T>();
-  itemId = input.required<number>();
- */
   confirmationService = inject(ConfirmationService);
 
   readonly restore = output<void>();

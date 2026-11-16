@@ -1,4 +1,3 @@
-// src/app/services/owner-restoration-guard.service.service.ts
 import { Injectable } from '@angular/core';
 import { DiffConfirmService } from './diff-confirm.service';
 
@@ -27,7 +26,6 @@ import {
   isFieldEqual,
   lightNormalize,
 } from '../utils/owner-ctrls';
-
 
 type CheckResult<T> =
   | { ok: true; restoring: T } // continue
@@ -116,8 +114,6 @@ export class OwnerRestorationGuardService {
     );
 
     if (!match) return { ok: true, restoring: null };
-
-
 
     const fullName =
       `${draft.firstName} ${draft.patronymic || ''} ${draft.lastName || ''}`.trim();
@@ -239,7 +235,5 @@ async checkContacts(
 
   return { ok: true, restoring };
 }
-
-
 
 }

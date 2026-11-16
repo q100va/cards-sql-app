@@ -1,6 +1,4 @@
-// src/app/shared/dialogs/details-dialogs/advances-details/advanced-details.component.ts
 import {
-  ChangeDetectorRef,
   Component,
   inject,
   signal,
@@ -21,7 +19,6 @@ import {
   OutdatedAddress,
   OutdatedFullName,
   OwnerContacts,
-  NonTelegram,
   Kind,
   User,
   UserDraft,
@@ -71,8 +68,6 @@ import {
   SeniorRestoringData,
   SeniorOutdatingData,
   SeniorDeletingData,
-  OptionalContacts,
-  UserContacts,
 } from '../../../../interfaces/advanced-model';
 import {
   INSTITUTE_CATEGORIES,
@@ -111,7 +106,6 @@ import {
   buildDuplicateInfoMessage,
   hasAddressSelectionChanges,
   hasContactChanges,
-  normalize,
 } from '../../../../utils/owner-ctrls';
 
 import {
@@ -128,12 +122,10 @@ import {
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
 import {
-  BehaviorSubject,
   debounceTime,
   finalize,
   Observable,
   of,
-  shareReplay,
 } from 'rxjs';
 import { DefaultAddressParams } from '../../../../../../shared/schemas/toponym.schema';
 import { AuthUser } from '../../../../../../shared/schemas/auth.schema';
@@ -146,9 +138,6 @@ import { reconcileOwnerRestoration } from '../../../../utils/owner-restoration-r
 import { OwnerRestorationGuardService } from '../../../../services/owner-restoration-guard.service';
 import { OwnerChangesPlannerService } from '../../../../services/owner-changes-planner.service';
 
-/* type PersonKind = Exclude<Kind, 'home'>;
-type ContactsOwner = Exclude<Kind, 'senior'>;
-type CoordinationsOwner = Extract<Kind, 'partner' | 'home'>; */
 @Component({
   selector: 'app-advanced-details',
   standalone: true,
@@ -180,7 +169,6 @@ export class AdvancedDetailsComponent<
   }
 
   private readonly contactUrl = inject(ContactUrlPipe);
-  private readonly cdr = inject(ChangeDetectorRef);
   // DI
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
@@ -197,15 +185,6 @@ export class AdvancedDetailsComponent<
   });
   declare kind: K;
   ownerDraft!: OwnerDraftByKind<K>;
-  protected service!: OwnerMainService<
-    OwnerByKind<K>,
-    OwnerDraftByKind<K>,
-    ChangingByKind<K>,
-    RestoringByKind<K>,
-    OutdatingByKind<K>,
-    DeletingByKind<K>,
-    ListDto<K>
-  >;
 
   protected readonly userService = inject(UserService) as OwnerMainService<
     User,
@@ -298,11 +277,9 @@ export class AdvancedDetailsComponent<
 
   // Data
   roles!: { id: number; name: string }[];
-  // existingOwner!: OwnerByKind<K> | null;
 
   restoringDataDraft!: RestoringByKind<K>;
   deletingDataDraft!: DeletingByKind<K>;
-  //deletingData!: DeletingByKind<K>;
   outdatedDataDraft!: OutdatedByKind<K>;
   changingData!: ChangingByKind<K>;
   outdatingData!: OutdatingByKind<K>;
@@ -320,8 +297,6 @@ export class AdvancedDetailsComponent<
   > = INSTITUTE_CATEGORIES;
 
   genders = ['male', 'female'];
-
-  //  genders = ['TABLE.NOTES.MALE', 'TABLE.NOTES.FEMALE'];
 
   action!: 'justSave' | 'saveAndExit';
 
@@ -343,13 +318,11 @@ export class AdvancedDetailsComponent<
   availableContactTypes: Exclude<ContactType, 'telegram' | 'otherContact'>[] =
     [];
 
-  // getOwner() {}
   hasOutdatedNames = signal<boolean>(false);
   hasOutdatedContacts = signal<boolean>(false);
   hasOutdatedAddresses = signal<boolean>(false);
   hasOutdatedUserNames = signal<boolean>(false);
   hasOutdatedOfficialNames = signal<boolean>(false);
-  //hasOutdatedHomes = signal<boolean>(false);
   hasOutdatedInstitutes = signal<boolean>(false);
   hasOutdatedCoordinations = signal<boolean>(false);
   hasOutdatedSubs = signal<boolean>(false);
@@ -361,8 +334,6 @@ export class AdvancedDetailsComponent<
   homeOrPartner = signal<'home' | 'partner' | 'other'>('other');
   relationPickList$: Observable<RelationPick[]> = of([]);
   spousePickList$: Observable<RelationPick[]> = of([]);
-  /*   spousePickListSubject = new BehaviorSubject<RelationPick[]>([]);
-  spousePickList$ = this.spousePickListSubject.asObservable(); */
   showRestrictedToggle = true;
 
   override ngOnInit(): void {
@@ -440,11 +411,6 @@ export class AdvancedDetailsComponent<
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'user'>>> {
     return this.kind === 'user';
-  }
-  private isPartnerContext(
-    this: AdvancedDetailsComponent<K>,
-  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'partner'>>> {
-    return this.kind === 'partner';
   }
   isHomeContext(
     this: AdvancedDetailsComponent<K>,
@@ -566,64 +532,21 @@ export class AdvancedDetailsComponent<
     formArray.removeAt(index);
     this.onChangeValidation();
   }
-  //TODO:
   deleteCoordinationControl(index: number) {
     const formArray = this.getFormArray('coordinations');
     formArray.removeAt(index);
     this.onChangeValidation();
   }
 
-  //TODO: delete ////////////////////////////////
-  /*   logInvalid(ctrl: AbstractControl, path: string = ''): void {
-    const here = path || '(root)';
-    if (
-      ctrl.invalid &&
-      (ctrl.touched || ctrl.dirty || ctrl.updateOn === 'submit')
-    ) {
-      console.groupCollapsed('❌ Invalid:', here, '=>', ctrl.errors || {});
-      console.log('errors:', ctrl.errors);
-      console.log('value:', ctrl.value);
-
-    }
-    if ((ctrl as any).controls) {
-      const controls =
-        (ctrl as FormGroup).controls ?? (ctrl as FormArray).controls;
-      for (const key of Object.keys(controls)) {
-        const child = (controls as any)[key];
-        const nextPath = Array.isArray(controls)
-          ? `${here}[${key}]`
-          : here === '(root)'
-          ? key
-          : `${here}.${key}`;
-        this.logInvalid(child, nextPath);
-      }
-    }
-  } */ /*     console.groupEnd();
-    console.log('form.errors =', this.mainForm.errors);
-    console.log('form.status =', this.mainForm.status);        // INVALID | PENDING | VALID
-console.log('form.pending =', this.mainForm.pending);      // true/false*/
-  /////////////////////////////////////////////////
-
   // Enable/disable Save button
   override checkIsSaveDisabled(): void {
-    /*     const isQualified =
-      this.kind === 'user' ||
-      this.kind === 'partner' ||
-      this.kind === 'volunteer' ||
-      this.kind === 'home'; */
-    // this.logInvalid(this.mainForm); //TODO: delete
     const disabled =
-      !this.mainForm.valid || //isQualified &&
+      !this.mainForm.valid ||
       (!this.changesSignal() &&
         !this.deletingSignal() &&
         this.data().operation === 'view-edit');
 
 
-    const controls = this.mainForm.controls;
-    for (const name of Object.keys(controls)) {
-      const c = controls[name];
-      // console.log('CONTROL', name, 'status:', c.status, 'errors:', c.errors);
-    }
 
     this.IsSaveDisabledSignal.set(disabled);
     this.emittedIsSaveDisabled.emit(disabled);
@@ -724,10 +647,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         if ('names' in this.outdatedDataDraft && restoredValue) {
           this.outdatedDataDraft.names.push(restoredValue);
 
-          //  this.restoringDataDraft.names = [];
         }
       }
-      //  }
 
       this.restoringDataDraft.names = [data.id];
 
@@ -736,13 +657,11 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         patronymic: data.patronymic,
         lastName: data.lastName,
       });
-      //восстанавливаемые значения удаляем из outdatingDataDraft
       this.deleteFromOutdatedDataDraft(
         'names' as unknown as keyof OutdatedByKind<K>,
         data.id,
       );
 
-      // this.updateControlsValidity(this.controlsNames, true);//TODO: точно ли надо?
       this.onChangeValidation();
     }
   }
@@ -766,9 +685,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       | 'institutes'
       | 'addresses'
       | 'contacts',
-    //keyof RestoringByKind<K>,
     data: Contact | OutdatedAddress | OutdatedHomeAddress,
-    //  | OutdatedHome,
     contactType?: Exclude<ContactType, 'telegram'>,
   ) {
     //восстанавливаемое значение присваиваем соответветствующему form.control,
@@ -794,9 +711,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
 
-    //для этих типов восстановить можно только одно значение,
-    //поэтому проверяем, были ли уже восстановленные значения,
-    //если были, то удаляем их их restoringDataDraft и помещаем в outdatingDataDraft
+    // Only one address can be selected for restoration.
+    // Return the previous selection to working history before replacing it.
     if (
       type === 'addresses' &&
       'addresses' in this.restoringDataDraft &&
@@ -811,9 +727,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         );
         if (restoredValue)
           (this.outdatedDataDraft.addresses as any[]).push(restoredValue);
-        //this.restoringDataDraft.addresses = [];
       }
-      //  }
       this.restoringDataDraft.addresses = [data.id];
 
       if ('country' in data) {
@@ -829,7 +743,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
 
-    //восстанавливаемые значения удаляем из outdatingDataDraft
     this.deleteFromOutdatedDataDraft(
       type as unknown as keyof OutdatedByKind<K>,
       data.id,
@@ -839,7 +752,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.onChangeValidation();
   }
   onDeleteOutdatedData(
-    type: // | keyof DeletingByKind<K>
+    type:
       | 'names'
       | 'userNames'
       | 'officialNames'
@@ -993,7 +906,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             kind: this.kind,
             owner: this.ownerDraft,
           });
-          return of(null);
         },
       });
   }
@@ -1030,8 +942,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.outdatedDataDraft = history;
   }
 
-  //если введенные данные совпадают с outdatingDataDraft данными,
-  //то добавляем их с согласия пользователя в restoringDataDraft
+  // Matching working-history values require confirmation before restoration.
   async checkOutdatedDataDuplicates(intent = this.saveIntent) {
     if (!this.isCurrentSaveIntent(intent)) return false;
     // Addresses
@@ -1179,10 +1090,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
   async checkAllChanges(intent = this.saveIntent) {
     if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
-    /*  this.deletingData = structuredClone(this.deletingDataDraft); //clone deleting data in case saving cancellation
-        const restoringData: RestoringByKind<K> = structuredClone(
-      this.restoringDataDraft,
-    ); */
 
     // Addresses
 
@@ -1330,7 +1237,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
     if (this.isVolunteerContext()) {
-      const { changes, outdating, deleting } =
+      const { changes, deleting } =
         await this.ownerChangesPlannerService.diffSubs(
           this.existingOwner!.subscriptions ?? [],
           this.ownerDraft.draftSubscriptions ?? [],
@@ -1392,8 +1299,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             this.invalidateSaveIntent();
             this.closeDialogDataSignal.set(res.data);
             this.emittedCloseDialogData.emit(res.data);
-          } else {
-            // keep dialog open, could re-load owner data if needed
           }
         },
         error: (err) => {
@@ -1414,7 +1319,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.setOutdatingData();
   }
 
-  // View-mode: set outdated data
   protected override changeToViewMode(
     addressParams: DefaultAddressParams | null,
   ) {
@@ -1448,7 +1352,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           if (this.action === 'saveAndExit') {
             this.emitShowSpinner(false);
             this.invalidateSaveIntent();
-            this.closeDialogDataSignal.set('close'); //TODO: change?
+            this.closeDialogDataSignal.set('close');
             this.emittedCloseDialogData.emit('close');
             return;
           }
@@ -1471,16 +1375,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               ? res.data.address.country.id
               : null,
           };
-          // this.existingOwner = this.data().object;
           if (this.existingOwner) {
             this.outdatedDataDraft = structuredClone(
               this.existingOwner!.outdatedData,
             ) as OutdatedByKind<K>;
           }
 
-
           this.setHasOutdatedUserNames();
-          //this.setHasOutdatedHomes();
           this.setHasOutdatedNames();
           this.setHasOutdatedOfficialNames();
           this.setHasOutdatedCoordinations();
@@ -1495,7 +1396,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             'addresses' in this.outdatedDataDraft &&
               this.outdatedDataDraft.addresses.length > 0,
           );
-
 
           this.addressFilterComponent.onChangeMode(
             'view',
@@ -1531,7 +1431,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
-  // badges (for template)
+  // Owner-specific hooks and template helpers
   setEmptyOutdatedDataDraft() {}
   setRestoringDataDraft() {}
   setDeletingDataDraft() {}
@@ -1542,10 +1442,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
   hasAffiliation(): boolean {
     return false;
-  }
-  hasCoordinations(): boolean {
-    if (this.kind == 'home' || this.kind == 'partner') return true;
-    else return false;
   }
 
   hasSubscriptions(): boolean {
@@ -1564,7 +1460,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   getRowSpanForUserNames() {
     return 0;
   }
-  //TODO: doI need these funcs?
   setHasOutdatedUserNames() {}
   setHasOutdatedInstitutes() {}
   setHasOutdatedSubs() {}
@@ -1581,12 +1476,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   setHomeOpen() {}
   setPartnerActive() {}
 
-  getRowSpanForHomes() {
-    return 0;
-  }
-  getRowSpanForPartners() {
-    return 0;
-  }
   getRowSpanForInstitutes() {
     return 0;
   }
@@ -1650,10 +1539,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       ),
     );
   }
-
-  /*  get coordinationsArray(): FormArray<FormControl<RelationPick | string>> {
-    return new FormArray<FormControl<RelationPick | string>>([]);
-  } */
 
   get lastDateOfUpdate(): Date | null {
     return null;

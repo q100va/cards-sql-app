@@ -36,8 +36,7 @@ import {
   PartnerService,
   PartnerMainService,
 } from '../../services/partner.service';
-import { DateUtilsService } from '../../services/date-utils.service';
-import { combineLatest, shareReplay } from 'rxjs';
+import { shareReplay } from 'rxjs';
 import { zodValidator } from '../../utils/zod-validator';
 import { coordinationNameControlSchema } from '../../../../shared/schemas/common.schema';
 import { DefaultAddressParams } from '../../../../shared/schemas/toponym.schema';
@@ -92,9 +91,6 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       'dateOfRestriction',
       'isClose',
       'dateOfClose',
-      /*   'postalAddressPart',
-      'postalName',
-      'postalCode', */
     ];
     this.hasOutdatedOfficialNames.set(
       this.outdatedDataDraft.officialNames.length > 0,
@@ -121,7 +117,6 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
         new FormControl<RelationPick | null>(
           { value: null, disabled: true },
           {
-            // nonNullable: true,
             validators: [zodValidator(coordinationNameControlSchema)],
           },
         ),
@@ -191,7 +186,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.homeOpen.set(!this.existingOwner?.isClose);
   }
 
-  // View-mode: disable institutes controls
+  // View mode: disable coordination controls.
   protected override changeToViewMode(
     addressParams: DefaultAddressParams | null,
   ) {
@@ -199,7 +194,7 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.updateCoordinationsControlsValidity(false);
   }
 
-  // Edit-mode: enable institutes controls
+  // Edit mode: enable coordination controls.
   override onEditClick() {
     super.onEditClick();
     this.updateCoordinationsControlsValidity(true);
@@ -238,10 +233,6 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     );
   }
 
-  /*    protected override onChangeValidation() {
-    super.onChangeValidation();
-   } */
-
   private coordinationsChangeValidation(): boolean {
     const original = this.existingOwner!['coordinations'].map(
       (c: HomeCoordination) => c.partnerId,
@@ -253,19 +244,10 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
       .map((c: RelationPick) => c.id)
       .sort();
 
-    /*     let current = this.mainForm.get('coordinations')!.getRawValue() ?? [];
-    console.log('CURRENT',current)
-    if (current.length && current[0]) current = current.map((c: RelationPick) => c.id).sort();
- */
     // lengths differ -> changed
     if (original.length !== current.length) return true;
 
     // content differs -> changed
-    /*      console.log(
-          'JSON.stringify((original)) === JSON.stringify((current))',
-          JSON.stringify((original)),JSON.stringify((current)),
-          JSON.stringify((original)) === JSON.stringify((current))
-        ); */
 
     return !(JSON.stringify(original) === JSON.stringify(current));
   }
@@ -287,60 +269,6 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     this.deleteFromOutdatedDataDraft('officialNames', data.id);
     this.onChangeValidation();
   }
-
-  /*   override async correctRestoringData() {
-    super.correctRestoringData();
-
-    // Addresses
-    if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.ownerDiffService.corrHomeAddress(
-        this.restoringDataDraft.addresses,
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft,
-        this.existingOwner!.outdatedData.addresses
-      );
-      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
-      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
-    }
-
-    // Official Names
-    const dataOffNames = this.ownerDiffService.corrOfficialNames(
-      this.restoringDataDraft.officialNames ?? [],
-      this.outdatedDataDraft.officialNames ?? [],
-      this.ownerDraft.officialName ?? [],
-      this.existingOwner!.outdatedData.officialNames ?? []
-    );
-
-    this.restoringDataDraft.officialNames = structuredClone(
-      dataOffNames.restoring
-    );
-    this.outdatedDataDraft.officialNames = structuredClone(
-      dataOffNames.outdating
-    );
-  } */
-
-  /*   override async checkOutdatedDataDuplicates() {
-    const address = await this.ownerDiffService.checkHomeAddress(
-      this.outdatedDataDraft.addresses,
-      this.ownerDraft
-    );
-    if (!address.restoringId) return false;
-    if (address.restoringId > -1) {
-      this.restoringDataDraft.addresses ??= [];
-      this.restoringDataDraft.addresses.push(address.restoringId);
-    }
-
-    const dataOffNames = await this.ownerDiffService.checkOfficialNames(
-      this.outdatedDataDraft.officialNames,
-      this.ownerDraft.officialName
-    );
-    if (!dataOffNames.restoringId) return false;
-    if (dataOffNames.restoringId > 0) {
-      this.restoringDataDraft.officialNames ??= [];
-      this.restoringDataDraft.officialNames.push(dataOffNames.restoringId);
-    }
-    return await super.checkOutdatedDataDuplicates();
-  } */
 
   override onRestoreOutdatedCoordination(data: OutdatedCoordination) {
     this.restoringDataDraft['coordinations'] ??= [];
@@ -368,7 +296,6 @@ export class HomeDetailsComponent extends AdvancedDetailsComponent<'home'> {
     }
 
     this.deleteFromOutdatedDataDraft('coordinations', data.id);
-    // this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
 

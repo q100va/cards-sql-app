@@ -132,35 +132,6 @@ export function reconcileOwnerRestoration<K extends Kind>(
   };
 }
 
-/* function reconcileRestoringIds<TOutdated extends { id: number }>(
-  restoringIds: readonly number[],
-  outdating: readonly TOutdated[],
-  outdatedAll: readonly TOutdated[],
-  shouldRemove: (candidate: TOutdated) => boolean,
-): ReconcileResult<number[], TOutdated[]> {
-  const nextOutdating = [...outdating];
-
-  const toRemoveId = restoringIds.find((id) => {
-    const candidate = outdatedAll.find((x) => x.id === id);
-    return candidate ? shouldRemove(candidate) : false;
-  });
-
-  if (!toRemoveId) {
-    return {
-      restoring: [...restoringIds],
-      outdating: nextOutdating,
-    };
-  }
-
-  const removed = outdatedAll.find((x) => x.id === toRemoveId);
-  if (removed) nextOutdating.push(removed);
-
-  return {
-    restoring: removeId([...restoringIds], toRemoveId),
-    outdating: nextOutdating,
-  };
-} */
-
 function reconcileRestoringIds<TOutdated extends { id: number }>(
   restoringIds: readonly number[],
   outdating: readonly TOutdated[],
@@ -298,8 +269,6 @@ export function reconcileRestoredContacts(
   const nextRestoring: ContactsByType<Contact> = { ...restoring };
   const nextOutdating: ContactsByType<Contact> = { ...outdating };
 
-  const removedTypes: NonTelegram[] = [];
-
   for (const [type, contacts] of Object.entries(restoring) as [
     NonTelegram,
     Contact[],
@@ -312,7 +281,6 @@ export function reconcileRestoredContacts(
     if (ownerContacts.length === 0) {
       nextOutdating[type] = [...(nextOutdating[type] ?? []), ...contacts];
       delete nextRestoring[type];
-      removedTypes.push(type);
       continue;
     }
 
@@ -327,7 +295,6 @@ export function reconcileRestoredContacts(
     );
     if (nextRestoring[type]?.length === 0) {
       delete nextRestoring[type];
-      removedTypes.push(type);
     }
   }
 

@@ -1,4 +1,3 @@
-//src\app\utils\owner-ctrls.ts
 import type { Contact } from '../interfaces/advanced-model';
 import type { AddressKey } from '../interfaces/toponym';
 

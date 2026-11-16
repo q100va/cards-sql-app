@@ -33,7 +33,6 @@ import { BaseModel } from '../../../../interfaces/base-model';
 import { MessageWrapperService } from '../../../../services/message.service';
 import { AddressService } from '../../../../services/address.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { startWith } from 'rxjs';
 
 @Component({
   selector: 'app-base-details',
@@ -70,7 +69,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
   protected readonly msgWrapper = inject(MessageWrapperService);
   readonly translateService = inject(TranslateService);
 
-  // Input data (as a signal from parent wrapper)
   data = input.required<DialogData<T>>();
 
   // Address filter state
@@ -83,7 +81,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
   });
   invalidAddressFilter = true;
 
-  // Outputs as signals (parent bridges them)
+  // Angular outputs; the host reads the separate state signals below.
   readonly emittedIsEditMode = output<boolean>();
   readonly emittedChanges = output<boolean>();
   readonly emittedIsSaveDisabled = output<boolean>();
@@ -128,7 +126,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
     // cache control names for quick loops
     this.controlsNames = this.data().controls.map((c) => c.controlName);
-    //console.log('controlsNames ', this.controlsNames);
 
     // init values by mode
     if (this.object) {
@@ -139,7 +136,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
       // country form starts enabled
       this.updateControlsValidity(this.controlsNames, true);
     }
-    // console.log('ngOnInit ', this.addressFilter());
   }
 
   // Hook for specific components to implement
@@ -147,7 +143,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Build reactive form from declarative controls config
   protected createFormGroup(controls: Control[], controlsDisable: boolean) {
-   // console.log('controls', controls);
     for (const control of controls) {
       if (control.formType == 'formControl') {
         this.mainForm.addControl(
@@ -207,7 +202,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
     this.setInitialValues('edit');
     this.updateControlsValidity(this.controlsNames, true);
     this.addressFilterComponent.onChangeMode('edit', null);
-    //console.log('onEditClick ', this.addressFilter());
   }
 
   // Switch to view mode (with confirm if there are changes)
@@ -246,9 +240,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
   onCancelClick() {
     const intent = this.saveIntent;
     if (!this.isCurrentSaveIntent(intent)) return;
-    /*     console.log('this.changesSignal()', this.changesSignal());
-    console.log('this.deletingSignal()', this.deletingSignal());
-    console.log('this.data().operation', this.data().operation); */
     if (
       ((this.changesSignal() || this.deletingSignal()) &&
         this.isEditModeSignal()) ||
@@ -285,17 +276,11 @@ export class BaseDetailsComponent<T extends BaseModel> {
 
   // Recalculate `changes` + save-disabled
   protected onChangeValidation() {
-    // console.log('onChangeValidation');
 
     if (this.data().operation == 'view-edit') {
       this.changesSignal.set(false);
 
       for (const controlName of this.controlsNames) {
-       /*  console.log(
-          'onChangeValidation',
-          controlName,
-          controlName in this.object!,
-        ); */
         if (
           controlName != 'password' &&
           !isContactType(controlName) &&
@@ -303,8 +288,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
         ) {
           const newVal = this.mainForm.controls[controlName].value;
           const oldVal = this.object![controlName];
-         // console.log('newVal', controlName, newVal);
-         // console.log('oldVal', controlName, oldVal);
           const isNbspToNull = newVal === '\u00A0' && oldVal === null;
           if (newVal != oldVal && !isNbspToNull) {
             this.changesSignal.set(true);
@@ -314,9 +297,7 @@ export class BaseDetailsComponent<T extends BaseModel> {
       }
 
       if (!this.changesSignal()) {
-        // let specific component add extra dirty rules (address filter, etc.)
         this.changesSignal.set(this.additionalValidationHooks());
-        //   console.log('this.changesSignal()', this.changesSignal());
       }
 
       this.emittedChanges.emit(this.changesSignal());
@@ -347,7 +328,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
     enable: boolean,
   ) {
     for (const control of controlsToUpdate) {
-      // console.log('control', control);
       if(control == 'nursingHome') continue;
       enable
         ? this.mainForm.controls[control].enable()
@@ -365,7 +345,6 @@ export class BaseDetailsComponent<T extends BaseModel> {
         this.mainForm.controls[controlName].setValue('password123');
       if (hasKey(this.object!, controlName)) {
         const v = this.object![controlName];
-        //console.log(controlName, this.object![controlName]);
         this.mainForm.controls[controlName].setValue(
           mode === 'view' && v === null ? '\u00A0' : v,
         );

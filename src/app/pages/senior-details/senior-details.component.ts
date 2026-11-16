@@ -27,7 +27,6 @@ import { HomeService, HomeMainService } from '../../services/home.service';
 import { OutdatedFullName } from '../../../../shared/schemas/common.schema';
 import { BehaviorSubject, of, shareReplay, switchMap } from 'rxjs';
 import { RelationPick } from '../../interfaces/advanced-model';
-import { DateUtilsService } from '../../services/date-utils.service';
 
 @Component({
   selector: 'app-senior-details',
@@ -107,7 +106,7 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
       'spouseId',
     ];
     this.showRestrictedToggle = !this.existingOwner?.dateOfExit;
-    this.setHasOutdatedNames(); //hasOutdatedNames.set(this.outdatedDataDraft.names.length > 0);
+    this.setHasOutdatedNames();
   }
 
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
@@ -195,32 +194,4 @@ export class SeniorDetailsComponent extends AdvancedDetailsComponent<'senior'> {
     return !(original === current);
   }
 
-  /*
-  override updateAddressFilter(home: RelationPick | null) {
-    this.mainForm.get('spouse')?.enable();
-    console.log('home', home);
-    if (home === null) {
-      // this.spousePickList$ = of([]);
-      this.spousePickListSubject.next([]);
-      this.addressFilterComponent.onChangeMode('view', {
-        countryId: null,
-        regionId: null,
-        districtId: null,
-        localityId: null,
-      });
-    } else {
-      this.seniorService.getSeniorsPickList(home.id).subscribe((list) => {
-        this.spousePickListSubject.next(list);
-      });
-      console.log('this.spousePickList$', this.spousePickList$);
-
-
-      this.addressFilterComponent.onChangeMode('view', {
-        countryId: home.countryId!,
-        regionId: home.regionId!,
-        districtId: home.districtId!,
-        localityId: home.localityId!,
-      });
-    }
-  } */
 }
