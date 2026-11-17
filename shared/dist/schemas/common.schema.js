@@ -197,6 +197,7 @@ export const outdatedAddressItemSchema = z
     isRecoverable: z.boolean(),
 })
     .strict();
+export const coordinationNameControlSchema = z.object({ id: positiveInt, name: z.string().min(1) }, { error: 'FORM_VALIDATION.REQUIRED' });
 /* ===================== DTO ===================== */
 export const duplicatesSchema = z
     .object({

@@ -1,242 +1,160 @@
-# CardsSqlApp - Greeting Cards Management App
+# CardsSqlApp — Greeting Cards Management App
 
-**cards-sql-app** is a full-stack web application built *pro bono* for the charity foundation **“Starost v radost”** (Moscow, Russia).  
-It supports the program **“Grandchildren by Correspondence: Send a Greeting Card,”** which enables volunteers to send birthday and holiday cards to nursing home residents.  
-The application manages data about nursing homes, residents, volunteers, and staff, assigns greeting card requests to participants, and tracks confirmation and coverage.  
-Reports provide insights into the number of requests, participants, and residents who received greetings.  
+A full-stack web application developed for **Starost v radost**, a charitable foundation in Moscow, Russia. It supports the **Grandchildren by Correspondence: Send a Greeting Card** program, which connects volunteers with nursing-home residents through birthday and holiday greetings.
 
-**Status:** Active, in development (pro bono)  
+The application helps staff coordinate requests, manage resident and volunteer information, track confirmations, and identify residents who still need a greeting. Reporting tools provide visibility into participation and coverage.
 
----
+> **Project status:** Actively maintained. The frontend Phase 7 audit, cleanup, and regression review was completed in November 2026.
+>
+> **Privacy:** This is an application that handles sensitive personal information. Public repositories, screenshots, test data, and demos must use synthetic or appropriately anonymized data only.
 
-## 🔗 Live Demo
-- Frontend:  
-- API base URL:  
-- Test user:  
+## Features
 
-⚠️ Do **not** publish real PII or production credentials in this repo. Use demo data only.
+- **Resident and nursing-home management:** Maintain resident records, nursing homes, and associated contacts.
+- **Volunteer and staff workflows:** Manage participants and coordinate greeting-card activities.
+- **Request assignment and tracking:** Assign resident greeting requests to volunteers and track progress and confirmations.
+- **Coverage monitoring:** Review lists and reports to help identify residents who have not yet been assigned or confirmed.
+- **Reporting and exports:** Generate operational reports and export data for authorized workflows.
+- **Search and data navigation:** Filter, sort, and paginate records to support larger datasets.
+- **Authentication and authorization:** Session-based JWT authentication with server-enforced role and permission checks.
+- **Multilingual interface:** Russian and English UI support.
+- **Responsive interface:** Workflows designed for desktop and smaller screens.
+- **Auditability and diagnostics:** Audit logging, structured application logs, and consistent API error handling.
 
----
+## Tech Stack
 
-## 📸 Screenshots
-- Dashboard  
-- Resident profile  
-- Request assignment flow  
-- Reports  
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Angular, TypeScript, RxJS, Angular Material, PrimeNG, HTML, CSS |
+| Backend | Node.js, Express, REST APIs |
+| Database | PostgreSQL, Sequelize ORM |
+| Validation and security | Zod, JWT sessions, role-based access control (RBAC) |
+| Logging | Pino, structured error handling, request correlation |
+| Frontend testing | Jasmine, Karma, Cypress |
+| Backend testing | Jest, Supertest |
+| Collaboration and tooling | Git, GitHub |
 
----
+The application was migrated from an earlier MongoDB-based data model to PostgreSQL, with relational schemas and API queries adapted to the application's workflows.
 
-## ✨ Features
-- Manage nursing homes and their contact persons  
-- Store and update data about residents, volunteers, and staff  
-- Create and assign requests: lists of residents to be congratulated by a specific volunteer  
-- Track confirmation status and ensure coverage of all residents  
-- Generate reports on requests, participants, and congratulated residents  
-- Provide role-based access for staff and volunteers  
-- Responsive UI for both desktop and mobile  
+## Architecture
 
-**Planned:**  
-- Authentication (JWT, sessions)  
-- Email notifications / reminders  
-- Advanced reporting & analytics
-
-**Tech Debt items:**
-- Add handling of err.fields on the frontend (automatic assignment of errors in FormGroup)
-
----
-
-## 🧰 Tech Stack
-
-**Frontend**  
-- Angular 19, TypeScript, RxJS  
-- Angular Material, PrimeNG  
-- HTML5, CSS3  
-
-**Backend**  
-- Node.js, Express  
-- PostgreSQL with Sequelize ORM  
-- Zod (validation)  
-- JWT authentication (planned)  
-- Pino (logging)  
-
-**Testing**  
-- **Backend:**  
-  - Jest (unit & integration tests)  
-  - Supertest (API testing)  
-- **Frontend:**  
-  - Jasmine + Karma (unit/component tests with Angular CLI)  
-
-**Tooling**  
-- Git, GitHub  
-- Concurrently (scripts)  
-- Nodemon  
-- Docker (planned)  
-
----
-
-## 🏗️ Architecture
+```text
+Angular UI
+    |
+    | REST / JSON
+    v
+Express API
+    |-- Authentication and permission checks
+    |-- Request validation and error handling
+    |-- Business workflows and reporting
+    |-- Structured logging and audit data
+    |
+    v
+Sequelize ORM
+    |
+    v
+PostgreSQL
 ```
-apps/
-  src/     (Angular app)
-  server/  (Express API)
-  shared/  (shared types/utils)
-```
-  
-**High level**  
-- Angular consumes REST API from Express  
-- Express uses Sequelize to access Postgres  
-- Validation layer with Zod before controllers  
-- Centralized error and logging middleware  
 
----
+The frontend communicates with the Express API. The backend performs input validation, enforces authorization, and accesses PostgreSQL through Sequelize. Shared validation and types help keep client and server contracts aligned.
 
-## 📦 API Overview
-> Full OpenAPI/Swagger spec is planned.
+## Quality and Testing
 
-**Roles**  
-- `GET /get-roles` – list roles (id, name, description)  
-- `PATCH /update-role-access` – toggle access flags for operations  
-- `DELETE /delete-role/:id` – delete role by id  
+The project includes unit, integration, API, and end-to-end tests covering business workflows, permissions, and navigation.
 
-**Users**  
-- `GET /users`, `POST /users`, `PATCH /users/:id`  
+**Frontend Phase 7 closure snapshot (November 2026):**
 
-**Operations**  
-- `GET /operations`, `PATCH /operations/:id`  
+| Check | Result |
+| --- | --- |
+| Full frontend suite | **722 / 722 passed** |
+| Critical specifications | **86 / 86 passed** |
+| Authentication checks | **29 / 29 passed** |
+| Routing checks | **33 / 33 passed** |
+| Cypress end-to-end checks | **8 / 8 passed** |
+| TypeScript, production build, diff checks | **Passed** |
 
----
+These are recorded results from the Phase 7 closure review, not live test results. Counts refer to their respective checks and should not be added together.
 
-## 🔐 Security & PII
-- Do not log PII (emails, phones) — always mask: `+1 (*** ) ***-**11`, `q***@gmail.com`.  
-- Use environment variables for secrets. Never commit `.env`.  
-- Apply server-side validation (Zod) for all input.  
-- Role-based access checks in middleware.  
+The production frontend build was under its **5 MB budget** at closure, with approximately **6.33 kB** of headroom. Existing build warnings were documented.
 
----
+**Test commands listed in the existing project documentation:**
 
-## 🪵 Logging & Error Handling
-- Centralized logger (Pino)  
-- Levels: error, warn, info, debug  
-- Retention: delete logs older than 180 days  
-- Structured errors via middleware → consistent JSON shape  
-
----
-
-## 🗄️ Database
-- PostgreSQL with Sequelize  
-- Migrations via sequelize-cli  
-
-**Example env variables:**
-```bash
-DATABASE_URL=postgres://user:password@localhost:5432/cards
-
-# or split vars:
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=cards
-DB_USER=user
-DB_PASS=password
-```
-## 🧪 Testing
-
-- **Backend:**
-  - Jest (unit & integration tests)
-  - Supertest (API testing)
-
-- **Frontend:**
-  - Jasmine + Karma (unit/component tests with Angular CLI)
-
-**Run tests:**
 ```bash
 npm run test:server
-npm run test   # frontend tests with Jasmine/Karma
-```
-## 🧑‍💻 Local Development
-
-**Prerequisites**
-- Node.js 18+
-- npm or pnpm
-- PostgreSQL running locally
-
-**Environment**  
-Create `app/.env`:  
-
-**backend**  
-```bash
-PORT=3000
-NODE_ENV=development
-DATABASE_URL=...
-```
-**frontend**  
-```bash
-NG_PORT=4200  
-API_BASE_URL=http://localhost:3000
+npm test
 ```
 
-**Install & Run (monorepo-style)**  
-```bash
-npm install
-npm run build:shared
-npm run server
-npm run start
-```
-Or concurrently:  
-{  
-  "scripts": {  
-    "build:shared": "tsc -p shared/tsconfig.json --watch",  
-    "server": "nodemon ./server/app.js",  
-    "start": "ng serve --port 56379",  
-    "dev": "concurrently \"npm:build:shared\" \"npm:server\" \"npm:start\""  
-  }  
-}
+> Check the current `package.json` scripts and test runner configuration before running these commands; scripts can change as the project evolves.
 
----
+Phase 6 and Phase 7 audit, cleanup, and closure notes are maintained in the `docs/` directory.
 
-## 🚀 Deployment
-•	Frontend: Vercel/Netlify  
-•	Backend: Render/Fly.io/Heroku, or VPS  
-•	DB: Managed Postgres (Railway, Supabase, RDS)  
+## Security and Privacy
 
-**Checklist:**
-- [ ] Configure CORS
-- [ ] Set NODE_ENV=production
-- [ ] Apply DB migrations
-- [ ] Set up log retention
+- Authentication uses JWT-based sessions and access controls.
+- Backend middleware enforces authorization for protected operations.
+- Sensitive fields are masked or excluded from application logs.
+- Inputs are validated on the server; API errors use structured responses.
+- Secrets and database credentials must be supplied through environment configuration, **never committed to Git**.
+- Public documentation, screenshots, and demos must not expose real resident, volunteer, or staff information.
 
----
+## Local Development
 
-## 🗺️ Roadmap
-- [ ] Authentication & Authorization (JWT sessions, role-based access)  
-- [ ] Email notifications and reminders for volunteers  
-- [ ] Export data (CSV/Excel reports for admins)  
-- [ ] Pagination and caching for large datasets  
-- [ ] Accessibility improvements (WCAG compliance, keyboard navigation)  
-- [ ] End-to-End tests (Cypress or Playwright)  
-- [ ] Docker setup for local development and deployment  
-- [ ] Continuous Integration (GitHub Actions: lint, test, build)  
-- [ ] Continuous Deployment (auto-deploy to Vercel/Render)  
-- [ ] OpenAPI/Swagger documentation for API  
-- [ ] заменить subscribe() на Angular pipe где нужно
-- [ ] из топонимов убрать жесткую привязку к 143 
-- [ ] привести к единообразию тесты 
-- [ ] решить вопрос двуязычности с типом орг-й, affiliation
-- [ ] добавить возможность создавать дом и партнера из карточки партнера/дома
-- [ ] добавить hint к тоггл close по интернатам "коорд-я становится недействит. и не восст автоматически"
-- [ ] CREATE INDEX idx_seniors_birth_month ON "Seniors" (EXTRACT(MONTH FROM "birthDate"));
+### Prerequisites
 
+- A Node.js version compatible with the project's Angular and backend dependencies.
+- npm.
+- A PostgreSQL instance and access credentials.
 
----
+### Setup
 
-## 🤝 Contributing
-Pro bono project for the charity foundation “Starost v radost.” Contributions welcome — please open an issue or PR.
+1. Clone the repository and install dependencies:
 
----
+   ```bash
+   npm install
+   ```
 
-## 📄 License
-MIT (or specify different license if required by the foundation).
+2. Configure the backend environment using the actual environment-variable names supported by the project. For example:
 
----
+   ```dotenv
+   NODE_ENV=development
+   PORT=3000
+   DATABASE_URL=postgresql://user:password@localhost:5432/cards
+   ```
 
-## 🙌 Acknowledgements
-Thanks to the volunteers and contributors supporting this project.
+   These values are examples, **not production credentials**. Keep all local `.env` files out of version control. Configure the frontend API endpoint through the Angular configuration used by this project; do not expose secrets in the frontend bundle.
 
+3. Start the application using the scripts defined in `package.json`. The previous README listed:
+
+   ```bash
+   npm run build:shared
+   npm run server
+   npm run start
+   ```
+
+   Verify that these scripts and any required database migration commands match the current repository before using them.
+
+## Deployment
+
+The project has used **Render** for the backend and **Neon PostgreSQL** for hosted data; the frontend also has **Vercel preview deployments**. Public access details are intentionally omitted here.
+
+Production deployments should use appropriate secrets management, restricted CORS configuration, database migrations, and monitoring. Do not publish credentials or personal data as part of deployment documentation.
+
+## Roadmap
+
+The following items are potential future improvements rather than promises of currently implemented functionality:
+
+- [ ] Email notifications and reminders for volunteers.
+- [ ] Publish or expand OpenAPI/Swagger API documentation.
+- [ ] Improve automated deployment and development setup where needed.
+- [ ] Continue accessibility and usability refinements based on user feedback.
+- [ ] Track remaining technical-debt and domain-specific enhancements in repository issues or internal project documents.
+
+Implemented functionality such as JWT authentication, authorization, exports, pagination, and Cypress testing is described above rather than listed as unfinished work.
+
+## Acknowledgements
+
+Thank you to the staff and volunteers of **Starost v radost**, whose work and feedback shaped the application's requirements and day-to-day workflows.
+
+## License and Data Usage
+
+A public software license has **not been specified in this README**. Verify the repository's `LICENSE` file and any permissions required by the foundation before adding a license declaration or inviting external reuse. The application is not a source of public personal data.
