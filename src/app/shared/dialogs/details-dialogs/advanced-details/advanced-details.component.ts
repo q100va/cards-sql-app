@@ -904,7 +904,6 @@ export class AdvancedDetailsComponent<
             source: 'CreateOwnerDialog',
             stage: 'checkOwnerData',
             kind: this.kind,
-            owner: this.ownerDraft,
           });
         },
       });
@@ -1307,7 +1306,6 @@ export class AdvancedDetailsComponent<
             source: 'CreateOwnerDialog',
             stage: 'saveOwner',
             kind: this.kind,
-            owner: this.ownerDraft,
           });
         },
       });
