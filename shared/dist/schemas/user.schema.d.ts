@@ -369,11 +369,11 @@ export declare const usersQueryDTOSchema: z.ZodObject<{
     }, z.core.$strict>;
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
         field: z.ZodEnum<{
-            userName: "userName";
             name: "name";
             comment: "comment";
             isRestricted: "isRestricted";
             dateOfStart: "dateOfStart";
+            userName: "userName";
             role: "role";
         }>;
         direction: z.ZodEnum<{

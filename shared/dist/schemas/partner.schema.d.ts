@@ -312,10 +312,10 @@ export declare const partnersQueryDTOSchema: z.ZodObject<{
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
         field: z.ZodEnum<{
             name: "name";
-            affiliation: "affiliation";
             comment: "comment";
             isRestricted: "isRestricted";
             dateOfStart: "dateOfStart";
+            affiliation: "affiliation";
         }>;
         direction: z.ZodEnum<{
             asc: "asc";

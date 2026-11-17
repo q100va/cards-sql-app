@@ -13,6 +13,7 @@
       "@shared/*": ["./*"]
     }
   },
-  "include": ["schemas/**/*.ts", "constants/**/*.ts"]
+  "include":
+    ["schemas/**/*.ts", "constants/**/*.ts"]
 }
 

@@ -206,15 +206,15 @@ export declare const seniorsQueryDTOSchema: z.ZodObject<{
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
         field: z.ZodEnum<{
             name: "name";
-            regionName: "regionName";
             comment: "comment";
             dateOfStart: "dateOfStart";
-            status: "status";
-            gender: "gender";
+            regionName: "regionName";
             birthDate: "birthDate";
             dateOfConsent: "dateOfConsent";
             dateOfExit: "dateOfExit";
+            gender: "gender";
             home: "home";
+            status: "status";
         }>;
         direction: z.ZodEnum<{
             asc: "asc";

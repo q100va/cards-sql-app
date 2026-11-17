@@ -392,11 +392,11 @@ export declare const homesQueryDTOSchema: z.ZodObject<{
     sort: z.ZodOptional<z.ZodArray<z.ZodObject<{
         field: z.ZodEnum<{
             name: "name";
-            regionName: "regionName";
             comment: "comment";
             isRestricted: "isRestricted";
-            isClose: "isClose";
             dateOfStart: "dateOfStart";
+            regionName: "regionName";
+            isClose: "isClose";
             dateOfLastUpdate: "dateOfLastUpdate";
         }>;
         direction: z.ZodEnum<{
