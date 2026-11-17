@@ -1,0 +1,632 @@
+<form [formGroup]="mainForm" [class]="data().operation == 'view-edit' && !isEditModeSignal() ? 'view-mode' : 'none'">
+  <mat-tab-group animationDuration="0ms">
+
+    <!-- Main Data -->
+    <mat-tab [label]="'TABLE.CARD.MAIN_DATA_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        @for (control of data().controls; track $index) {
+        <!-- Subscription -->
+        @if (control.category=='subscription') {
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
+          <mat-slide-toggle [formControlName]="control.controlName"
+            class="small-toggle">{{'TABLE.CARD.SUBSCRIPTION_LABEL' | translate}}
+          </mat-slide-toggle>
+        </mat-grid-tile>
+
+        @if(data().operation == 'view-edit'){
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
+          <div>
+            @if(subscriptions.length){
+            <span>{{'TABLE.NOTES.SUBSCRIPTION' | translate}}:</span> <br />
+
+            @for (subscription of subscriptions; track $index) {
+
+            <div>
+              {{subscription.userFullName}} - {{subscription.userName}} <br />
+            </div>
+            } }
+          </div>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForCoops()">
+          <div>
+            @if(cooperations.length){
+            <span>{{'TABLE.NOTES.COOPERATION' | translate}}:</span> <br />
+
+            @for (cooperation of cooperations; track $index) {
+
+            <div>
+              {{cooperation.userFullName}} - {{cooperation.userName}} <br />
+            </div>
+            } }
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        @if (control.category=='mainData') {
+        @if(control.type=='inputText') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="text" matInput [formControlName]="control.controlName"
+              [placeholder]="control.placeholder | translate" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+
+        <!-- password -->
+        @if(control.type=='inputPassword') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          @if(data().operation == 'create') {
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="password" matInput [formControlName]="control.controlName" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+          }
+          @else {
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
+            (click)="onChangePasswordClick()">
+            <mat-icon>edit</mat-icon>
+            {{'TABLE.CARD.CHANGE_PASSWORD_BUTTON' | translate}}</button>
+          }
+        </mat-grid-tile>
+        }
+        <!-- role / affiliation -->
+        @if(control.type=='select') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <mat-select [formControlName]="control.controlName">
+              @if(hasRole()){
+              @for (role of roles; track $index) {
+              <mat-option [value]="role.id">{{ role.name }}</mat-option>
+              }}
+              @if(hasAffiliation()){
+              @for (affiliation of affiliations; track affiliation.id) {
+              <mat-option [value]="affiliation.id">{{ affiliation.optionKey | translate}}</mat-option>
+              }}
+              @if(isSeniorContext()){
+              @for (gender of genders; track $index) {
+              <mat-option [value]="gender">{{ (gender === 'male' ? 'TABLE.NOTES.MALE' : 'TABLE.NOTES.FEMALE') |
+                translate}}</mat-option>
+              }}
+            </mat-select>
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+
+        <!-- noAddress specialHome acceptableForSchool -->
+        @if(control.type=='toggle'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-slide-toggle [formControlName]="control.controlName" class="small-toggle">{{control.label | translate}}
+          </mat-slide-toggle>
+        </mat-grid-tile>
+        }
+        @if(control.type=='checkbox'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <div style="text-align: left; width: 100%; height: 76px; vertical-align: top;">
+            <mat-checkbox [formControlName]="control.controlName" (change)="onChangeValidation()">{{control.label |
+              translate}}</mat-checkbox>
+          </div>
+
+        </mat-grid-tile>
+        }
+
+        @if(control.type=='datePicker'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input matInput [matDatepicker]="picker" [formControlName]="control.controlName">
+            <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            @if (mainForm.controls[control.controlName].hasError('matDatepickerParse')) {
+            <mat-error class="error">{{'FORM_VALIDATION.INVALID_ISO_DATE' |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+        }
+        }
+
+        <!--dateOfLastUpdate-->
+        <!--    TODO: all list+edit+new -->
+        @if(isHomeContext()&&data().operation == 'view-edit'){
+        <mat-grid-tile colspan="6" rowspan="1">
+          <div style="text-align: left; width: 100%;">{{'HOME.CARD.UPDATE_DATE_LABEL' | translate}}: {{lastDateOfUpdate
+            ? dateUtils.transformDate(lastDateOfUpdate) : '---'}}</div>
+        </mat-grid-tile>
+        }
+
+        <!-- Blocking -->
+        @if(showRestrictedToggle){
+        <mat-grid-tile colspan="2" rowspan="1">
+          <mat-slide-toggle formControlName="isRestricted" class="small-toggle"
+            (change)="onRestrictedToggleClick()">{{'TABLE.CARD.BLOCKED_LABEL' | translate}}</mat-slide-toggle>
+        </mat-grid-tile>
+        @if (mainForm.controls['isRestricted'].value) {
+        <mat-grid-tile colspan="6" rowspan="1">
+          <mat-form-field>
+            <mat-label>{{'TABLE.CARD.CAUSE_OF_BLOCK_LABEL' | translate}}</mat-label>
+            <input type="text" matInput formControlName="causeOfRestriction"
+              [placeholder]="'TABLE.CARD.CAUSE_OF_BLOCK_PLACEHOLDER' | translate" />
+            @if (showRestrictedToggle && mainForm.controls['causeOfRestriction'].hasError('zodError')) {
+            <mat-error class="error">{{mainForm.controls['causeOfRestriction'].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile> }
+        }
+        <!-- Close -->
+        @if(hasStatus()){
+        <mat-grid-tile colspan="2" rowspan="1">
+          <mat-slide-toggle formControlName="isClose" class="small-toggle"
+            (change)="onCloseToggleClick()">{{'HOME.CARD.CLOSE_LABEL' | translate}}</mat-slide-toggle>
+        </mat-grid-tile>
+        }
+
+        @if(isSeniorContext()){
+        <mat-grid-tile colspan="3" rowspan="1">
+          <mat-form-field>
+            <mat-label>{{'SENIOR.CARD.EXIT_DATE_LABEL' | translate}}</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="dateOfExit" (dateChange)="onChangeDateOfExit()">
+            <mat-hint>{{'SENIOR.CARD.DATE_HINT' | translate}}</mat-hint>
+            <mat-datepicker-toggle matIconSuffix [for]=" picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            @if (mainForm.controls['dateOfExit'].hasError('matDatepickerParse')) {
+            <mat-error class="error">{{'FORM_VALIDATION.INVALID_ISO_DATE' |
+              translate}}</mat-error>}
+          </mat-form-field>
+        </mat-grid-tile>}
+
+      </mat-grid-list>
+    </mat-tab>
+
+    <!-- Address -->
+    <mat-tab [label]="'TABLE.CARD.ADDRESS_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+
+        <!-- Home/Address -->
+        @if(isSeniorContext()){
+        <mat-grid-tile colspan="6" rowspan="2">
+          <div style="width: 100%;">
+            <app-autocomplete-row [ctrl]="homeCtrl" [relationPickList$]="relationPickList$"
+              [label]="'TABLE.CARD.CHOOSE_HOME_LABEL'" [showDeleteButton]="data().operation == 'create'"
+              (delete)="clearHomeControl()" (selectOption)="updateAddressFilter($event)"></app-autocomplete-row>
+            @if(homeCtrl.value && typeof homeCtrl.value !== 'string'){
+            <br />
+            <div>
+              {{ homeCtrl.value.fullPostalAddress ?? '' }}
+              @if (homeCtrl.value.noAddress){ <br /><span> {{'HOME.CARD.NO_ADDRESS_LABEL' | translate}}
+                <!--    @else { {{'TABLE.HOME_CATEGORIES.WITH_ADDRESS' | translate}} } -->
+              </span>}
+              @if (homeCtrl.value.specialHome){ <br /><span>{{'HOME.CARD.SPECIAL_HOME_LABEL' | translate}} </span>}
+              @if (homeCtrl.value.acceptableForSchool){ <br /><span>{{'HOME.CARD.ACC_SCHOOL_LABEL' | translate}}
+              </span><br />}
+            </div>
+            }
+          </div>
+        </mat-grid-tile>
+        }
+
+        <mat-grid-tile colspan="6" rowspan="2">
+          <app-address-filter [params]="params" [defaultAddressParams]="data().defaultAddressParams!"
+            (addressFilter)="onChangeAddress($event)" (showSpinner)="emitShowSpinner($event)"></app-address-filter>
+        </mat-grid-tile>
+
+        <!-- PostalAddress -->
+        @for (control of data().controls; track $index) {
+        @if(control.category=='address'){
+        @if(control.type=='inputText') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="text" matInput [formControlName]="control.controlName"
+              [placeholder]="control.placeholder | translate" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+        }
+        }
+
+        @if(hasPostalAddress() && data().operation == 'view-edit' && !isEditModeSignal()){
+        <mat-grid-tile colspan="6" rowspan="1">
+          {{getPostalAddress()}}
+        </mat-grid-tile>
+        }
+
+      </mat-grid-list>
+    </mat-tab>
+
+    <!-- Contacts -->
+    @if(isContactsOwnerContext()){
+    <mat-tab [label]="'TABLE.CARD.CONTACTS_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        @for (control of data().controls; track $index) {
+        @if (control.category=='contacts') {
+        <ng-container [formArrayName]="control.controlName">
+          @for (item of getFormArray(control.controlName).controls; track $index; let j = $index) {
+          <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+            <mat-form-field>
+              <mat-label>{{control.label | translate}}</mat-label>
+              <input type="text" matInput [formControlName]="j" [placeholder]="control.placeholder | translate" />
+              @if (j>0 && (data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create')) {
+              <button matSuffix mat-icon-button [title]="'TABLE.CARD.DELETE_BUTTON_TITLE' | translate"
+                (click)="deleteContactControl(j, control.controlName) ">
+                <mat-icon>delete_outlined</mat-icon>
+              </button>
+              }
+              @if(getFormArray(control.controlName).controls[j].hasError('zodError')){
+              <mat-error class="error">{{getFormArray(control.controlName).controls[j].errors!['zodError'] |
+                translate}}</mat-error>
+              }
+            </mat-form-field>
+          </mat-grid-tile>
+          }
+        </ng-container>
+        }
+        }
+
+        <!-- Extra Contacts Button-->
+        <mat-grid-tile colspan="3" rowspan="1">
+          @if (data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create') {
+          <button mat-button [matMenuTriggerFor]="menu" [disabled]="mainForm.hasError('mainContacts')"
+            (click)="modifyContactTypesList()">{{'TABLE.CARD.EXTRA_CONTACT_BUTTON' | translate}}</button>
+          <mat-menu #menu="matMenu">
+            @for (item of availableContactTypes; track $index) {
+            <button mat-menu-item (click)="onTypeClick($index, null)">{{item}}</button>
+            }
+          </mat-menu>
+          }
+        </mat-grid-tile>
+      </mat-grid-list>
+    </mat-tab> }
+
+    <!-- Coordinations ---->
+    @if(isCoordinationsOwnerContext()){
+    <mat-tab [label]="'TABLE.CARD.COORDINATED_HOMES_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        @if(coordinationsArray.length){
+        <ng-container formArrayName="coordinations">
+          @for (ctrl of coordinationsArray.controls; track ctrl; let l = $index) {
+          <mat-grid-tile colspan="6" rowspan="1">
+            <div style="width: 100%;">
+
+              <app-autocomplete-row [ctrl]="ctrl" [index]="l" [relationPickList$]="relationPickList$"
+                [label]="isHomeContext() ? 'TABLE.CARD.CHOOSE_PARTNER_LABEL' : 'TABLE.CARD.CHOOSE_HOME_LABEL'"
+                [showDeleteButton]="data().operation == 'create' || isEditModeSignal()"
+                (delete)="deleteCoordinationControl($event)"></app-autocomplete-row>
+            </div>
+
+          </mat-grid-tile>
+          }
+        </ng-container>
+        }
+
+        @if(homeOpen() && partnerActive()){
+        <mat-grid-tile colspan="3" rowspan="1">
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
+            (click)="onAddCoordinationClick()">
+            <mat-icon>combine_columns</mat-icon>
+            {{'TABLE.CARD.ADD_COORDINATION_BUTTON' | translate}}</button>
+        </mat-grid-tile>
+        @if (data().operation == 'create' || isEditModeSignal()) {
+        <mat-grid-tile colspan="3" rowspan="1">
+          <mat-hint>{{'TABLE.CARD.COORDINATION_HINT' | translate}}</mat-hint>
+        </mat-grid-tile>
+        }
+        }
+      </mat-grid-list>
+    </mat-tab>
+    }
+
+    <!-- Institutes ---->
+    @if(hasInstitutes()){
+    <mat-tab [label]="'TABLE.CARD.INSTITUTES_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        @if(institutesArray.length){
+        <ng-container formArrayName="institutes">
+          @for (group of institutesArray.controls; track $index; let k = $index) {
+          <ng-container [formGroupName]="k">
+            <mat-grid-tile colspan="3" rowspan="1">
+              <mat-form-field>
+                <mat-label>{{'VOLUNTEER.CARD.INSTITUTE_NAME_LABEL' | translate}}</mat-label>
+                <input type="text" matInput formControlName="instituteName"
+                  [placeholder]="'VOLUNTEER.CARD.INSTITUTE_NAME_PLACEHOLDER' | translate" />
+                @if(group.controls.instituteName.hasError('zodError')){
+                <mat-error class="error">{{group.controls.instituteName.errors!['zodError'] |
+                  translate}}</mat-error>
+                }
+              </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile colspan="2" rowspan="1">
+              <mat-form-field>
+                <mat-label>{{'VOLUNTEER.CARD.CATEGORY_LABEL' | translate}}</mat-label>
+                <mat-select formControlName="category">
+                  @for (category of categories; track category.id) {
+                    <mat-option [value]="category.id">{{ category.optionKey | translate}}</mat-option>
+                  }
+                </mat-select>
+                @if(group.controls.category.hasError('zodError')){
+                <mat-error class="error">{{group.controls.category.errors!['zodError'] |
+                  translate}}</mat-error>
+                }
+              </mat-form-field>
+            </mat-grid-tile>
+
+            @if ((data().operation == 'view-edit' && isEditModeSignal() || data().operation == 'create')) {
+            <mat-grid-tile colspan="1" rowspan="1">
+              <button matSuffix mat-icon-button [title]="'TABLE.CARD.DELETE_BUTTON_TITLE' | translate"
+                (click)="deleteInstituteControl(k)">
+                <mat-icon>delete_outlined</mat-icon>
+              </button>
+            </mat-grid-tile>
+            }
+          </ng-container>
+          }
+        </ng-container>
+        }
+
+        <mat-grid-tile colspan="3" rowspan="1">
+          <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
+            (click)="onAddInstituteClick()">
+            <mat-icon>add_business</mat-icon>
+            {{'TABLE.CARD.ADD_INSTITUTE_BUTTON' | translate}}</button>
+        </mat-grid-tile>
+
+      </mat-grid-list>
+
+    </mat-tab>
+    }
+
+    <!-- Senior Details -->
+    @if (isSeniorContext()) {
+    <mat-tab [label]="'TABLE.CARD.SENIOR_DETAILS_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px">
+        @for (control of data().controls; track $index) {
+        @if (control.category=='details') {
+        @if(control.type=='inputText') {
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <mat-form-field>
+            <mat-label>{{control.label | translate}}</mat-label>
+            <input type="text" matInput [formControlName]="control.controlName"
+              [placeholder]="control.placeholder | translate" />
+            @if(mainForm.controls[control.controlName].hasError('zodError')){
+            <mat-error class="error">{{mainForm.controls[control.controlName].errors!['zodError'] |
+              translate}}</mat-error>
+            }
+          </mat-form-field>
+        </mat-grid-tile>
+        }
+        @if(control.type=='select'){
+        <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
+          <div style="width: 100%;">
+            <app-autocomplete-row [ctrl]="spouseCtrl" [relationPickList$]="spousePickList$"
+              [label]="'TABLE.CARD.CHOOSE_SPOUSE_LABEL'"
+              [showDeleteButton]="data().operation == 'create'  || isEditModeSignal()"
+              (delete)="clearSpouseControl()"></app-autocomplete-row>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        }
+      </mat-grid-list>
+    </mat-tab>
+    }
+
+    <!-- Outdated Data -->
+    @if (data().operation == 'view-edit') {
+    <mat-tab [label]="'TABLE.CARD.OUTDATED_DATA_LABEL' | translate">
+      <mat-grid-list cols="6" gutterSize="0px" rowHeight="56px">
+        <!-- Outdated Names -->
+        @if (hasOutdatedNames()) {
+        <mat-grid-tile colspan='2' [rowspan]="outdatedNames.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_NAMES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedNames; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedName(item)" (delete)="onDeleteOutdatedData('names', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">
+              {{ item.firstName }} {{ item.patronymic }} {{ item.lastName }}
+            </div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        <!-- Outdated UserNames -->
+        @if (hasOutdatedUserNames()) {
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForUserNames()">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_USER_NAMES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedUserNames; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedUserName(item)" (delete)="onDeleteOutdatedData('userNames', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.userName }}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        <!-- Outdated Official Names -->
+        @if (hasOutdatedOfficialNames()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedOfficialNames.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_HOME_OFFICIAL_NAMES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedOfficialNames; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedOfficialName(item)" (delete)="onDeleteOutdatedData('officialNames', item.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.officialName }}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        <!-- Outdated Addresses -->
+        @if (hasOutdatedAddresses()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedAddresses.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_ADDRESSES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (address of outdatedAddresses; track address.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: address.isRecoverable, isDeletable: true}"
+              (restore)="onRestoreOutdatedData('addresses', address)"
+              (delete)="onDeleteOutdatedData('addresses', address.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">
+              {{
+              address.country.name
+              + (address.region ? (', ' + address.region!.shortName) : '')
+              + (address.district ? (', ' + address.district!.shortName) : '')
+              + (address.locality ? (', ' + address.locality!.shortName) : '')
+              }}
+            </div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        <!-- Outdated Contacts -->
+        @if (hasOutdatedContacts()) {
+        <mat-grid-tile colspan="2" [rowspan]="countOutdatedContactsAmount(outdatedContacts)">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_CONTACTS_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (type of contactTypes; track type) {
+        @if (outdatedContacts[type]) {
+        @for (contact of outdatedContacts[type]; track contact.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: true}"
+              (restore)="onRestoreOutdatedData('contacts', contact, type)"
+              (delete)="onDeleteOutdatedData('contacts', contact.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">
+              {{ type + ': ' + contact.content | contactUrl:type }}
+            </div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+        }
+        }
+
+        <!-- Outdated Coordinations -->
+        @if (hasOutdatedCoordinations() && homeOrPartner()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedCoordinations.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_COORDINATIONS_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedCoordinations; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: item.isRecoverable, isDeletable: true}"
+              (restore)="onRestoreOutdatedCoordination(item)" (delete)="onDeleteOutdatedData('coordinations', item.id)">
+            </app-outdated-item-menu>
+            }
+            @if(homeOrPartner() == 'home'){
+            <div class="outdated-data">{{ item.partnerName }}</div>
+            }
+            @if(homeOrPartner() == 'partner') {
+            <div class="outdated-data">{{ item.homeName }} - {{item.regionName}}{{ item.homeStatus ? (' - ' +
+              (item.homeStatus | translate)) : '' }}</div>
+            }
+
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        <!-- Outdated Subs and Coops -->
+        @if (hasOutdatedSubs()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedSubscriptions.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_SUBSCRIPTIONS_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedSubscriptions; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: false, isDeletable: false}">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.userFullName }} - {{item.userName}}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        @if (hasOutdatedCoops()) {
+        <mat-grid-tile colspan="2" [rowspan]="outdatedCooperations.length">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_COOPERATIONS_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (item of outdatedCooperations; track item.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: false, isDeletable: false}">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ item.userFullName }} - {{item.userName}}</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+        <!-- Outdated Institutes -->
+        @if (hasOutdatedInstitutes()) {
+        <mat-grid-tile colspan="2" [rowspan]="getRowSpanForInstitutes()">
+          <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_INSTITUTES_TITLE' | translate}}</div>
+        </mat-grid-tile>
+        @for (institute of outdatedInstitutes; track institute.id) {
+        <mat-grid-tile colspan="4" rowspan="1">
+          <div class="outdated-row">
+            @if (isEditModeSignal()) {
+            <app-outdated-item-menu [params]="{isRecoverable: true, isDeletable: institute.isDeletable}"
+              (restore)="onRestoreOutdatedInstitute(institute)"
+              (delete)="onDeleteOutdatedData('institutes', institute.id)">
+            </app-outdated-item-menu>
+            }
+            <div class="outdated-data">{{ institute.instituteName }} ({{ instituteCategories[institute.category].key | translate }})</div>
+          </div>
+        </mat-grid-tile>
+        }
+        }
+
+      </mat-grid-list>
+    </mat-tab>
+    }
+  </mat-tab-group>
+</form>

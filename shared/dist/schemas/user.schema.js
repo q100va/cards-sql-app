@@ -1,0 +1,489 @@
+import { z } from 'zod';
+import { toTrim, emptyToNull, toLowerTrim, keepE164Chars, keepE164CharsNullable, nonEmptyString, nonEmptyTrim, nonEmptyTrimMax, positiveInt, nullableInt, nullableIsoDate, intOptArray, positiveIntParam, } from './common.schema.js';
+import { emailSchema, facebookSchema, instagramSchema, otherContactSchema, phoneNumberSchema, telegramIdSchema, telegramNicknameSchema, vKontakteSchema, websiteSchema, } from './common.schema.js';
+import { draftAddressSchema, addressSchema } from './common.schema.js';
+import { contactType, nonEmptyContacts, optionalContactsSchema, } from './common.schema.js';
+import { changingContactsSchema } from './common.schema.js';
+import { outdatedNameItemSchema, outdatedAddressItemSchema, } from './common.schema.js';
+/* ===================== Some Schemas for form validation ===================== */
+export const causeOfRestrictionControlSchema = z.preprocess(toTrim, z
+    .string()
+    .min(1, 'FORM_VALIDATION.REQUIRED')
+    .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+    .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' }));
+export const emailControlSchema = z
+    .preprocess(toLowerTrim, z.email({ message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT' }))
+    .superRefine((v, ctx) => {
+    if (v.length > 254)
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+    const [local] = v.split('@');
+    if (local && local.length > 64)
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+});
+export const phoneNumberControlSchema = z
+    .preprocess(keepE164Chars, z.string().min(1, 'FORM_VALIDATION.REQUIRED'))
+    .superRefine((val, ctx) => {
+    if (!val.startsWith('+')) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+        return;
+    }
+    if (val.startsWith('+7')) {
+        if (!/^\+7\d{10}$/.test(val)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+            });
+        }
+        return;
+    }
+    if (!/^\+[1-9]\d{7,14}$/.test(val)) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+    }
+});
+export const telegramIdControlSchema = z.preprocess(toTrim, z
+    .string()
+    .min(1, 'FORM_VALIDATION.REQUIRED')
+    .regex(/^#[0-9]{7,10}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT'));
+export const whatsAppControlSchema = z
+    .preprocess(keepE164CharsNullable, z.string().nullable())
+    .superRefine((val, ctx) => {
+    if (val && !val.startsWith('+')) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+        return;
+    }
+    if (val && val.startsWith('+7')) {
+        if (!/^\+7\d{10}$/.test(val)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+            });
+        }
+        return;
+    }
+    if (val && !/^\+[1-9]\d{7,14}$/.test(val)) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'FORM_VALIDATION.CONTACT.INVALID_CONTACT',
+        });
+    }
+});
+export const telegramNicknameControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^@[A-Za-z0-9_]{5,32}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const vKontakteControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9_]|(?:\.(?!\.))){3,30}[A-Za-z0-9]$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const instagramControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^[A-Za-z0-9_](?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}[A-Za-z0-9_]$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const facebookControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^[A-Za-z0-9_.]{5,}$/, 'FORM_VALIDATION.CONTACT.INVALID_CONTACT')
+    .nullable());
+export const websiteControlSchema = z.preprocess(emptyToNull, z
+    .string()
+    .regex(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i, 'Invalid website URL')
+    .nullable());
+export const otherContactControlSchema = z.preprocess(emptyToNull, z.string().max(256, { message: 'FORM_VALIDATION.TOO_LONG_256' }).nullable());
+/* ===================== Contacts (draft / ordered / optional) ===================== */
+// Draft
+export const draftContactsSchema = z
+    .object({
+    email: z.array(emailSchema).nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
+    phoneNumber: z
+        .array(phoneNumberSchema)
+        .nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
+    whatsApp: z.array(phoneNumberSchema),
+    telegramNickname: z.array(telegramNicknameSchema),
+    telegramId: z
+        .array(telegramIdSchema)
+        .nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
+    telegramPhoneNumber: z
+        .array(phoneNumberSchema)
+        .nonempty('FORM_VALIDATION.CONTACT.MIN_CONTACT'),
+    vKontakte: z.array(vKontakteSchema),
+    instagram: z.array(instagramSchema),
+    facebook: z.array(facebookSchema),
+    website: z.array(websiteSchema),
+    otherContact: z.array(otherContactSchema),
+})
+    .strict();
+// Ordered contacts object
+export const contactsSchema = z
+    .object({
+    email: nonEmptyContacts,
+    phoneNumber: nonEmptyContacts,
+    whatsApp: nonEmptyContacts.optional(),
+    telegram: nonEmptyContacts,
+    telegramNickname: nonEmptyContacts.optional(),
+    telegramId: nonEmptyContacts,
+    telegramPhoneNumber: nonEmptyContacts,
+    vKontakte: nonEmptyContacts.optional(),
+    instagram: nonEmptyContacts.optional(),
+    facebook: nonEmptyContacts.optional(),
+    website: nonEmptyContacts.optional(),
+    otherContact: nonEmptyContacts.optional(),
+})
+    .strict();
+/* ===================== Small DTOs ===================== */
+export const userIdSchema = z
+    .object({
+    id: positiveInt,
+})
+    .strict();
+export const userIdParamSchema = z
+    .object({
+    id: positiveIntParam,
+})
+    .strict();
+const restrictionCauseSchema = z
+    .string()
+    .trim()
+    .min(5, 'FORM_VALIDATION.TOO_SHORT_5')
+    .max(500, 'FORM_VALIDATION.TOO_LONG_500');
+const nullableRestrictionCauseSchema = z.preprocess(emptyToNull, restrictionCauseSchema.nullable());
+export const userBlockingSchema = z
+    .object({
+    id: positiveInt,
+    causeOfRestriction: restrictionCauseSchema,
+})
+    .strict();
+const userNameSchema = z.preprocess(toTrim, z
+    .string()
+    .min(5, {
+    message: 'FORM_VALIDATION.TOO_SHORT_5',
+})
+    .max(20, {
+    message: 'FORM_VALIDATION.TOO_LONG_20',
+}));
+export const checkUserNameSchema = z
+    .object({
+    userName: userNameSchema,
+    id: positiveIntParam.optional(),
+})
+    .strict();
+export const checkUserDataSchema = z
+    .object({
+    id: positiveInt.nullable(),
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    contacts: draftContactsSchema,
+})
+    .strict();
+/* ===================== User Draft ===================== */
+const passwordSchema = z.preprocess(toTrim, z
+    .string()
+    .min(8, 'FORM_VALIDATION.USER.MIN_PASSWORD')
+    .regex(/[A-Za-z]/, 'FORM_VALIDATION.USER.LETTER_PASSWORD')
+    .regex(/\d/, 'FORM_VALIDATION.USER.DIGIT_PASSWORD'));
+export const userDraftSchema = z
+    .object({
+    id: nullableInt,
+    userName: userNameSchema,
+    password: passwordSchema,
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    patronymic: z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable()),
+    lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    roleId: z.number({ message: 'FORM_VALIDATION.REQUIRED' }).int().positive(),
+    draftAddress: draftAddressSchema,
+    comment: z.preprocess(emptyToNull, z
+        .string()
+        .max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' })
+        .nullable()),
+    isRestricted: z.boolean(),
+    causeOfRestriction: nullableRestrictionCauseSchema,
+    dateOfRestriction: nullableIsoDate,
+    draftContacts: draftContactsSchema,
+})
+    .strict()
+    .superRefine((data, ctx) => {
+    if (!data.isRestricted) {
+        if (data.causeOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['causeOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+        if (data.dateOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['dateOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+    }
+    else {
+        if (!data.causeOfRestriction) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['causeOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+        if (!data.dateOfRestriction) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['dateOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+    }
+});
+/* ===================== Password change ===================== */
+export const changePasswordSchema = z
+    .object({
+    userId: positiveInt,
+    newPassword: passwordSchema,
+    currentPassword: z.string().trim().min(8).optional(),
+})
+    .strict();
+/* ===================== UpdateUserData ===================== */
+// ChangingData.main — PATCH-like
+export const changingMainSchema = z
+    .object({
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
+    patronymic: z
+        .preprocess(emptyToNull, z
+        .string()
+        .max(50)
+        .nullable())
+        .optional(),
+    lastName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
+    userName: userNameSchema.optional(),
+    roleId: positiveInt.optional(),
+    comment: z
+        .preprocess(emptyToNull, z
+        .string()
+        .max(500)
+        .nullable())
+        .optional(),
+    isRestricted: z.boolean().optional(),
+    causeOfRestriction: nullableRestrictionCauseSchema.optional(),
+    dateOfRestriction: nullableIsoDate.optional(),
+})
+    .strict();
+export const changingDataSchema = z
+    .object({
+    main: changingMainSchema.nullable(),
+    address: draftAddressSchema.nullable(),
+    contacts: changingContactsSchema.nullable(),
+})
+    .strict()
+    .superRefine((data, ctx) => {
+    const m = data.main;
+    if (!m)
+        return;
+    if (m.isRestricted === false) {
+        if (m.causeOfRestriction !== undefined && m.causeOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'causeOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+        if (m.dateOfRestriction !== undefined && m.dateOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'dateOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+    }
+    if (m.isRestricted === true) {
+        if (m.causeOfRestriction === undefined || m.causeOfRestriction === null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'causeOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+        if (m.dateOfRestriction === undefined || m.dateOfRestriction === null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'dateOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+    }
+});
+/* ========= OutdatingData ========= */
+export const outdatingDataSchema = z
+    .object({
+    address: positiveInt.nullable(),
+    names: z
+        .object({
+        firstName: nonEmptyTrim,
+        patronymic: z.preprocess(toTrim, z.string().min(1)).nullable(),
+        lastName: nonEmptyTrim,
+    })
+        .strict()
+        .nullable(),
+    userName: z.preprocess(toTrim, z.string().min(1)).nullable(),
+    contacts: z.array(positiveInt).nullable(),
+})
+    .strict();
+/* ========= DeletingData ========= */
+export const deletingDataSchema = z
+    .object({
+    userNames: z.array(positiveInt).nullable(),
+    names: z.array(positiveInt).nullable(),
+    addresses: z.array(positiveInt).nullable(),
+    contacts: z.array(positiveInt).nullable(),
+})
+    .strict();
+/* ========= RestoringData ========= */
+export const restoringDataSchema = z
+    .object({
+    addresses: z.array(positiveInt).nullable(),
+    names: z.array(positiveInt).nullable(),
+    userNames: z.array(positiveInt).nullable(),
+    contacts: optionalContactsSchema.nullable(),
+})
+    .strict();
+/* ========= UpdateUserData wrapper ========= */
+export const updateUserDataSchema = z
+    .object({
+    id: positiveInt,
+    changingData: changingDataSchema,
+    restoringData: restoringDataSchema,
+    outdatingData: outdatingDataSchema,
+    deletingData: deletingDataSchema,
+})
+    .strict();
+/* ========= Users query DTO ========= */
+const sortDir = z.enum(['asc', 'desc']);
+const userSortFieldSchema = z.enum([
+    'userName',
+    'role',
+    'name',
+    'dateOfStart',
+    'comment',
+    'isRestricted',
+]);
+const userSortSchema = z
+    .object({
+    field: userSortFieldSchema,
+    direction: sortDir,
+})
+    .strict();
+export const usersQueryDTOSchema = z
+    .object({
+    page: z
+        .object({
+        size: z.number().int().min(1),
+        number: z.number().int().min(0),
+    })
+        .strict(),
+    sort: z.array(userSortSchema).max(1).optional(),
+    search: z
+        .object({ value: z.string().min(1), exact: z.boolean().optional() })
+        .strict()
+        .optional(),
+    view: z
+        .object({
+        option: z.enum(['all', 'only-active', 'only-blocked']).optional(),
+        includeOutdated: z.boolean().optional(),
+    })
+        .strict()
+        .optional(),
+    filters: z
+        .object({
+        general: z
+            .object({
+            roles: z.array(positiveInt).min(1).optional(),
+            dateBeginningRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            dateRestrictionRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            contactTypes: z.array(contactType).min(1).optional(),
+            details: z
+                .array(z.enum(['comment']))
+                .min(1)
+                .optional(),
+        })
+            .strict()
+            .optional(),
+        address: z
+            .object({
+            countries: intOptArray,
+            regions: intOptArray,
+            districts: intOptArray,
+            localities: intOptArray,
+        })
+            .strict()
+            .partial()
+            .optional(),
+        mode: z
+            .object({
+            strictAddress: z.boolean().optional(),
+            strictContact: z.boolean().optional(),
+        })
+            .strict()
+            .optional(),
+    })
+        .strict()
+        .optional(),
+})
+    .strict();
+/* ===================== OutdatedData (view) ===================== */
+const outdatedUserNameItemSchema = z
+    .object({
+    userName: nonEmptyString,
+    id: positiveInt,
+})
+    .strict();
+export const outdatedDataSchema = z
+    .object({
+    contacts: optionalContactsSchema,
+    addresses: z.array(outdatedAddressItemSchema),
+    names: z.array(outdatedNameItemSchema),
+    userNames: z.array(outdatedUserNameItemSchema),
+})
+    .strict();
+/* ===================== User (view) & users list ===================== */
+export const userSchema = z
+    .object({
+    id: positiveInt,
+    userName: nonEmptyString,
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString,
+    roleId: positiveInt,
+    roleName: nonEmptyString,
+    isRestricted: z.boolean(),
+    dateOfStart: z.coerce.date(),
+    causeOfRestriction: nonEmptyString.nullable(),
+    dateOfRestriction: nullableIsoDate,
+    address: addressSchema,
+    comment: nonEmptyString.nullable(),
+    orderedContacts: contactsSchema,
+    outdatedData: outdatedDataSchema,
+})
+    .strict();
+export const usersSchema = z
+    .object({
+    list: z.array(userSchema),
+    length: z.number().int().min(0),
+})
+    .strict();

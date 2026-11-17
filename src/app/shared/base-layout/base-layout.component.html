@@ -50,15 +50,27 @@
 <mat-toolbar class="toolbar">
   <mat-toolbar-row class="toolbar-row">
 
-    <img class="nav-logo" src="LOGO.png" height="50px" routerLink="/" />
+    <a class="nav-home-link" routerLink="/">
+      <img class="nav-logo" src="LOGO.png" height="50px" [alt]="'TOOLBAR.HOME_LINK_LABEL' | translate" />
+    </a>
     <span class="logo">&nbsp;{{'TOOLBAR.TITLE' | translate}}</span>
 
     <span class="spacer"></span>
-<!--     <button mat-button class="navbar-link">
+    <button mat-button class="navbar-link" [routerLink]="`/orders/new-order/1`" *hasOp="{
+        codes: ['ADD_NEW_ORDER'],
+        mode: 'any',
+      }">
+      {{'TOOLBAR.BIRTHDAY' | translate}}
+    </button>
+    <button mat-button class="navbar-link" [routerLink]="`/orders/${userId()}`" *hasOp="{
+        codes: ['VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'],
+        mode: 'any',
+      }">
       {{'TOOLBAR.MY_ORDERS' | translate}}
     </button>
- -->
-    <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu">
+
+    <button type="button" mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu"
+      [attr.aria-label]="'TOOLBAR.PROFILE_MENU_LABEL' | translate">
       <mat-icon>flutter_dash</mat-icon>
     </button>
 
@@ -68,19 +80,22 @@
       @for (item of menuItems; track $index) {
       <ng-container>
         @if(!item.subMenuItems){
-        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy" *hasOp="item.params">
-          <mat-icon class="drop-menu-icon">{{item.icon}}</mat-icon>
+        <button mat-menu-item class="drop-menu-item" [routerLink]="item.link" [attr.data-cy]="item.dataCy"
+          *hasOp="item.params">
+          <mat-icon fontSet="material-symbols-outlined" class="drop-menu-icon">{{item.icon}}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         } @else {
-        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy" *hasOp="item.params">
-          <mat-icon class="drop-menu-icon">{{ item.icon }}</mat-icon>
+        <button mat-menu-item class="drop-menu-item" [matMenuTriggerFor]="submenu" [attr.data-cy]="item.dataCy"
+          *hasOp="item.params">
+          <mat-icon fontSet="material-symbols-outlined" class="drop-menu-icon">{{ item.icon }}</mat-icon>
           <span>{{item.text | translate}}</span>
         </button>
         <mat-menu #submenu="matMenu" xPosition="before">
           @for(subItem of item.subMenuItems; track $index){
-          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy" *hasOp="subItem.params">
-            <mat-icon class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
+          <button mat-menu-item class="drop-menu-item" [routerLink]="subItem.link" [attr.data-cy]="subItem.dataCy"
+            *hasOp="subItem.params">
+            <mat-icon fontSet="material-symbols-outlined" class="drop-menu-icon">{{ subItem.icon }}</mat-icon>
             <span>{{subItem.text | translate}}</span>
           </button>
           }
@@ -96,7 +111,7 @@
     </mat-menu>
 
     <!-- Button in the toolbar -->
-    <button mat-icon-button [matMenuTriggerFor]="langMenu">
+    <button type="button" mat-icon-button [matMenuTriggerFor]="langMenu" [attr.aria-label]="'LANG.SWITCH' | translate">
       <mat-icon>language</mat-icon>
     </button>
 

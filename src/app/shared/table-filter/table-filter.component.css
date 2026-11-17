@@ -28,3 +28,7 @@ mat-checkbox {
 .comment {
   font-size: x-small;
 }
+
+mat-slider {
+  width: 100%;
+}

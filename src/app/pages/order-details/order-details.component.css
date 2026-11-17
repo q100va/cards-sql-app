@@ -1,0 +1,34 @@
+.order-details-card {
+  width: min(1180px, calc(100vw - 48px));
+  margin: 24px auto;
+  padding: 36px;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loading {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+}
+
+.recipients-section {
+  margin-top: 12px;
+}
+
+.recipients-section h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 16px;
+}
+
+@media (max-width: 720px) {
+  .order-details-card {
+    width: calc(100vw - 24px);
+    margin: 12px auto;
+  }
+}

@@ -1,0 +1,79 @@
+.update-card {
+  margin: auto;
+  width: fit-content;
+  min-width: 70%;
+  min-height: 80vh;
+  text-align: center;
+}
+
+p-progress-spinner {
+  --p-progressspinner-color-1: #fbc02d;
+  --p-progressspinner-color-2: #d6c616;
+  --p-progressspinner-color-3: #45d233;
+  --p-progressspinner-color-4: #66bb6a;
+}
+
+/* spinner overlay */
+.overlay {
+  z-index: 100;
+  position: fixed;
+  width: 70%;
+  height: 80vh;
+  padding-top: 20%;
+  background-color: #dddfd081;
+  border-radius: 12px;
+}
+
+mat-card-header {
+  display: block;
+  justify-content: center;
+  padding-bottom: 8px;
+  margin: 40px 0 40px 0;
+}
+mat-card-actions {
+  display: block;
+  justify-content: center;
+  padding-bottom: 16px;
+}
+/* view-mode::ng-deep .mat-grid-tile-content {
+  align-items: start;
+} */
+
+.table-container{
+  width: 100%;
+  height: 100%;
+  align-items: start;
+}
+
+.months-selection {
+  width: 100%;
+}
+
+.months-selection mat-form-field {
+  width: 100%;
+}
+
+.months-selection p {
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+:host ::ng-deep .right .mat-grid-tile-content{
+ justify-content: end !important;
+}
+
+:host ::ng-deep .left .mat-grid-tile-content{
+ justify-content: start !important;
+}
+
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: #f9faf4 !important;
+}
+
+.small-card{
+  background-color: white;
+  padding: 16px;
+  margin-bottom: 16px;
+  justify-content: center;
+  align-items:center;
+}

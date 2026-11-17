@@ -1,127 +1,173 @@
-import request from 'supertest';
+/* @jest-environment node */
+
 import { jest } from '@jest/globals';
 import express from 'express';
-import { Op } from 'sequelize'; // ✅ так надёжнее в ESM
-import { handleError } from '../../middlewares/error-handler.js';
+import request from 'supertest';
+import { Op } from 'sequelize';
 
-// ✅ мок модели
-jest.unstable_mockModule('../../models/index.js', () => ({
-  AuditLog: { findAll: jest.fn(), count: jest.fn() },
-}));
+const AuditLog = {
+  findAll: jest.fn(),
+  count: jest.fn(),
+};
 
-// ✅ мок валидации
-jest.unstable_mockModule('../../middlewares/validate-request.js', () => ({
-  validateRequest: () => (_req, _res, next) => next(),
-}));
+jest.unstable_mockModule('../../models/index.js', () => ({ AuditLog }));
 
-// ✅ мок аутентификации (иначе 401)
-jest.unstable_mockModule('../../middlewares/check-auth.js', () => ({
-  requireAuth: (_req, _res, next) => next(),
-  optionalAuth: (_req, _res, next) => next(),
+jest.unstable_mockModule('../../middlewares/check-auth.js', () =>
+({
   default: (_req, _res, next) => next(),
 }));
 
-// (опц.) ✅ если роут защищён правами — пропускаем
-jest.unstable_mockModule('../../middlewares/require-permission.js', () => ({
-  requireAny: () => (_req, _res, next) => next(),
-  requireAll: () => (_req, _res, next) => next(),
+jest.unstable_mockModule('../../middlewares/require-permission.js', () =>
+({
   requireOperation: () => (_req, _res, next) => next(),
 }));
 
-// теперь можно импортировать тестируемый роут после моков
+jest.unstable_mockModule('../../middlewares/validate-request.js', () =>
+({
+  validateRequest: () => (_req, _res, next) => next(),
+}));
+
+jest.unstable_mockModule('../../../shared/dist/schemas/audit.schema.js', () =>
+({
+  auditQuerySchema: {},
+}));
+
 const { default: auditRouter } = await import('../../routes/audit-api.js');
-const { AuditLog } = await import('../../models/index.js');
 
 function makeApp() {
   const app = express();
+
   app.use('/api/audit', auditRouter);
-  app.use(handleError);
+
+  // Error-handler behavior is tested
+  // separately. Here we only inspect
+  // what error the route passes onward.
+  app.use((error, _req, res, _next) => {
+    res.status(error.status ?? 500).json({ code: error.code ?? 'ERRORS.INTERNAL' });
+  });
+
   return app;
 }
 
-// ...дальше твои тесты без изменений
-
-
-describe('GET /api/audit (Jest + supertest)', () => {
+describe('GET /api/audit', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    AuditLog.findAll.mockReset();
+
+    AuditLog.count.mockReset();
   });
 
-  test('defaults: limit=10, offset=0, no filters', async () => {
-    AuditLog.findAll.mockResolvedValueOnce([{ id: 1 }]);
-    AuditLog.count.mockResolvedValueOnce(1);
+  test('returns audit rows and total count', async () => {
+    AuditLog.findAll.mockResolvedValue([
+      {
+        id: 1,
+        action: 'update',
+      },
+    ]);
 
-    const res = await request(makeApp()).get('/api/audit');
+    AuditLog.count.mockResolvedValue(1);
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body.data.rows).toEqual([{ id: 1 }]);
-    expect(res.body.data.count).toBe(1);
+    const response = await request(makeApp()).get('/api/audit').expect(200);
 
-    const args = AuditLog.findAll.mock.calls[0][0];
-    expect(args.limit).toBe(10);
-    expect(args.offset).toBe(0);
-    expect(args.where).toEqual({});
-    expect(args.order).toEqual([['createdAt', 'DESC'], ['id', 'DESC']]);
+    expect(response.body).toEqual({
+      data: {
+        rows: [
+          {
+            id: 1,
+            action: 'update',
+          },
+        ],
+        count: 1,
+      },
+    });
+
+    expect(AuditLog.findAll).toHaveBeenCalledTimes(1);
+
+    expect(AuditLog.count).toHaveBeenCalledTimes(1);
+
+    const query = AuditLog.findAll.mock.calls[0][0];
+
+    expect(query.where).toEqual({});
+
+    expect(query.order).toEqual([['createdAt', 'DESC'], ['id', 'DESC']]);
+
+    expect(query.raw).toBe(true);
+
+    expect(AuditLog.count).toHaveBeenCalledWith({ where: {} });
   });
 
-  test('applies filters + paging + date range', async () => {
-    AuditLog.findAll.mockResolvedValueOnce([]);
-    AuditLog.count.mockResolvedValueOnce(0);
+  test('builds filters from query parameters', async () => {
+    AuditLog.findAll.mockResolvedValue([]);
+
+    AuditLog.count.mockResolvedValue(0);
 
     const from = '2025-08-01T00:00:00.000Z';
+
     const to = '2025-08-03T00:00:00.000Z';
 
-    const res = await request(makeApp())
-      .get('/api/audit')
-      .query({
-        model: 'role',
-        action: 'update',
-        entityId: '42',
-        userId: '7',
-        correlationId: 'cid-123',
-        from, to,
-        limit: 25,
-        offset: 50,
-      });
+    await request(makeApp()).get('/api/audit').query({
+      model: 'role',
+      action: 'update',
+      entityId: '42',
+      userId: '7',
+      correlationId: 'cid-123',
+      from,
+      to,
+      limit: 25,
+      offset: 50,
+    }).expect(200);
 
-    expect(res.statusCode).toBe(200);
+    const query = AuditLog.findAll.mock.calls[0][0];
 
-    const args = AuditLog.findAll.mock.calls[0][0];
-    expect(args.limit).toBe(25);
-    expect(args.offset).toBe(50);
-    expect(args.where).toMatchObject({
+    expect(query.where).toMatchObject({
       model: 'role',
       action: 'update',
       entityId: '42',
       actorUserId: '7',
       correlationId: 'cid-123',
     });
-    expect(args.where.createdAt[Op.gte]).toBeInstanceOf(Date);
-    expect(args.where.createdAt[Op.lte]).toBeInstanceOf(Date);
-    expect(args.where.createdAt[Op.gte].toISOString()).toBe(from);
-    expect(args.where.createdAt[Op.lte].toISOString()).toBe(to);
+
+    expect(query.where.createdAt[Op.gte]).toBe(from);
+
+    expect(query.where.createdAt[Op.lte]).toBe(to);
+
+    // Validation is mocked here,
+    // so Express query values remain
+    // strings. Coercion belongs to
+    // schema validation tests.
+    expect(query.limit).toBe('25');
+
+    expect(query.offset).toBe('50');
+
+    expect(AuditLog.count).toHaveBeenCalledWith({ where: query.where });
   });
 
-  test('caps limit at 100', async () => {
-    AuditLog.findAll.mockResolvedValueOnce([]);
+  test('supports one-sided date ranges', async () => {
+    AuditLog.findAll.mockResolvedValue([]);
 
-    await request(makeApp()).get('/api/audit').query({ limit: 999, offset: 0 });
+    AuditLog.count.mockResolvedValue(0);
 
-    const args = AuditLog.findAll.mock.calls[0][0];
-    expect(args.limit).toBe(100);
+    const from = '2025-08-01T00:00:00.000Z';
+
+    await request(makeApp()).get('/api/audit').query({ from }).expect(200);
+
+    const where = AuditLog.findAll.mock.calls[0][0].where;
+
+    expect(where.createdAt[Op.gte]).toBe(from);
+
+    expect(where.createdAt[Op.lte]).toBeUndefined();
   });
 
-  test('handles DB error via error handler', async () => {
-    AuditLog.findAll.mockRejectedValueOnce(new Error('db down'));
-    AuditLog.count.mockResolvedValueOnce(0);
+  test('passes database errors onward as DATA_FETCH_FAILED', async () => {
+    const dbError = new Error('db down');
 
-    const res = await request(makeApp()).get('/api/audit');
+    AuditLog.findAll.mockRejectedValue(dbError);
 
-    expect(res.status).toBe(500);
-    expect(res.headers['content-type']).toMatch(/application\/json/i);
-    expect(res.body).toMatchObject({
-      code: 'ERRORS.NO_DATA_RECEIVED'
-    });
-    expect('correlationId' in res.body).toBe(true);
+    AuditLog.count.mockResolvedValue(0);
+
+    const response = await request(makeApp()).get('/api/audit').expect(500);
+
+    expect(response.body).toEqual({ code: 'ERRORS.DATA_FETCH_FAILED' });
+
+    expect(dbError.code).toBe('ERRORS.DATA_FETCH_FAILED');
   });
 });

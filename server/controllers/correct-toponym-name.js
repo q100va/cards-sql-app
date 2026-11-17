@@ -1,235 +1,299 @@
 import CustomError from "../shared/customError.js";
 
-const namesOfAddressTypes = {
+const ADDRESS_TYPES = {
   districts: [
     {
       name: "городской округ город-курорт",
       shortName: "г.о. город-курорт",
-      re: /городской округ город-курорт/i
+      re: /городской округ город-курорт/i,
     },
     {
       name: "городской округ город",
       shortName: "г.о. город",
-      re: /городской округ город/i
+      re: /городской округ город/i,
     },
     {
       name: "городской округ",
       shortName: "г.о.",
-      re: /городской округ/i
+      re: /городской округ/i,
     },
     {
       name: "муниципальный район",
       shortName: "м.р-н",
-      re: /муниципальный район/i
+      re: /муниципальный район/i,
     },
     {
       name: "район",
       shortName: "р-н",
-      re: /район/i
+      re: /район/i,
     },
     {
       name: "муниципальный округ",
       shortName: "м.о.",
-      re: /муниципальный округ/i
+      re: /муниципальный округ/i,
     },
     {
       name: "муниципальное образование город",
       shortName: "м.о. город",
-      re: /муниципальное образование город/i
+      re: /муниципальное образование город/i,
     },
     {
       name: "муниципальное образование",
       shortName: "м.о.",
-      re: /муниципальное образование/i
+      re: /муниципальное образование/i,
     },
     {
       name: "город",
       shortName: "г.",
-      re: /город/i
+      re: /город/i,
     },
   ],
+
   localities: [
     {
       name: "город",
       shortName: "г.",
-      re: /город/i
     },
     {
       name: "деревня",
       shortName: "д.",
-      re: /деревня/i
     },
     {
       name: "село",
       shortName: "с.",
-      re: /село/i
     },
     {
       name: "пгт",
       shortName: "пгт",
-      re: /пгт/i
     },
     {
       name: "рабочий поселок",
       shortName: "рп",
-      re: /рабочий поселок/i
     },
     {
       name: "дачный поселок",
       shortName: "дп",
-      re: /дачный поселок/i
     },
     {
       name: "поселок станции",
       shortName: "п.ст.",
-      re: /поселок станции/i
     },
     {
       name: "курортный поселок",
       shortName: "кп",
-      re: /курортный поселок/i
     },
     {
       name: "поселок",
       shortName: "п.",
-      re: /поселок/i
     },
     {
       name: "хутор",
       shortName: "х.",
-      re: /хутор/i
     },
     {
       name: "слобода",
       shortName: "сл.",
-      re: /слобода/i
     },
     {
       name: "слободка",
       shortName: "сл.",
-      re: /слободка/i
     },
     {
       name: "местечко",
       shortName: "м.",
-      re: /местечко/i
     },
     {
       name: "аул",
       shortName: "аул",
-      re: /аул/i
     },
     {
       name: "станица",
       shortName: "ст-ца",
-      re: /станица/i
     },
     {
       name: "поселок ж.д. станции",
       shortName: "п. ж/д ст.",
-      re: /поселок ж.д. станции/i
     },
     {
       name: "поселок ж.д. разъезда",
       shortName: "п. ж/д рзд.",
-      re: /поселок ж.д. разъезда/i
     },
     {
       name: "разъезд",
       shortName: "рзд",
-      re: /разъезд/i
     },
     {
       name: "станция",
       shortName: "ст.",
-      re: /станция/i
     },
-  ]
+  ],
 };
 
+function normalizeName(value) {
+  return value
+    ?.replaceAll("ё", "е")
+    .replaceAll("Ё", "Е")
+    .trim();
+}
+
+function normalizeType(value) {
+  return normalizeName(value)
+    ?.toLowerCase();
+}
+
 export function correctCountryName(rowName) {
-  const name = rowName?.replace('ё', 'е').trim();
   return {
-    name,
-  }
+    name: normalizeName(rowName),
+  };
 }
 
-export function correctRegionName(rowName, rowShortName) {
-  const name = rowName?.replace('ё', 'е').trim();
-  const shortName = rowShortName?.replace('ё', 'е').trim();
+export function correctRegionName(
+  rowName,
+  rowShortName,
+) {
   return {
-    name,
-    shortName,
-  }
+    name: normalizeName(rowName),
+    shortName: normalizeName(rowShortName),
+  };
 }
 
-export function correctDistrictName(rowName, rowPostName = null, rowPostNameType = null) {
-  rowPostName = rowPostName?.replace('ё', 'е').trim();
-  rowPostNameType = rowPostNameType?.replace('ё', 'е').trim().toLowerCase();
-  rowName = rowName.replace('ё', 'е').trim();
-  const addressTypes = namesOfAddressTypes.districts;
-  let name, shortName, postName, shortPostName;
-  for (let type of addressTypes) {
-    if (rowName.toLowerCase().includes(type.name)) {
-      name = rowName.replace(type.re, "").trim() + " " + type.name;
-      shortName = rowName.replace(type.re, type.shortName);
+export function correctDistrictName(
+  rowName,
+  rowPostName = null,
+  rowPostNameType = null,
+) {
+  const normalizedName =
+    normalizeName(rowName);
+
+  const normalizedPostName =
+    normalizeName(rowPostName);
+
+  const normalizedPostNameType =
+    normalizeType(rowPostNameType);
+
+  const addressTypes =
+    ADDRESS_TYPES.districts;
+
+  let name;
+  let shortName;
+
+  for (const addressType of addressTypes) {
+    if (
+      normalizedName
+        .toLowerCase()
+        .includes(addressType.name)
+    ) {
+      name =
+        `${normalizedName
+          .replace(addressType.re, "")
+          .trim()} ${addressType.name}`;
+
+      shortName =
+        normalizedName.replace(
+          addressType.re,
+          addressType.shortName,
+        );
+
       break;
     }
   }
-  if (!name || !shortName) {
-    throw new CustomError('ERRORS.TOPONYM.INVALID_TYPE', 422, { name: rowName });
-  }
-  let postData;
 
-  if (rowPostName && rowPostNameType) {
-    try {
-      if (rowPostNameType == "район") {
-        postData = correctDistrictName(rowName);
-      } else {
-        postData = correctLocalityName(rowPostName, rowPostNameType);
-      }
-      postName = postData.name;
-      shortPostName = postData.shortName;
-    } catch (e) {
-      throw e;
-    }
+  if (!name || !shortName) {
+    throw new CustomError(
+      'ERRORS.TOPONYM.INVALID_TYPE',
+      422,
+      {
+        name: normalizedName,
+      },
+    );
   }
+
+  let postName;
+  let shortPostName;
+
+  if (
+    normalizedPostName &&
+    normalizedPostNameType
+  ) {
+    const postData =
+      normalizedPostNameType === "район"
+        ? correctDistrictName(
+            normalizedName,
+          )
+        : correctLocalityName(
+            normalizedPostName,
+            normalizedPostNameType,
+          );
+
+    postName =
+      postData.name;
+
+    shortPostName =
+      postData.shortName;
+  }
+
   return {
-    name: name,
-    shortName: shortName,
-    postName: postName,
-    shortPostName: shortPostName,
-  }
+    name,
+    shortName,
+    postName,
+    shortPostName,
+  };
 }
 
-export function correctLocalityName(rowName, type, district = null) {
-  type = type.replace('ё', 'е').trim().toLowerCase();
-  if (type == 'поселок городского типа' || type == 'пгт (рабочий поселок)') {
-    type = 'пгт';
-  }
-  rowName = rowName.replace('ё', 'е').trim();
-  const addressType = namesOfAddressTypes.localities.find(item => item.name == type);
+export function correctLocalityName(
+  rowName,
+  type,
+  district = null,
+) {
+  const normalizedName =
+    normalizeName(rowName);
 
-  if (!addressType) throw new CustomError('ERRORS.TOPONYM.INVALID_TYPE', 422, { name: `${rowName} ${type}` });
-  let districtData;
-  if (district) {
-    try {
-      districtData = correctDistrictName(district).name;
-    } catch (e) {
-      throw e;
-    }
+  let normalizedType =
+    normalizeType(type);
+
+  if (
+    normalizedType ===
+      "поселок городского типа" ||
+    normalizedType ===
+      "пгт (рабочий поселок)"
+  ) {
+    normalizedType = "пгт";
   }
 
-  let name = rowName + " " + addressType.name;
-  let shortName = addressType.shortName + " " + rowName;
+  const addressType =
+    ADDRESS_TYPES.localities.find(
+      (item) =>
+        item.name === normalizedType,
+    );
+
+  if (!addressType) {
+    throw new CustomError(
+      'ERRORS.TOPONYM.INVALID_TYPE',
+      422,
+      {
+        name:
+          `${normalizedName} ${normalizedType}`,
+      },
+    );
+  }
+
+  const districtFullName =
+    district
+      ? correctDistrictName(
+          district,
+        ).name
+      : null;
 
   return {
-    name: name,
-    shortName: shortName,
-    districtFullName: districtData
-  }
+    name:
+      `${normalizedName} ${addressType.name}`,
 
-};
+    shortName:
+      `${addressType.shortName} ${normalizedName}`,
+
+    districtFullName,
+  };
+}
 
 /**************************************************************/
 

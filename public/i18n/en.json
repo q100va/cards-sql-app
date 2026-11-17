@@ -20,25 +20,47 @@
   },
   "TOOLBAR": {
     "TITLE": "Project “Grandchildren by Correspondence: Send a Greeting Card”",
+    "BIRTHDAY": "Birthdays",
     "MY_ORDERS": "My Requests",
     "SIGNED_IN_AS": "Signed in as {{ name }}",
-    "EXIT": "Exit"
+    "EXIT": "Exit",
+    "HOME_LINK_LABEL": "Home page",
+    "PROFILE_MENU_LABEL": "User menu"
   },
   "MENU": {
     "PROFILE": "Profile",
     "ROLES": "Roles",
     "USERS": "Users",
+    "VOLUNTEERS": "Volunteers",
     "TOPONYMS": "Toponyms",
     "COUNTRIES": "Countries",
     "REGIONS": "Regions",
     "DISTRICTS": "Districts",
     "LOCALITIES": "Localities",
-    "AUDIT": "Audit"
+    "AUDIT": "Audit",
+    "PARTNERS": "Partners",
+    "HOMES": "Homes",
+    "SENIORS": "Residents",
+    "OCCASIONS": "Occasions",
+    "SENIORS_BULK_UPDATE": "Update List",
+    "ALL_ORDERS": "All Requests",
+    "REPORTS": "Reports",
+    "STATISTIC": "Statistic"
   },
   "LANG": {
     "SWITCH": "Language",
     "EN": "English",
     "RU": "Русский"
+  },
+  "AUDIT": {
+    "APPLY_DATE_FILTER": "Apply date range filter",
+    "CLEAR_DATE_FILTER": "Clear date range filter",
+    "APPLY_ENTITY_ID_FILTER": "Apply entity ID filter",
+    "CLEAR_ENTITY_ID_FILTER": "Clear entity ID filter",
+    "APPLY_USER_ID_FILTER": "Apply user ID filter",
+    "CLEAR_USER_ID_FILTER": "Clear user ID filter",
+    "APPLY_CORRELATION_ID_FILTER": "Apply correlation ID filter",
+    "CLEAR_CORRELATION_ID_FILTER": "Clear correlation ID filter"
   },
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Confirmation",
@@ -46,13 +68,14 @@
     "REJECT": "No",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
     "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?<br />Data cannot be restored.",
+    "CLEAR_LIST_MESSAGE": "Clear the recipient list for '{{name}}'? All recipients will be removed from this list.",
     "UNBLOCK_ITEM_MESSAGE": "Unblock «{{name}}»?",
 
     "SAVE_WITH_DUPLICATES": "Duplicates detected. Are you sure you want to save the entered data?",
-    "NAMES_DUPLICATE": "The entered first and last name match the data of user {{user}}.",
-    "NAMES_DUPLICATES": "The entered first and last name match the data of the following users:<br />{{users}}",
-    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of user {{user}}.",
-    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following users:<br />{{users}}",
+    "NAMES_DUPLICATE": "The entered first and last name match the data of owner {{owner}}.",
+    "NAMES_DUPLICATES": "The entered first and last name match the data of the following owners:<br />{{owners}}",
+    "CONTACT_DUPLICATE": "The entered {{type}} {{content}} matches the data of owner {{owner}}.",
+    "CONTACT_DUPLICATES": "The entered {{type}} {{content}} matches the data of the following owners:<br />{{owners}}",
     "OUTDATED_DUPLICATES": "The data you entered:<br /> {{type}} '{{value}}'<br />match outdated records.<br />Are you sure this information is correct?",
     "SAVE_OR_DELETE_OLD_DATA": "You changed the {{type}}.<br />Save the previous value '{{oldValue}}' as outdated?<br />Otherwise, it will be deleted as incorrect and cannot be restored.",
     "RESTORE_OUTDATED_DATA": "Restore this data as current?",
@@ -61,15 +84,22 @@
       "ADDRESS": "address",
       "NAMES": "full name",
       "USER_NAME": "username",
-      "CONTACTS": "contact(s)"
-    }
+      "CONTACTS": "contact(s)",
+      "HOMES": "nursing home(s)",
+      "INSTITUTES": "institute(s)",
+      "COORDINATIONS": "coordination",
+      "OFFICIAL_NAME": "official name"
+    },
+    "ORDER_DUPLICATES_1": "This volunteer has already received addresses for '{{occasion}}':<br />",
+    "ORDER_DUPLICATES_2": "<br />Are you sure this isn't a duplicate?",
+    "ORDER_NOT_FOR_INSTITUTES": "Are you sure this request isn't for an organization?"
   },
   "TOAST": {
     "INFO": "Information",
     "WARN": "Warning",
     "ERROR": "Error",
     "SUCCESS": "Success",
-    "DELETE_DUPLICATES": "You entered duplicate values:\n{{duplicates}}.\n\nPlease remove the duplicates."
+    "DELETE_DUPLICATES": "You entered duplicate values:<br />{{duplicates}}.<br />Please remove the duplicates."
   },
   "ROLE": {
     "CREATED": "Role \"{{name}}\" created",
@@ -92,6 +122,180 @@
     "TABLE_OPERATION": "Operation",
     "TABLE_NAME_PLACEHOLDER": "2–50 characters",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 characters"
+  },
+  "OCCASION": {
+    "TABLE_TITLE": "Occasions",
+    "TABLE_ADD_OCCASION": "Add occasion",
+    "TABLE_EMPTY": "No occasions found.",
+    "TABLE_NAME": "Name",
+    "TABLE_DATE": "Date",
+    "TABLE_MONTH": "Month",
+    "TABLE_YEAR": "Year",
+    "TABLE_TYPE": "Type",
+    "TABLE_STATUS": "Status",
+    "TABLE_AMOUNT": "Amount",
+    "TABLE_ACTIONS": "Actions",
+    "TABLE_CLEAR": "Clear",
+    "TABLE_SEARCH_PLACEHOLDER": "Keyboard Search",
+    "TABLE_SELECT_PLACEHOLDER": "Any",
+    "TABLE_PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
+    "CARD_TITLE": "New occasion",
+    "CARD_CLOSE": "Close",
+    "CARD_LABEL_YEAR": "Year*",
+    "CARD_LABEL_TYPE": "Type*",
+    "CARD_LABEL_MONTH": "Month*",
+    "CARD_LABEL_STATUS": "Status*",
+    "CARD_SAVE_AND_EXIT": "Save and exit",
+    "CHECK_RESULT": "The list's been checked",
+    "MENU": {
+      "OPEN_OCCASION": "close",
+      "CLOSE_OCCASION": "open",
+      "DELETE_OCCASION": "delete",
+      "CREATE_LIST": "create list",
+      "VIEW_LIST": "view list",
+      "CHECK_LIST": "check list",
+      "CLEAR_LIST": "clear list"
+    },
+
+    "BIRTHDAY": {
+      "NAME": "Birthdays"
+    },
+    "NEW_YEAR": {
+      "NAME": "New Year",
+      "DATE": "January 1"
+    },
+    "FEBRUARY_23": {
+      "NAME": "Defender of the Fatherland Day",
+      "DATE": "February 23"
+    },
+    "MARCH_8": {
+      "NAME": "International Women's Day",
+      "DATE": "March 8"
+    },
+    "MAY_9": {
+      "NAME": "Victory Day",
+      "DATE": "May 8"
+    },
+    "EASTER": {
+      "NAME": "Easter",
+      "DATE": {
+        "2022": "April 17",
+        "2023": "April 9",
+        "2024": "March 31",
+        "2025": "April 20",
+        "2026": "April 5",
+        "2027": "March 28",
+        "2028": "April 16",
+        "2029": "April 1",
+        "2030": "April 21",
+        "2031": "April 13",
+        "2032": "March 28",
+        "2033": "April 17",
+        "2034": "April 9",
+        "2035": "March 25",
+        "2036": "April 13",
+        "2037": "April 5",
+        "2038": "April 25",
+        "2039": "April 10",
+        "2040": "April 1"
+      }
+    },
+    "MONTH": {
+      "JANUARY": {
+        "OPT": "January",
+        "NAME": "in January"
+      },
+      "FEBRUARY": {
+        "OPT": "February",
+        "NAME": "in February"
+      },
+      "MARCH": {
+        "OPT": "March",
+        "NAME": "in March"
+      },
+      "APRIL": {
+        "OPT": "April",
+        "NAME": "in April"
+      },
+      "MAY": {
+        "OPT": "May",
+        "NAME": "in May"
+      },
+      "JUNE": {
+        "OPT": "June",
+        "NAME": "in June"
+      },
+      "JULY": {
+        "OPT": "July",
+        "NAME": "in July"
+      },
+      "AUGUST": {
+        "OPT": "August",
+        "NAME": "in August"
+      },
+      "SEPTEMBER": {
+        "OPT": "September",
+        "NAME": "in September"
+      },
+      "OCTOBER": {
+        "OPT": "October",
+        "NAME": "in October"
+      },
+      "NOVEMBER": {
+        "OPT": "November",
+        "NAME": "in November"
+      },
+      "DECEMBER": {
+        "OPT": "December",
+        "NAME": "in December"
+      }
+    },
+    "STATUS": {
+      "OPEN": "open",
+      "CLOSED": "closed"
+    }
+  },
+  "RECIPIENT": {
+    "TABLE_ADD_RECIPIENT": "Add recipient",
+    "TABLE_DELETE_RECIPIENT": "Delete recipient(s)",
+    "TABLE_SEND_RECIPIENT": "Send recipient(s) to order",
+    "TABLE_EMPTY": "No recipients found.",
+
+    "TABLE_NAME": "Name",
+    "TABLE_DAY": "Day of birth",
+    "TABLE_MONTH": "Month of birth",
+    "TABLE_YEAR": "Year of birth",
+    "TABLE_COMMENT": "Comment",
+    "TABLE_NOTE": "Note",
+    "TABLE_CATEGORY": "Category",
+    "TABLE_PLUS_AMOUNT": "Cards amount",
+    "TABLE_REGION": "Region",
+    "TABLE_HOME": "Nursing home",
+    "TABLE_STATUS": "Status",
+    "TABLE_ACTIONS": "Actions",
+    "TABLE_FOR_SCHOOL": "school-safe",
+    "TABLE_NOT_FOR_SCHOOL": "not-school-safe",
+    "TABLE_ABSENT_STATUS": "absent",
+    "TABLE_EMPTY_STATUS": "(empty)",
+    "TABLE_CLEAR": "Clear",
+    "TABLE_SEARCH_PLACEHOLDER": "Keyboard Search (min 3 symbols)",
+    "TABLE_SEARCH_TOOLTIP": "Search name, comment, category, region, home",
+    "TABLE_SELECT_PLACEHOLDER": "Any",
+    "TABLE_CHECKBOX_TOOLTIP": "Current page selection",
+    "TABLE_CATEGORY_TOOLTIP": "'old'- >70; 'middle'- 40-69; 'young'- <40;",
+    "TABLE_PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
+    "MENU": {
+      "DELETE_RECIPIENT": "delete",
+      "SEND_RECIPIENT": "send to request",
+      "VIEW_ORDERS": "view requests list"
+    },
+    "CARD_TITLE": "Add recipients",
+    "CARD_CLOSE": "Close",
+    "CARD_LABEL_HOME": "Select home",
+    "CARD_SAVE_AND_EXIT": "Save and exit",
+    "ADDED": "Added:",
+    "RETURNED": "Restored:",
+    "ABSENT": "Marked as absent:"
   },
   "ADDRESS_FILTER": {
     "LABEL_COUNTRY": "Country",
@@ -159,7 +363,7 @@
       "OPEN_USERS": "open users list",
       "OPEN_VOLUNTEERS": "open volunteers list",
       "OPEN_SENIORS": "open seniors list",
-      "OPEN_HOMES": "open institutions list",
+      "OPEN_HOMES": "open homes list",
       "OPEN_REGIONS": "open regions list",
       "OPEN_DISTRICTS": "open districts list",
       "OPEN_LOCALITIES": "open localities list",
@@ -175,6 +379,112 @@
     "RESTORE_DATA": "restore as current",
     "DELETE_DATA": "delete as incorrect"
   },
+  "TABLE": {
+    "COLUMNS": {
+      "USER_NAME": "Username",
+      "ROLE_NAME": "Role",
+      "AFFILIATION": "Affiliation",
+      "FULL_NAME": "Full name",
+      "CONTACTS": "Contacts",
+      "ADDRESS": "Address",
+      "START_DATE": "Join date",
+      "COMMENT": "Comment",
+      "STATUS": "Status",
+      "ACTIONS": "Actions",
+      "HOMES": "Coordinated homes",
+      "COOPERATIONS": "Cooperation",
+      "INSTITUTES": "Institutes",
+      "REGION_NAME": "Region",
+      "HOME_NAME": "Home name",
+      "HOME_CATEGORIES": "Category",
+      "OFFICIAL_HOME_DATA": "Contacts",
+      "POSTAL_ADDRESS": "Postal address",
+      "UPDATE_DATE": "Updated",
+      "PARTNERS": "Coordinators",
+      "GENDER": "Gender",
+      "BIRTH_DATE": "Date of birth",
+      "SENIOR_DETAILS": "Details",
+      "CONSENT_DATE": "Consent date",
+      "SENIOR_HOME_NAME": "Home name",
+      "EXIT_DATE": "Date of exit",
+      "LAST_ORDER_DATE": "Date of last order",
+      "LAST_UPDATE_DATE": "Last update date"
+    },
+    "NOTES": {
+      "CLOSE": "closed",
+      "DEACTIVATED": "not participate",
+      "OUTDATED_DATA": "outdated data:",
+      "BLOCKED_FROM": "blocked from ",
+      "CLOSE_FROM": "closed from ",
+      "ACTIVE": "active",
+      "ACCESSIBLE": "accessible",
+      "LEFT": "discharged ",
+      "HOME_BLOCKED_FROM": "home inactive from ",
+      "SUBSCRIPTION": "subscription",
+      "COOPERATION": "cooperation",
+      "HOME_CLOSE_FROM": "home closed from ",
+      "MALE": "male",
+      "FEMALE": "female",
+      "NO_ADDRESS_LABEL": "no return address",
+      "PERSONAL_NO_ADDRESS_LABEL": "personal no return address",
+      "SPECIAL_HOME_LABEL": "from special home",
+      "ACC_SCHOOL_LABEL": "suitable for schools",
+      "SPOUSE": "spouse - "
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Open list",
+      "OPEN_CARD": "open card",
+      "OPEN_ORDERS": "open requests",
+      "OPEN_SUBSCRIBERS": "open subscribers",
+      "OPEN_VOLUNTEERS": "open volunteers list",
+      "OPEN_COOPERATIONS": "open collaborating users",
+      "OPEN_HOMES": "open nursing homes list",
+      "OPEN_PARTNERS": "open coordinators list",
+      "OPEN_USERS": "open users list",
+      "OPEN_SENIORS": "open seniors list",
+      "BLOCK_OWNER": "block",
+      "UNBLOCK_OWNER": "unblock",
+      "DELETE_OWNER": "delete"
+    },
+    "DIALOGS": {
+      "CAUSE_OF_BLOCK_LABEL": "Reason of blocking (deactivation)"
+    },
+    "NO_DATA_FOR_QUERY": "No data found",
+    "CARD": {
+      "MAIN_DATA_LABEL": "Main info",
+      "CONTACTS_LABEL": "Contact details",
+      "ADDRESS_LABEL": "Address",
+      "OUTDATED_DATA_LABEL": "Outdated data",
+      "COORDINATED_HOMES_LABEL": "Coordination",
+      "INSTITUTES_LABEL": "Institutes",
+      "CHANGE_PASSWORD_BUTTON": "Change password",
+      "BLOCKED_LABEL": "Blocked",
+      "CAUSE_OF_BLOCK_LABEL": "Reason of blocking (deactivation)",
+      "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
+      "SUBSCRIPTION_LABEL": "My subscriber",
+      "DELETE_BUTTON_TITLE": "Delete",
+      "EXTRA_CONTACT_BUTTON": "Additional contact",
+      "OUTDATED_NAMES_TITLE": "Outdated full names:",
+      "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
+      "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
+      "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
+      "OUTDATED_COORDINATIONS_TITLE": "Former coordinations:",
+      "OUTDATED_SUBSCRIPTIONS_TITLE": "Former subscriptions:",
+      "OUTDATED_COOPERATIONS_TITLE": "Former cooperations:",
+      "OUTDATED_INSTITUTES_TITLE": "Former institutes:",
+      "ADD_INSTITUTE_BUTTON": "Add institute",
+      "COOPERATIONS": "Cooperation with:",
+      "COORDINATION_NAME_LABEL": "Name",
+      "ADD_COORDINATION_BUTTON": "Add coordination",
+      "COORDINATION_PLACEHOLDER": "start typing and select value",
+      "COORDINATION_HINT": "If the value is not found, go to the corresponding section and create a record.",
+      "CHOOSE_HOME_LABEL": "Nursing home name",
+      "CHOOSE_PARTNER_LABEL": "Partner name",
+      "CHOOSE_SPOUSE_LABEL": "Spouse name",
+      "SENIOR_DETAILS_LABEL": "Details"
+    },
+    "HOME_CATEGORIES": {}
+  },
   "USER": {
     "CREATED": "User \"{{userName}}\" created",
     "UPDATED": "User \"{{userName}}\" updated",
@@ -188,24 +498,11 @@
     "TABLE_TITLE": "Users",
     "ADD_USER": "Add user",
     "SEARCH_PLACEHOLDER": "Olga Kotova",
-    "BLOCKED_FROM": "blocked from ",
-    "ACTIVE": "active",
 
     "VIEW_OPTIONS": {
-      "ALL_USERS": "all users",
+      "ALL": "all users",
       "ONLY_ACTIVE": "only active",
-      "ONLY_BLOCKED": "only blocked"
-    },
-    "COLUMNS": {
-      "USER_NAME": "Username",
-      "ROLE_NAME": "Role",
-      "FULL_NAME": "Full name",
-      "CONTACTS": "Contacts",
-      "ADDRESS": "Address",
-      "START_DATE": "Join\ndate",
-      "COMMENT": "Comment",
-      "STATUS": "Status",
-      "ACTIONS": "Actions"
+      "ONLY_BLOCKED": "only former"
     },
 
     "CONTACTS": {
@@ -216,35 +513,13 @@
       "VKONTAKTE_LABEL": "VKontakte",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Other contact"
     },
-    "MENU": {
-      "OPEN_LIST_TITLE": "Open list",
-      "OPEN_CARD": "open card",
-      "OPEN_ORDERS": "open orders",
-      "OPEN_SUBSCRIBERS": "open subscribers",
-      "OPEN_VOLUNTEERS": "open volunteers",
-      "BLOCK_USER": "block user",
-      "UNBLOCK_USER": "unblock user",
-      "DELETE_USER": "delete user"
-    },
+
     "CARD": {
       "CREATION_TITLE": "New user",
       "VIEW_TITLE": "User",
-
-      "MAIN_DATA_LABEL": "Main info",
-      "CONTACTS_LABEL": "Contact details",
-      "OUTDATED_DATA_LABEL": "Outdated data",
-
-      "CHANGE_PASSWORD_BUTTON": "Change password",
-      "CAUSE_OF_BLOCK_LABEL": "Reason",
-      "CAUSE_OF_BLOCK_PLACEHOLDER": "termination of volunteering",
-      "DELETE_BUTTON_TITLE": "Delete",
-      "EXTRA_CONTACT_BUTTON": "Additional contact",
-      "OUTDATED_NAMES_TITLE": "Outdated full names:",
-      "OUTDATED_USER_NAMES_TITLE": "Outdated usernames:",
-      "OUTDATED_ADDRESSES_TITLE": "Outdated addresses:",
-      "OUTDATED_CONTACTS_TITLE": "Outdated contacts:",
 
       "USER_NAME_LABEL": "Username*",
       "ROLE_LABEL": "Role*",
@@ -253,7 +528,7 @@
       "PATRONYMIC_LABEL": "Patronymic",
       "LAST_NAME_LABEL": "Last name*",
       "COMMENT_LABEL": "Comment",
-      "BLOCKED_LABEL": "Blocked",
+
       "EMAIL_LABEL": "Email*",
       "PHONE_NUMBER_LABEL": "Phone number*",
       "TELEGRAM_ID_LABEL": "Telegram ID*",
@@ -263,6 +538,7 @@
       "VKONTAKTE_LABEL": "VKontakte",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Other contact",
 
       "USER_NAME_PLACEHOLDER": "a.petrova",
@@ -275,6 +551,7 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above",
 
       "CHANGE_PASSWORD_TITLE": "Change Password",
@@ -287,19 +564,340 @@
     "BLOCK_BUTTON": "Block",
     "CANCEL_BUTTON": "Cancel"
   },
+  "PARTNER": {
+    "TABLE_TITLE": "Partners",
+    "ADD_PARTNER": "Add partner",
+    "SEARCH_PLACEHOLDER": "Olga Kotova",
+    "VIEW_OPTIONS": {
+      "ALL": "all partners",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only former"
+    },
+    "AFF": {
+      "VOLUNTEER_COORDINATOR": "Coordinator",
+      "HOME_REPRESENTATIVE": "Home representative",
+      "FOUNDATION_STAFF": "Foundation staff"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New partner",
+      "VIEW_TITLE": "Partner",
+
+      "FIRST_NAME_LABEL": "First name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last name",
+      "AFFILIATION_LABEL": "Affiliation*",
+      "POSITION_LABEL": "Position",
+      "COMMENT_LABEL": "Comment",
+      "BLOCKED_LABEL": "Blocked",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_ID_LABEL": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+  "HOME": {
+    "TABLE_TITLE": "Nursing Homes",
+    "ADD_PARTNER": "Add home",
+    "SEARCH_PLACEHOLDER": "KABANOVO",
+    "HAS_DEPENDENCIES": "The home cannot be deleted: {{count}} related resident(s) or coordination(s).",
+    "VIEW_OPTIONS": {
+      "ALL": "all homes",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only inactive",
+      "ONLY_CLOSED": "only closed",
+      "EXCLUDE_CLOSED": "exclude closed"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "New home",
+      "VIEW_TITLE": "Home",
+
+      "HOME_NAME_LABEL": "Short name*",
+      "OFFICIAL_NAME_LABEL": "Official name",
+      "COMMENT_LABEL": "Comment",
+      "SPECIAL_HOME_LABEL": "special home",
+      "NO_ADDRESS_LABEL": "no return address",
+      "ACC_SCHOOL_LABEL": "suitable for schools",
+      "UPDATE_DATE_LABEL": "Update date",
+      "POSTAL_CODE_LABEL": "Postal code",
+      "POSTAL_NAME_LABEL": "Postal name",
+      "POSTAL_ADDR_LABEL": "Street, house number",
+      "INFO_COMMENT_LABEL": "Info comment",
+      "BLOCKED_LABEL": "Blocked",
+      "CLOSE_LABEL": "Home is closed",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_ID_LABEL": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+  "SENIOR": {
+    "TABLE_TITLE": "Nursing Home Residents",
+    "ADD_PARTNER": "Add Resident",
+    "SEARCH_PLACEHOLDER": "Volkova Anna Petrovna",
+
+    "VIEW_OPTIONS": {
+      "ALL": "all residents",
+      "ONLY_ACTIVE": "only accessible",
+      "ONLY_BLOCKED": "only blocked",
+      "ONLY_QUITTED": "only discharged",
+      "EXCLUDE_BLOCKED_AND_QUITTED": "excl. blocked and discharged",
+      "EXCLUDE_QUITTED": "exclude discharged"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New Resident",
+      "VIEW_TITLE": "Resident",
+      "HOME_BLOCKED_LABEL": " - home doesn't participate!",
+      "HOME_CLOSED_LABEL": " - home was closed!",
+      "FIRST_NAME_LABEL": "First Name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last Name",
+      "CONFIRM_FIRST_NAME_LABEL": "First Name Confirmed",
+      "CONFIRM_PATRONYMIC_LABEL": "Patronymic Confirmed",
+      "CONFIRM_LAST_NAME_LABEL": "Last Name Confirmed",
+      "COMMENT_LABEL": "Comment",
+      "GENDER": "Gender*",
+      "BIRTH_DATE_LABEL": "Date of Birth",
+      "CONFIRM_BIRTH_DATE_LABEL": "Date of Birth Confirmed",
+      "CONCENT_DATE_LABEL": "Consent Signing Date",
+      "NO_ADDRESS_LABEL": "No Mailing Address",
+      "BLOCKED_LABEL": "Terminate Participation",
+      "EXIT_DATE_LABEL": "Exit Date",
+      "HOME_LABEL": "Nursing Home*",
+      "INFO_NOTE_LABEL": "Building, Floor, Room Number",
+      "INFO_NOTE_PLACEHOLDER": "Building 1, Floor 2, Room 250",
+      "KINDERGARTEN_LABEL": "Preschool Worker",
+      "KINDERGARTEN_PLACEHOLDER": "nursery assistant",
+      "TEACHER_LABEL": "Teacher",
+      "TEACHER_PLACEHOLDER": "math teacher, school principal",
+      "VETERAN_LABEL": "WWII Veteran / Home Front / Prisoner",
+      "VETERAN_PLACEHOLDER": "home front worker, daughter of WWII veteran",
+      "CHILD_OF_WAR_LABEL": "Child of War",
+      "CHILD_OF_WAR_LABEL_PLACEHOLDER": "child of war",
+      "PROFESSION_LABEL": "Profession",
+      "PROFESSION_PLACEHOLDER": "electrician",
+      "HONORARY_STATUS_LABEL": "Special Honors",
+      "HONORARY_STATUS_PLACEHOLDER": "honorary donor, labor veteran, Chernobyl liquidator, military",
+      "INTERESTS_LABEL": "Interests",
+      "INTERESTS_PLACEHOLDER": "enjoys reading and gardening",
+      "ORTHODOX_BELIEVER_LABEL": "Faith (Orthodox)",
+      "ORTHODOX_BELIEVER_PLACEHOLDER": "believer, attends church",
+      "PHOTO_LINK_LABEL": "Photo Link",
+      "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
+      "SPOUSE_LABEL": "Spouse",
+      "DATE_HINT": "mm/dd/yyyy"
+    },
+    "BULK_UPDATE": {
+      "TITLE": "Nursing Home Residents List Update",
+      "DELETED_DUPLICATES": "Duplicate records removed:\n{{duplicates}}",
+      "LIST_UPDATED": "List updated:\nAdded: {{createdCount}}\nRemoved: {{removedCount}}\nUpdated: {{updatedCount}}",
+      "COMMENTS_MODE": "Ignore changes to empty values in non-essential fields",
+      "HOME_NAME": "Nursing Home",
+      "APPLY_CHANGES": "Apply Changes",
+      "DATE_OF_UPDATE": "Update Date",
+      "MONTHS_NOTE_1": "If you are updating birthday recipients for one or more specific months,\nselect the desired months below.",
+      "MONTHS_NOTE_2": "If you are updating the entire list, leave this field empty.",
+      "CHOOSE_MONTHS": "Select Month(s)",
+      "REMOVED": "REMOVED",
+      "ADMITTED": "ADMITTED",
+      "RETURNED": "RETURNED (if these are different people, move them to Admitted/Removed)",
+      "POSSIBLE_DUPLICATES": "POSSIBLY UPDATED (if these are different people, move them to Admitted/Removed)",
+      "UPDATED": "UPDATED (if these are different people, move them to Admitted/Removed)",
+      "NAMES": "Full Name",
+      "BIRTH_DATE": "Date of Birth",
+      "NO_CHANGES": "The list has not changed.",
+      "MOVE_TO_UPDATED": "Move to Updated",
+      "MOVE_TO_ADMITTED": "Move to Admitted/Removed",
+      "ACCEPT_CHANGES": "Accept Changes",
+      "START": "Start",
+
+      "FIELD": {
+        "lastName": "last name",
+        "firstName": "first name",
+        "patronymic": "patronymic",
+        "gender": "gender",
+        "birthDate": "date of birth",
+        "dateOfExit": "date of departure",
+        "dateOfConsent": "consent date",
+        "comment": "comment",
+        "infoNote": "additional information",
+        "photoLink": "photo link",
+        "kindergarten": "kindergarten",
+        "teacher": "teacher",
+        "veteran": "veteran",
+        "childOfWar": "child of war",
+        "profession": "profession",
+        "honoraryStatus": "honorary status",
+        "interests": "interests",
+        "orthodoxBeliever": "Orthodox believer"
+      }
+    },
+
+    "DIALOG": {
+      "BUTTON_APPLY": "Apply",
+      "BUTTON_CANCEL": "Cancel Update",
+
+      "CHECK_DATE": {
+        "TITLE": "Data Verification",
+        "CORRECT_DATE": "Choose a correction option*:",
+
+        "ACTION_DEFAULT_DAY": "set day to 15",
+        "ACTION_DEFAULT_MONTH": "set month to July",
+        "ACTION_DEFAULT_YEAR": "do not specify year of birth",
+        "ACTION_RETAIN_YEAR": "keep existing year of birth",
+        "ACTION_CUSTOM": "specify full date",
+        "ACTION_EMPTY": "do not specify date of birth",
+
+        "ERROR": {
+          "NO_MONTH": "Month is missing in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "NO_DAY": "Day is missing in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "WRONG_MONTH": "Invalid month in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "WRONG_DAY": "Invalid day in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "WRONG_YEAR": "Invalid year in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'.",
+          "STRANGE_YEAR": "Unusual year in the date of birth for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'."
+        }
+      },
+
+      "CHECK_GENDER": {
+        "TITLE": "Gender Verification",
+        "CORRECT_GENDER": "Specify the gender* and correct the name fields if necessary:",
+
+        "MALE": "Male",
+        "FEMALE": "Female",
+
+        "LAST_NAME_LABEL": "Last Name",
+        "FIRST_NAME_LABEL": "First Name",
+        "PATRONYMIC_LABEL": "Patronymic",
+
+        "ERROR": {
+          "NO_GENDER": "Unable to determine the gender automatically for resident '{{fullName}} - {{day}}.{{month}}.{{year}}'."
+        }
+      }
+    }
+  },
+
+  "VOLUNTEER": {
+    "HAS_DEPENDENCIES": "The volunteer cannot be deleted: {{count}} related request(s)",
+    "TABLE_TITLE": "Volunteers",
+    "ADD_PARTNER": "Add volunteer",
+    "SEARCH_PLACEHOLDER": "Olga Kotova",
+
+    "VIEW_OPTIONS": {
+      "ALL": "all volunteers",
+      "ONLY_ACTIVE": "only active",
+      "ONLY_BLOCKED": "only blocked"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "New volunteer",
+      "VIEW_TITLE": "Volunteer",
+
+      "FIRST_NAME_LABEL": "First name*",
+      "PATRONYMIC_LABEL": "Patronymic",
+      "LAST_NAME_LABEL": "Last name",
+      "COMMENT_LABEL": "Comment",
+      "BLOCKED_LABEL": "Blocked",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Phone number",
+      "TELEGRAM_ID_LABEL": "Telegram ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Telegram phone number",
+      "TELEGRAM_NICKNAME_LABEL": "Telegram nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "VKontakte",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Other contact",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above",
+
+      "INSTITUTE_NAME_LABEL": "Institute's name*",
+      "INSTITUTE_NAME_PLACEHOLDER": "MS 216 George J. Ryan",
+      "CATEGORY_LABEL": "Category*"
+    },
+    "CATEGORIES": {
+      "KINDERGARTEN": "Preschool",
+      "SCHOOL": "School",
+      "COLLEGE": "College",
+      "UNIVERSITY": "University",
+      "GOVERNMENT": "Government organization",
+      "BUSINESS": "Business organization",
+      "CHURCH": "Religious organization",
+      "CHARITY": "Charitable organization",
+      "CHILDREN": "Children volunteers",
+      "YOUTH": "Youth volunteers",
+      "ADULTS": "Adult volunteers",
+      "OTHER": "Other"
+    }
+  },
   "BASE_LIST": {
     "DOWNLOAD_TABLE": "Download table",
     "SEARCH_LABEL": "Search (enter any value present in the table)",
     "APPLIED_FILTERS": "Applied filters: {{value}}",
     "EXACT_MATCH_HINT": "search terms must be present simultaneously",
     "INCLUDE_OUTDATED": "include outdated data: previous addresses, phone numbers, etc.",
-    "NO_DATA_FOR_QUERY": "No data found",
     "SET_FILTER": "Configure filter",
     "RESET_FILTER": "Reset filter",
     "SET_COLUMNS": "Configure column visibility",
+    "UPDATE_LABEL": "update",
     "START_LABEL": "start",
     "BLOCK_LABEL": "block",
-    "OUTDATED_DATA": "outdated data:"
+    "EXIT_LABEL": "exit",
+    "CLOSE_LABEL": "close",
+    "LAST_ORDER_LABEL": "last order",
+    "DAY_LABEL": "DOB days: ",
+    "MONTH_LABEL": "DOB months: ",
+    "YEAR_LABEL": "DOB years: ",
+    "FROM_LABEL": "from ",
+    "HOMES_LABEL": " homes"
   },
   "NAV": {
     "COLUMNS_HEADER": "Configure column visibility",
@@ -308,12 +906,33 @@
       "ADDR_LABEL": "address",
       "STRONG_FILTER": "all selected values must be present simultaneously",
       "ROLE_LABEL": "role",
-      "CHOOSE_VALUE_LABEL": "Select value(s)",
+      "AFFILIATION_LABEL": "affiliation",
+      "INSTITUTE_LABEL": "institute category",
+      "SUBSCRIPTIONS_LABEL": "subscription",
+      "COOPERATIONS_LABEL": "cooperation",
+      "CHOOSE_VALUE_LABEL": "select value(s)",
+      "CHOOSE_REGION_VALUE_LABEL": "select region(s)",
+      "CHOOSE_HOME_VALUE_LABEL": "select home(s)",
       "START_DATE_LABEL": "start date",
       "CHOOSE_RANGE_LABEL": "Enter a range",
       "DATE_PLACEHOLDER": "mm/dd/yyyy",
       "BLOCK_DATE_LABEL": "block date",
-      "BLOCK_COMMENT": "The result will make sense only if ‘All’ or ‘Blocked only’ is selected",
+      "EXIT_DATE_LABEL": "exit date",
+      "CLOSE_DATE_LABEL": "close date",
+      "UPDATE_DATE_LABEL": "update date",
+      "LAST_ORDER_DATE_LABEL": "last order date",
+      "BLOCK_COMMENT": "The result will make sense only if ‘all’ or ‘only blocked’ is selected",
+      "BLOCK_COMMENT_USERS": "The result will make sense only if ‘all’ or ‘only blocked’ is selected",
+      "BLOCK_COMMENT_VOLUNTEERS": "The result will make sense only if ‘all’ or ‘only blocked’ is selected",
+      "BLOCK_COMMENT_PARTNERS": "The result will make sense only if ‘all’ or ‘only former’ is selected",
+      "BLOCK_COMMENT_HOMES": "The result will make sense only if ‘all’ or ‘only inactive’ or ‘exclude closed’ is selected",
+      "BLOCK_COMMENT_SENIORS": "The result will make sense only if ‘all’ or ‘only blocked’ or ‘exclude discharged’ is selected",
+      "CLOSE_COMMENT_HOMES": "The result will make sense only if ‘all’ or ‘only closed’ is selected",
+      "CLOSE_COMMENT_SENIORS": "The result will make sense only if ‘all’ or ‘only discharged’ is selected",
+      "NOT_ACTIVE_COMMENT_PARTNERS": "to select closed homes, include outdated data",
+      "NOT_ACTIVE_COMMENT_SENIORS": "to select inactive homes, choose ‘all’ or ‘only inactive’ or ‘exclude closed’, to select closed homes - ‘all’ or ‘only closed’",
+      "NOT_ACTIVE_COMMENT_HOMES": "to select former partners, include outdated data",
+      "NOT_ACTIVE_COMMENT_VOLUNTEERS": "to select former users, include outdated data",
       "CONTACT_TYPE_LABEL": "contact type",
       "COMMENT_LABEL": "comment",
       "WITH_COMMENT_OPT": "with comment",
@@ -327,92 +946,351 @@
       "VKONTAKTE_OPT": "VKontakte",
       "INSTAGRAM_OPT": "Instagram",
       "FACEBOOK_OPT": "Facebook",
-      "OTHER_CONTACT_OPT": "Other contact"
+      "OTHER_CONTACT_OPT": "Other contact",
+      "GENDER_LABEL": "gender",
+      "ONLY_MALE": "male",
+      "ONLY_FEMALE": "female",
+      "PECULIARITIES_LABEL": "peculiarities",
+      "ONLY_NO_ADDRESS": "no return address only",
+      "WITHOUT_NO_ADDRESS": "exclude no return address",
+      "ONLY_SPECIAL": "special care homes only",
+      "WITHOUT_SPECIAL": "exclude special care homes",
+      "ONLY_ACC_FOR_SCHOOL": "suitable for schools only",
+      "WITHOUT_ACC_FOR_SCHOOL": "exclude suitable for schools",
+      "ONLY_WITH_COORDINATION": "active coordination",
+      "ONLY_WITHOUT_COORDINATION": "vacant coordination",
+      "ONLY_WITH_INSTITUTE": "institutes",
+      "ONLY_WITHOUT_INSTITUTE": "no institutes",
+      "ONLY_WITH_SUBSCRIPTION": "active subscription",
+      "ONLY_WITHOUT_SUBSCRIPTION": "vacant subscription",
+      "ONLY_WITH_COOPERATION": "active cooperation",
+      "ONLY_WITHOUT_COOPERATION": "vacant cooperation",
+      "PARTNERS_LABEL": "coordinators",
+      "HOMES_LABEL": "nursing homes",
+      "REGIONS_LABEL": "home regions",
+      "DETAILS_LABEL": "only with",
+      "PERSONAL_NO_ADDRESS_LABEL": "personal no return address status",
+      "COMMENT_OPT": "comment",
+      "PHOTO_LINK_OPT": "photo",
+      "CONSENT_OPT": "consent",
+      "TEACHER_OPT": "teacher status",
+      "KINDERGARTEN_OPT": "preschool worker status",
+      "HONORARY_OPT": "honorary status",
+      "VETERAN_OPT": "veteran status",
+      "CHILD_OF_WAR_OPT": "child of war status",
+      "BELIEVER_OPT": "believer status",
+      "PROFESSION_OPT": "profession",
+      "INTERESTS_OPT": "interests",
+      "SPOUSE_OPT": "spouse",
+      "BIRTHDAY_LABEL": "birthday",
+      "DAY_LABEL": "day",
+      "MONTH_LABEL": "month",
+      "YEAR_LABEL": "year",
+      "FROM_LABEL": "from",
+      "TO_LABEL": "to",
+      "JANUARY": "January",
+      "FEBRUARY": "February",
+      "MARCH": "March",
+      "APRIL": "April",
+      "MAY": "May",
+      "JUNE": "June",
+      "JULY": "July",
+      "AUGUST": "August",
+      "SEPTEMBER": "September",
+      "OCTOBER": "October",
+      "NOVEMBER": "November",
+      "DECEMBER": "December",
+      "WITHOUT_YEAR": "hide entries without year of birth",
+      "WITHOUT_BIRTHDAY": "hide entries without DOB"
     }
   },
+  "ORDER": {
+    "VIEW_OPTIONS": {
+      "ALL": "all requests",
+      "ONLY_ACTIVE": "active only",
+      "ONLY_BLOCKED": "cancelled only"
+    },
+    "TABLE": {
+      "TITLE": "Requests",
+      "PAGE_REPORT": "Showing {first} to {last} of {totalRecords} entries",
+      "CLEAR": "Clear",
+      "SEARCH_PLACEHOLDER": "Enter at least 3 characters...",
+      "USER_NAME": "Coordinator",
+      "DATE": "Date",
+      "AMOUNT": "Amount",
+      "VOLUNTEER_NAME": "Volunteer",
+      "INSTITUTE_NAME": "Organization",
+      "CONTACT": "Contact",
+      "SOURCE": "Source",
+      "STATUS": "Status",
+      "CONFIRM": "Confirm",
+      "ACTION": "Actions",
+      "CANCEL": "Cancel confirmation",
+      "VIEW": "Open",
+      "DELETE": "Cancel",
+      "RESTORE": "Restore",
+      "DELETE_OVERDUE": "Cancel: expired",
+      "DELETE_RETURNED": "Cancel: declined",
+      "DELETE_MISTAKE": "Delete: created by mistake",
+      "OCCASION_NAME": "Occasion",
+      "COMMENT": "Comment",
+      "CONFIRM_BUTTON": "Confirm",
+      "CANCEL_BUTTON": "Cancel confirmation",
+      "VIEW_BUTTON": "Open",
+      "DELETE_BUTTON": "Cancel",
+      "RESTORE_BUTTON": "Restore",
+      "EMPTY": "No records found.",
+      "SEARCH_TOOLTIP": "Search the coordinator, volunteer, organization, contact, and comment columns"
+    },
+    "STATUS": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Confirmed",
+      "RETURNED": "Declined",
+      "OVERDUE": "Expired"
+    },
+    "DETAILS": {
+      "EDIT_BUTTON": "Edit",
+      "SAVE_BUTTON": "Save",
+      "CANCEL_BUTTON": "Cancel",
+      "INSTITUTE": "Organization"
+    },
+    "CARD": {
+      "CREATION_TITLE": "New request",
+      "VIEW_TITLE": "Request",
+      "PREVIOUS_OCCASION_LABEL": "Previous occasion",
+      "NEXT_OCCASION_LABEL": "Next occasion",
+      "CREATE_BUTTON": "Create",
+      "CLEAR_BUTTON": "Clear",
+      "NO_CONF_REQUIRED_LABEL": "No confirmation required",
+      "SOURCE_LABEL": "Source",
+      "CONTACT_LABEL": "Email/account/phone number",
+      "ADD_VOLUNTEER": "add volunteer",
+      "AMOUNT_LABEL": "Amount",
+      "COMMENT_LABEL": "Comment",
+      "COMMENT_PLACEHOLDER": "sending greetings as a family",
+      "VOLUNTEER_INFO": "Volunteer information",
+      "OPEN_CARD_TOOLTIP": "Open volunteer card",
+      "WARNING_NOTE": "WARNING! This volunteer is blocked and must not be given addresses.",
+      "INSTITUTES_NOTE": "Check if the addresses are for an organization",
+      "SOURCE": {
+        "SUBS": "regular volunteers",
+        "SITE": "website",
+        "VK": "VKontakte",
+        "TELEGRAM": "Telegram",
+        "INSTA": "Instagram",
+        "DOBRORU": "Dobro.ru",
+        "INFLUENCER": "influencer",
+        "OTHER": "other"
+      },
+      "LIST_TITLE": "Recipient list",
+      "SUCCESS_MESSAGE": "Your request has been created and saved. Please copy the list and send it to the volunteer. If the list does not meet your needs, delete this request and adjust the filters or contact an administrator.",
+      "FAILED_MESSAGE": "The request could not be created because there are not enough matching addresses. Try adjusting the filters or contact an administrator.",
+      "NO_ADDRESS_NOTE": "(The administration strongly asks that you not put your personal address on mail sent to this nursing home. In the sender address field, enter your post office address; in the sender name field, enter ‘Volunteer’ and your name.)",
+      "NO_ADDRESS_NOTE_SCHOOL": "(The administration strongly asks that you not put your personal address or other personal information on mail sent to this nursing home. In the sender address field, enter the educational institution’s address; in the sender name field, enter the institution’s name.)",
+      "ADDRESS_NOTE_SCHOOL": "In the sender address field, enter the educational institution’s address; in the sender name field, enter the institution’s name.",
+      "INDEX_LABEL": "number the entries",
+      "SUBS_LABEL": "include the regular-volunteer message",
+      "NEWER_LABEL": "include the new-volunteer instructions",
+      "COPY_BUTTON_TOOLTIP": "Copy",
+      "FOR_NOTE": "for",
+      "FILTERS": {
+        "HEADER": "Filters",
+        "ADDRESS_LABEL": "Addresses",
+        "DATE_LABEL": "Dates",
+        "DATE_TOOLTIP": "Only one boundary may be specified: dates must be either before or after it",
+        "YEAR_LABEL": "Year of birth",
+        "YEAR_TOOLTIP": "Only one boundary may be specified: the year of birth must be either before or after it",
+        "FROM_LABEL": "from",
+        "TO_LABEL": "to",
+        "FEMALE_LABEL": "M",
+        "MALE_LABEL": "F",
+        "REGION_LABEL": "Region",
+        "HOME_LABEL": "Nursing home",
+        "ADD_SPARE_REGIONS_LABEL": "include nearby regions",
+        "PLACE_TOOLTIP": "If no results are returned, enter a wider date range",
+        "ONLY_PHOTO_LABEL": "With photos only",
+        "ONLY_ANNIVERSARY_LABEL": "Anniversaries only",
+        "ONLY_OLDEST": "Anniversaries and ages 80+ only",
+        "ONLY_CONCENT": "With consent only",
+        "MAX_NO_ADDRESS_LABEL": "max no-return-address",
+        "MIN_ONE_HOME_LABEL": "min from one home",
+        "MAX_ONE_HOME_LABEL": "max from one home",
+        "ADDRESS_CATEGORY": {
+          "ANY": "any",
+          "FOR_SCHOOLS": "for schools",
+          "ONLY_WITH_ADDRESS": "with return addresses only",
+          "NO_RELEASED": "exclude former prisoners",
+          "ONLY_MENT_CATEGORY": "no-return-address only"
+        },
+        "GENDER": {
+          "ANY": "any",
+          "MALE": "men only",
+          "FEMALE": "women only",
+          "PROPORTION": "proportionally"
+        }
+      },
+      "RECIPIENT_STATUS": {
+        "PRESENT": "",
+        "ABSENT": "ABSENT",
+        "DELETED": "DELETED",
+        "DELETING": "DELETING"
+      }
+    }
+  },
+  "SUCCESS": {
+    "DATA_ADDED": "Added {{listLength}} records.",
+    "DATA_DELETED": "Records deleted.",
+    "DATA_CHECKED": "Records checked.",
+    "CREATED": "Record created successfully.",
+    "UPDATED": "Record updated successfully.",
+    "DELETED": "Record deleted successfully.",
+    "SAVED": "Changes saved successfully."
+  },
+
   "ERRORS": {
-    "VALIDATION": "Validation error",
-    "FORBIDDEN": "Not enough permissions",
-    "ACCESS": "Failed to check permissions",
-    "BAD_REQUEST": "Bad request",
-    "DB_ERROR": "Storage error",
+    "DATA_ADD_FAILED": "Failed to add records.",
+    "INVALID_FILTER_MATCH_MODE": "Invalid filter match mode.",
+    "INVALID_FILTER_VALUE": "Invalid filter value.",
+    "UNSUPPORTED_TYPE": "Unsupported type value.",
+    "RECIPIENT": {
+      "LIST_ALREADY_EXISTS": "This list already exists.",
+      "HAS_DEPENDENCIES": "The selected records cannot be deleted because they are linked to requests.",
+      "LIST_HAS_DEPENDENCIES": "The list cannot be cleared because it is linked to requests."
+    },
+    "ORDER": {
+      "MIN_RECIPIENTS": "The request must contain at least one recipient."
+    },
+    "DATA_FETCH_FAILED": "Failed to load data.",
+    "DATA_SAVE_FAILED": "Failed to save data.",
+    "DATA_UPDATE_FAILED": "Failed to update data.",
+    "DATA_DELETE_FAILED": "Failed to delete data.",
+    "DATA_NOT_FOUND": "Data not found.",
+    "DATA_CREATE_FAILED": "Failed to create the record.",
+    "DATA_CHECK_FAILED": "Failed to verify data.",
+    "REPORT_GENERATE_FAILED": "Failed to generate report.",
+
+    "OCCASION": {
+      "ALREADY_EXISTS": "Occasion with this name already exists.",
+      "HAS_DEPENDENCIES": "The occasion cannot be deleted because it has related recipients."
+    },
+
+    "VALIDATION": "Validation error.",
+    "FORBIDDEN": "Not enough permissions.",
+    "ACCESS": "Failed to check permissions.",
+    "BAD_REQUEST": "Bad request.",
+    "DB_ERROR": "Storage error.",
     "SERVER": "Unexpected server error. Please try again later.",
-    "UNAUTHORIZED": "Unauthorized",
-    "INVALID_AUTHORIZATION": "Invalid password or username",
-    "NOT_FOUND": "Resource not found",
-    "CONFLICT": "Data conflict",
-    "LOGS_NOT_ACCEPTED": "Failed to accept client logs",
+    "UNAUTHORIZED": "Unauthorized.",
+    "INVALID_AUTHORIZATION": "Invalid password or username.",
+    "NOT_FOUND": "Resource not found.",
+    "CONFLICT": "Data conflict.",
+    "LOGS_NOT_ACCEPTED": "Failed to accept client logs.",
     "NO_DATA_RECEIVED": "An error occurred. No data received.",
-    "INVALID_SCHEMA": "Invalid response data format",
-    "INVALID_TYPE": "Invalid response data type",
-    "NO_VALIDATOR": "Validation is not available",
-    "UNKNOWN": "Unknown error occurred",
+    "INVALID_SCHEMA": "Invalid response data format.",
+    "INVALID_TYPE": "Invalid response data type.",
+    "NO_VALIDATOR": "Validation is not available.",
+    "UNKNOWN": "Unknown error occurred.",
     "TOO_MANY_ATTEMPTS": "Too many attempts. Try again in {{retryAfterSec}} sec.",
     "ACCOUNT_RESTRICTED": "Your account is restricted by an administrator.",
     "ACCOUNT_LOCKED": "Temporary lock after multiple failed attempts. Please try later.",
     "ACCOUNT_LOCKED_UNTIL": "Temporary lock. Please try again after {{until}}.",
     "UNAUTHORIZED_CATCH": "Authorization error. Please try again.",
-    "USER_WITHOUT_ROLE": "User without role",
+    "USER_WITHOUT_ROLE": "User without role.",
+    "ADDRESS_NOT_RESTORED": "Failed to restore the address. Object not updated.",
 
     "ROLE": {
-      "NOT_FOUND": "Role not found",
-      "NAME_NOT_CHECKED": "Failed to check the role name",
-      "NOT_CREATED": "Failed to create the role",
-      "NOT_UPDATED": "Failed to update the role",
-      "NAME_LIST_FAILED": "Failed to get the list of role names",
-      "LIST_FAILED": "Failed to get the list of roles",
-      "NOT_CHECKED": "Failed to check the role dependencies",
-      "NOT_DELETED": "Failed to delete the role"
+      "NOT_FOUND": "Role not found.",
+      "ALREADY_EXISTS": "A role with this name already exists.",
+      "HAS_DEPENDENCIES": "The role cannot be deleted because it is assigned to users.",
+      "NAME_NOT_CHECKED": "Failed to check the role name.",
+      "NOT_CREATED": "Failed to create the role.",
+      "NOT_UPDATED": "Failed to update the role.",
+      "NAME_LIST_FAILED": "Failed to get the list of role names.",
+      "LIST_FAILED": "Failed to get the list of roles.",
+      "NOT_CHECKED": "Failed to check the role dependencies.",
+      "NOT_DELETED": "Failed to delete the role."
     },
     "TOPONYM": {
-      "NOT_FOUND": "Toponym not found",
-      "NAME_NOT_CHECKED": "Failed to check the toponym name",
-      "NOT_CREATED": "Failed to create the toponym",
-      "NOT_UPDATED": "Failed to update the toponym",
-      "NAME_LIST_FAILED": "Failed to get the list of toponym names",
-      "LIST_FAILED": "Failed to get the list of toponyms",
-      "NOT_CHECKED": "Failed to check the toponym dependencies",
-      "NOT_DELETED": "Failed to delete the toponym",
-      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}",
+      "NOT_FOUND": "Toponym not found.",
+      "NAME_NOT_CHECKED": "Failed to check the toponym name.",
+      "NOT_CREATED": "Failed to create the toponym.",
+      "NOT_UPDATED": "Failed to update the toponym.",
+      "NAME_LIST_FAILED": "Failed to get the list of toponym names.",
+      "LIST_FAILED": "Failed to get the list of toponyms.",
+      "NOT_CHECKED": "Failed to check the toponym dependencies.",
+      "NOT_DELETED": "Failed to delete the toponym.",
+      "BULK_INPUT_DUPLICATES": "The input contains duplicate names: {{duplicates}}.",
       "FROM_BULK_ALREADY_EXISTS": "These names: {{conflicts}} are already in use for this area. If this isn’t a mistake, please contact an administrator.",
-      "BULK_NOT_CREATED": "Toponyms were not created due to an error",
+      "BULK_NOT_CREATED": "Toponyms were not created due to an error.",
       "BULK_PARENT_NOT_FOUND": "These toponyms: {{parents}} were not found. Please check the spelling.",
-      "INVALID_TYPE": "Invalid type of the toponym: {{name}}"
+      "INVALID_TYPE": "Invalid type of the toponym: {{name}}."
     },
     "FILE": {
-      "EMPTY": "The file contains no data",
-      "INVALID_STRUCTURE": "Required columns are missing",
-      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx)",
-      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'",
-      "NOT_UPLOADED": "Failed to upload the file",
-      "NOT_CHOSEN": "The file isn't chosen"
+      "EMPTY": "The file contains no data.",
+      "INVALID_STRUCTURE": "Required columns are missing.",
+      "INVALID_FORMAT_XLSX": "Invalid file format. Please upload an Excel file (.xlsx).",
+      "VALIDATION": "Validation error: row {{row}}, column '{{column}}', error '{{error}}'.",
+      "NOT_UPLOADED": "Failed to upload the file.",
+      "NOT_CHOSEN": "The file isn't chosen.",
+      "INVALID_PATH": "Invalid file path.",
+      "NOT_FOUND": "File not found.",
+      "DOWNLOAD_FAILED": "Failed to download the file."
     },
     "USER": {
-      "NOT_FOUND": "User not found",
-      "NAME_NOT_CHECKED": "Failed to check the user name",
-      "DUPLICATES_NOT_CHECKED": "Failed to check the user data",
+      "ALREADY_EXISTS": "User with this userName already exists",
+      "HAS_DATA_DUPLICATES": "The user data has duplicates",
+      "HAS_DEPENDENCIES": "The user cannot be deleted: {{count}} related items(s)",
+      "NOT_FOUND": "User not found.",
+      "NAME_NOT_CHECKED": "Failed to check the user name.",
+      "DUPLICATES_NOT_CHECKED": "Failed to check the user data.",
       "ROLE_REQUIRED": "User has no assigned role. Account not created.",
-      "NOT_CREATED": "Failed to create the user",
-      "NOT_UPDATED": "Failed to update the user",
-      "ADDRESS_NOT_RESTORED": "Failed to restore the address. User not updated.",
-      "LIST_FAILED": "Failed to get the list of users",
-      "NOT_CHECKED": "Failed to check the user dependencies",
-      "NOT_DELETED": "Failed to delete the user",
+      "NOT_CREATED": "Failed to create the user.",
+      "NOT_UPDATED": "Failed to update the user.",
+      "LIST_FAILED": "Failed to get the list of users.",
+      "NOT_CHECKED": "Failed to check the user dependencies.",
+      "NOT_DELETED": "Failed to delete the user.",
       "CURRENT_PASSWORD_REQUIRED": "Current password is required to change your password.",
       "CURRENT_PASSWORD_INVALID": "The current password you entered is incorrect.",
       "PASSWORD_NOT_CHANGED": "The password could not be changed. Please try again.",
-      "NOT_BLOCKED": "Failed to block the user",
-      "NOT_UNBLOCKED": "Failed to unblock the user"
+      "NOT_BLOCKED": "Failed to block the user.",
+      "NOT_UNBLOCKED": "Failed to unblock the user."
+    },
+    "VOLUNTEER": {
+      "HAS_DATA_DUPLICATES": "The volunteer data has duplicates",
+      "HAS_DEPENDENCIES": "The volunteer cannot be deleted because related requests exist."
+    },
+    "PARTNER": {
+      "HAS_DATA_DUPLICATES": "The partner data has duplicates.",
+      "HAS_DEPENDENCIES": "The partner cannot be deleted while related home coordinations exist."
+    },
+    "SENIOR": {
+      "HAS_DATA_DUPLICATES": "The resident data has duplicates.",
+      "HAS_DEPENDENCIES": "The resident cannot be deleted while related records exist."
+    },
+    "HOME": {
+      "ALREADY_EXISTS": "A home with this name already exists."
+    },
+    "CONTACT": {
+      "INVALID_FORMAT": "The contact value has an invalid format."
     }
   },
+
   "FORM_VALIDATION": {
     "INVALID_FORM": "Invalid form",
     "INVALID_FORMAT": "Invalid data format",
     "REQUIRED": "This field cannot be empty",
+    "REQUIRED_SELECTION": "A selection is required",
     "TOO_LONG_500": "Maximum 500 characters",
+    "TOO_LONG_256": "Maximum 256 characters",
+    "TOO_LONG_150": "Maximum 150 characters",
     "TOO_LONG_50": "Maximum 50 characters",
     "TOO_LONG_20": "Maximum 20 characters",
     "TOO_SHORT_5": "Minimum 5 characters",
+    "TOO_SHORT_2": "Minimum 2 characters",
+    "TOO_SHORT_7": "Minimum 7 characters",
+    "NOT_FOUND": "The field is empty or the entered value was not found",
+    "INVALID_ISO_DATE": "Invalid date",
+    "MIN_ONE_CONTACT": "At least one contact is required",
     "ROLE": {
       "NAME_MIN": "Name must contain at least 2 characters",
       "NAME_MAX": "Name must not be longer than 50 characters",
@@ -424,29 +1302,168 @@
     },
     "CONTACT": {
       "MIN_CONTACT": "At least one contact is required",
-      "INVALID_CONTACT": "Invalid data"
+      "INVALID_CONTACT": "Invalid data",
+      "INVALID_URL": "Invalid URL"
     },
     "USER": {
       "MIN_PASSWORD": "Minimum 8 characters",
       "LETTER_PASSWORD": "At least 1 Latin letter",
       "DIGIT_PASSWORD": "At least 1 digit",
       "MISMATCH_PASSWORDS": "Passwords mismatch"
+    },
+    "SENIOR": {
+      "MODE_REQUIRED": "Selection is required",
+      "DATE_REQUIRED": "Please select a date in right format"
+    },
+    "ORDER": {
+      "WRONG_DAY": "Allowed values: 1 through 31",
+      "WRONG_YEAR": "Allowed values: 1900 through the current year",
+      "INT_MIN_1": "Only integers greater than 0 are allowed",
+      "INVALID_DATE_RANGE": "The ‘from’ date cannot be later than the ‘to’ date",
+      "INVALID_YEAR_RANGE": "The ‘from’ year cannot be later than the ‘to’ year",
+      "GENDER_AMOUNT_SUM": "The sum of the values must equal the requested amount",
+      "MAX_NO_ADDRESS_TOO_BIG": "The maximum number of no-return-address entries cannot exceed the requested amount",
+      "MIN_FROM_ONE_HOUSE_TOO_BIG": "The minimum from one home cannot exceed the requested amount",
+      "MAX_FROM_ONE_HOUSE_TOO_BIG": "The maximum from one home cannot exceed the requested amount",
+      "MIN_GRATE_THAN_MAX": "The minimum from one home cannot exceed the maximum from one home",
+      "IMPOSSIBLE_HOUSE_DISTRIBUTION": "This distribution across homes is not possible for the specified amount"
     }
   },
   "INTERNAL_VALIDATION": {
     "FLAG_INVALID": "Flag is allowed only for VIEW_LIMITED_* or VIEW_FULL_* operations",
     "SUPER_OPS_WITH_FLAG": "Super-operations (accessToAllOps=true) must not have flag"
   },
+  "STATISTIC": {
+    "CARD_TITLE": "Statistics",
+    "GENERAL_TITLE": "General statistics (only actual occasions)",
+    "TABLE": {
+      "OCCASION": "Occasion",
+      "ALL": "Total",
+      "ZERO": "Not yet covered",
+      "ONCE": "Once covered",
+      "TWICE": "Twice covered",
+      "THREE_TIMES": "Three times covered",
+      "FOUR_AND_MORE_TIMES": "Four or more times cov.",
+      "ALL_RECIPIENTS": "all rec.",
+      "PART_RECIPIENTS": "spec. cat."
+    },
+    "EXPORT": {
+      "OCCASION": "Occasion",
+      "ALL": "Total recipients",
+      "INCL_PART": "incl. special categories",
+      "ZERO": "Not yet covered",
+      "ONCE": "Covered once",
+      "TWICE": "Covered twice",
+      "THREE_TIMES": "Covered three times",
+      "FOUR_AND_MORE_TIMES": "Covered four or more times"
+    },
+    "BUTTON_DOWNLOAD": "Export to Excel"
+  },
+
+  "REPORTS": {
+    "CARD_TITLE": "Reports",
+    "BUTTON_GENERATE": "Generate report",
+    "FORM": {
+      "TYPE": "Report type",
+      "FREQUENCY": "Frequency",
+      "YEARS": "Years",
+      "MONTHS": "Months",
+      "QUARTERS": "Quarters"
+    },
+    "TYPES": {
+      "GENERAL": "General report",
+      "PERSONAL": "Personal report",
+      "SCHOOL_COORDINATION": "School coordination",
+      "BY_OCCASION": "Report by occasion"
+    },
+    "FREQUENCIES": {
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "ANNUAL": "Annually"
+    },
+    "QUARTERS": {
+      "FIRST": "1st quarter",
+      "SECOND": "2nd quarter",
+      "THIRD": "3rd quarter",
+      "FORTH": "4th quarter"
+    },
+    "MONTHS": {
+      "JANUARY": "January",
+      "FEBRUARY": "February",
+      "MARCH": "March",
+      "APRIL": "April",
+      "MAY": "May",
+      "JUNE": "June",
+      "JULY": "July",
+      "AUGUST": "August",
+      "SEPTEMBER": "September",
+      "OCTOBER": "October",
+      "NOVEMBER": "November",
+      "DECEMBER": "December"
+    },
+    "TABLE": {
+      "PERIOD": "Period",
+      "OCCASION": "Occasion",
+      "ORDERS_COUNT": "Number of orders",
+      "DOBRORU_COUNT": "Dobro.ru orders",
+      "CARDS_COUNT": "Number of cards",
+      "SENIORS_COUNT": "Number of seniors",
+      "VOLUNTEERS_COUNT": "Number of volunteers",
+      "INSTITUTES_COUNT": "Number of organizations",
+      "SCHOOLS_COUNT": "Number of schools",
+      "NEW_SCHOOLS_COUNT": "Number of new schools",
+      "HOMES_COUNT": "Number of care homes",
+      "REGIONS_COUNT": "Number of regions",
+      "OCCASIONS_TITLE": "By occasion",
+      "TOGGLE_OCCASIONS": "Show or hide occasion details",
+      "EMPTY_MESSAGE": "No data"
+    }
+  },
+
   "OBJECT": {
+    "RECIPIENTS": "Greeting recipients",
+    "REPORTS": "Reports",
     "TOPONYMS": "Countries\nRegions\nDistricts\nLocalities",
     "USERS": "Users",
     "ROLES": "Roles",
     "HOMES": "Nursing homes",
     "PARTNERS": "Institution\nrepresentatives",
     "SENIORS": "Residents",
-    "VOLUNTEERS": "Volunteers"
+    "VOLUNTEERS": "Volunteers",
+    "ORDERS": "Requests",
+    "OCCASIONS": "Occasions"
   },
   "OPS": {
+    "BULK_CREATE": {
+      "NAME": "Create a list"
+    },
+    "BULK_EDIT": {
+      "NAME": "Edit in bulk"
+    },
+    "BULK_CLEAR": {
+      "NAME": "Clear the list"
+    },
+    "DOWNLOAD": {
+      "NAME": "Download data"
+    },
+    "EDIT_RECIPIENTS": {
+      "NAME": "Edit the recipients list"
+    },
+    "FULL_FILTER": {
+      "NAME": "Access the full filter"
+    },
+    "VIEW_AUDIT_LOG": {
+      "NAME": "View the audit log"
+    },
+    "VIEW_CURRENT_STATISTIC": {
+      "NAME": "View current statistics"
+    },
+    "VIEW_LIMITED_REPORTS": {
+      "NAME": "Access basic report data"
+    },
+    "VIEW_FULL_REPORTS": {
+      "NAME": "Access additional report data"
+    },
     "ALL_OPS": {
       "NAME": "Full access to all operations"
     },

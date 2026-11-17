@@ -1,14 +1,18 @@
 @if(showSpinner()){
- <div class="overlay">
+<div class="overlay">
   <p-progress-spinner strokeWidth="6" fill="transparent" animationDuration="1s"
     [style]="{ width: '150px', height: '150px' }" />
 </div>
 }
 <mat-grid-list cols="18" gutterSize="16px" rowHeight="76px">
   <div mat-dialog-title>
-
-    <mat-grid-tile colspan="11" rowspan="1">
-      <h3 mat-dialog-title>{{title | translate}}</h3>
+    <mat-grid-tile colspan="1" rowspan="1"> </mat-grid-tile>
+    <mat-grid-tile colspan="10" rowspan="1">
+      <h5 mat-dialog-title>{{title | translate}}
+        @if(data.extraTitle){
+        <span style="color: red">{{data.extraTitle | translate}}</span>
+        }
+      </h5>
     </mat-grid-tile>
 
     <mat-grid-tile colspan="2" rowspan="1">

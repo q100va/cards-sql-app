@@ -1,14 +1,80 @@
 import { AddressFilter } from './toponym';
-import { ContactType } from './user';
+import { ContactType, RelationPick } from './advanced-model';
 
 export interface GeneralFilter {
   roles: { id: number; name: string }[];
-  comment: string[];
   dateBeginningRange: Date[];
   dateRestrictionRange: Date[];
+  dateExitRange: Date[];
+  dateUpdateRange: Date[];
+  dateLastOrderRange: Date[];
   contactTypes: { type: ContactType; label: string }[];
+  affiliations: number[];
+  categories: number[];
+  homes: RelationPick[];
+  homeRegions: { id: number; name: string }[];
+  partners: RelationPick[];
+  subscriptions: RelationPick[];
+  cooperations: RelationPick[];
+  gender: string | null;
+  details: { value: string; label: string }[];
+  noAddress: boolean | null;
+  specialHome: boolean | null;
+  acceptableForSchool: boolean | null;
+  hasCoordination: boolean | null;
+  hasInstitute: boolean | null;
+  hasSubscription: boolean | null;
+  hasCooperation: boolean | null;
+  birthDate: { dayRange: number[]; monthRange: number[]; yearRange: number[] };
+  hideWithoutYear: boolean;
+  hideWithoutBirthday: boolean;
 }
 
+export interface AllFilterParameters {
+  viewOption: string;
+  viewHomeOption: string;
+  includeOutdated: boolean;
+  searchValue: string;
+  exactMatch: boolean;
+  sortParameters: {
+    active: string;
+    direction: 'asc' | 'desc' | '';
+  };
+  filter: GeneralFilter;
+  addressFilter: AddressFilter;
+  strongAddressFilter: boolean;
+  strongContactFilter: boolean;
+  strongDetailFilter: boolean;
+}
+
+export const createEmptyGeneralFilter = () => ({
+  roles: [],
+  contactTypes: [],
+  dateBeginningRange: [],
+  dateRestrictionRange: [],
+  dateExitRange: [],
+  dateUpdateRange: [],
+  dateLastOrderRange: [],
+  affiliations: [],
+  categories: [],
+  homes: [],
+  homeRegions: [],
+  partners: [],
+  subscriptions: [],
+  cooperations: [],
+  gender: null,
+  details: [],
+  noAddress: null,
+  specialHome: null,
+  acceptableForSchool: null,
+  hasCoordination: null,
+  hasInstitute: null,
+  hasSubscription: null,
+  hasCooperation: null,
+  birthDate: { dayRange: [], monthRange: [], yearRange: [] },
+  hideWithoutYear: false,
+  hideWithoutBirthday: false,
+});
 export type FilterDraft = {
   viewOption: string;
   searchValue: string;
@@ -18,6 +84,7 @@ export type FilterDraft = {
   addressFilter: AddressFilter;
   strongAddressFilter: boolean;
   strongContactFilter: boolean;
+  strongDetailFilter: boolean;
 };
 
 export interface ColumnDefinition {
@@ -28,7 +95,15 @@ export interface ColumnDefinition {
 }
 
 export interface ViewOption {
-  id: 'all' | 'only-active' | 'only-blocked';
+  id:
+    | 'all'
+    | 'only-active'
+    | 'only-blocked'
+    | 'only-closed'
+    | 'exclude-closed'
+    | 'exclude-discharged'
+    | 'only-discharged'
+    | 'exclude-blocked-quitted';
   name: string;
   initiallySelected: boolean;
 }
@@ -38,6 +113,11 @@ export interface TableParams {
   addTitle: string;
   searchPlaceholder: string;
   addIcon: string;
+  labels: {
+    blockLabel: string;
+    closeLabel: string;
+    notActiveLabel: string;
+  };
 }
 
 export type FilterComponentSource =
@@ -45,7 +125,14 @@ export type FilterComponentSource =
   | 'toponymList'
   | 'userCard'
   | 'userList'
-  | 'partnerList';
+  | 'partnerList'
+  | 'partnerCard'
+  | 'volunteerList'
+  | 'volunteerCard'
+  | 'homeList'
+  | 'homeCard'
+  | 'seniorList'
+  | 'seniorCard';
 
 export interface ContactParamsForList {
   type: string;
@@ -61,4 +148,5 @@ export type ContactTypeForList =
   | 'vKontakte'
   | 'instagram'
   | 'facebook'
+  | 'website'
   | 'otherContact';

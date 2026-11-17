@@ -5,7 +5,7 @@ import {
 } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
-import { AuditPage, auditPageSchema } from '@shared/schemas/audit.schema';
+import { AuditPage, auditPageSchema } from '../../../shared/schemas/audit.schema';
 import { ApiResponse } from '../interfaces/api-response';
 import { environment } from '../../environments/environment';
 import { validateResponse } from '../utils/validate-response';
@@ -34,7 +34,6 @@ export class AuditService {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null && String(v) !== '') {
         p = p.set(k, String(v));
-        console.log({ k, v });
       }
     }
     return this.http

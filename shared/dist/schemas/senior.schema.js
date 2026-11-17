@@ -1,0 +1,615 @@
+import { z } from 'zod';
+import { emptyToNull, nonEmptyString, nonEmptyTrimMax, positiveInt, positiveIntParam, nullableInt, nullableIsoDate, intOptArray, addressRefFullSchema, addressRefShortSchema, outdatedNameItemSchema, } from './common.schema.js';
+export const nullableDateOnly = z.preprocess((v) => {
+    if (v == null || v === '')
+        return null;
+    if (v instanceof Date) {
+        const y = v.getFullYear();
+        const m = String(v.getMonth() + 1).padStart(2, '0');
+        const d = String(v.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    // If an ISO string is provided, keep only the date part.
+    if (typeof v === 'string') {
+        return v.slice(0, 10);
+    }
+    return String(v);
+}, z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable());
+const nullableString = z.preprocess(emptyToNull, z.string().max(500, { message: 'FORM_VALIDATION.TOO_LONG_500' }).nullable());
+const nullableName = z.preprocess(emptyToNull, z.string().max(50, { message: 'FORM_VALIDATION.TOO_LONG_50' }).nullable());
+/* ===================== DTOs ===================== */
+export const checkSeniorDataSchema = z
+    .object({
+    id: positiveInt.optional(),
+    homeId: positiveInt,
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    patronymic: nullableName,
+    lastName: nullableName,
+    birthDate: nullableDateOnly,
+})
+    .strict();
+export const seniorIdSchema = z
+    .object({
+    id: positiveInt,
+})
+    .strict();
+export const seniorIdParamSchema = z
+    .object({
+    id: positiveIntParam,
+})
+    .strict();
+export const seniorBlockingSchema = z
+    .object({
+    id: positiveInt,
+    causeOfRestriction: nonEmptyTrimMax(500, 'FORM_VALIDATION.TOO_LONG_500'),
+})
+    .strict();
+export const homeControlSchema = z.object({
+    id: z.number().int().positive(),
+    name: z.string().min(1),
+    fullPostalAddress: z.string().min(1),
+    countryId: z.number().int().positive(),
+    regionId: z.number().int().positive(),
+    districtId: z.number().int().positive(),
+    localityId: z.number().int().positive(),
+}, 'FORM_VALIDATION.REQUIRED');
+export const spouseControlSchema = z
+    .object({
+    id: z.number().int().positive(),
+    name: z.string().min(1),
+})
+    .nullable();
+/* ===================== Senior Draft ===================== */
+export const seniorDraftSchema = z
+    .object({
+    id: nullableInt,
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+    patronymic: nullableName,
+    lastName: nullableName,
+    birthDate: nullableDateOnly,
+    confirmedFirstName: z.boolean(),
+    confirmedPatronymic: z.boolean(),
+    confirmedLastName: z.boolean(),
+    confirmedBirthDate: z.boolean(),
+    gender: z.enum(['male', 'female'], {
+        message: 'FORM_VALIDATION.REQUIRED_SELECTION',
+    }),
+    comment: nullableString,
+    infoNote: nullableString,
+    photoLink: nullableString,
+    dateOfConsent: nullableDateOnly,
+    personalNoAddr: z.boolean(),
+    isRestricted: z.boolean(),
+    causeOfRestriction: nullableString,
+    dateOfRestriction: nullableIsoDate,
+    kindergarten: nullableString,
+    teacher: nullableString,
+    veteran: nullableString,
+    childOfWar: nullableString,
+    profession: nullableString,
+    honoraryStatus: nullableString,
+    interests: nullableString,
+    orthodoxBeliever: nullableString,
+    dateOfStart: nullableIsoDate,
+    dateOfExit: nullableIsoDate,
+    homeId: positiveInt,
+    spouseId: positiveInt.nullable(),
+})
+    .strict()
+    .superRefine((data, ctx) => {
+    if (!data.isRestricted) {
+        if (data.causeOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['causeOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+        if (data.dateOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['dateOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+    }
+    else {
+        if (!data.causeOfRestriction) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['causeOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+        if (!data.dateOfRestriction) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['dateOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+    }
+});
+/* ===================== UpdateSeniorData ===================== */
+// ChangingData.main — PATCH-like
+export const changingMainSchema = z.object({
+    firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50').optional(),
+    patronymic: nullableName.optional(),
+    lastName: nullableName.optional(),
+    birthDate: nullableDateOnly.optional(),
+    confirmedFirstName: z.boolean().optional(),
+    confirmedPatronymic: z.boolean().optional(),
+    confirmedLastName: z.boolean().optional(),
+    confirmedBirthDate: z.boolean().optional(),
+    gender: z.enum(['male', 'female']).optional(),
+    comment: nullableString.optional(),
+    infoNote: nullableString.optional(),
+    photoLink: nullableString.optional(),
+    dateOfConsent: nullableDateOnly.optional(),
+    personalNoAddr: z.boolean().optional(),
+    isRestricted: z.boolean().optional(),
+    causeOfRestriction: nullableString.optional(),
+    dateOfRestriction: nullableIsoDate.optional(),
+    kindergarten: nullableString.optional(),
+    teacher: nullableString.optional(),
+    veteran: nullableString.optional(),
+    childOfWar: nullableString.optional(),
+    profession: nullableString.optional(),
+    honoraryStatus: nullableString.optional(),
+    interests: nullableString.optional(),
+    orthodoxBeliever: nullableString.optional(),
+    dateOfStart: nullableIsoDate.optional(),
+    dateOfExit: nullableIsoDate.optional(),
+    spouseId: positiveInt.nullable().optional(),
+});
+export const changingDataSchema = z
+    .object({
+    main: changingMainSchema.nullable(),
+})
+    .strict()
+    .superRefine((data, ctx) => {
+    const m = data.main;
+    if (!m)
+        return;
+    if (m.isRestricted === false) {
+        if (m.causeOfRestriction !== undefined && m.causeOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'causeOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+        if (m.dateOfRestriction !== undefined && m.dateOfRestriction !== null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'dateOfRestriction'],
+                message: 'Must be null when isRestricted is false',
+            });
+        }
+    }
+    if (m.isRestricted === true) {
+        if (m.causeOfRestriction === undefined || m.causeOfRestriction === null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'causeOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+        if (m.dateOfRestriction === undefined || m.dateOfRestriction === null) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['main', 'dateOfRestriction'],
+                message: 'Required when isRestricted is true',
+            });
+        }
+    }
+});
+/* ========= OutdatingData ========= */
+export const outdatingDataSchema = z
+    .object({
+    names: z
+        .object({
+        firstName: nonEmptyTrimMax(50, 'FORM_VALIDATION.TOO_LONG_50'),
+        patronymic: nullableName,
+        lastName: nullableName,
+    })
+        .strict()
+        .nullable(),
+})
+    .strict();
+/* ========= DeletingData ========= */
+export const deletingDataSchema = z
+    .object({
+    names: z.array(positiveInt).nullable(),
+})
+    .strict();
+/* ========= RestoringData ========= */
+export const restoringDataSchema = z
+    .object({
+    names: z.array(positiveInt).nullable(),
+})
+    .strict();
+/* ========= UpdateSeniorData wrapper ========= */
+export const updateSeniorDataSchema = z
+    .object({
+    id: positiveInt,
+    changingData: changingDataSchema,
+    restoringData: restoringDataSchema,
+    outdatingData: outdatingDataSchema,
+    deletingData: deletingDataSchema,
+})
+    .strict();
+/* ========= Senior query DTO ========= */
+const sortDir = z.enum(['asc', 'desc']);
+const seniorSortField = z.enum([
+    'name',
+    'regionName',
+    'home',
+    'birthDate',
+    'gender',
+    'dateOfStart',
+    'dateOfConsent',
+    'comment',
+    'status',
+    'dateOfExit',
+]);
+const seniorDetailField = z.enum([
+    'personalNoAddr',
+    'comment',
+    'photoLink',
+    'dateOfConsent',
+    'kindergarten',
+    'teacher',
+    'honoraryStatus',
+    'veteran',
+    'childOfWar',
+    'orthodoxBeliever',
+    'profession',
+    'interests',
+    'spouseId',
+]);
+export const seniorsQueryDTOSchema = z
+    .object({
+    page: z.object({
+        size: z.number().int().min(1),
+        number: z.number().int().min(0),
+    }),
+    sort: z
+        .array(z.object({
+        field: seniorSortField,
+        direction: sortDir,
+    }))
+        .optional(),
+    search: z
+        .object({ value: z.string().min(1), exact: z.boolean().optional() })
+        .optional(),
+    view: z
+        .object({
+        option: z
+            .enum([
+            'all',
+            'only-active',
+            'only-blocked',
+            'only-discharged',
+            'exclude-discharged',
+        ]).optional(),
+        homeOption: z
+            .enum([
+            'all',
+            'only-active',
+            'only-blocked',
+            'only-closed',
+            'exclude-closed',
+        ]).optional(),
+        includeOutdated: z.boolean().optional(),
+    })
+        .optional(),
+    filters: z
+        .object({
+        general: z
+            .object({
+            dateBeginningRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            dateRestrictionRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            dateExitRange: z
+                .tuple([z.coerce.date(), z.coerce.date()])
+                .optional(),
+            dayRange: z.tuple([nullableInt, nullableInt]).optional(),
+            monthRange: z.tuple([nullableInt, nullableInt]).optional(),
+            yearRange: z.tuple([nullableInt, nullableInt]).optional(),
+            homes: intOptArray,
+            gender: z.enum(['male', 'female']),
+            noAddress: z.boolean().optional(),
+            specialHome: z.boolean().optional(),
+            acceptableForSchool: z.boolean().optional(),
+            details: z.array(seniorDetailField).min(1).optional(),
+            hideWithoutYear: z.boolean().optional(),
+            hideWithoutBirthday: z.boolean().optional(),
+        })
+            .partial()
+            .optional(),
+        address: z
+            .object({
+            countries: intOptArray,
+            regions: intOptArray,
+            districts: intOptArray,
+            localities: intOptArray,
+        })
+            .partial()
+            .optional(),
+        mode: z
+            .object({
+            strictAddress: z.boolean().optional(),
+            strictDetail: z.boolean().optional(),
+        })
+            .partial()
+            .optional(),
+    })
+        .partial()
+        .optional(),
+})
+    .strict();
+/* ===================== OutdatedData (view) ===================== */
+export const outdatedDataSchema = z
+    .object({
+    names: z.array(outdatedNameItemSchema),
+})
+    .strict();
+/* ===================== Senior (view) & seniors list ===================== */
+export const seniorAddressSchema = z
+    .object({
+    country: addressRefFullSchema,
+    region: addressRefShortSchema,
+    district: addressRefShortSchema,
+    locality: addressRefShortSchema,
+    fullPostalAddress: nonEmptyString,
+})
+    .strict();
+export const seniorSchema = z
+    .object({
+    id: positiveInt,
+    firstName: nonEmptyString,
+    patronymic: nonEmptyString.nullable(),
+    lastName: nonEmptyString.nullable(),
+    isRestricted: z.boolean(),
+    dateOfStart: z.coerce.date(),
+    causeOfRestriction: nonEmptyString.nullable(),
+    dateOfRestriction: nullableIsoDate,
+    address: seniorAddressSchema,
+    comment: nonEmptyString.nullable(),
+    birthDate: nullableIsoDate,
+    confirmedFirstName: z.boolean(),
+    confirmedPatronymic: z.boolean(),
+    confirmedLastName: z.boolean(),
+    confirmedBirthDate: z.boolean(),
+    gender: z.enum(['male', 'female']),
+    infoNote: nullableString,
+    photoLink: nullableString,
+    dateOfConsent: nullableIsoDate,
+    personalNoAddr: z.boolean(),
+    kindergarten: nullableString,
+    teacher: nullableString,
+    veteran: nullableString,
+    childOfWar: nullableString,
+    profession: nullableString,
+    honoraryStatus: nullableString,
+    interests: nullableString,
+    orthodoxBeliever: nullableString,
+    dateOfExit: nullableIsoDate,
+    spouseFullName: nonEmptyString.nullable(),
+    spouseId: positiveInt.nullable(),
+    homeId: positiveInt,
+    home: z.object({
+        homeName: nonEmptyString,
+        noAddress: z.boolean(),
+        specialHome: z.boolean(),
+        acceptableForSchool: z.boolean(),
+        isRestricted: z.boolean(),
+        dateOfRestriction: nullableIsoDate,
+        isClose: z.boolean(),
+        dateOfClose: nullableIsoDate,
+    }),
+    outdatedData: outdatedDataSchema,
+})
+    .strict();
+export const seniorsSchema = z
+    .object({
+    list: z.array(seniorSchema),
+    length: z.coerce.number().int().min(0),
+})
+    .strict();
+export const seniorRowSchema = z.object({
+    nursingHome: z.string().trim().min(1),
+    lastName: nullableName.optional(),
+    firstName: z.string().trim().min(1),
+    patronymic: nullableName.optional(),
+    dateOfConsent: z.string().trim().nullable().optional(),
+    dayBirthday: z.coerce.number().int().min(1).max(31).nullable().optional(),
+    monthBirthday: z.coerce.number().int().min(1).max(12).nullable().optional(),
+    yearBirthday: z.coerce.number().int().min(1800).nullable().optional(),
+    birthDate: nullableDateOnly.optional(),
+    gender: z.enum(['male', 'female']).nullable().optional(),
+    comment: nullableString.optional(),
+    infoNote: nullableString.optional(),
+    photoLink: nullableString.optional(),
+    kindergarten: nullableString.optional(),
+    teacher: nullableString.optional(),
+    veteran: nullableString.optional(),
+    childOfWar: nullableString.optional(),
+    profession: nullableString.optional(),
+    honoraryStatus: nullableString.optional(),
+    interests: nullableString.optional(),
+    orthodoxBeliever: nullableString.optional(),
+});
+export const seniorPreSchema = z.object({
+    nursingHome: z.string().trim().min(1),
+    lastName: nullableName,
+    firstName: z.string().trim().min(1),
+    patronymic: nullableName,
+    dateOfConsent: z.string().trim().nullable(),
+    dayBirthday: z.coerce.number().int().min(1).max(31).nullable(),
+    monthBirthday: z.coerce.number().int().min(1).max(12).nullable(),
+    yearBirthday: z.coerce.number().int().min(1800).nullable(),
+    birthDate: nullableDateOnly.optional(),
+    gender: z.enum(['male', 'female']),
+    comment: nullableString.optional(),
+    infoNote: nullableString.optional(),
+    photoLink: nullableString.optional(),
+    kindergarten: nullableString.optional(),
+    teacher: nullableString.optional(),
+    veteran: nullableString.optional(),
+    childOfWar: nullableString.optional(),
+    profession: nullableString.optional(),
+    honoraryStatus: nullableString.optional(),
+    interests: nullableString.optional(),
+    orthodoxBeliever: nullableString.optional(),
+});
+export const seniorRawSchema = z.object({
+    id: positiveInt.optional(),
+    homeId: positiveInt,
+    nursingHome: z.string().trim().min(1).optional(),
+    lastName: nullableName,
+    firstName: z.string().trim().min(1),
+    patronymic: nullableName,
+    dateOfConsent: nullableDateOnly,
+    dayBirthday: z.coerce.number().int().min(1).max(31).nullable().optional(),
+    monthBirthday: z.coerce.number().int().min(1).max(12).nullable().optional(),
+    yearBirthday: z.coerce.number().int().min(1800).nullable().optional(),
+    birthDate: nullableDateOnly,
+    gender: z.enum(['male', 'female']),
+    dateOfExit: nullableDateOnly,
+    comment: nullableString,
+    infoNote: nullableString,
+    photoLink: nullableString,
+    kindergarten: nullableString,
+    teacher: nullableString,
+    veteran: nullableString,
+    childOfWar: nullableString,
+    profession: nullableString,
+    honoraryStatus: nullableString,
+    interests: nullableString,
+    orthodoxBeliever: nullableString,
+});
+const changesSchema = z.object({
+    lastName: z
+        .object({
+        newValue: nullableName,
+        oldValue: nullableName,
+    })
+        .optional(),
+    firstName: z
+        .object({ newValue: z.string(), oldValue: z.string() })
+        .optional(),
+    patronymic: z
+        .object({
+        newValue: nullableName,
+        oldValue: nullableName,
+    })
+        .optional(),
+    gender: z
+        .object({
+        newValue: z.enum(['male', 'female']),
+        oldValue: z.enum(['male', 'female']),
+    })
+        .optional(),
+    birthDate: z
+        .object({ newValue: nullableDateOnly, oldValue: nullableDateOnly })
+        .optional(),
+    dateOfExit: z
+        .object({ newValue: nullableDateOnly, oldValue: nullableDateOnly })
+        .optional(),
+    dateOfConsent: z
+        .object({ newValue: nullableDateOnly, oldValue: nullableDateOnly })
+        .optional(),
+    comment: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    infoNote: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    photoLink: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    kindergarten: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    teacher: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    veteran: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    childOfWar: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    profession: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    honoraryStatus: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    interests: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+    orthodoxBeliever: z
+        .object({ newValue: nullableString, oldValue: nullableString })
+        .optional(),
+});
+const acceptedChangesSchema = z.object({
+    lastName: nullableName.optional(),
+    firstName: z.string().optional(),
+    patronymic: nullableName.optional(),
+    gender: z.enum(['male', 'female']).optional(),
+    birthDate: nullableDateOnly.optional(),
+    dateOfExit: nullableDateOnly.optional(),
+    dateOfConsent: nullableDateOnly.optional(),
+    comment: nullableString.optional(),
+    infoNote: nullableString.optional(),
+    photoLink: nullableString.optional(),
+    kindergarten: nullableString.optional(),
+    teacher: nullableString.optional(),
+    veteran: nullableString.optional(),
+    childOfWar: nullableString.optional(),
+    profession: nullableString.optional(),
+    honoraryStatus: nullableString.optional(),
+    interests: nullableString.optional(),
+    orthodoxBeliever: nullableString.optional(),
+});
+const seniorDiffSchema = z.object({
+    newSenior: seniorRawSchema,
+    oldSenior: seniorRawSchema,
+    changes: changesSchema,
+    changeRows: z.array(z.object({
+        field: z.string().nonempty(),
+        label: z.string().nonempty(),
+        newValue: z.any(),
+        oldValue: z.any(),
+    })),
+});
+const differencesSchema = z.object({
+    newSeniors: z.array(seniorRawSchema),
+    removedSeniors: z.array(seniorRawSchema),
+    updatedSeniors: z.array(seniorDiffSchema),
+    possibleDuplicates: z.array(seniorDiffSchema),
+    returnedSeniors: z.array(seniorDiffSchema),
+});
+export const differencesResponseSchema = z.object({
+    differences: differencesSchema,
+    homeId: positiveInt,
+});
+export const bulkUpdateSchema = z.object({
+    admitted: z.array(seniorRawSchema),
+    removed: z.array(seniorRawSchema),
+    updated: z.array(z.object({
+        seniorId: positiveInt,
+        changes: acceptedChangesSchema,
+    })),
+    homeId: positiveInt,
+    dateOfUpdate: z.coerce.date(),
+});

@@ -3,7 +3,7 @@ import type {
   ToponymNamesList,
   ToponymType,
   DefaultAddressParams,
-} from '@shared/schemas/toponym.schema';
+} from '../../../shared/schemas/toponym.schema';
 import { DialogData } from './dialog-props';
 
 export type { Toponym, ToponymNamesList, ToponymType, DefaultAddressParams };
@@ -61,7 +61,19 @@ export interface AddressFilterParams {
   isShowRegion: boolean;
   isShowDistrict: boolean;
   isShowLocality: boolean;
-  source?: 'toponymCard' | 'toponymList' | 'userCard' | 'userList' | 'partnerList';
+  source?:
+    | 'toponymCard'
+    | 'toponymList'
+    | 'userCard'
+    | 'userList'
+    | 'partnerList'
+    | 'partnerCard'
+    | 'volunteerList'
+    | 'volunteerCard'
+    | 'homeList'
+    | 'homeCard'
+    | 'seniorList'
+    | 'seniorCard';
   multiple?: boolean;
   cols?: string;
   gutterSize?: string;
@@ -89,7 +101,7 @@ export function typedKeys<T extends object>(obj: T): (keyof T & string)[] {
 
 export function hasKey<T extends object>(
   obj: T,
-  key: PropertyKey
+  key: PropertyKey,
 ): key is keyof T {
   return key in obj;
 }

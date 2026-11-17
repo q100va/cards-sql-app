@@ -33,7 +33,7 @@ class FakeDetailsComponent {
   changesSignal = signal(false);
   isEditModeSignal = signal(false);
   IsSaveDisabledSignal = signal(true);
-  closeDialogDataSignal = signal<string | true | null>(null);
+  closeDialogDataSignal = signal<string | false | null>(null);
 
   data = input.required<any>();
 
@@ -134,18 +134,18 @@ describe('DetailsDialogComponent', () => {
     delete (PERMISSIONS_COMPONENT_REGISTRY as any)['spec'];
   });
 
-  it('closes dialog with string name when child requests saveAndExit', () => {
+  it('closes with refresh=true when the child finishes saving', () => {
     FakeDetailsComponent.last.closeDialogDataSignal.set('Saved');
     fixture.detectChanges();
 
-    expect(dialogRefSpy.close).toHaveBeenCalledWith({ name: 'Saved' });
+    expect(dialogRefSpy.close).toHaveBeenCalledOnceWith({ refresh: true });
   });
 
-  it('maps true → {name: null} when child requests plain close', () => {
-    FakeDetailsComponent.last.closeDialogDataSignal.set(true);
+  it('closes with refresh=false when the child requests a plain close', () => {
+    FakeDetailsComponent.last.closeDialogDataSignal.set(false);
     fixture.detectChanges();
 
-    expect(dialogRefSpy.close).toHaveBeenCalledWith({ name: null });
+    expect(dialogRefSpy.close).toHaveBeenCalledOnceWith({ refresh: false });
   });
 
   it('mirrors child state signals (smoke)', () => {

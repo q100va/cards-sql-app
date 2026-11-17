@@ -1,21 +1,21 @@
 export type ClientLogLevel = 'error' | 'warn';
 
 export interface ClientLogItem {
-  ts: string;                 // ISO
+  ts: string;
   level: ClientLogLevel;
   message: string;
   stack?: string;
   pageUrl?: string;
   route?: string;
   userId?: string | number | null;
-  sessionId: string;          // uuid
-  corrId?: string | null;     // X-Request-Id
+  sessionId: string;
+  corrId?: string | null;
   userAgent?: string;
   context?: Record<string, unknown>;
 }
 
 export interface ClientLogBatch {
-  app: string;
-  env: string;                // 'development'|'production'
+  app: 'cards-sql-app';
+  env: 'development' | 'production';
   items: ClientLogItem[];
 }

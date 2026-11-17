@@ -1,0 +1,309 @@
+import { Component, DestroyRef, inject, input } from '@angular/core';
+import { AccordionModule } from 'primeng/accordion';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+} from '@angular/forms';
+import { SelectButtonModule } from 'primeng/selectbutton';
+
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { getRegionsWithNearby } from '../../../../../shared/constants/nearby-regions';
+import { OrderService } from '../../../services/order.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MessageWrapperService } from '../../../services/message.service';
+import {
+  dateYearRangeValidator,
+  genderAmountSumValidator,
+  houseAmountValidator,
+} from '../../../utils/custom.validator';
+
+import { HasOpDirective } from '../../../directives/has-op.directive';
+import { AuthService } from '../../../services/auth.service';
+import { ADDRESS_CATEGORY_OPTIONS, GENDER_FILTERS } from '../../../../../shared/constants/orders';
+
+type FilterOption = {
+  id: number;
+  optionKey: string;
+  disabled: boolean;
+};
+
+@Component({
+  selector: 'app-order-filters',
+  imports: [
+    AccordionModule,
+    MatGridListModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatSelectModule,
+    MatRadioModule,
+    MatSlideToggleModule,
+    MatCheckboxModule,
+    TranslateModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatTooltipModule,
+    HasOpDirective,
+    SelectButtonModule,
+  ],
+  templateUrl: './order-filters.component.html',
+  styleUrl: './order-filters.component.css',
+})
+export class OrderFiltersComponent {
+  private readonly orderService = inject(OrderService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly msgWrapper = inject(MessageWrapperService);
+  readonly translateService = inject(TranslateService);
+  readonly authService = inject(AuthService);
+
+  readonly ADDRESS_FILTER = this.authService.has('FULL_FILTER_NEW_ORDER')
+  ? [
+      ADDRESS_CATEGORY_OPTIONS.ANY,
+      ADDRESS_CATEGORY_OPTIONS.FOR_SCHOOLS,
+      ADDRESS_CATEGORY_OPTIONS.ONLY_WITH_ADDRESS,
+      ADDRESS_CATEGORY_OPTIONS.NO_RELEASED,
+      ADDRESS_CATEGORY_OPTIONS.ONLY_MENT,
+    ]
+  : [
+      {
+        ...ADDRESS_CATEGORY_OPTIONS.FOR_SCHOOLS,
+        optionKey: 'ORDER.CARD.FILTERS.ADDRESS_CATEGORY.ANY',
+      },
+      ADDRESS_CATEGORY_OPTIONS.ONLY_WITH_ADDRESS,
+      ADDRESS_CATEGORY_OPTIONS.ONLY_MENT,
+    ];
+
+ genderFilterOptions: FilterOption[] = GENDER_FILTERS.map((item) => ({
+  ...item,
+}));
+
+  periodOptions = [
+    { label: '1-15', value: 1 },
+    { label: '16-31', value: 2 },
+  ];
+
+  regions: {
+    id: number;
+    name: string;
+    // neighbors: number[];
+  }[] = [];
+  homes: {
+    id: number;
+    name: string;
+    regionId: number;
+  }[] = [];
+  filteredHomes: {
+    id: number;
+    name: string;
+    regionId: number;
+  }[] = [];
+
+  private readonly defaultFilter = {
+    addressCategory: 1,
+    gender: 1,
+    maleAmount: null,
+    femaleAmount: null,
+    onlyWithPicture: false,
+    onlyAnniversaries: false,
+    onlyAnniversariesAndOldest: false,
+    onlyWithConcents: false,
+    year1: null,
+    year2: null,
+    date1: null,
+    date2: null,
+    regions: [],
+    homes: [],
+    addSpareRegions: false,
+    minFromOneHouse: null,
+    maxFromOneHouse: null,
+    maxNoAddress: null,
+  };
+
+  filterForm = input.required<FormGroup>();
+  amountControl = input.required<FormControl<number | null>>();
+
+  ngOnInit() {
+    this.filterForm().addValidators([
+      genderAmountSumValidator(this.amountControl()),
+      houseAmountValidator(this.amountControl()),
+      dateYearRangeValidator(),
+    ]);
+
+    this.amountControl()
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.filterForm().updateValueAndValidity();
+      });
+
+    this.filterForm()
+      .controls['gender'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.filterForm().updateValueAndValidity();
+      });
+
+    this.orderService
+      .getOrderFiltersData()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.regions = res.data.regions;
+          this.homes = res.data.homes;
+          this.filteredHomes = res.data.homes;
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'OrderFiltersComponent',
+            stage: 'getOrderFiltersData',
+          }),
+      });
+
+    this.filterForm()
+      .controls['regions'].valueChanges.pipe(
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((regionIds) => {
+        if ((regionIds ?? []).length !== 1) {
+          this.filterForm().controls['addSpareRegions'].disable();
+          this.filterForm().controls['addSpareRegions'].setValue(false);
+        } else {
+          this.filterForm().controls['addSpareRegions'].enable();
+          this.filterForm().controls['homes'].enable();
+        }
+        if (this.filterForm().controls['addSpareRegions'].value)
+          regionIds = getRegionsWithNearby(regionIds);
+        this.updateHomesByRegions(regionIds);
+      });
+
+    this.filterForm()
+      .controls['addSpareRegions'].valueChanges.pipe(
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((addSpareRegions) => {
+        let regionIds = this.filterForm().controls['regions'].value ?? [];
+        if (addSpareRegions) regionIds = getRegionsWithNearby(regionIds);
+        this.updateHomesByRegions(regionIds);
+      });
+  }
+
+  private updateHomesByRegions(regionIds: number[]) {
+    if (!regionIds.length) {
+      this.filteredHomes = this.homes;
+      return;
+    }
+    this.filteredHomes = this.homes.filter((home) =>
+      regionIds.includes(home.regionId),
+    );
+    const allowedHomeIds = new Set(this.filteredHomes.map((home) => home.id));
+    const selectedHomes = this.filterForm().controls['homes'].value ?? [];
+    const validSelectedHomes = selectedHomes.filter((homeId: number) =>
+      allowedHomeIds.has(homeId),
+    );
+    if (validSelectedHomes.length !== selectedHomes.length) {
+      this.filterForm().controls['homes'].setValue(validSelectedHomes);
+    }
+  }
+
+  get emptyFilter(): boolean {
+    return (
+      JSON.stringify(this.filterForm().getRawValue()) ===
+      JSON.stringify(this.defaultFilter)
+    );
+  }
+
+  clearFilter() {
+    this.filterForm().reset(this.defaultFilter);
+    this.filteredHomes = this.homes;
+  }
+
+  correctMaxNoAddress(value: number) {
+    if (value == 3 || value == 5) {
+      this.filterForm().controls['maxNoAddress'].disable();
+      this.filterForm().controls['maxNoAddress'].setValue(null);
+    } else {
+      this.filterForm().controls['maxNoAddress'].enable();
+    }
+  }
+  correctProportion(value: number) {
+    if (value !== 4) {
+      this.filterForm().controls['femaleAmount'].setValue(null);
+      this.filterForm().controls['maleAmount'].setValue(null);
+      this.filterForm().controls['minFromOneHouse'].enable();
+    } else {
+      this.filterForm().controls['minFromOneHouse'].disable();
+      this.filterForm().controls['minFromOneHouse'].setValue(null);
+    }
+  }
+  correctMinFromOneHouse(event: Event){
+    const value = (event.target as HTMLInputElement).value;
+    if(value){
+      if(this.filterForm().controls['gender'].value === 4) this.filterForm().controls['gender'].setValue(1)
+      this.filterForm().controls['femaleAmount'].setValue(null);
+      this.filterForm().controls['maleAmount'].setValue(null);
+      this.filterForm().controls['femaleAmount'].disable();
+      this.filterForm().controls['maleAmount'].disable()
+      this.genderFilterOptions[3].disabled = true;
+    } else {
+      this.filterForm().controls['femaleAmount'].setValue(null);
+      this.filterForm().controls['maleAmount'].setValue(null);
+      this.filterForm().controls['femaleAmount'].enable();
+      this.filterForm().controls['maleAmount'].enable()
+      this.genderFilterOptions[3].disabled = false;
+
+    }
+  }
+  //TODO: disable option "только БОА/без БОА" if maxNoAddress
+  onSlideToggleChange(reason: string) {
+    if (reason == 'onlyAnniversaries') {
+      if (
+        this.filterForm().controls['onlyAnniversariesAndOldest'].value &&
+        this.filterForm().controls['onlyAnniversaries'].value
+      ) {
+        this.filterForm().controls['onlyAnniversariesAndOldest'].setValue(
+          false,
+        );
+      }
+    }
+    if (reason == 'onlyAnniversariesAndOldest') {
+      if (
+        this.filterForm().controls['onlyAnniversariesAndOldest'].value &&
+        this.filterForm().controls['onlyAnniversaries'].value
+      ) {
+        this.filterForm().controls['onlyAnniversaries'].setValue(false);
+      }
+    }
+  }
+
+  onPeriodChange(period: 1 | 2 | null) {
+    if (period === 1) {
+      this.filterForm().controls['date1'].setValue(1);
+      this.filterForm().controls['date2'].setValue(15);
+      this.filterForm().controls['date1'].disable();
+      this.filterForm().controls['date2'].disable();
+    }
+    if (period === 2) {
+      this.filterForm().controls['date1'].setValue(16);
+      this.filterForm().controls['date2'].setValue(31);
+      this.filterForm().controls['date1'].disable();
+      this.filterForm().controls['date2'].disable();
+    }
+    if (period === null) {
+      this.filterForm().controls['date1'].setValue(null);
+      this.filterForm().controls['date2'].setValue(null);
+      this.filterForm().controls['date1'].enable();
+      this.filterForm().controls['date2'].enable();
+    }
+  }
+}

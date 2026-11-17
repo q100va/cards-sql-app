@@ -1,0 +1,59 @@
+<mat-card class="order-details-card" appearance="outlined">
+  <mat-card-header>
+    <div class="header-row">
+      <button mat-icon-button type="button" (click)="onBackClick()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <mat-card-title>{{ 'ORDER.CARD.VIEW_TITLE' | translate }}</mat-card-title>
+        @if (order(); as currentOrder) {
+        <mat-card-subtitle>
+          #{{ currentOrder.id }} - {{ translatedOccasionName(currentOrder.occasion) }}
+        </mat-card-subtitle>
+        }
+      </div>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (isLoading()) {
+    <div class="loading">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+    } @else {
+    @if(order(); as currentOrder) {
+    <br />
+    <br />
+    <div fxLayout="column" fxLayoutGap="10px">
+      <mat-card-subtitle>{{ 'ORDER.TABLE.DATE' | translate }}: <strong>{{ dateUtils.transformDate(currentOrder.date)
+        }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.USER_NAME' | translate }}: <strong>{{ currentOrder.userName }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.AMOUNT' | translate }}: <strong>{{ currentOrder.amount }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}: <strong>{{ currentOrder.volunteerName }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.CONTACT' | translate }}: <strong>{{ currentOrder.contact || '-' }}</strong></mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.INSTITUTE_NAME' | translate }}: <strong>{{ currentOrder.instituteName || '-' }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.SOURCE' | translate }}: <strong>{{ currentOrder.source | translate }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.STATUS' | translate }}: <strong>{{ currentOrder.status | translate }}</strong>
+      </mat-card-subtitle>
+      <mat-card-subtitle>{{ 'ORDER.TABLE.COMMENT' | translate }}: <strong>{{ currentOrder.comment || '-' }}</strong></mat-card-subtitle>
+    </div>
+    <br />
+    <br />
+    <section class="recipients-section">
+      <h2>{{ 'ORDER.CARD.LIST_TITLE' | translate }}</h2>
+      <app-order-recipients [list]="currentOrder.recipients" [orderDetails]="{
+        volunteerName: currentOrder.volunteerName,
+        occasionName: translatedOccasionName(currentOrder.occasion),
+        forInstitute: !!currentOrder.instituteName,
+        amount: currentOrder.amount
+      }" [isEditAllowed]="authService.has('EDIT_ORDER') && (currentOrder.statusId===1 || currentOrder.statusId===2) && currentOrder.occasionStatus===1"
+        (deletingRecipientIds)="changeRecipientsList($event)">
+      </app-order-recipients>
+    </section>
+    }
+    }
+  </mat-card-content>
+</mat-card>

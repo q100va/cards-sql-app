@@ -1,48 +1,31 @@
-// server/tests/factories/role.js
+import { Role } from '../../../models/index.js';
+import { grantOperationsForRole } from './operation.js';
+export { seedDefaultOperationsForRole as seedOperationsForRole } from './operation.js';
 
-import {RolePermission, Role} from '../../../models/index.js';
-import { OPERATIONS } from '../../../shared/operations.js';
-
-/** Создать роль (с разумными дефолтами) */
+/**
+ * Create a role with sensible test defaults.
+ */
 export async function createRole(attrs = {}) {
-  try{
-      const defaults = {
+  const defaults = {
     name: `role_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     description: 'Test role',
   };
+
   const data = { ...defaults, ...attrs };
   const role = await Role.create(data);
-  return role.get({ plain: true });
-  }
-  catch(err){
-    console.log(err);
-  }
 
+  return role.get({ plain: true });
 }
 
-/** Найти роль по id (raw) — то, чего не хватает тесту */
+/**
+ * Find a role by id and return a plain object.
+ */
 export async function findRoleById(id) {
   return Role.findByPk(id, { raw: true });
 }
 
-/** Удалить роль (мягко через destroy) */
-export async function destroyRoleById(id) {
-  return Role.destroy({ where: { id }});
-}
-
-/** Посеять записи в RolePermission для роли по OPERATIONS */
-export async function seedOperationsForRole(roleId) {
-  const rows = OPERATIONS.map((op) => ({
-    name: op.operation,
-    roleId,
-    access: false,
-    disabled: op.flag === 'FULL',
-  }));
-  await RolePermission.bulkCreate(rows);
-}
-
-/** Очистить таблицы ролей/операций (аккуратно, только для тестов) */
-export async function truncateRolesAndOperations({ cascade = true } = {}) {
-  await RolePermission.destroy({ where: {}, truncate: true, cascade });
-  await Role.destroy({ where: {}, truncate: true, cascade });
+export async function createRoleWithOperations(operationNames = [], overrides = {}) {
+  const role = await createRole(overrides);
+  await grantOperationsForRole(role.id, operationNames);
+  return role;
 }

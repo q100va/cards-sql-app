@@ -1,0 +1,308 @@
+<mat-card class="orders-list-card" appearance="outlined">
+  <!-- Header -->
+  <mat-grid-list cols="10" gutterSize="0px" rowHeight="112px">
+    <mat-grid-tile colspan="4"></mat-grid-tile>
+
+    <!-- Title -->
+    <mat-grid-tile colspan="2">
+      <mat-card-header>
+        <mat-card-title>{{ 'ORDER.TABLE.TITLE' | translate }}</mat-card-title>
+      </mat-card-header>
+    </mat-grid-tile>
+
+    <mat-grid-tile colspan="3"></mat-grid-tile>
+
+  </mat-grid-list>
+
+  <!-- Content -->
+  <mat-card-content>
+    <p-table #dt showGridlines [value]="orders" dataKey="id" [rowHover]="true" [rows]="10"
+      [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 25, 50]" [totalRecords]="totalRecords"
+      [loading]="isLoading()" [paginator]="true"
+      [currentPageReportTemplate]="translateService.instant('ORDER.TABLE.PAGE_REPORT')" [filterDelay]="0" [lazy]="true"
+      (onLazyLoad)="loadOrders($event)">
+      <ng-template #caption>
+        <div class="caption">
+
+          <div class="caption-left">
+          </div>
+
+          <div class="caption-right">
+            <p-button [outlined]="true" icon="pi pi-filter-slash"
+              [label]="translateService.instant('ORDER.TABLE.CLEAR')" (click)="clear(dt)" />
+
+            <p-iconField iconPosition="left">
+              <p-inputIcon>
+                <i class="pi pi-search"></i>
+              </p-inputIcon>
+
+              <input pInputText type="text" [(ngModel)]="searchValue"
+                [placeholder]="translateService.instant('ORDER.TABLE.SEARCH_PLACEHOLDER')"
+                (keydown.enter)="onSearchEnter(dt)" [pTooltip]="translateService.instant('ORDER.TABLE.SEARCH_TOOLTIP')"
+                tooltipPosition="left" />
+            </p-iconField>
+          </div>
+
+        </div>
+      </ng-template>
+      <ng-template #header>
+        <tr>
+          @if(!this.userId){
+          <th pSortableColumn="userName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.USER_NAME' | translate }}
+
+              <p-sortIcon field="userName" />
+              <p-columnFilter type="text" field="userId" display="menu" matchMode="in" operator="or" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto" [class.active-filter]="(filters['userId'] ?? []).length > 0">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedUsers" [options]="(userOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedUsers, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>}
+          @else {
+          <th style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.USER_NAME' | translate }}
+            </div>
+          </th>
+          }
+          <th pSortableColumn="date" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.DATE' | translate }}
+              <p-sortIcon field="date" />
+              <p-columnFilter type="date" field="date" display="menu" class="ml-auto"
+                [class.active-filter]="(filters['date'] ?? []).length > 0" />
+            </div>
+          </th>
+          <th pSortableColumn="amount" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.AMOUNT' | translate }}
+              <p-sortIcon field="amount" />
+              <p-columnFilter type="numeric" field="amount" display="menu" class="ml-auto"
+                [class.active-filter]="(filters['amount'] ?? []).length > 0" />
+            </div>
+          </th>
+          <th pSortableColumn="volunteerName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.VOLUNTEER_NAME' | translate }}
+              <p-sortIcon field="volunteerName" />
+              <p-columnFilter type="text" field="volunteerName" display="menu" showAddButton="false"
+                showOperator="false" showMatchModes="false" class="ml-auto"
+                [class.active-filter]="(filters['volunteerName'] ?? []).length > 0" />
+            </div>
+          </th>
+          <th pSortableColumn="instituteName" style="max-width: 146rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.INSTITUTE_NAME' | translate }}
+              <p-sortIcon field="instituteName" />
+              <p-columnFilter type="text" field="instituteName" display="menu" showAddButton="false"
+                showOperator="false" showMatchModes="false" class="ml-auto"
+                [class.active-filter]="(filters['instituteName'] ?? []).length > 0" />
+            </div>
+          </th>
+          <th pSortableColumn="contact" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.CONTACT' | translate }}
+              <p-sortIcon field="contact" />
+              <p-columnFilter type="text" field="contact" display="menu" showAddButton="false" showOperator="false"
+                showMatchModes="false" class="ml-auto" [class.active-filter]="(filters['contact'] ?? []).length > 0" />
+            </div>
+          </th>
+          <th pSortableColumn="status" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.STATUS' | translate }}
+              <p-sortIcon field="status" />
+              <p-columnFilter type="text" field="status" display="menu" matchMode="in" operator="or" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto" [class.active-filter]="(filters['status'] ?? []).length > 0">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedStatuses" [options]="(statusOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedStatuses, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.CONFIRM' | translate }}
+            </div>
+          </th>
+          <th style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.ACTION' | translate }}
+            </div>
+          </th>
+          <th pSortableColumn="source" style="min-width: 10rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.SOURCE' | translate }}
+              <p-sortIcon field="source" />
+              <p-columnFilter type="text" field="source" display="menu" matchMode="in" operator="or" display="menu"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto" [class.active-filter]="(filters['source'] ?? []).length > 0">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect [(ngModel)]="selectedSources" [options]="(sourceOptions$ | async) ?? []"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')" [filter]="false"
+                    class="w-full" (onChange)="onMultiFilterChange($event.value, selectedSources, filter)">
+                    <ng-template let-option #item>
+                      <div class="flex items-center gap-2">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+          <th pSortableColumn="occasionName" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.OCCASION_NAME' | translate }}
+              <p-sortIcon field="occasionName" />
+              <p-columnFilter type="text" field="occasionName" display="menu" matchMode="equals" operator="or"
+                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
+                [showClearButton]="false" class="ml-auto"
+                [class.active-filter]="(filters['occasionName'] ?? []).length > 0">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-treeselect class="w-full md:w-80" containerStyleClass="w-full" [(ngModel)]="selectedNodes"
+                    [options]="(nodes$ | async) ?? []" display="chip" [metaKeySelection]="false"
+                    selectionMode="checkbox"
+                    [placeholder]="translateService.instant('OCCASION.TABLE_SELECT_PLACEHOLDER')"
+                    (ngModelChange)="onOccasionFilterChange($event, selectedNodes, filter)">
+                  </p-treeselect>
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+
+          <th pSortableColumn="comment" style="min-width: 14rem">
+            <div class="header-cell">
+              {{ 'ORDER.TABLE.COMMENT' | translate }}
+              <p-sortIcon field="comment" />
+              <p-columnFilter type="text" field="comment" display="menu" class="ml-auto"
+                [class.active-filter]="(filters['comment'] ?? []).length > 0" />
+            </div>
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-order>
+        <tr>
+          <td>
+            {{ order.userName }}
+          </td>
+          <td>
+            {{ dateUtils.transformDate(order.date) }}
+          </td>
+          <td>
+            {{ order.amount }}
+          </td>
+          <td>
+            {{ order.volunteerName }}
+          </td>
+          <td>
+            {{ order.instituteName }}
+          </td>
+          <td>
+            {{ order.contact }}
+          </td>
+
+          <td>
+            {{ order.status | translate }}
+          </td>
+          <td>
+            <div class="center">
+              @if(order.statusId === 1 && order.occasionStatus !== 2){
+              <button mat-icon-button [title]="'ORDER.TABLE.CONFIRM_BUTTON'  | translate"
+                (click)="onUpdateOrderStatusClick(order.id, dt, 2)" *hasOp="{codes:['EDIT_ORDER'], mode:'any'}">
+                <mat-icon fontSet="material-symbols-outlined">
+                  check_circle
+                </mat-icon>
+              </button>}
+            </div>
+          </td>
+
+          <td style="text-align: center">
+            <div class="center">
+              <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'TABLE.MENU.OPEN_LIST_TITLE'  | translate"
+                appBlurOnClick>
+                <mat-icon>
+                  keyboard_double_arrow_down
+                </mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="onViewOrderClick(order.id)"
+                  *hasOp="{codes:['VIEW_ORDER','EDIT_ORDER'], mode:'any'}">
+                  <mat-icon fontSet="material-symbols-outlined">open_in_new</mat-icon>
+                  <span>{{'ORDER.TABLE.VIEW' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 1)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}"
+                  [disabled]="order.statusId !== 2 || order.occasionStatus===2">
+                  <mat-icon fontSet="material-symbols-outlined">cancel</mat-icon>
+                  <span>{{'ORDER.TABLE.CANCEL' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 4)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}" [disabled]="order.occasionStatus===2">
+                  <mat-icon fontSet="material-symbols-outlined">timer</mat-icon>
+                  <span>{{'ORDER.TABLE.DELETE_OVERDUE' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 3)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}" [disabled]="order.occasionStatus===2">
+                  <mat-icon fontSet="material-symbols-outlined">assignment_returned</mat-icon>
+                  <span>{{'ORDER.TABLE.DELETE_RETURNED' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onDeleteOrderClick(order.id, dt)"
+                  *hasOp="{codes:['DELETE_ORDER'], mode:'any'}" [disabled]="order.occasionStatus===2">
+                  <mat-icon fontSet="material-symbols-outlined">error</mat-icon>
+                  <span>{{'ORDER.TABLE.DELETE_MISTAKE' | translate}}</span>
+                </button>
+                <button mat-menu-item (click)="onUpdateOrderStatusClick(order.id, dt, 1)"
+                  *hasOp="{codes:['EDIT_ORDER'], mode:'any'}"
+                  [disabled]="(order.statusId !== 3 && order.statusId !== 4) || order.occasionStatus===2">
+                  <mat-icon fontSet="material-symbols-outlined">restore_from_trash</mat-icon>
+                  <span>{{'ORDER.TABLE.RESTORE' | translate}}</span>
+                </button>
+
+              </mat-menu>
+            </div>
+          </td>
+          <td>
+            {{ order.source | translate }}
+          </td>
+          <td>
+            {{ getOrderOccasionName(order) }}
+          </td>
+          <td>
+            {{ order.comment }}
+          </td>
+
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="12">{{ "ORDER.TABLE.EMPTY" | translate }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </mat-card-content>
+</mat-card>

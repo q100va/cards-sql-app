@@ -3,7 +3,14 @@ import { ConfirmationService } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
 import { sanitizeText } from '../utils/sanitize-text';
 
-export type ConfirmKind = 'address' | 'names' | 'userName' | 'contact';
+export type ConfirmKind =
+  | 'address'
+  | 'names'
+  | 'userName'
+  | 'contact'
+  | 'coordination'
+  | 'institute'
+  | 'officialName';
 
 @Injectable({ providedIn: 'root' })
 export class DiffConfirmService {
@@ -11,12 +18,18 @@ export class DiffConfirmService {
   private readonly t = inject(TranslateService);
 
   /** Ask: move previous value to 'outdated' (Accept) or delete it (Reject). */
-  confirmOutdateOrDelete(kind: ConfirmKind, value: string): Promise<boolean> {
+  async confirmOutdateOrDelete(
+    kind: ConfirmKind,
+    value: string
+  ): Promise<boolean> {
     const kindLabel = {
       address: this.t.instant('PRIME_CONFIRM.DATA_TYPES.ADDRESS'),
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contact: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
+      coordination: this.t.instant('PRIME_CONFIRM.DATA_TYPES.COORDINATIONS'),
+      institute: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
+      officialName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.OFFICIAL_NAME'),
     }[kind];
 
     const header = this.t.instant('PRIME_CONFIRM.WARNING_HEADER');
@@ -49,7 +62,14 @@ export class DiffConfirmService {
   /** Ask:  is correct new data when it matches outdated records.
    * (Accept) - restore it or (Reject) - cancel saving. */
   confirmDataCorrectness(
-    type: 'address' | 'names' | 'userName' | 'contacts',
+    type:
+      | 'address'
+      | 'names'
+      | 'userName'
+      | 'contacts'
+      | 'coordinations'
+      | 'institutes'
+      | 'officialName',
     value: string
   ): Promise<boolean> {
     const types = {
@@ -57,6 +77,9 @@ export class DiffConfirmService {
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contacts: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
+      coordinations: this.t.instant('PRIME_CONFIRM.DATA_TYPES.COORDINATIONS'),
+      institutes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
+      officialName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.OFFICIAL_NAME'),
     };
 
     return new Promise((resolve) => {

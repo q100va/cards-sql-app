@@ -5,74 +5,72 @@ import { correlationId } from '../../middlewares/correlation-id.js';
 import { withRequestContext, getRequestContext } from '../../middlewares/request-context.js';
 import { handleError } from '../../middlewares/error-handler.js';
 
-const makeApp = () => {
+function makeApp() {
   const app = express();
+
   app.use(correlationId());
   app.use(withRequestContext);
 
-  // Async boundaries: micro + macro + promise
-  app.get('/ctx', async (_req, res) => {
-    await new Promise(r => setTimeout(r, 5));
+  app.get('/context', async (_req, res) => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
     await Promise.resolve();
-    const ctx = getRequestContext();
-    res.json({ ctx });
+
+    res.json(getRequestContext());
   });
 
-  // Same, but throws, to ensure context visible in error-handler too
-  app.get('/boom', async (_req, _res, next) => {
-    await new Promise(r => setTimeout(r, 1));
-    const err = new Error('boom');
-    err.status = 500;
-    next(err);
+  app.get('/error', async (_req, _res, next) => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const context = getRequestContext();
+    const error = new Error('boom');
+    error.status = 500;
+    error.contextCorrelationId = context.correlationId;
+
+    next(error);
+  });
+
+  app.use((error, _req, res, next) => {
+    res.set('x-context-id', error.contextCorrelationId ?? '');
+    next(error);
   });
 
   app.use(handleError);
+
   return app;
-};
+}
 
-describe('withRequestContext + AsyncLocalStorage (integration)', () => {
-  it('keeps request context across async boundaries', async () => {
-    const ua = 'Jest-UA';
-    const custom = 'corr-A';
-
+describe('request context', () => {
+  test('preserves context across async boundaries', async () => {
     const res = await request(makeApp())
-      .get('/ctx')
-      .set('user-agent', ua)
-      .set('x-correlation-id', custom);
+      .get('/context')
+      .set('x-correlation-id', 'context-1')
+      .set('user-agent', 'Jest-UA');
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('ctx');
-
-    const { ctx } = res.body;
-    expect(ctx.correlationId).toBe(custom);     // preserved from header via correlationId()
-    expect(ctx.userAgent).toBe(ua);             // captured by withRequestContext
-    expect(typeof ctx.ip).toBe('string');       // Express computes something like ::ffff:127.0.0.1
+    expect(res.body.correlationId).toBe('context-1');
+    expect(res.body.userAgent).toBe('Jest-UA');
+    expect(typeof res.body.ip).toBe('string');
   });
 
-  it('isolates context between concurrent requests', async () => {
+  test('isolates concurrent request contexts', async () => {
     const app = makeApp();
-    const A = 'corr-A';
-    const B = 'corr-B';
 
-    const [r1, r2] = await Promise.all([
-      request(app).get('/ctx').set('x-correlation-id', A),
-      request(app).get('/ctx').set('x-correlation-id', B),
+    const [first, second] = await Promise.all([
+      request(app).get('/context').set('x-correlation-id', 'context-A'),
+      request(app).get('/context').set('x-correlation-id', 'context-B'),
     ]);
 
-    expect(r1.status).toBe(200);
-    expect(r2.status).toBe(200);
-    expect(r1.body.ctx.correlationId).toBe(A);
-    expect(r2.body.ctx.correlationId).toBe(B);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(first.body.correlationId).toBe('context-A');
+    expect(second.body.correlationId).toBe('context-B');
   });
 
-  it('context is available inside error handler path as well', async () => {
-    const custom = 'corr-ERR';
-    const res = await request(makeApp())
-      .get('/boom')
-      .set('x-correlation-id', custom);
+  test('keeps context on async error path', async () => {
+    const res = await request(makeApp()).get('/error').set('x-correlation-id', 'context-error');
 
-    expect(res.status).toBeGreaterThanOrEqual(500);
-    // error-handler replies with correlationId from req; if ALS lost it, это бы упало
-    expect(res.body).toHaveProperty('correlationId', custom);
+    expect(res.status).toBe(500);
+    expect(res.headers['x-context-id']).toBe('context-error');
+    expect(res.body.correlationId).toBe('context-error');
   });
 });

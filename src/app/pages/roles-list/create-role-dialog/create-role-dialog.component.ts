@@ -8,7 +8,6 @@ import {
 
 // Angular Material dialog
 import {
-  MAT_DIALOG_DATA,
   MatDialogActions,
   MatDialogContent,
   MatDialogRef,
@@ -40,7 +39,7 @@ import { switchMap, finalize } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Validation
-import { roleDraftSchema } from '@shared/schemas/role.schema';
+import { roleDraftSchema } from '../../../../../shared/schemas/role.schema';
 import { zodValidator } from '../../../utils/zod-validator';
 
 //Directives
@@ -72,7 +71,6 @@ export class CreateRoleDialogComponent {
   // Dependencies
   private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<CreateRoleDialogComponent>);
-  readonly data = inject<{ userId: number; userName: string }>(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly roleService = inject(RoleService);
   private readonly confirmationService = inject(ConfirmationService);
