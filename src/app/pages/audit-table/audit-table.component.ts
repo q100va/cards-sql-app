@@ -25,7 +25,6 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { PaginatorModule } from 'primeng/paginator';
 import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
@@ -36,6 +35,7 @@ import { PaginatorState } from 'primeng/paginator';
 import { AuditService } from '../../services/audit.service';
 import { AuditItem } from '../../../../shared/schemas/audit.schema';
 import { MessageWrapperService } from '../../services/message.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 // --- Types & constants -------------------------------------------------------
 
@@ -96,7 +96,7 @@ const ACTIONS: Exclude<AuditAction, ''>[] = ['create', 'update', 'delete', 'auth
     TooltipModule,
     PaginatorModule,
     IconFieldModule,
-    InputIconModule,
+    TranslateModule,
     SelectModule,
     ButtonModule,
     DatePicker,

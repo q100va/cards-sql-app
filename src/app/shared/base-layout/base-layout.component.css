@@ -5,6 +5,10 @@
   cursor: pointer;
 }
 
+.nav-home-link {
+  display: inline-flex;
+}
+
 .nav-logo {
   margin-right: 10px;
   cursor: pointer;

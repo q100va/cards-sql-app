@@ -24,3 +24,9 @@ mat-card-header {
   word-break: break-word;
 }
 
+.audit-filter-action {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+

@@ -23,7 +23,9 @@
     "BIRTHDAY": "Birthdays",
     "MY_ORDERS": "My Requests",
     "SIGNED_IN_AS": "Signed in as {{ name }}",
-    "EXIT": "Exit"
+    "EXIT": "Exit",
+    "HOME_LINK_LABEL": "Home page",
+    "PROFILE_MENU_LABEL": "User menu"
   },
   "MENU": {
     "PROFILE": "Profile",
@@ -50,12 +52,23 @@
     "EN": "English",
     "RU": "Русский"
   },
+  "AUDIT": {
+    "APPLY_DATE_FILTER": "Apply date range filter",
+    "CLEAR_DATE_FILTER": "Clear date range filter",
+    "APPLY_ENTITY_ID_FILTER": "Apply entity ID filter",
+    "CLEAR_ENTITY_ID_FILTER": "Clear entity ID filter",
+    "APPLY_USER_ID_FILTER": "Apply user ID filter",
+    "CLEAR_USER_ID_FILTER": "Clear user ID filter",
+    "APPLY_CORRELATION_ID_FILTER": "Apply correlation ID filter",
+    "CLEAR_CORRELATION_ID_FILTER": "Clear correlation ID filter"
+  },
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Confirmation",
     "ACCEPT": "Yes",
     "REJECT": "No",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Are you sure you want to leave without saving?",
     "DELETE_ITEM_MESSAGE": "Delete '{{name}}'?<br />Data cannot be restored.",
+    "CLEAR_LIST_MESSAGE": "Clear the recipient list for '{{name}}'? All recipients will be removed from this list.",
     "UNBLOCK_ITEM_MESSAGE": "Unblock «{{name}}»?",
 
     "SAVE_WITH_DUPLICATES": "Duplicates detected. Are you sure you want to save the entered data?",
@@ -1044,6 +1057,8 @@
     "CARD": {
       "CREATION_TITLE": "New request",
       "VIEW_TITLE": "Request",
+      "PREVIOUS_OCCASION_LABEL": "Previous occasion",
+      "NEXT_OCCASION_LABEL": "Next occasion",
       "CREATE_BUTTON": "Create",
       "CLEAR_BUTTON": "Clear",
       "NO_CONF_REQUIRED_LABEL": "No confirmation required",

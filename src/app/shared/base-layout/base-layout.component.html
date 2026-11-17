@@ -50,7 +50,9 @@
 <mat-toolbar class="toolbar">
   <mat-toolbar-row class="toolbar-row">
 
-    <img class="nav-logo" src="LOGO.png" height="50px" routerLink="/" />
+    <a class="nav-home-link" routerLink="/">
+      <img class="nav-logo" src="LOGO.png" height="50px" [alt]="'TOOLBAR.HOME_LINK_LABEL' | translate" />
+    </a>
     <span class="logo">&nbsp;{{'TOOLBAR.TITLE' | translate}}</span>
 
     <span class="spacer"></span>
@@ -67,7 +69,8 @@
       {{'TOOLBAR.MY_ORDERS' | translate}}
     </button>
 
-    <button mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu">
+    <button type="button" mat-icon-button class="right-button" [matMenuTriggerFor]="profileMenu" data-cy="profileMenu"
+      [attr.aria-label]="'TOOLBAR.PROFILE_MENU_LABEL' | translate">
       <mat-icon>flutter_dash</mat-icon>
     </button>
 
@@ -108,7 +111,7 @@
     </mat-menu>
 
     <!-- Button in the toolbar -->
-    <button mat-icon-button [matMenuTriggerFor]="langMenu">
+    <button type="button" mat-icon-button [matMenuTriggerFor]="langMenu" [attr.aria-label]="'LANG.SWITCH' | translate">
       <mat-icon>language</mat-icon>
     </button>
 
