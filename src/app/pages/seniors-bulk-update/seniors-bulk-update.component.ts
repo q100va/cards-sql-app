@@ -215,13 +215,19 @@ export class SeniorsBulkUpdateComponent {
   }
 
   async onStartClick() {
+    const startWasVisible = this.showStart;
+    const monthsWereEnabled = this.chosenMonths.enabled;
     this.showStart = false;
     this.chosenMonths.disable();
 
-    const data: Differences = await this.compareLists(
-      this.home.list,
-      this.home.homeName,
-    );
+    let data: Differences;
+    try {
+      data = await this.compareLists(this.home.list, this.home.homeName);
+    } catch {
+      this.showStart = startWasVisible;
+      if (monthsWereEnabled) this.chosenMonths.enable();
+      return;
+    }
     this.newSeniors = data.differences.newSeniors;
     this.removedSeniors = data.differences.removedSeniors;
     this.updatedSeniors = data.differences.updatedSeniors;

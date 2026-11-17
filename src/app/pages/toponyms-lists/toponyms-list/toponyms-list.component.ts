@@ -205,9 +205,9 @@ export class ToponymsListComponent {
           distinctUntilChanged(
             (a, b) => JSON.stringify(a) === JSON.stringify(b)
           ),
-          tap(() => this.showSpinner.set(true)),
-          switchMap((q) =>
-            this.addressService
+          switchMap((q) => {
+            this.showSpinner.set(true);
+            return this.addressService
               .getToponyms(q.type, q.filter, q.pageSize, q.page)
               .pipe(
                 tap((res) => {
@@ -224,8 +224,8 @@ export class ToponymsListComponent {
                   return of(null);
                 }),
                 finalize(() => this.showSpinner.set(false))
-              )
-          ),
+              );
+          }),
           takeUntilDestroyed(this.destroyRef)
         )
         .subscribe();

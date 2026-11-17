@@ -17,7 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { finalize, map, switchMap } from 'rxjs';
+import { EMPTY, catchError, finalize, map, switchMap } from 'rxjs';
 
 import { ORDER_SOURCE_OPTIONS } from '../../../../shared/constants/orders';
 import {
@@ -28,6 +28,7 @@ import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
 import { zodValidator } from '../../utils/zod-validator';
 import { OrderRecipientsComponent } from '../order-card/order-recipients/order-recipients.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-order-details',
@@ -54,6 +55,7 @@ export class OrderDetailsComponent {
   private readonly orderService = inject(OrderService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly msgWrapper = inject(MessageWrapperService);
+  readonly authService = inject(AuthService);
   readonly translateService = inject(TranslateService);
   readonly dateUtils = inject(DateUtilsService);
   readonly sources = ORDER_SOURCE_OPTIONS;
@@ -86,11 +88,23 @@ export class OrderDetailsComponent {
           this.orderId = orderId;
           this.userId = userId;
 
+          this.order.set(null);
           this.isLoading.set(true);
 
           return this.orderService
             .getOrderById(orderId)
-            .pipe(finalize(() => this.isLoading.set(false)));
+            .pipe(
+              catchError((err) => {
+                this.msgWrapper.handle(err, {
+                  source: 'OrderDetailsComponent',
+                  stage: 'getOrderById',
+                  orderId,
+                  userId,
+                });
+                return EMPTY;
+              }),
+              finalize(() => this.isLoading.set(false)),
+            );
         }),
 
         takeUntilDestroyed(this.destroyRef),
@@ -142,7 +156,7 @@ export class OrderDetailsComponent {
   }
 
   changeRecipientsList(deletingIds: number[]) {
-    if (!this.order()) return;
+    if (!this.order() || !this.authService.has('EDIT_ORDER')) return;
     this.isLoading.set(true);
     this.orderService
       .editOrderRecipientsList(this.order()!.id, deletingIds)

@@ -50,7 +50,7 @@
         occasionName: translatedOccasionName(currentOrder.occasion),
         forInstitute: !!currentOrder.instituteName,
         amount: currentOrder.amount
-      }" [isEditAllowed]="(currentOrder.statusId===1 || currentOrder.statusId===2) && currentOrder.occasionStatus===1"
+      }" [isEditAllowed]="authService.has('EDIT_ORDER') && (currentOrder.statusId===1 || currentOrder.statusId===2) && currentOrder.occasionStatus===1"
         (deletingRecipientIds)="changeRecipientsList($event)">
       </app-order-recipients>
     </section>
