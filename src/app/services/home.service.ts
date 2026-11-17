@@ -1,0 +1,305 @@
+import { Injectable, inject } from '@angular/core';
+import {
+  HttpClient,
+  HttpErrorResponse,
+} from '@angular/common/http';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+import {
+  Home,
+  Duplicates,
+  HomeDraft,
+  HomeChangingData,
+  HomeDeletingData,
+  HomeOutdatingData,
+  HomeRestoringData,
+  OwnerMainService,
+  UpdatedOwnerData,
+  RelationPick,
+} from '../interfaces/advanced-model';
+import { AllFilterParameters } from '../interfaces/base-list';
+import {
+  validateNoSchemaResponse,
+  validateResponse,
+} from '../utils/validate-response';
+import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
+import { MessageWrapperService } from './message.service';
+import z from 'zod';
+import * as ctrl from '../utils/common-ctrls';
+import {
+  homeSchema,
+  homesSchema,
+  RegionWithHomes,
+  regionWithHomesSchema,
+} from '../../../shared/schemas/home.schema';
+
+export interface HomeMainService extends OwnerMainService<
+  Home,
+  HomeDraft,
+  HomeChangingData,
+  HomeRestoringData,
+  HomeOutdatingData,
+  HomeDeletingData,
+  { list: Home[]; length: number }
+> {
+  getActiveHomesPickList(): Observable<RelationPick[]>;
+  getPotentialHomesPickList(): Observable<RelationPick[]>;
+  getHomesPickList(): Observable<RelationPick[]>;
+}
+
+@Injectable({
+  providedIn: 'root',
+})
+export class HomeService implements HomeMainService {
+  private http = inject(HttpClient);
+  private readonly BASE_URL = `${environment.apiUrl}/api/homes`;
+  private handleError = (error: HttpErrorResponse) => throwError(() => error);
+
+  constructor(private msgWrapper: MessageWrapperService) {}
+
+  getOwnerName(owner: Home) {
+    return owner['homeName'].trim();
+  }
+  checkOwnerData(ownerDraft: HomeDraft): Observable<ApiResponse<Duplicates>> {
+    return of({
+      data: {
+        duplicatesName: [],
+        duplicatesContact: [],
+      },
+    });
+  }
+
+  saveOwner(ownerDraft: HomeDraft): Observable<ApiResponse<string>> {
+    return this.http
+      .post<RawApiResponse>(`${this.BASE_URL}/create-home`, ownerDraft)
+      .pipe(
+        validateResponse(z.string()),
+        this.msgWrapper.messageTap('success', undefined, (res) => ({
+          homeFullName: res.data,
+        })),
+        catchError(this.handleError),
+      );
+  }
+
+  saveUpdatedOwner(
+    id: number,
+    updatedOwnerData: UpdatedOwnerData<
+      HomeChangingData,
+      HomeRestoringData,
+      HomeOutdatingData,
+      HomeDeletingData
+    >,
+  ): Observable<ApiResponse<Home>> {
+    return this.http
+      .post<RawApiResponse>(`${this.BASE_URL}/update-home`, {
+        id,
+        ...updatedOwnerData,
+      })
+      .pipe(
+        validateResponse(homeSchema),
+        this.msgWrapper.messageTap('success', undefined, (res) => ({
+          homeData: res.data,
+        })),
+        catchError(this.handleError),
+      );
+  }
+
+  getList(
+    allFilterParameters: AllFilterParameters,
+    pageSize: number,
+    currentPage: number,
+  ): Observable<ApiResponse<{ list: Home[]; length: number }>> {
+    const p = { ...allFilterParameters };
+    const dto = {
+      page: { size: pageSize, number: currentPage },
+      sort:
+        p.sortParameters.active && p.sortParameters.direction
+          ? [
+              {
+                field: p.sortParameters.active,
+                direction: p.sortParameters.direction,
+              },
+            ]
+          : undefined,
+      search: ctrl.buildSearch(p.searchValue, p.exactMatch),
+      view: ctrl.omitEmpty({
+        option: p.viewOption,
+        includeOutdated: p.includeOutdated,
+      }),
+      filters: ctrl.omitEmpty({
+        general: ctrl.omitEmpty({
+          dateBeginningRange: ctrl.toIsoRange(p.filter.dateBeginningRange),
+          dateRestrictionRange: ctrl.toIsoRange(p.filter.dateRestrictionRange),
+          dateCloseRange: ctrl.toIsoRange(p.filter.dateExitRange),
+          dateUpdateRange: ctrl.toIsoRange(p.filter.dateUpdateRange),
+          contactTypes: p.filter.contactTypes.map((c) => c.type),
+          details: p.filter.details.map((d) => d.value),
+          noAddress: p.filter.noAddress,
+          specialHome: p.filter.specialHome,
+          acceptableForSchool: p.filter.acceptableForSchool,
+          hasCoordination: p.filter.hasCoordination,
+          partners: p.filter.partners.map((p) => p.id),
+        }),
+        address: ctrl.omitEmpty({
+          countries: p.addressFilter.countries,
+          regions: p.addressFilter.regions,
+          districts: p.addressFilter.districts,
+          localities: p.addressFilter.localities,
+        }),
+        mode: ctrl.omitEmpty({
+          strictAddress: p.strongAddressFilter,
+          strictContact: p.strongContactFilter,
+          strictDetail: p.strongDetailFilter,
+        }),
+      }),
+    };
+    return this.http
+      .post<RawApiResponse>(`${this.BASE_URL}/get-homes`, dto)
+      .pipe(validateResponse(homesSchema), catchError(this.handleError));
+  }
+
+  getById(id: number): Observable<ApiResponse<Home>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-home-by-id/${id}`)
+      .pipe(validateResponse(homeSchema), catchError(this.handleError));
+  }
+
+  getActiveHomesPickList(): Observable<RelationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-active-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+              fullPostalAddress: z.string().optional(),
+              countryId: z.number().int().positive().optional(),
+              regionId: z.number().int().positive().optional(),
+              districtId: z.number().int().positive().optional(),
+              localityId: z.number().int().positive().optional(),
+              noAddress: z.boolean().optional(),
+              specialHome: z.boolean().optional(),
+              acceptableForSchool: z.boolean().optional(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
+
+  getPotentialHomesPickList(): Observable<RelationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-potential-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+              fullPostalAddress: z.string().optional(),
+              countryId: z.number().int().positive().optional(),
+              regionId: z.number().int().positive().optional(),
+              districtId: z.number().int().positive().optional(),
+              localityId: z.number().int().positive().optional(),
+              isRestricted: z.boolean().optional(),
+              isClose: z.boolean().optional(),
+              homeStatus: z.string().optional(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
+
+  getHomesPickList(): Observable<RelationPick[]> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
+      .pipe(
+        validateResponse(
+          z.array(
+            z.object({
+              id: z.number().int().positive(),
+              name: z.string(),
+              fullPostalAddress: z.string().optional(),
+              countryId: z.number().int().positive().optional(),
+              regionId: z.number().int().positive().optional(),
+              districtId: z.number().int().positive().optional(),
+              localityId: z.number().int().positive().optional(),
+              isRestricted: z.boolean().optional(),
+              isClose: z.boolean().optional(),
+            }),
+          ),
+        ),
+        map((res: ApiResponse<RelationPick[]>) => res.data),
+        catchError(this.handleError),
+      );
+  }
+
+  checkPossibilityToDeleteOwner(id: number): Observable<ApiResponse<number>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/check-home-before-delete/${id}`)
+      .pipe(
+        validateNoSchemaResponse<number>('isNumber'),
+        this.msgWrapper.messageTap(
+          'warn',
+          (res) => ({
+            source: 'HomesList',
+            stage: 'checkPossibilityToDeleteHome',
+            homeId: id,
+            amountOfDependencies: res.data,
+          }),
+          (res) => ({ count: res.data }),
+        ),
+        catchError(this.handleError),
+      );
+  }
+
+  deleteOwner(id: number): Observable<ApiResponse<null>> {
+    return this.http
+      .delete<RawApiResponse>(`${this.BASE_URL}/delete-home/${id}`)
+      .pipe(
+        validateNoSchemaResponse<null>('isNull'),
+        this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  blockOwner(
+    id: number,
+    causeOfRestriction: string,
+  ): Observable<ApiResponse<null>> {
+    return this.http
+      .patch<RawApiResponse>(`${this.BASE_URL}/block-home/`, {
+        id,
+        causeOfRestriction,
+      })
+      .pipe(
+        validateNoSchemaResponse<null>('isNull'),
+        this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  unblockOwner(id: number): Observable<ApiResponse<null>> {
+    return this.http
+      .patch<RawApiResponse>(`${this.BASE_URL}/unblock-home/`, { id })
+      .pipe(
+        validateNoSchemaResponse<null>('isNull'),
+        this.msgWrapper.messageTap('success'),
+        catchError(this.handleError),
+      );
+  }
+
+  getHomeGroups(): Observable<ApiResponse<RegionWithHomes>> {
+    return this.http
+      .get<RawApiResponse>(`${this.BASE_URL}/get-home-groups/`)
+      .pipe(
+        validateResponse(regionWithHomesSchema),
+        catchError(this.handleError),
+      );
+  }
+}

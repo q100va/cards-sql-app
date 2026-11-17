@@ -7,9 +7,11 @@ export type PermissionSet = {
   readonly [A in 'downloadTable' | 'create']: Params;
 };
 
-export type PermissionsComponentRegistry = Partial<Record<FilterComponentSource, PermissionSet>>;
+export type PermissionsComponentRegistry = Partial<
+  Record<FilterComponentSource, PermissionSet>
+>;
 
-export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry  = {
+export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
   userList: {
     create: {
       codes: ['ADD_NEW_USER'],
@@ -20,13 +22,43 @@ export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry  = {
       mode: 'any',
     },
   },
-   partnerList: {
+  partnerList: {
     create: {
       codes: ['ADD_NEW_PARTNER'],
       mode: 'all',
     },
     downloadTable: {
       codes: ['DOWNLOAD_PARTNERS_TABLE'],
+      mode: 'any',
+    },
+  },
+  volunteerList: {
+    create: {
+      codes: ['ADD_NEW_VOLUNTEER'],
+      mode: 'all',
+    },
+    downloadTable: {
+      codes: ['DOWNLOAD_VOLUNTEERS_TABLE'],
+      mode: 'any',
+    },
+  },
+  homeList: {
+    create: {
+      codes: ['ADD_NEW_HOME'],
+      mode: 'all',
+    },
+    downloadTable: {
+      codes: ['DOWNLOAD_HOMES_TABLE'],
+      mode: 'any',
+    },
+  },
+  seniorList: {
+    create: {
+      codes: ['ADD_NEW_SENIOR'],
+      mode: 'all',
+    },
+    downloadTable: {
+      codes: ['DOWNLOAD_SENIORS_TABLE'],
       mode: 'any',
     },
   },

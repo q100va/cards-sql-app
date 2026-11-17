@@ -21,7 +21,6 @@ export class AppComponent implements OnInit {
   private subTranslate?: Subscription;
 
   constructor() {
-    //this.signInService.hydrateFromSession().subscribe();
     this.subIdle = this.signInService.currentUser$
       .pipe(
         map((u) => !!u),

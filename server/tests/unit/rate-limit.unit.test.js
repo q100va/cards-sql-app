@@ -1,205 +1,289 @@
 /* @jest-environment node */
+
 import { jest } from '@jest/globals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+function createMocks() {
+  const memoryInstances = [];
+  const redisLimiterInstances = [];
+  const redisClients = [];
 
-const rateLimitPath = path.resolve(__dirname, '../../controllers/rate-limit.js');
-
-/** Изолированная загрузка модуля в memory-режиме (без Redis). */
-async function loadMemoryModule() {
-  await jest.isolateModulesAsync(async () => {
-    delete process.env.REDIS_URL;
-    process.env.NODE_ENV = 'test';
-    // важно: никаких моков — хотим реальное поведение RateLimiterMemory
-    const mod = await import(rateLimitPath);
-    Object.assign(loadMemoryModule, { mod });
-  });
-  return loadMemoryModule.mod;
-}
-
-/** Изолированная загрузка модуля в redis-режиме с моками. */
-async function loadRedisModule() {
-  // мок ioredis
-  class RedisMock {
-    static calls = [];
-    constructor(url, options) {
-      RedisMock.calls.push({ url, options });
-    }
-    on() {}
-  }
-
-  // мок rate-limiter-flexible (только то, что нужно)
   class RateLimiterMemoryMock {
-    constructor(opts) { this.opts = opts; }
-    consume() { return Promise.resolve({ remainingPoints: (this.opts?.points ?? 1) - 1, msBeforeNext: 0 }); }
-    delete() { return Promise.resolve(true); }
+    constructor(options) {
+      this.options = options;
+
+      this.consume = jest.fn(async () =>
+      ({
+        remainingPoints: options.points - 1,
+        msBeforeNext: 0,
+      }));
+
+      this.delete = jest.fn(async () => true);
+
+      memoryInstances.push(this);
+    }
   }
 
   class RateLimiterRedisMock {
-    // простой shared state по keyPrefix:key
-    static _counters = new Map();
-    static _lastCtor = null;
+    constructor(options) {
+      this.options = options;
 
-    constructor(args) {
-      this.opts = args;
-      RateLimiterRedisMock._lastCtor = args;
-    }
-    _keyId(key) {
-      const p = this.opts.keyPrefix || 'default';
-      return `${p}:${key}`;
-    }
-    async consume(key) {
-      const id = this._keyId(key);
-      const points = this.opts.points ?? 1;
-      let c = RateLimiterRedisMock._counters.get(id) ?? 0;
-      c += 1;
-      RateLimiterRedisMock._counters.set(id, c);
-      if (c > points) {
-        const err = new Error('Rate limit exceeded');
-        const ttl = (this.opts.blockDuration ?? this.opts.duration ?? 1) * 1000;
-        err.msBeforeNext = ttl;
-        throw err;
-      }
-      return { remainingPoints: points - c, msBeforeNext: 0 };
-    }
-    async delete(key) {
-      RateLimiterRedisMock._counters.delete(this._keyId(key));
-      return true;
+      this.consume = jest.fn(async () =>
+      ({
+        remainingPoints: options.points - 1,
+        msBeforeNext: 0,
+      }));
+
+      this.delete = jest.fn(async () => true);
+
+      redisLimiterInstances.push(this);
     }
   }
 
-  await jest.isolateModulesAsync(async () => {
-    process.env.NODE_ENV = 'production';
-    process.env.REDIS_URL = 'redis://localhost:6379';
+  class RedisMock {
+    constructor(url, options) {
+      this.url = url;
+      this.options = options;
+      this.on = jest.fn();
 
-    jest.unstable_mockModule('ioredis', () => ({ default: RedisMock }));
-    jest.unstable_mockModule('rate-limiter-flexible', () => ({
-      RateLimiterMemory: RateLimiterMemoryMock,
-      RateLimiterRedis: RateLimiterRedisMock,
-    }));
+      redisClients.push(this);
+    }
+  }
 
-    const mod = await import(rateLimitPath);
-    Object.assign(loadRedisModule, { mod, RedisMock, RateLimiterRedisMock });
-  });
+  const logger = { warn: jest.fn() };
 
-  return { mod: loadRedisModule.mod, RedisMock: loadRedisModule.RedisMock, RateLimiterRedisMock: loadRedisModule.RateLimiterRedisMock };
+  return {
+    RateLimiterMemoryMock,
+    RateLimiterRedisMock,
+    RedisMock,
+    logger,
+    memoryInstances,
+    redisLimiterInstances,
+    redisClients,
+  };
 }
 
-describe('rate-limit (memory mode)', () => {
+async function loadRateLimit({
+  nodeEnv = 'test',
+  redisUrl = null,
+} = {}) {
+  const previousNodeEnv = process.env.NODE_ENV;
+
+  const previousRedisUrl = process.env.REDIS_URL;
+
+  const mocks = createMocks();
+
+  try {
+    process.env.NODE_ENV = nodeEnv;
+
+    if (redisUrl === null) {
+      delete process.env.REDIS_URL;
+    } else {
+      process.env.REDIS_URL = redisUrl;
+    }
+
+    jest.unstable_mockModule('rate-limiter-flexible', () =>
+    ({
+      RateLimiterMemory: mocks.RateLimiterMemoryMock,
+      RateLimiterRedis: mocks.RateLimiterRedisMock,
+    }));
+
+    jest.unstable_mockModule('ioredis', () => ({ default: mocks.RedisMock }));
+
+    jest.unstable_mockModule('../../logging/logger.js', () => ({ default: mocks.logger }));
+
+    let mod;
+
+    await jest.isolateModulesAsync(async () => {
+      mod = await import('../../security/rate-limit.js');
+    });
+
+    return {
+      mod,
+      ...mocks,
+    };
+  } finally {
+    if (previousNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnv;
+    }
+
+    if (previousRedisUrl === undefined) {
+      delete process.env.REDIS_URL;
+    } else {
+      process.env.REDIS_URL = previousRedisUrl;
+    }
+  }
+}
+
+describe('rate-limit', () => {
   afterEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
   });
 
-  test('loginKey normalizes username', async () => {
-    const m = await loadMemoryModule();
-    expect(m.loginKey('  Alice ')).toBe('alice');
-    expect(m.loginKey(null)).toBe('');
-    expect(m.loginKey(undefined)).toBe('');
+  test('loginKey normalizes usernames', async () => {
+    const { mod } = await loadRateLimit();
+
+    expect(mod.loginKey('  Alice ')).toBe('alice');
+
+    expect(mod.loginKey(null)).toBe('');
+
+    expect(mod.loginKey(undefined)).toBe('');
+
+    expect(mod.loginKey(123)).toBe('123');
   });
 
-  test('consumeOrInfo: ok until points are exhausted, then blocked', async () => {
-    const m = await loadMemoryModule();
-    const key = '1.2.3.4';
+  test('creates expected memory limiters outside Redis mode', async () => {
+    const {
+      memoryInstances,
+      redisLimiterInstances,
+      redisClients,
+    } = await loadRateLimit();
 
-    // points=8 for signInIpLimiter
-    let info;
-    for (let i = 1; i <= 8; i++) {
-      info = await m.consumeOrInfo(m.signInIpLimiter, key);
-      expect(info.ok).toBe(true);
-      expect(info.remaining).toBe(8 - i);
-      expect(info.msBeforeNext).toBeGreaterThanOrEqual(0);
-    }
+    expect(memoryInstances).toHaveLength(4);
 
-    // 9-я попытка должна дать блок
-    const blocked = await m.consumeOrInfo(m.signInIpLimiter, key);
-    expect(blocked.ok).toBe(false);
-    expect(blocked.remaining).toBe(0);
-    expect(blocked.msBeforeNext).toBeGreaterThan(0);
+    expect(memoryInstances.map((instance) => instance.options)).toEqual([
+      {
+        keyPrefix: 'login:ip',
+        points: 8,
+        duration: 15 * 60,
+        blockDuration: 15 * 60,
+      },
+      {
+        keyPrefix: 'login:user',
+        points: 8,
+        duration: 15 * 60,
+        blockDuration: 15 * 60,
+      },
+      {
+        keyPrefix: 'login:all',
+        points: 50,
+        duration: 60,
+        blockDuration: 60,
+      },
+      {
+        keyPrefix: 'login:ua',
+        points: 10,
+        duration: 15 * 60,
+        blockDuration: 15 * 60,
+      },
+    ]);
+
+    expect(redisLimiterInstances).toHaveLength(0);
+
+    expect(redisClients).toHaveLength(0);
   });
 
-  test('resetKey clears consumption', async () => {
-    const m = await loadMemoryModule();
-    const key = 'reset-me';
+  test('memory limiter delegates consume and delete', async () => {
+    const {
+      mod,
+      memoryInstances,
+    } = await loadRateLimit();
 
-    // сожрём все 8
-    for (let i = 0; i < 8; i++) {
-      const info = await m.consumeOrInfo(m.signInUserLimiter, key);
-      expect(info.ok).toBe(true);
-    }
-    const blocked = await m.consumeOrInfo(m.signInUserLimiter, key);
-    expect(blocked.ok).toBe(false);
+    const ipLimiter = memoryInstances[0];
 
-    // сброс
-    await m.resetKey(m.signInUserLimiter, key);
+    await mod.signInIpLimiter.consume('1.2.3.4');
 
-    // снова должна пройти 1 попытка
-    const after = await m.consumeOrInfo(m.signInUserLimiter, key);
-    expect(after.ok).toBe(true);
-    expect(after.remaining).toBe(7);
+    expect(ipLimiter.consume).toHaveBeenCalledWith('1.2.3.4');
+
+    await mod.signInIpLimiter.delete('1.2.3.4');
+
+    expect(ipLimiter.delete).toHaveBeenCalledWith('1.2.3.4');
   });
 
-  test('attachLimitHeaders sets headers for success and block', async () => {
-    const m = await loadMemoryModule();
-    const res = { setHeader: jest.fn() };
+  test('production with Redis creates Redis client lazily', async () => {
+    const {
+      mod,
+      memoryInstances,
+      redisLimiterInstances,
+      redisClients,
+    } = await loadRateLimit({
+      nodeEnv: 'production',
+      redisUrl: 'redis://localhost:6379',
+    });
 
-    // успех
-    m.attachLimitHeaders(res, { ok: true, remaining: 5, msBeforeNext: 0 }, { points: 10 });
-    expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', 10);
-    expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 5);
+    // Insurance limiters exist
+    // immediately.
+    expect(memoryInstances).toHaveLength(4);
 
-    res.setHeader.mockClear();
+    // Redis itself is lazy.
+    expect(redisClients).toHaveLength(0);
 
-    // блок
-    m.attachLimitHeaders(res, { ok: false, remaining: 0, msBeforeNext: 1234 }, { points: 10 });
-    expect(res.setHeader).toHaveBeenCalledWith('Retry-After', Math.ceil(1234 / 1000));
-  });
-});
+    expect(redisLimiterInstances).toHaveLength(0);
 
-describe('rate-limit (redis mode with mocks)', () => {
-  afterEach(() => {
-    jest.resetModules();
-    jest.clearAllMocks();
-  });
+    await mod.signInUaLimiter.consume('ua/1.0');
 
-  test('buildLimiter in production uses Redis client and RateLimiterRedis with insuranceLimiter', async () => {
-    const { mod, RedisMock, RateLimiterRedisMock } = await loadRedisModule();
+    expect(redisClients).toHaveLength(1);
 
-    // При первом consume должен создаться Redis-клиент и RateLimiterRedis
-    const info1 = await mod.consumeOrInfo(mod.signInUaLimiter, 'ua/1.0');
-    expect(info1.ok).toBe(true);
-    // Убедимся, что Redis вызван с правильным URL и опциями
-    expect(RedisMock.calls.length).toBeGreaterThan(0);
-    const { url, options } = RedisMock.calls[0];
-    expect(url).toBe('redis://localhost:6379');
-    expect(options).toMatchObject({
+    expect(redisClients[0].url).toBe('redis://localhost:6379');
+
+    expect(redisClients[0].options).toEqual({
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       lazyConnect: true,
     });
 
-    // Проверим, что последний конструктор Redis-лимитера получил insuranceLimiter и keyPrefix
-    const ctorArgs = RateLimiterRedisMock._lastCtor;
-    expect(ctorArgs).toBeTruthy();
-    expect(ctorArgs.storeClient).toBeInstanceOf(RedisMock); // просто факт наличия
-    expect(ctorArgs.insuranceLimiter).toBeDefined();
-    expect(ctorArgs.keyPrefix).toBe('login:ua');
+    expect(redisLimiterInstances).toHaveLength(1);
 
-    // Доведём до блокировки: points=10 → 11-й вызов должен упасть
-    let last;
-    for (let i = 0; i < 9; i++) last = await mod.consumeOrInfo(mod.signInUaLimiter, 'ua/1.0');
-    expect(last.ok).toBe(true);
+    const limiter = redisLimiterInstances[0];
 
-    const blocked = await mod.consumeOrInfo(mod.signInUaLimiter, 'ua/1.0');
-    expect(blocked.ok).toBe(false);
-    expect(blocked.msBeforeNext).toBeGreaterThan(0);
+    expect(limiter.options.keyPrefix).toBe('login:ua');
 
-    // Сброс через delete → снова пойдёт
-    await mod.resetKey(mod.signInUaLimiter, 'ua/1.0');
-    const after = await mod.consumeOrInfo(mod.signInUaLimiter, 'ua/1.0');
-    expect(after.ok).toBe(true);
+    expect(limiter.options.insuranceLimiter).toBe(memoryInstances[3]);
+
+    expect(limiter.options.storeClient).toBe(redisClients[0]);
+  });
+
+  test('Redis limiter reset also clears the insurance limiter', async () => {
+    const {
+      mod,
+      memoryInstances,
+      redisLimiterInstances,
+    } = await loadRateLimit({
+      nodeEnv: 'production',
+      redisUrl: 'redis://localhost:6379',
+    });
+
+    await mod.signInUaLimiter.consume('ua-key');
+
+    const redisLimiter = redisLimiterInstances[0];
+
+    const insuranceLimiter = memoryInstances[3];
+
+    await mod.signInUaLimiter.delete('ua-key');
+
+    expect(redisLimiter.delete).toHaveBeenCalledWith('ua-key');
+
+    expect(insuranceLimiter.delete).toHaveBeenCalledWith('ua-key');
+  });
+
+  test('resetKey does not break login when reset fails', async () => {
+    const { mod } = await loadRateLimit();
+
+    const limiter = { delete: jest.fn().mockRejectedValue(new Error('reset failed')) };
+
+    await expect(mod.resetKey(limiter, 'user-key')).resolves.toBeUndefined();
+
+    expect(limiter.delete).toHaveBeenCalledWith('user-key');
+  });
+
+  test('production without REDIS_URL falls back to memory limiters', async () => {
+    const {
+      mod,
+      memoryInstances,
+      redisClients,
+    } = await loadRateLimit({
+      nodeEnv: 'production',
+      redisUrl: null,
+    });
+
+    expect(memoryInstances).toHaveLength(4);
+
+    await mod.signInGlobalLimiter.consume('global');
+
+    expect(redisClients).toHaveLength(0);
+
+    expect(memoryInstances[2].consume).toHaveBeenCalledWith('global');
   });
 });

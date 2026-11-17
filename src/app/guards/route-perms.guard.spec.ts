@@ -2,7 +2,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject, firstValueFrom, from, isObservable, of } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
-import { CanMatchFn, Router, UrlTree } from '@angular/router';
+import { CanMatchFn, Router, UrlTree, provideRouter } from '@angular/router';
 
 import { requireOp, requireAnyOp, requireAllOps } from './route-perms.guard';
 import { AuthService } from '../services/auth.service';
@@ -127,4 +127,68 @@ describe('route-perms guards', () => {
     const result = await p;
     expect(result).toBeTrue();
   });
+});
+
+describe('permission guard readiness and terminal results', () => {
+  let auth: AuthServiceMock;
+  let router: Router;
+
+  const cases = [
+    { name: 'requireOp', guard: () => requireOp('VIEW_ORDER'), grants: ['VIEW_ORDER'] },
+    { name: 'requireAnyOp', guard: () => requireAnyOp('VIEW_ORDER', 'EDIT_ORDER'), grants: ['EDIT_ORDER'] },
+    { name: 'requireAllOps', guard: () => requireAllOps('VIEW_ORDER', 'EDIT_ORDER'), grants: ['VIEW_ORDER', 'EDIT_ORDER'] },
+  ];
+
+  beforeEach(() => {
+    auth = new AuthServiceMock();
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: AuthService, useValue: auth }],
+    });
+    router = TestBed.inject(Router);
+  });
+
+  afterEach(() => router.dispose());
+
+  for (const { name, guard, grants } of cases) {
+    for (const allowed of [true, false]) {
+      it(`${name}: waits only for permission readiness, emits ${allowed ? 'allow' : '/forbidden'}, and completes`, () => {
+        const result = TestBed.runInInjectionContext(() => guard()({ path: 'protected' }, []));
+        const result$ = isObservable(result) ? result : from(Promise.resolve(result));
+        const values: unknown[] = [];
+        const errors: unknown[] = [];
+        let completions = 0;
+        const subscription = result$.subscribe({
+          next: (value) => values.push(value),
+          error: (error: unknown) => errors.push(error),
+          complete: () => completions += 1,
+        });
+        try {
+          expect(values).toEqual([]);
+          expect(completions).toBe(0);
+          if (allowed) auth.grant(...grants);
+          auth.setReady(true);
+
+          expect(errors).toEqual([]);
+          expect(values.length).toBe(1);
+          if (allowed) {
+            expect(values).toEqual([true]);
+          } else {
+            expect(values[0]).toEqual(jasmine.any(UrlTree));
+            if (values[0] instanceof UrlTree) expect(router.serializeUrl(values[0])).toBe('/forbidden');
+          }
+          expect(completions).toBe(1);
+          expect(subscription.closed).toBeTrue();
+
+          auth.revoke(...grants);
+          auth.setReady(false);
+          auth.grant(...grants);
+          auth.setReady(true);
+          expect(values.length).withContext('completed guards must not emit new decisions').toBe(1);
+          expect(completions).toBe(1);
+        } finally {
+          subscription.unsubscribe();
+        }
+      });
+    }
+  }
 });

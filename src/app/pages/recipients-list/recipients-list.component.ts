@@ -1,0 +1,288 @@
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { InputIcon } from 'primeng/inputicon';
+import { IconField } from 'primeng/iconfield';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatMenuModule } from '@angular/material/menu';
+import { SelectModule } from 'primeng/select';
+import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
+import { OccasionService } from '../../services/occasion.service';
+import { RecipientService } from '../../services/recipient.service';
+import { ConfirmationService } from 'primeng/api';
+import { MessageWrapperService } from '../../services/message.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { finalize, map, switchMap } from 'rxjs';
+import { Occasion } from '../../../../shared/schemas/occasion.schema';
+import {
+  Recipient,
+} from '../../../../shared/schemas/recipient.schema';
+import { HasOpDirective } from '../../directives/has-op.directive';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CreateRecipientDialogComponent } from './create-recipient-dialog/create-recipient-dialog.component';
+
+@Component({
+  selector: 'app-recipients-list',
+  templateUrl: './recipients-list.component.html',
+  standalone: true,
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatGridListModule,
+    MatIconModule,
+    MatMenuModule,
+    TableModule,
+    ButtonModule,
+    IconField,
+    InputIcon,
+    CommonModule,
+    SelectModule,
+    InputTextModule,
+    TooltipModule,
+    HasOpDirective,
+    TranslateModule,
+  ],
+  providers: [],
+  styleUrl: './recipients-list.component.css',
+})
+export class RecipientsListComponent implements OnInit {
+  // Dependencies
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly occasionService = inject(OccasionService);
+  private readonly recipientService = inject(RecipientService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly dialog = inject(MatDialog);
+  private readonly msgWrapper = inject(MessageWrapperService);
+  readonly translateService = inject(TranslateService);
+  private readonly route = inject(ActivatedRoute);
+
+  isLoading = signal<boolean>(false);
+  totalRecords = 0;
+  occasionId!: number;
+  occasion!: Occasion;
+  recipients!: Recipient[];
+  selectedRecipients: Recipient[] = [];
+  searchValue: string | undefined;
+  acceptableForSchoolOptions = [
+    {
+      label: this.translateService.instant('RECIPIENT.TABLE_FOR_SCHOOL'),
+      value: true,
+    },
+    {
+      label: this.translateService.instant('RECIPIENT.TABLE_NOT_FOR_SCHOOL'),
+      value: false,
+    },
+  ];
+  statusOptions = [
+    {
+      label: this.translateService.instant('RECIPIENT.TABLE_ABSENT_STATUS'),
+      value: true,
+    },
+    {
+      label: this.translateService.instant('RECIPIENT.TABLE_EMPTY_STATUS'),
+      value: false,
+    },
+  ];
+
+
+  ngOnInit() {
+    this.route.paramMap
+      .pipe(
+        map((params) => Number(params.get('occasionId'))),
+        switchMap((occasionId) => {
+          this.occasionId = occasionId;
+          return this.occasionService.getOccasionById(occasionId);
+        }),
+      )
+      .subscribe({
+        next: (res) => {
+          this.occasion = res.data;
+        },
+        error: (err) => {
+          this.msgWrapper.handle(err, {
+            source: 'RecipientsListComponent',
+            stage: 'getOccasionById',
+            occasionId: this.occasionId,
+          });
+        },
+      });
+  }
+
+  loadRecipients(event: TableLazyLoadEvent): void {
+
+
+    const query = {
+      occasionId: this.occasionId,
+      offset: event.first ?? 0,
+      limit: event.rows ?? 20,
+      sortField: event.sortField,
+      sortOrder: event.sortOrder,
+      searchValue: this.searchValue,
+      filters: this.normalizePrimeFilters(event.filters),
+    };
+    this.isLoading.set(true);
+    this.recipientService
+      .getRecipientsByOccasion(query)
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.recipients = res.data.list;
+          this.totalRecords = res.data.length;
+          this.selectedRecipients = [];
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'RecipientsList',
+            stage: 'getRecipientsByOccasion',
+            query,
+          }),
+      });
+  }
+
+  onSearchEnter(dt: Table) {
+    this.loadRecipients({
+      first: 0,
+      rows: dt.rows ?? 20,
+      sortField: dt.sortField,
+      sortOrder: dt.sortOrder,
+      filters: dt.filters,
+    });
+  }
+
+  private normalizePrimeFilters(filters: any) {
+    const result: Record<
+      string,
+      {
+        value: string | boolean | number;
+        matchMode: string;
+        operator: string;
+      }[]
+    > = {};
+
+    for (const [field, meta] of Object.entries(filters ?? {})) {
+      const metaArray = Array.isArray(meta)
+        ? meta.filter(
+            (m) => m.value !== null && m.value !== undefined && m.value !== '',
+          )
+        : [];
+      if (metaArray.length) {
+        result[field] = [...metaArray];
+      }
+    }
+
+    return result;
+  }
+
+  clear(dt: Table) {
+    this.searchValue = '';
+    dt.reset();
+  }
+
+  cannotDeleteRecipients() {
+    if (this.selectedRecipients.length === 0) return true;
+    const index = this.selectedRecipients.findIndex((s) => s.plusAmount > 0);
+    if (index !== -1) return true;
+    return false;
+  }
+  cannotSendRecipients() {
+    if (this.selectedRecipients.length === 0) return true;
+    const index = this.selectedRecipients.findIndex((s) => s.isAbsent === true);
+    if (index !== -1) return true;
+    return false;
+  }
+
+  getOccasionName(occasion: Occasion) {
+    return (
+      this.translateService.instant(occasion!.type) +
+      ' ' +
+      (occasion!.monthNameKey
+        ? this.translateService.instant(occasion!.monthNameKey)
+        : '') +
+      ' ' +
+      occasion!.year
+    );
+  }
+
+  onAddRecipientClick(dt: Table) {
+    const dialogRef = this.dialog.open(CreateRecipientDialogComponent, {
+      disableClose: true,
+      minWidth: '400px',
+      minHeight: '350px',
+      height: 'auto',
+      maxHeight: '80%',
+      data: this.occasion,
+    });
+
+    dialogRef
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((occasionName) => {
+        if (occasionName) {
+          this.clear(dt);
+        }
+      });
+  }
+
+    onDeleteRecipientsClick(selectedRecipients: Recipient[], dt: Table) {
+    this.confirmationService.confirm({
+      message: this.translateService.instant(
+        'PRIME_CONFIRM.DELETE_ITEM_MESSAGE',
+        {
+          name: selectedRecipients.length + ' ' + 'PRIME_CONFIRM.DELETE_RECIPIENTS',//TODO:
+        },
+      ),
+      header: this.translateService.instant('PRIME_CONFIRM.WARNING_HEADER'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.REJECT'),
+      },
+      acceptButtonProps: {
+        label: this.translateService.instant('PRIME_CONFIRM.ACCEPT'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => this.deleteRecipient(selectedRecipients, dt),
+    });
+  }
+
+  deleteRecipient(selectedRecipients: Recipient[], dt: Table) {
+    this.isLoading.set(true);
+    const selectedRecipientIds = selectedRecipients.map((r) => r.id);
+    this.recipientService
+      .deleteRecipients(selectedRecipientIds, this.occasion.id)
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.clear(dt);
+          this.selectedRecipients = [];
+        },
+        error: (err) =>
+          this.msgWrapper.handle(err, {
+            source: 'RecipientsList',
+            stage: 'deleteRecipients',
+            selectedRecipientIds,
+          }),
+      });
+  }
+  onSendRecipientClick(selectedRecipients: Recipient[]) {}
+  onShowOrdersClick(recipientId: number) {}
+}
+
+//TODO: вносить изменения в ресипиентов открытых поводов при изменении данных сеньора или интерната

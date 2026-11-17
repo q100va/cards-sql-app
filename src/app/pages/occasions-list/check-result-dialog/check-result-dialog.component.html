@@ -1,0 +1,51 @@
+<mat-grid-list cols="10" gutterSize="16px" rowHeight="76px">
+  <!-- Title -->
+  <mat-grid-tile colspan="5" rowspan="1">
+    <h3 mat-dialog-title>{{'OCCASION.CHECK_RESULT' | translate}}</h3>
+  </mat-grid-tile>
+
+  <!-- Spacer -->
+  <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+
+  <!-- Close button -->
+  <mat-grid-tile colspan="2" rowspan="1">
+    <button data-cy="dlg-cancel" mat-icon-button [title]="'OCCASION.CARD_CLOSE' | translate" (click)="onCancelClick()">
+      <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
+    </button>
+  </mat-grid-tile>
+</mat-grid-list>
+
+<mat-dialog-content class="full-width">
+  <div>{{'RECIPIENT.ADDED' | translate}} {{data.added.length}}</div>
+  <mat-list role="list">
+    @for(recipient of data.added; track recipient.id){
+    <mat-list-item role="listitem">
+      {{recipient.fullData}}
+    </mat-list-item>
+    }
+  </mat-list>
+  <div>{{'RECIPIENT.RETURNED' | translate}} {{data.returned.length}}</div>
+   <mat-list role="list">
+    @for(recipient of data.returned; track recipient.id){
+    <mat-list-item role="listitem">
+      {{recipient.fullData}}
+    </mat-list-item>
+    }
+  </mat-list>
+  <div>{{'RECIPIENT.ABSENT' | translate}} {{data.absent.length}}</div>
+   <mat-list role="list">
+    @for(recipient of data.absent; track recipient.id){
+    <mat-list-item role="listitem">
+      {{recipient.fullData}}
+    </mat-list-item>
+    }
+  </mat-list>
+
+</mat-dialog-content>
+
+<!-- Actions -->
+<mat-dialog-actions>
+  <button mat-raised-button data-cy="dlg-create" class="dialog-submit-button" (click)="onCancelClick()">
+    {{'OCCASION.CARD_CLOSE' | translate}}
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,139 @@
+<div style="display: flex; justify-content: space-between; align-items: center;">
+  <div style="width: 80%;">
+    <form [formGroup]="settingsForm" style="margin-bottom: 48px;">
+      <mat-slide-toggle formControlName="showIndexes" class="small-toggle">
+        {{'ORDER.CARD.INDEX_LABEL' | translate}}
+      </mat-slide-toggle>
+      <br />
+
+      <mat-slide-toggle formControlName="newerInstruction" class="small-toggle">
+        {{'ORDER.CARD.NEWER_LABEL' | translate}}
+      </mat-slide-toggle>
+
+      <mat-slide-toggle formControlName="subscriberInstruction" class="small-toggle">
+        {{'ORDER.CARD.SUBS_LABEL' | translate}}
+      </mat-slide-toggle>
+    </form>
+  </div>
+  <div style="width: 20%; text-align: right;">
+    <button mat-fab matTooltip="translateService.instant('ORDER.CARD.COPY_BUTTON_TOOLTIP')" class="white-and-green"
+      [disabled]="list().length == 0" (click)="copyAddressesToClipboard()">
+      <mat-icon>file_copy</mat-icon>
+    </button>
+  </div>
+</div>
+
+<div style="font-family: 'Times New Roman', Times, serif">
+
+  @if(showShortInstruction || showFullInstruction){
+  @for(p of topParts; track $index){
+  @if(p.className === 'list-item' || p.className === 'list-item-bold'){
+  <p [ngClass]="p.className">
+    <span> {{ p.prefix}} </span>
+    <span>{{ p.text }}</span>
+  </p>
+  }
+  @else {
+  <p [ngClass]="p.className">
+    {{ p.text }}
+  </p>
+  }
+  }
+  }
+  <h2>{{orderDetails().occasionName}}</h2>
+
+  @if(isEditAllowed()){
+  <div class="toolbar">
+    @if (!isEditMode()) {
+    <button mat-raised-button color="primary" type="button" (click)="onEditClick()">
+      <mat-icon>edit</mat-icon>
+      {{ 'ORDER.DETAILS.EDIT_BUTTON' | translate }}
+    </button>
+    } @else {
+    <button mat-button type="button" (click)="onCancelClick()" [disabled]="isSaving()">
+      {{ 'ORDER.DETAILS.CANCEL_BUTTON' | translate }}
+    </button>
+    <button mat-raised-button color="primary" type="button" (click)="onSaveClick()"
+      [disabled]="isSaving() || deletingIds.size === 0">
+      <mat-icon>save</mat-icon>
+      {{ 'ORDER.DETAILS.SAVE_BUTTON' | translate }}
+    </button>
+    }
+  </div>}
+
+  @for(home of list(); track home.homeId){
+  <p style="font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    {{home.postAddress}}</p>
+  @if(!flag && orderDetails().forInstitute){
+  <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    ({{('ORDER.CARD.ADDRESS_NOTE_SCHOOL' | translate) + (home.infoNote ? (' ' + home.infoNote) : '')}})
+  </p>
+  }
+  @else {
+  @if(home.infoNote){
+  <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    ({{home.infoNote}})
+  </p>
+  }
+  }
+
+  @if(home.noAddressNote){
+  <p style="color: red; font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
+    {{orderDetails().forInstitute && !flag ? ('ORDER.CARD.NO_ADDRESS_NOTE_SCHOOL' | translate) : (home.noAddressNote |
+    translate)}}
+  </p>
+  }
+
+  @for(recipient of home.homeRecipients; track recipient.id){
+  <div style="font-family: 'Times New Roman', Times, serif;">
+    @if(isEditAllowed()){
+    <button mat-icon-button [style.visibility]="isEditMode() ? 'visible' : 'hidden'"
+      [disabled]="!isEditMode() || recipient.statusId === 3 || deletingIds.has(recipient.id) || deletingIds.size === orderDetails().amount-1"
+      (click)="deleteRecipient(recipient.id)">
+      <mat-icon fontSet="material-symbols-outlined">
+        close
+      </mat-icon>
+    </button>}
+
+    {{ showIndexes ? recipient.index + '.' : '' }}
+    {{ recipient.fullNameSnapshot }}
+    {{ fullDayBirthday(recipient) }}
+    {{ recipient.infoNote }}
+    {{ recipient.photoLink }}
+    <span style="font-weight: bold; color: rgb(175, 19, 175);">
+      {{ recipient.specialComment }}
+    </span>
+    <span style=" color: rgb(255, 64, 64);"><strong>
+        {{ deletingIds.has(recipient.id) ? ('ORDER.CARD.RECIPIENT_STATUS.DELETING' | translate)
+        : recipient.statusId !== 1 ? (recipient.status | translate)
+        : '' }}</strong></span>
+
+  </div>
+  }
+  <br />
+  }
+
+
+  @if(showShortInstruction || showFullInstruction){
+  @for(p of bottomParts; track $index){
+  @if(p.className === 'list-item'){
+  <p [ngClass]="p.className">
+    <span> {{ p.prefix }} </span>
+    <span>{{ p.text }}</span>
+  </p>
+  }
+  @else{
+  @if(p.className === 'hr'){
+  <hr>
+  }
+  @else{
+  <p [ngClass]="p.className">
+    {{ p.text }}
+  </p>
+  }
+  }
+  }
+  }
+
+
+</div>

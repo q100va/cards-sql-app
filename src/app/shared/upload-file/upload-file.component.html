@@ -1,4 +1,14 @@
 <input style="display: none" type="file" accept=".xlsx,.xls" (change)="addFile($event)" #hiddenfileinput>
+@if(typeOfData()!== 'seniors'){
 <button mat-icon-button [title]="'FILE.UPLOAD_LIST' | translate" (click)="hiddenfileinput.click()">
   <mat-icon fontSet="material-icons-outlined">file_upload</mat-icon>
 </button>
+}
+@else{
+<button class="white-and-green" mat-fab extended (click)="hiddenfileinput.click()">
+  <mat-icon fontSet="material-icons-outlined">file_upload</mat-icon>
+  {{'FILE.UPLOAD_LIST' | translate}}
+</button>
+<p>{{fileName}}</p>
+
+}

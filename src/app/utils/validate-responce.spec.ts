@@ -110,3 +110,73 @@ describe('validate-response', () => {
     });
   });
 });
+
+describe('validation diagnostic privacy', () => {
+  const payload = {
+    id: 'invalid-id',
+    name: 'Private Person',
+    birthDate: '1940-05-12',
+    comment: 'Private family circumstances',
+    credentials: { password: 'private-password', token: 'private-token' },
+  };
+  const sensitiveValues = [payload.name, payload.birthDate, payload.comment,
+    payload.credentials.password, payload.credentials.token];
+  let consoleSpies: jasmine.Spy[];
+
+  beforeEach(() => {
+    consoleSpies = (['log', 'info', 'warn', 'error', 'debug'] as const)
+      .map(method => spyOn(console, method).and.stub());
+  });
+
+  function argumentsEmitted(): unknown[] {
+    return consoleSpies.flatMap(spy => spy.calls.allArgs().flat());
+  }
+
+  function expectNoSensitiveValues(): void {
+    const emitted = JSON.stringify(argumentsEmitted());
+    for (const value of sensitiveValues) expect(emitted).not.toContain(value);
+  }
+
+  it('reports schema failure metadata without payloads or issue messages that echo input', () => {
+    const schema = z.object({
+      id: z.number(),
+      name: z.string().refine(() => false, { message: payload.comment }),
+    });
+    let received: unknown;
+    of({ data: payload }).pipe(validateResponse(schema)).subscribe({ error: (error: unknown) => { received = error; } });
+    expect(received).toBeInstanceOf(ValidationError);
+    expect((received as ValidationError).code).toBe('ERRORS.INVALID_SCHEMA');
+    expectNoSensitiveValues();
+    expect(argumentsEmitted()).toContain(jasmine.objectContaining({
+      code: 'ERRORS.INVALID_SCHEMA', stage: 'schema', issueCount: 2,
+    }));
+  });
+
+  it('reports a failed type guard by validator name without the rejected object', () => {
+    let received: unknown;
+    of({ data: payload }).pipe(validateNoSchemaResponse<boolean>('isBoolean'))
+      .subscribe({ error: (error: unknown) => { received = error; } });
+    expect(received).toBeInstanceOf(ValidationError);
+    expect((received as ValidationError).code).toBe('ERRORS.INVALID_TYPE');
+    expectNoSensitiveValues();
+    expect(argumentsEmitted()).toContain(jasmine.objectContaining({
+      code: 'ERRORS.INVALID_TYPE', stage: 'type', validator: 'isBoolean',
+    }));
+  });
+
+  it('returns valid schema data without printing it', () => {
+    const schema = z.object({ name: z.string() }).passthrough();
+    let received: unknown;
+    of({ data: payload, code: 'RESPONSE.OK' }).pipe(validateResponse(schema)).subscribe(value => { received = value; });
+    expect(received).toEqual({ data: payload, code: 'RESPONSE.OK' });
+    expect(argumentsEmitted()).toEqual([]);
+  });
+
+  it('returns valid free-text data without printing it', () => {
+    let received: unknown;
+    of({ data: payload.comment }).pipe(validateNoSchemaResponse<string>('isString'))
+      .subscribe(value => { received = value.data; });
+    expect(received).toBe(payload.comment);
+    expect(argumentsEmitted()).toEqual([]);
+  });
+});

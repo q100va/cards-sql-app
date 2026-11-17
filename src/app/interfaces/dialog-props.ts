@@ -12,8 +12,13 @@ import { DetailsComponentType } from '../shared/dialogs/details-dialogs/details-
 export interface DialogData<T extends BaseModel> {
   creationTitle: string;
   viewTitle: string;
+  extraTitle?: string;
   controls: Control[];
-  checkingName: string;
+  mainContactsValidator?: ((
+    control: AbstractControl<any, any>
+  ) => ValidationErrors | null)[];
+
+  checkingName?: string;
   addressFilterControls?: AddressFilterControl<AddressKey>[];
   addressFilterParams: AddressFilterParams;
   operation?: 'create' | 'view-edit';
@@ -26,7 +31,7 @@ export interface DialogData<T extends BaseModel> {
 
 export interface Control {
   controlName: string;
-  value: string | boolean | null; // | Date | string[];
+  value: string | boolean | null;
   disabled?: boolean;
   validators?: ((
     control: AbstractControl<any, any>
@@ -37,7 +42,9 @@ export interface Control {
     | 'select'
     | 'checkbox'
     | 'radio'
-    | 'toggle';
+    | 'toggle'
+    | 'group'
+    | 'datePicker';
   label: string;
   placeholder?: string;
   errorName?: string;

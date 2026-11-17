@@ -1,0 +1,606 @@
+<div>
+  <app-base-list [params]="params()" [showSpinner]="loading()"
+    (defaultAddressFilterValue)="setDefaultAddrFilter($event)" (selectedColumns)="changeColumnsView($event)"
+    (allFilterParametersChange)="onAllFilterParametersChange($event)" (addWasClicked)="onAddOwnerClick()"
+    (downloadWasClicked)="exportToExcel()">
+
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
+      <!-- User Name Column -->
+      <ng-container matColumnDef="userName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.USER_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <div>{{row.userName}}</div>
+          <br>
+          @if(allFilterParameters().includeOutdated && hasOutdatedUserNames(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (item of row.outdatedData.userNames; track item.id) {
+          <span class="outdated-data">
+            {{item.userName}}
+          </span>
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Role Column -->
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.ROLE_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row"> {{row.roleName}} </td>
+      </ng-container>
+
+      <!-- Region Column -->
+      <ng-container matColumnDef="regionName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.REGION_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row"> {{row.address.region.shortName}} </td>
+      </ng-container>
+
+      <!-- Full Name Column -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.FULL_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          @if(kind() === 'senior'){
+          <div>
+            @if (row.lastName) { <span>{{row.lastName}}</span><br />}
+            <span>{{row.firstName}}</span><br />
+            @if (row.patronymic) {<span>{{row.patronymic}}</span>}
+          </div>
+          }
+          @else{
+          <div> <span>{{row.firstName}}</span><br />
+            @if (row.patronymic) {<span>{{row.patronymic}}</span><br />}
+            @if (row.lastName) {<span>{{row.lastName}}</span>}
+          </div>}
+          <br>
+          @if(allFilterParameters().includeOutdated && hasOutdatedNames(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (item of row.outdatedData.names; track item.id) {
+          @if(item.firstName) {
+          @if(kind() === 'senior'){
+          <div class="outdated-data">
+            @if (item.lastName) { <span>{{item.lastName}}</span><br />}
+            <span>{{item.firstName}}</span><br />
+            @if (item.patronymic) {<span>{{item.patronymic}}</span>}
+          </div>
+          } @else{
+          <div class="outdated-data">
+            <span>{{item.firstName}}</span><br />
+            @if (item.patronymic) {<span>{{item.patronymic}}</span><br />}
+            @if (item.lastName) { <span>{{item.lastName}}</span>}
+          </div>}
+          }
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Home name Column -->
+      <ng-container matColumnDef="homeName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.HOME_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row"> {{row.homeName}} </td>
+      </ng-container>
+
+      <!-- Senior Home Column -->
+      <ng-container matColumnDef="home">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.SENIOR_HOME_NAME' | translate}}</th>
+        <td mat-cell *matCellDef="let row"> {{row.home.homeName}} </td>
+      </ng-container>
+
+      <!-- Affiliation/position Column -->
+      <ng-container matColumnDef="affiliation">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.AFFILIATION' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <div> <span>{{partnerAffiliations[row.affiliation].key | translate}}</span><br />
+            @if (row.position) {<span>{{row.position}}</span><br />}
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Home categories Column -->
+      <ng-container matColumnDef="categories">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.HOME_CATEGORIES' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <div>
+            @if (row.noAddress){ <span> {{'HOME.CARD.NO_ADDRESS_LABEL' | translate}}
+              <!--    @else { {{'TABLE.HOME_CATEGORIES.WITH_ADDRESS' | translate}} } -->
+            </span><br />}
+            @if (row.specialHome){ <span>{{'HOME.CARD.SPECIAL_HOME_LABEL' | translate}} </span><br />}
+            @if (row.acceptableForSchool){ <span>{{'HOME.CARD.ACC_SCHOOL_LABEL' | translate}} </span><br />}
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Contact Column -->
+      <ng-container matColumnDef="contacts">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.CONTACTS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <!-- Official home name -->
+          @if(row.officialName){
+          {{row.officialName}}<br />
+          @if(allFilterParameters().includeOutdated && hasOutdatedOfficialNames(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (item of row.outdatedData.officialNames; track item.id) {
+          <div class="outdated-data">
+            <span>{{item.officialName}}</span>
+          </div>
+          }
+          }
+          }
+
+
+          @for (item of contactTypes; track $index) {
+          @if (row.orderedContacts[item.type]) {
+          <div class="outer">
+            <div class="inner-left" [title]="item.label | translate">
+              <mat-icon [svgIcon]="item.type"></mat-icon>
+            </div>
+            <div class="inner-right">
+              @for (contact of row.orderedContacts[item.type]; track $index) {
+              {{ contact.content | contactUrl:item.type }}<br />
+              }
+            </div>
+          </div>
+          }
+          }
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedContacts(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+
+          @for (item of contactTypes; track $index) {
+          @if (row.outdatedData.contacts[item.type]) {
+          <div class="outdated-data">
+            <div class="outer">
+              <div class="inner-left" [title]="item.label | translate">
+                <mat-icon [svgIcon]="item.type"></mat-icon>
+              </div>
+              <div class="inner-right">
+                @for (contact of row.outdatedData.contacts[item.type]; track $index) {
+                {{ contact.content | contactUrl:item.type }}<br />
+                }
+              </div>
+            </div>
+          </div>
+          }
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Date Of Last Update Column -->
+      <ng-container matColumnDef="dateOfLastUpdate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.LAST_UPDATE_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfLastUpdate)}}
+      </ng-container>
+
+      <!-- Gender Column -->
+      <ng-container matColumnDef="gender">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.GENDER' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{row.gender === 'male' ? ('TABLE.NOTES.MALE' | translate) : ('TABLE.NOTES.FEMALE' | translate)}}
+      </ng-container>
+
+      <!-- Birth Date Column -->
+      <ng-container matColumnDef="birthDate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.BIRTH_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.birthDate)}}
+      </ng-container>
+
+      <!-- Details Column -->
+
+      <ng-container matColumnDef="details">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.SENIOR_DETAILS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <div>
+            @if (row.personalNoAddr){ <span> {{'TABLE.NOTES.PERSONAL_NO_ADDRESS_LABEL' | translate}}
+            </span><br />}
+            @if (row.home.noAddress){ <span> {{'TABLE.NOTES.NO_ADDRESS_LABEL' | translate}}
+            </span><br />}
+            @if (row.home.specialHome){ <span>{{'TABLE.NOTES.SPECIAL_HOME_LABEL' | translate}} </span><br />}
+            @if (row.home.acceptableForSchool){ <span>{{'TABLE.NOTES.ACC_SCHOOL_LABEL' | translate}} </span><br />}
+            @if (createDetailsString(row)){<span>{{createDetailsString(row)}}</span>}
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Address Column -->
+      <ng-container matColumnDef="address">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.ADDRESS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.address.fullPostalAddress) {
+          {{row.address.fullPostalAddress}}<br />
+          @if(row.infoNote){ ({{row.infoNote}})<br />}
+          } @else {
+          @if (row.address.country) {
+          {{row.address.country.name}}<br />
+          }
+          @if (row.address.region) {
+          {{row.address.region.shortName}}<br />
+          }
+          @if (row.address.district) {
+          {{row.address.district.shortName}}<br />
+          }
+          @if (row.address.locality) {
+          {{row.address.locality.shortName}}<br />
+          }
+          }
+
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedAddresses(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (address of row.outdatedData.addresses; track $index) {
+          <div class="outdated-data">
+            @if (address.fullPostalAddress) {
+            {{address.fullPostalAddress}}<br />
+            } @else {
+            @if (address.country) {
+            {{address.country.name}}<br />
+            }
+            @if (address.region) {
+            {{address.region.shortName}}<br />
+            }
+            @if (address.district) {
+            {{address.district.shortName}}<br />
+            }
+            @if (address.locality) {
+            {{address.locality.shortName}}<br />
+            }
+            }
+
+          </div>
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Institutes Column -->
+      <ng-container matColumnDef="institutes">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.INSTITUTES' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+          @for (institute of row.institutes; track $index) {
+          <div>
+            {{institute.instituteName}} ({{instituteCategories[institute.category].key | translate}})
+            <br />
+          </div>
+          }
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedInstitutes(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (institute of row.outdatedData.institutes; track $index) {
+          <div class="outdated-data">
+            {{institute.instituteName}} ({{instituteCategories[institute.category].key | translate}})
+            <br />
+          </div>
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Cooperations Column -->
+      <ng-container matColumnDef="cooperations">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.COOPERATIONS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          @if(row.subscriptions.length){
+          <span>{{'TABLE.NOTES.SUBSCRIPTION' | translate}}:</span>
+          @for (subscription of row.subscriptions; track $index) {
+          <div>
+            {{subscription.userFullName}} - {{subscription.userName}}
+            <br />
+          </div>
+          } }
+          @if(row.cooperations.length){
+          <span>{{'TABLE.NOTES.COOPERATION' | translate}}:</span>
+          @for (cooperation of row.cooperations; track $index) {
+          <div>
+            {{cooperation.userFullName}} - {{cooperation.userName}}
+            <br />
+          </div>
+          }}
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedCooperations(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}<br />
+            @if(row.outdatedData.subscriptions.length){
+            <span>{{'TABLE.NOTES.SUBSCRIPTION' | translate}}:</span>
+            @for (subscription of row.outdatedData.subscriptions; track $index) {
+            <div>
+              {{subscription.userFullName}} - {{subscription.userName}} ({{'TABLE.NOTES.SUBSCRIPTION' | translate}})
+              <br />
+            </div>
+            }}
+
+            @if(row.outdatedData.cooperations.length){
+            <span>{{'TABLE.NOTES.COOPERATION' | translate}}:</span>
+            @for (cooperation of row.outdatedData.cooperations; track $index) {
+            <div>
+              {{cooperation.userFullName}} - {{cooperation.userName}}
+              <br />
+            </div>
+            }}
+          </div>}
+
+        </td>
+      </ng-container>
+
+      <!-- Coordinations -->
+      <!-- Homes Column -->
+      <ng-container matColumnDef="homes">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.HOMES' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+          @for (home of row.coordinations; track $index) {
+          <div>
+            {{home.homeName}} - {{home.regionName}}{{ home.homeStatus ? (' - ' + (home.homeStatus | translate)) : '' }}
+            <br />
+          </div>
+          }
+
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedHomes(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}</div>
+          @for (home of row.outdatedData.coordinations; track $index) {
+          <div class="outdated-data">
+            {{home.homeName}} - {{home.regionName}}{{ home.homeStatus ? (' - ' + (home.homeStatus | translate)) : '' }}
+            <br />
+          </div>
+          }
+          }
+        </td>
+      </ng-container>
+
+      <!-- Partners Column -->
+      <ng-container matColumnDef="partners">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.PARTNERS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+
+
+          @for (partner of row.coordinations; track $index) {
+          <div>
+            {{partner.partnerName}} - {{partnerAffiliations[partner.partnerAffiliation].key | translate}}
+            @if (partner.partnerPosition) { - {{partner.partnerPosition}} }
+            @for (item of contactTypes; track $index) {
+            @if (partner.partnerContacts[item.type]) {
+            <div class="outer">
+              <div class="inner-left" [title]="item.label | translate">
+                <mat-icon [svgIcon]="item.type"></mat-icon>
+              </div>
+              <div class="inner-right">
+                @for (contact of partner.partnerContacts[item.type]; track $index) {
+                {{ contact.content | contactUrl:item.type }}<br />
+                }
+              </div>
+            </div>
+            }
+            }
+          </div>
+          }
+
+          @if(allFilterParameters().includeOutdated && hasOutdatedPartners(row)) {
+          <div class="outdated-data">{{'TABLE.NOTES.OUTDATED_DATA' | translate}}
+            @for (partner of row.outdatedData.coordinations; track $index) {
+            <div>
+              {{partner.partnerName}} - {{partnerAffiliations[partner.partnerAffiliation].key | translate}}
+              @if (partner.partnerPosition) { - {{partner.partnerPosition}} }
+              @for (item of contactTypes; track $index) {
+              @if (partner.partnerContacts[item.type]) {
+              <div class="outer">
+                <div class="inner-left" [title]="item.label | translate">
+                  <mat-icon [svgIcon]="item.type"></mat-icon>
+                </div>
+                <div class="inner-right">
+                  @for (contact of partner.partnerContacts[item.type]; track $index) {
+                  {{ contact.content | contactUrl:item.type }}<br />
+                  }
+                </div>
+              </div>
+              }
+              }
+            </div>
+            }
+          </div>}
+        </td>
+      </ng-container>
+
+
+
+
+      <!-- Date Of Start Column -->
+      <ng-container matColumnDef="dateOfStart">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.START_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfStart)}}
+      </ng-container>
+
+      <!-- Date Of Consent Column -->
+      <ng-container matColumnDef="dateOfConsent">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.CONSENT_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfConsent)}}
+      </ng-container>
+
+      <!-- Comment Column -->
+      <ng-container matColumnDef="comment">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.COMMENT' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{row.comment}}
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="isRestricted">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.STATUS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          @if(row.isClose){
+          {{('TABLE.NOTES.CLOSE_FROM' | translate) + dateUtils.transformDate(row.dateOfClose) }}
+          }
+          @else if (row.isRestricted) {
+          {{('TABLE.NOTES.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
+          {{row.causeOfRestriction}}
+          } @else {
+          {{'TABLE.NOTES.ACTIVE' | translate}}
+          }
+        </td>
+      </ng-container>
+      <!--   For seniors -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.STATUS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          @if(row.home.isClose){
+          {{('TABLE.NOTES.HOME_CLOSE_FROM' | translate) + dateUtils.transformDate(row.home.dateOfClose) }}
+          }
+          @else if (row.home.isRestricted){
+          {{('TABLE.NOTES.HOME_BLOCKED_FROM' | translate) + dateUtils.transformDate(row.home.dateOfRestriction) }}
+
+          @if (row.dateOfExit) {
+          ({{('TABLE.NOTES.LEFT' | translate)}})
+          }
+          @else if (row.isRestricted) {
+          ({{('TABLE.NOTES.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
+          {{row.causeOfRestriction}})
+          }
+          @else {
+          ({{'TABLE.NOTES.ACCESSIBLE' | translate}})
+          }
+
+          }
+          @else if (row.dateOfExit) {
+          {{('TABLE.NOTES.LEFT' | translate)}}
+          }
+          @else if (row.isRestricted) {
+          {{('TABLE.NOTES.BLOCKED_FROM' | translate) + dateUtils.transformDate(row.dateOfRestriction)}}<br />
+          {{row.causeOfRestriction}}
+          }
+          @else {
+          {{'TABLE.NOTES.ACCESSIBLE' | translate}}
+          }
+        </td>
+      </ng-container>
+
+      <!-- Date Of Exit Column -->
+      <ng-container matColumnDef="dateOfExit">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.EXIT_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfExit)}}
+      </ng-container>
+
+       <!-- Date Of Last Order -->
+      <ng-container matColumnDef="dateOfLastOrder">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'TABLE.COLUMNS.LAST_ORDER_DATE' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          {{dateUtils.transformDate(row.dateOfLastOrder)}}
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{'TABLE.COLUMNS.ACTIONS' | translate}}</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="center">
+            <button mat-icon-button [matMenuTriggerFor]="menu" [title]="'TABLE.MENU.OPEN_LIST_TITLE'  | translate"
+              appBlurOnClick>
+              <mat-icon>
+                keyboard_double_arrow_down
+              </mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" xPosition="before">
+              <button mat-menu-item (click)="onOpenOwnerCardClick(row.id)" *hasOp="permissions.viewOrEdit">
+                <mat-icon fontSet="material-icons-outlined">open_in_new</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_CARD' | translate}}</span>
+              </button>
+              @if(kind() == 'user'){
+              <button mat-menu-item (click)="onShowUsersOrdersClick(row.id)" *hasOp="permissions.viewOrders">
+                <mat-icon fontSet="material-icons-outlined"
+                  fontSet="material-icons-outlined">local_post_office</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_ORDERS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowUsersSubscribersClick(row.id)" *hasOp="permissions.viewVolunteers">
+                <mat-icon>subscriptions</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_SUBSCRIBERS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowUsersVolunteersClick(row.id)" *hasOp="permissions.viewVolunteers">
+                <mat-icon>hub</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_VOLUNTEERS' | translate}}</span>
+              </button>
+              }
+              @if(kind() == 'partner'){
+              <button mat-menu-item (click)="onShowPartnersHomesClick(row.id)" *hasOp="permissions.viewHomes">
+                <mat-icon>house</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_HOMES' | translate}}</span>
+              </button>
+              }
+              @if(kind() == 'volunteer'){
+              <button mat-menu-item (click)="onShowVolunteersOrdersClick(row.id)" *hasOp="permissions.viewOrders">
+                <mat-icon fontSet="material-icons-outlined"
+                  fontSet="material-icons-outlined">local_post_office</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_ORDERS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowVolunteersCooperationsClick(row.id)" *hasOp="permissions.viewUsers">
+                <mat-icon>hub</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_COOPERATIONS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowVolunteersSeniorsClick(row.id)" *hasOp="permissions.viewSeniors">
+                <mat-icon>elderly_woman</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_SENIORS' | translate}}</span>
+              </button>
+              }
+              @if(kind() == 'home'){
+              <button mat-menu-item (click)="onShowHomesSeniorsClick(row.id)" *hasOp="permissions.viewSeniors">
+                <mat-icon>elderly_woman</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_SENIORS' | translate}}</span>
+              </button>
+
+              <button mat-menu-item (click)="onShowHomesPartnersClick(row.id)" *hasOp="permissions.viewPartners">
+                <mat-icon fontSet="material-icons-outlined" fontSet="material-icons-outlined">handshake</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_PARTNERS' | translate}}</span>
+              </button>
+              }
+              @if(kind() == 'senior'){
+
+              <button mat-menu-item (click)="onShowSeniorsUsersClick(row.id)" *hasOp="permissions.viewUsers">
+                <mat-icon>badge</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_USERS' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onShowSeniorsVolunteersClick(row.id)" *hasOp="permissions.viewVolunteers">
+                <mat-icon>hub</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_VOLUNTEERS' | translate}}</span>
+              </button>
+
+              <button mat-menu-item (click)="onShowSeniorsOrdersClick(row.id)" *hasOp="permissions.viewOrders">
+                <mat-icon fontSet="material-icons-outlined"
+                  fontSet="material-icons-outlined">local_post_office</mat-icon>
+                <span>{{'TABLE.MENU.OPEN_ORDERS' | translate}}</span>
+              </button>
+              }
+
+              <button mat-menu-item [disabled]="row.isRestricted" (click)="onBlockOwnerClick(row.id)"
+                *hasOp="permissions.block">
+                <mat-icon fontSet="material-icons-outlined">lock</mat-icon>
+                <span>{{'TABLE.MENU.BLOCK_OWNER' | translate}}</span>
+              </button>
+              <button mat-menu-item [disabled]="!row.isRestricted" (click)="onUnblockOwnerClick(row.id)"
+                *hasOp="permissions.unblock">
+                <mat-icon fontSet="material-icons-outlined">lock_open</mat-icon>
+                <span>{{'TABLE.MENU.UNBLOCK_OWNER' | translate}}</span>
+              </button>
+              <button mat-menu-item (click)="onDeleteOwnerClick(row)" *hasOp="permissions.delete">
+                <mat-icon fontSet="material-icons-outlined">delete_outlined</mat-icon>
+                <span>{{'TABLE.MENU.DELETE_OWNER' | translate}}</span>
+              </button>
+            </mat-menu>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns;"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <!-- Row shown when there is no matching data. -->
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="4">>{{'TABLE.NO_DATA_FOR_QUERY' | translate}}</td>
+      </tr>
+    </table>
+
+    <mat-paginator [pageSizeOptions]="pageSizeOptions" [length]="length()" [pageSize]="pageSize()"
+      (page)="onChangedPage($event)"></mat-paginator>
+
+  </app-base-list>
+</div>

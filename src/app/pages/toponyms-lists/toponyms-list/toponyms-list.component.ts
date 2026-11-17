@@ -35,16 +35,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatBadgeModule } from '@angular/material/badge';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -78,18 +74,13 @@ import { sanitizeText } from '../../../utils/sanitize-text';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatListModule,
     MatTableModule,
     MatSortModule,
     MatGridListModule,
     MatPaginatorModule,
     MatIconModule,
-    MatBadgeModule,
-    MatButtonToggleModule,
     MatCheckboxModule,
-    MatSelectModule,
     FormsModule,
-    ReactiveFormsModule,
     MatMenuModule,
     ProgressSpinner,
     AddressFilterComponent,
@@ -131,7 +122,6 @@ export class ToponymsListComponent {
   dataSource = new MatTableDataSource<Toponym>([]);
   length = signal(0);
   showSpinner = signal(false);
-//TODO: не меняется число строк на странице при изменении pageSize
   // --- paging/sorting
   pageIndex = signal(0); // 0-based for MatPaginator
   pageSize = signal(10);
@@ -206,9 +196,9 @@ export class ToponymsListComponent {
           distinctUntilChanged(
             (a, b) => JSON.stringify(a) === JSON.stringify(b)
           ),
-          tap(() => this.showSpinner.set(true)),
-          switchMap((q) =>
-            this.addressService
+          switchMap((q) => {
+            this.showSpinner.set(true);
+            return this.addressService
               .getToponyms(q.type, q.filter, q.pageSize, q.page)
               .pipe(
                 tap((res) => {
@@ -225,8 +215,8 @@ export class ToponymsListComponent {
                   return of(null);
                 }),
                 finalize(() => this.showSpinner.set(false))
-              )
-          ),
+              );
+          }),
           takeUntilDestroyed(this.destroyRef)
         )
         .subscribe();
@@ -487,6 +477,27 @@ export class ToponymsListComponent {
         if (data?.refresh) {
           this.resetTable(op == 'view-edit' ? obj!.id : -1);
         }
+      });
+  }
+
+    saveData(rows: any[]) {
+    return this.addressService
+      .createListOfToponyms(rows, this.type())
+      .pipe(
+        finalize(() => this.showSpinner.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: () => {
+          this.resetTable();
+        },
+        error: (err) => {
+          this.msgWrapper.handle(err, {
+            source: 'UploadFileComponent',
+            stage: 'saveData',
+            type: this.type(),
+          });
+        },
       });
   }
 }

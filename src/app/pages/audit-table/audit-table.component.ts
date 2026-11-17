@@ -2,8 +2,9 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subject, merge, of } from 'rxjs';
+import { EMPTY, Observable, Subject, merge, of } from 'rxjs';
 import {
+  catchError,
   map,
   scan,
   debounceTime,
@@ -20,11 +21,9 @@ import { MatCardModule } from '@angular/material/card';
 // PrimeNG
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { PaginatorModule } from 'primeng/paginator';
 import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
@@ -33,8 +32,9 @@ import { PaginatorState } from 'primeng/paginator';
 
 // App services, utils, schemas
 import { AuditService } from '../../services/audit.service';
-import { AuditItem } from '@shared/schemas/audit.schema';
+import { AuditItem } from '../../../../shared/schemas/audit.schema';
 import { MessageWrapperService } from '../../services/message.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 // --- Types & constants -------------------------------------------------------
 
@@ -91,11 +91,10 @@ const ACTIONS: Exclude<AuditAction, ''>[] = ['create', 'update', 'delete', 'auth
     MatCardModule,
     TableModule,
     InputTextModule,
-    TagModule,
     TooltipModule,
     PaginatorModule,
     IconFieldModule,
-    InputIconModule,
+    TranslateModule,
     SelectModule,
     ButtonModule,
     DatePicker,
@@ -222,7 +221,14 @@ export class AuditTableComponent {
               limit: p.size,
               offset: p.index * p.size, // ← correct offset always (0 after filters change)
             })
-            .pipe(finalize(() => this.setLoadingSoft(false)))
+            .pipe(
+              // Settle this request's error without terminating future paging/filter events.
+              catchError((err: unknown) => {
+                this.msgWrapper.handle(err);
+                return EMPTY;
+              }),
+              finalize(() => this.setLoadingSoft(false))
+            )
         ),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -230,7 +236,6 @@ export class AuditTableComponent {
         next: (res) => {
           this.records.set(res.data.rows);
           this.total.set(res.data.count);
-          console.log('Audit data loaded, total:', this.total());
         },
         error: (err) => {
           this.msgWrapper.handle(err);
@@ -255,17 +260,10 @@ export class AuditTableComponent {
   /** Called from `<p-table (onFilter)>` */
   onFilter(meta?: Record<string, FilterMetadata | undefined>) {
     if (!meta) return;
-    console.log('Filters changed:', meta);
-    console.log('Filters changed:', this.readFilters(meta));
     this.filters$.next(this.readFilters(meta));
   }
 
-  /** Blur helper for Enter-to-apply inputs */
-  blur(input: HTMLInputElement) {
-    input.blur();
-  }
 
-  /** Called from date range picker */
 
   private toISOStart(d: Date): string {
     // начало дня (UTC)
@@ -293,7 +291,6 @@ export class AuditTableComponent {
   }
 
   onRangeSelect(filterCb: (v: any) => void) {
-    console.log('onRangeSelect', this.rangeDates);
     const [a, b] = this.rangeDates ?? [null, null];
     if (a && b) {
       filterCb(this.packRange(a, b));

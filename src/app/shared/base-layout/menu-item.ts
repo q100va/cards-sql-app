@@ -1,16 +1,4 @@
-import { MatMenu } from '@angular/material/menu';
 
-/* export class MenuItem {
-  constructor(
-    public perms: string[],
-    public mode: 'any' | 'all',
-    public dataCy: string,
-    public icon: string,
-    public text: string,
-    public link: string,
-    public subMenuItems?: MenuItem[]
-  ) {}
-} */
 
 export type Item = {
   params: {

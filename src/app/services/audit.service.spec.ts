@@ -7,7 +7,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { AuditService } from './audit.service';
 import { environment } from 'src/environments/environment';
 import { ApiResponse } from '../interfaces/api-response';
-import { AuditPage } from '@shared/schemas/audit.schema';
+import { AuditPage } from '../../../shared/schemas/audit.schema';
 
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';

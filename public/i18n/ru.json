@@ -21,24 +21,46 @@
   "TOOLBAR": {
     "TITLE": "Проект «Внуки по переписке: Поздравить открыткой»",
     "MY_ORDERS": "Мои заявки",
+    "BIRTHDAY": "Дни рождения",
     "SIGNED_IN_AS": "Вы вошли как {{ name }}",
-    "EXIT": "Выйти"
+    "EXIT": "Выйти",
+    "HOME_LINK_LABEL": "Главная страница",
+    "PROFILE_MENU_LABEL": "Меню пользователя"
   },
   "MENU": {
     "PROFILE": "Профайл",
     "ROLES": "Роли",
     "USERS": "Пользователи",
+    "VOLUNTEERS": "Волонтеры",
     "TOPONYMS": "Топонимы",
     "COUNTRIES": "Страны",
     "REGIONS": "Регионы",
     "DISTRICTS": "Районы",
     "LOCALITIES": "Нас. пункты",
-    "AUDIT": "Аудит"
+    "AUDIT": "Аудит",
+    "PARTNERS": "Координаторы",
+    "HOMES": "Интернаты",
+    "SENIORS": "Жители интернатов",
+    "OCCASIONS": "Праздники и ДР",
+    "SENIORS_BULK_UPDATE": "Обновление списков",
+    "ALL_ORDERS": "Все заявки",
+    "REPORTS": "Отчеты",
+    "STATISTIC": "Статистика"
   },
   "LANG": {
     "SWITCH": "Язык",
     "EN": "English",
     "RU": "Русский"
+  },
+  "AUDIT": {
+    "APPLY_DATE_FILTER": "Применить фильтр по диапазону дат",
+    "CLEAR_DATE_FILTER": "Очистить фильтр по диапазону дат",
+    "APPLY_ENTITY_ID_FILTER": "Применить фильтр по ID сущности",
+    "CLEAR_ENTITY_ID_FILTER": "Очистить фильтр по ID сущности",
+    "APPLY_USER_ID_FILTER": "Применить фильтр по ID пользователя",
+    "CLEAR_USER_ID_FILTER": "Очистить фильтр по ID пользователя",
+    "APPLY_CORRELATION_ID_FILTER": "Применить фильтр по идентификатору корреляции",
+    "CLEAR_CORRELATION_ID_FILTER": "Очистить фильтр по идентификатору корреляции"
   },
   "PRIME_CONFIRM": {
     "WARNING_HEADER": "Требуется подтверждение",
@@ -46,13 +68,14 @@
     "REJECT": "Нет",
     "LEAVE_WITHOUT_SAVE_MESSAGE": "Вы уверены, что хотите выйти без сохранения?",
     "DELETE_ITEM_MESSAGE": "Удалить «{{name}}»?<br />Данные невозможно будет восстановить.",
+    "CLEAR_LIST_MESSAGE": "Очистить список получателей для «{{name}}»? Все получатели будут удалены из этого списка.",
     "UNBLOCK_ITEM_MESSAGE": "Разблокировать «{{name}}»?",
 
     "SAVE_WITH_DUPLICATES": "Обнаружены дубли. Вы уверены, что хотите сохранить введенные данные?",
-    "NAMES_DUPLICATE": "Введенные имя и фамилия совпадают с данными пользователя {{user}}",
-    "NAMES_DUPLICATES": "Введенные имя и фамилия совпадают с данными пользователей:<br />{{users}}",
-    "CONTACT_DUPLICATE": "Введенный {{type}} {{content}} совпадает с данными пользователя {{user}}",
-    "CONTACT_DUPLICATES": "Введенный {{type}} {{content}} совпадает с данными пользователей:<br />{{users}}",
+    "NAMES_DUPLICATE": "Введенные имя и фамилия совпадают с данными записи: {{owner}}",
+    "NAMES_DUPLICATES": "Введенные имя и фамилия совпадают с данными других записей:<br />{{owners}}",
+    "CONTACT_DUPLICATE": "Введенный {{type}} {{content}} совпадает с данными записи: {{owner}}",
+    "CONTACT_DUPLICATES": "Введенный {{type}} {{content}} совпадает с данными других записей:<br />{{owners}}",
     "OUTDATED_DUPLICATES": "В введенных вами данных:<br /> {{type}} '{{value}}'<br />есть совпадения с неактуальными.<br />Вы уверены, что указали верную информацию?",
     "SAVE_OR_DELETE_OLD_DATA": "Вы изменили {{type}}.<br />Сохранить прежнее значение '{{oldValue}}' как неактуальное?<br />В противном случае оно будет удалено как ошибочное без возможности восстановления.",
     "RESTORE_OUTDATED_DATA": "Восстановить эти данные как актуальные?",
@@ -61,15 +84,22 @@
       "ADDRESS": "адрес",
       "NAMES": "ФИО",
       "USER_NAME": "имя пользователя",
-      "CONTACTS": "контакт(ы)"
-    }
+      "CONTACTS": "контакт(ы)",
+      "HOMES": "интернат(ы)",
+      "INSTITUTES": "организация(ии)",
+      "COORDINATIONS": "координацию",
+      "OFFICIAL_NAME": "официальное название"
+    },
+    "ORDER_DUPLICATES_1": "Данный волонтер уже получил адреса для поздравления с '{{occasion}}': <br />",
+    "ORDER_DUPLICATES_2": "<br />Вы уверены, что это не дубль?",
+    "ORDER_NOT_FOR_INSTITUTES": "Вы уверены, что заявка не для организации?"
   },
   "TOAST": {
     "INFO": "Информация",
     "WARN": "Предупреждение",
     "ERROR": "Ошибка",
     "SUCCESS": "Выполнено",
-    "DELETE_DUPLICATES": "Вы указали одинаковые значения: \n{{duplicates}}. \n\n Удалите, пожалуйста, дубли."
+    "DELETE_DUPLICATES": "Вы указали одинаковые значения:<br />{{duplicates}}.<br />Удалите, пожалуйста, дубли."
   },
   "ROLE": {
     "CREATED": "Роль «{{name}}» создана",
@@ -92,6 +122,180 @@
     "TABLE_OPERATION": "Операция",
     "TABLE_NAME_PLACEHOLDER": "2–50 символов",
     "TABLE_DESCRIPTION_PLACEHOLDER": "5–500 символов"
+  },
+  "OCCASION": {
+    "TABLE_TITLE": "Список поводов",
+    "TABLE_ADD_OCCASION": "Добавить повод",
+    "TABLE_EMPTY": "Поводы не найдены",
+    "TABLE_NAME": "Название",
+    "TABLE_DATE": "Дата",
+    "TABLE_MONTH": "Месяц",
+    "TABLE_YEAR": "Год",
+    "TABLE_TYPE": "Тип",
+    "TABLE_AMOUNT": "Кол-во",
+    "TABLE_STATUS": "Статус",
+    "TABLE_ACTIONS": "Действия",
+    "TABLE_CLEAR": "Очистить",
+    "TABLE_SEARCH_PLACEHOLDER": "Поиск...",
+    "TABLE_SELECT_PLACEHOLDER": "Выберите...",
+    "TABLE_PAGE_REPORT": "Показаны записи с {first} по {last} из {totalRecords}",
+    "CARD_TITLE": "Новый повод",
+    "CARD_CLOSE": "Закрыть",
+    "CARD_LABEL_YEAR": "Год*",
+    "CARD_LABEL_TYPE": "Тип*",
+    "CARD_LABEL_MONTH": "Месяц*",
+    "CARD_LABEL_STATUS": "Статус*",
+    "CARD_SAVE_AND_EXIT": "Сохранить и выйти",
+    "CHECK_RESULT": "Список проверен",
+    "MENU": {
+      "OPEN_OCCASION": "открыть",
+      "CLOSE_OCCASION": "закрыть",
+      "DELETE_OCCASION": "удалить",
+      "CREATE_LIST": "создать список",
+      "VIEW_LIST": "просмотреть список",
+      "CHECK_LIST": "проверить список",
+      "CLEAR_LIST": "очистить список"
+    },
+
+    "BIRTHDAY": {
+      "NAME": "Дни рождения"
+    },
+    "NEW_YEAR": {
+      "NAME": "Новый год",
+      "DATE": "1 января"
+    },
+    "FEBRUARY_23": {
+      "NAME": "23 февраля",
+      "DATE": "23 февраля"
+    },
+    "MARCH_8": {
+      "NAME": "8 марта",
+      "DATE": "8 марта"
+    },
+    "MAY_9": {
+      "NAME": "День Победы",
+      "DATE": "9 мая"
+    },
+    "EASTER": {
+      "NAME": "Easter",
+      "DATE": {
+        "2022": "24 апреля",
+        "2023": "16 апреля",
+        "2024": "5 мая",
+        "2025": "20 апреля",
+        "2026": "12 апреля",
+        "2027": "2 мая",
+        "2028": "16 апреля",
+        "2029": "8 апреля",
+        "2030": "28 апреля",
+        "2031": "13 апреля",
+        "2032": "2 мая",
+        "2033": "24 апреля",
+        "2034": "9 апреля",
+        "2035": "29 апреля",
+        "2036": "13 апреля",
+        "2037": "3 мая",
+        "2038": "25 апреля",
+        "2039": "10 апреля",
+        "2040": "29 апреля"
+      }
+    },
+    "MONTH": {
+      "JANUARY": {
+        "OPT": "Январь",
+        "NAME": "января"
+      },
+      "FEBRUARY": {
+        "OPT": "Февраль",
+        "NAME": "февраля"
+      },
+      "MARCH": {
+        "OPT": "Март",
+        "NAME": "марта"
+      },
+      "APRIL": {
+        "OPT": "Апрель",
+        "NAME": "апреля"
+      },
+      "MAY": {
+        "OPT": "Май",
+        "NAME": "мая"
+      },
+      "JUNE": {
+        "OPT": "Июнь",
+        "NAME": "июня"
+      },
+      "JULY": {
+        "OPT": "Июль",
+        "NAME": "июля"
+      },
+      "AUGUST": {
+        "OPT": "Август",
+        "NAME": "августа"
+      },
+      "SEPTEMBER": {
+        "OPT": "Сентябрь",
+        "NAME": "сентября"
+      },
+      "OCTOBER": {
+        "OPT": "Октябрь",
+        "NAME": "октября"
+      },
+      "NOVEMBER": {
+        "OPT": "Ноябрь",
+        "NAME": "ноября"
+      },
+      "DECEMBER": {
+        "OPT": "Декабрь",
+        "NAME": "декабря"
+      }
+    },
+    "STATUS": {
+      "OPEN": "открыт",
+      "CLOSED": "закрыт"
+    }
+  },
+  "RECIPIENT": {
+    "TABLE_ADD_RECIPIENT": "Добавить получателя",
+    "TABLE_DELETE_RECIPIENT": "Удалить получателей",
+    "TABLE_SEND_RECIPIENT": "Добавить получателей в заяку",
+    "TABLE_EMPTY": "Получатели не найдены",
+
+    "TABLE_NAME": "ФИО",
+    "TABLE_DAY": "День рожд.",
+    "TABLE_MONTH": "Месяц рожд.",
+    "TABLE_YEAR": "Год рожд.",
+    "TABLE_COMMENT": "Комментарий",
+    "TABLE_NOTE": "Примечание",
+    "TABLE_CATEGORY": "Категория",
+    "TABLE_PLUS_AMOUNT": "Кол-во откр.",
+    "TABLE_REGION": "Регион",
+    "TABLE_HOME": "Интернат",
+    "TABLE_STATUS": "Статус",
+    "TABLE_ACTIONS": "Действия",
+    "TABLE_FOR_SCHOOL": "для школ",
+    "TABLE_NOT_FOR_SCHOOL": "только д/взрослых",
+    "TABLE_ABSENT_STATUS": "выбыл(а)",
+    "TABLE_EMPTY_STATUS": "(пустое)",
+    "TABLE_CLEAR": "Очистить",
+    "TABLE_SEARCH_PLACEHOLDER": "Введите мин. 3 знака...",
+    "TABLE_SEARCH_TOOLTIP": "Поиск по колонкам ФИО, комментарий, категория, район, интернат",
+    "TABLE_CHECKBOX_TOOLTIP": "Выбрать все записи на странице",
+    "TABLE_SELECT_PLACEHOLDER": "Выберите...",
+    "TABLE_CATEGORY_TOOLTIP": "'gen'-ДИПИ;\n'ment'-ПНИ;\n'spec'-специнтернат;\n'old'-70 и старше;\n'middle'-от 40 до 69;\n'young'-младше 40;\n'male'-муж.;\n'female'-жен.;",
+    "TABLE_PAGE_REPORT": "Показаны записи с {first} по {last} из {totalRecords}",
+    "MENU": {
+      "DELETE_RECIPIENT": "удалить",
+      "SEND_RECIPIENT": "добавить в заявку",
+      "VIEW_ORDERS": "к списку заявок"
+    },
+    "CARD_TITLE": "Добавить получателей",
+    "CARD_CLOSE": "Закрыть",
+    "CARD_LABEL_HOME": "Выберите интернат",
+    "CARD_SAVE_AND_EXIT": "Сохранить и выйти",
+    "ADDED": "Добавлены:",
+    "RETURNED": "Восстановлены:",
+    "ABSENT": "Помечены выбывшими:"
   },
   "ADDRESS_FILTER": {
     "LABEL_COUNTRY": "Страна",
@@ -175,6 +379,111 @@
     "RESTORE_DATA": "восстановить как актуальное",
     "DELETE_DATA": "удалить как ошибочное"
   },
+  "TABLE": {
+    "COLUMNS": {
+      "USER_NAME": "Имя пользователя",
+      "UPDATE_DATE": "Дата обновления",
+      "ROLE_NAME": "Роль",
+      "AFFILIATION": "Позиция",
+      "FULL_NAME": "ФИО",
+      "CONTACTS": "Контакты",
+      "ADDRESS": "Адрес",
+      "START_DATE": "Дата присоединения",
+      "COMMENT": "Комментарий",
+      "STATUS": "Статус",
+      "ACTIONS": "Действия",
+      "HOMES": "Координируемые дома",
+      "COOPERATIONS": "Взаимодействие",
+      "INSTITUTES": "Организации",
+      "REGION_NAME": "Регион",
+      "HOME_NAME": "Название",
+      "HOME_CATEGORIES": "Категория",
+      "OFFICIAL_HOME_DATA": "Контакты",
+      "POSTAL_ADDRESS": "Почтовый адрес",
+      "LAST_UPDATE_DATE": "Дата обновления",
+      "PARTNERS": "Координаторы",
+      "GENDER": "Пол",
+      "BIRTH_DATE": "Дата рождения",
+      "SENIOR_DETAILS": "Подробности",
+      "CONSENT_DATE": "Дата согласия",
+      "SENIOR_HOME_NAME": "Название интерната",
+      "EXIT_DATE": "Дата выбытия",
+      "LAST_ORDER_DATE": "Дата посл.заявки"
+    },
+    "NOTES": {
+      "CLOSE": "закрыт",
+      "DEACTIVATED": "не поздравляем",
+      "OUTDATED_DATA": "прежние данные:",
+      "BLOCKED_FROM": "заблокирован с ",
+      "CLOSE_FROM": "закрыт с ",
+      "LEFT": "выбыл",
+      "HOME_BLOCKED_FROM": "интернат не поздравляем с ",
+      "HOME_CLOSE_FROM": "интернат закрыт с ",
+      "ACTIVE": "активен",
+      "ACCESSIBLE": "доступен",
+      "SUBSCRIPTION": "подписка",
+      "COOPERATION": "сотрудничество",
+      "MALE": "муж.",
+      "FEMALE": "жен.",
+      "NO_ADDRESS_LABEL": "БОА",
+      "PERSONAL_NO_ADDRESS_LABEL": "персонально БОА",
+      "SPECIAL_HOME_LABEL": "проживает в специнтернате",
+      "ACC_SCHOOL_LABEL": "можно поздравлять школьникам",
+      "SPOUSE": "супруг(а) - "
+    },
+    "MENU": {
+      "OPEN_LIST_TITLE": "Открыть перечень",
+      "OPEN_CARD": "открыть карточку",
+      "OPEN_ORDERS": "открыть список заявок",
+      "OPEN_SUBSCRIBERS": "открыть список подписчиков",
+      "OPEN_COOPERATIONS": "открыть список связанных пользователей",
+      "OPEN_VOLUNTEERS": "открыть список волонтеров",
+      "OPEN_HOMES": "открыть список интернатов",
+      "OPEN_USERS": "открыть список пользователей",
+      "OPEN_PARTNERS": "открыть список координаторов",
+      "OPEN_SENIORS": "открыть список жителей интернатов",
+      "BLOCK_OWNER": "заблокировать",
+      "UNBLOCK_OWNER": "разблокировать",
+      "DELETE_OWNER": "удалить"
+    },
+    "DIALOGS": {
+      "CAUSE_OF_BLOCK_LABEL": "Причина блокировки(дезактивации)"
+    },
+    "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу",
+    "CARD": {
+      "MAIN_DATA_LABEL": "Основные сведения",
+      "CONTACTS_LABEL": "Контактные данные",
+      "ADDRESS_LABEL": "Адрес",
+      "OUTDATED_DATA_LABEL": "Неактуальные данные",
+      "COORDINATED_HOMES_LABEL": "Координация",
+      "INSTITUTES_LABEL": "Организации",
+      "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
+      "BLOCKED_LABEL": "Заблокирован",
+      "CAUSE_OF_BLOCK_LABEL": "Причина блокировки(дезактивации)",
+      "CAUSE_OF_BLOCK_PLACEHOLDER": "прекращение волонтерства",
+      "SUBSCRIPTION_LABEL": "Мой подписчик",
+      "DELETE_BUTTON_TITLE": "Удалить",
+      "EXTRA_CONTACT_BUTTON": "Дополнительный контакт",
+      "OUTDATED_NAMES_TITLE": "Прежние ФИО:",
+      "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
+      "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
+      "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
+      "OUTDATED_COORDINATIONS_TITLE": "Прежние координации:",
+      "OUTDATED_SUBSCRIPTIONS_TITLE": "Прежние подписки:",
+      "OUTDATED_COOPERATIONS_TITLE": "Прежние координаторы:",
+      "OUTDATED_INSTITUTES_TITLE": "Бывшие организации:",
+      "ADD_INSTITUTE_BUTTON": "Добавить организацию",
+      "COOPERATIONS": "Взаимодействует с:",
+      "COORDINATION_NAME_LABEL": "Имя/название",
+      "ADD_COORDINATION_BUTTON": "Добавить координацию",
+      "COORDINATION_PLACEHOLDER": "начните печатать и выберите значение",
+      "COORDINATION_HINT": "Если значение не найдено, перейдите в соответствующий раздел и создайте карточку.",
+      "CHOOSE_HOME_LABEL": "Название интерната",
+      "CHOOSE_PARTNER_LABEL": "Имя координатора",
+      "CHOOSE_SPOUSE_LABEL": "Имя супруг(а)",
+      "SENIOR_DETAILS_LABEL": "Доп.информация"
+    }
+  },
   "USER": {
     "CREATED": "Пользователь «{{userName}}» создан",
     "UPDATED": "Пользователь «{{userName}}» обновлен",
@@ -188,25 +497,11 @@
     "TABLE_TITLE": "Пользователи",
     "ADD_USER": "Добавить пользователя",
     "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
-    "BLOCKED_FROM": "заблокирован с ",
-    "ACTIVE": "активен",
 
     "VIEW_OPTIONS": {
-      "ALL_USERS": "Все пользователи",
-      "ONLY_ACTIVE": "Только активные",
-      "ONLY_BLOCKED": "Только заблокированные"
-    },
-
-    "COLUMNS": {
-      "USER_NAME": "Имя пользователя",
-      "ROLE_NAME": "Роль",
-      "FULL_NAME": "ФИО",
-      "CONTACTS": "Контакты",
-      "ADDRESS": "Адрес",
-      "START_DATE": "Дата\nприсоединения",
-      "COMMENT": "Комментарий",
-      "STATUS": "Статус",
-      "ACTIONS": "Действия"
+      "ALL": "все пользователи",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только бывшие"
     },
 
     "CONTACTS": {
@@ -217,36 +512,12 @@
       "VKONTAKTE_LABEL": "Вконтакте",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Другой контакт"
-    },
-
-    "MENU": {
-      "OPEN_LIST_TITLE": "Открыть перечень",
-      "OPEN_CARD": "открыть карточку",
-      "OPEN_ORDERS": "открыть список заявок",
-      "OPEN_SUBSCRIBERS": "открыть список подписчиков",
-      "OPEN_VOLUNTEERS": "открыть список волонтеров",
-      "BLOCK_USER": "заблокировать",
-      "UNBLOCK_USER": "разблокировать",
-      "DELETE_USER": "удалить"
     },
     "CARD": {
       "CREATION_TITLE": "Новый пользователь",
       "VIEW_TITLE": "Пользователь",
-
-      "MAIN_DATA_LABEL": "Основные сведения",
-      "CONTACTS_LABEL": "Контактные данные",
-      "OUTDATED_DATA_LABEL": "Неактуальные данные",
-
-      "CHANGE_PASSWORD_BUTTON": "Изменить пароль",
-      "CAUSE_OF_BLOCK_LABEL": "Причина",
-      "CAUSE_OF_BLOCK_PLACEHOLDER": "прекращение волонтерства",
-      "DELETE_BUTTON_TITLE": "Удалить",
-      "EXTRA_CONTACT_BUTTON": "Дополнительный контакт",
-      "OUTDATED_NAMES_TITLE": "Прежние ФИО:",
-      "OUTDATED_USER_NAMES_TITLE": "Прежние имена пользователя:",
-      "OUTDATED_ADDRESSES_TITLE": "Прежние адреса:",
-      "OUTDATED_CONTACTS_TITLE": "Прежние контакты:",
 
       "USER_NAME_LABEL": "Имя пользователя*",
       "ROLE_LABEL": "Роль*",
@@ -255,7 +526,7 @@
       "PATRONYMIC_LABEL": "Отчество",
       "LAST_NAME_LABEL": "Фамилия*",
       "COMMENT_LABEL": "Комментарий",
-      "BLOCKED_LABEL": "Заблокирован",
+
       "EMAIL_LABEL": "Email*",
       "PHONE_NUMBER_LABEL": "Номер телефона*",
       "TELEGRAM_ID_LABEL": "Телеграм ID*",
@@ -265,6 +536,7 @@
       "VKONTAKTE_LABEL": "Вконтакте",
       "INSTAGRAM_LABEL": "Instagram",
       "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
       "OTHER_CONTACT_LABEL": "Другой контакт",
 
       "USER_NAME_PLACEHOLDER": "a.petrova",
@@ -277,6 +549,7 @@
       "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
       "INSTAGRAM_PLACEHOLDER": "daisy",
       "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
       "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше",
 
       "CHANGE_PASSWORD_TITLE": "Изменить пароль",
@@ -290,33 +563,504 @@
     "BLOCK_BUTTON": "Заблокировать",
     "CANCEL_BUTTON": "Отмена"
   },
+  "PARTNER": {
+    "TABLE_TITLE": "Координаторы",
+    "ADD_PARTNER": "Добавить координатора",
+    "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
+
+    "VIEW_OPTIONS": {
+      "ALL": "все координаторы",
+      "ONLY_ACTIVE": "только действующие",
+      "ONLY_BLOCKED": "только бывшие"
+    },
+    "AFF": {
+      "VOLUNTEER_COORDINATOR": "Координатор",
+      "HOME_REPRESENTATIVE": "Представитель интерната",
+      "FOUNDATION_STAFF": "Сотрудник фонда"
+    },
+    "CARD": {
+      "CREATION_TITLE": "Новый координатор",
+      "VIEW_TITLE": "Координатор",
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия",
+      "AFFILIATION_LABEL": "Позиция*",
+      "POSITION_LABEL": "Должность",
+      "COMMENT_LABEL": "Комментарий",
+      "BLOCKED_LABEL": "Заблокирован",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_ID_LABEL": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше"
+    }
+  },
+  "HOME": {
+    "TABLE_TITLE": "Интернаты",
+    "ADD_PARTNER": "Добавить интернат",
+    "SEARCH_PLACEHOLDER": "КАБАНОВО",
+    "HAS_DEPENDENCIES": "Интернат нельзя удалить: связанных жителей или координаций — {{count}}.",
+    "VIEW_OPTIONS": {
+      "ALL": "все интернаты",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только неактивные",
+      "ONLY_CLOSED": "только закрытые",
+      "EXCLUDE_CLOSED": "искл. закрытые"
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "Новый интернат",
+      "VIEW_TITLE": "Интернат",
+
+      "HOME_NAME_LABEL": "Короткое название*",
+      "OFFICIAL_NAME_LABEL": "Официальное название",
+      "COMMENT_LABEL": "Комментарий",
+      "SPECIAL_HOME_LABEL": "специнтернат",
+      "NO_ADDRESS_LABEL": "БОА",
+      "ACC_SCHOOL_LABEL": "подходит для школ",
+      "UPDATE_DATE_LABEL": "Дата обновления",
+      "POSTAL_CODE_LABEL": "Индекс",
+      "POSTAL_NAME_LABEL": "Интернат-получатель",
+      "POSTAL_ADDR_LABEL": "Улица, номер дома",
+      "INFO_COMMENT_LABEL": "Информационный комментарий",
+      "BLOCKED_LABEL": "Прекратить участие",
+      "CLOSE_LABEL": "Интернат закрыт",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_ID_LABEL": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "start with '+', any format afterwards",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "start with '+', any format afterwards",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 or daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "anything that doesn’t fit above"
+    }
+  },
+
+  "SENIOR": {
+    "TABLE_TITLE": "Жители интернатов",
+    "ADD_PARTNER": "Добавить жителя интерната",
+    "SEARCH_PLACEHOLDER": "Волкова Анна Петровна",
+    "VIEW_OPTIONS": {
+      "ALL": "все жители",
+      "ONLY_ACTIVE": "только доступные",
+      "ONLY_BLOCKED": "только заблок.",
+      "ONLY_QUITTED": "только выбывшие",
+      "EXCLUDE_BLOCKED_AND_QUITTED": "искл. заблок. и выбывших",
+      "EXCLUDE_QUITTED": "искл. выбывших"
+    },
+    "CARD": {
+      "CREATION_TITLE": "Новый резидент",
+      "VIEW_TITLE": "Резидент",
+      "HOME_BLOCKED_LABEL": " - интернат не участвует!",
+      "HOME_CLOSED_LABEL": " - интернат закрыт!",
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия",
+      "CONFIRM_FIRST_NAME_LABEL": "Имя подтверждено",
+      "CONFIRM_PATRONYMIC_LABEL": "Отчество подтверждено",
+      "CONFIRM_LAST_NAME_LABEL": "Фамилия подтверждена",
+      "COMMENT_LABEL": "Комментарий",
+      "GENDER": "Пол*",
+      "BIRTH_DATE_LABEL": "Дата рождения",
+      "CONFIRM_BIRTH_DATE_LABEL": "ДР подтверждена",
+      "CONCENT_DATE_LABEL": "Дата подписания согласия",
+      "NO_ADDRESS_LABEL": "БОА (персонально)",
+      "BLOCKED_LABEL": "Прекратить участие",
+      "EXIT_DATE_LABEL": "Дата выбытия",
+      "HOME_LABEL": "Интернат проживания*",
+      "INFO_NOTE_LABEL": "Корпус, этаж, номер комнаты",
+      "INFO_NOTE_PLACEHOLDER": "1 корпус, 2 этаж, комн.250 ",
+      "KINDERGARTEN_LABEL": "Дошкольный работник",
+      "KINDERGARTEN_PLACEHOLDER": "нянечка в д/с",
+      "TEACHER_LABEL": "Учитель",
+      "TEACHER_PLACEHOLDER": "учитель математики, директор школы",
+      "VETERAN_LABEL": "УВОВ, ВВОВ, ТТ, узник",
+      "VETERAN_PLACEHOLDER": "труженик тыла, дочь УВОВ",
+      "CHILD_OF_WAR_LABEL": "Дети войны",
+      "CHILD_OF_WAR_LABEL_PLACEHOLDER": "дети войны",
+      "PROFESSION_LABEL": "Профессия",
+      "PROFESSION_PLACEHOLDER": "электрик",
+      "HONORARY_STATUS_LABEL": "Особые заслуги",
+      "HONORARY_STATUS_PLACEHOLDER": "почетный донор, ВТ, ликвидатор ЧАЭС, военный",
+      "INTERESTS_LABEL": "Интересы",
+      "INTERESTS_PLACEHOLDER": "любит читать и садоводство",
+      "ORTHODOX_BELIEVER_LABEL": "Вера (православная)",
+      "ORTHODOX_BELIEVER_PLACEHOLDER": "верующая, посещает церковь",
+      "PHOTO_LINK_LABEL": "Ссылка на фото",
+      "PHOTO_LINK_PLACEHOLDER": "https://starikam.org/wp-content/uploads/2016/07/Belikova.JPG",
+      "SPOUSE_LABEL": "Супруг(а)",
+      "DATE_HINT": "ДД-ММ-ГГГГ"
+    },
+    "BULK_UPDATE": {
+      "TITLE": "Обновление списков жителей интернатов",
+      "DELETED_DUPLICATES": "Удалены дубли:\n {{duplicates}}",
+      "LIST_UPDATED": "Список обновлен:\nдобавлено {{createdCount}} зап.\nисключено {{removedCount}} зап.\nизменено {{updatedCount}} зап.",
+      "COMMENTS_MODE": "не учитывать по неосновным данным изменения на пустое значение",
+      "HOME_NAME": "Обновляется интернат",
+      "APPLY_CHANGES": "Сохранить изменения",
+      "DATE_OF_UPDATE": "Дата обновления",
+      "MONTHS_NOTE_1": "Если вы обновляете список именинников определенного месяца\nили нескольких, выберите нужные месяцы ниже.",
+      "MONTHS_NOTE_2": "Если обновляется полный список, оставьте поле пустым.",
+      "CHOOSE_MONTHS": "Выберите месяц(ы)",
+      "REMOVED": "ВЫБЫВШИЕ",
+      "ADMITTED": "ПОСТУПИВШИЕ",
+      "RETURNED": "ВОССТАНОВЛЕННЫЕ (если это разные люди, перенести в поступившие/выбывшие)",
+      "POSSIBLE_DUPLICATES": "ВОЗМОЖНО ИЗМЕНЕННЫЕ (если это разные люди, перенести в поступившие/выбывшие)",
+      "UPDATED": "ИЗМЕНЕННЫЕ (если это разные люди, перенести в поступившие/выбывшие)",
+      "NAMES": "ФИО",
+      "BIRTH_DATE": "Дата рождения",
+      "NO_CHANGES": "Список не изменился.",
+      "MOVE_TO_UPDATED": "Перенести в измененные",
+      "MOVE_TO_ADMITTED": "Перенести в поступившие/выбывшие",
+      "ACCEPT_CHANGES": "Принять изменения",
+      "START": "Старт",
+      "FIELD": {
+        "lastName": "фамилия",
+        "firstName": "имя",
+        "patronymic": "отчество",
+        "gender": "пол",
+        "birthDate": "дата рождения",
+        "dateOfExit": "дата выбытия",
+        "dateOfConsent": "дата согласия",
+        "comment": "комментарий",
+        "infoNote": "дополнительная информация",
+        "photoLink": "ссылка на фото",
+        "kindergarten": "детский сад",
+        "teacher": "учитель",
+        "veteran": "ветеран",
+        "childOfWar": "ребёнок войны",
+        "profession": "профессия",
+        "honoraryStatus": "почётный статус",
+        "interests": "интересы",
+        "orthodoxBeliever": "православный верующий"
+      }
+    },
+    "DIALOG": {
+      "BUTTON_APPLY": "Применить",
+      "BUTTON_CANCEL": "Oтменить обновление",
+      "CHECK_DATE": {
+        "TITLE": "Уточнение данных",
+        "CORRECT_DATE": "Выберите вариант корректировки*:",
+        "ACTION_DEFAULT_DAY": "проставить 15 число",
+        "ACTION_DEFAULT_MONTH": "проставить 7 месяц 'июль'",
+        "ACTION_DEFAULT_YEAR": "не указывать г.р.",
+        "ACTION_RETAIN_YEAR": "не менять г.р.",
+        "ACTION_CUSTOM": "указать полную дату",
+        "ACTION_EMPTY": "не указывать дату рождения",
+
+        "ERROR": {
+          "NO_MONTH": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' не указан месяц в дате рождения.",
+          "NO_DAY": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' не указано число в дате рождения.",
+          "WRONG_MONTH": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' неверно указан месяц в дате рождения.",
+          "WRONG_DAY": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' неверно указано число в дате рождения.",
+          "WRONG_YEAR": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' неверно указан год в дате рождения.",
+          "STRANGE_YEAR": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' указан странный год в дате рождения."
+        }
+      },
+      "CHECK_GENDER": {
+        "TITLE": "Уточнение пола",
+        "CORRECT_GENDER": "Укажите пол* и при необходимости исправьте ошибки в ФИО:",
+        "MALE": "муж.",
+        "FEMALE": "жен.",
+        "LAST_NAME_LABEL": "фамилия",
+        "FIRST_NAME_LABEL": "имя",
+        "PATRONYMIC_LABEL": "отчество",
+
+        "ERROR": {
+          "NO_GENDER": "Для резидента '{{fullName}} - {{day}}.{{month}}.{{year}}' невозможно автоматически определить пол."
+        }
+      }
+    }
+  },
+
+  "VOLUNTEER": {
+    "HAS_DEPENDENCIES": "Волонтёра нельзя удалить: связанных заявок — {{count}}.",
+    "TABLE_TITLE": "Волонтеры",
+    "ADD_PARTNER": "Добавить волонтера",
+    "SEARCH_PLACEHOLDER": "Например, Петрова или малика петрова",
+
+    "VIEW_OPTIONS": {
+      "ALL": "все волонтеры",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только заблок."
+    },
+
+    "CARD": {
+      "CREATION_TITLE": "Новый волонтер",
+      "VIEW_TITLE": "Волонтер",
+
+      "FIRST_NAME_LABEL": "Имя*",
+      "PATRONYMIC_LABEL": "Отчество",
+      "LAST_NAME_LABEL": "Фамилия",
+      "COMMENT_LABEL": "Комментарий",
+      "BLOCKED_LABEL": "Заблокирован",
+      "EMAIL_LABEL": "Email",
+      "PHONE_NUMBER_LABEL": "Номер телефона",
+      "TELEGRAM_ID_LABEL": "Телеграм ID",
+      "TELEGRAM_PHONE_NUMBER_LABEL": "Телеграм номер телефона",
+      "TELEGRAM_NICKNAME_LABEL": "Телеграм nickname",
+      "WHATSAPP_LABEL": "WhatsApp",
+      "VKONTAKTE_LABEL": "Вконтакте",
+      "INSTAGRAM_LABEL": "Instagram",
+      "FACEBOOK_LABEL": "Facebook",
+      "WEBSITE_LABEL": "website",
+      "OTHER_CONTACT_LABEL": "Другой контакт",
+
+      "EMAIL_PLACEHOLDER": "agatha85@yandex.ru",
+      "PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_ID_PLACEHOLDER": "#1234567890",
+      "TELEGRAM_PHONE_NUMBER_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "TELEGRAM_NICKNAME_PLACEHOLDER": "@daisy",
+      "WHATSAPP_PLACEHOLDER": "начните с '+', далее в любом формате",
+      "VKONTAKTE_PLACEHOLDER": "id719993384 или daisy",
+      "INSTAGRAM_PLACEHOLDER": "daisy",
+      "FACEBOOK_PLACEHOLDER": "daisy",
+      "WEBSITE_PLACEHOLDER": "www.kcsoprim.ru",
+      "OTHER_CONTACT_PLACEHOLDER": "все, что не подошло выше",
+
+      "INSTITUTE_NAME_LABEL": "Название организации*",
+      "INSTITUTE_NAME_PLACEHOLDER": "ГБОУ 'Школа Кузьминки'",
+      "CATEGORY_LABEL": "Категория*"
+    },
+
+    "CATEGORIES": {
+      "KINDERGARTEN": "дошкольное ОУ",
+      "SCHOOL": "школа",
+      "COLLEGE": "профессиональное ОУ",
+      "UNIVERSITY": "ВУЗ",
+      "GOVERNMENT": "бюджетная орг-я",
+      "BUSINESS": "коммерческая орг-я",
+      "CHURCH": "религиозная орг-я",
+      "CHARITY": "благотворительная орг-я",
+      "CHILDREN": "детский коллектив",
+      "YOUTH": "юношеский коллектив",
+      "ADULTS": "взрослые волонтеры",
+      "OTHER": "другое"
+    }
+  },
+
+  "ORDER": {
+    "VIEW_OPTIONS": {
+      "ALL": "все заявки",
+      "ONLY_ACTIVE": "только активные",
+      "ONLY_BLOCKED": "только аннул."
+    },
+    "TABLE": {
+      "TITLE": "Заявки",
+      "PAGE_REPORT": "Показаны записи с {first} по {last} из {totalRecords}",
+      "CLEAR": "Очистить",
+      "SEARCH_PLACEHOLDER": "Введите мин. 3 знака...",
+      "USER_NAME": "Координатор",
+      "DATE": "Дата",
+      "AMOUNT": "Кол-во",
+      "VOLUNTEER_NAME": "Волонтер",
+      "INSTITUTE_NAME": "Организация",
+      "CONTACT": "Контакт",
+      "SOURCE": "Источник",
+      "STATUS": "Статус",
+      "CONFIRM": "Подтвердить",
+      "ACTION": "Действия",
+      "CANCEL": "Отменить подтверждение",
+      "VIEW": "Открыть",
+      "DELETE": "Аннулировать",
+      "RESTORE": "Восстановить",
+      "DELETE_OVERDUE": "Аннулировать: истек срок",
+      "DELETE_RETURNED": "Аннулировать: отказ",
+      "DELETE_MISTAKE": "Удалить: ошибка",
+      "OCCASION_NAME": "Праздник",
+      "COMMENT": "Комментарий",
+      "CONFIRM_BUTTON": "Подтвердить",
+      "CANCEL_BUTTON": "Отменить подтверждение",
+      "VIEW_BUTTON": "Открыть",
+      "DELETE_BUTTON": "Аннулировать",
+      "RESTORE_BUTTON": "Восстановить",
+      "EMPTY": "Записи не найдены.",
+      "SEARCH_TOOLTIP": "Поиск по колонкам координатор, волонтер, организация, контакт и комментарий"
+    },
+    "STATUS": {
+      "PENDING": "Ожидаема",
+      "ACCEPTED": "Подтверждена",
+      "RETURNED": "Возвращена",
+      "OVERDUE": "Просрочена"
+    },
+    "DETAILS": {
+      "EDIT_BUTTON": "Редактировать",
+      "SAVE_BUTTON": "Сохранить",
+      "CANCEL_BUTTON": "Отмена",
+      "INSTITUTE": "Организация"
+    },
+    "CARD": {
+      "CREATION_TITLE": "Новая заявка",
+      "VIEW_TITLE": "Заявка",
+      "PREVIOUS_OCCASION_LABEL": "Предыдущий повод",
+      "NEXT_OCCASION_LABEL": "Следующий повод",
+      "CREATE_BUTTON": "Сформировать",
+      "CLEAR_BUTTON": "Очистить",
+      "NO_CONF_REQUIRED_LABEL": "Не требует подтверждения",
+      "SOURCE_LABEL": "Источник",
+      "CONTACT_LABEL": "Email/аккаунт/номер",
+      "ADD_VOLUNTEER": "добавить волонтера",
+      "AMOUNT_LABEL": "Количество",
+      "COMMENT_LABEL": "Комментарий",
+      "COMMENT_PLACEHOLDER": "поздравляют семьей",
+      "VOLUNTEER_INFO": "Информация о волонтере",
+      "OPEN_CARD_TOOLTIP": "Открыть карточку волонтера",
+      "WARNING_NOTE": "ВНИМАНИЕ! Волонтер заблокирован. Ему нельзя выдавать адреса.",
+      "INSTITUTES_NOTE": "Отметьте, если адреса для организации",
+      "SOURCE": {
+        "SUBS": "постоянные",
+        "SITE": "сайт",
+        "VK": "вконтакте",
+        "TELEGRAM": "телеграм",
+        "INSTA": "инста",
+        "DOBRORU": "добро.ру",
+        "INFLUENCER": "блогер",
+        "OTHER": "другое"
+      },
+      "LIST_TITLE": "Список поздравляемых",
+      "SUCCESS_MESSAGE": "Ваша заявка сформирована и сохранена. Пожалуйста, скопируйте список и отправьте поздравляющему. Если список вас не устраивает, удалите эту заявку и измените фильтры или обратитесь к администратору.",
+      "FAILED_MESSAGE": "Заявка не сформирована из-за недостаточного количества подходящих адресов. Попробуйте изменить фильтры или обратитесь к администратору.",
+      "NO_ADDRESS_NOTE": "(администрация настоятельно просит не указывать ваш личный адрес на отправлениях в этот интернат,\nв графе откуда укажите адрес вашего почтового отделения, в графе от кого – Волонтер и ваше имя)",
+      "NO_ADDRESS_NOTE_SCHOOL": "(администрация настоятельно просит не указывать ваш личный адрес и другие личные данные на отправлениях в этот интернат, в графе 'откуда' укажите адрес образовательного учреждения, в графе 'от кого' - название ОУ)",
+      "ADDRESS_NOTE_SCHOOL": "в графе 'откуда' укажите адрес образовательного учреждения, в графе 'от кого' - название ОУ)",
+      "INDEX_LABEL": "пронумеровать",
+      "SUBS_LABEL": "с текстом для постоянных",
+      "NEWER_LABEL": "с памяткой для новеньких",
+      "COPY_BUTTON_TOOLTIP": "Скопировать",
+      "FOR_NOTE": "для",
+      "FILTERS": {
+        "HEADER": "Фильтры",
+        "ADDRESS_LABEL": "Адреса",
+        "DATE_LABEL": "Даты",
+        "DATE_TOOLTIP": "Можно указать только одно значение: до или после которого должны быть даты",
+        "YEAR_LABEL": "Год рождения",
+        "YEAR_TOOLTIP": "Можно указать только одно значение: до или после которого должен быть год рождения",
+        "FROM_LABEL": "с",
+        "TO_LABEL": "по",
+        "FEMALE_LABEL": "м",
+        "MALE_LABEL": "ж",
+        "REGION_LABEL": "Регион",
+        "HOME_LABEL": "Интернат",
+        "ADD_SPARE_REGIONS_LABEL": "включая ближайшие регионы",
+        "PLACE_TOOLTIP": "Если результат пуст, введите больший диапазон дат",
+        "ONLY_PHOTO_LABEL": "Только с фото",
+        "ONLY_ANNIVERSARY_LABEL": "Только юбиляры",
+        "ONLY_OLDEST": "Только юбиляры и 80+",
+        "ONLY_CONCENT": "Только с согласиями",
+        "MAX_NO_ADDRESS_LABEL": "max БОА",
+        "MIN_ONE_HOME_LABEL": "min из 1 дома",
+        "MAX_ONE_HOME_LABEL": "max из 1 дома",
+        "ADDRESS_CATEGORY": {
+          "ANY": "любые",
+          "FOR_SCHOOLS": "для школ",
+          "ONLY_WITH_ADDRESS": "без БОА",
+          "NO_RELEASED": "без бывших з/к",
+          "ONLY_MENT_CATEGORY": "только БОА"
+        },
+        "GENDER": {
+          "ANY": "любые",
+          "MALE": "только мужчины",
+          "FEMALE": "только женщины",
+          "PROPORTION": "в пропорции"
+        }
+      },
+      "RECIPIENT_STATUS": {
+        "PRESENT": "",
+        "ABSENT": "ВЫБЫЛ(а)",
+        "DELETED": "УДАЛЕН(а)",
+        "DELETING": "УДАЛЕНИЕ"
+      }
+    }
+  },
+
   "BASE_LIST": {
     "DOWNLOAD_TABLE": "Скачать таблицу",
     "SEARCH_LABEL": "Поиск (введите любое значение, допустимое в таблице)",
     "APPLIED_FILTERS": "Примененные фильтры: {{value}}",
     "EXACT_MATCH_HINT": "искомые значения должны присутствовать одновременно",
     "INCLUDE_OUTDATED": "включать неактуальные данные: прежние адреса, телефоны и т.п.",
-    "NO_DATA_FOR_QUERY": "Не найдены данные, соответствующие запросу",
     "SET_FILTER": "Настроить фильтр",
     "RESET_FILTER": "Сбросить фильтр",
     "SET_COLUMNS": "Настроить отображение колонок",
+    "UPDATE_LABEL": "обн.",
     "START_LABEL": "нач.",
     "BLOCK_LABEL": "блок.",
-    "OUTDATED_DATA": "прежние значения:"
+    "EXIT_LABEL": "выб.",
+    "CLOSE_LABEL": "закр.",
+    "LAST_ORDER_LABEL": "посл.заявка",
+    "DAY_LABEL": "даты рожд.: ",
+    "MONTH_LABEL": "месяцы рожд.: ",
+    "YEAR_LABEL": "годы рожд.: ",
+    "FROM_LABEL": "из ",
+    "HOMES_LABEL": " интернаты"
   },
   "NAV": {
     "COLUMNS_HEADER": "Настройте отображение колонок",
     "FILTER_HEADER": "Настройте фильтр",
     "FILTER": {
+      "BLOCK_COMMENT": "Результат имеет смысл только при выборе «все» или «только заблокированные»",
       "ADDR_LABEL": "адрес",
       "STRONG_FILTER": "все выбранные значения должны присутствовать одновременно",
       "ROLE_LABEL": "роль",
-      "CHOOSE_VALUE_LABEL": "Выберите значение(я)",
+      "AFFILIATION_LABEL": "позиция",
+      "INSTITUTE_LABEL": "категория организации",
+      "SUBSCRIPTIONS_LABEL": "подписка",
+      "COOPERATIONS_LABEL": "сотрудничество",
+      "CHOOSE_VALUE_LABEL": "выберите значение(я)",
+      "CHOOSE_REGION_VALUE_LABEL": "выберите регион(ы)",
+      "CHOOSE_HOME_VALUE_LABEL": "выберите интернат(ы)",
       "START_DATE_LABEL": "дата присоединения",
       "CHOOSE_RANGE_LABEL": "Введите диапазон",
       "DATE_PLACEHOLDER": "дд.мм.гггг",
       "BLOCK_DATE_LABEL": "дата блокировки",
-      "BLOCK_COMMENT": "результат поиска будет иметь смысл, если выбраны/n 'Все' или 'Только заблокированные'",
+      "EXIT_DATE_LABEL": "дата выбытия",
+      "CLOSE_DATE_LABEL": "дата закрытия",
+      "UPDATE_DATE_LABEL": "дата обновления",
+      "LAST_ORDER_DATE_LABEL": "дата посл.заказа",
+      "BLOCK_COMMENT_USERS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только заблок.'",
+      "BLOCK_COMMENT_VOLUNTEERS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только заблок.'",
+      "BLOCK_COMMENT_PARTNERS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только бывшие.'",
+      "BLOCK_COMMENT_HOMES": "результат поиска будет иметь смысл, если выбраны 'все', 'только неактивные' или 'искл. закрытые'",
+      "BLOCK_COMMENT_SENIORS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только заблок.' или 'искл. выбывших'",
+      "CLOSE_COMMENT_HOMES": "результат поиска будет иметь смысл, если выбраны 'все' или 'только закрытые'",
+      "CLOSE_COMMENT_SENIORS": "результат поиска будет иметь смысл, если выбраны 'все' или 'только выбывшие'",
+      "NOT_ACTIVE_COMMENT_PARTNERS": "для выбора закрытых интернатов включите неактуальные данные",
+      "NOT_ACTIVE_COMMENT_SENIORS": "для выбора неактивных интернатов выберите 'все', 'только неактивные' или 'искл. закрытые', для закрытых - 'все' или 'только закрытые'",
+      "NOT_ACTIVE_COMMENT_HOMES": "для выбора бывших координаторов включите неактуальные данные",
+      "NOT_ACTIVE_COMMENT_VOLUNTEERS": "для выбора бывших пользователей включите неактуальные данные",
       "CONTACT_TYPE_LABEL": "тип контакта",
       "COMMENT_LABEL": "комментарий",
       "WITH_COMMENT_OPT": "с комментарием",
@@ -330,93 +1074,219 @@
       "VKONTAKTE_OPT": "Вконтакте",
       "INSTAGRAM_OPT": "Instagram",
       "FACEBOOK_OPT": "Facebook",
-      "OTHER_CONTACT_OPT": "Другой контакт"
+      "OTHER_CONTACT_OPT": "Другой контакт",
+      "GENDER_LABEL": "пол",
+      "ONLY_MALE": "женщины",
+      "ONLY_FEMALE": "мужчины",
+      "PECULIARITIES_LABEL": "особенности",
+      "ONLY_NO_ADDRESS": "только БОА",
+      "WITHOUT_NO_ADDRESS": "без БОА",
+      "ONLY_SPECIAL": "только специнтернаты",
+      "WITHOUT_SPECIAL": "без специнтернатов",
+      "ONLY_ACC_FOR_SCHOOL": "только подходящие для школ",
+      "WITHOUT_ACC_FOR_SCHOOL": "без подходящих для школ",
+      "ONLY_WITH_COORDINATION": "с координацией",
+      "ONLY_WITHOUT_COORDINATION": "без координации",
+      "ONLY_WITH_INSTITUTE": "предст.организацию",
+      "ONLY_WITHOUT_INSTITUTE": "предст.частное лицо",
+      "ONLY_WITH_SUBSCRIPTION": "с подпиской",
+      "ONLY_WITHOUT_SUBSCRIPTION": "без подписки",
+      "ONLY_WITH_COOPERATION": "с сотрудничеством",
+      "ONLY_WITHOUT_COOPERATION": "без сотрудничества",
+      "PARTNERS_LABEL": "координаторы",
+      "HOMES_LABEL": "интернаты",
+      "REGIONS_LABEL": "регионы интернатов",
+      "DETAILS_LABEL": "детали",
+      "PERSONAL_NO_ADDRESS_LABEL": "персональным БОА",
+      "COMMENT_OPT": "с комментарием",
+      "PHOTO_LINK_OPT": "с фото",
+      "CONSENT_OPT": "подписано согласие",
+      "TEACHER_OPT": "учитель",
+      "KINDERGARTEN_OPT": "дошкольный работник",
+      "HONORARY_OPT": "имеет заслуги",
+      "VETERAN_OPT": "ветеран",
+      "CHILD_OF_WAR_OPT": "дети войны",
+      "BELIEVER_OPT": "верующий",
+      "PROFESSION_OPT": "указана профессия",
+      "INTERESTS_OPT": "указаны интересы",
+      "SPOUSE_OPT": "женат(а)",
+      "BIRTHDAY_LABEL": "дата рождения",
+      "DAY_LABEL": "дата",
+      "MONTH_LABEL": "месяц",
+      "YEAR_LABEL": "год",
+      "FROM_LABEL": "с",
+      "TO_LABEL": "по",
+      "JANUARY": "Январь",
+      "FEBRUARY": "Февраль",
+      "MARCH": "Март",
+      "APRIL": "Апрель",
+      "MAY": "Май",
+      "JUNE": "Июнь",
+      "JULY": "Июль",
+      "AUGUST": "Август",
+      "SEPTEMBER": "Сентябрь",
+      "OCTOBER": "Октябрь",
+      "NOVEMBER": "Ноябрь",
+      "DECEMBER": "Декабрь",
+      "WITHOUT_YEAR": "скрыть записи без года рождения",
+      "WITHOUT_BIRTHDAY": "скрыть записи без даты рождения"
     }
   },
+  "SUCCESS": {
+    "CREATED": "Запись добавлена.",
+    "UPDATED": "Запись обновлена.",
+    "DELETED": "Запись удалена.",
+    "SAVED": "Изменения сохранены.",
+    "DATA_ADDED": "Добавлено {{listLength}} записей.",
+    "DATA_DELETED": "Записи удалены.",
+    "DATA_CHECKED": "Записи проверены."
+  },
+
   "ERRORS": {
-    "VALIDATION": "Ошибка валидации",
-    "FORBIDDEN": "Недостаточно прав",
-    "ACCESS": "Не удалось проверить права доступа",
-    "BAD_REQUEST": "Некорректный запрос",
-    "DB_ERROR": "Ошибка хранилища",
+    "DATA_NOT_FOUND": "Данные не найдены.",
+    "DATA_FETCH_FAILED": "Не удалось загрузить данные.",
+    "DATA_SAVE_FAILED": "Не удалось сохранить данные.",
+    "DATA_ADD_FAILED": "Не удалось добавить записи.",
+    "DATA_CREATE_FAILED": "Не удалось создать запись.",
+    "DATA_UPDATE_FAILED": "Не удалось обновить данные.",
+    "DATA_DELETE_FAILED": "Не удалось удалить данные.",
+    "DATA_CHECK_FAILED": "Не удалось проверить данные.",
+    "REPORT_GENERATE_FAILED": "Не удалось сформировать отчет.",
+
+    "OCCASION": {
+      "ALREADY_EXISTS": "Такой праздник уже существует.",
+      "HAS_DEPENDENCIES": "Праздник нельзя удалить, пока существует связанный с ним список поздравляемых."
+    },
+    "RECIPIENT": {
+      "LIST_ALREADY_EXISTS": "Такой список уже существует.",
+      "HAS_DEPENDENCIES": "Выбранные записи нельзя удалить, потому что они связаны с заявками.",
+      "LIST_HAS_DEPENDENCIES": "Список нельзя очистить, потому что с ним связаны заявки."
+    },
+
+    "ORDER": {
+      "MIN_RECIPIENTS": "В заявке должен остаться хотя бы один получатель."
+    },
+
+    "INVALID_FILTER_MATCH_MODE": "Некорректный режим фильтрации.",
+    "INVALID_FILTER_VALUE": "Некорректное значение фильтра.",
+    "UNSUPPORTED_TYPE": "Неподдерживаемое значение типа.",
+
+    "VALIDATION": "Ошибка валидации.",
+    "FORBIDDEN": "Недостаточно прав.",
+    "ACCESS": "Не удалось проверить права доступа.",
+    "BAD_REQUEST": "Некорректный запрос.",
+    "DB_ERROR": "Ошибка хранилища.",
     "SERVER": "Непредвиденная ошибка сервера. Повторите позже.",
-    "UNAUTHORIZED": "Требуется авторизация",
-    "INVALID_AUTHORIZATION": "Неверное имя пользователя или пароль",
-    "NOT_FOUND": "Ресурс не найден",
-    "CONFLICT": "Конфликт данных",
-    "LOGS_NOT_ACCEPTED": "Не удалось принять логи клиента",
+    "UNAUTHORIZED": "Требуется авторизация.",
+    "INVALID_AUTHORIZATION": "Неверное имя пользователя или пароль.",
+    "NOT_FOUND": "Ресурс не найден.",
+    "CONFLICT": "Конфликт данных.",
+    "LOGS_NOT_ACCEPTED": "Не удалось принять логи клиента.",
     "NO_DATA_RECEIVED": "Произошла ошибка. Данные не получены.",
-    "INVALID_SCHEMA": "Неверный формат данных ответа",
-    "INVALID_TYPE": "Неверный тип данных ответа",
-    "NO_VALIDATOR": "Невозможно осуществить валидацию",
-    "UNKNOWN": "Произошла неизвестная ошибка",
+    "INVALID_SCHEMA": "Неверный формат данных ответа.",
+    "INVALID_TYPE": "Неверный тип данных ответа.",
+    "NO_VALIDATOR": "Невозможно осуществить валидацию.",
+    "UNKNOWN": "Произошла неизвестная ошибка.",
     "TOO_MANY_ATTEMPTS": "Слишком много попыток. Повторите через {{retryAfterSec}} сек.",
     "ACCOUNT_RESTRICTED": "Учётная запись заблокирована администратором.",
     "ACCOUNT_LOCKED": "Временная блокировка после нескольких неудачных попыток. Попробуйте позже.",
     "ACCOUNT_LOCKED_UNTIL": "Временная блокировка. Повторите попытку после {{until}}.",
     "UNAUTHORIZED_CATCH": "Ошибка авторизации. Попробуйте ещё раз.",
-    "USER_WITHOUT_ROLE": "Пользователю не назначена роль",
+    "USER_WITHOUT_ROLE": "Пользователю не назначена роль.",
+    "ADDRESS_NOT_RESTORED": "Невозможно восстановить адрес. Объект не обновлен.",
 
     "ROLE": {
-      "NOT_FOUND": "Роль не найдена",
-      "NAME_NOT_CHECKED": "Произошла ошибка при проверке названия роли",
+      "NOT_FOUND": "Роль не найдена.",
+      "ALREADY_EXISTS": "Роль с таким названием уже существует.",
+      "HAS_DEPENDENCIES": "Роль нельзя удалить: она назначена пользователям.",
+      "NAME_NOT_CHECKED": "Произошла ошибка при проверке названия роли.",
       "NOT_CREATED": "Произошла ошибка. Роль не создана.",
       "NOT_UPDATED": "Произошла ошибка. Роль не обновлена.",
-      "NAME_LIST_FAILED": "Произошла ошибка при получении списка названий ролей",
-      "LIST_FAILED": "Произошла ошибка при получении списка ролей",
-      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления роли",
-      "NOT_DELETED": "Произошла ошибка при удалении роли"
+      "NAME_LIST_FAILED": "Произошла ошибка при получении списка названий ролей.",
+      "LIST_FAILED": "Произошла ошибка при получении списка ролей.",
+      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления роли.",
+      "NOT_DELETED": "Произошла ошибка при удалении роли."
     },
     "TOPONYM": {
-      "NOT_FOUND": "Топоним не найден",
-      "NAME_NOT_CHECKED": "Произошла ошибка при проверке названия топонима",
+      "NOT_FOUND": "Топоним не найден.",
+      "NAME_NOT_CHECKED": "Произошла ошибка при проверке названия топонима.",
       "NOT_CREATED": "Произошла ошибка. Топоним не создан.",
       "NOT_UPDATED": "Произошла ошибка. Топоним не обновлен.",
-      "NAME_LIST_FAILED": "Произошла ошибка при получении списка названий топонимов",
-      "LIST_FAILED": "Произошла ошибка при получении списка топонимов",
-      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления топонима",
-      "NOT_DELETED": "Произошла ошибка при удалении топонима",
-      "BULK_INPUT_DUPLICATES": "В списке есть повторяющиеся названия: {{duplicates}}",
+      "NAME_LIST_FAILED": "Произошла ошибка при получении списка названий топонимов.",
+      "LIST_FAILED": "Произошла ошибка при получении списка топонимов.",
+      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления топонима.",
+      "NOT_DELETED": "Произошла ошибка при удалении топонима.",
+      "BULK_INPUT_DUPLICATES": "В списке есть повторяющиеся названия: {{duplicates}}.",
       "FROM_BULK_ALREADY_EXISTS": "Эти названия: {{conflicts}} уже используются. Если вы уверены, что это не ошибка, обратитесь к администратору.",
-      "BULK_NOT_CREATED": "Топонимы не были созданы из-за ошибки",
+      "BULK_NOT_CREATED": "Топонимы не были созданы из-за ошибки.",
       "BULK_PARENT_NOT_FOUND": "Tопоним(ы): {{parents}} не найден(ы). Проверьте правильность написания.",
-      "INVALID_TYPE": "Неверный или отсутствующий тип топонима: {{name}}"
+      "INVALID_TYPE": "Неверный или отсутствующий тип топонима: {{name}}."
     },
     "FILE": {
-      "EMPTY": "Файл не содержит данных",
-      "INVALID_STRUCTURE": "В файле отсутствуют обязательные колонки",
-      "INVALID_FORMAT_XLSX": "Неверный формат файла. Загрузите Excel-файл (.xlsx)",
-      "VALIDATION": "Ошибка валидации: ряд {{row}}, колонка '{{column}}', ошибка '{{error}}'",
-      "NOT_UPLOADED": "Невозможно загрузить выбранный файл",
-      "NOT_CHOSEN": "Файл не выбран"
+      "EMPTY": "Файл не содержит данных.",
+      "INVALID_STRUCTURE": "В файле отсутствуют обязательные колонки.",
+      "INVALID_FORMAT_XLSX": "Неверный формат файла. Загрузите Excel-файл (.xlsx).",
+      "VALIDATION": "Ошибка валидации: ряд {{row}}, колонка '{{column}}', ошибка '{{error}}'.",
+      "NOT_UPLOADED": "Невозможно загрузить выбранный файл.",
+      "NOT_CHOSEN": "Файл не выбран.",
+      "INVALID_PATH": "Некорректный путь к файлу.",
+      "NOT_FOUND": "Файл не найден.",
+      "DOWNLOAD_FAILED": "Не удалось скачать файл."
     },
     "USER": {
-      "NOT_FOUND": "Пользователь не найден",
-      "NAME_NOT_CHECKED": "Произошла ошибка при проверке имени пользователя",
-      "DUPLICATES_NOT_CHECKED": "Произошла ошибка при проверке данных пользователя",
+      "ALREADY_EXISTS": "Пользователь с таким именем уже существует.",
+      "HAS_DATA_DUPLICATES": "Данные пользователя содержат дубликаты.",
+      "HAS_DEPENDENCIES": "Пользователя нельзя удалить: связанных записей — {{count}}.",
+      "NOT_FOUND": "Пользователь не найден.",
+      "NAME_NOT_CHECKED": "Произошла ошибка при проверке имени пользователя.",
+      "DUPLICATES_NOT_CHECKED": "Произошла ошибка при проверке данных пользователя.",
       "NOT_CREATED": "Произошла ошибка. Пользователь не создан.",
-      "ROLE_REQUIRED": "Пользователю не назначена роль. Аккаунт не создан",
+      "ROLE_REQUIRED": "Пользователю не назначена роль. Аккаунт не создан.",
       "NOT_UPDATED": "Произошла ошибка. Пользователь не обновлен.",
-      "ADDRESS_NOT_RESTORED": "Невозможно восстановить адрес. Пользователь не обновлен.",
-      "LIST_FAILED": "Произошла ошибка при получении списка пользователей",
-      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления пользователя",
-      "NOT_DELETED": "Произошла ошибка при удалении пользователя",
+      "LIST_FAILED": "Произошла ошибка при получении списка пользователей.",
+      "NOT_CHECKED": "Произошла ошибка при проверке возможности удаления пользователя.",
+      "NOT_DELETED": "Произошла ошибка при удалении пользователя.",
       "CURRENT_PASSWORD_REQUIRED": "Для смены пароля требуется текущий пароль.",
       "CURRENT_PASSWORD_INVALID": "Введён неверный текущий пароль.",
       "PASSWORD_NOT_CHANGED": "Не удалось изменить пароль. Повторите попытку.",
       "NOT_BLOCKED": "Произошла ошибка. Пользователь не заблокирован.",
       "NOT_UNBLOCKED": "Произошла ошибка. Пользователь не разблокирован."
+    },
+    "VOLUNTEER": {
+      "HAS_DATA_DUPLICATES": "Данные волонтёра содержат дубликаты.",
+      "HAS_DEPENDENCIES": "Волонтёра нельзя удалить, пока существуют связанные заявки."
+    },
+    "PARTNER": {
+      "HAS_DATA_DUPLICATES": "Данные координатора содержат дубликаты.",
+      "HAS_DEPENDENCIES": "Координатора нельзя удалить, пока существуют связанные координации с интернатами."
+    },
+    "SENIOR": {
+      "HAS_DATA_DUPLICATES": "Данные жителя интерната содержат дубликаты.",
+      "HAS_DEPENDENCIES": "Жителя интерната нельзя удалить, пока существуют связанные записи."
+    },
+    "HOME": {
+      "ALREADY_EXISTS": "Интернат с таким названием уже существует."
+    },
+    "CONTACT": {
+      "INVALID_FORMAT": "Неверный формат контактных данных."
     }
   },
   "FORM_VALIDATION": {
     "INVALID_FORM": "Форма невалидна",
     "INVALID_FORMAT": "Неверный формат",
     "REQUIRED": "Поле не может быть пустым",
+    "REQUIRED_SELECTION": "Необходимо выбрать значение",
     "TOO_LONG_500": "Максимум 500 символов",
+    "TOO_LONG_256": "Максимум 256 символов",
+    "TOO_LONG_150": "Максимум 150 символов",
     "TOO_LONG_50": "Максимум 50 символов",
     "TOO_LONG_20": "Максимум 20 символов",
-    "TOO_SHORT_7": "Минимум 5 символов",
-
+    "TOO_SHORT_5": "Минимум 5 символов",
+    "TOO_SHORT_2": "Минимум 2 символа",
+    "TOO_SHORT_7": "Минимум 7 символов",
+    "NOT_FOUND": "Поле пустое или введенное значение не найдено",
+    "INVALID_ISO_DATE": "Неверный формат даты",
+    "MIN_ONE_CONTACT": "Требуется хотя бы один контакт",
     "ROLE": {
       "NAME_MIN": "Имя должно содержать минимум 2 символа",
       "NAME_MAX": "Имя не должно быть длиннее 50 символов",
@@ -428,18 +1298,124 @@
     },
     "CONTACT": {
       "MIN_CONTACT": "Требуется хотя бы один контакт",
-      "INVALID_CONTACT": "Неверный формат"
+      "INVALID_CONTACT": "Неверный формат",
+      "INVALID_URL": "Неверный URL"
     },
     "USER": {
       "MIN_PASSWORD": "Минимум 8 символов",
       "LETTER_PASSWORD": "Только латиница (мин. 1)",
       "DIGIT_PASSWORD": "Минимум 1 цифра",
       "MISMATCH_PASSWORDS": "Пароли не совпадают"
+    },
+    "SENIOR": {
+      "MODE_REQUIRED": "Необходимо выбрать вариант",
+      "DATE_REQUIRED": "Укажите дату в правильном формате"
+    },
+    "ORDER": {
+      "WRONG_DAY": "Допустимые значения: от 1 до 31",
+      "WRONG_YEAR": "Допустимые значения: от 1900 до текущего года",
+      "INT_MIN_1": "Допустимы только целые числа > 0",
+      "INVALID_DATE_RANGE": "Дата 'c' не может быть больше 'по'",
+      "INVALID_YEAR_RANGE": "Год 'c' не может быть больше 'по'",
+      "GENDER_AMOUNT_SUM": "Сумма значений должна быть равна количеству в заявке",
+      "MAX_NO_ADDRESS_TOO_BIG": "max БОА не может быть больше количества в заявке",
+      "MIN_FROM_ONE_HOUSE_TOO_BIG": "min из 1 дома не может быть больше количества в заявке",
+      "MAX_FROM_ONE_HOUSE_TOO_BIG": "max из 1 дома не может быть больше количества в заявке",
+      "MIN_GRATE_THAN_MAX": "min из 1 дома не может быть больше max из 1 дома",
+      "IMPOSSIBLE_HOUSE_DISTRIBUTION": "Такое распределение по домам невозможно для указанного количества"
     }
   },
   "INTERNAL_VALIDATION": {
     "FLAG_INVALID": "flag допустим только для VIEW_LIMITED_* или VIEW_FULL_* операций",
     "SUPER_OPS_WITH_FLAG": "Супер-операции (accessToAllOps=true) не должны иметь flag"
+  },
+
+  "STATISTIC": {
+    "CARD_TITLE": "Статистика",
+    "GENERAL_TITLE": "Общая статистика по актуальным праздникам",
+    "TABLE": {
+      "OCCASION": "Праздник",
+      "ALL": "Всего поздравляемых",
+      "ZERO": "Ни разу не поздравлены",
+      "ONCE": "Один раз поздравлены",
+      "TWICE": "Два раза поздравлены",
+      "THREE_TIMES": "Три раза поздравлены",
+      "FOUR_AND_MORE_TIMES": "Четыре и более раз поздр.",
+      "ALL_RECIPIENTS": "Все",
+      "PART_RECIPIENTS": "БОА"
+    },
+    "EXPORT": {
+      "OCCASION": "Праздник",
+      "ALL": "Всего поздравляемых",
+      "INCL_PART": "в т. ч. БОА",
+      "ZERO": "Ни разу не поздравлены",
+      "ONCE": "Один раз поздравлены",
+      "TWICE": "Два раза поздравлены",
+      "THREE_TIMES": "Три раза поздравлены",
+      "FOUR_AND_MORE_TIMES": "Четыре и более раз поздравлены"
+    },
+    "BUTTON_DOWNLOAD": "Выгрузить в Excel"
+  },
+
+  "REPORTS": {
+    "CARD_TITLE": "Отчёты",
+    "BUTTON_GENERATE": "Сформировать отчёт",
+    "FORM": {
+      "TYPE": "Тип отчёта",
+      "FREQUENCY": "Периодичность",
+      "YEARS": "Годы",
+      "MONTHS": "Месяцы",
+      "QUARTERS": "Кварталы"
+    },
+
+    "TYPES": {
+      "GENERAL": "Общий отчёт",
+      "PERSONAL": "Персональный отчёт",
+      "SCHOOL_COORDINATION": "Координация школ",
+      "BY_OCCASION": "Отчёт по праздникам"
+    },
+    "FREQUENCIES": {
+      "MONTHLY": "Ежемесячно",
+      "QUARTERLY": "Ежеквартально",
+      "ANNUAL": "Ежегодно"
+    },
+    "QUARTERS": {
+      "FIRST": "1-й квартал",
+      "SECOND": "2-й квартал",
+      "THIRD": "3-й квартал",
+      "FORTH": "4-й квартал"
+    },
+    "MONTHS": {
+      "JANUARY": "Январь",
+      "FEBRUARY": "Февраль",
+      "MARCH": "Март",
+      "APRIL": "Апрель",
+      "MAY": "Май",
+      "JUNE": "Июнь",
+      "JULY": "Июль",
+      "AUGUST": "Август",
+      "SEPTEMBER": "Сентябрь",
+      "OCTOBER": "Октябрь",
+      "NOVEMBER": "Ноябрь",
+      "DECEMBER": "Декабрь"
+    },
+    "TABLE": {
+      "PERIOD": "Период",
+      "OCCASION": "Праздник",
+      "ORDERS_COUNT": "Кол-во заявок",
+      "DOBRORU_COUNT": "Заявки с Добро.ру",
+      "CARDS_COUNT": "Кол-во открыток",
+      "SENIORS_COUNT": "Кол-во поздравленных",
+      "VOLUNTEERS_COUNT": "Кол-во волонтёров",
+      "INSTITUTES_COUNT": "Кол-во организаций",
+      "SCHOOLS_COUNT": "Кол-во ОУ",
+      "NEW_SCHOOLS_COUNT": "Кол-во новых ОУ",
+      "HOMES_COUNT": "Кол-во интернатов",
+      "REGIONS_COUNT": "Кол-во регионов",
+      "OCCASIONS_TITLE": "По праздникам",
+      "TOGGLE_OCCASIONS": "Показать или скрыть данные по поводам",
+      "EMPTY_MESSAGE": "По выбранным периодам данные отсутствуют"
+    }
   },
 
   "OBJECT": {
@@ -449,7 +1425,11 @@
     "HOMES": "Интернаты",
     "PARTNERS": "Представители\nинтернатов",
     "SENIORS": "Жители\nинтернатов",
-    "VOLUNTEERS": "Поздравляющие"
+    "VOLUNTEERS": "Поздравляющие",
+    "ORDERS": "Заявки",
+    "OCCASIONS": "Праздники и ДР",
+    "RECIPIENTS": "Получатели поздравлений",
+    "REPORTS": "Отчеты"
   },
   "OPS": {
     "ALL_OPS": {
@@ -488,6 +1468,36 @@
     "DOWNLOAD_TEMPLATE": {
       "NAME": "скачать шаблон"
     },
-    "DOWNLOAD_TABLE": { "NAME": "скачать список" }
+    "DOWNLOAD_TABLE": { "NAME": "скачать список" },
+    "BULK_CREATE": {
+      "NAME": "создать список"
+    },
+    "BULK_EDIT": {
+      "NAME": "редактировать списком"
+    },
+    "BULK_CLEAR": {
+      "NAME": "очистить список"
+    },
+    "DOWNLOAD": {
+      "NAME": "скачать данные"
+    },
+    "EDIT_RECIPIENTS": {
+      "NAME": "редактировать список получателей"
+    },
+    "FULL_FILTER": {
+      "NAME": "доступ к полному фильтру"
+    },
+    "VIEW_AUDIT_LOG": {
+      "NAME": "просмотреть журнал действий"
+    },
+    "VIEW_CURRENT_STATISTIC": {
+      "NAME": "просмотреть текущую статистику"
+    },
+    "VIEW_LIMITED_REPORTS": {
+      "NAME": "доступ к осн. данным отчетов"
+    },
+    "VIEW_FULL_REPORTS": {
+      "NAME": "доступ к доп. данным отчетов"
+    }
   }
 }

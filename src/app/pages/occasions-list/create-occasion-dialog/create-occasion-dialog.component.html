@@ -1,0 +1,78 @@
+<mat-grid-list cols="10" gutterSize="16px" rowHeight="76px">
+  <!-- Title -->
+  <mat-grid-tile colspan="5" rowspan="1">
+    <h3 mat-dialog-title>{{'OCCASION.CARD_TITLE' | translate}}</h3>
+  </mat-grid-tile>
+
+  <!-- Spacer -->
+  <mat-grid-tile colspan="3" rowspan="1"></mat-grid-tile>
+
+  <!-- Close button -->
+  <mat-grid-tile colspan="2" rowspan="1">
+    <button data-cy="dlg-cancel" mat-icon-button [title]="'OCCASION.CARD_CLOSE' | translate"
+      (click)="onCancelClick($event)">
+      <mat-icon fontSet="material-icons-outlined">disabled_by_default</mat-icon>
+    </button>
+  </mat-grid-tile>
+</mat-grid-list>
+
+<mat-dialog-content class="full-width">
+  <form [formGroup]="occasionForm">
+    <mat-form-field class="full-width">
+      <mat-label>{{'OCCASION.CARD_LABEL_YEAR' | translate}}</mat-label>
+      <mat-select formControlName="occasionYear">
+        @for (year of YEARS; track year) {
+        <mat-option [value]="year">{{ year }}</mat-option>
+        }
+      </mat-select>
+      @if(occasionForm.controls.occasionYear.hasError('zodError')){
+      <mat-error>{{occasionForm.controls.occasionYear.errors!['zodError'] | translate}}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>{{'OCCASION.CARD_LABEL_TYPE' | translate}}</mat-label>
+      <mat-select formControlName="occasionType">
+        @for (type of TYPES; track type.id) {
+        <mat-option [value]="type.id">{{ type.nameKey | translate }}</mat-option>
+        }
+      </mat-select>
+      @if(occasionForm.controls.occasionType.hasError('zodError')){
+      <mat-error>{{occasionForm.controls.occasionType.errors!['zodError'] | translate}}</mat-error>
+      }
+    </mat-form-field>
+
+    @if (occasionForm.contains('occasionMonth')) {
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'OCCASION.CARD_LABEL_MONTH' | translate }}</mat-label>
+      <mat-select formControlName="occasionMonth">
+        @for (month of MONTHS; track month.id) {
+        <mat-option [value]="month.id">{{ month.optionKey | translate }}</mat-option>
+        }
+      </mat-select>
+
+      @if (occasionForm.controls.occasionMonth?.hasError('zodError')) {
+      <mat-error>{{ occasionForm.controls.occasionMonth?.errors?.['zodError'] | translate }}</mat-error>
+      }
+    </mat-form-field>
+    }
+
+    <label id="example-radio-group-label">{{'OCCASION.CARD_LABEL_STATUS' | translate}}</label>
+    <mat-radio-group class="example-radio-group" formControlName="occasionStatus">
+      @for (status of STATUSES; track status.id) {
+      <mat-radio-button class="example-radio-button" [value]="status.id">{{ status.nameKey|
+        translate }}</mat-radio-button>
+      }
+    </mat-radio-group>
+
+  </form>
+</mat-dialog-content>
+
+<!-- Actions -->
+<mat-dialog-actions>
+  <button mat-raised-button data-cy="dlg-create" class="dialog-submit-button"
+    [disabled]="!occasionForm.valid || isLoading" (click)="onCreateOccasionClick()"
+    *hasOp="{codes:['ADD_NEW_OCCASION'], mode:'all'}">
+    {{'OCCASION.CARD_SAVE_AND_EXIT' | translate}}
+  </button>
+</mat-dialog-actions>

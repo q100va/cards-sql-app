@@ -19,7 +19,7 @@ import { LanguageService } from '../../services/language.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import { IdleService } from '../../services/idle.service';
-import { AuthUser } from '@shared/schemas/auth.schema';
+import { AuthUser } from '../../../../shared/schemas/auth.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
 
 @Component({
@@ -67,18 +67,9 @@ export class BaseLayoutComponent {
     return u ? `${u.firstName} ${u.lastName}` : '';
   });
   readonly userName = computed(() => this.user()?.userName ?? '');
+  readonly userId = computed(() => this.user()?.id ?? '');
 
   menu: Menu = [
-/*     {
-      params: {
-        codes: [],
-        mode: 'any',
-      },
-      dataCy: 'nav-profile',
-      icon: 'settings',
-      text: 'MENU.PROFILE',
-      link: '/users/user/profile',
-    }, */
     {
       params: {
         codes: ['ALL_OPS_ROLES'],
@@ -91,6 +82,16 @@ export class BaseLayoutComponent {
     },
     {
       params: {
+        codes: ['ALL_OPS_OCCASIONS'],
+        mode: 'all',
+      },
+      dataCy: 'nav-occasions',
+      icon: 'cake',
+      text: 'MENU.OCCASIONS',
+      link: '/occasions',
+    },
+    {
+      params: {
         codes: ['VIEW_LIMITED_USERS_LIST', 'VIEW_FULL_USERS_LIST'],
         mode: 'any',
       },
@@ -99,6 +100,88 @@ export class BaseLayoutComponent {
       text: 'MENU.USERS',
       link: '/users',
     },
+    {
+      params: {
+        codes: ['VIEW_LIMITED_VOLUNTEERS_LIST', 'VIEW_FULL_VOLUNTEERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-volunteers',
+      icon: 'groups',
+      text: 'MENU.VOLUNTEERS',
+      link: '/volunteers',
+    },
+    {
+      params: {
+        codes: ['VIEW_LIMITED_HOMES_LIST', 'VIEW_FULL_HOMES_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-homes',
+      icon: 'house',
+      text: 'MENU.HOMES',
+      link: '/homes',
+    },
+    {
+      params: {
+        codes: ['VIEW_LIMITED_SENIORS_LIST', 'VIEW_FULL_SENIORS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-seniors',
+      icon: 'elderly_woman',
+      text: 'MENU.SENIORS',
+      link: '/seniors',
+    },
+    {
+      params: {
+        codes: ['UPLOAD_LIST_OF_SENIORS'],
+        mode: 'any',
+      },
+      dataCy: 'nav-seniors-bulk-update',
+      icon: 'cloud_upload',
+      text: 'MENU.SENIORS_BULK_UPDATE',
+      link: '/seniors-bulk-upload',
+    },
+
+    {
+      params: {
+        codes: ['VIEW_LIMITED_PARTNERS_LIST', 'VIEW_FULL_PARTNERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-partners',
+      icon: 'handshake',
+      text: 'MENU.PARTNERS',
+      link: '/partners',
+    },
+    {
+      params: {
+        codes: ['VIEW_FULL_ORDERS_LIST'],
+        mode: 'any',
+      },
+      dataCy: 'nav-all-orders',
+      icon: 'mail',
+      text: 'MENU.ALL_ORDERS',
+      link: '/orders',
+    },
+    {
+      params: {
+        codes: ['VIEW_FULL_REPORTS', 'VIEW_LIMITED_REPORTS'],
+        mode: 'any',
+      },
+      dataCy: 'nav-all-reports',
+      icon: 'summarize',
+      text: 'MENU.REPORTS',
+      link: '/reports',
+    },
+       {
+      params: {
+        codes: ['VIEW_CURRENT_STATISTIC'],
+        mode: 'any',
+      },
+      dataCy: 'nav-statistic',
+      icon: 'bar_chart_4_bars',
+      text: 'MENU.STATISTIC',
+      link: '/statistic',
+    },
+
     {
       params: {
         codes: ['VIEW_LIMITED_TOPONYMS_LIST', 'VIEW_FULL_TOPONYMS_LIST'],
@@ -153,7 +236,7 @@ export class BaseLayoutComponent {
     },
     {
       params: {
-        codes: ['VIEW_FULL_ROLES_LIST'], //TODO: create operations for audit
+        codes: ['VIEW_AUDIT_LOG'],
         mode: 'all',
       },
       dataCy: 'nav-audit',

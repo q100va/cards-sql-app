@@ -1,66 +1,135 @@
 import logger from '../logging/logger.js';
 
-const statusToDefaultCode = (s) => {
-  if (s === 400) return 'ERRORS.BAD_REQUEST';
-  if (s === 401) return 'ERRORS.UNAUTHORIZED';
-  if (s === 403) return 'ERRORS.FORBIDDEN';
-  if (s === 404) return 'ERRORS.NOT_FOUND';
-  if (s === 409) return 'ERRORS.CONFLICT';
-  if (s === 422) return 'ERRORS.VALIDATION';
-  return 'ERRORS.UNKNOWN'; // 5xx и прочее
-};
-
-export function handleError(err, req, res, _next) {
-  if (res.headersSent) {
-    logger.error({ err, route: `${req.method} ${req.originalUrl}` }, 'Headers already sent');
-    return;
+// Maps common HTTP statuses to stable API error codes.
+function statusToDefaultCode(status) {
+  if (status === 400) {
+    return 'ERRORS.BAD_REQUEST';
   }
 
-  const status = err.status || err.statusCode || 500;
-  const cid = req.correlationId || req.id || null;
-  const code = err.code || statusToDefaultCode(status);
-  const data = err.data || null;
+  if (status === 401) {
+    return 'ERRORS.UNAUTHORIZED';
+  }
+
+  if (status === 403) {
+    return 'ERRORS.FORBIDDEN';
+  }
+
+  if (status === 404) {
+    return 'ERRORS.NOT_FOUND';
+  }
+
+  if (status === 409) {
+    return 'ERRORS.CONFLICT';
+  }
+
+  if (status === 422) {
+    return 'ERRORS.VALIDATION';
+  }
+
+  return 'ERRORS.UNKNOWN';
+}
+
+// Accept only valid HTTP error statuses; fall back to 500 otherwise.
+function normalizeStatus(error) {
+  const status =
+    error?.status ??
+    error?.statusCode;
+
+  return Number.isInteger(status) &&
+    status >= 400 &&
+    status <= 599
+    ? status
+    : 500;
+}
+
+// Avoid logging query parameters because they may contain sensitive data.
+function getRoute(req) {
+  const path =
+    req.originalUrl?.split('?')[0] ??
+    req.path ??
+    '';
+
+  return `${req.method} ${path}`;
+}
+
+export function handleError(
+  error,
+  req,
+  res,
+  next,
+) {
+  // Delegate to Express when the response has already started.
+  if (res.headersSent) {
+    logger.error(
+      {
+        err: error,
+        route: getRoute(req),
+      },
+      'Headers already sent',
+    );
+
+    return next(error);
+  }
+
+  const status =
+    normalizeStatus(error);
+
+  const correlationId =
+    req.correlationId ??
+    req.id ??
+    null;
+
+  const code =
+    error.code ??
+    statusToDefaultCode(status);
+
+  const data =
+    error.data ?? null;
+
   const logPayload = {
-    err,                         // pino красиво сериализует stack
+    err: error,
     code,
     status,
-    correlationId: cid,
-    route: `${req.method} ${req.originalUrl}`,
-    lang: req.lang,              // если используешь langDetector
+    correlationId,
+    route: getRoute(req),
+    lang: req.lang ?? null,
   };
 
-  if (status === 422 && err.details) {
-    logPayload.validation = err.details; // zod details, если есть
+  // Include structured validation details only for validation errors.
+  if (
+    status === 422 &&
+    error.details
+  ) {
+    logPayload.validation =
+      error.details;
   }
 
-  logger.error(logPayload, err.message || 'Unhandled error');
+  logger.error(
+    logPayload,
+    error.message ??
+    'Unhandled error',
+  );
 
-  const body = {
-    code,
-    data,
-    correlationId: cid,
-  };
-
-  /*   // Если хочешь в dev показывать message для удобства (UI его игнорирует)
-    if (process.env.NODE_ENV !== 'production' && (err.customMessage || err.userMessage)) {
-      body.message = err.customMessage || err.userMessage;
-    } */
-
-  /*   // Детали валидации по желанию
-    if (code === 'ERRORS.VALIDATION' && err.fields) {
-      body.fields = err.fields; // { email: 'INVALID', roleId: 'REQUIRED' }
-    } */
-
-  res.status(status).json(body);
+  return res
+    .status(status)
+    .json({
+      code,
+      data,
+      correlationId,
+    });
 }
 
-export function notFound(req, _res, next) {
-  const err = new Error('Not Found');
-  err.status = 404;
-  err.code = 'ERRORS.NOT_FOUND';
-  next(err);
+export function notFound(
+  req,
+  _res,
+  next,
+) {
+  const error =
+    new Error('Not Found');
+
+  error.status = 404;
+  error.code =
+    'ERRORS.NOT_FOUND';
+
+  return next(error);
 }
-
-
-
-

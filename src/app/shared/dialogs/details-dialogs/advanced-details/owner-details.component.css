@@ -1,0 +1,73 @@
+mat-form-field {
+  width: 100%;
+}
+
+.mat-grid-list {
+  margin-top: 32px;
+}
+
+app-address-filter {
+  width: 100%;
+}
+
+.view-mode
+  ::ng-deep.mdc-text-field--filled.mdc-text-field--disabled
+  .mdc-text-field__input {
+  color: #191c19;
+}
+
+.view-mode
+  ::ng-deep
+  .mdc-text-field--filled.mdc-text-field--disabled
+  .mdc-floating-label {
+  color: #191c19 !important;
+}
+
+.view-mode ::ng-deep .mat-mdc-checkbox.mat-mdc-checkbox-disabled label {
+  color: #191c19 !important;
+}
+
+.view-mode ::ng-deep .mat-mdc-select-arrow svg {
+  fill: #ffffff;
+}
+
+.view-mode ::ng-deep .mdc-text-field--filled.mdc-text-field--disabled {
+  background-color: #ffffff !important;
+}
+
+.view-mode ::ng-deep.mat-mdc-select-disabled {
+  color: #191c19;
+}
+
+.password {
+  margin-bottom: 20px;
+}
+
+::ng-deep .custom-confirm-dialog {
+  width: 500px !important;
+  max-width: 90vw;
+}
+
+.title {
+  font-weight: bold;
+  width: 100%;
+  align-self: flex-start;
+}
+.outdated-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.outdated-data {
+  color: #7d7d7d;
+  font-style: italic;
+  font-size: 1.1em;
+  margin-left: 10px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+ /* важно: текст внутри будет слева */

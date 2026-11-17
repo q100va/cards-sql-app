@@ -13,7 +13,7 @@ import {
   roleAccessesSchema,
   rolesListSchema,
   rolesNamesListSchema,
-} from '@shared/schemas/role.schema';
+} from '../../../shared/schemas/role.schema';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -41,7 +41,6 @@ export class RoleService {
       )
       .pipe(
          validateResponse(z.boolean()),
-        //validateNoSchemaResponse<boolean>('isBoolean'),
         this.msgWrapper.messageTap('warn', {
           source: 'CreateRoleDialog',
           stage: 'checkRoleName',
@@ -63,7 +62,6 @@ export class RoleService {
       })
       .pipe(
         validateResponse(z.string().trim()),
-        //validateNoSchemaResponse<string>('isString'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           name: res.data,
         })),
@@ -132,7 +130,6 @@ export class RoleService {
         )}`
       )
       .pipe(
-        // validateResponse(z.number().int().positive()),
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap(
           'warn',

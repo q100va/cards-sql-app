@@ -1,72 +1,101 @@
 // server/tests/unit/correlation-id.unit.test.js
-import { jest } from '@jest/globals';
 
-// Mock 'crypto' BEFORE importing the middleware
-const cryptoMock = { randomUUID: jest.fn(() => 'uuid-fixed-0000-0000-0000-000000000000') };
-jest.unstable_mockModule('crypto', () => cryptoMock);
+import { jest } from '@jest/globals';
+import { Router } from 'express';
+import request from 'supertest';
+
+const randomUUIDMock = jest.fn(() => '00000000-0000-4000-8000-000000000000');
+
+jest.unstable_mockModule('crypto', () => ({ randomUUID: randomUUIDMock }));
 
 const { correlationId } = await import('../../middlewares/correlation-id.js');
 
-function run(headers = {}) {
-  // Normalize header keys to lowercase like Node does
-  const lower = Object.fromEntries(
-    Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])
-  );
+const { makeTestApp } = await import('./makeApp.js');
 
-  const req = {
-    headers: lower,
-    correlationId: undefined,
-    // mimic Express's req.get
-    get: (h) => lower[h.toLowerCase()],
-    method: 'GET',
-    url: '/',
-    ip: '127.0.0.1',
-  };
-  const res = { setHeader: jest.fn() };
-  const next = jest.fn();
+function makeApp() {
+  const router = Router();
 
-  correlationId()(req, res, next);
-  return { req, res, next };
+  router.use(correlationId());
+
+  router.get('/', (req, res) => {
+    res.status(200).json({ correlationId: req.correlationId });
+  });
+
+  return makeTestApp(router);
 }
 
-describe('correlationId middleware (unit)', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe('correlationId middleware', () => {
+  it('prefers x-request-id over x-correlation-id', async () => {
+    const app = makeApp();
+
+    const response = await request(app).get('/').set(
+      'x-request-id',
+      'req-123_ABC'
+    ).set(
+      'x-correlation-id',
+      'corr-ignored'
+    ).expect(200);
+
+    expect(response.body).toEqual({ correlationId: 'req-123_ABC' });
+
+    expect(response.headers['x-request-id']).toBe('req-123_ABC');
+
+    expect(randomUUIDMock).not.toHaveBeenCalled();
   });
 
-  it('prefers x-request-id over x-correlation-id when both provided', () => {
-    const r = run({
-      'x-request-id': 'req-123_ABC',
-      'x-correlation-id': 'corr-ignored',
-    });
+  it('uses x-correlation-id when x-request-id is absent', async () => {
+    const app = makeApp();
 
-    expect(r.req.correlationId).toBe('req-123_ABC');
-    expect(r.res.setHeader).toHaveBeenCalledWith('X-Request-Id', 'req-123_ABC');
-    expect(r.next).toHaveBeenCalled();
+    const response = await request(app).get('/').set('x-correlation-id', 'corr-xyz-001').expect(200);
+
+    expect(response.body).toEqual({ correlationId: 'corr-xyz-001' });
+
+    expect(response.headers['x-request-id']).toBe('corr-xyz-001');
+
+    expect(randomUUIDMock).not.toHaveBeenCalled();
   });
 
-  it('uses x-correlation-id when x-request-id is absent', () => {
-    const r = run({ 'x-correlation-id': 'corr-xyz-001' });
+  it('generates an id when no incoming id is provided', async () => {
+    const app = makeApp();
 
-    expect(r.req.correlationId).toBe('corr-xyz-001');
-    expect(r.res.setHeader).toHaveBeenCalledWith('X-Request-Id', 'corr-xyz-001');
+    const response = await request(app).get('/').expect(200);
+
+    expect(randomUUIDMock).toHaveBeenCalledTimes(1);
+
+    expect(response.body).toEqual({ correlationId: '00000000-0000-4000-8000-000000000000' });
+
+    expect(response.headers['x-request-id']).toBe('00000000-0000-4000-8000-000000000000');
   });
 
-  it('accepts array header, using the first element', () => {
-    const r = run({ 'x-request-id': ['first-id', 'second-id'] });
+  it('rejects an invalid incoming id and generates a new one', async () => {
+    const app = makeApp();
 
-    expect(r.req.correlationId).toBe('first-id');
-    expect(r.res.setHeader).toHaveBeenCalledWith('X-Request-Id', 'first-id');
+    const response = await request(app).get('/').set('x-request-id', 'bad id with spaces!').expect(200);
+
+    expect(randomUUIDMock).toHaveBeenCalledTimes(1);
+
+    expect(response.body).toEqual({ correlationId: '00000000-0000-4000-8000-000000000000' });
+
+    expect(response.headers['x-request-id']).toBe('00000000-0000-4000-8000-000000000000');
   });
 
-  it('rejects invalid header (fails ALLOWED) and generates a UUID', () => {
-    const r = run({ 'x-request-id': 'bad id with spaces!' });
+  it('uses the first value when the incoming header is an array', () => {
+    const middleware = correlationId();
 
-    expect(cryptoMock.randomUUID).toHaveBeenCalled();
-    expect(r.req.correlationId).toBe('uuid-fixed-0000-0000-0000-000000000000');
-    expect(r.res.setHeader).toHaveBeenCalledWith(
-      'X-Request-Id',
-      'uuid-fixed-0000-0000-0000-000000000000'
-    );
+    const req = { headers: { 'x-request-id': ['first-id', 'second-id'] } };
+
+    const res = { setHeader: jest.fn() };
+
+    const next = jest.fn();
+
+    middleware(req, res, next);
+
+    expect(req.correlationId).toBe('first-id');
+
+    expect(res.setHeader).toHaveBeenCalledWith('X-Request-Id', 'first-id');
+
+    expect(next).toHaveBeenCalledTimes(1);
+
+    expect(randomUUIDMock).not.toHaveBeenCalled();
   });
 });

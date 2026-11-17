@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>{{'SENIOR.DIALOG.CHECK_DATE.TITLE' | translate}}</h2>
+<mat-dialog-content>
+  <p>{{ data.error }}</p>
+  <br />
+
+  <form>
+    <h3 mat-label>{{'SENIOR.DIALOG.CHECK_DATE.CORRECT_DATE' | translate}}</h3>
+    <mat-radio-group [formControl]="mode" class="dialog-radio-group" (change)="onModeChange($event.value)">
+
+      <mat-radio-button value="custom" class="dialog-radio-button">
+        <br /> {{'SENIOR.DIALOG.CHECK_DATE.ACTION_CUSTOM'| translate}}
+        <mat-form-field class="ml-2">
+          <input matInput [matDatepicker]="picker" [formControl]="birthDate" (click)="$event.stopPropagation()"
+            placeholder="{{'SENIOR.CARD.DATE_HINT' | translate}}" />
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </mat-radio-button>
+
+      <mat-radio-button value="default" class="dialog-radio-button">
+        {{defaultActions[data.type].label| translate}}
+      </mat-radio-button>
+
+      @if(data.type === 'STRANGE_YEAR'){
+      <mat-radio-button value="retain" class="dialog-radio-button">
+        {{'SENIOR.DIALOG.CHECK_DATE.ACTION_RETAIN_YEAR'| translate}}
+      </mat-radio-button>
+      }
+
+      <mat-radio-button value="empty" class="dialog-radio-button">
+        {{'SENIOR.DIALOG.CHECK_DATE.ACTION_EMPTY'| translate}}
+      </mat-radio-button>
+
+    </mat-radio-group>
+
+    @if (form.hasError('modeRequired') && mode.touched) {
+    <mat-error>{{'FORM_VALIDATION.SENIOR.MODE_REQUIRED'| translate}}</mat-error>
+    }
+    @if (form.hasError('birthDateRequired') && birthDate.touched) {
+    <mat-error>{{'FORM_VALIDATION.SENIOR.DATE_REQUIRED'| translate}}</mat-error>
+    }
+    @if (form.hasError('birthDateInvalid') && birthDate.touched) {
+    <mat-error>{{'FORM_VALIDATION.SENIOR.DATE_REQUIRED'| translate}}</mat-error>
+    }
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button class="dialog-cancel-button" (click)="onCancelClick()">{{'SENIOR.DIALOG.BUTTON_CANCEL' |
+    translate}}</button>
+  <button mat-button class="dialog-submit-button" [disabled]="form.invalid" (click)="onApplyClick()">{{'SENIOR.DIALOG.BUTTON_APPLY'|
+    translate}}</button>
+</mat-dialog-actions>

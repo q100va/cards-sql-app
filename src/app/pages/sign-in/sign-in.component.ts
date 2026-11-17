@@ -51,9 +51,6 @@ export class SignInComponent {
   });
   errorMessage?: string;
 
-  constructor() {
-    //this.signInService.resetAuthState?.();
-  }
 
   onSubmit() {
     this.isLoad = true;

@@ -1,45 +1,60 @@
-import { User } from '../../../models';
-import { hashPassword } from "../../../controllers/passwords.mjs";
+import { User } from '../../../models/index.js';
+import { hashPassword } from '../../../security/passwords.mjs';
 
-export async function createUser(attrs = {}) {
+/**
+ * Create a user with sensible test defaults.
+ * The password is stored exactly as provided.
+ */
+export async function createUserInstance(attrs = {}) {
   const defaults = {
     userName: `user_${Date.now()}`,
     roleId: null,
-    isBlocked: false,
+    patronymic: null,
+    comment: null,
+    isRestricted: false,
+    causeOfRestriction: null,
+    dateOfRestriction: null,
     firstName: 'John',
     lastName: 'Fox',
     password: 'password2025',
   };
+
   const data = { ...defaults, ...attrs };
-  const user = await User.create(data);
+  return User.create(data);
+}
+
+/**
+ * Return a plain object when model instance methods are not needed.
+ */
+export async function createUser(attrs = {}) {
+  const user = await createUserInstance(attrs);
   return user.get({ plain: true });
 }
 
+/**
+ * Hash the supplied plaintext password before creating the row.
+ */
 export async function createUserHashed(attrs = {}) {
-  const user = await User.create({
-    userName: `user_${Date.now()}`,
-    roleId: null,
-    isBlocked: false,
-    firstName: 'John',
-    lastName: 'Fox',
-    password: await hashPassword(attrs.password ?? 'password2025'),
-    ...attrs,
-  });
-  return user.get({ plain: true });
+  const { password = 'password2025', ...overrides } = attrs;
+  return createUser({ ...overrides, password: await hashPassword(password) });
 }
 
+/**
+ * Count users assigned to a role.
+ */
 export async function countUsersByRole(roleId) {
   return User.count({ where: { roleId } });
 }
 
-export async function truncateUsers({ cascade = true } = {}) {
-  await User.destroy({ where: {}, truncate: true, cascade });
-}
-
+/**
+ * Create multiple users sequentially.
+ */
 export async function seedUsers(list = []) {
   const results = [];
+
   for (const data of list) {
     results.push(await createUser(data));
   }
+
   return results;
 }
