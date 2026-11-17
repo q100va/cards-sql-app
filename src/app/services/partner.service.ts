@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -19,8 +18,7 @@ import {
   UpdatedOwnerData,
   RelationPick,
 } from '../interfaces/advanced-model';
-import { AddressFilter } from '../interfaces/toponym';
-import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -33,7 +31,6 @@ import {
   partnersSchema,
 } from '../../../shared/schemas/partner.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 
 export interface PartnerMainService extends OwnerMainService<
@@ -58,10 +55,7 @@ export class PartnerService implements PartnerMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/partners`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Partner) {
     const fn = owner['firstName'] ?? '';
@@ -73,8 +67,8 @@ export class PartnerService implements PartnerMainService {
   checkOwnerData(
     ownerDraft: PartnerDraft,
   ): Observable<ApiResponse<Duplicates>> {
-    let body = {
-      id: ownerDraft.id,
+    const body = {
+      ...(ownerDraft.id != null ? { id: ownerDraft.id } : {}),
       firstName: ownerDraft.firstName,
       lastName: ownerDraft.lastName,
       contacts: ownerDraft.draftContacts,
@@ -119,18 +113,6 @@ export class PartnerService implements PartnerMainService {
       );
   }
 
-  formCommentFilterValue(
-    commentFilter: string[] | undefined,
-  ): boolean | undefined {
-    if (commentFilter && commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
-  }
-
   getList(
     allFilterParameters: AllFilterParameters,
     pageSize: number,
@@ -148,10 +130,7 @@ export class PartnerService implements PartnerMainService {
               },
             ]
           : undefined,
-      search: ctrl.omitEmpty({
-        value: p.searchValue,
-        exact: p.exactMatch || undefined,
-      }),
+      search: ctrl.buildSearch(p.searchValue, p.exactMatch),
       view: ctrl.omitEmpty({
         option: p.viewOption,
         includeOutdated: p.includeOutdated,
@@ -181,7 +160,6 @@ export class PartnerService implements PartnerMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-partners`, dto)
       .pipe(validateResponse(partnersSchema), catchError(this.handleError));

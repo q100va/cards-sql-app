@@ -18,9 +18,6 @@ import { AddressFilterComponent } from '../../shared/address-filter/address-filt
 import { Toponym, ToponymFormControlsValues } from '../../interfaces/toponym';
 import { BaseDetailsComponent } from '../../shared/dialogs/details-dialogs/base-details/base-details.component';
 
-
-
-
 @Component({
   selector: 'app-toponym-details',
   imports: [
@@ -49,7 +46,6 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
 
   // evaluate save button disabled state
   override checkIsSaveDisabled() {
-    console.log('checkIsSaveDisabled ', this.addressFilter());
     const disabled =
       !this.mainForm.valid ||
       this.invalidAddressFilter ||
@@ -87,7 +83,6 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
     const type = this.data().toponymType!;
 
     this.emitShowSpinner(true);
-     console.log('HttpParams ', this.addressFilter());
 
     this.addressService
       .checkToponymName(
@@ -102,7 +97,7 @@ export class ToponymDetailsComponent extends BaseDetailsComponent<Toponym> {
           if (!res.data) {
             this.saveToponym(action);
           } else {
-            // duplicate: stop spinner; message is shown by msgWrapper in interceptor/elsewhere
+            // The service handles duplicate notifications.
             this.emitShowSpinner(false);
           }
         }),

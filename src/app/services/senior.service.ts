@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -19,8 +18,7 @@ import {
   UpdatedOwnerData,
   RelationPick,
 } from '../interfaces/advanced-model';
-import { AddressFilter } from '../interfaces/toponym';
-import { AllFilterParameters, GeneralFilter } from '../interfaces/base-list';
+import { AllFilterParameters } from '../interfaces/base-list';
 import {
   validateNoSchemaResponse,
   validateResponse,
@@ -38,10 +36,8 @@ import {
   seniorsSchema,
 } from '../../../shared/schemas/senior.schema';
 import { duplicatesSchema } from '../../../shared/schemas/common.schema';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 import { recipientsShortSchema } from '../../../shared/schemas/recipient.schema';
-//import { SeniorRow } from '../pages/seniors-bulk-update/seniors-bulk-update.component';
 
 export interface SeniorMainService extends OwnerMainService<
   Senior,
@@ -63,10 +59,7 @@ export class SeniorService implements SeniorMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/seniors`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Senior) {
     const fn = owner['firstName'] ?? '';
@@ -76,8 +69,8 @@ export class SeniorService implements SeniorMainService {
   }
 
   checkOwnerData(ownerDraft: SeniorDraft): Observable<ApiResponse<Duplicates>> {
-    let body = {
-      id: ownerDraft.id,
+    const body = {
+      ...(ownerDraft.id != null ? { id: ownerDraft.id } : {}),
       firstName: ownerDraft.firstName,
       patronymic: ownerDraft.patronymic,
       lastName: ownerDraft.lastName,
@@ -124,18 +117,6 @@ export class SeniorService implements SeniorMainService {
       );
   }
 
-  formCommentFilterValue(
-    commentFilter: string[] | undefined,
-  ): boolean | undefined {
-    if (commentFilter && commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
-  }
-
   getList(
     allFilterParameters: AllFilterParameters,
     pageSize: number,
@@ -153,10 +134,7 @@ export class SeniorService implements SeniorMainService {
               },
             ]
           : undefined,
-      search: ctrl.omitEmpty({
-        value: p.searchValue,
-        exact: p.exactMatch || undefined,
-      }),
+      search: ctrl.buildSearch(p.searchValue, p.exactMatch),
       view: ctrl.omitEmpty({
         option: p.viewOption,
         homeOption: p.viewHomeOption,
@@ -188,13 +166,10 @@ export class SeniorService implements SeniorMainService {
         }),
 
         mode: ctrl.omitEmpty({
-          //strictAddress: p.strongAddressFilter,
-          //strictContact: p.strongContactFilter,
           strictDetail: p.strongDetailFilter,
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-seniors`, dto)
       .pipe(validateResponse(seniorsSchema), catchError(this.handleError));
@@ -324,7 +299,6 @@ export class SeniorService implements SeniorMainService {
       updatedCount: number;
     }>
   > {
-    console.log('updateList');
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/update-seniors-list/`, {
         admitted,
@@ -334,7 +308,6 @@ export class SeniorService implements SeniorMainService {
         dateOfUpdate
       })
       .pipe(
-        //validateNoSchemaResponse<null>('isNull'),
         validateResponse(
           z.object({
             createdCount: z.number(),

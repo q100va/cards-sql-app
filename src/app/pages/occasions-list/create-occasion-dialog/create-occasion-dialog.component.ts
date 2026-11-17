@@ -8,7 +8,6 @@ import {
 
 // Angular Material dialog
 import {
-  MAT_DIALOG_DATA,
   MatDialogActions,
   MatDialogContent,
   MatDialogRef,
@@ -28,7 +27,6 @@ import {
 // Material UI modules
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
@@ -96,7 +94,6 @@ export type OccasionFormControls = {
     MatDialogContent,
     // Material form + UI
     MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatGridListModule,
     MatIconModule,
@@ -116,7 +113,6 @@ export class CreateOccasionDialogComponent {
   // Dependencies
   private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<CreateOccasionDialogComponent>);
-  readonly data = inject(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly occasionService = inject(OccasionService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -124,7 +120,6 @@ export class CreateOccasionDialogComponent {
 
   // UI state
   isLoading = false;
-  occasionName = '';
   MONTHS = MONTHS;
   TYPES = OCCASION_TYPES;
   YEARS = YEARS;

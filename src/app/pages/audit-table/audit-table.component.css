@@ -9,11 +9,6 @@ mat-card-header {
   width: 100%;
   padding: 40px 20px 20px 20px;
 }
-.copy-button {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
 .diff-list {
   margin: 0;
   padding-left: 20px;
@@ -22,5 +17,11 @@ mat-card-header {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.audit-filter-action {
+  border: 0;
+  padding: 0;
+  background: transparent;
 }
 

@@ -1,25 +1,21 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import {
-  HttpClient,
-  HttpErrorResponse,
-  HttpParams,
-} from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
+import type { z } from 'zod';
 import { environment } from '../../environments/environment';
-import {
-  validateNoSchemaResponse,
-  validateResponse,
-} from '../utils/validate-response';
+import { validateResponse } from '../utils/validate-response';
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
-import { MessageWrapperService } from './message.service';
 
 import {
+  type reportDTOSchema,
   reportSchema,
   ReportResponse,
   StatisticResponse,
   statisticSchema,
 } from '../../../shared/schemas/report.schema';
+
+type ReportRequest = z.infer<typeof reportDTOSchema>;
 
 @Injectable({
   providedIn: 'root',
@@ -32,17 +28,14 @@ export class ReportsService {
   // HTTP error passthrough (handled by MessageWrapperService at call sites)
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(private msgWrapper: MessageWrapperService) {}
-
   getReport(
-    userId: number | null,
-    type: number,
-    frequency: string,
-    months: number[] | null,
-    quarters: number[] | null,
-    years: number[],
+    userId: ReportRequest['userId'],
+    type: ReportRequest['type'],
+    frequency: ReportRequest['frequency'],
+    months: ReportRequest['months'],
+    quarters: ReportRequest['quarters'],
+    years: ReportRequest['years'],
   ): Observable<ApiResponse<ReportResponse>> {
-    //console.log('months', months);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-report/`, {
         userId,

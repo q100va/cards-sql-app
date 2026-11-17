@@ -75,28 +75,6 @@ export const createEmptyGeneralFilter = () => ({
   hideWithoutYear: false,
   hideWithoutBirthday: false,
 });
-/*
-export const fullDetailsOptions = [
-  { value: 'comment', label: 'NAV.FILTER.COMMENT_OPT' },
-  { value: 'photoLink', label: 'NAV.FILTER.PHOTO_LINK_OPT' },
-  { value: 'dateOfConsent', label: 'NAV.FILTER.CONSENT_OPT' },
-  {
-    value: 'kindergarten',
-    label: 'NAV.FILTER.KINDERGARTEN_OPT',
-  },
-  { value: 'teacher', label: 'NAV.FILTER.TEACHER_OPT' },
-  { value: 'honoraryStatus', label: 'NAV.FILTER.HONORARY_OPT' },
-  { value: 'veteran', label: 'NAV.FILTER.VETERAN_OPT' },
-  { value: 'childOfWar', label: 'NAV.FILTER.CHILD_OF_WAR_OPT' },
-  {
-    value: 'orthodoxBeliever',
-    label: 'NAV.FILTER.BELIEVER_OPT',
-  },
-  { value: 'profession', label: 'NAV.FILTER.PROFESSION_OPT' },
-  { value: 'interests', label: 'NAV.FILTER.INTERESTS_OPT' },
-  { value: 'spouseId', label: 'NAV.FILTER.SPOUSE_OPT' },
-];
- */
 export type FilterDraft = {
   viewOption: string;
   searchValue: string;

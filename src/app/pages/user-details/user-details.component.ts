@@ -1,5 +1,4 @@
-// src/app/pages/user-details/user-details.component.ts
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -25,17 +24,7 @@ import { ContactUrlPipe } from '../../utils/contact-url.pipe';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-/* import {
-  ContactType,
-  UserRestoringData,
-  UserOutdatedData,
-  UserDeletingData,
-  UserDraft,
-  UserChangingData,
-  UserOutdatingData,
-} from '../../interfaces/advanced-model'; */
 import { UserMainService, UserService } from '../../services/user.service';
-import { DateUtilsService } from '../../services/date-utils.service';
 import { of } from 'rxjs';
 @Component({
   selector: 'app-user-details',
@@ -137,17 +126,20 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
       .subscribe(() => {});
   }
 
-  override checkUserName() {
+  override checkUserName(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const userDraft = this.ownerDraft;
     this.userService
       .checkUserName(userDraft.userName ?? '', this.ownerDraft.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          if (!res.data) this.checkDuplicates();
+          if (!this.isCurrentSaveIntent(intent)) return;
+          if (!res.data) this.checkDuplicates(intent);
           else this.emitShowSpinner(false);
         },
         error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.emitShowSpinner(false);
           this.msgWrapper.handle(err, {
             source: 'CreateUserDialog',
@@ -174,105 +166,8 @@ export class UserDetailsComponent extends AdvancedDetailsComponent<'user'> {
     this.mainForm.controls['userName'].setValue(data.userName);
     this.deleteFromOutdatedDataDraft('userNames', data.id);
 
-   // this.updateControlsValidity(this.controlsNames, true);
     this.onChangeValidation();
   }
-
-  // --- Compare draft vs restoring/outdated
-  //проверяем не изменил ли пользователь восстановленные данные
-  //если изменил,
-  // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
-
-  /*   override async correctRestoringData() {
-    super.correctRestoringData();
-    // Addresses
-    if (this.restoringDataDraft.addresses?.length) {
-      const addresses = await this.ownerService.corrAddress(
-        this.restoringDataDraft.addresses,
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft.draftAddress,
-        this.existingOwner!.outdatedData.addresses
-      );
-      this.restoringDataDraft.addresses = structuredClone(addresses.restoring);
-      this.outdatedDataDraft.addresses = structuredClone(addresses.outdating);
-    }
-
-    // UserNames
-    const { restoring, outdating } = this.ownerDiffService.corrUserNames(
-      this.restoringDataDraft.userNames ?? [],
-      this.outdatedDataDraft.userNames ?? [],
-      this.ownerDraft.userName,
-      this.existingOwner!.outdatedData.userNames ?? []
-    );
-
-    this.restoringDataDraft.userNames = structuredClone(restoring);
-    this.outdatedDataDraft.userNames = structuredClone(outdating);
-  } */
-
-  //если введенные данные совпадают с outdatingDataDraft данными,
-  //то добавляем их с согласия пользователя в restoringDataDraft
-  /*   override async checkOutdatedDataDuplicates() {
-    const address = await this.ownerService.checkAddress(
-      this.outdatedDataDraft.addresses,
-      this.ownerDraft.draftAddress
-    );
-    if (!address.restoringId) return false;
-    if (address.restoringId > -1) {
-      this.restoringDataDraft.addresses ??= [];
-      this.restoringDataDraft.addresses.push(address.restoringId);
-    }
-    const userName = await this.ownerDiffService.checkUserNames(
-      this.outdatedDataDraft.userNames,
-      this.ownerDraft.userName
-    );
-    if (!userName.restoringId) return false;
-    if (userName.restoringId > -1) {
-      this.restoringDataDraft.userNames ??= [];
-      this.restoringDataDraft.userNames.push(userName.restoringId);
-    }
-
-    return await super.checkOutdatedDataDuplicates();
-  }
- */
-  /*   override async checkAllChanges() {
-    const address = await this.ownerService.diffAddress(
-      this.existingOwner!,
-      this.ownerDraft,
-      this.restoringDataDraft.addresses == null
-        ? null
-        : this.restoringDataDraft.addresses![0]
-    );
-    if (address.changes) this.changingData.address = address.changes;
-    if (address.outdatingId) this.outdatingData.address = address.outdatingId;
-    if (address.deletingId) {
-      this.deletingDataDraft.addresses ??= [];
-      this.deletingDataDraft.addresses.push(address.deletingId);
-    }
-
-    const userName = await this.ownerDiffService.diffUserName(
-      this.existingOwner!,
-      this.ownerDraft
-    );
-    if (userName.changes)
-      this.changingData.main = {
-        ...(this.changingData.main ?? {}),
-        ...{ userName: userName.changes },
-      };
-    if (userName.outdating) this.outdatingData.userName = userName.outdating;
-
-    const names = await this.ownerService.diffNames(
-      this.existingOwner!,
-      this.ownerDraft
-    );
-    if (names.changes) this.changingData.main = names.changes;
-    if (names.outdating) this.outdatingData.names = names.outdating;
-
-    return await super.checkAllChanges();
-  } */
-
-  /*   override hasOutdatedUserNames(): boolean {
-    return this.outdatedDataDraft.userNames.length > 0;
-  } */
 
   override getRowSpanForUserNames(): number {
     return this.outdatedDataDraft.userNames.length;

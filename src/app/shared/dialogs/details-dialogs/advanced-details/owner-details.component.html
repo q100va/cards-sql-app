@@ -107,7 +107,6 @@
         </mat-grid-tile>
         }
 
-
         <!-- noAddress specialHome acceptableForSchool -->
         @if(control.type=='toggle'){
         <mat-grid-tile [colspan]="control.colspan" [rowspan]="control.rowspan">
@@ -122,8 +121,6 @@
               translate}}</mat-checkbox>
           </div>
 
-          <!--          <mat-slide-toggle [formControlName]="control.controlName" class="small-toggle">{{control.label | translate}}
-          </mat-slide-toggle> -->
         </mat-grid-tile>
         }
 
@@ -194,9 +191,6 @@
               translate}}</mat-error>}
           </mat-form-field>
         </mat-grid-tile>}
-
-
-
 
       </mat-grid-list>
     </mat-tab>
@@ -289,7 +283,6 @@
         </ng-container>
         }
         }
-
 
         <!-- Extra Contacts Button-->
         <mat-grid-tile colspan="3" rowspan="1">
@@ -391,8 +384,6 @@
         </ng-container>
         }
 
-        <!--
-      <mat-grid-list cols="6" gutterSize="16px" rowHeight="76px"> -->
         <mat-grid-tile colspan="3" rowspan="1">
           <button class='password' mat-button [disabled]="data().operation == 'view-edit' && !isEditModeSignal()"
             (click)="onAddInstituteClick()">
@@ -441,14 +432,12 @@
     </mat-tab>
     }
 
-
     <!-- Outdated Data -->
     @if (data().operation == 'view-edit') {
     <mat-tab [label]="'TABLE.CARD.OUTDATED_DATA_LABEL' | translate">
       <mat-grid-list cols="6" gutterSize="0px" rowHeight="56px">
         <!-- Outdated Names -->
         @if (hasOutdatedNames()) {
-        <!--   style="background-color: rgb(224, 241, 227);" -->
         <mat-grid-tile colspan='2' [rowspan]="outdatedNames.length">
           <div class="outdated-data title">{{'TABLE.CARD.OUTDATED_NAMES_TITLE' | translate}}</div>
         </mat-grid-tile>

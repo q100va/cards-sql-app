@@ -102,7 +102,6 @@
       </p>
     </p-fieldset>}
 
-
     <!-- Homes -->
     @if(source() === 'seniorList' || source() === 'partnerList' ){
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
@@ -141,7 +140,6 @@
         <span class="comment">{{labels().notActiveLabel | translate}}</span>
       </p>
 
-
     </p-fieldset>
     }
 
@@ -171,7 +169,6 @@
         <mat-form-field>
           <mat-label>{{'NAV.FILTER.FROM_LABEL' | translate}}</mat-label>
           <mat-select formControlName="minBirthMonth">
-            <!--           <mat-option></mat-option> -->
             @for (month of monthsOptions; track $index) {
             <mat-option [value]="month.value">{{month.label | translate}}</mat-option>
             }
@@ -180,7 +177,6 @@
         <mat-form-field>
           <mat-label>{{'NAV.FILTER.TO_LABEL' | translate}}</mat-label>
           <mat-select formControlName="maxBirthMonth">
-            <!--    <mat-option></mat-option> -->
             @for (month of monthsOptions; track $index) {
             <mat-option [value]="month.value">{{month.label | translate}}</mat-option>
             }
@@ -224,31 +220,6 @@
     }
 
     <!-- Home regions -->
-    <!--     @if(source() === 'partnerList' ){
-    <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
-      <ng-template #header>
-        <div class="flex items-center">
-          @if (form.controls.homeRegions.value.length > 0) {
-          <p-overlaybadge severity="info">
-            <span class="font-bold">{{'NAV.FILTER.REGIONS_LABEL' | translate}}</span>
-          </p-overlaybadge>
-          } @else {
-          <span class="font-bold">{{'NAV.FILTER.REGIONS_LABEL' | translate}}</span>
-          }
-        </div>
-      </ng-template>
-      <p class="m-0">
-        <mat-form-field>
-          <mat-label>{{'NAV.FILTER.CHOOSE_VALUE_LABEL' | translate}}</mat-label>
-          <mat-select formControlName="homeRegions" multiple>
-            @for (region of regionsList; track $index) {
-            <mat-option [value]="region">{{region.name}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </p>
-    </p-fieldset>
-    } -->
 
     <!-- Peculiarities -->
     @if(source() === 'seniorList' || source() === 'homeList'){
@@ -289,22 +260,6 @@
         </mat-chip-listbox>
       </p>
       @if(source() === 'homeList'){
-      <!--       <p class="m-0">
-        <mat-chip-listbox [multiple]="false" formControlName="isClosed" class="mat-mdc-chip-set-stacked">
-          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_ACC_FOR_SCHOOL' |
-            translate}}</mat-chip-option>
-          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_ACC_FOR_SCHOOL' |
-            translate}}</mat-chip-option>
-        </mat-chip-listbox>
-      </p>
-      <p class="m-0">
-        <mat-chip-listbox [multiple]="false" formControlName="isRestricted" class="mat-mdc-chip-set-stacked">
-          <mat-chip-option [value]="true">{{'NAV.FILTER.ONLY_ACC_FOR_SCHOOL' |
-            translate}}</mat-chip-option>
-          <mat-chip-option [value]="false">{{'NAV.FILTER.WITHOUT_ACC_FOR_SCHOOL' |
-            translate}}</mat-chip-option>
-        </mat-chip-listbox>
-      </p> -->
       }
     </p-fieldset>
     }
@@ -450,7 +405,6 @@
       </p>
     </p-fieldset>
 
-
     <!-- ContactType -->
     @if(source() !== 'seniorList'){
     <p-fieldset class="fieldset" [toggleable]="true" [collapsed]="true">
@@ -478,7 +432,6 @@
       </p>
     </p-fieldset>
     }
-
 
     <!-- UpdateDate -->
     @if(source() === 'homeList'){
@@ -508,7 +461,6 @@
       </p>
     </p-fieldset>
     }
-
 
     <!-- StartDate -->
     <p-fieldset class=" fieldset" [toggleable]="true" [collapsed]="true">

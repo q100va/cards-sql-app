@@ -1,21 +1,22 @@
-// src/app/services/message.service.ts
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ClientLoggerService } from './client-logger.service';
 import { MessageService } from 'primeng/api';
 import { sanitizeText } from '../utils/sanitize-text';
 import { TranslateService } from '@ngx-translate/core';
-import { MonoTypeOperatorFunction, of, tap } from 'rxjs';
+import { MonoTypeOperatorFunction, tap } from 'rxjs';
 import { ApiResponse } from '../interfaces/api-response';
 import { ValidationError } from '../utils/validate-response';
 import { CustomError } from '../shared/upload-file/custom-error';
+import { errorRecord, hasErrorDiagnostic, markErrorDiagnostic } from '../utils/error-diagnostics';
+import { diagnosticPath } from '../utils/http-diagnostics';
 
 type Severity = 'info' | 'warn' | 'error' | 'success';
 
 export interface LogContext {
-  source?: string; // откуда вызвали (компонент/сервис)
-  stage?: string; // этап (submit, load, etc)
-  route?: string; // url/endpoint
+  source?: string;
+  stage?: string;
+  route?: string;
   correlationId?: string | null;
   [k: string]: unknown;
 }
@@ -35,7 +36,6 @@ export class MessageWrapperService {
     private translateService: TranslateService
   ) {}
 
-  // Публичные шорткаты
   info(code: string, ctx?: LogContext, params?: Record<string, unknown>) {
     this.notify('info', code, ctx, params);
   }
@@ -49,13 +49,6 @@ export class MessageWrapperService {
     this.notify('success', code, ctx, params);
   }
 
-  private resolve<T, R>(
-    val: R | ((resp: ApiResponse<T>) => R),
-    resp: ApiResponse<T>
-  ): R | undefined {
-    return typeof val === 'function' ? (val as any)(resp) : val;
-  }
-
   messageTap<T>(
     severity: Severity,
     ctx?: LogContext | ((res: ApiResponse<T>) => LogContext),
@@ -66,20 +59,12 @@ export class MessageWrapperService {
     return tap((res) => {
       const code = res?.code;
       if (!code) return;
-      const c = this.resolve(ctx, res);
-      const p = this.resolve(params, res);
+      const c = typeof ctx === 'function' ? ctx(res) : ctx;
+      const p = typeof params === 'function' ? params(res) : params;
       this.notify(severity, code, c, p);
     });
   }
 
-  /**
-   * Универсальный обработчик ошибок, вызывай из subscribe(error) и catchError().
-   * Он:
-   *  1) Пытается извлечь user-friendly сообщение;
-   *  2) Достаёт correlationId (если есть);
-   *  3) Пишет лог (warn|error) с контекстом (без PII);
-   *  4) Показывает тост пользователю.
-   */
   handle(err: unknown, ctx: LogContext = {}, severityHint: Severity = 'error') {
     const parsed = this.parseError(err);
     const mergedCtx: LogContext = {
@@ -91,26 +76,24 @@ export class MessageWrapperService {
       isHttp: parsed.isHttp,
     };
 
-    // Лог: http 4xx можно писать как warn, 5xx — error; иначе — по hint.
     const severity: Severity = parsed.isHttp
       ? parsed.status && parsed.status < 500
         ? 'warn'
         : 'error'
       : severityHint;
     const params = parsed.data;
-    //console.log('params', params);
-    if (severity === 'warn') this.logService.warn(parsed.devMessage, mergedCtx);
-    else this.logService.error(parsed.devMessage, mergedCtx);
+    // Intercepted failures already have a diagnostic; notifications must not record them again.
+    if (!hasErrorDiagnostic(err)) {
+      if (severity === 'warn') this.logService.warn(parsed.devMessage, mergedCtx);
+      else this.logService.error(parsed.devMessage, mergedCtx);
+      markErrorDiagnostic(err);
+    }
 
-    // Тост: короткое понятное сообщение
     const msg = parsed.code
       ? this.translateService.instant(parsed.code, params)
       : this.fallbackUserMessage(parsed.status);
-    console.log('msg', msg);
     this.showToast(severity, msg, mergedCtx.correlationId);
   }
-
-  // --- Внутреннее ------------------------------------------------------------
 
   private notify(
     severity: Severity,
@@ -120,10 +103,8 @@ export class MessageWrapperService {
   ) {
     if (!code) return;
 
-    // Пишем в логи (для warn/error), info можно не слать
     if (severity === 'warn') this.logService.warn(code, ctx ?? {});
     if (severity === 'error') this.logService.error(code, ctx ?? {});
-    // Тост
     const text = this.translateService.instant(code, params);
     this.showToast(severity, text, ctx?.correlationId ?? null);
   }
@@ -135,7 +116,7 @@ export class MessageWrapperService {
     devMessage: string;
     correlationId?: string | null;
     route?: string;
-    data?: any;
+    data?: Record<string, unknown>;
   } {
     if (err instanceof ValidationError) {
       return {
@@ -147,27 +128,23 @@ export class MessageWrapperService {
     }
 
     if (err instanceof CustomError) {
-      const data = err.data ?? undefined;
+      const data: unknown = err.data;
       return {
         isHttp: false,
         code: err.code,
         status: err.status,
         devMessage: err.message ?? err.code,
-        data
+        data: data == null ? undefined : errorRecord(data),
       };
     }
-    // HTTP-ошибка
     if (err instanceof HttpErrorResponse) {
       const status = err.status;
-      const body = (err.error ?? {}) as any;
-
-      // сервер, как мы договорились, присылает:
-      // { message, code, correlationId }
-      const code = (typeof body?.code === 'string' && body.code) || undefined;
-      const correlationId =
-        body?.correlationId ?? err.headers?.get?.('X-Request-Id') ?? null;
-      const route = err.url ?? undefined;
-      const data = body?.data ?? undefined;
+      const body = errorRecord(err.error);
+      const code = (typeof body['code'] === 'string' && body['code']) || undefined;
+      const correlationId = typeof body['correlationId'] === 'string'
+        ? body['correlationId'] : err.headers.get('X-Request-Id');
+      const route = err.url ? diagnosticPath(err.url) : undefined;
+      const data = body['data'];
       const dev = `HTTP ${status} ${route ?? ''}${code ? ` — ${code}` : ''}`;
 
       return {
@@ -177,18 +154,14 @@ export class MessageWrapperService {
         correlationId,
         route,
         devMessage: dev,
-        data,
+        data: data == null ? undefined : errorRecord(data),
       };
     }
 
-    // Строка/обычный Error/что-то ещё
-    const msg =
-      (typeof err === 'string' && err) ||
-      ((err as any)?.message as string) ||
-      'Unknown error';
+    const msg = (typeof err === 'string' && err) || errorRecord(err)['message'] || 'Unknown error';
     return {
       isHttp: false,
-      devMessage: msg,
+      devMessage: String(msg),
     };
   }
 

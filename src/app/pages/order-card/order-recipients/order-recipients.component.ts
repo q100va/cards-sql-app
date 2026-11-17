@@ -1,5 +1,4 @@
 import { Component, inject, input, output, signal } from '@angular/core';
-import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { NgClass } from '@angular/common';
@@ -31,7 +30,6 @@ import { AuthService } from '../../../services/auth.service';
   selector: 'app-order-recipients',
   imports: [
     TranslateModule,
-    MatGridListModule,
     MatSlideToggleModule,
     FormsModule,
     ReactiveFormsModule,
@@ -125,10 +123,9 @@ export class OrderRecipientsComponent {
         recipient.birthMonth > 9
           ? recipient.birthMonth
           : '0' + recipient.birthMonth
-          //TODO: не 1800 а null
-      }${recipient.birthYear !== null /* > 1800 */ ? '.' + recipient.birthYear : ''}`;
+      }${recipient.birthYear !== null ? '.' + recipient.birthYear : ''}`;
     } else {
-      return `${recipient.birthYear !== null /* > 1800 */ ? recipient.birthYear : '????'}/
+      return `${recipient.birthYear !== null ? recipient.birthYear : '????'}/
       ${recipient.birthMonth}/${recipient.birthDay}`;
     }
   }

@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -27,7 +26,6 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { TranslateService } from '@ngx-translate/core';
 import * as ctrl from '../utils/common-ctrls';
 import {
   homeSchema,
@@ -45,8 +43,6 @@ export interface HomeMainService extends OwnerMainService<
   HomeDeletingData,
   { list: Home[]; length: number }
 > {
-  checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>>;
-  checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>>;
   getActiveHomesPickList(): Observable<RelationPick[]>;
   getPotentialHomesPickList(): Observable<RelationPick[]>;
   getHomesPickList(): Observable<RelationPick[]>;
@@ -60,30 +56,10 @@ export class HomeService implements HomeMainService {
   private readonly BASE_URL = `${environment.apiUrl}/api/homes`;
   private handleError = (error: HttpErrorResponse) => throwError(() => error);
 
-  constructor(
-    private msgWrapper: MessageWrapperService,
-    private translateService: TranslateService,
-  ) {}
+  constructor(private msgWrapper: MessageWrapperService) {}
 
   getOwnerName(owner: Home) {
     return owner['homeName'].trim();
-  }
-  checkHomeName(ownerDraft: HomeDraft): Observable<ApiResponse<boolean>> {
-    let params = new HttpParams().set('homeName', ownerDraft.homeName);
-    if (ownerDraft.id != null) params = params.set('id', String(ownerDraft.id));
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-home-name/`, {
-        params,
-      })
-      .pipe(
-        validateResponse(z.boolean()),
-        this.msgWrapper.messageTap('warn', {
-          source: 'CreateHomeDialog',
-          stage: 'checkHomeName',
-          name: ownerDraft.homeName,
-        }),
-        catchError(this.handleError),
-      );
   }
   checkOwnerData(ownerDraft: HomeDraft): Observable<ApiResponse<Duplicates>> {
     return of({
@@ -129,16 +105,6 @@ export class HomeService implements HomeMainService {
       );
   }
 
-  formCommentFilterValue(commentFilter: string[]): boolean | undefined {
-    if (commentFilter.length === 1) {
-      return (
-        commentFilter[0] ==
-        this.translateService.instant('NAV.FILTER.WITH_COMMENT_OPT')
-      );
-    }
-    return undefined;
-  }
-
   getList(
     allFilterParameters: AllFilterParameters,
     pageSize: number,
@@ -156,10 +122,7 @@ export class HomeService implements HomeMainService {
               },
             ]
           : undefined,
-      search: ctrl.omitEmpty({
-        value: p.searchValue,
-        exact: p.exactMatch || undefined,
-      }),
+      search: ctrl.buildSearch(p.searchValue, p.exactMatch),
       view: ctrl.omitEmpty({
         option: p.viewOption,
         includeOutdated: p.includeOutdated,
@@ -191,7 +154,6 @@ export class HomeService implements HomeMainService {
         }),
       }),
     };
-    console.log('dto', dto);
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/get-homes`, dto)
       .pipe(validateResponse(homesSchema), catchError(this.handleError));
@@ -203,19 +165,6 @@ export class HomeService implements HomeMainService {
       .pipe(validateResponse(homeSchema), catchError(this.handleError));
   }
 
-  /*   getActiveHomesPickList(): Observable<ApiResponse<RelationPick[]>> {
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-homes`)
-      .pipe(
-        validateResponse(
-          z.array(
-            z.object({ id: z.number().int().positive(), name: z.string() })
-          )
-        ),
-        catchError(this.handleError)
-      );
-  }
- */
   getActiveHomesPickList(): Observable<RelationPick[]> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-list-of-active-homes`)
@@ -315,25 +264,6 @@ export class HomeService implements HomeMainService {
       .pipe(
         validateNoSchemaResponse<null>('isNull'),
         this.msgWrapper.messageTap('success'),
-        catchError(this.handleError),
-      );
-  }
-
-  checkPossibilityToBlockHome(id: number): Observable<ApiResponse<number>> {
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/check-home-before-block/${id}`)
-      .pipe(
-        validateNoSchemaResponse<number>('isNumber'),
-        this.msgWrapper.messageTap(
-          'warn',
-          (res) => ({
-            source: 'HomesList',
-            stage: 'checkPossibilityToDeleteHome',
-            homeId: id,
-            amountOfDependencies: res.data,
-          }),
-          (res) => ({ count: res.data }),
-        ),
         catchError(this.handleError),
       );
   }

@@ -280,6 +280,11 @@ export const outdatedAddressItemSchema = z
   .strict();
 
 
+export const coordinationNameControlSchema = z.object(
+  { id: positiveInt, name: z.string().min(1) },
+  { error: 'FORM_VALIDATION.REQUIRED' },
+);
+
 /* ===================== DTO ===================== */
 
 export const duplicatesSchema = z
@@ -299,3 +304,12 @@ export const duplicatesSchema = z
   })
   .strict();
 
+
+export type Contact = z.infer<typeof contactSchema>;
+export type OptionalContacts = z.infer<typeof optionalContactsSchema>;
+export type Address = z.infer<typeof addressSchema>;
+export type DraftAddress = z.infer<typeof draftAddressSchema>;
+export type OutdatedAddress = z.infer<typeof outdatedAddressItemSchema>;
+export type OutdatedFullName = z.infer<typeof outdatedNameItemSchema>;
+export type OutdatedContacts = z.infer<typeof optionalContactsSchema>;
+export type Duplicates = z.infer<typeof duplicatesSchema>;

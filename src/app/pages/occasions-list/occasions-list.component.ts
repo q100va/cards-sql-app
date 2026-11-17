@@ -11,19 +11,15 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { Table, TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmationService, SortEvent, FilterService } from 'primeng/api';
 // Angular Material
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -35,7 +31,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { HasOpDirective } from '../../directives/has-op.directive';
 import { OccasionService } from '../../services/occasion.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, finalize, map, Observable, switchMap } from 'rxjs';
+import { BehaviorSubject, finalize, map, switchMap } from 'rxjs';
 import { Occasion } from '../../../../shared/schemas/occasion.schema';
 import { RecipientService } from '../../services/recipient.service';
 import { CheckResultDialogComponent } from './check-result-dialog/check-result-dialog.component';
@@ -47,19 +43,15 @@ import { CheckResultDialogComponent } from './check-result-dialog/check-result-d
     MatCardModule,
     MatButtonModule,
     MatGridListModule,
-    MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
     ButtonModule,
-    SelectModule,
     IconFieldModule,
     InputIconModule,
     MultiSelectModule,
     TableModule,
     InputTextModule,
     FormsModule,
-    ToolbarModule,
-    ConfirmDialogModule,
     TranslateModule,
     HasOpDirective,
     AsyncPipe,
@@ -185,7 +177,6 @@ export class OccasionsListComponent implements OnInit {
     selectedSignal: WritableSignal<string[]>,
     filter: (value: string[] | null) => void,
   ): void {
-    console.log('selectedSignal', selectedSignal);
     const next = value ?? [];
     selectedSignal.set(next);
     filter(next.length ? next : null);
@@ -211,7 +202,6 @@ export class OccasionsListComponent implements OnInit {
           this.rawStatusOptions$.next(res.data.options.status);
 
           this.yearOptions = res.data.options.year;
-          // this.options = res.data.options;
         },
         error: (err) =>
           this.msgWrapper.handle(err, {
@@ -247,7 +237,6 @@ export class OccasionsListComponent implements OnInit {
   }
 
   customSort(event: SortEvent) {
-    console.log('event', event);
     event.data?.sort((a: any, b: any) => {
       let value1;
       let value2;
@@ -413,7 +402,6 @@ export class OccasionsListComponent implements OnInit {
   }
 
   onOpenListClick(id: number): void {
-    console.log('occasionId:', id);
     this.router.navigate(['/recipients', id]);
   }
   onCreateListClick(id: number): void {
@@ -479,7 +467,6 @@ export class OccasionsListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          console.log('res.data', res.data);
           const dialogRef = this.dialog.open(CheckResultDialogComponent, {
             disableClose: true,
             minWidth: '400px',

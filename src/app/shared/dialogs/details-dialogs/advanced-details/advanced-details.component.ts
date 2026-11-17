@@ -1,6 +1,4 @@
-// src/app/shared/dialogs/details-dialogs/advances-details/advanced-details.component.ts
 import {
-  ChangeDetectorRef,
   Component,
   inject,
   signal,
@@ -21,7 +19,6 @@ import {
   OutdatedAddress,
   OutdatedFullName,
   OwnerContacts,
-  NonTelegram,
   Kind,
   User,
   UserDraft,
@@ -71,8 +68,6 @@ import {
   SeniorRestoringData,
   SeniorOutdatingData,
   SeniorDeletingData,
-  OptionalContacts,
-  UserContacts,
 } from '../../../../interfaces/advanced-model';
 import {
   INSTITUTE_CATEGORIES,
@@ -84,7 +79,7 @@ import {
   PARTNER_AFFILIATION_OPTIONS,
   PartnerAffiliationId,
 } from '../../../../../../shared/constants/partners';
-import { AddressKey, typedKeys } from '../../../../interfaces/toponym';
+import { typedKeys } from '../../../../interfaces/toponym';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -109,7 +104,8 @@ import { DateUtilsService } from '../../../../services/date-utils.service';
 
 import {
   buildDuplicateInfoMessage,
-  normalize,
+  hasAddressSelectionChanges,
+  hasContactChanges,
 } from '../../../../utils/owner-ctrls';
 
 import {
@@ -126,12 +122,10 @@ import {
 import { zodValidator } from '../../../../utils/zod-validator';
 import { sanitizeText } from '../../../../utils/sanitize-text';
 import {
-  BehaviorSubject,
   debounceTime,
   finalize,
   Observable,
   of,
-  shareReplay,
 } from 'rxjs';
 import { DefaultAddressParams } from '../../../../../../shared/schemas/toponym.schema';
 import { AuthUser } from '../../../../../../shared/schemas/auth.schema';
@@ -140,22 +134,10 @@ import { HomeService } from '../../../../services/home.service';
 import { coordinationNameControlSchema } from '../../../../../../shared/schemas/common.schema';
 import { SeniorService } from '../../../../services/senior.service';
 import { buildDraft } from '../../../../utils/owner-draft.builder';
-import {
-  reconcileRestoredAddress,
-  reconcileRestoredContacts,
-  reconcileRestoredCoordinations,
-  reconcileRestoredHomeAddress,
-  reconcileRestoredInstitutes,
-  reconcileRestoredNames,
-  reconcileRestoredOfficialNames,
-  reconcileRestoredUserNames,
-} from '../../../../utils/owner-restoration-reconcile.util';
+import { reconcileOwnerRestoration } from '../../../../utils/owner-restoration-reconcile.util';
 import { OwnerRestorationGuardService } from '../../../../services/owner-restoration-guard.service';
 import { OwnerChangesPlannerService } from '../../../../services/owner-changes-planner.service';
 
-/* type PersonKind = Exclude<Kind, 'home'>;
-type ContactsOwner = Exclude<Kind, 'senior'>;
-type CoordinationsOwner = Extract<Kind, 'partner' | 'home'>; */
 @Component({
   selector: 'app-advanced-details',
   standalone: true,
@@ -187,7 +169,6 @@ export class AdvancedDetailsComponent<
   }
 
   private readonly contactUrl = inject(ContactUrlPipe);
-  private readonly cdr = inject(ChangeDetectorRef);
   // DI
   readonly destroyRef = inject(DestroyRef);
   private readonly roleService = inject(RoleService);
@@ -204,15 +185,6 @@ export class AdvancedDetailsComponent<
   });
   declare kind: K;
   ownerDraft!: OwnerDraftByKind<K>;
-  protected service!: OwnerMainService<
-    OwnerByKind<K>,
-    OwnerDraftByKind<K>,
-    ChangingByKind<K>,
-    RestoringByKind<K>,
-    OutdatingByKind<K>,
-    DeletingByKind<K>,
-    ListDto<K>
-  >;
 
   protected readonly userService = inject(UserService) as OwnerMainService<
     User,
@@ -305,11 +277,9 @@ export class AdvancedDetailsComponent<
 
   // Data
   roles!: { id: number; name: string }[];
-  // existingOwner!: OwnerByKind<K> | null;
 
   restoringDataDraft!: RestoringByKind<K>;
   deletingDataDraft!: DeletingByKind<K>;
-  //deletingData!: DeletingByKind<K>;
   outdatedDataDraft!: OutdatedByKind<K>;
   changingData!: ChangingByKind<K>;
   outdatingData!: OutdatingByKind<K>;
@@ -327,8 +297,6 @@ export class AdvancedDetailsComponent<
   > = INSTITUTE_CATEGORIES;
 
   genders = ['male', 'female'];
-
-  //  genders = ['TABLE.NOTES.MALE', 'TABLE.NOTES.FEMALE'];
 
   action!: 'justSave' | 'saveAndExit';
 
@@ -350,13 +318,11 @@ export class AdvancedDetailsComponent<
   availableContactTypes: Exclude<ContactType, 'telegram' | 'otherContact'>[] =
     [];
 
-  // getOwner() {}
   hasOutdatedNames = signal<boolean>(false);
   hasOutdatedContacts = signal<boolean>(false);
   hasOutdatedAddresses = signal<boolean>(false);
   hasOutdatedUserNames = signal<boolean>(false);
   hasOutdatedOfficialNames = signal<boolean>(false);
-  //hasOutdatedHomes = signal<boolean>(false);
   hasOutdatedInstitutes = signal<boolean>(false);
   hasOutdatedCoordinations = signal<boolean>(false);
   hasOutdatedSubs = signal<boolean>(false);
@@ -368,15 +334,11 @@ export class AdvancedDetailsComponent<
   homeOrPartner = signal<'home' | 'partner' | 'other'>('other');
   relationPickList$: Observable<RelationPick[]> = of([]);
   spousePickList$: Observable<RelationPick[]> = of([]);
-  /*   spousePickListSubject = new BehaviorSubject<RelationPick[]>([]);
-  spousePickList$ = this.spousePickListSubject.asObservable(); */
   showRestrictedToggle = true;
 
   override ngOnInit(): void {
     super.ngOnInit();
     this.kind = this.data().componentType as K;
-    // console.log(' this.object', structuredClone(this.object));
-    // console.log('this.existingOwner', structuredClone(this.existingOwner));
     if (this.existingOwner) {
       this.outdatedDataDraft = structuredClone(
         this.existingOwner!.outdatedData,
@@ -384,14 +346,18 @@ export class AdvancedDetailsComponent<
     } else {
       this.setEmptyOutdatedDataDraft();
     }
-    this.setRestoringDataDraft();
-    this.setDeletingDataDraft();
-    this.setChangingData();
-    this.setOutdatingData();
+    this.resetPendingEditState();
     this.mainForm.setValidators(this.data().mainContactsValidator!);
     this.mainForm.valueChanges
       .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.onChangeValidation());
+      .subscribe(() => {
+        // Debounced form events can outlive Edit; settled View must stay clean.
+        if (this.data().operation === 'create' || this.isEditModeSignal()) {
+          this.onChangeValidation();
+        } else {
+          this.checkIsSaveDisabled();
+        }
+      });
 
     // Load roles (with auto-unsubscribe)
     this.roleService
@@ -446,11 +412,6 @@ export class AdvancedDetailsComponent<
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'user'>>> {
     return this.kind === 'user';
   }
-  private isPartnerContext(
-    this: AdvancedDetailsComponent<K>,
-  ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'partner'>>> {
-    return this.kind === 'partner';
-  }
   isHomeContext(
     this: AdvancedDetailsComponent<K>,
   ): this is AdvancedDetailsComponent<Extract<K, Extract<Kind, 'home'>>> {
@@ -469,6 +430,7 @@ export class AdvancedDetailsComponent<
 
   // bridge spinner to parent
   emitShowSpinner(value: boolean) {
+    if (!this.isCurrentSaveIntent(this.saveIntent)) return;
     this.showSpinner.set(value);
     this.emittedShowSpinner.emit(value);
   }
@@ -507,7 +469,6 @@ export class AdvancedDetailsComponent<
   }
 
   onChangeDateOfExit() {
-    console.log('onChangeDateOfExit');
     this.showRestrictedToggle = !!!this.mainForm.controls['dateOfExit'].value;
     this.onChangeValidation();
   }
@@ -571,72 +532,25 @@ export class AdvancedDetailsComponent<
     formArray.removeAt(index);
     this.onChangeValidation();
   }
-  //TODO:
   deleteCoordinationControl(index: number) {
     const formArray = this.getFormArray('coordinations');
     formArray.removeAt(index);
     this.onChangeValidation();
   }
 
-  //TODO: delete ////////////////////////////////
-  /*   logInvalid(ctrl: AbstractControl, path: string = ''): void {
-    const here = path || '(root)';
-    if (
-      ctrl.invalid &&
-      (ctrl.touched || ctrl.dirty || ctrl.updateOn === 'submit')
-    ) {
-      console.groupCollapsed('❌ Invalid:', here, '=>', ctrl.errors || {});
-      console.log('errors:', ctrl.errors);
-      console.log('value:', ctrl.value);
-
-    }
-    if ((ctrl as any).controls) {
-      const controls =
-        (ctrl as FormGroup).controls ?? (ctrl as FormArray).controls;
-      for (const key of Object.keys(controls)) {
-        const child = (controls as any)[key];
-        const nextPath = Array.isArray(controls)
-          ? `${here}[${key}]`
-          : here === '(root)'
-          ? key
-          : `${here}.${key}`;
-        this.logInvalid(child, nextPath);
-      }
-    }
-  } */ /*     console.groupEnd();
-    console.log('form.errors =', this.mainForm.errors);
-    console.log('form.status =', this.mainForm.status);        // INVALID | PENDING | VALID
-console.log('form.pending =', this.mainForm.pending);      // true/false*/
-  /////////////////////////////////////////////////
-
   // Enable/disable Save button
   override checkIsSaveDisabled(): void {
-    /*     const isQualified =
-      this.kind === 'user' ||
-      this.kind === 'partner' ||
-      this.kind === 'volunteer' ||
-      this.kind === 'home'; */
-    // this.logInvalid(this.mainForm); //TODO: delete
     const disabled =
-      !this.mainForm.valid || //isQualified &&
+      !this.mainForm.valid ||
       (!this.changesSignal() &&
         !this.deletingSignal() &&
         this.data().operation === 'view-edit');
 
-    //  console.log('disabled', disabled);
-    // console.log('FORM status:', this.mainForm.status);
-    // console.log('FORM errors:', this.mainForm.errors);
 
-    const controls = this.mainForm.controls;
-    for (const name of Object.keys(controls)) {
-      const c = controls[name];
-      // console.log('CONTROL', name, 'status:', c.status, 'errors:', c.errors);
-    }
 
     this.IsSaveDisabledSignal.set(disabled);
     this.emittedIsSaveDisabled.emit(disabled);
   }
-  //TODO: вынести хелперы в отдельный файл по адресам и контактам
   // Optional extra validation gates (true => changes detected)
   protected override additionalValidationHooks(): boolean {
     return this.contactsChangeValidation() || this.addressChangeValidation();
@@ -650,26 +564,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       ] as OwnerContacts;
 
       for (const type of this.contactTypes) {
-        const original = ordered?.[type] ?? [];
-        const current: string[] = this.getFormArray(type)
-          .getRawValue()
-          .filter(Boolean);
-
-        // console.log('original', original);
-        //  console.log('current', current);
-
-        // lengths differ -> changed
-        if (original.length !== current.length) return true;
-
-        // content differs -> changed
-        const originalSet = new Set(original.map((c) => c.content));
-        const currentSet = new Set(current);
-
-        if (originalSet.size !== currentSet.size) return true;
-
-        for (const v of currentSet) {
-          if (!originalSet.has(v)) return true;
-        }
+        const current: (string | null | undefined)[] = this.getFormArray(type).getRawValue();
+        if (hasContactChanges(ordered?.[type] ?? [], current)) return true;
       }
       return false;
     }
@@ -678,29 +574,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
   // Compare address selection against original address (country/region/district/locality)
   addressChangeValidation(): boolean {
-    const address = this.existingOwner!['address'];
-    const filter = this.addressFilter();
-
-    const keyMap: Record<
-      'country' | 'region' | 'district' | 'locality',
-      AddressKey
-    > = {
-      country: 'countries',
-      region: 'regions',
-      district: 'districts',
-      locality: 'localities',
-    };
-
-    for (const key of typedKeys(keyMap)) {
-      const originalId = address[key]?.id ?? null;
-      const selectedIds = filter[keyMap[key]];
-      const selectedId = Array.isArray(selectedIds)
-        ? (selectedIds[0] ?? null)
-        : null;
-
-      if (originalId !== selectedId) return true;
-    }
-    return this.homeAddressChangeValidation();
+    return hasAddressSelectionChanges(this.existingOwner!.address, this.addressFilter()) ||
+      this.homeAddressChangeValidation();
   }
 
   homeAddressChangeValidation() {
@@ -710,7 +585,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   // Seed form with initial values; transform contacts for view-mode
   override setInitialValues(mode: 'view' | 'edit' | 'create'): void {
     super.setInitialValues(mode);
-    console.log('setInitialValues');
     if ('orderedContacts' in this.existingOwner!) {
       const ordered: OwnerContacts = this.existingOwner![
         'orderedContacts'
@@ -764,7 +638,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       'names' in this.restoringDataDraft &&
       'names' in this.existingOwner!.outdatedData
     ) {
-      console.log('INDEX - onRestoreOutdatedName ', this.outdatedDataDraft);
 
       if (this.restoringDataDraft.names !== null) {
         const nameId = this.restoringDataDraft.names![0];
@@ -774,10 +647,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         if ('names' in this.outdatedDataDraft && restoredValue) {
           this.outdatedDataDraft.names.push(restoredValue);
 
-          //  this.restoringDataDraft.names = [];
         }
       }
-      //  }
 
       this.restoringDataDraft.names = [data.id];
 
@@ -786,16 +657,23 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         patronymic: data.patronymic,
         lastName: data.lastName,
       });
-      console.log('INDEX - onRestoreOutdatedName 2', this.outdatedDataDraft);
-      //восстанавливаемые значения удаляем из outdatingDataDraft
       this.deleteFromOutdatedDataDraft(
         'names' as unknown as keyof OutdatedByKind<K>,
         data.id,
       );
 
-      // this.updateControlsValidity(this.controlsNames, true);//TODO: точно ли надо?
       this.onChangeValidation();
     }
+  }
+
+  protected setHomePostalAddress(
+    address: Pick<Home['address'], 'postalCode' | 'postalName' | 'postalAddressPart'>,
+  ) {
+    this.mainForm.patchValue({
+      postalCode: address.postalCode,
+      postalName: address.postalName,
+      postalAddressPart: address.postalAddressPart,
+    });
   }
 
   onRestoreOutdatedData(
@@ -807,9 +685,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       | 'institutes'
       | 'addresses'
       | 'contacts',
-    //keyof RestoringByKind<K>,
     data: Contact | OutdatedAddress | OutdatedHomeAddress,
-    //  | OutdatedHome,
     contactType?: Exclude<ContactType, 'telegram'>,
   ) {
     //восстанавливаемое значение присваиваем соответветствующему form.control,
@@ -835,9 +711,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
 
-    //для этих типов восстановить можно только одно значение,
-    //поэтому проверяем, были ли уже восстановленные значения,
-    //если были, то удаляем их их restoringDataDraft и помещаем в outdatingDataDraft
+    // Only one address can be selected for restoration.
+    // Return the previous selection to working history before replacing it.
     if (
       type === 'addresses' &&
       'addresses' in this.restoringDataDraft &&
@@ -852,12 +727,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         );
         if (restoredValue)
           (this.outdatedDataDraft.addresses as any[]).push(restoredValue);
-        //this.restoringDataDraft.addresses = [];
       }
-      //  }
       this.restoringDataDraft.addresses = [data.id];
 
       if ('country' in data) {
+        if (this.kind === 'home' && 'postalCode' in data) {
+          this.setHomePostalAddress(data);
+        }
         this.addressFilterComponent.onChangeMode('edit', {
           localityId: data.locality?.id ?? null,
           districtId: data.district?.id ?? null,
@@ -867,7 +743,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
 
-    //восстанавливаемые значения удаляем из outdatingDataDraft
     this.deleteFromOutdatedDataDraft(
       type as unknown as keyof OutdatedByKind<K>,
       data.id,
@@ -877,7 +752,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     this.onChangeValidation();
   }
   onDeleteOutdatedData(
-    type: // | keyof DeletingByKind<K>
+    type:
       | 'names'
       | 'userNames'
       | 'officialNames'
@@ -902,10 +777,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   deleteFromOutdatedDataDraft(type: keyof OutdatedByKind<K>, id: number) {
-    console.log(
-      'INDEX - deleteFromOutdatedDataDraft',
-      this.outdatedDataDraft[type],
-    );
     if (type === 'contacts' && 'contacts' in this.outdatedDataDraft) {
       for (const key of typedKeys(this.outdatedDataDraft.contacts)) {
         const idx = this.outdatedDataDraft.contacts[key]!.findIndex(
@@ -918,17 +789,14 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     } else if (Array.isArray(this.outdatedDataDraft[type])) {
       const idx = this.outdatedDataDraft[type].findIndex((c) => c.id === id);
-      console.log('INDEX', idx);
       if (idx !== -1) this.outdatedDataDraft[type].splice(idx, 1);
-      console.log(
-        'INDEX - deleteFromOutdatedDataDraft this.outdatedDataDraft',
-        this.outdatedDataDraft,
-      );
     }
   }
 
   // --- Save flows
   override onSaveClick(action: 'justSave' | 'saveAndExit') {
+    if (!this.isCurrentSaveIntent(this.saveIntent)) return;
+    const intent = ++this.saveIntent;
     this.emitShowSpinner(true);
     this.action = action;
     this.ownerDraft = buildDraft(
@@ -940,13 +808,14 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       this.user()!.id,
     );
     if ('userName' in this.ownerDraft) {
-      this.checkUserName();
+      this.checkUserName(intent);
     } else {
-      this.checkDuplicates();
+      this.checkDuplicates(intent);
     }
   }
 
-  checkDuplicates() {
+  checkDuplicates(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const contactDuplicates = {} as Record<
       Exclude<ContactType, 'telegram'>,
       string[]
@@ -973,17 +842,19 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       });
       this.emitShowSpinner(false);
     } else {
-      this.checkOwnerData();
+      this.checkOwnerData(intent);
     }
   }
 
-  checkOwnerData() {
+  checkOwnerData(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const service = this.getService();
     service
       .checkOwnerData(this.ownerDraft)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: async (res) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           const { duplicatesName = [], duplicatesContact = [] } =
             res.data ?? {};
           const hasNameDup = duplicatesName.length > 0;
@@ -1015,185 +886,71 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
                 outlined: true,
               },
               accept: async () => {
-                await this.savingFlow();
+                if (!this.isCurrentSaveIntent(intent)) return;
+                await this.savingFlow(intent);
               },
-              reject: () => this.emitShowSpinner(false),
+              reject: () => {
+                if (this.isCurrentSaveIntent(intent)) this.emitShowSpinner(false);
+              },
             });
           } else {
-            await this.savingFlow();
+            await this.savingFlow(intent);
           }
         },
         error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.emitShowSpinner(false);
           this.msgWrapper.handle(err, {
             source: 'CreateOwnerDialog',
             stage: 'checkOwnerData',
             kind: this.kind,
-            owner: this.ownerDraft,
           });
-          return of(null);
         },
       });
   }
 
-  async savingFlow() {
+  async savingFlow(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     if (this.data().operation === 'create') {
-      this.saveOwner();
+      this.saveOwner(intent);
     } else {
-      await this.correctRestoringData();
-      if (await this.checkOutdatedDataDuplicates()) {
-        const updatingOwnerData = await this.checkAllChanges();
-        this.saveUpdatedOwner(updatingOwnerData);
+      await this.correctRestoringData(intent);
+      if (!this.isCurrentSaveIntent(intent)) return;
+      const canSave = await this.checkOutdatedDataDuplicates(intent);
+      if (!this.isCurrentSaveIntent(intent)) return;
+      if (canSave) {
+        const updatingOwnerData = await this.checkAllChanges(intent);
+        if (!this.isCurrentSaveIntent(intent)) return;
+        this.saveUpdatedOwner(updatingOwnerData, intent);
       } else {
         this.emitShowSpinner(false);
       }
     }
   }
 
-  // --- Compare draft vs restoring/outdated
-  //проверяем не изменил ли пользователь восстановленные данные
-  //если изменил,
-  // то помещаем их в outdatingDataDraft и удаляем из restoringDataDraft
-  async correctRestoringData() {
-    // Addresses
-    if (this.isCommonAddressOwnerContext()) {
-      const { restoring, outdating } = reconcileRestoredAddress(
-        this.restoringDataDraft.addresses ?? [],
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft.draftAddress,
-        this.existingOwner!.outdatedData.addresses,
-      );
-      this.restoringDataDraft.addresses = structuredClone(restoring);
-      this.outdatedDataDraft.addresses = structuredClone(outdating);
-    }
-
-    if (this.isHomeContext()) {
-      const { restoring, outdating } = reconcileRestoredHomeAddress(
-        this.restoringDataDraft.addresses ?? [],
-        this.outdatedDataDraft.addresses,
-        this.ownerDraft,
-        this.existingOwner!.outdatedData.addresses,
-      );
-      this.restoringDataDraft.addresses = structuredClone(restoring);
-      this.outdatedDataDraft.addresses = structuredClone(outdating);
-    }
-
-    // Names
-    if (this.isPersonContext()) {
-      /*       console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.names',
-        this.restoringDataDraft.names,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.names',
-        this.outdatedDataDraft.names,
-      ); */
-      const { restoring, outdating } = reconcileRestoredNames(
-        this.restoringDataDraft.names ?? [],
-        this.outdatedDataDraft.names,
-        {
-          firstName: this.ownerDraft.firstName,
-          patronymic: this.ownerDraft.patronymic,
-          lastName: this.ownerDraft.lastName,
-        },
-        this.existingOwner!.outdatedData.names,
-      );
-      this.restoringDataDraft.names = structuredClone(restoring);
-      this.outdatedDataDraft.names = structuredClone(outdating);
-      console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.names',
-        this.restoringDataDraft.names,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.names',
-        this.outdatedDataDraft.names,
-      );
-    }
-
-    if (this.isUserContext()) {
-      const { restoring, outdating } = reconcileRestoredUserNames(
-        this.restoringDataDraft.userNames ?? [],
-        this.outdatedDataDraft.userNames,
-        this.ownerDraft.userName,
-        this.existingOwner!.outdatedData.userNames,
-      );
-      this.restoringDataDraft.userNames = structuredClone(restoring);
-      this.outdatedDataDraft.userNames = structuredClone(outdating);
-    }
-
-    if (this.isHomeContext()) {
-      const { restoring, outdating } = reconcileRestoredOfficialNames(
-        this.restoringDataDraft.officialNames ?? [],
-        this.outdatedDataDraft.officialNames,
-        this.ownerDraft.officialName,
-        this.existingOwner!.outdatedData.officialNames,
-      );
-      this.restoringDataDraft.officialNames = structuredClone(restoring);
-      this.outdatedDataDraft.officialNames = structuredClone(outdating);
-    }
-
-    // Contacts
-    if (this.isContactsOwnerContext()) {
-      const { restoring, outdating } = reconcileRestoredContacts(
-        this.restoringDataDraft.contacts ?? {},
-        this.outdatedDataDraft.contacts,
-        this.ownerDraft.draftContacts,
-      );
-      this.restoringDataDraft.contacts = structuredClone(restoring);
-      this.outdatedDataDraft.contacts = structuredClone(outdating);
-    }
-
-    //Coordinations
-    if (this.isCoordinationsOwnerContext()) {
-      console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.coordinations',
-        this.restoringDataDraft.coordinations,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.coordinations',
-        this.outdatedDataDraft.coordinations,
-      );
-      const { restoring, outdating } = reconcileRestoredCoordinations(
-        this.kind,
-        this.restoringDataDraft.coordinations ?? [],
-        this.outdatedDataDraft.coordinations,
-        this.ownerDraft.draftCoordinations,
-        this.existingOwner!.outdatedData.coordinations,
-      );
-      this.restoringDataDraft.coordinations = structuredClone(restoring);
-      this.outdatedDataDraft.coordinations = structuredClone(outdating);
-      console.log(
-        'INDEX - correctRestoringData this.restoringDataDraft.coordinations AFTER',
-        this.restoringDataDraft.coordinations,
-      );
-      console.log(
-        'INDEX - correctRestoringData this.outdatedDataDraft.coordinations AFTER',
-        this.outdatedDataDraft.coordinations,
-      );
-    }
-
-    //Institutes
-    if (this.isVolunteerContext()) {
-      const { restoring, outdating } = reconcileRestoredInstitutes(
-        this.restoringDataDraft.institutes ?? [],
-        this.outdatedDataDraft.institutes,
-        this.ownerDraft.draftInstitutes,
-        this.existingOwner!.outdatedData.institutes,
-      );
-      this.restoringDataDraft.institutes = structuredClone(restoring);
-      this.outdatedDataDraft.institutes = structuredClone(outdating);
-    }
+  async correctRestoringData(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
+    const { restoring, history } = reconcileOwnerRestoration({
+      kind: this.kind,
+      draft: this.ownerDraft,
+      restoring: this.restoringDataDraft,
+      history: this.outdatedDataDraft,
+      persistedHistory: this.existingOwner!.outdatedData,
+    });
+    this.restoringDataDraft = restoring;
+    this.outdatedDataDraft = history;
   }
 
-  //если введенные данные совпадают с outdatingDataDraft данными,
-  //то добавляем их с согласия пользователя в restoringDataDraft
-  async checkOutdatedDataDuplicates() {
+  // Matching working-history values require confirmation before restoration.
+  async checkOutdatedDataDuplicates(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return false;
     // Addresses
     if (this.isCommonAddressOwnerContext()) {
       const res = await this.ownerRestorationGuardService.checkAddress(
         this.outdatedDataDraft.addresses,
         this.ownerDraft.draftAddress,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1208,6 +965,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.addresses,
         this.ownerDraft,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1219,15 +977,12 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
 
     // Names
     if (this.isPersonContext()) {
-      /*       console.log(
-        'INDEX - checkOutdatedDataDuplicates this.outdatedDataDraft.names',
-        this.outdatedDataDraft,
-      ); */
 
       const res = await this.ownerRestorationGuardService.checkNames(
         this.outdatedDataDraft.names,
         this.ownerDraft,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1242,6 +997,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.userNames,
         this.ownerDraft.userName,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1256,6 +1012,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.officialNames,
         this.ownerDraft.officialName,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1271,6 +1028,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.outdatedDataDraft.institutes,
         this.ownerDraft.draftInstitutes,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1285,15 +1043,12 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     //Coordinations
 
     if (this.isCoordinationsOwnerContext()) {
-      console.log(
-        'INDEX - checkOutdatedDataDuplicates this.outdatedDataDraft',
-        this.outdatedDataDraft,
-      );
       const res = await this.ownerRestorationGuardService.checkCoordinations(
         this.kind,
         this.outdatedDataDraft.coordinations,
         this.ownerDraft.draftCoordinations,
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1312,7 +1067,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         this.contactTypes,
         this.outdatedDataDraft.contacts,
         this.ownerDraft.draftContacts,
+        () => this.isCurrentSaveIntent(intent),
       );
+      if (!this.isCurrentSaveIntent(intent)) return false;
 
       if (!res.ok) return false;
 
@@ -1330,11 +1087,8 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
 
   //формируем окончательные варианты измененных, восстановленных, удаляемых и неактуальных значений
-  async checkAllChanges() {
-    /*  this.deletingData = structuredClone(this.deletingDataDraft); //clone deleting data in case saving cancellation
-        const restoringData: RestoringByKind<K> = structuredClone(
-      this.restoringDataDraft,
-    ); */
+  async checkAllChanges(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
 
     // Addresses
 
@@ -1347,6 +1101,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             ? null
             : this.restoringDataDraft.addresses![0],
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.address = changes;
       this.outdatingData.address = outdatingId;
       if (deletingId) {
@@ -1364,6 +1119,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
             ? null
             : this.restoringDataDraft.addresses![0],
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.address = changes;
       this.outdatingData.address = outdatingId;
       if (deletingId) {
@@ -1379,6 +1135,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.existingOwner!,
           this.ownerDraft,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       if (changes)
         this.changingData.main = {
           ...(this.changingData.main ?? {}),
@@ -1393,6 +1150,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.existingOwner!,
           this.ownerDraft,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       if (changes)
         this.changingData.main = {
           ...(this.changingData.main ?? {}),
@@ -1407,12 +1165,14 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.existingOwner!,
           this.ownerDraft,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       if (changes)
         this.changingData.main = {
           ...(this.changingData.main ?? {}),
           ...changes,
         };
-      this.outdatingData.officialName = outdating;
+      // The planner keeps a form string; archival requests use the schema's object wrapper.
+      this.outdatingData.officialName = outdating === null ? null : { officialName: outdating };
     }
 
     // Contacts
@@ -1424,7 +1184,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft,
           this.contactTypes,
           this.restoringDataDraft.contacts,
+          () => this.isCurrentSaveIntent(intent),
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.contacts = changes;
       this.outdatingData.contacts = outdatingIds;
       if (deletingIds) {
@@ -1443,7 +1205,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft.draftCoordinations ?? [],
           this.restoringDataDraft.coordinations ?? [],
           this.existingOwner!.outdatedData.coordinations ?? [],
+          () => this.isCurrentSaveIntent(intent),
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
 
       this.changingData.coordinations = changes;
       this.outdatingData.coordinations = outdating;
@@ -1461,7 +1225,9 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
           this.ownerDraft.draftInstitutes ?? [],
           this.restoringDataDraft.institutes ?? [],
           this.existingOwner!.outdatedData.institutes ?? [],
+          () => this.isCurrentSaveIntent(intent),
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.institutes = changes;
       this.outdatingData.institutes = outdating;
       if (deleting) {
@@ -1470,12 +1236,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       }
     }
     if (this.isVolunteerContext()) {
-      const { changes, outdating, deleting } =
+      const { changes, deleting } =
         await this.ownerChangesPlannerService.diffSubs(
           this.existingOwner!.subscriptions ?? [],
           this.ownerDraft.draftSubscriptions ?? [],
           this.user()!.id,
         );
+      if (!this.isCurrentSaveIntent(intent)) return this.pendingUpdateData();
       this.changingData.subscriptions = changes;
       if (deleting) {
         this.deletingDataDraft.subscriptions ??= [];
@@ -1488,8 +1255,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     for (const key of this.mainProps) {
       const existing = this.existingOwner as Record<string, unknown>;
       const draft = this.ownerDraft as Record<string, unknown>;
-      //console.log(key, existing[key as string]);
-      // console.log(key, draft[key as string]);
       if (existing[key as string] !== draft[key as string]) {
         const currentMain =
           (this.changingData.main as NonNullable<
@@ -1502,12 +1267,10 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
         } as NonNullable<ChangingByKind<K>['main']>;
       }
     }
-    console.log('{ changes, restoringData, outdatingData, deletingData }', {
-      changingData: this.changingData,
-      restoringData: this.restoringDataDraft,
-      outdatingData: this.outdatingData,
-      deletingData: this.deletingDataDraft,
-    });
+    return this.pendingUpdateData();
+  }
+
+  private pendingUpdateData() {
     return {
       changingData: this.changingData,
       restoringData: this.restoringDataDraft,
@@ -1516,37 +1279,49 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     };
   }
 
-  saveOwner() {
+  saveOwner(intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const service = this.getService();
-    console.log('this.ownerDraft', this.ownerDraft);
     service
       .saveOwner(this.ownerDraft)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.emitShowSpinner(false)),
+        finalize(() => {
+          if (this.isCurrentSaveIntent(intent)) this.emitShowSpinner(false);
+        }),
       )
       .subscribe({
         next: (res) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           if (this.action === 'saveAndExit') {
+            this.emitShowSpinner(false);
+            this.invalidateSaveIntent();
             this.closeDialogDataSignal.set(res.data);
             this.emittedCloseDialogData.emit(res.data);
-          } else {
-            // keep dialog open, could re-load owner data if needed
           }
         },
-        error: (err) =>
+        error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.msgWrapper.handle(err, {
             source: 'CreateOwnerDialog',
             stage: 'saveOwner',
             kind: this.kind,
-            owner: this.ownerDraft,
-          }),
+          });
+        },
       });
   }
-  // View-mode: set outdated data
+  private resetPendingEditState() {
+    this.setRestoringDataDraft();
+    this.setDeletingDataDraft();
+    this.setChangingData();
+    this.setOutdatingData();
+  }
+
   protected override changeToViewMode(
     addressParams: DefaultAddressParams | null,
   ) {
+    // Pending mutations must not survive the edit session that produced them.
+    this.resetPendingEditState();
     super.changeToViewMode(addressParams);
     this.outdatedDataDraft = structuredClone(
       this.existingOwner!.outdatedData,
@@ -1558,18 +1333,24 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     restoringData: RestoringByKind<K>;
     outdatingData: OutdatingByKind<K>;
     deletingData: DeletingByKind<K>;
-  }) {
+  }, intent = this.saveIntent) {
+    if (!this.isCurrentSaveIntent(intent)) return;
     const service = this.getService();
     service
       .saveUpdatedOwner(this.existingOwner!.id, upgradedOwnerData)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.emitShowSpinner(false)),
+        finalize(() => {
+          if (this.isCurrentSaveIntent(intent)) this.emitShowSpinner(false);
+        }),
       )
       .subscribe({
         next: (res) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           if (this.action === 'saveAndExit') {
-            this.closeDialogDataSignal.set('close'); //TODO: change?
+            this.emitShowSpinner(false);
+            this.invalidateSaveIntent();
+            this.closeDialogDataSignal.set('close');
             this.emittedCloseDialogData.emit('close');
             return;
           }
@@ -1592,21 +1373,13 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               ? res.data.address.country.id
               : null,
           };
-          // this.existingOwner = this.data().object;
-          console.log(
-            'this.existingOwner',
-            structuredClone(this.existingOwner),
-          );
           if (this.existingOwner) {
             this.outdatedDataDraft = structuredClone(
               this.existingOwner!.outdatedData,
             ) as OutdatedByKind<K>;
           }
 
-          console.log('OOO - this.outdatedDataDraft', this.outdatedDataDraft);
-
           this.setHasOutdatedUserNames();
-          //this.setHasOutdatedHomes();
           this.setHasOutdatedNames();
           this.setHasOutdatedOfficialNames();
           this.setHasOutdatedCoordinations();
@@ -1622,28 +1395,24 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
               this.outdatedDataDraft.addresses.length > 0,
           );
 
-          console.log('this.hasOutdatedContacts', this.hasOutdatedContacts());
-
           this.addressFilterComponent.onChangeMode(
             'view',
             this.data().defaultAddressParams!,
           );
 
-          this.setRestoringDataDraft();
-          this.setDeletingDataDraft();
-          this.setChangingData();
-          this.setOutdatingData();
-
+          this.emitShowSpinner(false);
           this.changeToViewMode(null);
           this.setInitialValues('view');
         },
-        error: (err) =>
+        error: (err) => {
+          if (!this.isCurrentSaveIntent(intent)) return;
           this.msgWrapper.handle(err, {
             source: 'EditOwnerDialog',
             stage: 'saveUpdatedOwner',
             kind: this.kind,
             ownerId: this.existingOwner!.id,
-          }),
+          });
+        },
       });
   }
 
@@ -1660,7 +1429,7 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     }
   }
 
-  // badges (for template)
+  // Owner-specific hooks and template helpers
   setEmptyOutdatedDataDraft() {}
   setRestoringDataDraft() {}
   setDeletingDataDraft() {}
@@ -1671,10 +1440,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   }
   hasAffiliation(): boolean {
     return false;
-  }
-  hasCoordinations(): boolean {
-    if (this.kind == 'home' || this.kind == 'partner') return true;
-    else return false;
   }
 
   hasSubscriptions(): boolean {
@@ -1687,13 +1452,12 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
     return false;
   }
 
-  checkUserName() {}
+  checkUserName(_intent = this.saveIntent) {}
   onChangePasswordClick() {}
   onAddInstituteClick() {}
   getRowSpanForUserNames() {
     return 0;
   }
-  //TODO: doI need these funcs?
   setHasOutdatedUserNames() {}
   setHasOutdatedInstitutes() {}
   setHasOutdatedSubs() {}
@@ -1710,12 +1474,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
   setHomeOpen() {}
   setPartnerActive() {}
 
-  getRowSpanForHomes() {
-    return 0;
-  }
-  getRowSpanForPartners() {
-    return 0;
-  }
   getRowSpanForInstitutes() {
     return 0;
   }
@@ -1779,10 +1537,6 @@ console.log('form.pending =', this.mainForm.pending);      // true/false*/
       ),
     );
   }
-
-  /*  get coordinationsArray(): FormArray<FormControl<RelationPick | string>> {
-    return new FormArray<FormControl<RelationPick | string>>([]);
-  } */
 
   get lastDateOfUpdate(): Date | null {
     return null;

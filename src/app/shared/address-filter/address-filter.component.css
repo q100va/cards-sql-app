@@ -11,14 +11,6 @@ mat-grid-list {
   width: 100%;
 }
 
-/* .mat-grid-tile-content {
-  width: 100%;
-
-}
-.mat-grid-tile {
-  display: block;
-} */
-
 .view-mode
 ::ng-deep.mat-mdc-select-disabled {
   color: #191c19;
@@ -39,4 +31,3 @@ mat-grid-list {
   ::ng-deep .mdc-text-field--filled.mdc-text-field--disabled {
     background-color: #ffffff !important;
   }
-

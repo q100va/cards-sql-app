@@ -1,7 +1,6 @@
 // Angular core
 import {
   Component,
-  DestroyRef,
   inject,
   ViewEncapsulation,
 } from '@angular/core';
@@ -22,7 +21,7 @@ import {MatListModule} from '@angular/material/list';
 
 // Services
 import { TranslateModule } from '@ngx-translate/core';
-import { Recipient, RecipientsShortList } from '../../../../../shared/schemas/recipient.schema';
+import { RecipientsShortList } from '../../../../../shared/schemas/recipient.schema';
 
 
 
@@ -37,7 +36,6 @@ import { Recipient, RecipientsShortList } from '../../../../../shared/schemas/re
     MatGridListModule,
     MatIconModule,
     MatListModule,
-    // Angular forms
     TranslateModule
   ],
   templateUrl: './check-result-dialog.component.html',

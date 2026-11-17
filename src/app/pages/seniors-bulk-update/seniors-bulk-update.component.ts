@@ -1,9 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
@@ -22,7 +20,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { UploadFileComponent } from '../../shared/upload-file/upload-file.component';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-//import { ButtonModule } from 'primeng/button';
 import { TableModule, TableRowSelectEvent } from 'primeng/table';
 import { HasOpDirective } from '../../directives/has-op.directive';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -48,29 +45,6 @@ import { MONTHS } from '../../../../shared/constants/occasions';
 import { FileService } from '../../services/file.service';
 import { saveAs } from 'file-saver';
 
-/* export interface SeniorRow {
-  nursingHome: string;
-  lastName?: string | null;
-  firstName: string;
-  patronymic?: string | null;
-  dateOfConsent?: string | null;
-  dayBirthday?: number | null;
-  monthBirthday?: number | null;
-  yearBirthday?: number | null;
-  gender?: 'male' | 'female' | null;
-  birthDate?: string | null;
-  comment?: string | null;
-  infoNote?: string | null;
-  photoLink?: string | null;
-  kindergarten?: string | null;
-  teacher?: string | null;
-  veteran?: string | null;
-  childOfWar?: string | null;
-  profession?: string | null;
-  honoraryStatus?: string | null;
-  interests?: string | null;
-  orthodoxBeliever?: string | null;
-} */
 export type ErrorType =
   | 'NO_DAY'
   | 'NO_MONTH'
@@ -82,7 +56,6 @@ export type ErrorType =
 @Component({
   selector: 'app-seniors-bulk-update',
   imports: [
-    CommonModule,
     UploadFileComponent,
     ProgressSpinner,
     HasOpDirective,
@@ -91,7 +64,6 @@ export type ErrorType =
     MatGridListModule,
     TableModule,
     MatButtonModule,
-    MatRadioModule,
     FormsModule,
     SeniorChangesTableComponent,
     MatSelectModule,
@@ -102,7 +74,6 @@ export type ErrorType =
     MatIconModule,
     MatSlideToggleModule,
     MatTooltipModule,
-    //ButtonModule
   ],
   templateUrl: './seniors-bulk-update.component.html',
   styleUrl: './seniors-bulk-update.component.css',
@@ -121,7 +92,6 @@ export class SeniorsBulkUpdateComponent {
     homeName: string;
     list: SeniorRow[];
   }[] = [];
-  //isStarted = false;
   currentHomeName = '';
   home!: {
     homeName: string;
@@ -151,18 +121,12 @@ export class SeniorsBulkUpdateComponent {
   commentsMode = new FormControl<boolean>(true, { nonNullable: true });
   noChanges = false;
   showStart = false;
-  constructor() {}
-  ngOnInit() {
-    // this.commentsMode.setValue(true);
-  }
 
   parseRows(rows: SeniorRow[]) {
     this.isCompleted = false;
     this.commentsMode.disable();
-    // this.toggleDisabled = true;
     this.index = 0;
     this.clear();
-    //this.isStarted = false;
 
     this.showSpinner.set(false);
 
@@ -179,14 +143,12 @@ export class SeniorsBulkUpdateComponent {
   }
 
   private async processHome(): Promise<void> {
-    console.log('processHomes', this.index, this.arrayOfLists[this.index]);
     if (this.index > this.arrayOfLists.length - 1) {
       this.commentsMode.enable();
       this.isCompleted = true;
       this.msgWrapper.success('SENIOR.BULK_UPDATE.COMPLETED');
       return;
     }
-    //this.isStarted = true;
     this.home = this.arrayOfLists[this.index];
 
     this.currentHomeName = this.home.homeName;
@@ -216,13 +178,19 @@ export class SeniorsBulkUpdateComponent {
   }
 
   async onStartClick() {
+    const startWasVisible = this.showStart;
+    const monthsWereEnabled = this.chosenMonths.enabled;
     this.showStart = false;
     this.chosenMonths.disable();
 
-    const data: Differences = await this.compareLists(
-      this.home.list,
-      this.home.homeName,
-    );
+    let data: Differences;
+    try {
+      data = await this.compareLists(this.home.list, this.home.homeName);
+    } catch {
+      this.showStart = startWasVisible;
+      if (monthsWereEnabled) this.chosenMonths.enable();
+      return;
+    }
     this.newSeniors = data.differences.newSeniors;
     this.removedSeniors = data.differences.removedSeniors;
     this.updatedSeniors = data.differences.updatedSeniors;
@@ -237,7 +205,6 @@ export class SeniorsBulkUpdateComponent {
       this.returnedSeniors.length === 0
     )
       this.noChanges = true;
-    console.log('this.newSeniors', this.newSeniors);
   }
 
   private normalizeName(name: string | null): string | null {
@@ -521,7 +488,6 @@ export class SeniorsBulkUpdateComponent {
               }
             | false,
         ) => {
-          console.log('result', result);
           if (result === false) return false;
 
           if (result.action === 'custom') {
@@ -568,7 +534,6 @@ export class SeniorsBulkUpdateComponent {
 
     return dialogRef.afterClosed().pipe(
       map((result) => {
-        console.log('result', result);
         return result;
       }),
     );
@@ -646,7 +611,6 @@ export class SeniorsBulkUpdateComponent {
           )
           .pipe(takeUntilDestroyed(this.destroyRef)),
       );
-      console.log('res', res.data);
       this.showSpinner.set(false);
       return res.data;
     } catch (err) {
@@ -675,7 +639,6 @@ export class SeniorsBulkUpdateComponent {
       );
       lengthOfTable = this.returnedSeniors.length + 10 + totalChanges;
     }
-    //console.log('lengthOfTable', lengthOfTable);
     return lengthOfTable;
   }
 
@@ -705,20 +668,12 @@ export class SeniorsBulkUpdateComponent {
   }
 
   moveToUpdated() {
-    console.log('this.selectedNewSeniorIndex', this.selectedNewSeniorIndex);
-    console.log(
-      'this.selectedRemovedSeniorIndex',
-      this.selectedRemovedSeniorIndex,
-    );
-    console.log('this.selectedNewSenior', this.selectedNewSenior);
-    console.log('this.selectedRemovedSenior', this.selectedRemovedSenior);
     if (
       this.selectedNewSenior &&
       this.selectedRemovedSenior &&
       this.selectedNewSeniorIndex !== null &&
       this.selectedRemovedSeniorIndex !== null
     ) {
-      console.log('this.updatedSeniors', this.updatedSeniors);
       const changes = this.compareData(
         this.selectedNewSenior,
         this.selectedRemovedSenior,
@@ -732,9 +687,6 @@ export class SeniorsBulkUpdateComponent {
       this.newSeniors.splice(this.selectedNewSeniorIndex, 1);
       this.removedSeniors.splice(this.selectedRemovedSeniorIndex, 1);
 
-      console.log('this.newSeniors', this.newSeniors);
-      console.log('this.updatedSeniors', this.updatedSeniors);
-      console.log('this.removedSeniors', this.removedSeniors);
 
       this.selectedNewSenior = null;
       this.selectedRemovedSenior = null;
@@ -759,12 +711,6 @@ export class SeniorsBulkUpdateComponent {
     this.updatedSeniors.splice(rowIndex, 1);
   }
 
-  /*   onChange(seniorId: number, field: string, value: unknown): void {
-    if (!this.accepted[seniorId]) {
-      this.accepted[seniorId] = {};
-    }
-    this.accepted[seniorId][field] = value;
-  } */
 
   acceptChanges(
     source: 'returned' | 'duplicates' | 'updated',
@@ -785,8 +731,6 @@ export class SeniorsBulkUpdateComponent {
 
     sourceMap[source].splice(rowIndex, 1);
 
-    console.log('this.possibleDuplicates', this.possibleDuplicates);
-    console.log('this.updated', this.updated);
   }
 
   private compareData(newData: SeniorRaw, oldData: SeniorRaw) {
@@ -911,7 +855,6 @@ export class SeniorsBulkUpdateComponent {
 
   applyChanges() {
     this.showSpinner.set(true);
-    console.log('applyChanges');
     this.admitted = [...this.newSeniors];
     this.removed = [...this.removedSeniors];
     const dateOfUpdate = this.dateOfUpdate.getRawValue();
@@ -986,16 +929,6 @@ export class SeniorsBulkUpdateComponent {
     this.dateOfUpdate.setValue(null);
   }
 
-  /*   expandAll() {
-    this.expandedRows = this.removedSeniors.reduce(
-      (acc, p) => (acc[p.id] = true) && acc,
-      {},
-    );
-  }
-
-  collapseAll() {
-    this.expandedRows = {};
-  } */
 }
 
 //TODO: запрос на сохранение измененных ФИО

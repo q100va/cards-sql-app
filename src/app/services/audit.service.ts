@@ -34,7 +34,6 @@ export class AuditService {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null && String(v) !== '') {
         p = p.set(k, String(v));
-        console.log({ k, v });
       }
     }
     return this.http

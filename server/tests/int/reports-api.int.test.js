@@ -27,9 +27,9 @@ import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
 
-function makeAccessToken(roleId) {
+function makeAccessToken(roleId, userId = 42) {
   return jwt.sign(
-    { sub: '42', roleId, uname: 'reports-integration-user', role: 'REPORTS_TEST_ROLE' },
+    { sub: String(userId), roleId, uname: 'reports-integration-user', role: 'REPORTS_TEST_ROLE' },
     process.env.JWT_ACCESS_SECRET,
     { algorithm: 'HS256', expiresIn: '15m', issuer: 'cards-sql-app', audience: 'web' },
   );
@@ -244,7 +244,7 @@ describe('reports API', () => {
   });
 
   test('builds general monthly report from active orders and active recipients', async () => {
-    const actor = await createAuthorizedActor(['VIEW_LIMITED_REPORTS']);
+    const actor = await createAuthorizedActor(['VIEW_FULL_REPORTS']);
 
     const fixture = await createBaseFixture(actor);
 
@@ -319,7 +319,7 @@ describe('reports API', () => {
   });
 
   test('includes only orders inside the selected monthly period', async () => {
-    const actor = await createAuthorizedActor(['VIEW_LIMITED_REPORTS']);
+    const actor = await createAuthorizedActor(['VIEW_FULL_REPORTS']);
 
     const fixture = await createBaseFixture(actor);
 
@@ -365,6 +365,8 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
+    const personalToken = makeAccessToken(actor.role.id, fixture.user.id);
+
     const occasion = await createOccasion(OCCASION);
 
     const firstRecipient = await createRecipient(fixture, occasion);
@@ -373,17 +375,6 @@ describe('reports API', () => {
       occasion,
       recipient: firstRecipient,
       createdAt: new Date('2026-02-10T12:00:00.000Z'),
-    });
-
-    const secondSenior = await createSenior({
-      firstName: 'Second',
-      lastName: 'Senior',
-      birthDate: '1950-11-20',
-      gender: 'male',
-      personalNoAddr: false,
-      isRestricted: false,
-      dateOfExit: null,
-      homeId: fixture.home.id,
     });
 
     const otherSenior = await createSenior({
@@ -403,8 +394,9 @@ describe('reports API', () => {
       createdAt: new Date('2026-10-10T12:00:00.000Z'),
     });
 
-    const res = await auth(global.api.post('/api/reports/get-report'), actor.token).send(
+    const res = await auth(global.api.post('/api/reports/get-report'), personalToken).send(
       reportPayload(REPORT_TYPE.PERSONAL, {
+        userId: fixture.user.id,
         frequency: REPORT_FREQUENCY.ANNUAL,
         months: null,
         quarters: null,
@@ -430,6 +422,8 @@ describe('reports API', () => {
 
     const fixture = await createBaseFixture(actor);
 
+    const personalToken = makeAccessToken(actor.role.id, fixture.user.id);
+
     const secondUser = await createUser(actor.role.id, 'report_user_2');
 
     const occasion = await createOccasion(OCCASION);
@@ -451,7 +445,7 @@ describe('reports API', () => {
 
     await createOrderFixture(fixture, { occasion, recipient: secondRecipient, user: secondUser });
 
-    const res = await auth(global.api.post('/api/reports/get-report'), actor.token).send(
+    const res = await auth(global.api.post('/api/reports/get-report'), personalToken).send(
       reportPayload(REPORT_TYPE.PERSONAL, { userId: fixture.user.id }),
     );
 
@@ -639,6 +633,84 @@ describe('reports API', () => {
       twicePart: 0,
       threeTimesPart: 0,
       fourTimesOrMorePart: 1,
+    });
+  });
+
+  test('allows an authenticated user to access their own personal report without report permissions', async () => {
+    const actor = await createAuthorizedActor([]);
+    const fixture = await createBaseFixture(actor);
+    const personalToken = makeAccessToken(actor.role.id, fixture.user.id);
+
+    const res = await auth(global.api.post('/api/reports/get-report'), personalToken).send(
+      reportPayload(REPORT_TYPE.PERSONAL, { userId: fixture.user.id }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.type).toBe(REPORT_TYPE.PERSONAL);
+    expect(res.body.data.report).toEqual([]);
+  });
+
+  test('denies access to another user personal report even with full permission', async () => {
+    const actor = await createAuthorizedActor(['VIEW_FULL_REPORTS']);
+    const fixture = await createBaseFixture(actor);
+    const personalToken = makeAccessToken(actor.role.id, fixture.user.id);
+    const anotherUser = await createUser(actor.role.id, 'report_user_2');
+
+    const res = await auth(global.api.post('/api/reports/get-report'), personalToken).send(
+      reportPayload(REPORT_TYPE.PERSONAL, { userId: anotherUser.id }),
+    );
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({
+      code: 'ERRORS.FORBIDDEN',
+      data: null,
+    });
+  });
+
+  test.each([
+    [REPORT_TYPE.GENERAL, 'General'],
+    [REPORT_TYPE.BY_OCCASION, 'By Occasion'],
+  ])('denies limited permission access to %s report (%s)', async (type) => {
+    const actor = await createAuthorizedActor(['VIEW_LIMITED_REPORTS']);
+
+    const res = await auth(global.api.post('/api/reports/get-report'), actor.token).send(
+      reportPayload(type, {
+        frequency: REPORT_FREQUENCY.ANNUAL,
+        months: null,
+        quarters: null,
+      }),
+    );
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({
+      code: 'ERRORS.FORBIDDEN',
+      data: null,
+    });
+  });
+
+  test('allows limited permission access to School Coordination report', async () => {
+    const actor = await createAuthorizedActor(['VIEW_LIMITED_REPORTS']);
+
+    const res = await auth(global.api.post('/api/reports/get-report'), actor.token).send(
+      reportPayload(REPORT_TYPE.SCHOOL_COORDINATION),
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.type).toBe(REPORT_TYPE.SCHOOL_COORDINATION);
+    expect(res.body.data.report).toEqual([]);
+  });
+
+  test('denies a non-null userId for a general report', async () => {
+    const actor = await createAuthorizedActor(['VIEW_FULL_REPORTS']);
+
+    const res = await auth(global.api.post('/api/reports/get-report'), actor.token).send(
+      reportPayload(REPORT_TYPE.GENERAL, { userId: 42 }),
+    );
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({
+      code: 'ERRORS.FORBIDDEN',
+      data: null,
     });
   });
 });

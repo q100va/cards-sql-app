@@ -30,7 +30,6 @@ export class HasOpDirective {
   private codes: OperationCode[] = [];
   private mode: 'any' | 'all' = 'any';
   private elseTpl: TemplateRef<any> | null = null;
-  private viewCreated = false;
   private ctx: HasOpContext = { $implicit: false, can: false, disabled: false };
 
   constructor() {
@@ -64,14 +63,11 @@ export class HasOpDirective {
     this.ctx.$implicit = can;
     this.ctx.can = can;
     this.vcr.clear();
-    this.viewCreated = false;
 
     if (can) {
       this.vcr.createEmbeddedView(this.tpl, this.ctx);
-      this.viewCreated = true;
     } else if (this.elseTpl) {
       this.vcr.createEmbeddedView(this.elseTpl);
-      this.viewCreated = true;
     }
   }
 }

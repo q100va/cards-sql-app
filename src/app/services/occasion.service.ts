@@ -49,7 +49,6 @@ export class OccasionService {
         params,
       })
       .pipe(
-        //validateResponse(z.boolean()),
         validateNoSchemaResponse<boolean>('isBoolean'),
         this.msgWrapper.messageTap('error', {
           source: 'CreateOccasionDialog',
@@ -65,7 +64,6 @@ export class OccasionService {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/create-occasion`, occasion)
       .pipe(
-        //validateResponse(z.string().trim()),
         validateNoSchemaResponse<string>('isString'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           name: res.data,
@@ -94,7 +92,6 @@ export class OccasionService {
 
   // Delete occasion by id.
   deleteOccasion(id: number): Observable<ApiResponse<null>> {
-    console.log('id', id);
     return this.http
       .delete<RawApiResponse>(
         `${this.BASE_URL}/delete-occasion/${encodeURIComponent(String(id))}`,
@@ -110,7 +107,6 @@ export class OccasionService {
     id: number,
     status: number,
   ): Observable<ApiResponse<null>> {
-    console.log('id', id);
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/edit-occasion/`, {
         id,

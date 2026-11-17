@@ -3,7 +3,6 @@ import { ToponymsListComponent } from '../toponyms-list/toponyms-list.component'
 import {
   ToponymProps,
   ToponymType,
-  DefaultAddressParams,
   QueryParams,
 } from '../../../interfaces/toponym';
 import { ActivatedRoute } from '@angular/router';

@@ -160,7 +160,6 @@
             <div class="header-cell">
               {{ 'RECIPIENT.TABLE_STATUS' | translate }}
               <p-sortIcon field="isAbsent" />
-              <!--               <p-columnFilter type="text" field="isAbsent" display="menu" class="ml-auto" />-->
               <p-columnFilter field="isAbsent" matchMode="equals" display="menu" [showMatchModes]="false"
                 [showOperator]="false" [showAddButton]="false" class="ml-auto">
                 <ng-template #filter let-value let-filter="filterCallback">

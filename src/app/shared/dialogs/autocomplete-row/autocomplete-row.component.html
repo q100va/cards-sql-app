@@ -12,9 +12,6 @@
           {{ c.name }}{{ c.homeStatus ? (' - ' + (c.homeStatus | translate)) : '' }}
         </mat-option>}
       </mat-autocomplete>
-      <!--     @if(showHint$ | async){
-    <mat-hint>{{'TABLE.CARD.COORDINATION_HINT' | translate}}</mat-hint>
-    } -->
       @if(ctrl().hasError('zodError')){
       <mat-error class="error">{{ctrl().errors!['zodError'] |
         translate}}</mat-error>

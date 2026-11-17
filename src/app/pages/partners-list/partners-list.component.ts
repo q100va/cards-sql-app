@@ -14,7 +14,6 @@ import {
 
 import { partnerDraftSchema } from '../../../../shared/schemas/partner.schema';
 
-import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -31,7 +30,7 @@ import { Kind, Partner } from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-partners-list',
-  imports: [TableComponent, TranslateModule],
+  imports: [TableComponent],
   templateUrl: './partners-list.component.html',
   styleUrl: './partners-list.component.css',
 })

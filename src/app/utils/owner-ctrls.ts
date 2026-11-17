@@ -1,5 +1,43 @@
-//src\app\utils\owner-ctrls.ts
+import type { Contact } from '../interfaces/advanced-model';
+import type { AddressKey } from '../interfaces/toponym';
 
+export type GeographicAddress = Readonly<Partial<Record<
+  'country' | 'region' | 'district' | 'locality', { readonly id: number } | null
+>>>;
+
+export type GeographicSelection = Readonly<Partial<Record<AddressKey, readonly number[] | null>>>;
+
+export function hasContactChanges(
+  existingContacts: readonly Pick<Contact, 'content'>[],
+  currentContacts: readonly (string | null | undefined)[],
+): boolean {
+  const current = currentContacts.filter((value): value is string => Boolean(value));
+  if (existingContacts.length !== current.length) return true;
+
+  const originalSet = new Set(existingContacts.map(contact => contact.content));
+  const currentSet = new Set(current);
+  if (originalSet.size !== currentSet.size) return true;
+  for (const value of currentSet) {
+    if (!originalSet.has(value)) return true;
+  }
+  return false;
+}
+
+export function hasAddressSelectionChanges(
+  existingAddress: GeographicAddress,
+  currentSelection: GeographicSelection,
+): boolean {
+  const levels: [keyof GeographicAddress, AddressKey][] = [
+    ['country', 'countries'], ['region', 'regions'], ['district', 'districts'], ['locality', 'localities'],
+  ];
+  for (const [level, selection] of levels) {
+    const originalId = existingAddress[level]?.id ?? null;
+    const selectedIds = currentSelection[selection];
+    const selectedId = Array.isArray(selectedIds) ? (selectedIds[0] ?? null) : null;
+    if (originalId !== selectedId) return true;
+  }
+  return false;
+}
 
 export const normalize = (v: string | null | undefined) => (v ?? '').trim();
 export const lightNormalize = (v: string | null | undefined) => (v ?? '').trim() !== '' ? (v ?? '').trim() : null;

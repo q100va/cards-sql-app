@@ -5,5 +5,4 @@
 
 :host ::ng-deep .left .mat-grid-tile-content{
  justify-content: start !important;
- /* align-items: self-start; */
 }

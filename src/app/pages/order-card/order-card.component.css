@@ -48,10 +48,6 @@
 ul {
   list-style-type: none;
 }
-.contact-autocomplete .p-autocomplete-input {
-  height: "56px";
-  --p-form-field-border-color: #2e7d32;
-}
 
 p-progress-spinner {
   --p-progressspinner-color-1: #fbc02d;

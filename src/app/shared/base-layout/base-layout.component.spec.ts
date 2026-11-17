@@ -188,4 +188,24 @@ afterEach(() => {
     expect(queryMenuItem('nav-roles')).toBeNull();
     expect(queryMenuItem('nav-users')).not.toBeNull();
   }));
+
+  it('shows the audit menu item for VIEW_AUDIT_LOG without roles-list access', fakeAsync(() => {
+    auth.setPerms([{ operation: 'VIEW_AUDIT_LOG', access: true, disabled: false }]);
+    auth.setPermsReady(true);
+    fixture.detectChanges();
+    tick();
+
+    openProfileMenu();
+    expect(queryMenuItem('nav-audit')).withContext('the audit menu must follow the audit endpoint permission').not.toBeNull();
+  }));
+
+  it('hides the audit menu item when only VIEW_FULL_ROLES_LIST is granted', fakeAsync(() => {
+    auth.setPerms([{ operation: 'VIEW_FULL_ROLES_LIST', access: true, disabled: false }]);
+    auth.setPermsReady(true);
+    fixture.detectChanges();
+    tick();
+
+    openProfileMenu();
+    expect(queryMenuItem('nav-audit')).withContext('roles-list permission must not expose the audit page').toBeNull();
+  }));
 });

@@ -4,6 +4,7 @@ import {
   provideHttpClientTesting,
   HttpTestingController,
 } from '@angular/common/http/testing';
+import { provideTranslateService } from '@ngx-translate/core';
 import { FileService } from './file.service';
 import { environment } from '../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -19,6 +20,7 @@ describe('FileService', () => {
       providers: [
         provideHttpClient(),          // modern HttpClient provider
         provideHttpClientTesting(),   // testing backend
+        ...provideTranslateService(),
         FileService,
       ],
     });

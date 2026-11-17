@@ -23,7 +23,10 @@ import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
   toponymSchema,
-  DraftToponym,
+  ToponymCreate,
+  ToponymUpdate,
+  toponymCreateSchema,
+  toponymUpdateSchema,
   ToponymNamesList,
   toponymNamesListSchema,
   toponymsSchema,
@@ -48,7 +51,6 @@ export class AddressService {
     let params = new HttpParams().set('type', type).set('name', name);
     if (id != null) params = params.set('id', String(id));
     if (addressFilter.countries[0]){
-       console.log('HttpParams ', addressFilter.countries[0]);
       params = params.set('countryId', String(addressFilter.countries[0]));}
     if (addressFilter.regions[0])
       params = params.set('regionId', String(addressFilter.regions[0]));
@@ -80,17 +82,10 @@ export class AddressService {
   ): Observable<ApiResponse<Toponym>> {
     const addressPoint =
       operation == 'create' ? 'create-toponym' : 'update-toponym';
-    let toponymData: DraftToponym = {
-      type: type,
-      ...mainValues,
-    };
-    if (id != null) toponymData.id = id;
-    if (addressFilter.countries[0])
-      toponymData.countryId = addressFilter.countries[0];
-    if (addressFilter.regions[0])
-      toponymData.regionId = addressFilter.regions[0];
-    if (addressFilter.districts[0])
-      toponymData.districtId = addressFilter.districts[0];
+    const createData = this.buildToponymCreate(type, mainValues, addressFilter);
+    const toponymData: ToponymCreate | ToponymUpdate = operation === 'create'
+      ? createData
+      : toponymUpdateSchema.parse({ ...createData, id });
 
     return this.http
       .post<RawApiResponse>(
@@ -104,6 +99,38 @@ export class AddressService {
         })),
         catchError(this.handleError)
       );
+  }
+
+  private buildToponymCreate(
+    type: ToponymType,
+    form: ToponymFormControlsValues,
+    filter: AddressFilter
+  ): ToponymCreate {
+    // Edit selections include the entity itself; only schema-defined ancestors
+    // belong in the request as parent references.
+    switch (type) {
+      case 'country':
+        return toponymCreateSchema.parse({ type, name: form.name });
+      case 'region':
+        return toponymCreateSchema.parse({
+          type, name: form.name, shortName: form.shortName,
+          countryId: filter.countries[0],
+        });
+      case 'district':
+        return toponymCreateSchema.parse({
+          type, name: form.name, shortName: form.shortName,
+          postName: form.postName, shortPostName: form.shortPostName,
+          countryId: filter.countries[0], regionId: filter.regions[0],
+        });
+      case 'locality':
+        return toponymCreateSchema.parse({
+          type, name: form.name, shortName: form.shortName,
+          countryId: filter.countries[0], regionId: filter.regions[0], districtId: filter.districts[0],
+          isFederalCity: form.isFederalCity,
+          isCapitalOfRegion: form.isCapitalOfRegion,
+          isCapitalOfDistrict: form.isCapitalOfDistrict,
+        });
+    }
   }
 
   //get toponym by id
@@ -148,7 +175,6 @@ export class AddressService {
     pageSize: number,
     currentPage: number
   ): Observable<ApiResponse<{ toponyms: Toponym[]; length: number }>> {
-    console.log('getToponyms filter', filter.exactMatch);
     let params = new HttpParams()
       .set('type', type)
       .set('search', filter.searchValue)

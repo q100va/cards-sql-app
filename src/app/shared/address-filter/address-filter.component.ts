@@ -23,13 +23,13 @@ import {
   Observable,
   catchError,
   concatMap,
+  filter,
   finalize,
   of,
   tap,
 } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  AddressKey,
   ToponymListMap,
   ToponymType,
   typedKeys,
@@ -86,6 +86,7 @@ export class AddressFilterComponent {
   form = new FormGroup<Record<string, AbstractControl>>({});
   // null for single-select, [] for multi-select
   private emptyValue: null | [] = null;
+  private hierarchyGeneration = 0;
 
   // --- lifecycle ---
   ngOnInit() {
@@ -98,56 +99,48 @@ export class AddressFilterComponent {
     this.addControl('district', this.params().source === 'toponymCard', true);
     this.addControl('locality', false, true);
 
-    console.log('this.params()', this.params());
-
     if (this.params().readonly) this.form.get('country')?.disable();
 
     // initial load of countries
+    const generation = ++this.hierarchyGeneration;
     this.addressService
       .getListOfToponyms([], 'countries')
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
+      .pipe(
+        filter(() => this.isCurrentHierarchy(generation)),
+        concatMap((res) => {
           this.toponymsList.countriesList = res.data;
 
           // preselect chain from defaults (if any)
           if (this.defaultAddressParams().countryId) {
             this.setDefaultFormValue('country');
-            this.onCountrySelectionChange(false)
+            return this.onCountrySelectionChange(false, generation)
               .pipe(
                 concatMap(() =>
-                  this.defaultAddressParams().regionId
+                  this.isCurrentHierarchy(generation) && this.defaultAddressParams().regionId
                     ? (this.setDefaultFormValue('region'),
-                      this.onRegionSelectionChange(false))
+                      this.onRegionSelectionChange(false, generation))
                     : EMPTY,
                 ),
                 concatMap(() =>
-                  this.defaultAddressParams().districtId
+                  this.isCurrentHierarchy(generation) && this.defaultAddressParams().districtId
                     ? (this.setDefaultFormValue('district'),
-                      this.onDistrictSelectionChange(false))
+                      this.onDistrictSelectionChange(false, generation))
                     : EMPTY,
                 ),
                 concatMap(() =>
-                  this.defaultAddressParams().localityId
+                  this.isCurrentHierarchy(generation) && this.defaultAddressParams().localityId
                     ? (this.setDefaultFormValue('locality'),
-                      this.onLocalitySelectionChange(false))
+                      this.onLocalitySelectionChange(false, generation))
                     : EMPTY,
                 ),
-                finalize(() => this.showSpinner.emit(false)),
-              )
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe({
-                error: (err) =>
-                  this.msgWrapper.handle(err, {
-                    source: 'AddressFilterComponent',
-                    stage: 'getListOfToponyms',
-                    type: 'country',
-                  }),
-              });
-          } else {
-            this.showSpinner.emit(false);
+              );
           }
-        },
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.showSpinner.emit(false)),
+      )
+      .subscribe({
         error: (err) =>
           this.msgWrapper.handle(err, {
             source: 'AddressFilterComponent',
@@ -158,6 +151,7 @@ export class AddressFilterComponent {
 
   // --- API for parent (card/list) ---
   onChangeMode(mode: string, data: DefaultAddressParams | null) {
+    const generation = ++this.hierarchyGeneration;
     if (mode == 'edit') {
       this.params().class = 'none';
       this.params().readonly = false;
@@ -168,36 +162,36 @@ export class AddressFilterComponent {
       ) {
         // enable all controls if not userCard
         this.enableChain(['country', 'region', 'district', 'locality']);
-        console.log('onChangeMode ', this.form.controls['country'].value);
       }
 
       if (
         this.params().source === 'userCard' ||
         this.params().source === 'partnerCard' ||
-        this.params().source === 'volunteerCard'
+        this.params().source === 'volunteerCard' ||
+        (this.params().source === 'homeCard' && data !== null)
       ) {
         if (data) {
           this.form.controls['country'].setValue(data.countryId);
           this.selectionChangeMethods
-            .onCountrySelectionChange()
+            .onCountrySelectionChange(true, generation)
             .pipe(
               concatMap(
-                () => (
+                () => this.isCurrentHierarchy(generation) ? (
                   this.form.controls['region'].setValue(data.regionId),
-                  this.selectionChangeMethods.onRegionSelectionChange()
-                ),
+                  this.selectionChangeMethods.onRegionSelectionChange(true, generation)
+                ) : EMPTY,
               ),
               concatMap(
-                () => (
+                () => this.isCurrentHierarchy(generation) ? (
                   this.form.controls['district'].setValue(data.districtId),
-                  this.selectionChangeMethods.onDistrictSelectionChange()
-                ),
+                  this.selectionChangeMethods.onDistrictSelectionChange(true, generation)
+                ) : EMPTY,
               ),
               concatMap(
-                () => (
+                () => this.isCurrentHierarchy(generation) ? (
                   this.form.controls['locality'].setValue(data.localityId),
-                  this.selectionChangeMethods.onLocalitySelectionChange()
-                ),
+                  this.selectionChangeMethods.onLocalitySelectionChange(true, generation)
+                ) : EMPTY,
               ),
             )
             .pipe(takeUntilDestroyed(this.destroyRef))
@@ -239,25 +233,25 @@ export class AddressFilterComponent {
     if (data) {
       this.form.controls['country'].setValue(data.countryId);
       this.selectionChangeMethods
-        .onCountrySelectionChange()
+        .onCountrySelectionChange(true, generation)
         .pipe(
           concatMap(
-            () => (
+            () => this.isCurrentHierarchy(generation) ? (
               this.form.controls['region'].setValue(data.regionId),
-              this.selectionChangeMethods.onRegionSelectionChange()
-            ),
+              this.selectionChangeMethods.onRegionSelectionChange(true, generation)
+            ) : EMPTY,
           ),
           concatMap(
-            () => (
+            () => this.isCurrentHierarchy(generation) ? (
               this.form.controls['district'].setValue(data.districtId),
-              this.selectionChangeMethods.onDistrictSelectionChange()
-            ),
+              this.selectionChangeMethods.onDistrictSelectionChange(true, generation)
+            ) : EMPTY,
           ),
           concatMap(
-            () => (
+            () => this.isCurrentHierarchy(generation) ? (
               this.form.controls['locality'].setValue(data.localityId),
-              this.selectionChangeMethods.onLocalitySelectionChange()
-            ),
+              this.selectionChangeMethods.onLocalitySelectionChange(true, generation)
+            ) : EMPTY,
           ),
         )
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -290,20 +284,11 @@ export class AddressFilterComponent {
     });
   }
 
-  onCountrySelectionChange(isEmit = true): Observable<any> {
-    return this.onToponymSelectionChange('country', 'region', 'regions').pipe(
-      tap(() => {
-        // reset chain below
-        this.resetChain(['region', 'district', 'locality']);
-        const chain: ('region' | 'district' | 'locality' | 'country')[] =
-          this.params().readonly
-            ? ['country', 'region', 'district', 'locality']
-            : ['district', 'locality'];
-        this.disableChain(chain);
-        this.toponymsList.districtsList = [];
-        this.toponymsList.localitiesList = [];
-        if (isEmit) this.emitAddressData();
-      }),
+  onCountrySelectionChange(isEmit = true, generation = ++this.hierarchyGeneration): Observable<any> {
+    if (!this.isCurrentHierarchy(generation)) return EMPTY;
+    const request$ = this.onToponymSelectionChange('country', 'region', 'regions', generation);
+    if (isEmit) this.emitAddressData();
+    return request$.pipe(
       catchError((err) => {
         this.msgWrapper.handle(err, {
           source: 'AddressFilterComponent',
@@ -313,22 +298,11 @@ export class AddressFilterComponent {
       }),
     );
   }
-  onRegionSelectionChange(isEmit = true): Observable<any> {
-    return this.onToponymSelectionChange(
-      'region',
-      'district',
-      'districts',
-    ).pipe(
-      tap(() => {
-        this.resetChain(['district', 'locality']);
-        const chain: ('region' | 'district' | 'locality' | 'country')[] =
-          this.params().readonly
-            ? ['region', 'district', 'locality']
-            : ['locality'];
-        this.disableChain(chain);
-        this.toponymsList.localitiesList = [];
-        if (isEmit) this.emitAddressData();
-      }),
+  onRegionSelectionChange(isEmit = true, generation = ++this.hierarchyGeneration): Observable<any> {
+    if (!this.isCurrentHierarchy(generation)) return EMPTY;
+    const request$ = this.onToponymSelectionChange('region', 'district', 'districts', generation);
+    if (isEmit) this.emitAddressData();
+    return request$.pipe(
       catchError((err) => {
         this.msgWrapper.handle(err, {
           source: 'AddressFilterComponent',
@@ -338,17 +312,11 @@ export class AddressFilterComponent {
       }),
     );
   }
-  onDistrictSelectionChange(isEmit = true): Observable<any> {
-    return this.onToponymSelectionChange(
-      'district',
-      'locality',
-      'localities',
-    ).pipe(
-      tap(() => {
-        this.resetChain(['locality']);
-        if (this.params().readonly) this.disableChain(['district', 'locality']);
-        if (isEmit) this.emitAddressData();
-      }),
+  onDistrictSelectionChange(isEmit = true, generation = ++this.hierarchyGeneration): Observable<any> {
+    if (!this.isCurrentHierarchy(generation)) return EMPTY;
+    const request$ = this.onToponymSelectionChange('district', 'locality', 'localities', generation);
+    if (isEmit) this.emitAddressData();
+    return request$.pipe(
       catchError((err) => {
         this.msgWrapper.handle(err, {
           source: 'AddressFilterComponent',
@@ -358,7 +326,8 @@ export class AddressFilterComponent {
       }),
     );
   }
-  onLocalitySelectionChange(isEmit = true): Observable<any> {
+  onLocalitySelectionChange(isEmit = true, generation = ++this.hierarchyGeneration): Observable<any> {
+    if (!this.isCurrentHierarchy(generation)) return EMPTY;
     if (this.params().readonly) this.disableChain(['locality']);
     if (isEmit) this.emitAddressData();
     return EMPTY;
@@ -373,6 +342,11 @@ export class AddressFilterComponent {
   };
 
   // --- helpers ---
+  // One generation owns the whole chain; newer intent invalidates its responses and continuations.
+  private isCurrentHierarchy(generation: number): boolean {
+    return generation === this.hierarchyGeneration;
+  }
+
   /** Add form control with optional required and initial disabled state */
   private addControl(name: ToponymType, required: boolean, disabled = false) {
     this.form.addControl(
@@ -419,10 +393,19 @@ export class AddressFilterComponent {
 
   /** Load next-level list based on current selection; enable/disable next control */
   private onToponymSelectionChange(
-    key: ToponymType,
+    key: 'country' | 'region' | 'district',
     nextKey: 'region' | 'district' | 'locality',
     typeOfList: 'regions' | 'districts' | 'localities',
+    generation: number,
   ): Observable<any> {
+    const descendants: ToponymType[] = key === 'country'
+      ? ['region', 'district', 'locality']
+      : key === 'region' ? ['district', 'locality'] : ['locality'];
+    this.resetChain(descendants);
+    this.disableChain(descendants);
+    descendants.forEach((level) => this.toponymsList[typeMap[level]] = []);
+    if (this.params().readonly) this.form.get(key)?.disable();
+
     const ctrl = this.form.controls[key];
     // normalize selected ids to array
     const idValues = this.params().multiple
@@ -437,7 +420,7 @@ export class AddressFilterComponent {
       return of(null);
     }
 
-    return this.fetchAndApplyToponyms(idValues, key, typeOfList, nextKey);
+    return this.fetchAndApplyToponyms(idValues, key, typeOfList, nextKey, generation);
   }
 
   private fetchAndApplyToponyms(
@@ -445,17 +428,19 @@ export class AddressFilterComponent {
     type: ToponymType,
     typeOfList: 'countries' | 'regions' | 'districts' | 'localities',
     nextKey?: 'region' | 'district' | 'locality',
+    generation = this.hierarchyGeneration,
   ): Observable<any> {
     return this.addressService.getListOfToponyms(idValues, typeOfList).pipe(
+      filter(() => this.isCurrentHierarchy(generation)),
       tap((res) => {
         this.toponymsList[`${typeOfList}List` as keyof ToponymListMap] =
           res.data;
         if (nextKey) {
-          res.data?.length
+          res.data?.length && !this.params().readonly
             ? this.form.get(nextKey)?.enable()
             : this.form.get(nextKey)?.disable();
         } else {
-          res.data?.length
+          res.data?.length && !this.params().readonly
             ? this.form.get(type)?.enable()
             : this.form.get(type)?.disable();
         }
@@ -489,6 +474,8 @@ export class AddressFilterComponent {
         parentIdMap[type],
         type,
         typeOfListMap[type],
+        undefined,
+        ++this.hierarchyGeneration,
       ).subscribe({
         next: () => {
           if (this.form.get(type)?.value && this.form.get(type)?.value == id) {

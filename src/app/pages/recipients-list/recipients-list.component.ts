@@ -8,15 +8,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatMenuModule } from '@angular/material/menu';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 import { OccasionService } from '../../services/occasion.service';
 import { RecipientService } from '../../services/recipient.service';
@@ -27,7 +24,6 @@ import { finalize, map, switchMap } from 'rxjs';
 import { Occasion } from '../../../../shared/schemas/occasion.schema';
 import {
   Recipient,
-  recipientQueryDTOSchema,
 } from '../../../../shared/schemas/recipient.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -42,7 +38,6 @@ import { CreateRecipientDialogComponent } from './create-recipient-dialog/create
     MatCardModule,
     MatButtonModule,
     MatGridListModule,
-    MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
     TableModule,
@@ -50,10 +45,8 @@ import { CreateRecipientDialogComponent } from './create-recipient-dialog/create
     IconField,
     InputIcon,
     CommonModule,
-    MultiSelectModule,
     SelectModule,
     InputTextModule,
-    DropdownModule,
     TooltipModule,
     HasOpDirective,
     TranslateModule,
@@ -67,7 +60,6 @@ export class RecipientsListComponent implements OnInit {
   private readonly occasionService = inject(OccasionService);
   private readonly recipientService = inject(RecipientService);
   private readonly confirmationService = inject(ConfirmationService);
-  //private readonly filterService = inject(FilterService);
   private readonly dialog = inject(MatDialog);
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly translateService = inject(TranslateService);
@@ -80,10 +72,6 @@ export class RecipientsListComponent implements OnInit {
   recipients!: Recipient[];
   selectedRecipients: Recipient[] = [];
   searchValue: string | undefined;
-  categories = [];
-  statuses = [];
-  selectedCategories = signal<string[]>([]);
-  selectedStatuses = signal<string[]>([]);
   acceptableForSchoolOptions = [
     {
       label: this.translateService.instant('RECIPIENT.TABLE_FOR_SCHOOL'),
@@ -105,22 +93,18 @@ export class RecipientsListComponent implements OnInit {
     },
   ];
 
-  constructor() {}
 
   ngOnInit() {
-    console.log('RecipientsListComponent');
     this.route.paramMap
       .pipe(
         map((params) => Number(params.get('occasionId'))),
         switchMap((occasionId) => {
           this.occasionId = occasionId;
-          console.log('this.occasionId:', occasionId);
           return this.occasionService.getOccasionById(occasionId);
         }),
       )
       .subscribe({
         next: (res) => {
-          console.log('res.data:', res.data);
           this.occasion = res.data;
         },
         error: (err) => {
@@ -134,29 +118,7 @@ export class RecipientsListComponent implements OnInit {
   }
 
   loadRecipients(event: TableLazyLoadEvent): void {
-    console.log('event:', event);
 
-    /*     Object
-    filters:
-    acceptableForSchool: [{…}]0: {value: null, matchMode: 'startsWith', operator: 'and'}length: 1[[Prototype]]: Array(0)
-    birthDay: [{…}]
-    birthMonth: [{…}]
-    birthYear: [{…}]
-    category: Array(1)0: {value: 'male', matchMode: 'contains', operator: 'and'}length: 1[[Prototype]]: Array(0)
-    fullName: [{…}]0: {value: null, matchMode: 'startsWith', operator: 'and'}length: 1[[Prototype]]: Array(0)
-    homeName: [{…}]
-    isAbsent: [{…}]
-    plusAmount: [{…}]
-    regionName: [{…}]
-    specialComment: [{…}][[Prototype]]: Object
-    first: 0
-    forceUpdate: () => this.cd.detectChanges()
-    globalFilter: null
-    multiSortMeta: undefined
-    rows: 10
-    sortField: "fullName"
-    sortOrder: 1
-    [[Prototype]]: Object */
 
     const query = {
       occasionId: this.occasionId,
@@ -168,7 +130,6 @@ export class RecipientsListComponent implements OnInit {
       filters: this.normalizePrimeFilters(event.filters),
     };
     this.isLoading.set(true);
-    //console.log('FILTERS:', query.filters);
     this.recipientService
       .getRecipientsByOccasion(query)
       .pipe(
@@ -201,7 +162,6 @@ export class RecipientsListComponent implements OnInit {
   }
 
   private normalizePrimeFilters(filters: any) {
-    //console.log('normalizePrimeFilters');
     const result: Record<
       string,
       {
@@ -212,13 +172,11 @@ export class RecipientsListComponent implements OnInit {
     > = {};
 
     for (const [field, meta] of Object.entries(filters ?? {})) {
-      //console.log('Object.entries(filters ?? {})');
       const metaArray = Array.isArray(meta)
         ? meta.filter(
             (m) => m.value !== null && m.value !== undefined && m.value !== '',
           )
         : [];
-      //console.log('metaArray:', metaArray);
       if (metaArray.length) {
         result[field] = [...metaArray];
       }
@@ -230,13 +188,6 @@ export class RecipientsListComponent implements OnInit {
   clear(dt: Table) {
     this.searchValue = '';
     dt.reset();
-    /*   this.selectedDates.set([]);
-      this.selectedMonths.set([]);
-      this.selectedYears.set([]);
-      this.selectedTypes.set([]);
-      this.selectedStatuses.set([]);
-      this.nameFilterValue.set('');
-      this.filteredOccasions = [...this.allOccasions]; */
   }
 
   cannotDeleteRecipients() {
@@ -309,7 +260,6 @@ export class RecipientsListComponent implements OnInit {
   }
 
   deleteRecipient(selectedRecipients: Recipient[], dt: Table) {
-    // console.log('selectedRecipients', selectedRecipients);
     this.isLoading.set(true);
     const selectedRecipientIds = selectedRecipients.map((r) => r.id);
     this.recipientService

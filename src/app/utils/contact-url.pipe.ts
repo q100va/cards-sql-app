@@ -1,4 +1,3 @@
-// src/app/pages/users-list/pipes/contact-url.pipe.ts
 import { Pipe, PipeTransform, Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })

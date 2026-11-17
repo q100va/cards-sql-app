@@ -3,7 +3,6 @@ import { Observable, throwError } from 'rxjs';
 import {
   HttpClient,
   HttpErrorResponse,
-  HttpParams,
 } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -11,7 +10,6 @@ import { environment } from '../../environments/environment';
 // Schemas & validators
 import {
   Recipient,
-  recipientSchema,
   recipientsListSchema,
   RecipientQuery,
   recipientsShortSchema,
@@ -24,7 +22,6 @@ import {
 import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
-import { MatListOption } from '@angular/material/list';
 
 @Injectable({ providedIn: 'root' })
 export class RecipientService {
@@ -42,7 +39,6 @@ export class RecipientService {
     return this.http
       .post<RawApiResponse>(`${this.BASE_URL}/create-list`, { occasionId })
       .pipe(
-        // validateResponse(z.string().trim()),
         validateNoSchemaResponse<number>('isNumber'),
         this.msgWrapper.messageTap('success', undefined, (res) => ({
           listLength: res.data,
@@ -52,7 +48,6 @@ export class RecipientService {
   }
 
   clearList(occasionId: number): Observable<ApiResponse<null>> {
-    console.log('id', occasionId);
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/clear-list/`, { occasionId })
       .pipe(
@@ -67,7 +62,6 @@ export class RecipientService {
     returned: RecipientsShortList;
     absent: RecipientsShortList;
   }>> {
-    console.log('id', occasionId);
     return this.http
       .patch<RawApiResponse>(`${this.BASE_URL}/check-list/`, { occasionId })
       .pipe(
@@ -77,7 +71,6 @@ export class RecipientService {
             returned: recipientsShortSchema,
             absent: recipientsShortSchema,
           })),
-        //this.msgWrapper.messageTap('success'),
         catchError(this.handleError),
       );
   }
@@ -112,25 +105,11 @@ export class RecipientService {
       );
   }
 
-  /*
-  // Get recipients and options (for the table).
-  getRecipients(): Observable<
-    ApiResponse<{ recipients: Recipient[]; options: Options }>
-  > {
-    return this.http
-      .get<RawApiResponse>(`${this.BASE_URL}/get-recipients`)
-      .pipe(
-        validateResponse(recipientsListSchema),
-        catchError(this.handleError),
-      );
-  } */
-
   // Delete recipient by id.
   deleteRecipients(
     recipientIds: number[],
     occasionId: number,
   ): Observable<ApiResponse<null>> {
-    console.log('id', recipientIds);
     return this.http
       .delete<RawApiResponse>(`${this.BASE_URL}/delete-recipients/`, {
         body: { recipientIds, occasionId },
@@ -141,21 +120,4 @@ export class RecipientService {
         catchError(this.handleError),
       );
   }
-  /*  // Edit recipient by id.
-  editRecipientStatus(id: number, status: number): Observable<ApiResponse<null>> {
-    console.log('id', id);
-    return this.http
-      .patch<RawApiResponse>(
-        `${this.BASE_URL}/edit-recipient/`,
-        {
-        id,
-        status,
-      }
-      )
-      .pipe(
-        validateNoSchemaResponse<null>('isNull'),
-        this.msgWrapper.messageTap('success'),
-        catchError(this.handleError),
-      );
-  } */
 }

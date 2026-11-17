@@ -1,4 +1,3 @@
-// src/app/pages/users-list/users-list.component.ts
 import {
   Component,
   DestroyRef,
@@ -158,21 +157,14 @@ export class TableComponent<K extends Kind> implements OnChanges {
   @ViewChild(MatSort) sort!: MatSort;
 
   private readonly destroyRef = inject(DestroyRef);
+  private cardLookupVersion = 0;
+  private cardLookupOwnerDestroyed = false;
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
   private readonly fileService = inject(FileService);
   private readonly msg = inject(MessageWrapperService);
   readonly dialog = inject(MatDialog);
   readonly dateUtils = inject(DateUtilsService);
-  protected service!: OwnerMainService<
-    OwnerByKind<K>,
-    OwnerDraftByKind<K>,
-    ChangingByKind<K>,
-    RestoringByKind<K>,
-    OutdatingByKind<K>,
-    DeletingByKind<K>,
-    ListDto<K>
-  >;
   protected readonly userService = inject(UserService) as OwnerMainService<
     User,
     UserDraft,
@@ -335,6 +327,7 @@ export class TableComponent<K extends Kind> implements OnChanges {
     >;
   }
   constructor(private injector: Injector) {
+    this.destroyRef.onDestroy(() => { this.cardLookupOwnerDestroyed = true; });
     const iconRegistry = inject(MatIconRegistry);
     const sanitizer = inject(DomSanitizer);
     for (const item of this.contactTypes) {
@@ -359,20 +352,10 @@ export class TableComponent<K extends Kind> implements OnChanges {
 
       combineLatest([this.kind$, query$])
         .pipe(
-          tap(() => this.loading.set(true)),
-          switchMap(([kind, q]) =>
-            this.fetchList(kind as K, q.filter, q.pageSize, q.page).pipe(
-              tap({
-                next: ({ list, length }) => {
-                  console.log('list', list);
-                  this.owners = list as OwnerByKind<K>[];
-                  this.length.set(length ?? 0);
-                  this.dataSource.data = list as OwnerByKind<K>[];
-                  console.log(' this.dataSource.data', this.dataSource.data);
-                  //this.dataSource.sort = this.sort;
-                },
-                complete: () => {},
-              }),
+          switchMap(([kind, q]) => {
+            // switchMap finalizes the previous request before starting this one's loading.
+            this.loading.set(true);
+            return this.fetchList(kind as K, q.filter, q.pageSize, q.page).pipe(
               catchError((err) => {
                 this.msg.handle(err, {
                   source: `${kind}-list`,
@@ -381,9 +364,14 @@ export class TableComponent<K extends Kind> implements OnChanges {
                 });
                 return of({ list: [], length: 0 });
               }),
+              tap(({ list, length }) => {
+                this.owners = list as OwnerByKind<K>[];
+                this.length.set(length ?? 0);
+                this.dataSource.data = list as OwnerByKind<K>[];
+              }),
               finalize(() => this.loading.set(false)),
-            ),
-          ),
+            );
+          }),
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({ next: () => {} });
@@ -391,7 +379,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   }
   ngOnInit() {
     this.displayedColumns = this.params().columns.map((c) => c.columnName);
-    console.log('this.displayedColumns', this.displayedColumns);
     this.dialogProps = this.ownerDialogConfig();
     this.permissions = PERMISSIONS_COMPONENT_REGISTRY[
       this.kind()
@@ -399,7 +386,6 @@ export class TableComponent<K extends Kind> implements OnChanges {
   }
   ngOnChanges(changes: SimpleChanges) {
     if (changes['kind'] && this.kind) {
-      console.log('this.kind', this.kind());
       this.kind$.next(this.kind());
     }
   }
@@ -551,14 +537,22 @@ export class TableComponent<K extends Kind> implements OnChanges {
       });
   }
 
+  // Late lookups may open UI only while they are the newest live card intent.
+  private isCurrentCardLookup(version: number): boolean {
+    return !this.cardLookupOwnerDestroyed && version === this.cardLookupVersion;
+  }
+
   onOpenOwnerCardClick(id: number) {
+    if (this.cardLookupOwnerDestroyed) return;
+    const version = ++this.cardLookupVersion;
     const service = this.getService();
 
     service
       .getById(id)
-      .pipe()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (!this.isCurrentCardLookup(version)) return;
           const owner = res.data;
           const dialogProps = {
             ...this.dialogProps,
@@ -608,20 +602,23 @@ export class TableComponent<K extends Kind> implements OnChanges {
               data: dialogData,
             })
             .afterClosed()
-            .pipe()
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: (r) => {
+                if (!this.isCurrentCardLookup(version)) return;
                 if (r?.refresh) this.forceReload();
               },
             });
         },
-        error: (err) =>
+        error: (err) => {
+          if (!this.isCurrentCardLookup(version)) return;
           this.msg.handle(err, {
             source: 'TableComponent',
             stage: 'openOwnerCard',
             ownerId: id,
             kind: this.kind(),
-          }),
+          });
+        },
       });
   }
   //TODO:

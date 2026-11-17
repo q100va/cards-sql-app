@@ -3,16 +3,10 @@ import {
   ConfOwnerDraftByKind,
   RelationPick,
   DraftCommon,
-  Home,
   HomeDraft,
   Kind,
   NonTelegram,
   OwnerByKind,
-  OwnerDraftByKind,
-  Partner,
-  Senior,
-  User,
-  Volunteer,
 } from '../interfaces/advanced-model';
 import { AddressFilter } from '../interfaces/toponym';
 import { completeContact, lightNormalize, normalize } from './owner-ctrls';
@@ -30,7 +24,6 @@ const getIds = (form: FormGroup, ctrlName: string) => {
 };
 const getId = (form: FormGroup, ctrlName: string) => {
   const v = form.get(ctrlName)!.getRawValue();
-  console.log('V', v);
   if (v === null) return v;
   return v.id;
 };
@@ -52,21 +45,6 @@ const getHomeAddress = (address: AddressFilter): HomeDraft['draftAddress'] => ({
   districtId: address.districts[0],
   localityId: address.localities[0],
 });
-
-/* function getContacts(form: FormGroup, contactTypes: NonTelegram[]) {
-  const draftContacts: Record<NonTelegram, string[]> = {} as Record<
-    NonTelegram,
-    string[]
-  >;
-  for (const type of contactTypes) {
-    const raw: (string | null)[] =
-      (form.get(type) as any)?.getRawValue?.() ?? [];
-    draftContacts[type] = (raw as string[])
-      .filter(Boolean)
-      .map((v) => completeContact(v!, type));
-  }
-  return draftContacts;
-} */
 
 function getContacts(form: FormGroup, contactTypes: NonTelegram[]) {
   const draftContacts = {} as Record<NonTelegram, string[]>;
@@ -199,16 +177,6 @@ type RestParams = Pick<
   'isRestricted' | 'causeOfRestriction' | 'dateOfRestriction'
 >;
 
-type BuildRestrictedFn<K extends Kind> = (
-  form: FormGroup,
-  existing: OwnerByKind<K> | null,
-  now: Date,
-) => RestParams;
-
-type BuildRestrictedMap = {
-  [K in Kind]: BuildRestrictedFn<K>;
-};
-
 function getRestParams<
   T extends { isRestricted?: boolean; dateOfRestriction?: Date | null },
 >(form: FormGroup, existing: T | null, now: Date): RestParams {
@@ -226,57 +194,6 @@ function getRestParams<
   };
 }
 
-const BUILD_RESTRICTED: BuildRestrictedMap = {
-  user: (form, existing, now) => getRestParams(form, existing, now),
-  partner: (form, existing, now) => getRestParams(form, existing, now),
-  volunteer: (form, existing, now) => getRestParams(form, existing, now),
-  // senior: (form, existing, now) => getRestParams(form, existing, now),
-
-  home: (form, existing, now) => {
-    const isClose = !!get(form, 'isClose');
-    const isRestricted = isClose ? true : !!get(form, 'isRestricted');
-
-    const causeOfRestriction = isClose
-      ? // ? `${get(form, 'causeOfRestriction') ?? ''} CLOSE`.trim()
-        get(form, 'causeOfRestriction')
-        ? get(form, 'causeOfRestriction')
-        : 'CLOSE'
-      : isRestricted
-        ? (get(form, 'causeOfRestriction') as string | null)
-        : null;
-
-    const dateOfRestriction = isRestricted
-      ? existing?.isRestricted
-        ? (existing?.dateOfRestriction ?? now)
-        : now
-      : null;
-
-    return { isRestricted, causeOfRestriction, dateOfRestriction };
-  },
-
-  senior: (form, existing, now) => {
-    const dateOfExit = !!get(form, 'dateOfExit');
-    const isRestricted = dateOfExit ? true : !!get(form, 'isRestricted');
-
-    const causeOfRestriction = dateOfExit
-      ? // ? `${get(form, 'causeOfRestriction') ?? ''} GONE`.trim()
-        get(form, 'causeOfRestriction')
-        ? get(form, 'causeOfRestriction')
-        : 'GONE'
-      : isRestricted
-        ? (get(form, 'causeOfRestriction') as string | null)
-        : null;
-
-    const dateOfRestriction = isRestricted
-      ? existing?.isRestricted
-        ? (existing?.dateOfRestriction ?? now)
-        : now
-      : null;
-
-    return { isRestricted, causeOfRestriction, dateOfRestriction };
-  },
-};
-
 // --- Unified builder ---------------------------------------------------------
 export function buildDraft<K extends Kind>(
   kind: K,
@@ -287,8 +204,6 @@ export function buildDraft<K extends Kind>(
   userId: number,
 ): ConfOwnerDraftByKind[K] {
   const now = new Date();
-
- // const rest = BUILD_RESTRICTED[kind](form, existing, now);
 
   const rest = getRestParams(form, existing, now);
   const base: DraftCommon = {
@@ -306,10 +221,6 @@ export function buildDraft<K extends Kind>(
     now,
   );
 
-  console.log('base, extras');
-  console.log(base, extras);
   return mergeDraft(base, extras);
 
-  /*   const draft: DraftByKind[K] = { ...base, ...extras };
-  return draft */
 }

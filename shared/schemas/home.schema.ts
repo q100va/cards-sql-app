@@ -263,6 +263,10 @@ export const homeDraftSchema = z
         .max(6, { message: 'FORM_VALIDATION.TOO_LONG_6' }),
     ),
     draftAddress: draftAddressSchema,
+    // TODO: Distinguish intentionally missing postalAddressPart from an accidentally
+    // omitted street/building. Some valid addresses have no street or house number,
+    // so the field cannot simply be required. Consider an explicit "no street/building"
+    // option or confirmation before saving an empty value.
     postalAddressPart: z.preprocess(
       emptyToNull,
       z

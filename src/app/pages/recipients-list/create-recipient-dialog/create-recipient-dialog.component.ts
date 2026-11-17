@@ -18,7 +18,6 @@ import {
 import {
   AbstractControl,
   FormControl,
-  FormGroup,
   FormsModule,
   ReactiveFormsModule,
   ValidationErrors,
@@ -28,27 +27,22 @@ import {
 // Material UI modules
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatListModule, MatListOption } from '@angular/material/list';
 
 // Services
-import { OccasionService } from '../../../services/occasion.service';
 import { ConfirmationService } from 'primeng/api';
 import { MessageWrapperService } from '../../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // RxJS
-import { EMPTY } from 'rxjs';
-import { switchMap, finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Validation
 import { Occasion } from '../../../../../shared/schemas/occasion.schema';
-import { zodValidator } from '../../../utils/zod-validator';
 
 //Directives
 import { HasOpDirective } from '../../../directives/has-op.directive';
@@ -92,12 +86,10 @@ export type OccasionFormControls = {
     MatDialogContent,
     // Material form + UI
     MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatGridListModule,
     MatIconModule,
     MatSelectModule,
-    MatRadioModule,
     MatListModule,
     // Angular forms
     FormsModule,
@@ -115,7 +107,6 @@ export class CreateRecipientDialogComponent {
   readonly dialogRef = inject(MatDialogRef<CreateRecipientDialogComponent>);
   readonly data = inject<Occasion>(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
-  private readonly occasionService = inject(OccasionService);
   private readonly homeService = inject(HomeService);
   private readonly recipientService = inject(RecipientService);
   private readonly seniorService = inject(SeniorService);
@@ -127,6 +118,7 @@ export class CreateRecipientDialogComponent {
   nursingHomeControl = new FormControl<number | null>(null);
   homeGroups: RegionWithHomes = [];
   seniors: RecipientsShortList = [];
+  private homeLookupIntent = 0;
 
   ngOnInit(): void {
     this.isLoading = true;
@@ -149,27 +141,36 @@ export class CreateRecipientDialogComponent {
       });
   }
 
-  onHomeSelected(homeId: number) {
+  onHomeSelected(homeId: number | null | undefined) {
+    const intent = ++this.homeLookupIntent;
     this.seniors = [];
-    if (homeId === null || homeId === undefined) return;
+    if (homeId === null || homeId === undefined) {
+      this.isLoading = false;
+      return;
+    }
     this.isLoading = true;
     this.seniorService
       .getSeniorsForOccasion(this.data.id, homeId)
       .pipe(
-        finalize(() => (this.isLoading = false)),
+        finalize(() => {
+          if (intent === this.homeLookupIntent) this.isLoading = false;
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (res) => {
+          if (intent !== this.homeLookupIntent) return;
           this.seniors = res.data;
         },
-        error: (err) =>
+        error: (err) => {
+          if (intent !== this.homeLookupIntent) return;
           this.msgWrapper.handle(err, {
             source: 'CreateRecipientDialog',
             stage: 'onHomeSelected',
             occasionId: this.data.id,
             homeId,
-          }),
+          });
+        },
       });
   }
 
@@ -180,7 +181,6 @@ export class CreateRecipientDialogComponent {
     this.isLoading = true;
 
    const recipientsIds = options.map(o => o.value);
-console.log('recipientsIds', recipientsIds);
     this.recipientService
       .createRecipients(recipientsIds, this.data.id)
       .pipe(

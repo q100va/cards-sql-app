@@ -40,9 +40,6 @@ export type PermissionSet<K extends TableComponentType> = {
 export type PermissionsComponentRegistry = {
   readonly [K in TableComponentType]: PermissionSet<K>;
 };
-/* export type PermissionsComponentRegistry = {
-  readonly [K in TableComponentType]: PermissionSet;
-}; */
 export const PERMISSIONS_COMPONENT_REGISTRY: PermissionsComponentRegistry = {
   user: {
     viewOrEdit: {

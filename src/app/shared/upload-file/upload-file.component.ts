@@ -12,12 +12,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { finalize } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import readXlsxFile from 'read-excel-file';
 import { MessageWrapperService } from '../../services/message.service';
-import { AddressService } from '../../services/address.service';
 import { ToponymType } from '../../interfaces/toponym';
 import { schemas } from './schemas';
 import { CustomError } from './custom-error';
@@ -37,27 +34,32 @@ import { CustomError } from './custom-error';
 })
 export class UploadFileComponent {
   private readonly destroyRef = inject(DestroyRef);
-  private addressService = inject(AddressService);
+  private fileSelectionVersion = 0;
+  private ownerDestroyed = false;
   private msgWrapper = inject(MessageWrapperService);
 
   @ViewChild('hiddenfileinput') hiddenfileinput!: ElementRef<HTMLInputElement>;
 
-  file?: File;
   fileName = '';
   typeOfData = input.required<ToponymType | 'seniors'>();
   isCompleted = input<boolean>();
 
   showSpinner = output<boolean>();
-  resetRequested = output<void>();
   result = output<any[]>();
 
   constructor() {
+    this.destroyRef.onDestroy(() => { this.ownerDestroyed = true; });
     effect(() => {
       if (this.isCompleted()) this.fileName = '';
     });
   }
 
   // --- utils ---
+  // File reads may finish late; only the current live selection owns UI side effects.
+  private ownsSelection(version: number): boolean {
+    return !this.ownerDestroyed && version === this.fileSelectionVersion;
+  }
+
   private isExcelFile(f: File) {
     const okMime = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -82,6 +84,8 @@ export class UploadFileComponent {
   }
 
   addFile(event: Event) {
+    if (this.ownerDestroyed) return;
+    const version = ++this.fileSelectionVersion;
     this.showSpinner.emit(true);
     this.fileName = '';
     const inputEl = event.target as HTMLInputElement;
@@ -111,19 +115,10 @@ export class UploadFileComponent {
 
     const schema = schemas[this.typeOfData()];
 
-    console.log('file', file);
     readXlsxFile(file, { schema })
       .then(({ rows, errors }) => {
-        console.log('errors');
-        console.log(errors);
-        console.log('rows', rows);
+        if (!this.ownsSelection(version)) return;
         if (!rows?.length) throw new CustomError('ERRORS.FILE.EMPTY');
-        /*         if (
-          schema &&
-          Object.keys(rows[0]).length < Object.keys(schema).length
-        ) {
-          throw new CustomError('ERRORS.FILE.INVALID_STRUCTURE');
-        } */
         if (errors.length) {
           throw new CustomError('ERRORS.FILE.VALIDATION', {
             row: errors[0].row,
@@ -134,6 +129,7 @@ export class UploadFileComponent {
         this.result.emit(rows);
       })
       .catch((e) => {
+        if (!this.ownsSelection(version)) return;
         const err = this.normalizeXlsxError(e);
         this.msgWrapper.handle(err, {
           source: 'UploadFileComponent',
@@ -142,10 +138,9 @@ export class UploadFileComponent {
         });
       })
       .finally(() => {
+        if (!this.ownsSelection(version)) return;
         this.showSpinner.emit(false);
         this.hiddenfileinput.nativeElement.value = '';
-        //this.fileName='';
-        //this.showSpinner.emit(false);
       });
   }
 
@@ -153,24 +148,4 @@ export class UploadFileComponent {
     this.fileName = '';
   }
 
-  /*   private saveData(rows: any[]) {
-    return this.addressService
-      .createListOfToponyms(rows, this.typeOfData())
-      .pipe(
-        finalize(() => this.showSpinner.emit(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe({
-        next: () => {
-          this.resetRequested.emit();
-        },
-        error: (err) => {
-          this.msgWrapper.handle(err, {
-            source: 'UploadFileComponent',
-            stage: 'saveData',
-            type: this.typeOfData(),
-          });
-        },
-      });
-  } */
 }

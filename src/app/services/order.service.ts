@@ -16,11 +16,9 @@ import { ApiResponse, RawApiResponse } from '../interfaces/api-response';
 import { MessageWrapperService } from './message.service';
 import z from 'zod';
 import {
-  Order,
   OrderDraft,
   OrderFilter,
   OrderFilterRegionsAndHomes,
-  orderSchema,
   orderFilterRegionsAndHomesSchema,
   OrderQuery,
   OrderRecipients,
@@ -42,7 +40,6 @@ export class OrderService {
 
   constructor(private msgWrapper: MessageWrapperService) {}
 
-  //get list of toponyms names for address-filter
   getOrderFiltersData(): Observable<ApiResponse<OrderFilterRegionsAndHomes>> {
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/get-filters-data`)
@@ -117,7 +114,6 @@ export class OrderService {
   }
 
   getOrderById(id: number): Observable<ApiResponse<OrderDetails>> {
-    console.log('id', id);
     return this.http
       .get<RawApiResponse>(`${this.BASE_URL}/order/${id}`)
       .pipe(validateResponse(orderDetailsSchema), catchError(this.handleError));

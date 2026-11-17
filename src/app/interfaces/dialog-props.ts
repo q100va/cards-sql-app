@@ -31,7 +31,7 @@ export interface DialogData<T extends BaseModel> {
 
 export interface Control {
   controlName: string;
-  value: string | boolean | null; // | Date | string[];
+  value: string | boolean | null;
   disabled?: boolean;
   validators?: ((
     control: AbstractControl<any, any>

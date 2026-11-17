@@ -1,4 +1,3 @@
-// src/app/services/owner-restoration-guard.service.service.ts
 import { Injectable } from '@angular/core';
 import { DiffConfirmService } from './diff-confirm.service';
 
@@ -27,7 +26,6 @@ import {
   isFieldEqual,
   lightNormalize,
 } from '../utils/owner-ctrls';
-
 
 type CheckResult<T> =
   | { ok: true; restoring: T } // continue
@@ -116,8 +114,6 @@ export class OwnerRestorationGuardService {
     );
 
     if (!match) return { ok: true, restoring: null };
-
-
 
     const fullName =
       `${draft.firstName} ${draft.patronymic || ''} ${draft.lastName || ''}`.trim();
@@ -218,6 +214,7 @@ async checkContacts(
   contactTypes: NonTelegram[],
   outdated: OutdatedContacts,
   draft: Record<NonTelegram, string[]>,
+  isCurrent: () => boolean = () => true,
 ): Promise<CheckResult<Partial<Record<ContactType, Contact[]>>>> {
   const restoring: Partial<Record<ContactType, Contact[]>> = {};
 
@@ -230,6 +227,7 @@ async checkContacts(
 
     const contentString = `${type} ${matches.map((m) => m.content).join(', ')}`;
     const confirmed = await this.diffConfirmService.confirmDataCorrectness('contacts', contentString);
+    if (!isCurrent()) return { ok: false, restoring: null };
     if (!confirmed) return { ok: false, restoring: null };
 
     restoring[type] = [...(restoring[type] ?? []), ...matches];
@@ -237,7 +235,5 @@ async checkContacts(
 
   return { ok: true, restoring };
 }
-
-
 
 }

@@ -14,13 +14,15 @@
         @if(orderTypeId==='1'){
 
         <span>
-          <button mat-icon-button (click)=goBack($event)>
+          <button type="button" mat-icon-button [attr.aria-label]="'ORDER.CARD.PREVIOUS_OCCASION_LABEL' | translate"
+            (click)="goBack($event)">
             <mat-icon>navigate_before</mat-icon>
           </button>
         </span>
         <span class="header">{{month | translate}}</span>
         <span>
-          <button mat-icon-button (click)=goForward($event)>
+          <button type="button" mat-icon-button [attr.aria-label]="'ORDER.CARD.NEXT_OCCASION_LABEL' | translate"
+            (click)="goForward($event)">
             <mat-icon>navigate_next</mat-icon>
           </button>
         </span>

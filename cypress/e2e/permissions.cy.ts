@@ -52,9 +52,8 @@ it('Menu: only allowed items are visible; admin-only items are hidden', () => {
   });
 
   it('Guarded route: navigating to forbidden page lands on /forbidden', () => {
-    // /audit защищён requireOp("VIEW_FULL_ROLES_LIST")
     cy.visit('/audit');
-    cy.location('pathname').should('eq', '/users');// TODO: should be forbidden
+    cy.location('pathname').should('eq', '/forbidden');
   });
 
  it('Users list: "Create" button is hidden without ADD_NEW_USER', () => {
@@ -78,6 +77,7 @@ function stubPermissionsAdmin() {
     { id: 1, roleId: 999, operation: 'VIEW_FULL_USERS_LIST', access: true, disabled: false },
     { id: 2, roleId: 999, operation: 'VIEW_FULL_TOPONYMS_LIST', access: true, disabled: false },
     { id: 3, roleId: 999, operation: 'VIEW_FULL_ROLES_LIST', access: true, disabled: false },
+    { id: 11, roleId: 999, operation: 'VIEW_AUDIT_LOG', access: true, disabled: false },
 
     // users
     { id: 4, roleId: 999, operation: 'ADD_NEW_USER', access: true, disabled: false },

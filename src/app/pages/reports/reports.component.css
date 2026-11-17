@@ -1,6 +1,9 @@
 .reports-card {
+  position: relative;
+  box-sizing: border-box;
   margin: auto;
   width: fit-content;
+  max-width: 100%;
   min-width: 70%;
   min-height: 80vh;
   text-align: center;
@@ -15,15 +18,30 @@ p-progress-spinner {
   --p-progressspinner-color-4: #66bb6a;
 }
 
-/* spinner overlay */
 .overlay {
   z-index: 100;
-  position: fixed;
-  width: 70%;
-  height: 80vh;
-  padding-top: 20%;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: #dddfd081;
   border-radius: 12px;
+}
+
+.selection-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.selection-label {
+  font-weight: 500;
+}
+
+.report-details {
+  padding: 12px 16px 12px 76px;
 }
 
 mat-card-header {

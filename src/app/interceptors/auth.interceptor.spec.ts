@@ -27,9 +27,13 @@ class SignInServiceStub {
     this.token = t;
   }
 
+  getAuthGeneration(): number {
+    return 0;
+  }
+
   // by default refresh succeeds
-  hydrateFromSession = jasmine
-    .createSpy('hydrateFromSession')
+  recoverSession = jasmine
+    .createSpy('recoverSession')
     .and.returnValue(of(void 0));
 
   logout = jasmine.createSpy('logout').and.returnValue(of(void 0));
@@ -107,12 +111,12 @@ describe('AuthInterceptor', () => {
     req.flush({ ok: true });
   });
 
-  it('on 401 triggers hydrateFromSession and retries the request with the new token', () => {
+  it('on 401 triggers recoverSession and retries the request with the new token', () => {
     // old token for the first attempt
     signIn.setToken('old');
 
     // simulate successful refresh; set new token during refresh
-    (signIn.hydrateFromSession as jasmine.Spy).and.callFake(() => {
+    (signIn.recoverSession as jasmine.Spy).and.callFake(() => {
       signIn.setToken('new');
       return of(void 0);
     });
@@ -133,7 +137,7 @@ describe('AuthInterceptor', () => {
     expect(second.request.headers.get('Authorization')).toBe('Bearer new');
     second.flush({ data: 'ok' });
 
-    expect(signIn.hydrateFromSession).toHaveBeenCalledTimes(1);
+    expect(signIn.recoverSession).toHaveBeenCalledTimes(1);
     expect(final).toEqual({ data: 'ok' });
   });
 
@@ -142,7 +146,7 @@ describe('AuthInterceptor', () => {
 
     // control refresh completion manually
     const gate = new Subject<void>();
-    (signIn.hydrateFromSession as jasmine.Spy).and.returnValue(
+    (signIn.recoverSession as jasmine.Spy).and.returnValue(
       gate.asObservable()
     );
 
@@ -175,12 +179,13 @@ describe('AuthInterceptor', () => {
 
     expect(res1).toEqual({ ok: 1 });
     expect(res2).toEqual({ ok: 2 });
-    expect(signIn.hydrateFromSession).toHaveBeenCalledTimes(1);
+    // Both callers join recovery; the real-service regressions verify one HTTP refresh.
+    expect(signIn.recoverSession).toHaveBeenCalledTimes(2);
   });
 
   it('if refresh fails — calls logout and rethrows the error', (done) => {
     signIn.setToken('old');
-    (signIn.hydrateFromSession as jasmine.Spy).and.returnValue(
+    (signIn.recoverSession as jasmine.Spy).and.returnValue(
       throwError(() => new Error('refresh-fail'))
     );
 
@@ -208,7 +213,7 @@ describe('AuthInterceptor', () => {
       error: (err) => {
         expect(err.status).toBe(403);
         // no refresh, no logout on 403
-        expect(signIn.hydrateFromSession).not.toHaveBeenCalled();
+        expect(signIn.recoverSession).not.toHaveBeenCalled();
         expect(signIn.logout).not.toHaveBeenCalled();
         done();
       },

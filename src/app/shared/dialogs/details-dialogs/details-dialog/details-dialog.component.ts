@@ -7,6 +7,7 @@ import {
   inject,
   Injector,
   signal,
+  Signal,
   Type,
   runInInjectionContext,
 } from '@angular/core';
@@ -26,10 +27,21 @@ import {
 } from './details-component-registry';
 import { DialogData } from '../../../../interfaces/dialog-props';
 import { BaseModel } from '../../../../interfaces/base-model';
-import { BaseDetailsComponent } from '../base-details/base-details.component';
 
 import { TranslateModule } from '@ngx-translate/core';
 import { HasOpDirective } from '../../../../directives/has-op.directive';
+
+interface DetailsHostContract {
+  readonly showSpinner: Signal<boolean>;
+  readonly changesSignal: Signal<boolean>;
+  readonly isEditModeSignal: Signal<boolean>;
+  readonly IsSaveDisabledSignal: Signal<boolean>;
+  readonly closeDialogDataSignal: Signal<string | false | null>;
+  onSaveClick(action: 'justSave' | 'saveAndExit'): void;
+  onEditClick(): void;
+  onViewClick(): void;
+  onCancelClick(): void;
+}
 
 @Component({
   selector: 'app-details-dialog',
@@ -74,7 +86,7 @@ export class DetailsDialogComponent<T extends BaseModel>
     parent: inject(Injector),
   });
 
-  private instance!: BaseDetailsComponent<T>;
+  private instance!: DetailsHostContract;
   readonly dataSignal = signal(this.data);
 
   // choose title once (create/view)
@@ -87,19 +99,18 @@ export class DetailsDialogComponent<T extends BaseModel>
 
   ngAfterViewInit(): void {
     // create details component dynamically into <ng-template #container>
-    const component = this.componentType as unknown as Type<
-      BaseDetailsComponent<T>
-    >;
+    const component: Type<DetailsHostContract> = this.componentType;
     const componentRef = this.container.createComponent(component, {
       injector: this.customInjector,
     });
     this.instance = componentRef.instance;
 
-    // pass DialogData as a signal to child (keeps reactivity if you update data later)
-    (this.instance as any).data = this.dataSignal;
+    componentRef.setInput('data', this.dataSignal());
 
-    // Bridge child signals → dialog signals
     runInInjectionContext(this.injector, () => {
+      effect(() => componentRef.setInput('data', this.dataSignal()));
+
+      // Bridge child signals → dialog signals
       effect(() => this.showSpinner.set(this.instance.showSpinner()));
       effect(() => this.changes.set(this.instance.changesSignal()));//TODO: delete?
       effect(() => this.isEditMode.set(this.instance.isEditModeSignal()));
@@ -113,7 +124,7 @@ export class DetailsDialogComponent<T extends BaseModel>
     });
   }
 
-  private getChild(): BaseDetailsComponent<T> {
+  private getChild(): DetailsHostContract {
     return this.instance;
   }
 
@@ -131,7 +142,6 @@ export class DetailsDialogComponent<T extends BaseModel>
     this.getChild().onCancelClick();
   }
 
-  // Close dialog; map true → null name per current semantics
   private closeDialog(data: string | boolean) {
     this.dialogRef.close({ refresh: !!data });
   }

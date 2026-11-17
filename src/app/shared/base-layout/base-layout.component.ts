@@ -236,7 +236,7 @@ export class BaseLayoutComponent {
     },
     {
       params: {
-        codes: ['VIEW_FULL_ROLES_LIST'], //TODO: create operations for audit
+        codes: ['VIEW_AUDIT_LOG'],
         mode: 'all',
       },
       dataCy: 'nav-audit',
@@ -249,7 +249,6 @@ export class BaseLayoutComponent {
   menuItems: Menu = [];
 
   ngOnInit(): void {
-    console.log('userId', this.userId);
     this.menuItems = [...this.menu];
   }
 

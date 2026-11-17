@@ -1,4 +1,3 @@
-// src/app/pages/users-list/cause-of-blocking-dialog/cause-of-blocking-dialog.component.ts
 import { Component, DestroyRef, inject } from '@angular/core';
 import {
   MAT_DIALOG_DATA,
@@ -18,7 +17,7 @@ import { UserService } from '../../../services/user.service';
 import { MessageWrapperService } from '../../../services/message.service';
 import { causeOfRestrictionControlSchema } from '../../../../../shared/schemas/user.schema';
 import { zodValidator } from '../../../utils/zod-validator';
-import { Kind, OwnerMainService } from 'src/app/interfaces/advanced-model';
+import { Kind } from 'src/app/interfaces/advanced-model';
 import { PartnerService } from 'src/app/services/partner.service';
 
 type DialogData = { id: number, kind: Kind, service: UserService | PartnerService};
@@ -45,7 +44,6 @@ export class CauseOfBlockingDialogComponent {
     MatDialogRef<CauseOfBlockingDialogComponent>
   );
   private readonly data = inject<DialogData>(MAT_DIALOG_DATA);
-  private readonly userService = inject(UserService);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly destroyRef = inject(DestroyRef);
 

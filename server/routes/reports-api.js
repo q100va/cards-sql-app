@@ -14,6 +14,7 @@ import {
   requireOperation,
   requireAny,
 } from '../middlewares/require-permission.js';
+import { requireReportAccess } from '../middlewares/require-report-access.js';
 import { validateRequest } from '../middlewares/validate-request.js';
 
 import * as reportSchemas from '../../shared/dist/schemas/report.schema.js';
@@ -52,10 +53,10 @@ const ACTIVE_RECIPIENT_STATUSES = [
   ORDER_RECIPIENT_STATUS.ABSENT,
 ];
 
-router.post("/get-report",
+router.post('/get-report',
   requireAuth,
-  requireAny('VIEW_LIMITED_REPORTS', 'VIEW_FULL_REPORTS'),
-  validateRequest(reportSchemas.reportDTOSchema, "body"),
+  validateRequest(reportSchemas.reportDTOSchema, 'body'),
+  requireReportAccess,
   async (req, res, next) => {
     try {
       const { userId, type, frequency, months, quarters, years } = req.body;

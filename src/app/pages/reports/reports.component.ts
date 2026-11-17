@@ -1,4 +1,12 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,34 +14,47 @@ import { MatButtonModule } from '@angular/material/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
-import { Listbox, ListboxChangeEvent } from 'primeng/listbox';
-
-import {
-  FormControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { HasOpDirective } from '../../directives/has-op.directive';
+import { Listbox } from 'primeng/listbox';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { MessageWrapperService } from '../../services/message.service';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { AuthUser } from '../../../../shared/schemas/auth.schema';
+import { finalize } from 'rxjs';
+import type { z } from 'zod';
+
+import { MessageWrapperService } from '../../services/message.service';
 import { AuthService } from '../../services/auth.service';
 import { ReportsService } from '../../services/reports.service';
-import { finalize } from 'rxjs';
-import {
-  ReportGeneralRow,
-  ReportRow,
-} from '../../../../shared/schemas/report.schema';
 import { FileService } from '../../services/file.service';
-import { REPORT_TYPE, REPORT_TYPE_OPTIONS } from '../../../../shared/constants/reports';
+import { AuthUser } from '../../../../shared/schemas/auth.schema';
+import type {
+  reportDTOSchema,
+  ReportGeneralRow,
+  ReportResponse,
+} from '../../../../shared/schemas/report.schema';
+import {
+  REPORT_FREQUENCY,
+  REPORT_TYPE,
+  REPORT_TYPES,
+} from '../../../../shared/constants/reports';
+import { FIRST_OCCASION_YEAR } from '../../../../shared/constants/occasions';
 
-type Option = {
-  code: number | string;
+type ReportRequest = z.infer<typeof reportDTOSchema>;
+type ReportType = ReportRequest['type'];
+type ReportFrequency = ReportRequest['frequency'];
+
+type ReportOption<Code extends number | string> = {
+  code: Code;
   name: string;
+  labelKey?: string;
   disabledForOccasion?: boolean;
+};
+
+type PeriodOption = ReportOption<number>;
+type ReportFormControls = {
+  selectedType: FormControl<ReportOption<ReportType> | null>;
+  selectedFrequency: FormControl<ReportOption<ReportFrequency> | null>;
+  selectedYears: FormControl<PeriodOption[] | null>;
+  selectedMonths: FormControl<PeriodOption[] | null>;
+  selectedQuarters: FormControl<PeriodOption[] | null>;
 };
 
 @Component({
@@ -42,10 +63,8 @@ type Option = {
     MatCardModule,
     TranslateModule,
     MatGridListModule,
-    FormsModule,
     ReactiveFormsModule,
     ProgressSpinner,
-    HasOpDirective,
     Listbox,
     MatIconModule,
     TableModule,
@@ -56,216 +75,268 @@ type Option = {
   styleUrl: './reports.component.css',
 })
 export class ReportsComponent {
-  readonly auth = inject(AuthService);
+  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
-  readonly translateService = inject(TranslateService);
+  private readonly translateService = inject(TranslateService);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly reportsService = inject(ReportsService);
-  readonly user = toSignal<AuthUser | null>(this.auth.currentUser$, {
+  private readonly fileService = inject(FileService);
+  private readonly user = toSignal<AuthUser | null>(this.auth.currentUser$, {
     initialValue: null,
   });
-  readonly name = computed(() => {
-    const u = this.user();
-    return u ? `${u.firstName} ${u.lastName}` : null;
-  });
-  //readonly userName = computed(() => this.user()?.userName ?? null);
-  readonly userId = computed(() => this.user()?.id ?? null);
-  readonly flag = this.auth.has('VIEW_FULL_REPORTS');
-  private readonly fileService = inject(FileService);
+  private readonly userId = computed(() => this.user()?.id ?? null);
 
+  readonly reportTypes = REPORT_TYPE;
+  readonly reportFrequencies = REPORT_FREQUENCY;
+  readonly showSpinner = signal(false);
   isExporting = false;
-  showSpinner = signal(false);
 
-  frequencies!: Option[];
-  types!: Option[];
-  years!: Option[];
-  months!: Option[];
-  quarters!: Option[];
-  frequenciesShortList!: Option[];
+  private readonly languageVersion = signal(0);
+  readonly types = computed<ReportOption<ReportType>[]>(() => {
+    this.languageVersion();
+    const hasFull = this.auth.has('VIEW_FULL_REPORTS');
+    const hasLimited = this.auth.has('VIEW_LIMITED_REPORTS');
 
-  formGroup!: FormGroup;
-  report: ReportRow[] = [];
-  reportName: string = '';
-  reportType: number = 0;
-  emptyMessage: string = '';
+    const allowedTypes: ReportType[] = [
+      ...(hasFull ? [REPORT_TYPE.GENERAL] : []),
+      REPORT_TYPE.PERSONAL,
+      ...(hasFull || hasLimited ? [REPORT_TYPE.SCHOOL_COORDINATION] : []),
+      ...(hasFull ? [REPORT_TYPE.BY_OCCASION] : []),
+    ];
 
-  cols!: {
-    field: string;
-    header: string;
-  }[];
+    return allowedTypes.map((type) =>
+      this.option(type, REPORT_TYPES[type].key),
+    );
+  });
+  frequencies: ReportOption<ReportFrequency>[] = [];
+  years: PeriodOption[] = [];
+  months: PeriodOption[] = [];
+  quarters: PeriodOption[] = [];
+
+  readonly formGroup = new FormGroup<ReportFormControls>({
+    selectedType: new FormControl<ReportOption<ReportType> | null>(null),
+    selectedFrequency: new FormControl<ReportOption<ReportFrequency> | null>(
+      null,
+    ),
+    selectedYears: new FormControl<PeriodOption[] | null>(null),
+    selectedMonths: new FormControl<PeriodOption[] | null>(null),
+    selectedQuarters: new FormControl<PeriodOption[] | null>(null),
+  });
+
+  report: ReportResponse['report'] = [];
+  cols: ReportResponse['cols'] = [];
+  reportType: ReportType | null = null;
+  emptyMessage = '';
+  private requestVersion = 0;
+
+  get reportName(): string {
+    return this.reportType === null
+      ? ''
+      : this.translateService.instant(REPORT_TYPES[this.reportType].key);
+  }
+
+  constructor() {
+    effect(() => {
+      const allowed = this.types();
+      const selected = this.formGroup.controls.selectedType.value;
+
+      const selectedDenied =
+        selected && !allowed.some((type) => type.code === selected.code);
+
+      const reportDenied =
+        this.reportType !== null &&
+        !allowed.some((type) => type.code === this.reportType);
+
+      if (!selectedDenied && !reportDenied) return;
+
+      if (selectedDenied) {
+        this.formGroup.controls.selectedType.setValue(null);
+      }
+
+      this.report = [];
+      this.cols = [];
+      this.reportType = null;
+      this.emptyMessage = '';
+      this.requestVersion++;
+      this.showSpinner.set(false);
+    });
+  }
 
   ngOnInit() {
-    //TODO: Dynamic translation
-    this.types = REPORT_TYPE_OPTIONS.filter(
-      (type) => type.id !== REPORT_TYPE.CURRENT_STATISTIC,
-    ).map((type) => ({
-      name: this.translateService.instant(type.optionKey),
-      code: type.id,
-    }));
     this.frequencies = [
-      {
-        name: 'REPORTS.FREQUENCIES.MONTHLY',
-        code: 'MONTHLY',
-        disabledForOccasion: true,
-      },
-      {
-        name: 'REPORTS.FREQUENCIES.QUARTERLY',
-        code: 'QUARTERLY',
-        disabledForOccasion: true,
-      },
-      {
-        name: 'REPORTS.FREQUENCIES.ANNUAL',
-        code: 'ANNUAL',
-        disabledForOccasion: false,
-      },
-    ].map((i) => ({
-      name: this.translateService.instant(i.name),
-      code: i.code,
-      disabledForOccasion: i.disabledForOccasion,
-    }));
-
-    /*     this.frequenciesShortList = [
-      { name: 'REPORTS.FREQUENCIES.ANNUAL', code: 'ANNUAL' },
-    ]; */
-    this.years = [
-      { name: '2026', code: 2026 },
-      { name: '2025', code: 2025 },
-      { name: '2024', code: 2024 },
-      { name: '2023', code: 2023 },
-      { name: '2022', code: 2022 },
+      this.option(
+        REPORT_FREQUENCY.MONTHLY,
+        'REPORTS.FREQUENCIES.MONTHLY',
+        true,
+      ),
+      this.option(
+        REPORT_FREQUENCY.QUARTERLY,
+        'REPORTS.FREQUENCIES.QUARTERLY',
+        true,
+      ),
+      this.option(REPORT_FREQUENCY.ANNUAL, 'REPORTS.FREQUENCIES.ANNUAL', false),
     ];
-    this.quarters = [
-      { name: 'REPORTS.QUARTERS.FIRST', code: 1 },
-      { name: 'REPORTS.QUARTERS.SECOND', code: 2 },
-      { name: 'REPORTS.QUARTERS.THIRD', code: 3 },
-      { name: 'REPORTS.QUARTERS.FORTH', code: 4 },
-    ].map((i) => ({
-      name: this.translateService.instant(i.name),
-      code: i.code,
-    }));
+    const currentYear = new Date().getFullYear();
+    this.years = Array.from(
+      { length: currentYear - FIRST_OCCASION_YEAR + 1 },
+      (_, index) => ({
+        code: currentYear - index,
+        name: String(currentYear - index),
+      }),
+    );
+    this.quarters = ['FIRST', 'SECOND', 'THIRD', 'FORTH'].map((key, index) =>
+      this.option(index + 1, `REPORTS.QUARTERS.${key}`),
+    );
     this.months = [
-      { name: 'REPORTS.MONTHS.JANUARY', code: 1 },
-      { name: 'REPORTS.MONTHS.FEBRUARY', code: 2 },
-      { name: 'REPORTS.MONTHS.MARCH', code: 3 },
-      { name: 'REPORTS.MONTHS.APRIL', code: 4 },
-      { name: 'REPORTS.MONTHS.MAY', code: 5 },
-      { name: 'REPORTS.MONTHS.JUNE', code: 6 },
-      { name: 'REPORTS.MONTHS.JULY', code: 7 },
-      { name: 'REPORTS.MONTHS.AUGUST', code: 8 },
-      { name: 'REPORTS.MONTHS.SEPTEMBER', code: 9 },
-      { name: 'REPORTS.MONTHS.OCTOBER', code: 10 },
-      { name: 'REPORTS.MONTHS.NOVEMBER', code: 11 },
-      { name: 'REPORTS.MONTHS.DECEMBER', code: 12 },
-    ].map((i) => ({
-      name: this.translateService.instant(i.name),
-      code: i.code,
-    }));
+      'JANUARY',
+      'FEBRUARY',
+      'MARCH',
+      'APRIL',
+      'MAY',
+      'JUNE',
+      'JULY',
+      'AUGUST',
+      'SEPTEMBER',
+      'OCTOBER',
+      'NOVEMBER',
+      'DECEMBER',
+    ].map((key, index) => this.option(index + 1, `REPORTS.MONTHS.${key}`));
 
-    this.formGroup = new FormGroup({
-      selectedType: new FormControl<Option | null>(null),
-      selectedFrequency: new FormControl<Option | null>(null),
-      selectedQuarters: new FormControl<Option[] | null>(null),
-      selectedMonths: new FormControl<Option[] | null>(null),
-      selectedYears: new FormControl<Option[] | null>(null),
+    this.translateService.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.languageVersion.update((version) => version + 1);
+        this.frequencies = this.translateOptions(this.frequencies);
+        this.months = this.translateOptions(this.months);
+        this.quarters = this.translateOptions(this.quarters);
+      });
+  }
+
+  private option<Code extends number | string>(
+    code: Code,
+    labelKey: string,
+    disabledForOccasion?: boolean,
+  ): ReportOption<Code> {
+    return {
+      code,
+      labelKey,
+      name: this.translateService.instant(labelKey),
+      disabledForOccasion,
+    };
+  }
+
+  private translateOptions<Code extends number | string>(
+    options: ReportOption<Code>[],
+  ): ReportOption<Code>[] {
+    // Keep selected option objects while refreshing labels and the listbox input array.
+    return options.map((option) => {
+      if (option.labelKey)
+        option.name = this.translateService.instant(option.labelKey);
+      return option;
     });
   }
 
   isFormInvalid(): boolean {
-    if (!this.formGroup) return true;
+    return this.buildRequest() === null;
+  }
 
+  private buildRequest(): ReportRequest | null {
     const {
       selectedType,
       selectedFrequency,
       selectedYears,
-      selectedQuarters,
       selectedMonths,
+      selectedQuarters,
     } = this.formGroup.getRawValue();
+    if (!selectedType || !selectedFrequency || !selectedYears?.length)
+      return null;
+    const type = selectedType.code;
+    const frequency = selectedFrequency.code;
+    if (frequency === REPORT_FREQUENCY.MONTHLY && !selectedMonths?.length)
+      return null;
+    if (frequency === REPORT_FREQUENCY.QUARTERLY && !selectedQuarters?.length)
+      return null;
 
-    if (!selectedType || !selectedFrequency || !selectedYears?.length) {
-      return true;
-    }
-
-    if (selectedFrequency.code === 'MONTHLY') {
-      return !selectedMonths?.length;
-    }
-
-    if (selectedFrequency.code === 'QUARTERLY') {
-      return !selectedQuarters?.length;
-    }
-
-    return false;
+    return {
+      userId: type === REPORT_TYPE.PERSONAL ? this.userId() : null,
+      type,
+      frequency,
+      months:
+        frequency === REPORT_FREQUENCY.MONTHLY
+          ? (selectedMonths?.map((option) => option.code) ?? null)
+          : null,
+      quarters:
+        frequency === REPORT_FREQUENCY.QUARTERLY
+          ? (selectedQuarters?.map((option) => option.code) ?? null)
+          : null,
+      years: selectedYears.map((option) => option.code),
+    };
   }
 
   onGenerateClick() {
+    const request = this.buildRequest();
+    if (!request) return;
+    // Form edits keep the preview; only an accepted Generate action takes ownership.
+    const version = ++this.requestVersion;
+    const actorId = this.userId();
     this.showSpinner.set(true);
-    this.emptyMessage = '';
     this.report = [];
-    this.reportName = '';
-    this.reportType = 0;
-    const {
-      selectedType,
-      selectedFrequency,
-      selectedYears,
-      selectedQuarters,
-      selectedMonths,
-    } = this.formGroup.getRawValue();
-    const type = selectedType.code;
-    const frequency = selectedFrequency.code;
-    const years = selectedYears.map((item: Option) => item.code);
-    const quarters = selectedQuarters?.length
-      ? selectedQuarters.map((item: Option) => item.code)
-      : null;
-    const months = selectedMonths?.length
-      ? selectedMonths.map((item: Option) => item.code)
-      : null;
+    this.cols = [];
+    this.reportType = null;
+    this.emptyMessage = '';
 
     this.reportsService
       .getReport(
-        type === 1 || type === 4 ? null : this.userId(),
-        type,
-        frequency,
-        months,
-        quarters,
-        years,
+        request.userId,
+        request.type,
+        request.frequency,
+        request.months,
+        request.quarters,
+        request.years,
       )
       .pipe(
-        finalize(() => this.showSpinner.set(false)),
+        finalize(() => {
+          if (version === this.requestVersion) this.showSpinner.set(false);
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (res) => {
-          this.emptyMessage = res.data.report.length
+        next: ({ data }) => {
+          if (version !== this.requestVersion) return;
+          this.report = data.report;
+          this.cols = data.cols;
+          this.reportType = data.type;
+          this.emptyMessage = data.report.length
             ? ''
             : 'REPORTS.TABLE.EMPTY_MESSAGE';
-          this.report = res.data.report;
-          console.log('this.report', res.data);
-          this.cols = res.data.cols;
-          this.reportName = this.types[res.data.type - 1].name;
-          this.reportType = res.data.type;
         },
-        error: (err) =>
-          this.msgWrapper.handle(err, {
+        error: (error: unknown) => {
+          if (version !== this.requestVersion) return;
+          this.msgWrapper.handle(error, {
             source: 'ReportsComponent',
             stage: 'getReport',
-            data: { userId: this.userId, frequency, months, quarters, years },
-          }),
+            data: {
+              userId: actorId,
+              frequency: request.frequency,
+              months: request.months,
+              quarters: request.quarters,
+              years: request.years,
+            },
+          });
+        },
       });
   }
 
-  getPeriod(periodData: { year: number; quarter?: number; month?: number }) {
-    const year = periodData['year'] ?? '';
-    const quarter = periodData['quarter']
-      ? this.translateService.instant(
-          this.quarters[periodData['quarter'] - 1].name,
-        )
-      : '';
-    const month = periodData['month']
-      ? this.translateService.instant(this.months[periodData['month'] - 1].name)
-      : '';
-    return [month, quarter, year].filter(Boolean).join(' ').trim();
+  getPeriod(period: ReportGeneralRow['periodData']): string {
+    const quarter =
+      this.quarters.find((option) => option.code === period.quarter)?.name ??
+      '';
+    const month =
+      this.months.find((option) => option.code === period.month)?.name ?? '';
+    return [month, quarter, period.year].filter(Boolean).join(' ').trim();
   }
 
-  getOccasionName(occasion: string) {
+  getOccasionName(occasion: string): string {
     return String(occasion ?? '')
       .split(' ')
       .filter(Boolean)
@@ -275,79 +346,71 @@ export class ReportsComponent {
       .join(' ');
   }
 
-  onChangeTypeSelection(event: ListboxChangeEvent) {
-    console.log('event', event);
-    if (event.value?.code === 4) {
-      /*
-TODO: absent check mark
-this.formGroup.controls['selectedFrequency'].setValue({
-        name: 'REPORTS.FREQUENCIES.ANNUAL',
-        code: 'ANNUAL',
-        disabledForOccasion: false,
-      }); */
-      this.formGroup.controls['selectedFrequency'].setValue(null);
-
-      this.formGroup.controls['selectedMonths'].setValue([]);
-      this.formGroup.controls['selectedQuarters'].setValue([]);
+  onChangeTypeSelection() {
+    if (
+      this.formGroup.controls.selectedType.value?.code ===
+      REPORT_TYPE.BY_OCCASION
+    ) {
+      this.formGroup.controls.selectedFrequency.setValue(null);
+      this.formGroup.controls.selectedMonths.setValue([]);
+      this.formGroup.controls.selectedQuarters.setValue([]);
     }
   }
 
-  onChangeFrequenciesSelection(event: ListboxChangeEvent) {
-    console.log('event', event);
-    if (event.value?.code === 'ANNUAL') {
-      this.formGroup.controls['selectedMonths'].setValue([]);
-      this.formGroup.controls['selectedQuarters'].setValue([]);
+  onChangeFrequenciesSelection() {
+    const frequency = this.formGroup.controls.selectedFrequency.value?.code;
+    if (
+      frequency === REPORT_FREQUENCY.ANNUAL ||
+      frequency === REPORT_FREQUENCY.QUARTERLY
+    ) {
+      this.formGroup.controls.selectedMonths.setValue([]);
     }
-    if (event.value?.code === 'QUARTERLY') {
-      this.formGroup.controls['selectedMonths'].setValue([]);
-    }
-    if (event.value?.code === 'MONTHLY') {
-      this.formGroup.controls['selectedQuarters'].setValue([]);
+    if (
+      frequency === REPORT_FREQUENCY.ANNUAL ||
+      frequency === REPORT_FREQUENCY.MONTHLY
+    ) {
+      this.formGroup.controls.selectedQuarters.setValue([]);
     }
   }
 
   async exportToExcel(): Promise<void> {
-    if (!this.report.length || !this.cols.length || this.isExporting) {
-      return;
-    }
-
+    if (!this.report.length || !this.cols.length || this.isExporting) return;
     this.isExporting = true;
-
-    let data;
-    if (this.reportType !== 1) {
-      data = this.report.map((i) => ({
-        ...i,
-        periodData: 'periodData' in i ? this.getPeriod(i.periodData) : null,
-        occasionName:
-          'occasionName' in i ? this.getOccasionName(i.occasionName) : null,
-      }));
-    } else {
-      data = (this.report as ReportGeneralRow[]).flatMap((item) => {
-        const { occasions, ...parent } = item;
-
-        return [
-          {
-            ...parent,
-            rowType: 'period' as const,
-            periodData: this.getPeriod(item.periodData),
-          },
-          ...occasions.map((occasion) => ({
-            ...occasion,
-            rowType: 'occasion' as const,
-            periodData: this.getOccasionName(occasion.occasionName),
-          })),
-        ];
-      });
-    }
-
-    const columns = this.cols.map((i) => ({
-      field: i.field,
-      header: this.translateService.instant(i.header),
-    }));
-
     try {
+      const data =
+        this.reportType === REPORT_TYPE.GENERAL
+          ? this.report.flatMap((item) => {
+              if (!('occasions' in item))
+                throw new Error('General report row is missing occasion data');
+              const { occasions, ...parent } = item;
+              return [
+                {
+                  ...parent,
+                  rowType: 'period' as const,
+                  periodData: this.getPeriod(item.periodData),
+                },
+                ...occasions.map((occasion) => ({
+                  ...occasion,
+                  rowType: 'occasion' as const,
+                  periodData: this.getOccasionName(occasion.occasionName),
+                })),
+              ];
+            })
+          : this.report.map((item) => ({
+              ...item,
+              periodData:
+                'periodData' in item ? this.getPeriod(item.periodData) : null,
+              occasionName:
+                'occasionName' in item
+                  ? this.getOccasionName(item.occasionName)
+                  : null,
+            }));
+      const columns = this.cols.map((column) => ({
+        field: column.field,
+        header: this.translateService.instant(column.header),
+      }));
       await this.fileService.export(data, columns, {
-        fileName: `${this.translateService.instant(this.reportName)}-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        fileName: `${this.reportName}-${new Date().toISOString().slice(0, 10)}.xlsx`,
         sheetName: 'Report',
       });
     } finally {
@@ -355,38 +418,3 @@ this.formGroup.controls['selectedFrequency'].setValue({
     }
   }
 }
-
-/*   Для Яны:
-за 2 квартал
-обработано 703* заявки,
-в т.ч. 650* с dobroru
-отправлено 12598 открыток
-приняло участие 445 волонтеров, в т.ч. 26 ОУ, из них 7 впервые (плюс Навигаторы**)
-* - неподтвержденные и возвращенные заявки не вычитались.
-** - во 2 квартале Навигаторы брали адреса для поздравления с 9 мая - 50 000 адресов. */
-
-/* Для Татьяны:
-за 2 квартал
-
-отправлено открыток 39699* + 43848** + 6166*** => 89 713 штук
-поздравлено 18901 + 24947** + 6166***  => 50 014 человек
-из 324 (+66***) интернатов в 73 регионах
-участвовало 1753* волонтера, в т.ч. 219 организаций, из них 74 ОУ, плюс Навигаторы
-* - неподтвержденные и возвращенные заявки НЕ учитывались
-** - только Навигаторы с 9 мая
-*** - неактивные интернаты, которых поздравили Навигаторы с 9 мая */
-
-/* В поздравлении открытками за Х квартал:
-- приняло участие ХХХ учреждения из ХХ регионов,
-ДИПИ-?  Регионы?
-Социальные дома (бывшие ПНИ)-? Регионы?
-КЦСОН,ЦСО(надомники)-? Регионы?
-- всего поздравили открытками ХХХ человек, отправили ХХХ открыток,
-- с ДР, с НГ, с 9 Мая, поздравили ХХХ человек, отправили ХХХ открыток,
-в поздравлениях приняли участие более ХХХ поздравляющих, в т.ч. ХХХ образовательных учреждения и ХХХ организаций
-
-1) Нужны данные в приложении
-2) Нужны данные с выгрузкой в Excel
-3) Нужны ежемесячные и квартальные отчёты
-4) Срок выгрузки отчтётов - на 1 число каждого месяца
- */

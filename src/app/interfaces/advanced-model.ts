@@ -1,4 +1,3 @@
-//import { BaseModel } from './base-model';
 import {
   UserContacts,
   OutdatedUserName,
@@ -19,9 +18,12 @@ import type {
   OutdatedCoordination,
   OutdatedOfficialName,
   OutdatedHomeAddress,
+  HomeChangingData as SharedHomeChangingData,
+  HomeOutdatingData,
 } from '../../../shared/schemas/home.schema';
 
-import type { SeniorAddress } from '../../../shared/schemas/senior.schema';
+import type { z } from 'zod';
+import type { SeniorAddress, seniorSchema } from '../../../shared/schemas/senior.schema';
 import type { PartnerAffiliationId } from '../../../shared/constants/partners';
 
 import type {
@@ -58,19 +60,8 @@ export type {
   ChangePassword,
   Institute,
   DraftAddress,
+  HomeOutdatingData,
 };
-
-/* export interface AdvancedModel extends BaseModel {
-  address: Address | HomeAddress | SeniorAddress;
-  comment: string | null;
-  orderedContacts: UserContacts | OptionalContacts;
-  outdatedData:
-    | UserOutdatedData
-    | PartnerOutdatedData
-    | VolunteerOutdatedData
-    | HomeOutdatedData
-    | SeniorOutdatedData;
-} */
 
 export type InstituteFormGroup = FormGroup<{
   instituteName: FormControl<string | null>;
@@ -182,18 +173,13 @@ export type VolunteerChangingData = AdvancedChangingData<PersonChangingMain> & {
   cooperations: number[] | null;
 };
 
-export type HomeChangingMain = BaseChangingMain & {
-  homeName?: string;
-  officialName?: string;
-  noAddress?: boolean;
-  specialHome?: boolean;
-  acceptableForSchool?: boolean;
-  isClose?: boolean;
-  dateOfClose?: Date | null;
-  infoNote?: string | null;
-};
-export type HomeChangingData = AdvancedChangingData<HomeChangingMain> & {
-  coordinations: number[] | null;
+export type HomeChangingMain = NonNullable<SharedHomeChangingData['main']>;
+type HomeAddressChange = NonNullable<SharedHomeChangingData['address']>;
+export type HomeChangingData = Omit<SharedHomeChangingData, 'address'> & {
+  // The schema normalizes an omitted postalAddressPart to null; preserve that wire contract.
+  address: (Omit<HomeAddressChange, 'postalAddressPart'> & {
+    postalAddressPart?: HomeAddressChange['postalAddressPart'];
+  }) | null;
 };
 export type SeniorChangingMain = PersonChangingMain & {
   birthDate?: Date | null;
@@ -215,7 +201,6 @@ export type SeniorChangingMain = PersonChangingMain & {
   interests?: string | null;
   orthodoxBeliever?: string | null;
   dateOfExit?: Date | null;
-  homeId?: number;
   spouseId?: number | null;
 };
 export type SeniorChangingData = BaseChangingData<SeniorChangingMain>;
@@ -241,10 +226,6 @@ export type PartnerOutdatingData = PersonOutdatingData & {
 };
 export type VolunteerOutdatingData = PersonOutdatingData & {
   institutes: number[] | null;
-};
-export type HomeOutdatingData = BaseOutdatingData & {
-  officialName: string | null;
-  coordinations: number[] | null;
 };
 export type SeniorOutdatingData = {
   names: BaseOutdatingNames | null;
@@ -458,7 +439,10 @@ export type Home = Owner & {
   isClose: boolean;
   dateOfClose: Date | null;
 };
-export type Senior = Person & {
+export type Senior = Person & Pick<
+  z.infer<typeof seniorSchema>,
+  'confirmedFirstName' | 'confirmedPatronymic' | 'confirmedLastName' | 'confirmedBirthDate'
+> & {
   address: SeniorAddress;
   outdatedData: SeniorOutdatedData;
   birthDate: Date | null;
@@ -476,14 +460,9 @@ export type Senior = Person & {
   interests: string | null;
   orthodoxBeliever: string | null;
   dateOfExit: Date | null;
-  confirmedFirstName?: boolean;
-  confirmedPatronymic?: boolean;
-  confirmedLastName?: boolean;
-  confirmedBirthDate?: boolean;
   spouseId: number | null;
   spouseFullName: string | null;
   homeId: number;
-  //homeName: string;
   home: {
     homeName: string;
     noAddress: boolean;
@@ -504,18 +483,7 @@ export type ConfOwnerByKind = {
   senior: Senior;
 };
 
-export type OwnerByKind<K extends Kind> =
-  ConfOwnerByKind[K]; /* K extends 'user'
-  ? User
-  : K extends 'partner'
-    ? Partner
-    : K extends 'volunteer'
-      ? Volunteer
-      : K extends 'home'
-        ? Home
-        : K extends 'senior'
-          ? Senior
-          : never; */
+export type OwnerByKind<K extends Kind> = ConfOwnerByKind[K];
 
 export type ConfOwnerDraftByKind = {
   user: UserDraft;
@@ -526,18 +494,6 @@ export type ConfOwnerDraftByKind = {
 };
 export type OwnerDraftByKind<K extends Kind> = ConfOwnerDraftByKind[K];
 
-/* export type OwnerDraftByKind<K extends Kind> = K extends 'user'
-  ? UserDraft
-  : K extends 'partner'
-    ? PartnerDraft
-    : K extends 'volunteer'
-      ? VolunteerDraft
-      : K extends 'home'
-        ? HomeDraft
-        : K extends 'senior'
-          ? SeniorDraft
-          : never; */
-
 export type ConfChangingByKind = {
   user: UserChangingData;
   partner: PartnerChangingData;
@@ -547,18 +503,6 @@ export type ConfChangingByKind = {
 };
 
 export type ChangingByKind<K extends Kind> = ConfChangingByKind[K];
-/* K extends 'user'
-  ? UserChangingData
-  : K extends 'partner'
-    ? PartnerChangingData
-    : K extends 'volunteer'
-      ? VolunteerChangingData
-      : K extends 'home'
-        ? HomeChangingData
-        : K extends 'senior'
-          ? SeniorChangingData
-          : never;
- */
 export type RestoringByKind<K extends Kind> = K extends 'user'
   ? UserRestoringData
   : K extends 'partner'
@@ -616,18 +560,6 @@ export type ConfListDto = {
 };
 
 export type ListDto<K extends Kind> = ConfListDto[K];
-
-/* K extends 'user'
-  ? { list: User[]; length: number }
-  : K extends 'partner'
-    ? { list: Partner[]; length: number }
-    : K extends 'volunteer'
-      ? { list: Volunteer[]; length: number }
-      : K extends 'home'
-        ? { list: Home[]; length: number }
-        : K extends 'senior'
-          ? { list: Senior[]; length: number }
-          : never; */
 
 export type RelationPick = {
   id: number;

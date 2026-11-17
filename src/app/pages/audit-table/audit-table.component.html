@@ -29,12 +29,16 @@
                 <p-iconfield>
                   <p-datepicker [(ngModel)]="rangeDates" selectionMode="range" [readonlyInput]="true"
                     placeholder="Pick and apply" [showIcon]="false" appendTo="body" [style]="{ width: '18rem'}" />
-                  <p-inputicon class="pi pi-check" [style.visibility]="rangeDates ? 'visible' : 'hidden'"
+                  <button type="button" class="p-inputicon pi pi-check audit-filter-action"
+                    [attr.aria-label]="'AUDIT.APPLY_DATE_FILTER' | translate" [disabled]="!rangeDates"
+                    [style.visibility]="rangeDates ? 'visible' : 'hidden'"
                     [style.pointer-events]="rangeDates ? 'auto' : 'none'" (click)="onRangeSelect(filter)"
-                    iconPosition="right" [style]="{ right: '.8rem' }" />
-                  <p-inputicon class="pi pi-times" [style.visibility]="rangeDates ? 'visible' : 'hidden'"
+                    [style]="{ right: '.8rem' }"></button>
+                  <button type="button" class="p-inputicon pi pi-times audit-filter-action"
+                    [attr.aria-label]="'AUDIT.CLEAR_DATE_FILTER' | translate" [disabled]="!rangeDates"
+                    [style.visibility]="rangeDates ? 'visible' : 'hidden'"
                     [style.pointer-events]="rangeDates ? 'auto' : 'none'" (click)="rangeDates = null; filter(null)"
-                    iconPosition="right" [style]="{ right: '2.6rem' }" />
+                    [style]="{ right: '2.6rem' }"></button>
                 </p-iconfield>
               </ng-template>
             </p-columnFilter>
@@ -64,12 +68,16 @@
                 <p-iconfield>
                   <input type="text" pInputText [(ngModel)]="pendingEntityId" placeholder="Type and apply"
                     [style]="{ 'padding-right': '4rem' }" />
-                  <p-inputicon class="pi pi-check" [style.visibility]="pendingEntityId ? 'visible' : 'hidden'"
+                  <button type="button" class="p-inputicon pi pi-check audit-filter-action"
+                    [attr.aria-label]="'AUDIT.APPLY_ENTITY_ID_FILTER' | translate" [disabled]="!pendingEntityId"
+                    [style.visibility]="pendingEntityId ? 'visible' : 'hidden'"
                     [style.pointer-events]="pendingEntityId ? 'auto' : 'none'" (click)="filter(pendingEntityId)"
-                    iconPosition="right" [style]="{ right: '.8rem' }" />
-                  <p-inputicon class="pi pi-times" [style.visibility]="pendingEntityId ? 'visible' : 'hidden'"
+                    [style]="{ right: '.8rem' }"></button>
+                  <button type="button" class="p-inputicon pi pi-times audit-filter-action"
+                    [attr.aria-label]="'AUDIT.CLEAR_ENTITY_ID_FILTER' | translate" [disabled]="!pendingEntityId"
+                    [style.visibility]="pendingEntityId ? 'visible' : 'hidden'"
                     [style.pointer-events]="pendingEntityId ? 'auto' : 'none'"
-                    (click)="pendingEntityId = ''; filter('')" iconPosition="right" [style]="{ right: '2.6rem' }" />
+                    (click)="pendingEntityId = ''; filter('')" [style]="{ right: '2.6rem' }"></button>
                 </p-iconfield>
               </ng-template>
             </p-columnFilter>
@@ -81,12 +89,16 @@
                 <p-iconfield>
                   <input type="text" pInputText [(ngModel)]="pendingUserId" placeholder="Type and apply"
                     [style]="{ 'padding-right': '4rem' }" />
-                  <p-inputicon class="pi pi-check" [style.visibility]="pendingUserId ? 'visible' : 'hidden'"
+                  <button type="button" class="p-inputicon pi pi-check audit-filter-action"
+                    [attr.aria-label]="'AUDIT.APPLY_USER_ID_FILTER' | translate" [disabled]="!pendingUserId"
+                    [style.visibility]="pendingUserId ? 'visible' : 'hidden'"
                     [style.pointer-events]="pendingUserId ? 'auto' : 'none'" (click)="filter(pendingUserId)"
-                    iconPosition="right" [style]="{ right: '.8rem' }" />
-                  <p-inputicon class="pi pi-times" [style.visibility]="pendingUserId ? 'visible' : 'hidden'"
+                    [style]="{ right: '.8rem' }"></button>
+                  <button type="button" class="p-inputicon pi pi-times audit-filter-action"
+                    [attr.aria-label]="'AUDIT.CLEAR_USER_ID_FILTER' | translate" [disabled]="!pendingUserId"
+                    [style.visibility]="pendingUserId ? 'visible' : 'hidden'"
                     [style.pointer-events]="pendingUserId ? 'auto' : 'none'" (click)="pendingUserId = ''; filter('')"
-                    iconPosition="right" [style]="{ right: '2.6rem' }" />
+                    [style]="{ right: '2.6rem' }"></button>
                 </p-iconfield>
               </ng-template>
             </p-columnFilter>
@@ -98,13 +110,16 @@
                 <p-iconfield>
                   <input type="text" pInputText [(ngModel)]="pendingCorrelationId" placeholder="Type and apply"
                     [style]="{ 'padding-right': '4rem' }" />
-                  <p-inputicon class="pi pi-check" [style.visibility]="pendingCorrelationId ? 'visible' : 'hidden'"
+                  <button type="button" class="p-inputicon pi pi-check audit-filter-action"
+                    [attr.aria-label]="'AUDIT.APPLY_CORRELATION_ID_FILTER' | translate" [disabled]="!pendingCorrelationId"
+                    [style.visibility]="pendingCorrelationId ? 'visible' : 'hidden'"
                     [style.pointer-events]="pendingCorrelationId ? 'auto' : 'none'"
-                    (click)="filter(pendingCorrelationId)" iconPosition="right" [style]="{ right: '.8rem' }" />
-                  <p-inputicon class="pi pi-times" [style.visibility]="pendingCorrelationId ? 'visible' : 'hidden'"
+                    (click)="filter(pendingCorrelationId)" [style]="{ right: '.8rem' }"></button>
+                  <button type="button" class="p-inputicon pi pi-times audit-filter-action"
+                    [attr.aria-label]="'AUDIT.CLEAR_CORRELATION_ID_FILTER' | translate" [disabled]="!pendingCorrelationId"
+                    [style.visibility]="pendingCorrelationId ? 'visible' : 'hidden'"
                     [style.pointer-events]="pendingCorrelationId ? 'auto' : 'none'"
-                    (click)="pendingCorrelationId = ''; filter('')" iconPosition="right"
-                    [style]="{ right: '2.6rem' }" />
+                    (click)="pendingCorrelationId = ''; filter('')" [style]="{ right: '2.6rem' }"></button>
                 </p-iconfield>
               </ng-template>
             </p-columnFilter>

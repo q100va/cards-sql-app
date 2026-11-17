@@ -2,7 +2,6 @@ import {
   Component,
   DestroyRef,
   inject,
-  OnInit,
   signal,
   WritableSignal,
 } from '@angular/core';
@@ -17,27 +16,20 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
-import { OccasionService } from '../../services/occasion.service';
 import { OrderService } from '../../services/order.service';
 import { ConfirmationService, TreeNode } from 'primeng/api';
 import { MessageWrapperService } from '../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { BehaviorSubject, finalize, map, switchMap } from 'rxjs';
-import { Occasion } from '../../../../shared/schemas/occasion.schema';
+import { BehaviorSubject, finalize, map } from 'rxjs';
 import { Order } from '../../../../shared/schemas/order.schema';
 import { HasOpDirective } from '../../directives/has-op.directive';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../services/auth.service';
-import { MatDialog } from '@angular/material/dialog';
 import { DateUtilsService } from '../../services/date-utils.service';
 
 @Component({
@@ -47,7 +39,6 @@ import { DateUtilsService } from '../../services/date-utils.service';
     MatCardModule,
     MatButtonModule,
     MatGridListModule,
-    MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
     TableModule,
@@ -57,9 +48,7 @@ import { DateUtilsService } from '../../services/date-utils.service';
     InputIcon,
     CommonModule,
     MultiSelectModule,
-    SelectModule,
     InputTextModule,
-    DropdownModule,
     TooltipModule,
     TranslateModule,
     HasOpDirective,
@@ -70,23 +59,19 @@ import { DateUtilsService } from '../../services/date-utils.service';
 })
 export class OrdersListComponent {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly occasionService = inject(OccasionService);
   private readonly orderService = inject(OrderService);
-  private readonly authService = inject(AuthService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly msgWrapper = inject(MessageWrapperService);
   readonly translateService = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly dialog = inject(MatDialog);
   readonly dateUtils = inject(DateUtilsService);
 
   userId: number | null = null;
 
   isLoading = signal<boolean>(false);
+  private pageRequestIntent = 0;
   totalRecords = 0;
-  occasionId!: number;
-  occasion!: Occasion;
   orders!: Order[];
   filters: Record<
     string,
@@ -128,17 +113,13 @@ export class OrdersListComponent {
   ngOnInit() {
     const userIdParam = this.route.snapshot.paramMap.get('userId');
     this.userId = userIdParam ? Number(userIdParam) : null;
-    console.log('userIdParam', userIdParam);
   }
 
   loadOrders(event: TableLazyLoadEvent): void {
-    //const userId = this.authService.getCurrentUserSnapshot()?.id ?? null;
-    //if (!this.userId) return;
-    console.log('event:', event);
+    const intent = ++this.pageRequestIntent;
     this.filters = this.normalizePrimeFilters(event.filters);
 
     const query = {
-      //userId: userId,
       offset: event.first ?? 0,
       limit: event.rows ?? 20,
       sortField: event.sortField,
@@ -147,29 +128,32 @@ export class OrdersListComponent {
       filters: this.filters,
     };
     this.isLoading.set(true);
-    //console.log('FILTERS:', query.filters);
     this.orderService
       .getOrders(query)
       .pipe(
-        finalize(() => this.isLoading.set(false)),
+        finalize(() => {
+          if (intent === this.pageRequestIntent) this.isLoading.set(false);
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (res) => {
+          if (intent !== this.pageRequestIntent) return;
           this.orders = res.data.list;
           this.totalRecords = res.data.length;
           this.rawUserOptions$.next(res.data.options.users);
           this.rawStatusOptions$.next(res.data.options.statuses);
           this.rawSourceOptions$.next(res.data.options.sources);
           this.rawOccasionNodes$.next(res.data.options.nodes);
-          console.log('res.data.options.nodes', res.data.options.nodes);
         },
-        error: (err) =>
+        error: (err) => {
+          if (intent !== this.pageRequestIntent) return;
           this.msgWrapper.handle(err, {
             source: 'OrdersList',
             stage: 'getOrdersByOccasion',
             query,
-          }),
+          });
+        },
       });
   }
 
@@ -188,12 +172,8 @@ export class OrdersListComponent {
     selectedSignal: WritableSignal<number[]>,
     filter: (value: number[] | null) => void,
   ): void {
-    //console.log('value', value);
-    //console.log('selectedSignal', selectedSignal);
-    //console.log('filter', filter);
     const next = value ?? [];
     selectedSignal.set(next);
-    //next.forEach(item => filter(item))
     filter(next.length ? next : null);
   }
 
@@ -203,17 +183,13 @@ export class OrdersListComponent {
     filter: (value: TreeNode[] | null) => void,
   ): void {
     const next = value ?? [];
-    console.log('value', value);
     selectedNodes.set(next);
     const selectedOccasions = value?.map((node) => node.data) ?? [];
-    console.log('selectedOccasions', selectedOccasions);
 
     filter(selectedOccasions.length ? selectedOccasions : null);
-    console.log('this.selectedNodes', this.selectedNodes);
   }
 
   private normalizePrimeFilters(filters: any) {
-    console.log('filters', filters);
     const result: Record<
       string,
       {
@@ -235,7 +211,6 @@ export class OrdersListComponent {
     }
 
     for (const [field, meta] of Object.entries(normalizedFilters)) {
-      //console.log('Object.entries(filters ?? {})');
       const metaArray = Array.isArray(meta)
         ? meta.filter(
             (m) => m.value !== null && m.value !== undefined && m.value !== '',
@@ -246,7 +221,6 @@ export class OrdersListComponent {
         result[field] = [...metaArray];
       }
     }
-    console.log('result:', result);
     return result;
   }
 
@@ -259,25 +233,6 @@ export class OrdersListComponent {
     dt.reset();
   }
 
-  onAddOrderClick(dt: Table) {
-    /*    const dialogRef = this.dialog.open(OrderDetailsDialogComponent, {
-      disableClose: true,
-      minWidth: '400px',
-      minHeight: '350px',
-      height: 'auto',
-      maxHeight: '80%',
-      data: this.occasion,
-    });
-
-    dialogRef
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((occasionName) => {
-        if (occasionName) {
-          this.clear(dt);
-        }
-      }); */
-  }
 
   getOrderOccasionName(order: Order): string {
     return String(order.occasion ?? '')
@@ -351,7 +306,6 @@ export class OrdersListComponent {
     this.orderService
       .deleteOrder(orderId)
       .pipe(
-        //finalize(() => this.isLoading.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({

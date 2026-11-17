@@ -1,4 +1,3 @@
-//src\app\shared\table-settings\table-settings.component.ts
 import { Component, input, output } from '@angular/core';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';

@@ -79,7 +79,6 @@ export class CheckDateDialogComponent {
       return null;
     }
 
-    console.log('birthDate', birthDate);
 
     if (!birthDate) {
       return { birthDateRequired: true };
@@ -132,9 +131,6 @@ export class CheckDateDialogComponent {
     },
   };
 
-  ngOnInit() {
-    //console.log('data', this.data.error);
-  }
 
   onApplyClick() {
     this.dialogRef.close({

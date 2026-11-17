@@ -4,6 +4,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Row, Workbook } from 'exceljs';
 import { TranslateService } from '@ngx-translate/core';
+import { hasErrorDiagnostic, markErrorDiagnostic } from '../utils/error-diagnostics';
 
 export interface ExcelColumn {
   field: string;
@@ -46,6 +47,8 @@ export class FileService {
             statusText: err.statusText,
             url: err.url || undefined,
           });
+          // Decoding the body must not create a second diagnostic for the same request.
+          if (hasErrorDiagnostic(err)) markErrorDiagnostic(normalized);
           return throwError(() => normalized);
         }),
       );
@@ -202,23 +205,6 @@ export class FileService {
 
     headerRow.height = 30;
 
-    /*  worksheet.views = [
-      {
-        state: 'frozen',
-        ySplit: 1,
-      },
-    ];
-
-    worksheet.autoFilter = {
-      from: {
-        row: 1,
-        column: 1,
-      },
-      to: {
-        row: 1,
-        column: columns.length,
-      },
-    }; */
 
     columns.forEach((column, index) => {
       const worksheetColumn = worksheet.getColumn(index + 1);

@@ -1,5 +1,5 @@
 /** Check if user changed restored values and correct them*/
-import {
+import type {
   Contact,
   DraftAddress,
   HomeDraft,
@@ -13,6 +13,11 @@ import {
   OutdatedUserName,
   PartnerDraft,
   VolunteerDraft,
+  Kind,
+  OwnerByKind,
+  OwnerDraftByKind,
+  RestoringByKind,
+  OutdatedByKind,
 } from '../interfaces/advanced-model';
 import { isFieldEqual, lightNormalize } from './owner-ctrls';
 
@@ -27,34 +32,105 @@ type Names = {
   lastName: string | null;
 };
 
-/* function reconcileRestoringIds<TOutdated extends { id: number }>(
-  restoringIds: readonly number[],
-  outdating: readonly TOutdated[],
-  outdatedAll: readonly TOutdated[],
-  shouldRemove: (candidate: TOutdated) => boolean,
-): ReconcileResult<number[], TOutdated[]> {
-  const nextOutdating = [...outdating];
+export type OwnerRestorationInput<K extends Kind> = {
+  kind: K;
+  draft: OwnerDraftByKind<NoInfer<K>>;
+  restoring: RestoringByKind<NoInfer<K>>;
+  history: OutdatedByKind<NoInfer<K>>;
+  persistedHistory: OwnerByKind<NoInfer<K>>['outdatedData'];
+};
 
-  const toRemoveId = restoringIds.find((id) => {
-    const candidate = outdatedAll.find((x) => x.id === id);
-    return candidate ? shouldRemove(candidate) : false;
-  });
+export type OwnerRestorationResult<K extends Kind> = {
+  kind: K;
+  restoring: RestoringByKind<K>;
+  history: OutdatedByKind<K>;
+};
 
-  if (!toRemoveId) {
-    return {
-      restoring: [...restoringIds],
-      outdating: nextOutdating,
-    };
+function isOwnerKind<K extends Kind, T extends Kind>(
+  input: OwnerRestorationInput<K>,
+  ...kinds: T[]
+): input is OwnerRestorationInput<Extract<K, T>> {
+  const supported: readonly Kind[] = kinds;
+  return supported.includes(input.kind);
+}
+
+export function reconcileOwnerRestoration<K extends Kind>(
+  input: OwnerRestorationInput<K>,
+): OwnerRestorationResult<K> {
+  const state: OwnerRestorationInput<K> = {
+    ...input, restoring: { ...input.restoring }, history: { ...input.history },
+  };
+
+  if (isOwnerKind(state, 'user', 'partner', 'volunteer')) {
+    const result = reconcileRestoredAddress(
+      state.restoring.addresses ?? [], state.history.addresses,
+      state.draft.draftAddress, state.persistedHistory.addresses,
+    );
+    state.restoring.addresses = result.restoring;
+    state.history.addresses = result.outdating;
+  }
+  if (isOwnerKind(state, 'home')) {
+    const result = reconcileRestoredHomeAddress(
+      state.restoring.addresses ?? [], state.history.addresses,
+      state.draft, state.persistedHistory.addresses,
+    );
+    state.restoring.addresses = result.restoring;
+    state.history.addresses = result.outdating;
+  }
+  if (isOwnerKind(state, 'user', 'partner', 'volunteer', 'senior')) {
+    const result = reconcileRestoredNames(
+      state.restoring.names ?? [], state.history.names,
+      state.draft, state.persistedHistory.names,
+    );
+    state.restoring.names = result.restoring;
+    state.history.names = result.outdating;
+  }
+  if (isOwnerKind(state, 'user')) {
+    const result = reconcileRestoredUserNames(
+      state.restoring.userNames ?? [], state.history.userNames,
+      state.draft.userName, state.persistedHistory.userNames,
+    );
+    state.restoring.userNames = result.restoring;
+    state.history.userNames = result.outdating;
+  }
+  if (isOwnerKind(state, 'home')) {
+    const result = reconcileRestoredOfficialNames(
+      state.restoring.officialNames ?? [], state.history.officialNames,
+      state.draft.officialName, state.persistedHistory.officialNames,
+    );
+    state.restoring.officialNames = result.restoring;
+    state.history.officialNames = result.outdating;
+  }
+  if (isOwnerKind(state, 'user', 'partner', 'volunteer', 'home')) {
+    const result = reconcileRestoredContacts(
+      state.restoring.contacts ?? {}, state.history.contacts, state.draft.draftContacts,
+    );
+    state.restoring.contacts = result.restoring;
+    state.history.contacts = result.outdating;
+  }
+  if (isOwnerKind(state, 'home', 'partner')) {
+    const result = reconcileRestoredCoordinations(
+      state.kind, state.restoring.coordinations ?? [], state.history.coordinations,
+      state.draft.draftCoordinations, state.persistedHistory.coordinations,
+    );
+    state.restoring.coordinations = result.restoring;
+    state.history.coordinations = result.outdating;
+  }
+  if (isOwnerKind(state, 'volunteer')) {
+    const result = reconcileRestoredInstitutes(
+      state.restoring.institutes ?? [], state.history.institutes,
+      state.draft.draftInstitutes, state.persistedHistory.institutes,
+    );
+    state.restoring.institutes = result.restoring;
+    state.history.institutes = result.outdating;
   }
 
-  const removed = outdatedAll.find((x) => x.id === toRemoveId);
-  if (removed) nextOutdating.push(removed);
-
   return {
-    restoring: removeId([...restoringIds], toRemoveId),
-    outdating: nextOutdating,
+    kind: state.kind,
+    restoring: structuredClone(state.restoring),
+    history: structuredClone(state.history),
   };
-} */
+}
 
 function reconcileRestoringIds<TOutdated extends { id: number }>(
   restoringIds: readonly number[],
@@ -74,8 +150,6 @@ function reconcileRestoringIds<TOutdated extends { id: number }>(
   for (const id of ids) {
     const candidate = byId.get(id);
     if (!candidate) continue; // если запись пропала — просто выкинули id
-    console.log('candidate', candidate);
-    console.log('shouldRemove(candidate)', shouldRemove(candidate));
     if (shouldRemove(candidate)) {
       nextOutdating.push(candidate);
     } else {
@@ -158,7 +232,6 @@ export function reconcileRestoredNames(
   draftNames: Names,
   outdatedAll: readonly OutdatedFullName[],
 ) {
-  console.log('draftNames', draftNames);
   return reconcileRestoringIds(
     restoringIds,
     outdating,
@@ -196,8 +269,6 @@ export function reconcileRestoredContacts(
   const nextRestoring: ContactsByType<Contact> = { ...restoring };
   const nextOutdating: ContactsByType<Contact> = { ...outdating };
 
-  const removedTypes: NonTelegram[] = [];
-
   for (const [type, contacts] of Object.entries(restoring) as [
     NonTelegram,
     Contact[],
@@ -210,7 +281,6 @@ export function reconcileRestoredContacts(
     if (ownerContacts.length === 0) {
       nextOutdating[type] = [...(nextOutdating[type] ?? []), ...contacts];
       delete nextRestoring[type];
-      removedTypes.push(type);
       continue;
     }
 
@@ -225,7 +295,6 @@ export function reconcileRestoredContacts(
     );
     if (nextRestoring[type]?.length === 0) {
       delete nextRestoring[type];
-      removedTypes.push(type);
     }
   }
 

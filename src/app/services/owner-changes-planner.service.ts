@@ -1,4 +1,3 @@
-// src/app/services/owner-diff-planner.service.ts
 import { Injectable } from '@angular/core';
 
 import {
@@ -6,10 +5,10 @@ import {
   ContactType,
   Home,
   HomeDraft,
+  HomeChangingData,
   NonTelegram,
   OutdatedContacts,
   OutdatedCoordination,
-  OutdatedHomeAddress,
   OutdatedInstitute,
   Partner,
   PartnerDraft,
@@ -24,7 +23,7 @@ import {
 } from '../interfaces/advanced-model';
 
 import { DiffConfirmService } from './diff-confirm.service';
-import { isFieldEqual, lightNormalize, normalize } from '../utils/owner-ctrls'; // <-- поправь путь под себя
+import { isFieldEqual, lightNormalize, normalize } from '../utils/owner-ctrls';
 
 // -----------------------------------------------------------------------------
 // Common contracts
@@ -49,7 +48,7 @@ export type AddressDiff = {
 };
 
 export type HomeAddressDiff = {
-  changes: HomeDraft['draftAddress'] | null;
+  changes: HomeChangingData['address'];
   outdatingId: number | null;
   deletingId: number | null;
 };
@@ -88,8 +87,8 @@ function currentCoordinationTargetId(
 function buildHomeAddressComparable(draft: HomeDraft) {
   return {
     ...draft.draftAddress,
-    postalCode: lightNormalize(draft.postalCode),
-    postalName: lightNormalize(draft.postalName),
+    postalCode: normalize(draft.postalCode),
+    postalName: normalize(draft.postalName),
     postalAddressPart: lightNormalize(draft.postalAddressPart),
   };
 }
@@ -232,18 +231,18 @@ export class OwnerChangesPlannerService {
       (newA.postalName ?? null) !== (oldA.postalName ?? null) ||
       (newA.postalCode ?? null) !== (oldA.postalCode ?? null);
 
-    let changes: HomeDraft['draftAddress'] | null = null;
+    let changes: HomeChangingData['address'] = null;
 
     if (changed) {
       if (!restoringId) {
-        changes = newA as HomeDraft['draftAddress'];
+        changes = newA;
       } else {
         const restoringAddr = existing.outdatedData.addresses.find(
           (a) => a.id === restoringId,
-        ) as OutdatedHomeAddress | undefined;
+        );
 
         if (restoringAddr && !isSameHomeAddress(newA, restoringAddr)) {
-          changes = newA as HomeDraft['draftAddress'];
+          changes = newA;
         }
       }
     }
@@ -358,6 +357,7 @@ export class OwnerChangesPlannerService {
     draft: UserDraft | PartnerDraft | VolunteerDraft | HomeDraft,
     contactTypes: NonTelegram[],
     restoringContacts: OutdatedContacts | null,
+    isCurrent: () => boolean = () => true,
   ): Promise<{
     changes: Partial<Record<ContactType, string[]>> | null;
     outdatingIds: number[] | null;
@@ -394,6 +394,7 @@ export class OwnerChangesPlannerService {
           'contact',
           `${type} ${c.content}`,
         );
+        if (!isCurrent()) return { changes: null, outdatingIds: null, deletingIds: null };
 
         if (moveToOutdated) {
           outdatingIds ??= [];
@@ -424,6 +425,7 @@ export class OwnerChangesPlannerService {
       | PartnerDraft['draftCoordinations'],
     restoringIds: number[] | null,
     outdatedAll: OutdatedCoordination[],
+    isCurrent: () => boolean = () => true,
   ): Promise<DiffSet<number[]>> {
     const outdating: number[] = [];
     const deleting: number[] = [];
@@ -444,6 +446,7 @@ export class OwnerChangesPlannerService {
         'coordination',
         label,
       );
+      if (!isCurrent()) return { changes: null, outdating: null, deleting: null };
 
       if (moveToOutdated) outdating.push(c.id);
       else deleting.push(c.id);
@@ -478,6 +481,7 @@ export class OwnerChangesPlannerService {
     draft: VolunteerDraft['draftInstitutes'],
     restoringIds: number[] | null,
     outdatedAll: OutdatedInstitute[],
+    isCurrent: () => boolean = () => true,
   ): Promise<DiffSet<VolunteerDraft['draftInstitutes']>> {
     const outdating: number[] = [];
     const deleting: number[] = [];
@@ -503,6 +507,7 @@ export class OwnerChangesPlannerService {
         'institute',
         i.instituteName,
       ) : true;
+      if (!isCurrent()) return { changes: null, outdating: null, deleting: null };
       if (moveToOutdated) outdating.push(i.id);
       else deleting.push(i.id);
     }
