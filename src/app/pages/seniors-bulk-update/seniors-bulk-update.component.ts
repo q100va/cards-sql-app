@@ -1,9 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
@@ -22,7 +20,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { UploadFileComponent } from '../../shared/upload-file/upload-file.component';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-//import { ButtonModule } from 'primeng/button';
 import { TableModule, TableRowSelectEvent } from 'primeng/table';
 import { HasOpDirective } from '../../directives/has-op.directive';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -48,29 +45,6 @@ import { MONTHS } from '../../../../shared/constants/occasions';
 import { FileService } from '../../services/file.service';
 import { saveAs } from 'file-saver';
 
-/* export interface SeniorRow {
-  nursingHome: string;
-  lastName?: string | null;
-  firstName: string;
-  patronymic?: string | null;
-  dateOfConsent?: string | null;
-  dayBirthday?: number | null;
-  monthBirthday?: number | null;
-  yearBirthday?: number | null;
-  gender?: 'male' | 'female' | null;
-  birthDate?: string | null;
-  comment?: string | null;
-  infoNote?: string | null;
-  photoLink?: string | null;
-  kindergarten?: string | null;
-  teacher?: string | null;
-  veteran?: string | null;
-  childOfWar?: string | null;
-  profession?: string | null;
-  honoraryStatus?: string | null;
-  interests?: string | null;
-  orthodoxBeliever?: string | null;
-} */
 export type ErrorType =
   | 'NO_DAY'
   | 'NO_MONTH'
@@ -82,7 +56,6 @@ export type ErrorType =
 @Component({
   selector: 'app-seniors-bulk-update',
   imports: [
-    CommonModule,
     UploadFileComponent,
     ProgressSpinner,
     HasOpDirective,
@@ -91,7 +64,6 @@ export type ErrorType =
     MatGridListModule,
     TableModule,
     MatButtonModule,
-    MatRadioModule,
     FormsModule,
     SeniorChangesTableComponent,
     MatSelectModule,
@@ -102,7 +74,6 @@ export type ErrorType =
     MatIconModule,
     MatSlideToggleModule,
     MatTooltipModule,
-    //ButtonModule
   ],
   templateUrl: './seniors-bulk-update.component.html',
   styleUrl: './seniors-bulk-update.component.css',
@@ -121,7 +92,6 @@ export class SeniorsBulkUpdateComponent {
     homeName: string;
     list: SeniorRow[];
   }[] = [];
-  //isStarted = false;
   currentHomeName = '';
   home!: {
     homeName: string;
@@ -151,18 +121,12 @@ export class SeniorsBulkUpdateComponent {
   commentsMode = new FormControl<boolean>(true, { nonNullable: true });
   noChanges = false;
   showStart = false;
-  constructor() {}
-  ngOnInit() {
-    // this.commentsMode.setValue(true);
-  }
 
   parseRows(rows: SeniorRow[]) {
     this.isCompleted = false;
     this.commentsMode.disable();
-    // this.toggleDisabled = true;
     this.index = 0;
     this.clear();
-    //this.isStarted = false;
 
     this.showSpinner.set(false);
 
@@ -185,7 +149,6 @@ export class SeniorsBulkUpdateComponent {
       this.msgWrapper.success('SENIOR.BULK_UPDATE.COMPLETED');
       return;
     }
-    //this.isStarted = true;
     this.home = this.arrayOfLists[this.index];
 
     this.currentHomeName = this.home.homeName;
@@ -748,12 +711,6 @@ export class SeniorsBulkUpdateComponent {
     this.updatedSeniors.splice(rowIndex, 1);
   }
 
-  /*   onChange(seniorId: number, field: string, value: unknown): void {
-    if (!this.accepted[seniorId]) {
-      this.accepted[seniorId] = {};
-    }
-    this.accepted[seniorId][field] = value;
-  } */
 
   acceptChanges(
     source: 'returned' | 'duplicates' | 'updated',
@@ -972,16 +929,6 @@ export class SeniorsBulkUpdateComponent {
     this.dateOfUpdate.setValue(null);
   }
 
-  /*   expandAll() {
-    this.expandedRows = this.removedSeniors.reduce(
-      (acc, p) => (acc[p.id] = true) && acc,
-      {},
-    );
-  }
-
-  collapseAll() {
-    this.expandedRows = {};
-  } */
 }
 
 //TODO: запрос на сохранение измененных ФИО

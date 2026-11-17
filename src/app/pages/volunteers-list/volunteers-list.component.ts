@@ -13,7 +13,6 @@ import {
 } from '../../../../shared/schemas/volunteer.schema';
 
 import { volunteerDraftSchema } from '../../../../shared/schemas/volunteer.schema';
-import { TranslateModule } from '@ngx-translate/core';
 import { TableComponent } from '../../shared/table/table.component';
 
 import { DialogData } from '../../interfaces/dialog-props';
@@ -30,7 +29,7 @@ import { Kind, Volunteer } from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-volunteers-list',
-  imports: [TableComponent, TranslateModule],
+  imports: [TableComponent],
   templateUrl: './volunteers-list.component.html',
   styleUrl: './volunteers-list.component.css',
 })

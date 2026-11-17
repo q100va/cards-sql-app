@@ -12,18 +12,6 @@
 
     <mat-grid-tile colspan="3"></mat-grid-tile>
 
-    <!-- Actions
-    <mat-grid-tile colspan="1">
-      <mat-card-actions>
-        <div class="bottom-right">
-          <button data-cy="add-ORDER-btn" mat-icon-button [title]="'ORDER.TABLE.ADD_ORDER' | translate"
-            (click)="onAddORDERClick(dt)" *hasOp="{codes:['ADD_NEW_ORDER'], mode:'all'}"
-            [disabled]="!occasion || !occasion.status || occasion.status === 'OCCASION.STATUS.CLOSED'">
-            <mat-icon fontSet="material-symbols-outlined">sticker_add</mat-icon>
-          </button>
-        </div>
-      </mat-card-actions>
-    </mat-grid-tile>-->
   </mat-grid-list>
 
   <!-- Content -->
@@ -298,59 +286,6 @@
               </mat-menu>
             </div>
           </td>
-          <!--   <td>
-            <div class="center">
-              <button mat-icon-button [title]="'ORDER.TABLE.CANCEL_BUTTON'  | translate">
-                <mat-icon>
-                  cancel
-                </mat-icon>
-              </button>
-            </div>
-          </td>
-          <td>
-            <div class="center">
-              <button mat-icon-button [title]="'ORDER.TABLE.VIEW_BUTTON'  | translate"
-                (click)="onViewOrderClick(order)">
-                <mat-icon>
-                  open_in_new
-                </mat-icon>
-              </button>
-            </div>
-          </td>
-          <td>
-            <div class="center">
-              <button mat-icon-button [matMenuTriggerFor]="deleteMenu"
-                [title]="'ORDER.TABLE.DELETE_BUTTON'  | translate">
-                <mat-icon>
-                  delete
-                </mat-icon>
-              </button>
-              <mat-menu #deleteMenu="matMenu" xPosition="before">
-                <button mat-menu-item (click)="moveToOverdue()">
-                  <mat-icon>timer</mat-icon>
-                  <span>{{ "ORDER.TABLE.DELETE_OVERDUE" | translate }}</span>
-                </button>
-                <button mat-menu-item (click)="moveToReturned()">
-                  <mat-icon>assignment_returned</mat-icon>
-                  <span>{{ "ORDER.TABLE.DELETE_RETURNED" | translate }}</span>
-                </button>
-                <button mat-menu-item (click)="deletePermanently()">
-                  <mat-icon>error</mat-icon>
-                  <span>{{ "ORDER.TABLE.DELETE_MISTAKE" | translate }}</span>
-                </button>
-              </mat-menu>
-            </div>
-          </td>
-          <td>
-            <div class="center">
-              <button mat-icon-button [title]="'ORDER.TABLE.RESTORE_BUTTON'  | translate"
-                (click)="onRestoreOrderClick()">
-                <mat-icon>
-                  restore_from_trash
-                </mat-icon>
-              </button>
-            </div>
-          </td> -->
           <td>
             {{ order.source | translate }}
           </td>

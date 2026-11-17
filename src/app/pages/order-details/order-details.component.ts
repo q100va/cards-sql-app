@@ -1,48 +1,29 @@
-import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  FormControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { EMPTY, catchError, finalize, map, switchMap } from 'rxjs';
 
-import { ORDER_SOURCE_OPTIONS } from '../../../../shared/constants/orders';
 import {
   OrderDetails,
 } from '../../../../shared/schemas/order.schema';
 import { OrderService } from '../../services/order.service';
 import { MessageWrapperService } from '../../services/message.service';
 import { DateUtilsService } from '../../services/date-utils.service';
-import { zodValidator } from '../../utils/zod-validator';
 import { OrderRecipientsComponent } from '../order-card/order-recipients/order-recipients.component';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-order-details',
   imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressSpinnerModule,
-    MatSelectModule,
     OrderRecipientsComponent,
     TranslateModule,
   ],
@@ -58,7 +39,6 @@ export class OrderDetailsComponent {
   readonly authService = inject(AuthService);
   readonly translateService = inject(TranslateService);
   readonly dateUtils = inject(DateUtilsService);
-  readonly sources = ORDER_SOURCE_OPTIONS;
 
   readonly isLoading = signal(false);
 
@@ -66,12 +46,6 @@ export class OrderDetailsComponent {
   orderId!: number;
   userId!: number | null;
 
-  readonly statusOptions = [
-    { id: 1, label: 'ORDER.STATUS.PENDING' },
-    { id: 2, label: 'ORDER.STATUS.ACCEPTED' },
-    { id: 3, label: 'ORDER.STATUS.RETURNED' },
-    { id: 4, label: 'ORDER.STATUS.OVERDUE' },
-  ];
 
 
 
@@ -121,7 +95,6 @@ export class OrderDetailsComponent {
           }),
       });
   }
-  //TODO:userId
   onBackClick(): void {
     if (this.userId) {
       this.router.navigate([`/orders/${this.userId}`]);
@@ -130,15 +103,7 @@ export class OrderDetailsComponent {
     }
   }
 
-  sourceLabel(sourceId: number): string {
-    return this.sources.find((source) => source.id === sourceId)?.optionKey ?? '';
-  }
 
-  statusLabel(statusId: number): string {
-    return (
-      this.statusOptions.find((status) => status.id === statusId)?.label ?? ''
-    );
-  }
 
   translatedOccasionName(occasion: string): string {
     return String(occasion ?? '')
@@ -152,7 +117,6 @@ export class OrderDetailsComponent {
 
   private setOrder(order: OrderDetails): void {
     this.order.set(order);
-    //this.patchForm(order);
   }
 
   changeRecipientsList(deletingIds: number[]) {
@@ -175,11 +139,4 @@ export class OrderDetailsComponent {
       });
   }
 
-  /*   private patchForm(order: OrderDetails): void {
-    this.form.patchValue({
-      status: order.status,
-      source: order.source,
-      comment: order.comment,
-    });
-  } */
 }

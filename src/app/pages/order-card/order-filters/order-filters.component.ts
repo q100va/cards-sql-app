@@ -11,19 +11,14 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-  AbstractControl,
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
 } from '@angular/forms';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { zodValidator } from '../../../utils/zod-validator';
-import { orderFilterSchema } from '../../../../../shared/schemas/order.schema';
 import { getRegionsWithNearby } from '../../../../../shared/constants/nearby-regions';
 import { OrderService } from '../../../services/order.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -100,7 +95,6 @@ export class OrderFiltersComponent {
     { label: '16-31', value: 2 },
   ];
 
-  actualYear = new Date().getFullYear();
   regions: {
     id: number;
     name: string;

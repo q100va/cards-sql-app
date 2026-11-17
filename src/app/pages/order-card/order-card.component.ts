@@ -6,15 +6,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import {
   AutoComplete,
   AutoCompleteCompleteEvent,
-  AutoCompleteSelectEvent,
 } from 'primeng/autocomplete';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
@@ -75,8 +72,6 @@ import { finalize } from 'rxjs';
     MatInputModule,
     MatIconModule,
     MatSelectModule,
-    MatRadioModule,
-    MatCheckboxModule,
     MatSlideToggleModule,
     MatTooltipModule,
     OrderFiltersComponent,
@@ -212,7 +207,6 @@ export class OrderCardComponent {
   orderTypeId!: string;
   title!: string;
   month!: string | null;
-  orderDate = new Date();
   actualOccasions: Occasion[] = [];
   index = 0;
   filteredContacts: ContactOption[] = [];
@@ -329,14 +323,12 @@ export class OrderCardComponent {
     this.index =
       this.index - 1 < 0 ? this.actualOccasions.length - 1 : this.index - 1;
     this.month = this.actualOccasions[this.index].month;
-    // this.occasionName = this.getOccasionName(this.actualOccasions[this.index]);
   }
   goForward(event: any) {
     event.preventDefault();
     this.index =
       this.index + 1 < this.actualOccasions.length ? this.index + 1 : 0;
     this.month = this.actualOccasions[this.index].month;
-    // this.occasionName = this.getOccasionName(this.actualOccasions[this.index]);
   }
 
   onCreateOrderClick() {
@@ -604,9 +596,6 @@ export class OrderCardComponent {
   }
 
   filterContact(event: AutoCompleteCompleteEvent) {
-    /*     this.message = '';
-    this.contactReminder = '';
-    this.list = []; */
     const query = event.query?.trim();
     const intent = ++this.contactLookupIntent;
 
@@ -666,12 +655,9 @@ export class OrderCardComponent {
               });
             }
           }
-          //this.addCheckboxes();
-          //  console.log(this.filteredContacts);
         },
         error: (err) => {
           if (intent !== this.volunteerLookupIntent) return;
-          //this.filteredContacts = [];
           this.msgWrapper.handle(err, {
             source: 'OrderCardComponent',
             stage: 'getActualOccasions',

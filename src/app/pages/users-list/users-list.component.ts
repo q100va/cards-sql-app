@@ -15,7 +15,6 @@ import {
   websiteControlSchema
 } from '../../../../shared/schemas/user.schema';
 
-import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -33,7 +32,7 @@ import { Kind, User} from '../../interfaces/advanced-model';
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [TranslateModule, TableComponent],
+  imports: [TableComponent],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.css',
 })

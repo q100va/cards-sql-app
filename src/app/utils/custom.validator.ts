@@ -2,7 +2,6 @@ import {
   AbstractControl,
   FormArray,
   FormControl,
-  FormGroup,
   ValidationErrors,
   ValidatorFn,
 } from '@angular/forms';
@@ -60,7 +59,6 @@ export const mainPartnerContactsValidator: ValidatorFn = (
     const noContact = formArray.controls.some(
       (control) => control.value == null || control.value.trim == '',
     );
-    // console.log("noContact", noContact)
     if (!noContact) return null;
   }
   return { mainContacts: true };

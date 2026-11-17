@@ -8,7 +8,6 @@
   </ng-template>
 
   <ng-template #body let-senior let-rowIndex="rowIndex">
-<!--     <tr style="background-color: rgba(214, 205, 140, 0.234);"> -->
        <tr style="background-color: rgba(174, 199, 129, 0.307);">
       <td colspan="3">
         <button mat-mini-fab (click)="moveToAdmitted.emit(rowIndex)" class="move"
@@ -32,10 +31,6 @@
       </td>
 
       <td>
-        <!--        <button mat-raised-button (click)="moveToAdmitted.emit(rowIndex)">
-          {{ 'SENIOR.BULK_UPDATE.MOVE_TO_ADMITTED' | translate }}
-        </button>
- -->
 
       </td>
     </tr>
@@ -78,11 +73,6 @@
 </td>
 
 <td>
-  <!--   <button mat-raised-button
-    (click)="acceptChanges.emit({ seniorId: senior.oldSenior.id, rowIndex, accepted: accepted[senior.oldSenior.id]})"
-    [disabled]="senior.changeRows.length !== getObjectSize(senior.oldSenior.id)">
-    {{ 'SENIOR.BULK_UPDATE.ACCEPT_CHANGES' | translate }}
-  </button> -->
 
   <button mat-mini-fab
     (click)="acceptChanges.emit({ seniorId: senior.oldSenior.id, rowIndex, accepted: accepted[senior.oldSenior.id]})"

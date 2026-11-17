@@ -9,7 +9,6 @@ export type ConfirmKind =
   | 'userName'
   | 'contact'
   | 'coordination'
- // | 'partner'
   | 'institute'
   | 'officialName';
 
@@ -28,7 +27,6 @@ export class DiffConfirmService {
       names: this.t.instant('PRIME_CONFIRM.DATA_TYPES.NAMES'),
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contact: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
-    //  home: this.t.instant('PRIME_CONFIRM.DATA_TYPES.HOMES'),
       coordination: this.t.instant('PRIME_CONFIRM.DATA_TYPES.COORDINATIONS'),
       institute: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
       officialName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.OFFICIAL_NAME'),
@@ -70,7 +68,6 @@ export class DiffConfirmService {
       | 'userName'
       | 'contacts'
       | 'coordinations'
-      //| 'partners'
       | 'institutes'
       | 'officialName',
     value: string
@@ -81,7 +78,6 @@ export class DiffConfirmService {
       userName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.USER_NAME'),
       contacts: this.t.instant('PRIME_CONFIRM.DATA_TYPES.CONTACTS'),
       coordinations: this.t.instant('PRIME_CONFIRM.DATA_TYPES.COORDINATIONS'),
-      //coordinations: this.t.instant('PRIME_CONFIRM.DATA_TYPES.PARTNERS'),
       institutes: this.t.instant('PRIME_CONFIRM.DATA_TYPES.INSTITUTES'),
       officialName: this.t.instant('PRIME_CONFIRM.DATA_TYPES.OFFICIAL_NAME'),
     };

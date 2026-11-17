@@ -35,16 +35,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatBadgeModule } from '@angular/material/badge';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -78,18 +74,13 @@ import { sanitizeText } from '../../../utils/sanitize-text';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatListModule,
     MatTableModule,
     MatSortModule,
     MatGridListModule,
     MatPaginatorModule,
     MatIconModule,
-    MatBadgeModule,
-    MatButtonToggleModule,
     MatCheckboxModule,
-    MatSelectModule,
     FormsModule,
-    ReactiveFormsModule,
     MatMenuModule,
     ProgressSpinner,
     AddressFilterComponent,

@@ -37,7 +37,7 @@ export class CountriesListComponent {
           controlName: 'name',
           value: '',
           disabled: true,
-          validators: [zodValidator(toponymFormSchema.shape.name)], // [Validators.required],
+          validators: [zodValidator(toponymFormSchema.shape.name)],
           type: 'inputText',
           label: 'TOPONYM.LABEL_NAME',
           placeholder: 'Лапландия',

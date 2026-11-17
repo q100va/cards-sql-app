@@ -18,7 +18,6 @@ import {
 import {
   AbstractControl,
   FormControl,
-  FormGroup,
   FormsModule,
   ReactiveFormsModule,
   ValidationErrors,
@@ -28,27 +27,22 @@ import {
 // Material UI modules
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatListModule, MatListOption } from '@angular/material/list';
 
 // Services
-import { OccasionService } from '../../../services/occasion.service';
 import { ConfirmationService } from 'primeng/api';
 import { MessageWrapperService } from '../../../services/message.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // RxJS
-import { EMPTY } from 'rxjs';
-import { switchMap, finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // Validation
 import { Occasion } from '../../../../../shared/schemas/occasion.schema';
-import { zodValidator } from '../../../utils/zod-validator';
 
 //Directives
 import { HasOpDirective } from '../../../directives/has-op.directive';
@@ -92,12 +86,10 @@ export type OccasionFormControls = {
     MatDialogContent,
     // Material form + UI
     MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatGridListModule,
     MatIconModule,
     MatSelectModule,
-    MatRadioModule,
     MatListModule,
     // Angular forms
     FormsModule,
@@ -115,7 +107,6 @@ export class CreateRecipientDialogComponent {
   readonly dialogRef = inject(MatDialogRef<CreateRecipientDialogComponent>);
   readonly data = inject<Occasion>(MAT_DIALOG_DATA);
   private readonly msgWrapper = inject(MessageWrapperService);
-  private readonly occasionService = inject(OccasionService);
   private readonly homeService = inject(HomeService);
   private readonly recipientService = inject(RecipientService);
   private readonly seniorService = inject(SeniorService);

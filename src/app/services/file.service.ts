@@ -205,23 +205,6 @@ export class FileService {
 
     headerRow.height = 30;
 
-    /*  worksheet.views = [
-      {
-        state: 'frozen',
-        ySplit: 1,
-      },
-    ];
-
-    worksheet.autoFilter = {
-      from: {
-        row: 1,
-        column: 1,
-      },
-      to: {
-        row: 1,
-        column: columns.length,
-      },
-    }; */
 
     columns.forEach((column, index) => {
       const worksheetColumn = worksheet.getColumn(index + 1);

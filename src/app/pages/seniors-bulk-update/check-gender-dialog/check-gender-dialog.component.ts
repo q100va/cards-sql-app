@@ -1,9 +1,6 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   inject,
-  model,
-  signal,
 } from '@angular/core';
 import {
   FormControl,
@@ -13,7 +10,6 @@ import {
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatRadioModule } from '@angular/material/radio';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -40,7 +36,6 @@ import { seniorDraftSchema, SeniorRow } from '../../../../../shared/schemas/seni
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatDatepickerModule,
     TranslateModule,
     ReactiveFormsModule,
   ],
@@ -83,9 +78,6 @@ export class CheckGenderDialogComponent {
     gender: this.gender,
   });
 
-  ngOnInit() {
-    //console.log('data', this.data.error);
-  }
 
   onApplyClick() {
     this.dialogRef.close({

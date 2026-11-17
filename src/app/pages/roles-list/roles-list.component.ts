@@ -243,7 +243,7 @@ export class RolesListComponent implements OnInit {
 
   // Private: check role usage before delete
   private checkPossibilityToDeleteRole(
-    id: number /* , roleName: string */
+    id: number
   ): void {
     this.roleService
       .checkPossibilityToDeleteRole(id)
@@ -264,7 +264,7 @@ export class RolesListComponent implements OnInit {
   }
 
   // Private: delete role
-  private deleteRole(id: number /* , roleName: string */): void {
+  private deleteRole(id: number ): void {
     this.roleService
       .deleteRole(id)
       .pipe(takeUntilDestroyed(this.destroyRef))

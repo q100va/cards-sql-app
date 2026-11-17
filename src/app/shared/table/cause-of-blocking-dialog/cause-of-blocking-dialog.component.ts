@@ -44,7 +44,6 @@ export class CauseOfBlockingDialogComponent {
     MatDialogRef<CauseOfBlockingDialogComponent>
   );
   private readonly data = inject<DialogData>(MAT_DIALOG_DATA);
-  private readonly userService = inject(UserService);
   private readonly msgWrapper = inject(MessageWrapperService);
   private readonly destroyRef = inject(DestroyRef);
 

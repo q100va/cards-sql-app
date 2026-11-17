@@ -64,10 +64,6 @@
   @for(home of list(); track home.homeId){
   <p style="font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
     {{home.postAddress}}</p>
-  <!--   @if((home.infoNote && flag) || (home.infoNote && !flag && !orderDetails().forInstitute)){
-  <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
-    ({{home.infoNote}})
-  </p>} -->
   @if(!flag && orderDetails().forInstitute){
   <p style="font-style: italic; margin: 0; font-family: 'Times New Roman', Times, serif;">
     ({{('ORDER.CARD.ADDRESS_NOTE_SCHOOL' | translate) + (home.infoNote ? (' ' + home.infoNote) : '')}})
@@ -83,7 +79,6 @@
 
   @if(home.noAddressNote){
   <p style="color: red; font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif;">
-    <!-- {{home.noAddressNote | translate}}</p> -->
     {{orderDetails().forInstitute && !flag ? ('ORDER.CARD.NO_ADDRESS_NOTE_SCHOOL' | translate) : (home.noAddressNote |
     translate)}}
   </p>

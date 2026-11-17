@@ -14,7 +14,6 @@ import {
 
 import { homeDraftSchema } from '../../../../shared/schemas/home.schema';
 
-import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -26,12 +25,11 @@ import {
 import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
-import * as Validator from '../../utils/custom.validator';
 import { Kind, Home } from '../../interfaces/advanced-model';
 
 @Component({
   selector: 'app-homes-list',
-  imports: [TableComponent, TranslateModule],
+  imports: [TableComponent],
   templateUrl: './homes-list.component.html',
   styleUrl: './homes-list.component.css',
 })
@@ -179,7 +177,7 @@ export class HomesListComponent {
       {
         controlName: 'noAddress',
         value: false,
-        validators: [], // [zodValidator(homeDraftSchema.shape.noAddress)],
+        validators: [],
         type: 'toggle',
         label: 'HOME.CARD.NO_ADDRESS_LABEL',
         category: 'mainData',
@@ -190,7 +188,7 @@ export class HomesListComponent {
       {
         controlName: 'specialHome',
         value: false,
-        validators: [], // [zodValidator(homeDraftSchema.shape.specialHome)],
+        validators: [],
         type: 'toggle',
         label: 'HOME.CARD.SPECIAL_HOME_LABEL',
         category: 'mainData',
@@ -201,7 +199,7 @@ export class HomesListComponent {
       {
         controlName: 'acceptableForSchool',
         value: false,
-        validators: [], // [zodValidator(homeDraftSchema.shape.acceptableForSchool)],
+        validators: [],
         type: 'toggle',
         label: 'HOME.CARD.ACC_SCHOOL_LABEL',
         category: 'mainData',
@@ -209,17 +207,6 @@ export class HomesListComponent {
         colspan: 2,
         rowspan: 1,
       },
-/*       {
-        controlName: 'dateOfLastUpdate',
-        value: null,
-        validators: [zodValidator(nullableIsoDate)],
-        type: 'datePicker',
-        label: 'SENIOR.CARD.CONCENT_DATE_LABEL',
-        category: 'mainData',
-        formType: 'formControl',
-        colspan: 4,
-        rowspan: 1,
-      }, */
       {
         controlName: 'comment',
         value: null,

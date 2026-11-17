@@ -35,11 +35,6 @@ export class SeniorChangesTableComponent {
     accepted: Record<string, unknown>;
   }>();
 
-  /*   valueSelected = output<{
-    seniorId: number;
-    field: string;
-    value: unknown;
-  }>(); */
   accepted: Record<number, Record<string, unknown>> = {};
 
   readonly dateUtils = inject(DateUtilsService);
@@ -57,7 +52,6 @@ export class SeniorChangesTableComponent {
 
     this.accepted[seniorId][field] = value;
 
-    //this.valueSelected.emit({ seniorId, field, value });
   }
 
   getObjectSize(seniorId: number) {

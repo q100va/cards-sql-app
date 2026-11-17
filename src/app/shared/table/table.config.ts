@@ -166,9 +166,6 @@ export const COLUMNS = {
 
       return [
         `${row.officialName}\n`,
-        /* ...Object.values(row.orderedContacts).flatMap(
-          (contacts) => contacts?.map(({ content }) => content) ?? [],
-        ), */
         ...contacts,
       ]
         .filter(Boolean)
@@ -229,9 +226,6 @@ export const COLUMNS = {
     ) =>
       row.coordinations
         .map((partner) => {
-          /*           const contacts = Object.values(partner.partnerContacts).flatMap(
-            (items) => items?.map(({ content }) => content) ?? [],
-          ); */
           const contacts = formatContacts(partner.partnerContacts);
           const affiliation = translate.instant(
             PARTNER_AFFILIATIONS[partner.partnerAffiliation].key,

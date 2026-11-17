@@ -5,7 +5,6 @@ import {
   spouseControlSchema,
 } from '../../../../shared/schemas/senior.schema';
 
-import { TranslateModule } from '@ngx-translate/core';
 import { DialogData } from '../../interfaces/dialog-props';
 import {
   ColumnDefinition,
@@ -17,14 +16,12 @@ import {
 import { zodValidator } from '../../utils/zod-validator';
 
 import { TableComponent } from '../../shared/table/table.component';
-import * as Validator from '../../utils/custom.validator';
 import { Kind, Senior } from '../../interfaces/advanced-model';
-import { readonly } from 'zod';
 import { nullableIsoDate } from '../../../../shared/schemas/common.schema';
 
 @Component({
   selector: 'app-seniors-list',
-  imports: [TableComponent, TranslateModule],
+  imports: [TableComponent],
   templateUrl: './seniors-list.component.html',
   styleUrl: './seniors-list.component.css',
 })

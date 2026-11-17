@@ -48,9 +48,6 @@
       </ng-template>
       <ng-template #header>
         <tr>
-          <!--         <th style="width: 4rem">
-          <p-tableHeaderCheckbox />
-        </th> -->
 
           <th pSortableColumn="name" style="min-width: 14rem">
             <div class="header-cell">
@@ -58,10 +55,6 @@
                 <p-sortIcon field="name" />
               </div>
 
-              <!--      <p-columnFilter matchMode="translatedContains" type="text" field="id" display="menu"
-                [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
-                [showClearButton]="false" class="ml-auto" placeholder="Type to search and enter" filterOn="enter">
-              </p-columnFilter> -->
 
               <p-columnFilter matchMode="translatedContains" type="text" field="id" display="menu"
                 [showMatchModes]="false" [showOperator]="false" [showAddButton]="false" [showApplyButton]="false"
@@ -204,9 +197,6 @@
       </ng-template>
       <ng-template #body let-occasion>
         <tr class="p-selectable-row">
-          <!--     <td>
-          <p-tableCheckbox [value]="customer" />
-        </td> -->
           <td>
             {{ getOccasionName(occasion.id) }}
           </td>

@@ -21,7 +21,6 @@ import { MatCardModule } from '@angular/material/card';
 // PrimeNG
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { PaginatorModule } from 'primeng/paginator';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -92,7 +91,6 @@ const ACTIONS: Exclude<AuditAction, ''>[] = ['create', 'update', 'delete', 'auth
     MatCardModule,
     TableModule,
     InputTextModule,
-    TagModule,
     TooltipModule,
     PaginatorModule,
     IconFieldModule,
@@ -238,7 +236,6 @@ export class AuditTableComponent {
         next: (res) => {
           this.records.set(res.data.rows);
           this.total.set(res.data.count);
-          console.log('Audit data loaded, total:', this.total());
         },
         error: (err) => {
           this.msgWrapper.handle(err);
@@ -266,12 +263,7 @@ export class AuditTableComponent {
     this.filters$.next(this.readFilters(meta));
   }
 
-  /** Blur helper for Enter-to-apply inputs */
-  blur(input: HTMLInputElement) {
-    input.blur();
-  }
 
-  /** Called from date range picker */
 
   private toISOStart(d: Date): string {
     // начало дня (UTC)

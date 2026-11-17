@@ -131,9 +131,6 @@ export class CheckDateDialogComponent {
     },
   };
 
-  ngOnInit() {
-    //console.log('data', this.data.error);
-  }
 
   onApplyClick() {
     this.dialogRef.close({

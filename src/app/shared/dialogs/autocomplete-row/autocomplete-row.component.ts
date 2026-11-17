@@ -23,7 +23,6 @@ import {
   distinctUntilChanged,
   map,
   startWith,
-  filter,
 } from 'rxjs/operators';
 import { RelationPick } from '../../../interfaces/advanced-model';
 
@@ -54,17 +53,11 @@ export class AutocompleteRowComponent implements OnInit {
   relationPickList$ = input.required<Observable<RelationPick[]>>();
   minLength = 0;
   filtered$!: Observable<RelationPick[]>;
-  //showHint$!: Observable<boolean>;
   index = input<number>(0);
   delete = output<number>();
   selectOption = output<RelationPick | null>();
-  homeStatus = '';
 
   ngOnInit(): void {
-    /*  if (this.ctrl().value) {
-      this.setHomeStatusValue(this.ctrl().value as RelationPick);
-    }
-    console.log('this.homeStatus', this.homeStatus); */
     const q$ = this.ctrl().valueChanges.pipe(
       startWith(this.ctrl().value),
       debounceTime(200),
@@ -73,7 +66,6 @@ export class AutocompleteRowComponent implements OnInit {
       distinctUntilChanged(),
     );
 
-    // this.showHint$ = q$.pipe(map((q) => q.length < this.minLength));
 
     this.filtered$ = combineLatest([this.relationPickList$(), q$]).pipe(
       map(([list, q]) => {
@@ -81,10 +73,6 @@ export class AutocompleteRowComponent implements OnInit {
         return list.filter((c) => c.name.toLowerCase().includes(q));
       }),
     );
-    /* if (this.ctrl().value && typeof this.ctrl().value !== 'string') {
-      this.setHomeStatusValue(this.ctrl().value as RelationPick);
-    }
-    console.log('this.ctrl().value', this.ctrl().value); */
   }
 
   onDeleteClick() {
@@ -93,26 +81,8 @@ export class AutocompleteRowComponent implements OnInit {
 
   onSelectOption(e: MatAutocompleteSelectedEvent) {
     this.selectOption.emit(e.option.value as RelationPick);
-    //  this.setHomeStatusValue(e.option.value as RelationPick);
-   // console.log('this.ctrl().value', this.ctrl().value);
   }
 
- /*  setHomeStatusValue(value: RelationPick) {
-    if (this.hasIsRestricted(value)) {
-      this.homeStatus = value.isClose
-        ? 'TABLE.NOTES.CLOSE'
-        : value.isRestricted
-          ? 'TABLE.NOTES.DEACTIVATED'
-          : 'TABLE.NOTES.ACTIVE';
-    }
-  }
-  hasIsRestricted(obj: unknown): obj is { isRestricted: boolean } {
-    return !!obj && typeof obj === 'object' && 'isRestricted' in obj;
-  } */
-  /*   onSelectOption() {
-    console.log('this.ctrl().value', this.ctrl().value);
-    this.selectOption.emit(this.ctrl().value);
-  } */
 
   display = (v: RelationPick | string | null): string =>
     !v ? '' : typeof v === 'string' ? v : v.name +
