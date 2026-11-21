@@ -49,6 +49,13 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "e2e": {
+              "browser": "cypress/frontend/main.ts",
+              "tsConfig": "cypress/frontend/tsconfig.json",
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -61,6 +68,9 @@
             },
             "development": {
               "buildTarget": "cards-sql-app:build:development"
+            },
+            "e2e": {
+              "buildTarget": "cards-sql-app:build:e2e"
             }
           },
           "defaultConfiguration": "development"

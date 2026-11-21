@@ -1,4 +1,10 @@
 // cypress/e2e/toponyms/_helpers.ts
+import type { Toponym } from '../../../shared/schemas/toponym.schema';
+
+interface RegionCreationResponse {
+  data: Toponym;
+}
+
 export const API_URL = String(Cypress.env('API_URL') || 'http://localhost:8080');
 
 function authHeaders() {
@@ -13,12 +19,13 @@ export function apiLogin(opts: { user: string; pass: string }) {
     .request({
       method: 'POST',
       url: `${API_URL}/api/session/sign-in`,
+      log: false,
       body: { userName: opts.user, password: opts.pass },
     })
-    .its('body')
+    .its('body', { log: false })
     .then((b) => {
       const token = b?.data?.token as string | undefined;
-      expect(token, 'token from /sign-in').to.be.a('string').and.not.empty;
+      expect(typeof token === 'string' && token.length > 0, 'nonempty token from /sign-in').to.eq(true);
       Cypress.env('ACCESS_TOKEN', token);
       return token!;
     });
@@ -31,6 +38,7 @@ export function resolveCountryId(preferred?: number) {
     .request({
       method: 'GET',
       url: `${API_URL}/api/toponyms/get-toponyms-list`,
+      log: false,
       qs: { typeOfToponym: 'countries' },
       headers: authHeaders(),
     })
@@ -46,12 +54,13 @@ export function createRegion(payload: {
   name: string;
   shortName?: string;
   countryId?: number; // опционально — если не задан, возьмём реальный
-}) {
+}): Cypress.Chainable<Toponym> {
   return resolveCountryId(payload.countryId).then((countryId) =>
     cy
-      .request({
+      .request<RegionCreationResponse>({
         method: 'POST',
         url: `${API_URL}/api/toponyms/create-toponym`,
+        log: false,
         headers: authHeaders(),
         body: {
           type: 'region',
@@ -61,15 +70,23 @@ export function createRegion(payload: {
         },
       })
       .its('body')
-      .then((b) => {b.data})
+      .then((body: RegionCreationResponse) => {
+        const region = body?.data;
+        if (!region || !Number.isSafeInteger(region.id) || region.id <= 0) {
+          throw new Error('Region creation must return an entity with a positive safe-integer ID.');
+        }
+        return region;
+      })
   );
 }
 
 export function deleteRegion(id: number) {
+  if (!Number.isSafeInteger(id) || id <= 0) throw new Error('A valid created region ID is required for cleanup.');
   return cy
     .request({
       method: 'DELETE',
       url: `${API_URL}/api/toponyms/delete-toponym`,
+      log: false,
       headers: authHeaders(),
       qs: { id, type: 'region', destroy: true },
       failOnStatusCode: false, // на случай, если уже удалён

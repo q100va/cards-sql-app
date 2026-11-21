@@ -3,35 +3,22 @@ import { defineConfig } from 'cypress';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawn } from 'node:child_process';
+import { configureCypress } from './cypress/safety/node.mjs';
+import { SPECS } from './cypress/safety/policy.mjs';
 
 export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:56379',
-    specPattern: 'cypress/e2e/**/*.cy.{js,ts,jsx,tsx}',
+    // setupNodeEvents replaces this with the mode's exact approved file list.
+    specPattern: [...SPECS.stub],
     supportFile: 'cypress/support/e2e.ts',
     video: false,
     env: {
       API_URL: 'http://localhost:8080',
-      USE_STUBS: '0',
+      USE_STUBS: process.env['E2E_MODE'] === 'stub' ? '1' : process.env['E2E_MODE'] === 'live' ? '0' : '',
     },
-    setupNodeEvents(on) {
-      on('task', {
-        async 'db:reset'() {
-          process.env['NODE_ENV'] = 'test';
-          process.env['DOTENV_CONFIG_PATH'] =
-            process.env['DOTENV_CONFIG_PATH'] || 'server/.env.test';
-
-          // @ts-ignore JS ESM без типов — ок
-          const mod = (await import('./server/scripts/reset-test-db.mjs')) as {
-            reset: () => Promise<unknown>;
-          };
-
-          console.log('[cypress task] db:reset → start');
-          await mod.reset();
-          console.log('[cypress task] db:reset → done');
-          return 'db-reset:done:v1';
-        },
-      });
+    setupNodeEvents(on, config) {
+      return configureCypress(on, config);
 
       /*       on('task', {
         async 'db:reset'() {

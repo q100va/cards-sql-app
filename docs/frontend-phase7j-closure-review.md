@@ -1,5 +1,60 @@
 # PHASE 7J — FINAL PHASE 7 CLOSURE REVIEW
 
+## Current checkout revalidation — 2026-11-21
+
+Reviewed `f10e20c` on `master` and its working tree. The original 2026-11-17 review follows this update. Its repository status describes the earlier checkout. The Phase 7 implementation range remains `cdf8949..8143edd`.
+
+### Final repository state
+
+At the start, `git status` showed 17 unstaged tracked paths and 42 untracked files. The staged diff was empty. The entire starting inventory is classified as **pre-existing unrelated change**:
+
+| Status | Paths |
+| --- | --- |
+| Modified | `.gitignore`, `angular.json`, `package.json`, `cypress.config.ts`, `cypress/tsconfig.json`, `cypress/e2e/{permissions,roles,sign-in}.cy.ts`, `cypress/e2e/toponyms/{_helpers.ts,details.live.cy.ts,permissions.live.cy.ts,regions.live.cy.ts,regions.stub.cy.ts,toponyms-list.stub.cy.ts}`, `cypress/support/{commands,e2e}.ts`, `server/scripts/reset-test-db.mjs` |
+| Untracked | `cypress/e2e/toponyms/_assertions.ts`, `cypress/fixtures/{template-regions-download,users-permissions}.json`, both files under `cypress/frontend/`, all 22 files under `cypress/safety/`, `cypress/support/execution-safety.ts`, `docs/cypress-e2e-audit.md`, all 12 untracked `docs/cypress-phase-*.md` reports, `server/scripts/bootstrap-admin.mjs` |
+
+The Angular working diff adds the Cypress-specific build and serve targets. The default production target, its budgets and Karma target retain the reviewed settings. The current change to this report is **expected Phase 7 documentation**. The committed production and test classifications remain in the appendix. The nine 7A–7I reports and original 7J report are now tracked. No unexpected working-tree artifact surfaced. Ignored items include Angular cache, `dist/` build output, dependencies, local environment/editor files, the public archive and workbook templates. The stub runner uses temporary output directories.
+
+### Aggregate diff, test integrity and hygiene
+
+- The Phase 7 range still contains 66 production files, 18 specs and one test helper. 7I still contains 60 production files with 590 deletions and 19 additions. The reviewed removals cover unused declarations and imports, detached resources, disabled code, empty hooks and a development log. The retained 7I paths preserve active permissions, validators, request contracts, resets and template behavior. The accepted ownership and recovery changes are in the preceding functional commits.
+- `git diff 8143edd -- src public` is empty. The separate committed shared build changes regenerate declarations, expose an existing coordination-name control schema and carry the postal-address TODO. The Phase 7 comparison itself contains no shared-schema, route, guard or Auth implementation diff. Each translation adds 13 leaves and preserves all 1,158 previous values.
+- The current Angular tree contains 110 specs. The Phase 7 test diff adds 17 specs and a fixture, and adds translation-provider setup to the existing AuditTable spec. There are no deleted frontend specs or removed assertions in the range. Targeted Angular and Cypress searches found no skip/focus/pending modifiers. An AST check found no callback-less Angular test or suite declaration.
+- Changed production TypeScript retains 26 explicit `any` nodes across 12 files, with identical type contexts against the pre-Phase-7 baseline. The existing library boundaries and deferred types are itemized below. There are zero new type escapes or suppression directives.
+- The 7H/7I audit scope was `src/app`. The current scan still finds its 19 TODO markers, four response-validator console calls and client logger capture/fallback. The test harness console hooks are **KEEP** test instrumentation. The inherited no-op hooks retain their contractual defaults, and the 17 parameterized constructors provide DI. The retained disabled business rules, CSS and TODOs follow the ledger below. There is no new or outstanding approved 7I SAFE/LOW removal.
+- The wider `src` scan also finds bootstrap logging (**KEEP**, fixed diagnostic code/stage), the optional Zone debugging import in `src/environments/environment.ts` (**KEEP**, development guidance), the disabled title binding in `src/index.html` (**DEFER**, title/localization), and the duplicate disabled icon import and toggle override in `src/styles.css` (**known manual verification**, global styles). These predate the review and sit outside the approved 7I list. No production FIXME, HACK or XXX marker surfaced.
+
+### Closure boundaries and documentation
+
+The preserved Phase 7 source and the current focused run cover accessible names, native controls, language selection and destructive wording. The manual accessibility ledger retains screen-reader quality, focus, contrast, zoom/reflow and cross-browser keyboard behavior. Owner diagnostics retain source, stage and kind while omitting owner drafts. File diagnostics preserve diagnostic identity and the existing redaction path without logging the Blob or body in the fixed path.
+
+The focused coverage checks lookup and paging ownership and current-error recovery for OrderCard, OrdersList, CreateRecipientDialog and ToponymsList. The full suite also covers AddressFilter, shared Table, cards, spreadsheet upload and save-intent confirmations. The existing recovery specs cover a later OrderDetails request, bulk comparison retry, Audit paging after failure and OrderCard preflight retry. The OrderDetails edit affordance still requires `EDIT_ORDER`, with the route authorization rules retained.
+
+The original finding map and deferred ledger below remain current. 7B/7C/7D supersede the corresponding 7A findings, 7F resolves R09–R12, and 7G resolves the scoped R14/R15 code issues. The 7I commit completes the 7H approved removals and retains its KEEP/DEFER items. The ledger's release/build entry records the actual passing gate and budget headroom. No historical Phase 7 report was rewritten.
+
+### Current validation
+
+| Check | Current result |
+| --- | --- |
+| Full frontend | **722/722**, unfiltered ChromeHeadless run |
+| Critical regression groups | **86/86**, 27 existing specs across the groups listed below |
+| Auth | **29/29** |
+| Routing | **33/33** |
+| Cypress permissions | **8/8**, stub Electron run, zero failures, pending or skipped |
+| Production TypeScript | **PASS**, `tsc -p tsconfig.app.json --noEmit` |
+| Production build | **PASS**, 4,993,670 bytes displayed as 4.99 MB, 831.10 kB estimated initial transfer |
+| `git diff --check` | **PASS** for working, staged and aggregate Phase 7 diffs |
+
+The normal Angular production build exited 0 with zero build errors. The initial bundle exactly matches the original 7J measurement, has zero excess above the 5 MB error budget and leaves 6,330 bytes of headroom. It is approximately 55.77 kB smaller than the older 5.05 MB baseline that exceeded the limit by 49.44 kB. The 17 warnings are one compiler metadata warning, ten NG8102 warnings in OrdersList, one NG8107 warning in RecipientsList, one initial-bundle warning at 2.99 MB above the 2 MB warning threshold, and four CommonJS warnings for `moment/locale/ru`, `moment`, `file-saver` and `exceljs`.
+
+The first sandboxed Angular checks encountered filesystem access errors during module resolution. The Node 22.11.0 retries with local filesystem and browser access produced the results above. The focused Karma run emitted launcher shutdown warnings after all 86 tests passed and exited 0.
+
+Cypress 15.20.0 ran `cypress/e2e/permissions.cy.ts` against the current local e2e frontend target with `E2E_MODE=stub` and `USE_STUBS=1`. The spec completed in 1 minute 20 seconds and exited 0. Cypress emitted its `allowCypressEnv` migration warning for the existing test configuration. The permission run used HTTP stubs and created no screenshot or video artifacts.
+
+**CLOSE PHASE 7.** No concrete in-scope correctness, security, accessibility or privacy regression surfaced. The revalidation changed only this report. The deferred ledger retains the remaining product, engineering, manual and release work.
+
+## Original closure review — 2026-11-17
+
 Review date: 2026-11-17. Reviewed HEAD: `8143edd7093cbf242a431c07e9580edbf4ce96bd` (`8143edd`). Aggregate Phase 7 comparison: `cdf8949..8143edd`. This verification-only phase adds this report; production, tests, configuration and previous reports are unchanged.
 
 ## FINAL REPOSITORY STATE

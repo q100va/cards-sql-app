@@ -1,33 +1,66 @@
 // server/scripts/reset-test-db.mjs
-import 'dotenv/config';
 import { Op } from 'sequelize';
+import { loadEnvironment, withApprovedDatabase } from '../../cypress/safety/node.mjs';
+import { isDirectExecution } from '../../cypress/safety/cli-entry.mjs';
 
-process.env.NODE_ENV = 'test';
-process.env.DOTENV_CONFIG_PATH =
-  process.env.DOTENV_CONFIG_PATH || 'server/.env.test';
+// Guard module entry as well as reset(): a direct CLI/import must reject an
+// unsafe environment before CLI dispatch is considered.
+loadEnvironment(process.env, true);
 
-// БД/модели грузим после env
-const { default: sequelize } = await import('../database.js');
-const models = await import('../models/index.js');
-const { Role, User, RolePermission, Country } = models;
+let sequelize, Role, User, RolePermission, Country;
 
 
 import { OPERATIONS } from '../shared/operations.js';
 
+function requireMethods(owner, name, methods) {
+  for (const method of methods) {
+    if (typeof owner?.[method] !== 'function') throw new Error(`${name}.${method} is required for the E2E reset.`);
+  }
+}
+
+async function loadResetDependencies() {
+  if (!process.env.PASSWORD_PEPPER) throw new Error('PASSWORD_PEPPER is not configured');
+  if (!Op.in || !Array.isArray(OPERATIONS) || !OPERATIONS.length) throw new Error('E2E reset permission dependencies are invalid.');
+  const { hashPassword } = await import('../security/passwords.mjs');
+  requireMethods({ hashPassword }, 'passwords', ['hashPassword']);
+  // Resolve the native hashing dependency and both existing seed hashes before
+  // loading a database client, so hash/import failures cannot follow a drop.
+  const adminHash = await hashPassword('p@ss12345');
+  const viewerHash = await hashPassword('p@ss54321');
+  if (typeof adminHash !== 'string' || !adminHash || typeof viewerHash !== 'string' || !viewerHash) {
+    throw new Error('E2E seed password hashing did not return valid hashes.');
+  }
+  const [{ default: database }, models] = await Promise.all([
+    import('../database.js'), import('../models/index.js'),
+  ]);
+  requireMethods(database, 'sequelize', ['authenticate', 'query', 'sync', 'transaction']);
+  requireMethods(models.Role, 'Role', ['bulkCreate', 'findAll', 'findOne']);
+  requireMethods(models.User, 'User', ['findOrCreate']);
+  requireMethods(models.RolePermission, 'RolePermission', ['destroy', 'bulkCreate', 'update']);
+  if (typeof models.Country?.getTableName !== 'function' && !models.Country?.tableName) {
+    throw new Error('Country table metadata is required for the E2E reset.');
+  }
+  return { sequelize: database, models, adminHash, viewerHash };
+}
+
 export async function reset() {
-  console.log('[cypress task] -> reset()');
-  await sequelize.authenticate();
+  return withApprovedDatabase({ authorizeReset: true, load: loadResetDependencies, run: async (dependencies) => {
+    sequelize = dependencies.sequelize;
+    ({ Role, User, RolePermission, Country } = dependencies.models);
+    console.log('[cypress task] -> reset()');
+    await sequelize.authenticate();
 
-  await sequelize.query('DROP SCHEMA IF EXISTS public CASCADE');
-  await sequelize.query('CREATE SCHEMA public');
+    await sequelize.query('DROP SCHEMA IF EXISTS public CASCADE');
+    await sequelize.query('CREATE SCHEMA public');
 
-  await sequelize.sync({ force: true });
-  await seedRolesAndOperations();
-  await seedAdminUser();
-  await seedViewer();
-  await seedCountry();
+    await sequelize.sync({ force: true });
+    await seedRolesAndOperations();
+    await seedAdminUser(dependencies.adminHash);
+    await seedViewer(dependencies.viewerHash);
+    await seedCountry();
 
-  return true;
+    return true;
+  } });
 }
 
 /** Создаём роли и полный комплект операций для каждой роли */
@@ -103,15 +136,11 @@ async function seedRolesAndOperations() {
 }
 
 /** Админ-пользователь */
-async function seedAdminUser() {
+async function seedAdminUser(passwordHash) {
   const t = await sequelize.transaction();
   try {
-    const { hashPassword } = await import('../controllers/passwords.mjs');
-
     const adminRole = await Role.findOne({ where: { name: 'Admin' }, transaction: t });
     if (!adminRole) throw new Error('Admin role not found');
-
-    const passwordHash = await hashPassword('p@ss12345');
 
     const [adminUser, created] = await User.findOrCreate({
       where: { userName: 'superAdmin' },
@@ -136,24 +165,20 @@ async function seedAdminUser() {
     }
 
     await t.commit();
-    console.log('[reset-db] seeded admin: superAdmin / p@ss12345');
+    console.log('[reset-db] seeded admin account');
   } catch (e) {
     await t.rollback();
-    console.error('[reset-db] seedAdminUser failed:', e?.message || e);
+    console.error('[reset-db] seedAdminUser failed');
     throw e;
   }
 }
 
 /** View-пользователь */
-async function seedViewer() {
+async function seedViewer(passwordHash) {
   const t = await sequelize.transaction();
   try {
-    const { hashPassword } = await import('../controllers/passwords.mjs');
-
     const viewerRole = await Role.findOne({ where: { name: 'Viewer' }, transaction: t });
     if (!viewerRole) throw new Error('Viewer role not found');
-
-    const passwordHash = await hashPassword('p@ss54321');
 
     const [adminUser, created] = await User.findOrCreate({
       where: { userName: 'viewerUser' },
@@ -178,10 +203,10 @@ async function seedViewer() {
     }
 
     await t.commit();
-    console.log('[reset-db] seeded viewer: viewerUser / p@ss54321');
+    console.log('[reset-db] seeded viewer account');
   } catch (e) {
     await t.rollback();
-    console.error('[reset-db] seedViewerUser failed:', e?.message || e);
+    console.error('[reset-db] seedViewerUser failed');
     throw e;
   }
 }
@@ -200,7 +225,7 @@ async function seedViewer() {
     await t.commit();
     console.log('[reset-db] seedCountry: Россия');
   } catch (e) {
-    console.log('[reset-db] ', e);
+    console.log('[reset-db] seedCountry failed');
     await t.rollback();
     throw e;
   }
@@ -236,15 +261,15 @@ async function seedCountry() {
     console.log('[reset-db] seedCountry: Россия (id=143)');
   } catch (e) {
     await t.rollback();
-    console.error('[reset-db] seedCountry failed:', e?.message || e);
+    console.error('[reset-db] seedCountry failed');
     throw e;
   }
 }
 
 
-// Ручной запуск: node -r dotenv/config server/scripts/reset-test-db.mjs
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Direct CLI entry uses the same explicit environment/authorization as Cypress.
+if (isDirectExecution(import.meta.url, process.argv[1])) {
   reset()
     .then(() => { console.log('[reset-test-db] OK'); process.exit(0); })
-    .catch((e) => { console.error('[reset-test-db] FAILED', e); process.exit(1); });
+    .catch(() => { console.error('[reset-test-db] FAILED'); process.exit(1); });
 }

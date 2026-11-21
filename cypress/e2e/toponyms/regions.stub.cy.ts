@@ -1,11 +1,19 @@
 /// <reference types="cypress" />
+import { checkRegionSort, type ToponymFixtures } from './_assertions';
 
 // fixture
-const fxToponyms = () => cy.fixture('toponyms.json');
+const fxToponyms = () => cy.fixture<ToponymFixtures>('toponyms.json');
 
 // minimal perms to see Regions page
 function stubPermissionsForToponyms() {
   const PERMS = [
+    {
+      id: 7,
+      roleId: 999,
+      operation: 'VIEW_LIMITED_USERS_LIST',
+      access: true,
+      disabled: false,
+    },
     {
       id: 1,
       roleId: 999,
@@ -73,10 +81,10 @@ function stubRegionsData() {
     const makeRegionsNames = () => {
       const rows = f?.regions?.list?.data?.toponyms ?? [];
       return {
-        data: rows.map((r: any) => ({
+        data: rows.map((r) => ({
           id: r.id,
           name: r.name,
-          countryId: r.countryId ?? 143, // fall back for safety
+          countryId: r.defaultAddressParams!.countryId,
         })),
       };
     };
@@ -93,7 +101,9 @@ function stubRegionsData() {
     // 3) Regions table (main grid)
     //    IMPORTANT: add "*" to match query string
     cy.intercept('GET', '**/api/toponyms/toponyms*', (req) => {
-      req.reply(f.regions.list);
+      const rows = [...f.regions.list.data.toponyms].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+      if (req.query.sortDir === 'desc') rows.reverse();
+      req.reply({ data: { toponyms: rows, length: rows.length } });
     }).as('list');
   });
 }
@@ -103,11 +113,11 @@ describe('Toponyms (stub): Regions list', () => {
     // Register all intercepts before navigation
     stubRegionsData();
 
-    // Stubbed login (your custom command)
-    cy.login({ noVisit: true });
-
     // Permissions for guard
     stubPermissionsForToponyms();
+
+    // Stubbed login (your custom command)
+    cy.login({ noVisit: true });
 
     // Enter app, let guards resolve
     cy.visit('/');
@@ -138,25 +148,6 @@ describe('Toponyms (stub): Regions list', () => {
   });
 
   it('sort triggers reload', () => {
-    // Catch any GET under /api/toponyms/** and alias only table reload calls
-cy.intercept('GET', '**/api/toponyms/toponyms*').as('list2');
-
-    // Ensure table is visible before clicking
-    cy.get('[data-cy="table"]').should('be.visible');
-
-    // Click first sortable header (forces event even if overlay was there)
-    cy.get('th[mat-sort-header]')
-      .first()
-      .scrollIntoView()
-      .click({ force: true });
-    cy.get('th[mat-sort-header]')
-      .first()
-      .click({ force: true })
-      .click({ force: true });
-    // Wait for the aliased table reload
-    cy.wait('@list2', { timeout: 15000 }).then(({ request, response }) => {
-      expect(request.method).to.eq('GET');
-      expect(response?.statusCode).to.be.oneOf([200, 201]);
-    });
+    checkRegionSort(['Тверская', 'Тульская'], ['Тульская', 'Тверская']);
   });
 });

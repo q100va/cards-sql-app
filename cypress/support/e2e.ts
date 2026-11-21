@@ -19,6 +19,7 @@
 // 1) Подключаем кастомные команды (login и т.д.)
 // cypress/support/e2e.ts
 
+import './execution-safety';
 import './commands';
 
 // ---- helpers ----
@@ -48,6 +49,21 @@ Cypress.Commands.add(
     }) as unknown as Cypress.Chainable<Window>;
   }
 );
+
+// Default Users landing-page data must precede scenario-specific routes, which
+// may override these responses (for example the Regions country fixtures).
+beforeEach(() => {
+  if (String(Cypress.env('USE_STUBS')) !== '1') return;
+  cy.intercept('POST', '**/api/users/get-users', {
+    statusCode: 200, body: { data: { list: [], length: 0 } },
+  }).as('usersList');
+  cy.intercept('GET', '**/api/roles/get-roles-names-list', {
+    statusCode: 200, body: { data: [] },
+  }).as('rolesList');
+  cy.intercept({ method: 'GET', pathname: '/api/toponyms/get-toponyms-list', query: { typeOfToponym: 'countries' } }, {
+    statusCode: 200, body: { data: [] },
+  }).as('countriesList');
+});
 
 // Disable animations for test stability
 beforeEach(() => {

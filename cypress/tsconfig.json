@@ -10,7 +10,8 @@
   },
   "include": [
     "**/*.ts",
+    "../cypress.config.ts",
     "../src/**/*.d.ts"
   ],
-  "exclude": []
+  "exclude": ["frontend"]
 }

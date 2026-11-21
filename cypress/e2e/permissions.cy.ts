@@ -2,6 +2,10 @@
 // и НЕ видит роли/аудит. Также запрещён маршрут с гардом.
 
 import { API } from '../support/constants';
+import type { z } from 'zod';
+import type { usersSchema } from '../../shared/schemas/user.schema';
+
+type UsersFixture = { data: z.input<typeof usersSchema> };
 
 function stubPermissionsLimited() {
   // Возвращаем минимально достаточный набор прав
@@ -27,8 +31,8 @@ function stubPermissionsLimited() {
 
 describe('Limited role — navigation & guards', () => {
   beforeEach(() => {
-    cy.login({ user: 'LIMITED_USER', pass: 'LIMITED_PASS', viaApi: true, noVisit: true });
     stubPermissionsLimited();
+    cy.login({ user: 'LIMITED_USER', pass: 'LIMITED_PASS', viaApi: true, noVisit: true });
   });
 
 it('Menu: only allowed items are visible; admin-only items are hidden', () => {
@@ -45,10 +49,8 @@ it('Menu: only allowed items are visible; admin-only items are hidden', () => {
     cy.get('button[data-cy="nav-toponyms"]').should('exist');
 
     // Не видим админских пунктов
-    cy.get('body').then(($b) => {
-      expect($b.find('button[data-cy="nav-roles"]').length).to.eq(0);
-      expect($b.find('button[data-cy="nav-audit"]').length).to.eq(0);
-    });
+    cy.get('button[data-cy="nav-roles"]').should('not.exist');
+    cy.get('button[data-cy="nav-audit"]').should('not.exist');
   });
 
   it('Guarded route: navigating to forbidden page lands on /forbidden', () => {
@@ -57,12 +59,14 @@ it('Menu: only allowed items are visible; admin-only items are hidden', () => {
   });
 
  it('Users list: "Create" button is hidden without ADD_NEW_USER', () => {
-    // если страница пользователей доступна в ограниченном режиме
+    cy.wait('@usersList');
     cy.visit('/users');
-    // Кнопка создания пользователя отсутствует
-    cy.get('body').then(($b) => {
-      expect($b.find('button[data-cy="btn-create-item"]').length).to.eq(0);
-    });
+    cy.wait('@perms').its('response.statusCode').should('eq', 200);
+    cy.wait('@usersList').its('response.statusCode').should('eq', 200);
+    cy.location('pathname').should('eq', '/users');
+    cy.get('app-users-list table[mat-table]').should('be.visible');
+    cy.get('app-users-list .overlay').should('not.exist');
+    cy.get('app-users-list button[data-cy="btn-create-item"]').should('not.exist');
   });
 });
 
@@ -98,8 +102,9 @@ function stubPermissionsAdmin() {
 
 describe('Admin — navigation & actions', () => {
   beforeEach(() => {
-    cy.login({ user: 'ADMIN_USER', pass: 'ADMIN_PASS', viaApi: true, noVisit: true });
+    cy.intercept('GET', `${API}/roles/get-roles`, { fixture: 'roles-list.json' }).as('getRoles');
     stubPermissionsAdmin();
+    cy.login({ user: 'ADMIN_USER', pass: 'ADMIN_PASS', viaApi: true, noVisit: true });
   });
 
   it('Menu: all main items are visible', () => {
@@ -116,21 +121,35 @@ describe('Admin — navigation & actions', () => {
 
   it('Roles page opens; action buttons match permissions', () => {
     cy.visit('/roles');
-
-    // Кнопки действий на странице ролей
+    cy.wait('@perms').its('response.statusCode').should('eq', 200);
+    cy.wait('@getRoles').its('response.statusCode').should('eq', 200);
+    cy.location('pathname').should('eq', '/roles');
+    cy.get('p-table .p-datatable').should('be.visible');
     cy.get('button[data-cy="add-role-btn"]').should('exist');
-    //cy.get('[data-cy="btn-edit-role"]').should('exist');
-    //TODO:add later
-   // cy.get('button[data-cy="delete-role-1"]').should('exist');
+    cy.get('button[data-cy="delete-role-1"]').should('be.visible');
+    cy.get('[data-cy="role-name-out-1"]').click();
+    cy.get('input[data-cy="role-name-1"]').should('be.visible').and('not.be.disabled');
+    cy.get('input[data-cy="role-name-1"]').type('{esc}');
+    cy.get('[data-cy="role-name-out-1"]').should('contain.text', 'Coordinator');
   });
 
   it('Users page: action buttons visible with proper rights', () => {
-    cy.visit('/users');
-
+    cy.intercept('POST', `${API}/users/get-users`, { fixture: 'users-permissions.json' }).as('permissionUsers');
+    cy.fixture<UsersFixture>('users-permissions.json').then((fixture) => {
+      cy.intercept('GET', `${API}/users/get-user-by-id/71`, { body: { data: fixture.data.list[0] } }).as('permissionUser');
+    });
+    cy.visitApp('/users');
+    cy.wait('@perms').its('response.statusCode').should('eq', 200);
+    cy.wait('@permissionUsers').its('response.statusCode').should('eq', 200);
+    cy.location('pathname').should('eq', '/users');
+    cy.get('app-users-list .overlay').should('not.exist');
+    cy.contains('app-users-list tr.mat-mdc-row', 'permission-fixture').as('userRow');
     cy.get('button[data-cy="btn-create-item"]').should('exist');
-    //TODO:add later
-   // cy.get('[data-cy="btn-edit-user"]').should('exist');   // хотя бы одна в таблице
-   // cy.get('[data-cy="btn-delete-user"]').should('exist');
+    cy.get('@userRow').find('td.mat-column-actions button').click();
+    cy.contains('button.mat-mdc-menu-item span', /^delete$/).should('be.visible');
+    cy.contains('button.mat-mdc-menu-item', 'open card').click();
+    cy.wait('@permissionUser').its('response.body.data.id').should('eq', 71);
+    cy.get('.mat-mdc-dialog-container button[title="Edit"]').should('be.visible').and('not.be.disabled');
   });
 });
 
@@ -152,59 +171,103 @@ function stubPermissions() {
 
 describe('Auth flows — 401 refresh retry & 403 no logout', () => {
   beforeEach(() => {
-    cy.login({ user: 'ADMIN_USER', pass: 'ADMIN_PASS', viaApi: true, noVisit: true });
     stubPermissions();
+    cy.login({ user: 'ADMIN_USER', pass: 'ADMIN_PASS', viaApi: true, noVisit: true });
   });
 
   it('401 → refresh → retry succeeds; no redirect to /session/sign-in', () => {
-    // Эндпоинт, который точно дергается страницей (пример)
-    const protectedPath = `${API}/roles/get-roles-names-list`;
+    // Complete hydration first so its refresh cannot satisfy recovery assertions.
+    cy.wait('@usersList');
+    cy.visitApp('/users');
+    cy.wait('@perms');
+    cy.wait('@usersList');
+    cy.get('app-users-list table[mat-table]').should('be.visible');
+    cy.get('app-users-list .overlay').should('not.exist');
 
-    // 1-й вызов: 401
-    let first = true;
-    cy.intercept('GET', protectedPath, (req) => {
-      if (first) {
-        first = false;
-        req.reply({ statusCode: 401, body: { code: 'ERRORS.UNAUTHORIZED' } });
-      } else {
-        req.reply({ statusCode: 200, body: { data: [] } });
-      }
-    }).as('protected');
-
-    // refresh: вернём новый accessToken
-    cy.intercept('POST', `${API}/session/refresh`, {
-      statusCode: 200,
-      body: { data: { accessToken: 'acc_new_token', expiresIn: 900 } },
+    const events: string[] = [];
+    let calls = 0;
+    cy.fixture<UsersFixture>('users-permissions.json').then((fixture) => {
+      cy.intercept('POST', `${API}/users/get-users`, (req) => {
+        expect(req.body.sort).to.deep.eq([{ field: 'userName', direction: 'asc' }]);
+        expect(req.body.page.number).to.eq(0);
+        calls++;
+        expect(calls, 'exactly one failed request and one retry').to.be.at.most(2);
+        if (calls === 1) {
+          expect(req.headers.authorization).to.eq('Bearer tok_ref_1234567890');
+          events.push('protected:401');
+          req.reply({ statusCode: 401, body: { code: 'ERRORS.UNAUTHORIZED' } });
+        } else {
+          expect(events).to.deep.eq(['protected:401', 'refresh:200']);
+          expect(req.headers.authorization).to.eq('Bearer acc_new_token');
+          events.push('retry:200');
+          req.reply({ statusCode: 200, body: fixture });
+        }
+      }).as('protected');
+    });
+    cy.intercept('POST', `${API}/session/refresh`, (req) => {
+      expect(events).to.deep.eq(['protected:401']);
+      events.push('refresh:200');
+      req.reply({ statusCode: 200, body: { data: { accessToken: 'acc_new_token', expiresIn: 900 } } });
     }).as('refresh');
 
-    cy.visit('/users');
-
-    // порядок: 401 на защищённом → refresh → повтор запроса → 200
-    cy.wait('@protected'); // 401
-    cy.wait('@refresh');
-    cy.wait('@protected'); // 200
-
+    cy.get('app-users-list th.mat-column-userName').click();
+    cy.wait('@protected').its('response.statusCode').should('eq', 401);
+    cy.wait('@refresh').its('response.statusCode').should('eq', 200);
+    cy.wait('@protected').then(({ request, response }) => {
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.data.list[0].userName).to.eq('permission-fixture');
+      expect(request.headers.authorization).to.eq('Bearer acc_new_token');
+    });
+    cy.contains('app-users-list td.mat-column-userName', 'permission-fixture').should('be.visible');
+    cy.wrap(null).then(() => {
+      expect(events).to.deep.eq(['protected:401', 'refresh:200', 'retry:200']);
+      expect(calls).to.eq(2);
+    });
+    cy.location('pathname').should('eq', '/users');
     cy.location('pathname').should('not.eq', '/session/sign-in');
   });
 
   it('403 is propagated (no logout); user stays on page', () => {
-    const protectedPath = `${API}/roles/get-roles-names-list`;
+    cy.wait('@usersList');
+    cy.visitApp('/users');
+    cy.wait('@perms');
+    cy.wait('@usersList');
+    cy.get('app-users-list table[mat-table]').should('be.visible');
+    cy.get('app-users-list .overlay').should('not.exist');
 
-    cy.intercept('GET', protectedPath, {
-      statusCode: 403,
-      body: { code: 'ERRORS.FORBIDDEN' },
-    }).as('protected403');
-
-    cy.visit('/users');
-
-    cy.wait('@protected403');
-
-    // Не уходит на /session/sign-in
+    let calls = 0;
+    let refreshCalls = 0;
+    cy.intercept('POST', `${API}/session/refresh`, () => {
+      refreshCalls++;
+      throw new Error('403 must not refresh the session');
+    });
+    cy.fixture<UsersFixture>('users-permissions.json').then((fixture) => {
+      cy.intercept('POST', `${API}/users/get-users`, (req) => {
+        calls++;
+        expect(calls).to.be.at.most(2);
+        expect(req.headers.authorization).to.eq('Bearer tok_ref_1234567890');
+        expect(req.body.sort).to.deep.eq([{ field: 'userName', direction: calls === 1 ? 'asc' : 'desc' }]);
+        req.reply(calls === 1 ? { statusCode: 403, body: { code: 'ERRORS.FORBIDDEN' } }
+          : { statusCode: 200, body: fixture });
+      }).as('protected403');
+    });
+    cy.get('app-users-list th.mat-column-userName').click();
+    cy.wait('@protected403').then(({ response }) => {
+      expect(response?.statusCode).to.eq(403);
+      expect(response?.body.code).to.eq('ERRORS.FORBIDDEN');
+    });
+    cy.contains('p-toast .ui-toast-warn', 'Not enough permissions.').should('be.visible');
+    cy.location('pathname').should('eq', '/users');
     cy.location('pathname').should('not.eq', '/session/sign-in');
-
-    // Опционально: проверка, что тост/ошибка показана.
-    // Если есть data-cy для тостов — лучше по нему.
-    // cy.get('[data-cy="toast"]').should('be.visible');
+    cy.get('app-users-list .overlay').should('not.exist');
+    cy.get('app-users-list th.mat-column-userName').click();
+    cy.wait('@protected403').its('response.statusCode').should('eq', 200);
+    cy.contains('app-users-list td.mat-column-userName', 'permission-fixture').should('be.visible');
+    cy.wrap(null).then(() => {
+      expect(refreshCalls).to.eq(0);
+      expect(calls).to.eq(2);
+    });
+    cy.location('pathname').should('eq', '/users');
   });
 });
 

@@ -50,3 +50,11 @@ Thumbs.db
 /public/archive
 *.xlsx
 
+# Private Cypress runtime artifacts (source fixtures remain tracked)
+/cypress/screenshots/
+/cypress/videos/
+/cypress/downloads/
+/cypress/logs/
+/cypress/results/
+/cypress/reports/
+

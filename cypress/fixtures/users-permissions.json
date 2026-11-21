@@ -1,0 +1,28 @@
+{
+  "data": {
+    "list": [{
+      "id": 71,
+      "userName": "permission-fixture",
+      "firstName": "Synthetic",
+      "patronymic": null,
+      "lastName": "User",
+      "roleId": 999,
+      "roleName": "Fixture role",
+      "isRestricted": false,
+      "dateOfStart": "2026-01-01T00:00:00.000Z",
+      "causeOfRestriction": null,
+      "dateOfRestriction": null,
+      "address": { "country": null, "region": null, "district": null, "locality": null },
+      "comment": null,
+      "orderedContacts": {
+        "email": [{ "id": 1, "content": "fixture@example.invalid" }],
+        "phoneNumber": [{ "id": 2, "content": "synthetic-phone" }],
+        "telegram": [{ "id": 3, "content": "synthetic-telegram" }],
+        "telegramId": [{ "id": 4, "content": "synthetic-id" }],
+        "telegramPhoneNumber": [{ "id": 5, "content": "synthetic-telegram-phone" }]
+      },
+      "outdatedData": { "contacts": {}, "addresses": [], "names": [], "userNames": [] }
+    }],
+    "length": 1
+  }
+}

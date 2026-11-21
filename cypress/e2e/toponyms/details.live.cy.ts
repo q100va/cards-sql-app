@@ -1,171 +1,131 @@
 /// <reference types="cypress" />
 import { apiLogin, createRegion, deleteRegion } from './_helpers';
+import type { Toponym } from '../../../shared/schemas/toponym.schema';
+
 const UNIQUE = `e2e-region-${Date.now()}`;
 const EDITED = `e2e-details-${Date.now()}-edited`;
 const BASE = `e2e-details-${Date.now()}-edited-again`;
 
 describe('Toponyms (live): Region details dialog', () => {
-  let id: number;
+  let id: number | null = null;
+  let currentName = UNIQUE;
+  let fixtureName = UNIQUE;
+  let fixtureSequence = 0;
 
   before(() => {
-    cy.task('db:reset', null, { timeout: 180_000, log: false }).should(
-      'eq',
-      'db-reset:done:v1'
-    );
-
-    // login via API → ACCESS_TOKEN
-    apiLogin({ user: 'superAdmin', pass: 'p@ss12345' }).then(() =>
-      createRegion({ name: UNIQUE }).then((r) => {
-        id = r.id;
-      })
-    );
+    cy.task('db:reset', null, { timeout: 180_000, log: false }).should('eq', 'db-reset:done:v1');
+    apiLogin({ user: 'superAdmin', pass: 'p@ss12345' });
   });
 
-  after(() => {
-    if (id) deleteRegion(id);
+  afterEach(() => {
+    if (id !== null) return deleteRegion(id).then(() => { id = null; });
+  });
+
+  beforeEach(() => {
+    id = null;
+    fixtureName = `${UNIQUE}-${++fixtureSequence}`;
+    currentName = fixtureName;
+    createRegion({ name: fixtureName, shortName: UNIQUE, countryId: 143 }).then((region) => { id = region.id; });
   });
 
   beforeEach(() => {
     cy.login();
+    cy.then(() => {
+      expect(id).to.be.a('number').and.be.greaterThan(0);
+      return cy.request<{ data: Toponym }>({
+        method: 'GET',
+        log: false,
+        url: `${Cypress.env('API_URL')}/api/toponyms/get-region-by-id/${id}`,
+        headers: { Authorization: `Bearer ${Cypress.env('ACCESS_TOKEN')}` },
+      }).then(({ status, body }) => {
+        expect(status).to.eq(200);
+        expect(body.data.id).to.eq(id);
+        expect(body.data.name).to.eq(fixtureName);
+        currentName = body.data.name;
+      });
+    });
     cy.visitApp('/regions');
   });
 
-  it('justSave keeps dialog open and switches to view', () => {
-    // register dialog-level traffic BEFORE actions
+  function openCreatedRegion(name: string) {
+    cy.intercept('GET', '**/api/toponyms/toponyms*', (req) => {
+      delete req.headers['if-none-match'];
+      delete req.headers['if-modified-since'];
+      if (req.query.search === name) req.alias = 'ownedRegion';
+    });
+    cy.intercept('GET', '**/api/toponyms/get-region-by-id/*', (req) => {
+      delete req.headers['if-none-match'];
+      delete req.headers['if-modified-since'];
+    }).as('regionById');
     cy.intercept('GET', '**/api/toponyms/get-toponyms-list*', (req) => {
-      const q = req.query || {};
-      if (q.typeOfToponym === 'countries') req.alias = 'dlgCountries';
-      if (q.typeOfToponym === 'regions') req.alias = 'dlgRegions';
-      if (q.typeOfToponym === 'districts') req.alias = 'dlgDistricts';
+      delete req.headers['if-none-match'];
+      delete req.headers['if-modified-since'];
+      if (req.query.typeOfToponym === 'countries') req.alias = 'dlgCountries';
+      if (req.query.typeOfToponym === 'regions') req.alias = 'dlgRegions';
     });
-    cy.intercept('GET', '**/api/toponyms/check-toponym-name*').as('checkName');
-
-    // open card via row menu
-    cy.get('button[data-cy="open-menu-actions"], button[matMenuTriggerFor]')
-      .first()
-      .click({ force: true });
-    cy.contains('button, .mat-mdc-menu-item', /open.*card/i).click({
-      force: true,
+    cy.get('app-toponyms-list .overlay').should('not.exist');
+    cy.get('[data-cy="search-input"]').should('be.visible').focus().clear().type(`${name}{enter}`);
+    cy.wait('@ownedRegion').then(({ request, response }) => {
+      expect(request.query.search).to.eq(name);
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.data.toponyms.map((region: { id: number }) => region.id)).to.deep.eq([id]);
     });
-
-    cy.get('.mat-mdc-dialog-container', { timeout: 10000 }).should(
-      'be.visible'
-    );
-
-    // wait for countries to load at least once (dialog boot)
-    cy.wait('@dlgCountries', { timeout: 20000 });
-
-    // optional: if regions list is requested on boot, wait for it too
-    cy.wait('@dlgRegions', { timeout: 20000 })
-      .its('response.statusCode')
-      .should('be.oneOf', [200, 201, 304]);
-    // wait until the overlay inside the dialog is gone (the form is ready)
-    cy.get('.mat-mdc-dialog-container .overlay', { timeout: 20000 }).should(
-      'not.exist'
-    );
-
-    // switch to edit
-    cy.contains('button[title],button', /edit/i).click({ force: true });
-
-    // CRITICAL: ensure country select is rendered with a value (text shows "Россия")
-    // This guarantees form controls (including countryId) are set before Save.
-    cy.get('.mat-mdc-dialog-container')
-      .should('be.visible')
-      .within(() => {
-        cy.get(
-          'mat-select[formControlName="country"] .mat-mdc-select-value-text',
-          { timeout: 10000 }
-        )
-          .should('be.visible')
-          .and(($t) => {
-            // accept any casing/locale
-            expect($t.text().toLowerCase()).to.include('россия');
-          });
-      });
-
-    // tiny stabilization; avoids flake on immediate save after render
-    cy.wait(150);
-
-    // edit name and Save (justSave path)
-    cy.get('input[data-cy="name"]').type(`{selectall}${EDITED}`, {
-      force: true,
+    cy.contains('[data-cy="row"]', name).find('[data-cy="open-menu-actions"]').click();
+    cy.get('[data-cy="open-card"]').click();
+    cy.wait('@regionById').then(({ request, response }) => {
+      expect(new URL(request.url).pathname).to.eq(`/api/toponyms/get-region-by-id/${id}`);
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.data).to.include({ id, name });
     });
-    cy.contains('button[title],button', /^save$/i).click({ force: true });
-
-    // assert that server got countryId in query
-    cy.wait('@checkName', { timeout: 20000 }).then(({ request }) => {
-      const q = request.query || {};
-      expect(String(q.countryId), 'countryId in check-toponym-name').to.match(
-        /^\d+$/
-      );
-    });
-
-    // dialog stays open (justSave) and is back in view
     cy.get('.mat-mdc-dialog-container').should('be.visible');
-    cy.contains('button[title],button', /edit/i).should('exist');
+    cy.wait('@dlgCountries').its('response.statusCode').should('eq', 200);
+    cy.wait('@dlgRegions').its('response.statusCode').should('eq', 200);
+    cy.get('.mat-mdc-dialog-container .overlay').should('not.exist');
+    cy.get('.mat-mdc-dialog-container input[data-cy="name"]').should('have.value', name).and('be.disabled');
+  }
+
+  function saveName(name: string, action: 'justSave' | 'saveAndExit') {
+    cy.intercept('GET', '**/api/toponyms/check-toponym-name*').as('checkName');
+    cy.intercept('POST', '**/api/toponyms/update-toponym').as('saveRegion');
+    cy.get('.mat-mdc-dialog-container button[title="Edit"]').click();
+    cy.get('.mat-mdc-dialog-container mat-select[formcontrolname="country"]').should('contain.text', 'Россия');
+    cy.get('.mat-mdc-dialog-container input[data-cy="name"]').should('not.be.disabled').clear().type(name);
+    const save = action === 'justSave' ? 'button[title="Save"]' : 'button.dialog-submit-button';
+    cy.get(`.mat-mdc-dialog-container ${save}`).should('not.be.disabled').click();
+    cy.wait('@checkName').then(({ request, response }) => {
+      expect(String(request.query.countryId), 'countryId in check-toponym-name').to.match(/^\d+$/);
+      expect(request.query).to.include({ type: 'region', id: String(id), name, countryId: '143' });
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.data).to.eq(false);
+    });
+    cy.wait('@saveRegion').then(({ request, response }) => {
+      expect(request.method).to.eq('POST');
+      expect(request.body).to.include({ type: 'region', id, name, countryId: 143, shortName: UNIQUE });
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.data).to.include({ id, name, shortName: UNIQUE });
+      expect(response?.body.data.defaultAddressParams.countryId).to.eq(143);
+    });
+  }
+
+  it('justSave keeps dialog open and switches to view', () => {
+    cy.then(() => openCreatedRegion(currentName));
+    saveName(EDITED, 'justSave');
+    cy.get('.mat-mdc-dialog-container').should('be.visible');
+    cy.get('.mat-mdc-dialog-container button[title="Edit"]').should('exist');
+    cy.get('.mat-mdc-dialog-container input[data-cy="name"]').should('have.value', EDITED).and('be.disabled');
+    cy.get('.mat-mdc-dialog-container button[title="Close"]').click();
+    cy.get('.mat-mdc-dialog-container').should('not.exist');
+    cy.reload();
+    openCreatedRegion(EDITED);
+    cy.get('.mat-mdc-dialog-container input[data-cy="name"]').should('have.value', EDITED);
   });
 
   it('saveAndExit closes dialog', () => {
-    // register dialog-level traffic BEFORE actions
-    cy.intercept('GET', '**/api/toponyms/get-toponyms-list*', (req) => {
-      const q = req.query || {};
-      if (q.typeOfToponym === 'countries') req.alias = 'dlgCountries';
-      if (q.typeOfToponym === 'regions') req.alias = 'dlgRegions';
-      if (q.typeOfToponym === 'districts') req.alias = 'dlgDistricts';
-    });
-    cy.intercept('GET', '**/api/toponyms/check-toponym-name*').as('checkName');
-
-    // open card via row menu
-    cy.get('button[data-cy="open-menu-actions"], button[matMenuTriggerFor]')
-      .first()
-      .click({ force: true });
-    cy.contains('button, .mat-mdc-menu-item', /open.*card/i).click({
-      force: true,
-    });
-
-    cy.get('.mat-mdc-dialog-container', { timeout: 10000 }).should(
-      'be.visible'
-    );
-
-    // wait for countries to load at least once (dialog boot)
-    cy.wait('@dlgCountries', { timeout: 20000 });
-
-    // optional: if regions list is requested on boot, wait for it too
-    cy.wait('@dlgRegions', { timeout: 20000 })
-      .its('response.statusCode')
-      .should('be.oneOf', [200, 201, 304]);
-    // wait until the overlay inside the dialog is gone (the form is ready)
-    cy.get('.mat-mdc-dialog-container .overlay', { timeout: 20000 }).should(
-      'not.exist'
-    );
-
-    // switch to edit
-    cy.contains('button[title],button', /edit/i).click({ force: true });
-
-    // CRITICAL: ensure country select is rendered with a value (text shows "Россия")
-    // This guarantees form controls (including countryId) are set before Save.
-    cy.get('.mat-mdc-dialog-container')
-      .should('be.visible')
-      .within(() => {
-        cy.get(
-          'mat-select[formControlName="country"] .mat-mdc-select-value-text',
-          { timeout: 10000 }
-        )
-          .should('be.visible')
-          .and(($t) => {
-            // accept any casing/locale
-            expect($t.text().toLowerCase()).to.include('россия');
-          });
-      });
-
-    // tiny stabilization; avoids flake on immediate save after render
-    cy.wait(150);
-
-    cy.get('input[data-cy="name"]').type('{selectall}' + BASE, {
-      force: true,
-    });
-    cy.contains('button', /save.*exit/i).click({ force: true });
-
+    cy.then(() => openCreatedRegion(currentName));
+    saveName(BASE, 'saveAndExit');
     cy.get('.mat-mdc-dialog-container').should('not.exist');
+    cy.reload();
+    openCreatedRegion(BASE);
+    cy.get('.mat-mdc-dialog-container input[data-cy="name"]').should('have.value', BASE);
   });
 });
