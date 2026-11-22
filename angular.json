@@ -21,7 +21,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "ignore": ["**/*.[xX][lL][sS]", "**/*.[xX][lL][sS][xX]"]
               }
             ],
             "styles": ["src/custom-theme.scss", "src/styles.css"],

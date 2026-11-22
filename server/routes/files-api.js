@@ -1,35 +1,37 @@
 import { Router } from 'express';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import CustomError from '../shared/customError.js';
 import { downloadQuery } from '../../shared/dist/schemas/file.schema.js';
 import requireAuth from '../middlewares/check-auth.js';
-import { requireAny } from '../middlewares/require-permission.js';
+import { requireOperation } from '../middlewares/require-permission.js';
 import { validateRequest } from '../middlewares/validate-request.js';
 
 const router = Router();
+const templateDirectory = fileURLToPath(new URL('../protected-templates/', import.meta.url));
+const templatePermissions = new Map([
+  ['template-countries.xlsx', 'DOWNLOAD_TEMPLATE_FOR_TOPONYM'],
+  ['template-regions.xlsx', 'DOWNLOAD_TEMPLATE_FOR_TOPONYM'],
+  ['template-districts.xlsx', 'DOWNLOAD_TEMPLATE_FOR_TOPONYM'],
+  ['template-localities.xlsx', 'DOWNLOAD_TEMPLATE_FOR_TOPONYM'],
+  ['template-seniors.xlsx', 'DOWNLOAD_TEMPLATE_FOR_SENIOR'],
+]);
 
 router.get(
   '/download/:filename',
   requireAuth,
-  requireAny(
-    'DOWNLOAD_TEMPLATE_FOR_TOPONYM',
-    'DOWNLOAD_TEMPLATE_FOR_SENIORS',
-    'DOWNLOAD_HOMES_TABLE'),
   validateRequest(downloadQuery, 'params'),
+  (req, res, next) => {
+    const operation = templatePermissions.get(req.params.filename);
+    if (!operation) return next(new CustomError('ERRORS.FILE.NOT_FOUND', 404));
+    return requireOperation(operation)(req, res, next);
+  },
   async (req, res, next) => {
     try {
       const { filename } = req.params;
 
-      const publicDir = path.resolve(__basedir, '../public');
-      const filePath = path.resolve(publicDir, filename);
-
-      // Prevent access outside the public directory.
-      const relativePath = path.relative(publicDir, filePath);
-
-      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-        throw new CustomError('ERRORS.FILE.INVALID_PATH', 400);
-      }
+      const filePath = path.join(templateDirectory, filename);
 
       // Verify that the requested path points to an existing file.
       let stat;

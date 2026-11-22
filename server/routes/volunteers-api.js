@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { CONTACT_SEARCH_ROUTE } from '../logging/request-path.js';
 import { Op, Sequelize } from 'sequelize';
 import {
   Country, Region, District, Locality,
@@ -988,7 +989,7 @@ router.patch(
     }
   });
 
-router.get("/search-contacts/:q",
+router.get(CONTACT_SEARCH_ROUTE,
   requireAuth,
   requireAny('ADD_NEW_ORDER', 'EDIT_ORDER'),
   validateRequest(volunteerSchemas.volunteerSearchContactSchema, 'params'),

@@ -1,14 +1,7 @@
 import pinoHttp from 'pino-http';
 
 import logger from '../logging/logger.js';
-
-function getRequestPath(req) {
-  return (
-    req.originalUrl ??
-    req.url ??
-    ''
-  ).split('?')[0];
-}
+import { isContactSearchRequest, requestLogPath } from '../logging/request-path.js';
 
 export const requestLoggerOptions = {
   logger,
@@ -50,16 +43,22 @@ export const requestLoggerOptions = {
     req,
     res,
   ) =>
-    `${req.method} ${getRequestPath(req)} → ${res.statusCode}`,
+    `${req.method} ${requestLogPath(req)} → ${res.statusCode}`,
 
   customErrorMessage: (
     req,
     res,
     error,
   ) =>
-    `ERROR ${req.method} ${getRequestPath(req)} → ${
+    `ERROR ${req.method} ${requestLogPath(req)} → ${
       res.statusCode || 500
-    }: ${error?.message ?? 'Unknown error'}`,
+    }: ${isContactSearchRequest(req) ? 'Contact search request failed' : (error?.message ?? 'Unknown error')}`,
+
+  customErrorObject: (req, _res, _error, entry) => {
+    if (!isContactSearchRequest(req)) return entry;
+    const { err, ...safeEntry } = entry;
+    return safeEntry;
+  },
 
   serializers: {
     req(req) {
@@ -68,7 +67,7 @@ export const requestLoggerOptions = {
           req.correlationId ??
           null,
         method: req.method,
-        path: getRequestPath(req),
+        path: requestLogPath(req),
         ip: req.ip ?? null,
       };
     },

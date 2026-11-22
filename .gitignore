@@ -49,6 +49,11 @@ Thumbs.db
 # xlsx file
 /public/archive
 *.xlsx
+!/server/protected-templates/template-countries.xlsx
+!/server/protected-templates/template-regions.xlsx
+!/server/protected-templates/template-districts.xlsx
+!/server/protected-templates/template-localities.xlsx
+!/server/protected-templates/template-seniors.xlsx
 
 # Private Cypress runtime artifacts (source fixtures remain tracked)
 /cypress/screenshots/

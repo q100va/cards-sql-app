@@ -37,6 +37,11 @@ export function corsMiddleware(
       'Access-Control-Allow-Credentials',
       'true',
     );
+
+    res.setHeader(
+      'Access-Control-Expose-Headers',
+      'X-Request-Id',
+    );
   }
 
   res.setHeader(

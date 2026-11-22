@@ -51,6 +51,7 @@ import {
   addNewSeniors,
   removeSeniors,
   updateSeniors,
+  validateBulkSeniors,
 } from "../controllers/ctrl-update-seniors-list.js";
 import {
   addRecipients,
@@ -183,7 +184,7 @@ router.post(
   },
 );
 
-async function refreshSeniorSearch(seniorId, transaction) {
+async function refreshSeniorSearch(seniorId, transaction, { required = false } = {}) {
   const senior = await Senior.findByPk(seniorId, {
     attributes: {
       exclude: ['createdAt', 'updatedAt'],
@@ -192,7 +193,10 @@ async function refreshSeniorSearch(seniorId, transaction) {
     transaction,
   });
 
-  if (!senior) return;
+  if (!senior) {
+    if (required) throw new CustomError('ERRORS.CONFLICT', 409);
+    return;
+  }
 
   const content = createSearchStringFor('senior', senior);
 
@@ -1009,17 +1013,13 @@ router.post(
       const { admitted, removed, updated, homeId, dateOfUpdate } = req.body;
 
       const result = await withTransaction(async (transaction) => {
+        const changedSeniorIds = await validateBulkSeniors(homeId, admitted, removed, updated, transaction);
         const createdCount = await addNewSeniors(admitted, dateOfUpdate, transaction);
-        const removedCount = await removeSeniors(removed, dateOfUpdate, transaction);
-        const updatedCount = await updateSeniors(updated, transaction);
-
-        const changedSeniorIds = new Set([
-          ...removed.map((senior) => senior.id),
-          ...updated.map((senior) => senior.seniorId),
-        ]);
+        const removedCount = await removeSeniors(removed, dateOfUpdate, homeId, transaction);
+        const updatedCount = await updateSeniors(updated, homeId, transaction);
 
         for (const seniorId of changedSeniorIds) {
-          await refreshSeniorSearch(seniorId, transaction);
+          await refreshSeniorSearch(seniorId, transaction, { required: true });
         }
 
         const activeOccasions = await Occasion.findAll({

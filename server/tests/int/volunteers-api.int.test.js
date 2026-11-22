@@ -1,4 +1,8 @@
 import jwt from 'jsonwebtoken';
+import { jest } from '@jest/globals';
+import { symbols } from 'pino';
+import logger from '../../logging/logger.js';
+import requestLogger from '../../middlewares/request-logger.js';
 
 import {
   Order,
@@ -24,6 +28,27 @@ import { createOccasion } from './factories/occasion.js';
 import { createUserInstance } from './factories/user.js';
 
 const PASSWORD = 'Password123';
+const contactRoute = '/api/volunteers/search-contacts/:q';
+const contactNamespace = '/api/volunteers/search-contacts';
+
+async function captureLogs(run) {
+  const entries = [];
+  const stream = { write: (line) => entries.push(JSON.parse(line)) };
+  const loggers = [...new Set([logger, requestLogger.logger])];
+  const original = loggers.map((item) => ({ stream: item[symbols.streamSym], level: item.level }));
+  for (const item of loggers) {
+    item[symbols.streamSym] = stream;
+    item.level = 'info';
+  }
+  try {
+    await run(entries);
+  } finally {
+    loggers.forEach((item, index) => {
+      item[symbols.streamSym] = original[index].stream;
+      item.level = original[index].level;
+    });
+  }
+}
 
 function makeAccessToken(roleId) {
   return jwt.sign(
@@ -518,6 +543,111 @@ describe('volunteers API', () => {
       volunteerId: created.volunteer.id,
       type: 'email',
       content: 'special.contact@example.com',
+    });
+  });
+
+  test('logs successful contact lookup and ordinary requests without exposing search input', async () => {
+    const term = 'privacy.test+volunteer@example.com';
+    const encoded = encodeURIComponent(term);
+    const actor = await createAuthorizedActor(['ADD_NEW_VOLUNTEER', 'ADD_NEW_ORDER']);
+    const fixture = await createBasicFixture(actor);
+    const created = await createVolunteerThroughApi(actor, fixture.location, {
+      draftContacts: draftContacts(term),
+    });
+    await captureLogs(async (entries) => {
+      const response = await auth(global.api.get(`/api/volunteers/search-contacts/${encoded}`), actor.token)
+        .set('X-Request-Id', 'contact-log-success')
+        .set('Cookie', 'sid=synthetic-cookie');
+      expect(response.status).toBe(200);
+      expect(response.body.data).toEqual(expect.arrayContaining([
+        expect.objectContaining({ volunteerId: created.volunteer.id, content: term }),
+      ]));
+      expect(await global.api.get('/healthz').expect(200)).toBeDefined();
+      expect(entries).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          correlationId: 'contact-log-success',
+          req: expect.objectContaining({ path: contactNamespace }),
+          res: { statusCode: 200 },
+          msg: expect.stringContaining(`GET ${contactRoute}`),
+        }),
+        expect.objectContaining({ req: expect.objectContaining({ path: '/healthz' }) }),
+      ]));
+      const serialized = JSON.stringify(entries);
+      for (const secret of [term, encoded, actor.token, 'synthetic-cookie']) {
+        expect(serialized).not.toContain(secret);
+      }
+    });
+  });
+
+  test('keeps failed contact lookups and relayed client diagnostics free of search terms', async () => {
+    const term = '+1 212 555 0199';
+    const encoded = encodeURIComponent(term);
+    const url = `/api/volunteers/search-contacts/${encoded}`;
+    const actor = await createAuthorizedActor(['EDIT_ORDER']);
+    const failure = Object.assign(new Error(`Controlled failure for ${term}`), {
+      sql: `SELECT '${term}'`,
+      parameters: [encoded],
+    });
+    const lookup = jest.spyOn(VolunteerContact, 'findAll').mockRejectedValueOnce(failure);
+    try {
+      await captureLogs(async (entries) => {
+        const response = await auth(global.api.get(url), actor.token)
+          .set('Origin', 'http://localhost:56379')
+          .set('X-Request-Id', 'contact-log-failure');
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({ code: 'ERRORS.DATA_FETCH_FAILED', correlationId: 'contact-log-failure' });
+        const forwarded = await global.api.post('/api/client-logs').send({
+          app: 'cards-sql-app', env: 'development', items: [{
+            ts: new Date().toISOString(), level: 'error', sessionId: 'contact-client-log',
+            corrId: 'contact-log-failure', message: `HTTP 500 GET ${url}`,
+            context: { request: { url: `/api/volunteers/search-contacts/${term}` } },
+          }],
+        });
+        expect(forwarded.status).toBe(204);
+        expect(entries).toEqual(expect.arrayContaining([
+          expect.objectContaining({
+            route: `GET ${contactRoute}`, code: 'ERRORS.DATA_FETCH_FAILED',
+            status: 500, correlationId: 'contact-log-failure',
+          }),
+          expect.objectContaining({
+            req: expect.objectContaining({ path: contactNamespace }),
+            res: { statusCode: 500 }, correlationId: 'contact-log-failure',
+          }),
+          expect.objectContaining({ client: true, corrId: 'contact-log-failure', msg: `HTTP 500 GET ${contactRoute}` }),
+        ]));
+        expect(JSON.stringify(entries)).not.toContain(term);
+        expect(JSON.stringify(entries)).not.toContain(encoded);
+      });
+    } finally {
+      lookup.mockRestore();
+    }
+  });
+
+  test('exposes request identity only for allowed origins and safely labels unmatched lookup paths', async () => {
+    const encoded = encodeURIComponent('privacy.test+missing@example.com');
+    const url = `/api/volunteers/search-contacts/${encoded}`;
+    const noPermission = await createAuthorizedActor();
+    await captureLogs(async (entries) => {
+      const unauthenticated = await global.api.get(url).set('Origin', 'http://localhost:56379');
+      expect(unauthenticated.status).toBe(401);
+      expect(unauthenticated.body).toEqual({ code: 'ERRORS.UNAUTHORIZED', data: null });
+      expect(unauthenticated.headers['x-request-id']).toBeTruthy();
+      expect(unauthenticated.headers['access-control-expose-headers']).toBe('X-Request-Id');
+      const forbidden = await auth(global.api.get(url), noPermission.token).set('Origin', 'http://localhost:56379');
+      expect(forbidden.status).toBe(403);
+      expect(forbidden.body).toMatchObject({
+        code: 'ERRORS.FORBIDDEN',
+        correlationId: forbidden.headers['x-request-id'],
+      });
+      expect(forbidden.headers['access-control-expose-headers']).toBe('X-Request-Id');
+      const denied = await global.api.get(url).set('Origin', 'https://denied.example.invalid');
+      expect(denied.headers['access-control-expose-headers']).toBeUndefined();
+      const unmatched = await global.api.get(`${url}/extra`);
+      expect(unmatched.status).toBe(404);
+      expect(entries).toEqual(expect.arrayContaining([
+        expect.objectContaining({ route: 'GET /api/volunteers/search-contacts', status: 404 }),
+      ]));
+      expect(JSON.stringify(entries)).not.toContain(encoded);
     });
   });
 

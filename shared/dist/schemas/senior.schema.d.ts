@@ -634,7 +634,7 @@ declare const acceptedChangesSchema: z.ZodObject<{
         female: "female";
     }>>;
     birthDate: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
-    dateOfExit: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+    dateOfExit: z.ZodOptional<z.ZodNullable<z.ZodUnion<readonly [z.ZodISODateTime, z.ZodISODate, z.ZodPipe<z.ZodLiteral<"">, z.ZodTransform<null, "">>]>>>;
     dateOfConsent: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
     comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
     infoNote: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
@@ -1365,7 +1365,7 @@ export declare const bulkUpdateSchema: z.ZodObject<{
                 female: "female";
             }>>;
             birthDate: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
-            dateOfExit: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
+            dateOfExit: z.ZodOptional<z.ZodNullable<z.ZodUnion<readonly [z.ZodISODateTime, z.ZodISODate, z.ZodPipe<z.ZodLiteral<"">, z.ZodTransform<null, "">>]>>>;
             dateOfConsent: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
             comment: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;
             infoNote: z.ZodOptional<z.ZodPipe<z.ZodTransform<string | null, unknown>, z.ZodNullable<z.ZodString>>>;

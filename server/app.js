@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 
 import sequelize from './database.js';
 import logger from './logging/logger.js';
+import { VOLUNTEERS_API_PATH } from './logging/request-path.js';
 
 import { initAuditHooks } from './audit/audit-hooks.js';
 import requestLogger from './middlewares/request-logger.js';
@@ -129,11 +130,18 @@ const __dirname =
 
 global.__basedir = __dirname;
 
-app.use(
-  express.static(
-    join(__dirname, '../public'),
-  ),
-);
+const publicAssets = express.static(join(__dirname, '../public'));
+app.use((req, res, next) => {
+  let requestPath;
+  try {
+    requestPath = decodeURIComponent(req.path);
+  } catch {
+    return next();
+  }
+  // Workbook downloads belong to the guarded API, including legacy local copies.
+  if (/\.xlsx?(?:[. :/\\]|$)/i.test(requestPath)) return next();
+  return publicAssets(req, res, next);
+});
 
 // Health check used by hosting infrastructure.
 app.get(
@@ -176,7 +184,7 @@ app.use('/api/users', UsersApi);
 app.use('/api/homes', HomesApi);
 app.use('/api/seniors', SeniorsApi);
 app.use('/api/partners', PartnersApi);
-app.use('/api/volunteers', VolunteersApi);
+app.use(VOLUNTEERS_API_PATH, VolunteersApi);
 app.use('/api/roles', RolesApi);
 app.use('/api/occasions', OccasionsApi);
 app.use('/api/recipients', RecipientsApi);

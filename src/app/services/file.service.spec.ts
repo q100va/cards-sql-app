@@ -96,6 +96,29 @@ describe('FileService', () => {
     req.flush(jsonBlob, { status: 404, statusText: 'Not Found' });
   });
 
+  for (const { status, statusText, code } of [
+    { status: 401, statusText: 'Unauthorized', code: 'ERRORS.UNAUTHORIZED' },
+    { status: 403, statusText: 'Forbidden', code: 'ERRORS.FORBIDDEN' },
+  ]) {
+    it(`downloadFile preserves HTTP ${status} and decodes the permission error Blob`, (done) => {
+      const body = { code, data: null };
+      service.downloadFile('template-regions.xlsx').subscribe({
+        next: () => done.fail('expected error'),
+        error: (error: HttpErrorResponse) => {
+          expect(error.status).toBe(status);
+          expect(error.error).toEqual(body);
+          done();
+        },
+      });
+      const request = httpMock.expectOne(`${BASE_URL}/download/template-regions.xlsx`);
+      expect(request.request.responseType).toBe('blob');
+      request.flush(new Blob([JSON.stringify(body)], { type: 'application/json' }), {
+        status,
+        statusText,
+      });
+    });
+  }
+
   // --------------------------------------------------------------------------
   // downloadFile: error path — server sends Blob(plain text), should wrap as {message:text}
   // --------------------------------------------------------------------------

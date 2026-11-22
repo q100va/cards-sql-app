@@ -630,7 +630,11 @@ const acceptedChangesSchema = z.object({
   patronymic: nullableName.optional(),
   gender: z.enum(['male', 'female']).optional(),
   birthDate: nullableDateOnly.optional(),
-  dateOfExit: nullableDateOnly.optional(),
+  dateOfExit: z.union([
+    z.iso.datetime({ offset: true }),
+    z.iso.date(),
+    z.literal('').transform(() => null),
+  ]).nullable().optional(),
   dateOfConsent: nullableDateOnly.optional(),
   comment: nullableString.optional(),
   infoNote: nullableString.optional(),

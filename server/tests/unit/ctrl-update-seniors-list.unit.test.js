@@ -61,11 +61,11 @@ describe('ctrl-update-seniors-list', () => {
     ).resolves.toBe(0);
 
     await expect(
-      removeSeniors([], '2026-11-10', transaction),
+      removeSeniors([], '2026-11-10', 4, transaction),
     ).resolves.toBe(0);
 
     await expect(
-      updateSeniors([], transaction),
+      updateSeniors([], 4, transaction),
     ).resolves.toBe(0);
 
     expect(Senior.bulkCreate).not.toHaveBeenCalled();
@@ -283,6 +283,7 @@ describe('ctrl-update-seniors-list', () => {
         { id: 11 },
       ],
       '2026-11-10',
+      4,
       transaction,
     );
 
@@ -292,6 +293,7 @@ describe('ctrl-update-seniors-list', () => {
       },
       {
         where: {
+          homeId: 4,
           id: {
             [Op.in]: [10, 11],
           },
@@ -316,6 +318,7 @@ describe('ctrl-update-seniors-list', () => {
           { id: 11 },
         ],
         '2026-11-10',
+        4,
         { id: 'tx-7' },
       );
     } catch (caughtError) {
@@ -323,14 +326,13 @@ describe('ctrl-update-seniors-list', () => {
     }
 
     expect(error).toBeInstanceOf(CustomError);
-    expect(error.code).toBe(
-      'ERRORS.SENIOR.BULK_REMOVED_COUNT_MISMATCH',
-    );
-    expect(error.statusCode ?? error.status).toBe(500);
+    expect(error.code).toBe('ERRORS.CONFLICT');
+    expect(error.status).toBe(409);
   });
 
   test('updates every senior with its own changes', async () => {
     const transaction = { id: 'tx-8' };
+    Senior.update.mockResolvedValue([1]);
 
     const updated = [
       {
@@ -349,6 +351,7 @@ describe('ctrl-update-seniors-list', () => {
 
     const result = await updateSeniors(
       updated,
+      4,
       transaction,
     );
 
@@ -361,6 +364,7 @@ describe('ctrl-update-seniors-list', () => {
       },
       {
         where: {
+          homeId: 4,
           id: 10,
         },
         individualHooks: true,
@@ -375,6 +379,7 @@ describe('ctrl-update-seniors-list', () => {
       },
       {
         where: {
+          homeId: 4,
           id: 11,
         },
         individualHooks: true,
@@ -383,5 +388,15 @@ describe('ctrl-update-seniors-list', () => {
     );
 
     expect(result).toBe(2);
+  });
+
+  test('rejects a bulk edit when its write affects no rows', async () => {
+    Senior.update.mockResolvedValue([0]);
+
+    await expect(updateSeniors(
+      [{ seniorId: 10, changes: { firstName: 'Anna' } }],
+      4,
+      { id: 'tx-9' },
+    )).rejects.toMatchObject({ code: 'ERRORS.CONFLICT', status: 409 });
   });
 });

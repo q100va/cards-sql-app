@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
 import logger from '../logging/logger.js';
+import { redactContactSearchPath } from '../logging/request-path.js';
 import { validateRequest } from '../middlewares/validate-request.js';
 import {
   clientLogBatchSchema,
@@ -28,7 +29,7 @@ function maskPII(value) {
   const bearer =
     /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi;
 
-  return value
+  return redactContactSearchPath(value)
     .replace(
       email,
       (_, first, domain) =>

@@ -341,6 +341,53 @@ describe('orders API', () => {
     expect(res.body.data.options.nodes.length).toBeGreaterThan(0);
   });
 
+  test('scopes limited rows, counts and options to the actor and gives full permission precedence', async () => {
+    const limited = await createAuthorizedActor(['ADD_NEW_ORDER', 'VIEW_LIMITED_ORDERS_LIST']);
+    const fixture = await createFixture(limited, 1);
+    await createOrderThroughApi(fixture, 1);
+    const fullRole = await createRoleWithOperations(
+      new Set(['VIEW_FULL_ORDERS_LIST', 'VIEW_LIMITED_ORDERS_LIST']),
+      { name: 'Full Orders Test Role' },
+    );
+    const other = await createUserInstance({ userName: 'other_order_owner', roleId: fullRole.id });
+    const otherOccasion = await createOccasion({ ...OCCASION, year: OCCASION.year + 1 });
+    const ownOrder = await Order.findOne({ where: { userId: limited.user.id } });
+    const otherOrder = await Order.create({
+      ...createOrderPayload(fixture, 1).orderDraft,
+      userId: other.id,
+      occasionId: otherOccasion.id,
+    });
+    const query = (token, filters = {}, offset = 0) => auth(global.api.post('/api/orders/get-orders'), token)
+      .send({ offset, limit: 10, sortField: null, sortOrder: null, filters });
+
+    const own = await query(limited.token);
+    expect(own.status).toBe(200);
+    expect(own.body.data.list.map(({ id }) => id)).toEqual([ownOrder.id]);
+    expect(own.body.data.length).toBe(1);
+    expect(own.body.data.options.users).toEqual([{ id: limited.user.id, userName: limited.user.userName }]);
+    expect(JSON.stringify(own.body.data.options.nodes)).not.toContain(String(otherOccasion.year));
+
+    const foreignFilter = { userId: [{ value: other.id, matchMode: 'equals', operator: 'and' }] };
+    const filtered = await query(limited.token, foreignFilter);
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data).toMatchObject({ list: [], length: 0, options: own.body.data.options });
+
+    const page = await query(limited.token, {}, 1);
+    expect(page.body.data).toMatchObject({ list: [], length: 1 });
+
+    const fullToken = makeAccessToken(other, fullRole);
+    const full = await query(fullToken);
+    expect(full.status).toBe(200);
+    expect(full.body.data.list.map(({ id }) => id).sort()).toEqual([ownOrder.id, otherOrder.id].sort());
+    expect(full.body.data.length).toBe(2);
+    expect(full.body.data.options.users.map(({ id }) => id)).toEqual(expect.arrayContaining([limited.user.id, other.id]));
+    expect(JSON.stringify(full.body.data.options.nodes)).toContain(String(otherOccasion.year));
+
+    const fullFiltered = await query(fullToken, foreignFilter);
+    expect(fullFiltered.body.data.list.map(({ id }) => id)).toEqual([otherOrder.id]);
+    expect(fullFiltered.body.data.length).toBe(1);
+  });
+
   test('returns full order details by id', async () => {
     const actor = await createAuthorizedActor(['ADD_NEW_ORDER', 'VIEW_ORDER']);
 

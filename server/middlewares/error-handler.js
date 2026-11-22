@@ -1,4 +1,5 @@
 import logger from '../logging/logger.js';
+import { isContactSearchRequest, requestLogPath } from '../logging/request-path.js';
 
 // Maps common HTTP statuses to stable API error codes.
 function statusToDefaultCode(status) {
@@ -42,14 +43,8 @@ function normalizeStatus(error) {
     : 500;
 }
 
-// Avoid logging query parameters because they may contain sensitive data.
 function getRoute(req) {
-  const path =
-    req.originalUrl?.split('?')[0] ??
-    req.path ??
-    '';
-
-  return `${req.method} ${path}`;
+  return `${req.method} ${requestLogPath(req)}`;
 }
 
 export function handleError(
@@ -58,17 +53,18 @@ export function handleError(
   res,
   next,
 ) {
+  const privateLookup = isContactSearchRequest(req);
   // Delegate to Express when the response has already started.
   if (res.headersSent) {
     logger.error(
       {
-        err: error,
+        ...(privateLookup ? {} : { err: error }),
         route: getRoute(req),
       },
       'Headers already sent',
     );
 
-    return next(error);
+    return next(privateLookup ? new Error('Contact search request failed') : error);
   }
 
   const status =
@@ -87,7 +83,7 @@ export function handleError(
     error.data ?? null;
 
   const logPayload = {
-    err: error,
+    ...(privateLookup ? {} : { err: error }),
     code,
     status,
     correlationId,
@@ -97,6 +93,7 @@ export function handleError(
 
   // Include structured validation details only for validation errors.
   if (
+    !privateLookup &&
     status === 422 &&
     error.details
   ) {
@@ -106,8 +103,7 @@ export function handleError(
 
   logger.error(
     logPayload,
-    error.message ??
-    'Unhandled error',
+    privateLookup ? 'Contact search request failed' : (error.message ?? 'Unhandled error'),
   );
 
   return res

@@ -4,6 +4,35 @@ import { INCLUDES } from "../routes/seniors-api.js";
 import { createSearchStringFor } from "./ctrl-search-string.js";
 import CustomError from "../shared/customError.js";
 
+export async function validateBulkSeniors(homeId, admitted, removed, updated, transaction) {
+  const removedIds = new Set(removed.map(({ id }) => id));
+  const updatedIds = new Set(updated.map(({ seniorId }) => seniorId));
+  if (
+    admitted.some((senior) => senior.homeId !== homeId) ||
+    removedIds.has(undefined) ||
+    removedIds.size !== removed.length ||
+    updatedIds.size !== updated.length
+  ) {
+    throw new CustomError('ERRORS.CONFLICT', 409);
+  }
+
+  const seniorIds = [...new Set([...removedIds, ...updatedIds])];
+  if (!seniorIds.length) return seniorIds;
+
+  const seniors = await Senior.findAll({
+    attributes: ['id'],
+    where: { homeId, id: { [Op.in]: seniorIds } },
+    order: [['id', 'ASC']],
+    transaction,
+    lock: transaction.LOCK.UPDATE,
+  });
+  if (seniors.length !== seniorIds.length) {
+    throw new CustomError('ERRORS.CONFLICT', 409);
+  }
+
+  return seniorIds;
+}
+
 export async function addNewSeniors(admitted, dateOfUpdate, transaction) {
   if (!admitted?.length) {
     return 0;
@@ -51,7 +80,7 @@ export async function addNewSeniors(admitted, dateOfUpdate, transaction) {
   return created.length;
 }
 
-export async function removeSeniors(removed, dateOfExit, transaction) {
+export async function removeSeniors(removed, dateOfExit, homeId, transaction) {
   if (!removed?.length) {
     return 0;
   }
@@ -60,32 +89,34 @@ export async function removeSeniors(removed, dateOfExit, transaction) {
   const [removedCount] = await Senior.update(
     { dateOfExit },
     {
-      where: { id: { [Op.in]: ids } },
+      where: { homeId, id: { [Op.in]: ids } },
       individualHooks: true,
       transaction,
     });
 
   if (removedCount !== removed.length) {
-    throw new CustomError('ERRORS.SENIOR.BULK_REMOVED_COUNT_MISMATCH', 500);
+    throw new CustomError('ERRORS.CONFLICT', 409);
   }
 
   return removedCount;
 }
 
-export async function updateSeniors(updated, transaction) {
-  if (!updated?.length) {
-    return 0;
-  }
+export async function updateSeniors(updated, homeId, transaction) {
+  let updatedCount = 0;
   for (const data of updated) {
-    await Senior.update(
+    const [affectedCount] = await Senior.update(
       data.changes,
       {
-        where: { id: data.seniorId },
+        where: { homeId, id: data.seniorId },
         individualHooks: true,
         transaction,
       });
+    if (affectedCount !== 1) {
+      throw new CustomError('ERRORS.CONFLICT', 409);
+    }
+    updatedCount += affectedCount;
   }
 
-  return updated.length;
+  return updatedCount;
 }
 

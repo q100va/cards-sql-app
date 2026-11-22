@@ -10,6 +10,7 @@ import {
   User,
   Occasion,
   Recipient,
+  RolePermission,
 } from '../models/index.js';
 
 import CustomError from "../shared/customError.js";
@@ -32,6 +33,28 @@ import { buildOccasionNodes } from "../controllers/ctrl-build-occasion-nodes.js"
 import { refreshVolunteerSearch } from '../controllers/ctrl-search-string.js';
 
 const router = Router();
+
+const LIMITED_ORDER_LIST = 'VIEW_LIMITED_ORDERS_LIST';
+const FULL_ORDER_LIST = 'VIEW_FULL_ORDERS_LIST';
+
+async function requireOrderListAccess(req, res, next) {
+  try {
+    const grants = await RolePermission.findAll({
+      where: {
+        roleId: req.user.roleId,
+        name: { [Op.in]: [LIMITED_ORDER_LIST, FULL_ORDER_LIST] },
+        access: true,
+      },
+      attributes: ['name'],
+      raw: true,
+    });
+    if (!grants.length) throw new CustomError('ERRORS.FORBIDDEN', 403);
+    res.locals.fullOrderList = grants.some(({ name }) => name === FULL_ORDER_LIST);
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
 
 async function getOrderDetails(id, t = null, lang = 'en') {
   const order = await Order.findByPk(id, {
@@ -204,7 +227,7 @@ router.post(
 router.post(
   "/get-orders",
   requireAuth,
-  requireAny('VIEW_LIMITED_ORDERS_LIST', 'VIEW_FULL_ORDERS_LIST'),
+  requireOrderListAccess,
   validateRequest(orderSchemas.orderQueryDTOSchema, 'body'),
   async (req, res, next) => {
     try {
@@ -233,6 +256,13 @@ router.post(
         searchValue,
       );
 
+      const fullOrderList = res.locals.fullOrderList;
+      const userId = req.user.id;
+      if (!fullOrderList) {
+        where[Op.and] ??= [];
+        where[Op.and].push({ userId });
+      }
+
       const include = ORDER_LIST_INCLUDE;
 
       const [
@@ -260,12 +290,22 @@ router.post(
         }),
 
         User.findAll({
+          ...(fullOrderList ? {} : { where: { id: userId } }),
           attributes: ['id', 'userName'],
           order: [['userName', 'ASC']],
           raw: true,
         }),
 
         Occasion.findAll({
+          ...(fullOrderList ? {} : {
+            include: [{
+              association: 'orders',
+              attributes: [],
+              where: { userId },
+              required: true,
+            }],
+            group: ['occasion.id'],
+          }),
           attributes: ['id', 'month', 'year', 'type'],
           order: [
             ['type', 'ASC'],

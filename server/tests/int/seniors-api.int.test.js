@@ -1,19 +1,20 @@
 import jwt from 'jsonwebtoken';
 
-import { Recipient, Senior, SeniorSearch } from '../../models/index.js';
+import { HomeUpdateDate, Recipient, Senior, SeniorSearch } from '../../models/index.js';
 
 import { OCCASION_STATUS } from '../../../shared/dist/constants/occasions.js';
 
 import { createRoleWithOperations } from './factories/role.js';
 
 import { createLocation } from './factories/toponym.js';
-import { createHomeFixture } from './factories/home.js';
+import { createHome, createHomeFixture } from './factories/home.js';
 import { createRecipient as createRecipientRow } from './factories/recipient.js';
 import { createOccasion } from './factories/occasion.js';
+import { createUserInstance } from './factories/user.js';
 
-function makeAccessToken(roleId) {
+function makeAccessToken(roleId, userId = 42) {
   return jwt.sign(
-    { sub: '42', roleId, uname: 'seniors-integration-user', role: 'SENIORS_TEST_ROLE' },
+    { sub: String(userId), roleId, uname: 'seniors-integration-user', role: 'SENIORS_TEST_ROLE' },
     process.env.JWT_ACCESS_SECRET,
     { algorithm: 'HS256', expiresIn: '15m', issuer: 'cards-sql-app', audience: 'web' },
   );
@@ -175,7 +176,214 @@ async function createBasicFixture(actor) {
   return { actor, location, home, address };
 }
 
+const bulkUpdateDate = '2026-11-21T12:00:00.000Z';
+
+async function createBulkFixture() {
+  const actor = await createAuthorizedActor(['ADD_NEW_SENIOR', 'UPLOAD_LIST_OF_SENIORS']);
+  const fixture = await createBasicFixture(actor);
+  const user = await createUserInstance({ roleId: actor.role.id });
+  return { ...fixture, token: makeAccessToken(actor.role.id, user.id) };
+}
+
+function saveBulk(fixture, changes) {
+  return auth(global.api.post('/api/seniors/update-seniors-list'), fixture.token).send({
+    homeId: fixture.home.id,
+    dateOfUpdate: bulkUpdateDate,
+    admitted: [],
+    removed: [],
+    updated: [],
+    ...changes,
+  });
+}
+
 describe('seniors API', () => {
+  test('rejects a stale bulk edit without recording a completed home update', async () => {
+    const actor = await createAuthorizedActor(['UPLOAD_LIST_OF_SENIORS']);
+    const { home } = await createBasicFixture(actor);
+    const user = await createUserInstance({ roleId: actor.role.id });
+
+    // A row from an earlier comparison no longer exists when the operator saves.
+    const response = await auth(
+      global.api.post('/api/seniors/update-seniors-list'),
+      makeAccessToken(actor.role.id, user.id),
+    ).send({
+      homeId: home.id,
+      dateOfUpdate: '2026-11-21T12:00:00.000Z',
+      admitted: [],
+      removed: [],
+      updated: [{ seniorId: 1, changes: { comment: 'Reviewed' } }],
+    });
+
+    const recordedUpdates = await HomeUpdateDate.count({ where: { homeId: home.id } });
+    expect({ staleConflict: [404, 409].includes(response.status), recordedUpdates }).toEqual({
+      staleConflict: true,
+      recordedUpdates: 0,
+    });
+  });
+
+  test('rejects a bulk removal when the compared Senior has since been deleted', async () => {
+    const fixture = await createBulkFixture();
+    const { senior, payload } = await createSeniorThroughApi(fixture.token, fixture.home.id);
+    const comparison = await auth(
+      global.api.post('/api/seniors/compare-seniors-lists'),
+      fixture.token,
+    ).send({
+      newList: [],
+      homeName: fixture.home.homeName,
+      commentsMode: false,
+      chosenMonths: [],
+    });
+    expect(comparison.status).toBe(200);
+    const [removed] = comparison.body.data.differences.removedSeniors;
+    expect(removed.id).toBe(senior.id);
+    await senior.destroy();
+
+    const response = await saveBulk(fixture, {
+      admitted: [{ ...payload, id: undefined, firstName: 'New resident' }],
+      removed: [removed],
+    });
+
+    expect(response.status).toBe(409);
+    expect(await Senior.count()).toBe(0);
+    expect(await HomeUpdateDate.count()).toBe(0);
+  });
+
+  test.each(['updated', 'removed'])('rejects foreign-Home Seniors in bulk %s', async (section) => {
+    const fixture = await createBulkFixture();
+    const foreignHome = await createHome({ homeName: 'Other home' });
+    const { senior, payload } = await createSeniorThroughApi(fixture.token, foreignHome.id);
+    const row = section === 'updated'
+      ? { seniorId: senior.id, changes: { firstName: 'Changed' } }
+      : { ...payload, id: senior.id, homeId: fixture.home.id };
+
+    const response = await saveBulk(fixture, { [section]: [row] });
+
+    expect(response.status).toBe(409);
+    await senior.reload();
+    expect(senior.firstName).toBe(payload.firstName);
+    expect(senior.dateOfExit).toBeNull();
+    expect(await HomeUpdateDate.count()).toBe(0);
+  });
+
+  test('rejects a bulk admission for a different Home', async () => {
+    const fixture = await createBulkFixture();
+    const foreignHome = await createHome({ homeName: 'Other home' });
+    const response = await saveBulk(fixture, {
+      admitted: [{ ...seniorDraft(foreignHome.id), id: undefined }],
+    });
+
+    expect(response.status).toBe(409);
+    expect(await Senior.count()).toBe(0);
+    expect(await HomeUpdateDate.count()).toBe(0);
+  });
+
+  test('rolls back earlier bulk writes when a later Senior update fails in PostgreSQL', async () => {
+    const fixture = await createBulkFixture();
+    const { senior: first } = await createSeniorThroughApi(fixture.token, fixture.home.id);
+    const { senior: second } = await createSeniorThroughApi(fixture.token, fixture.home.id, {
+      firstName: 'Second',
+    });
+    const response = await saveBulk(fixture, {
+      admitted: [{ ...seniorDraft(fixture.home.id, { firstName: 'Admitted' }), id: undefined }],
+      updated: [
+        { seniorId: first.id, changes: { firstName: 'Changed' } },
+        { seniorId: second.id, changes: { firstName: 'x'.repeat(51) } },
+      ],
+    });
+
+    expect(response.status).toBe(500);
+    expect((await first.reload()).firstName).toBe('Alice');
+    expect((await second.reload()).firstName).toBe('Second');
+    expect(await Senior.count()).toBe(2);
+    expect(await SeniorSearch.count()).toBe(2);
+    expect(await HomeUpdateDate.count()).toBe(0);
+  });
+
+  test('commits a same-Home bulk save with accurate counts and refreshed related state', async () => {
+    const fixture = await createBulkFixture();
+    const { senior: edited } = await createSeniorThroughApi(fixture.token, fixture.home.id);
+    const { senior: removed, payload } = await createSeniorThroughApi(fixture.token, fixture.home.id, {
+      firstName: 'Leaving',
+    });
+    const occasion = await createOccasion(OCCASION);
+    const editedRecipient = await createRecipientFixture(fixture, edited, occasion);
+    const removedRecipient = await createRecipientFixture(fixture, removed, occasion);
+    const response = await saveBulk(fixture, {
+      admitted: [{ ...seniorDraft(fixture.home.id, { firstName: 'Admitted' }), id: undefined }],
+      removed: [{ ...payload, id: removed.id }],
+      updated: [{ seniorId: edited.id, changes: { firstName: 'Changed' } }],
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      code: 'SUCCESS.UPDATED',
+      data: { createdCount: 1, removedCount: 1, updatedCount: 1 },
+    });
+    expect((await edited.reload()).firstName).toBe('Changed');
+    expect((await removed.reload()).dateOfExit.toISOString()).toBe(bulkUpdateDate);
+    const admitted = await Senior.findOne({ where: { homeId: fixture.home.id, firstName: 'Admitted' } });
+    expect(admitted).not.toBeNull();
+    expect((await SeniorSearch.findOne({ where: { seniorId: edited.id } })).content).toMatch(/changed/i);
+    expect(await SeniorSearch.count({ where: { seniorId: admitted.id } })).toBe(1);
+    expect((await editedRecipient.reload()).fullNameSnapshot).toContain('Changed');
+    expect((await removedRecipient.reload()).isAbsent).toBe(true);
+    expect(await Recipient.count({ where: { seniorId: admitted.id, occasionId: occasion.id } })).toBe(1);
+    const markers = await HomeUpdateDate.findAll({ where: { homeId: fixture.home.id } });
+    expect(markers).toHaveLength(1);
+    expect(markers[0].isLatest).toBe(true);
+    expect(markers[0].date.toISOString()).toBe(bulkUpdateDate);
+  });
+
+  test('keeps the exact stored exit timestamp from bulk comparison and still supports clearing it', async () => {
+    const fixture = await createBulkFixture();
+    const original = '2026-11-21T21:00:00.000Z';
+    const { senior, payload } = await createSeniorThroughApi(fixture.token, fixture.home.id, {
+      dateOfExit: original,
+    });
+    expect((await senior.reload()).dateOfExit.toISOString()).toBe(original);
+
+    const comparison = await auth(
+      global.api.post('/api/seniors/compare-seniors-lists'),
+      fixture.token,
+    ).send({
+      newList: [{
+        ...payload,
+        nursingHome: fixture.home.homeName,
+        dayBirthday: 15,
+        monthBirthday: 11,
+        yearBirthday: 1940,
+      }],
+      homeName: fixture.home.homeName,
+      commentsMode: true,
+      chosenMonths: [],
+    });
+    expect(comparison.status).toBe(200);
+    const [returning] = comparison.body.data.differences.returnedSeniors;
+    expect(returning.oldSenior.id).toBe(senior.id);
+    const exitChange = returning.changeRows.find(({ field }) => field === 'dateOfExit');
+    expect(exitChange).toMatchObject({ oldValue: original, newValue: null });
+
+    const keep = await saveBulk(fixture, {
+      updated: [{ seniorId: senior.id, changes: { dateOfExit: exitChange.oldValue } }],
+    });
+    expect(keep.status).toBe(200);
+    expect(keep.body.data).toEqual({ createdCount: 0, removedCount: 0, updatedCount: 1 });
+    const persisted = (await senior.reload()).dateOfExit;
+    expect(persisted.toISOString()).toBe(original);
+    const calendarDay = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit',
+    });
+    expect(calendarDay.format(new Date(original))).toBe('22/11/2026');
+    expect(calendarDay.format(persisted)).toBe('22/11/2026');
+
+    const clear = await saveBulk(fixture, {
+      updated: [{ seniorId: senior.id, changes: { dateOfExit: exitChange.newValue } }],
+    });
+    expect(clear.status).toBe(200);
+    expect((await senior.reload()).dateOfExit).toBeNull();
+    expect(await HomeUpdateDate.count({ where: { homeId: fixture.home.id, isLatest: true } })).toBe(1);
+  });
+
   test('returns 401 when authentication is missing', async () => {
     const res = await global.api
       .post('/api/seniors/check-senior-data')
