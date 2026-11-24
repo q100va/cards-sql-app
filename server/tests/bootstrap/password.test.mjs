@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PassThrough } from 'node:stream';
-import { readPassword } from '../../scripts/bootstrap-password.mjs';
+import { readHiddenFields, readPassword } from '../../scripts/bootstrap-password.mjs';
 
 function terminal(initialRaw = false) {
   const input = new PassThrough();
@@ -15,16 +15,25 @@ function terminal(initialRaw = false) {
   return {
     input,
     output,
-    checkRestored() {
+    checkRestored(expectedTranscript = /^Admin password \(hidden, 12-256 characters\): (?:\n(?:Repeat password \(hidden\): (?:\n)?)?)?$/) {
       assert.equal(input.isRaw, initialRaw);
       assert.equal(input.isPaused(), true);
       for (const event of ['data', 'end', 'error']) {
         assert.equal(input.listenerCount(event), 0);
       }
-      assert.match(transcript, /^Admin password \(hidden, 12-256 characters\): (?:\n(?:Repeat password \(hidden\): (?:\n)?)?)?$/);
+      assert.match(transcript, expectedTranscript);
     },
   };
 }
+
+test('reads four hidden fields and preserves a blank field for validation', async () => {
+  const tty = terminal();
+  const result = readHiddenFields(['Email: ', 'Phone: ', 'Telegram ID: ', 'Telegram phone: '],
+    tty.input, tty.output);
+  tty.input.write('first\r\n\r\nthirdx\x7f\r\nfourth\r\n');
+  assert.deepEqual(await result, ['first', '', 'third', 'fourth']);
+  tty.checkRestored(/^Email: \nPhone: \nTelegram ID: \nTelegram phone: \n$/);
+});
 
 const valid = 'a'.repeat(12);
 for (const [label, chunks, expected] of [

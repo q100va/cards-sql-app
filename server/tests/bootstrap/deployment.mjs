@@ -9,6 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import pg from 'pg';
 import { OPERATIONS, OPERATION_FLAG } from '../../shared/operations.js';
+import { userSchema, usersSchema } from '../../../shared/dist/schemas/user.schema.js';
 
 const run = promisify(execFile);
 const tools = process.argv[2];
@@ -18,6 +19,16 @@ const password = secret();
 const login = 'initial-admin';
 const pgPassword = secret();
 const children = new Set();
+const contactInputs = {
+  Email: ' ADMIN@EXAMPLE.TEST ',
+  'Phone number': '+1 (202) 555-0101',
+  'Telegram ID': '#1234567',
+  'Telegram phone number': '+1 (202) 555-0102',
+};
+const expectedContacts = {
+  email: 'admin@example.test', phoneNumber: '+12025550101',
+  telegramId: '#1234567', telegramPhoneNumber: '+12025550102',
+};
 
 function runQuiet(file, args) {
   return new Promise((resolve, reject) => {
@@ -162,6 +173,9 @@ async function main() {
     const counts = async () => Object.values((await client.query(
       'SELECT (SELECT count(*)::int FROM users) a, (SELECT count(*)::int FROM roles) b, (SELECT count(*)::int FROM "role-permissions") c',
     )).rows[0]);
+    const relatedCounts = async () => Object.values((await client.query(
+      'SELECT (SELECT count(*)::int FROM "user-contacts") contacts, (SELECT count(*)::int FROM "user-searches") searches, (SELECT count(*)::int FROM "user-addresses") addresses',
+    )).rows[0]);
 
     step = 'startup on empty schema';
     const firstBackend = await startBackend();
@@ -171,8 +185,8 @@ async function main() {
     await stopBackend(firstBackend);
 
     const cli = 'server/scripts/bootstrap-admin.mjs';
-    const runBootstrap = (overrides = {}, interactive = true) => launch([
-      ...(interactive ? ['--import', './server/tests/bootstrap/terminal-shim.mjs'] : []), cli,
+    const runBootstrap = (overrides = {}, interactive = true, args = []) => launch([
+      ...(interactive ? ['--import', './server/tests/bootstrap/terminal-shim.mjs'] : []), cli, ...args,
     ], { ...env, ...overrides });
 
     async function enterIdentity(proc, username = login, confirmation = 'CREATE ADMIN') {
@@ -187,13 +201,21 @@ async function main() {
       await prompt(proc, 'Repeat password (hidden): ', repeat + '\r');
     }
 
+    async function enterContacts(proc, overrides = {}) {
+      for (const [label, value] of Object.entries({ ...contactInputs, ...overrides })) {
+        await prompt(proc, `${label} (hidden): `, value + '\r');
+      }
+    }
+
     async function expectExit(proc, status, message) {
       proc.child.stdin.end();
       await waitFor(() => proc.done, 'bootstrap process exit');
       assert.equal(await proc.exit, status);
       const output = proc.stdout + proc.stderr;
       assert.equal(output.includes(message), true, 'missing expected outcome');
-      for (const sensitive of [password, pgPassword, env.PASSWORD_PEPPER, env.JWT_ACCESS_SECRET, env.JWT_REFRESH_SECRET, '$argon2id$']) {
+      for (const sensitive of [password, pgPassword, env.PASSWORD_PEPPER, env.JWT_ACCESS_SECRET,
+        env.JWT_REFRESH_SECRET, '$argon2id$', ...Object.values(contactInputs).map(value => value.trim()),
+        ...Object.values(expectedContacts)]) {
         assert.equal(output.includes(sensitive), false, 'bootstrap output contained a secret');
       }
     }
@@ -209,13 +231,22 @@ async function main() {
     await expectExit(proc, 1, 'username of 5-20');
     proc = runBootstrap();
     await enterIdentity(proc);
+    await enterContacts(proc);
     await prompt(proc, 'Admin password (hidden', 'typed\x03');
     await expectExit(proc, 1, 'Cancelled.');
     proc = runBootstrap();
     await enterIdentity(proc);
+    await enterContacts(proc);
     await enterPasswords(proc, secret());
     await expectExit(proc, 1, 'Passwords differ');
+    for (const overrides of [{ Email: '' }, { 'Telegram ID': 'malformed' }]) {
+      proc = runBootstrap();
+      await enterIdentity(proc);
+      await enterContacts(proc, overrides);
+      await expectExit(proc, 1, 'Required contact input is invalid');
+    }
     assert.deepEqual(await counts(), [0, 0, 0]);
+    assert.deepEqual(await relatedCounts(), [0, 0, 0]);
 
     step = 'existing record rejection';
     // The fixture-only session disables FK triggers to isolate the grant check.
@@ -241,22 +272,24 @@ async function main() {
         RAISE EXCEPTION 'Forced bootstrap fixture failure';
       END;
       $$;
-      CREATE TRIGGER test_reject_initial_user BEFORE INSERT ON users
+      CREATE TRIGGER test_reject_initial_user BEFORE INSERT ON "user-searches"
       FOR EACH ROW EXECUTE FUNCTION test_reject_initial_user();
     `);
     proc = runBootstrap();
     await enterIdentity(proc);
+    await enterContacts(proc);
     await enterPasswords(proc);
     await expectExit(proc, 1, 'An unexpected error occurred');
     assert.deepEqual(await counts(), [0, 0, 0]);
-    await client.query('DROP TRIGGER test_reject_initial_user ON users');
-    await client.query('DROP FUNCTION test_reject_initial_user()');
+    assert.deepEqual(await relatedCounts(), [0, 0, 0]);
+    await client.query('DROP TRIGGER test_reject_initial_user ON "user-searches"');
 
     step = 'concurrent bootstrap';
     await client.query('SELECT pg_advisory_lock(42043)');
     const attempts = [runBootstrap(), runBootstrap()];
     await Promise.all(attempts.map(async (candidate) => {
       await enterIdentity(candidate);
+      await enterContacts(candidate);
       await enterPasswords(candidate);
       candidate.child.stdin.end();
     }));
@@ -271,6 +304,7 @@ async function main() {
       attempt, statuses[index], statuses[index] === 0 ? 'Administrator created.' : 'database is no longer empty',
     )));
     assert.deepEqual(await counts(), [1, 1, OPERATIONS.length]);
+    assert.deepEqual(await relatedCounts(), [4, 1, 0]);
 
     const snapshot = async () => (await client.query(
       'SELECT (SELECT jsonb_agg(to_jsonb(u) ORDER BY id) FROM users u) users, (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM roles r) roles, (SELECT jsonb_agg(to_jsonb(p) ORDER BY id) FROM "role-permissions" p) grants',
@@ -293,7 +327,7 @@ async function main() {
     assert.equal(await verify(before.users[0].password, password), true);
     assert.equal(await verify(before.users[0].password, secret()), false);
 
-    await startBackend();
+    const backend = await startBackend();
     assert.equal(JSON.stringify(await snapshot()) === JSON.stringify(before), true);
     step = 'real login, permission delivery and protected requests';
     const signIn = await fetch(base + '/api/session/sign-in', {
@@ -321,7 +355,64 @@ async function main() {
       assert.equal((await fetch(base + path)).status, 401);
       assert.equal((await fetch(base + path, { headers })).status, 200);
     }
-    console.log(`Verified real login, ${permissions.length} permission grants, two protected routes, repeat refusal, rollback and deterministic concurrency.`);
+    step = 'Users list, detail and text search';
+    const adminId = session.user.id;
+    async function checkUserViews() {
+      for (const search of [undefined, { value: login, exact: true }]) {
+        const response = await fetch(base + '/api/users/get-users', {
+          method: 'POST',
+          headers: { ...headers, 'content-type': 'application/json' },
+          body: JSON.stringify({ page: { number: 0, size: 20 }, search }),
+        });
+        assert.equal(response.status, 200);
+        const parsed = usersSchema.safeParse((await response.json()).data);
+        assert.equal(parsed.success, true);
+        assert.equal(parsed.data.list.some(row => row.id === adminId), true);
+      }
+      const detail = await fetch(base + `/api/users/get-user-by-id/${adminId}`, { headers });
+      assert.equal(detail.status, 200);
+      const parsed = userSchema.safeParse((await detail.json()).data);
+      assert.equal(parsed.success, true);
+      const { orderedContacts, address } = parsed.data;
+      for (const [type, content] of Object.entries(expectedContacts)) {
+        assert.equal(orderedContacts[type].length === 1 && orderedContacts[type][0].content === content, true);
+      }
+      assert.equal(orderedContacts.telegram.length, 2);
+      assert.deepEqual(address, { country: null, region: null, district: null, locality: null });
+    }
+    await checkUserViews();
+
+    step = 'existing administrator repair and repeat refusal';
+    await stopBackend(backend);
+    const beforeRepair = await snapshot();
+    await client.query('DELETE FROM "user-contacts" WHERE "userId" = $1', [adminId]);
+    await client.query('DELETE FROM "user-searches" WHERE "userId" = $1', [adminId]);
+    async function runRepair(username = login, confirmation = 'REPAIR ADMIN') {
+      const repair = runBootstrap({}, true, ['--repair-existing']);
+      await prompt(repair, 'Existing admin user ID: ', adminId + '\r');
+      await prompt(repair, 'Admin username: ', username + '\r');
+      await prompt(repair, 'Type REPAIR ADMIN to continue: ', confirmation + '\r');
+      if (confirmation === 'REPAIR ADMIN') await enterContacts(repair);
+      return repair;
+    }
+    await expectExit(await runRepair(login, 'CANCEL'), 1, 'Cancelled');
+    await expectExit(await runRepair('other-admin'), 1, 'do not identify');
+    assert.deepEqual(await relatedCounts(), [0, 0, 0]);
+    await client.query(`
+      CREATE TRIGGER test_reject_initial_user BEFORE INSERT ON "user-searches"
+      FOR EACH ROW EXECUTE FUNCTION test_reject_initial_user();
+    `);
+    await expectExit(await runRepair(), 1, 'An unexpected error occurred');
+    assert.deepEqual(await relatedCounts(), [0, 0, 0]);
+    await client.query('DROP TRIGGER test_reject_initial_user ON "user-searches"');
+    await client.query('DROP FUNCTION test_reject_initial_user()');
+    await expectExit(await runRepair(), 0, 'Administrator contacts and search repaired');
+    await expectExit(await runRepair(), 1, 'already has contacts or search records');
+    assert.deepEqual(await relatedCounts(), [4, 1, 0]);
+    assert.equal(JSON.stringify(await snapshot()) === JSON.stringify(beforeRepair), true);
+    await startBackend();
+    await checkUserViews();
+    console.log(`Verified real login, ${permissions.length} grants, Users schemas and search, rollback, concurrency and existing account repair.`);
   } catch {
     throw new Error(`Verification failed during ${step}.`);
   } finally {

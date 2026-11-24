@@ -9,8 +9,9 @@ Candidate baseline `5c56b53`. This procedure is for the foundation's first deplo
 | Configuration | Production Sequelize uses `DATABASE_URL`, with dotenv supplying unset variables. Static imports previously evaluated the database and password modules before the production gate and error handler. The CLI now checks mode, terminal, pepper and target URL first. It displays only the host, port and database resolved by Sequelize, including a host override in the URL query. |
 | Identity | The CLI trims account names. Username and first/last name limits now match the regular account forms, at 5–20 characters for the username and 1–50 for each name. Control and format characters are rejected in those fields. The login API accepts this username range. |
 | Password | Kept the bootstrap's 12–256 length policy and the existing peppered Argon2id hash. The application verifies it with the same pepper and password module. Hidden input now processes batches, split UTF-8, Enter and Backspace within one raw-mode session. It handles Ctrl+C, mismatch, EOF and input errors, removes its listeners and restores the prior raw mode. |
+| Contacts and search | Enter genuine values for email, phone number, Telegram ID, and Telegram phone number. The CLI uses the normal user draft validators and contact persistence helper. It builds the initial search row from the saved user and contacts. The address is optional. |
 | Permissions | The existing administrator seed matches the catalog and synchronization rules. Each catalog operation receives `access: true`. LIMITED operations are marked `disabled: true` for the role editor while the corresponding FULL choices are enabled. Server authorization checks `access`. Boot synchronization normalizes the same dependencies. |
-| Atomicity | The early refusal checks users, roles and grants before prompting. The transaction acquires advisory lock `42043`, rechecks all three tables, and commits the role, grants and unrestricted user together. The lock serializes cooperating bootstrap invocations. Other writers can bypass it, so stop all backend replicas, workers and imports during bootstrap. |
+| Atomicity | The early refusal checks users, roles and grants before prompting. The transaction acquires advisory lock `42043`, rechecks all three tables, and commits the role, grants, unrestricted user, contacts and search index together. The lock serializes cooperating bootstrap invocations. Other writers can bypass it, so stop all backend replicas, workers and imports during bootstrap. |
 | Output | Expected refusals use fixed messages. Unexpected failures print a generic message without raw Sequelize errors, SQL, hashes, configuration secrets or credentials. The CLI closes Sequelize after each attempt. |
 
 ## First deployment
@@ -62,7 +63,7 @@ Candidate baseline `5c56b53`. This procedure is for the foundation's first deplo
    node server/scripts/bootstrap-admin.mjs
    ```
 
-   Compare the CLI's `Target database` line with the verified host, port and database before confirming. Enter the administrator's username and names, type `CREATE ADMIN`, then enter and repeat the password at the hidden prompts. Expect `Administrator created.` and exit status 0. A repeat run should refuse before prompting, with exit status 1. Ctrl+C cancels interactive entry.
+   Compare the CLI's `Target database` line with the verified host, port and database before confirming. Enter the administrator's username and names and type `CREATE ADMIN`. At the hidden prompts, enter a genuine email, international phone number, Telegram ID (`#` followed by 7–10 digits), and international Telegram phone number. Enter and repeat the password at the next two hidden prompts. Expect `Administrator created.` and exit status 0. A repeat run should refuse before prompting, with exit status 1. Ctrl+C cancels interactive entry.
 
 6. Restart the backend normally with permission synchronization enabled and verify health. Sign in through the application over its deployed HTTPS connection using the new administrator. For an API check through a trusted client, submit the credentials to `POST /api/session/sign-in` without printing the body or token, then use the returned bearer token to check `GET /api/auth/permissions`, `GET /api/roles/get-roles` and `GET /api/users/check-user-name?userName=<admin-username>`. Expect HTTP 200, the Administrator role, and access for all catalog operations. Compare LIMITED editor flags as described above.
 
@@ -77,9 +78,11 @@ Candidate baseline `5c56b53`. This procedure is for the foundation's first deplo
 
 ## Recovering from failure
 
-Keep traffic and other writers stopped. Verify the target and inspect the backend startup result and the three bootstrap table counts. With a partial schema and all three tables empty, correct the startup issue and run the normal backend entry point again. After successful startup, stop it and retry bootstrap. A failed transaction during bootstrap rolls back the role, grants and user together. Cancellation and input validation occur before writes.
+Keep traffic and other writers stopped. Verify the target and inspect the backend startup result and the three bootstrap table counts. With a partial schema and all three tables empty, correct the startup issue and run the normal backend entry point again. After successful startup, stop it and retry bootstrap. A failed transaction during bootstrap rolls back the role, grants, user, contacts and search row together. Cancellation and input validation occur before writes.
 
 If any of the three tables contains rows, keep the bootstrap refusal in place. Verify whether the administrator already exists and can sign in. If the state is unexpected, inspect it before making changes. For a confirmed disposable, never-used deployment database, provision a new empty database and repeat the documented sequence. For a database containing data, use the foundation's approved backup and recovery process. If the client disconnects near commit, establish the actual database state before retrying.
+
+For an administrator created by the original bootstrap without contacts or search, use the [existing administrator recovery procedure](phase8h1-bootstrap-contact-search-integrity.md#recover-the-existing-administrator).
 
 ## Verification commands
 

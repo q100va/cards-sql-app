@@ -2,18 +2,28 @@ import { StringDecoder } from 'node:string_decoder';
 
 export class BootstrapError extends Error {}
 
-export function readPassword(input = process.stdin, output = process.stdout) {
+export async function readPassword(input = process.stdin, output = process.stdout) {
+  const [password, repeat] = await readHiddenFields([
+    'Admin password (hidden, 12-256 characters): ',
+    'Repeat password (hidden): ',
+  ], input, output);
+  if (password.length < 12 || password.length > 256 || password !== repeat) {
+    throw new BootstrapError('Passwords differ or do not meet length requirements.');
+  }
+  return password;
+}
+
+export function readHiddenFields(labels, input = process.stdin, output = process.stdout) {
   return new Promise((resolve, reject) => {
     const previousRaw = input.isRaw ?? false;
     const wasPaused = input.isPaused();
     const decoder = new StringDecoder('utf8');
-    const maxLength = 256;
-    const values = [[], []];
+    const values = labels.map(() => []);
     let field = 0;
     let skipLineFeed = false;
     let escape = '';
 
-    function finish(error, password) {
+    function finish(error) {
       input.off('data', onData);
       input.off('error', onError);
       input.off('end', onEnd);
@@ -25,7 +35,7 @@ export function readPassword(input = process.stdin, output = process.stdout) {
         if (wasPaused) input.pause();
       }
       if (error) reject(error);
-      else resolve(password);
+      else resolve(values.map(value => value.join('')));
     }
 
     function onError(error) {
@@ -33,7 +43,7 @@ export function readPassword(input = process.stdin, output = process.stdout) {
     }
 
     function onEnd() {
-      finish(new BootstrapError('Password input ended before confirmation.'));
+      finish(new BootstrapError('Hidden input ended before all fields were entered.'));
     }
 
     function onData(chunk) {
@@ -67,19 +77,13 @@ export function readPassword(input = process.stdin, output = process.stdout) {
         const value = values[field];
         if (character === '\r' || character === '\n') {
           output.write('\n');
-          if (field === 0) {
-            field = 1;
+          field += 1;
+          if (field < labels.length) {
             skipLineFeed = character === '\r';
-            output.write('Repeat password (hidden): ');
+            output.write(labels[field]);
             continue;
           }
-
-          const password = values[0].join('');
-          if (password.length < 12 || password.length > maxLength || password !== value.join('')) {
-            finish(new BootstrapError('Passwords differ or do not meet length requirements.'));
-          } else {
-            finish(null, password);
-          }
+          finish();
           return;
         }
 
@@ -91,7 +95,7 @@ export function readPassword(input = process.stdin, output = process.stdout) {
       }
     }
 
-    output.write('Admin password (hidden, 12-256 characters): ');
+    output.write(labels[0]);
     input.setRawMode(true);
     input.on('data', onData);
     input.once('error', onError);

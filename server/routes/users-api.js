@@ -29,6 +29,7 @@ import { validateRequest } from "../middlewares/validate-request.js";
 import CustomError from "../shared/customError.js";
 import * as userSchemas from "../../shared/dist/schemas/user.schema.js";
 
+import { buildUserSearchContent } from '../controllers/ctrl-user-search-content.js';
 import { hashPassword } from "../security/passwords.mjs";
 import { verify } from '../security/passwords.mjs';
 import { withTransaction } from "../controllers/with-transaction.js";
@@ -202,45 +203,7 @@ router.post(
           transaction,
         );
 
-        const freshUser = await User.findOne({
-          where: { id: user.id },
-          attributes: {
-            exclude: [
-              'password',
-              'failedLoginCount',
-              'lockedUntil',
-              'bruteWindowStart',
-              'bruteStrikeCount',
-              'createdAt',
-              'updatedAt',
-            ],
-          },
-          include: [
-            {
-              model: Role,
-              attributes: ['name'],
-            },
-            {
-              model: UserContact,
-              as: 'contacts',
-              attributes: ['content', 'isRestricted'],
-            },
-            {
-              model: UserAddress,
-              as: 'addresses',
-              attributes: ['isRestricted'],
-              include: [
-                { model: Country, attributes: ['name'] },
-                { model: Region, attributes: ['name'] },
-                { model: District, attributes: ['name'] },
-                { model: Locality, attributes: ['name'] },
-              ],
-            },
-          ],
-          transaction,
-        });
-
-        const searchString = createSearchStringFor('user', freshUser);
+        const searchString = await buildUserSearchContent(user.id, transaction);
         await UserSearch.create(
           { userId: user.id, content: searchString },
           { transaction },

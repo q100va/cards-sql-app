@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
 import { usersQueryDTOSchema } from '../../../shared/schemas/user.schema';
 import { environment } from '../../environments/environment';
 import { AllFilterParameters, createEmptyGeneralFilter } from '../interfaces/base-list';
@@ -94,4 +95,54 @@ describe('UserService list search', () => {
     expectListRequest(undefined);
     expect(filters.exactMatch).toBeTrue();
   });
+
+  for (const hasContacts of [false, true]) {
+    const expectation = hasContacts ? 'accepts a complete' : 'rejects a contactless';
+    it(`${expectation} initial administrator without an address`, async () => {
+      const email = { id: 1, content: 'admin@example.test' };
+      const phoneNumber = { id: 2, content: '+12025550101' };
+      const telegramId = { id: 3, content: '#1234567' };
+      const telegramPhoneNumber = { id: 4, content: '+12025550102' };
+      const administrator = {
+        id: 1,
+        userName: 'initial-admin',
+        firstName: 'Synthetic',
+        patronymic: null,
+        lastName: 'Administrator',
+        roleId: 1,
+        roleName: 'Administrator',
+        isRestricted: false,
+        dateOfStart: '2026-01-15T12:00:00.000Z',
+        causeOfRestriction: null,
+        dateOfRestriction: null,
+        address: { country: null, region: null, district: null, locality: null },
+        comment: null,
+        orderedContacts: hasContacts ? {
+          email: [email], phoneNumber: [phoneNumber], telegramId: [telegramId],
+          telegramPhoneNumber: [telegramPhoneNumber], telegram: [telegramId, telegramPhoneNumber],
+        } : {},
+        outdatedData: { contacts: {}, addresses: [], names: [], userNames: [] },
+      };
+
+      filters.searchValue = '';
+      filters.filter = { ...createEmptyGeneralFilter(), roles: [] };
+      filters.addressFilter = { countries: [], regions: [], districts: [], localities: [] };
+      const result = firstValueFrom(service.getList(filters, 20, 0));
+
+      http.expectOne(environment.apiUrl + '/api/users/get-users')
+        .flush({ data: { list: [administrator], length: 1 } });
+
+      if (!hasContacts) {
+        await expectAsync(result).toBeRejectedWithError('ERRORS.INVALID_SCHEMA');
+        return;
+      }
+      expect<unknown>(await result).toEqual({
+        data: {
+          list: [{ ...administrator, dateOfStart: new Date(administrator.dateOfStart) }],
+          length: 1,
+        },
+        code: undefined,
+      });
+    });
+  }
 });
