@@ -134,6 +134,14 @@ const ADDRESS_TYPES = {
       name: "населенный пункт",
       shortName: "нп",
     },
+    {
+      name: "выселок",
+      shortName: "высел.",
+    },
+    {
+      name: "выселки",
+      shortName: "высел.",
+    },
   ],
 };
 
