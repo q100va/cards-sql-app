@@ -126,6 +126,10 @@ const ADDRESS_TYPES = {
       name: "станция",
       shortName: "ст.",
     },
+    {
+      name: "ж.д. блокпост",
+      shortName: "ж/д пост",
+    },
   ],
 };
 
@@ -218,12 +222,12 @@ export function correctDistrictName(
     const postData =
       normalizedPostNameType === "район"
         ? correctDistrictName(
-            normalizedName,
-          )
+          normalizedName,
+        )
         : correctLocalityName(
-            normalizedPostName,
-            normalizedPostNameType,
-          );
+          normalizedPostName,
+          normalizedPostNameType,
+        );
 
     postName =
       postData.name;
@@ -253,9 +257,9 @@ export function correctLocalityName(
 
   if (
     normalizedType ===
-      "поселок городского типа" ||
+    "поселок городского типа" ||
     normalizedType ===
-      "пгт (рабочий поселок)"
+    "пгт (рабочий поселок)"
   ) {
     normalizedType = "пгт";
   }
@@ -280,8 +284,8 @@ export function correctLocalityName(
   const districtFullName =
     district
       ? correctDistrictName(
-          district,
-        ).name
+        district,
+      ).name
       : null;
 
   return {
