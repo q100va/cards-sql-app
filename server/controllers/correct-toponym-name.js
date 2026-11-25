@@ -131,6 +131,10 @@ const ADDRESS_TYPES = {
       shortName: "ж/д пост",
     },
     {
+      name: "ж.д. пост",
+      shortName: "ж/д пост",
+    },
+    {
       name: "населенный пункт",
       shortName: "нп",
     },
