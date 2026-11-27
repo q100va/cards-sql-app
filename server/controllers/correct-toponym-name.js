@@ -162,6 +162,14 @@ const ADDRESS_TYPES = {
       name: "улус",
       shortName: "у.",
     },
+    {
+      name: "погост",
+      shortName: "погост",
+    },
+     {
+      name: "кордон",
+      shortName: "кордон",
+    },
   ],
 };
 
