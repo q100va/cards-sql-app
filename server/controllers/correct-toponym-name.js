@@ -115,6 +115,10 @@ const ADDRESS_TYPES = {
       shortName: "п. ж/д ст.",
     },
     {
+      name: "посёлок при ж.д. станции",
+      shortName: "п/ст.",
+    },
+    {
       name: "поселок ж.д. разъезда",
       shortName: "п. ж/д рзд.",
     },
@@ -153,6 +157,10 @@ const ADDRESS_TYPES = {
     {
       name: "выселки",
       shortName: "высел.",
+    },
+    {
+      name: "улус",
+      shortName: "у.",
     },
   ],
 };
