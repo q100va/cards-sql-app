@@ -131,6 +131,14 @@ const ADDRESS_TYPES = {
       shortName: "ст.",
     },
     {
+      name: "ж.д. станция",
+      shortName: "ж/д ст.",
+    },
+    {
+      name: "ж.д. разъезд",
+      shortName: "ж/д рзд.",
+    },
+    {
       name: "ж.д. блокпост",
       shortName: "ж/д пост",
     },
@@ -166,7 +174,7 @@ const ADDRESS_TYPES = {
       name: "погост",
       shortName: "погост",
     },
-     {
+    {
       name: "кордон",
       shortName: "кордон",
     },
