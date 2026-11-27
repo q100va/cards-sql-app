@@ -115,7 +115,7 @@ const ADDRESS_TYPES = {
       shortName: "п. ж/д ст.",
     },
     {
-      name: "посёлок при ж.д. станции",
+      name: "посeлок при ж.д. станции",
       shortName: "п/ст.",
     },
     {
